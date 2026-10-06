@@ -134,7 +134,7 @@ export const ERROR_CODES = {
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
     /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
     RATE_LIMITED: 'RATE_LIMITED',
-    /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. */
+    /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
     REAUTH_REQUIRED: 'REAUTH_REQUIRED',
     /** 409 — The past order named for reorder no longer has any purchasable lines. */
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',

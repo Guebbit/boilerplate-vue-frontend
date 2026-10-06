@@ -35,6 +35,9 @@ let requestLog: LoggedRequest[] = [];
 /** How the stub server answers the next requests. */
 let scenario: Scenario = { requiresReauth: true };
 
+/** What the next `REAUTH_REQUIRED` 401 asks beyond recency, as `details.methods`. */
+let demandedMethods: string[] | undefined;
+
 /** A `REAUTH_REQUIRED` 401, matching what `requireFreshAuth` actually answers. */
 const reauthRequired = () =>
     HttpResponse.json(
@@ -42,7 +45,13 @@ const reauthRequired = () =>
             success: false,
             status: 401,
             message: 'Fresh authentication required',
-            errors: [{ code: 'REAUTH_REQUIRED', message: 'Fresh authentication required' }]
+            errors: [
+                {
+                    code: 'REAUTH_REQUIRED',
+                    message: 'Fresh authentication required',
+                    details: { maxAge: 300, ...(demandedMethods && { methods: demandedMethods }) }
+                }
+            ]
         },
         { status: 401 }
     );
@@ -88,6 +97,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     requestLog = [];
     scenario = { requiresReauth: true };
+    demandedMethods = undefined;
     vi.unstubAllEnvs();
 });
 
@@ -109,6 +119,33 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                 });
         });
     });
+
+    it('opens the prompt with the proofs the 401 asked for beyond recency', () => {
+        demandedMethods = ['otp'];
+
+        return loadHttp().then(({ orvalMutator }) => {
+            const pending = orvalMutator({ url: '/checkout', method: 'POST', data: {} });
+
+            return waitForPrompt().then(() => {
+                expect(useReauthPromptStore().requiredMethods).toEqual(['otp']);
+                scenario.requiresReauth = false;
+                useReauthPromptStore().resolveStepUp();
+                return pending;
+            });
+        });
+    });
+
+    it('asks for nothing beyond recency when the 401 names no methods', () =>
+        loadHttp().then(({ orvalMutator }) => {
+            const pending = orvalMutator({ url: '/checkout', method: 'POST', data: {} });
+
+            return waitForPrompt().then(() => {
+                expect(useReauthPromptStore().requiredMethods).toEqual([]);
+                scenario.requiresReauth = false;
+                useReauthPromptStore().resolveStepUp();
+                return pending;
+            });
+        }));
 
     it('shares one prompt between two REAUTH_REQUIRED 401s that arrive together', () =>
         loadHttp().then(({ orvalMutator }) => {

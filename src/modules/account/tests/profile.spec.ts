@@ -81,6 +81,7 @@ beforeEach(() => {
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         'POST /account/verify-confirm': orvalEnvelope(),
         'POST /account/email-change-confirm': orvalEnvelope(),
+        'POST /account/email-change-undo': orvalEnvelope(),
         // The request answers `202` with the export's id and status; the data comes later, by link.
         'POST /account/export': orvalEnvelope({ id: 'e1', status: 'building' }),
         // The download body IS the export document, not an envelope. Every collection is an array
@@ -321,6 +322,20 @@ describe('the self-service actions', () => {
                     '/account',
                     '/account/abilities'
                 ]);
+            });
+    });
+
+    it('undoEmailChange posts the token and refetches nothing: every session was ended', () => {
+        const profile = useProfileStore();
+
+        return useAuthStore()
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => {
+                const before = requestedUrls().length;
+                return profile.undoEmailChange('a-token').then(() => before);
+            })
+            .then((before) => {
+                expect(requestedUrls().slice(before)).toEqual(['/account/email-change-undo']);
             });
     });
 

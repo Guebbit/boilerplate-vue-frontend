@@ -207,6 +207,14 @@
         "button-submit": "Confirm my new email",
         "success": "Email address changed."
     },
+    "email-change-undo-page": {
+        "page-title": "Undo email change",
+        "intro": "Use the one-time link from the notice we sent to your old address to undo an email change you did not ask for. Every device is signed out, and you can sign in again.",
+        "label-token": "Undo token",
+        "token-required": "The undo token is required",
+        "button-submit": "Undo the change",
+        "success": "The email change was undone. Sign in again."
+    },
     "oauth": {
         "divider": "or",
         "continue-with": "Continue with {provider}",

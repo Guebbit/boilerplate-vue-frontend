@@ -183,6 +183,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     startOAuthLogin: 'account',
     sweepReservations: 'inventory',
     syncPayment: 'payments',
+    undoEmailChange: 'account',
     updateAccount: 'account',
     updateAccountWithMultipart: 'account',
     updateAddress: 'addresses',

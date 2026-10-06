@@ -16,6 +16,11 @@ import { defineStore } from 'pinia';
  */
 interface PendingStepUp {
     /**
+     * What the server said the re-authentication must also prove (`details.methods` of the 401),
+     * e.g. `['otp']` for an account with a second factor armed. Empty when only recency is asked.
+     */
+    requiredMethods: readonly string[];
+    /**
      * Settles the caller's promise once a fresh session exists.
      */
     resolve: () => void;
@@ -45,14 +50,20 @@ export const useReauthPromptStore = defineStore('reauthPrompt', () => {
     const isOpen = computed(() => Boolean(pending.value));
 
     /**
+     * What the open prompt must collect beyond the first proof — empty while closed.
+     */
+    const requiredMethods = computed(() => pending.value?.requiredMethods ?? []);
+
+    /**
      * Opens the prompt. Called by the step-up interceptor, never directly by a component.
      *
+     * @param requiredMethods - The 401's `details.methods`: what the answer must also prove.
      * @returns A promise resolving once {@link resolveStepUp} is called, rejected by
      *  {@link rejectStepUp}.
      */
-    const requestStepUp = (): Promise<void> =>
+    const requestStepUp = (requiredMethods: readonly string[] = []): Promise<void> =>
         new Promise((resolve, reject) => {
-            pending.value = { resolve, reject };
+            pending.value = { requiredMethods, resolve, reject };
         });
 
     /**
@@ -75,5 +86,5 @@ export const useReauthPromptStore = defineStore('reauthPrompt', () => {
         pending.value = undefined;
     };
 
-    return { isOpen, requestStepUp, resolveStepUp, rejectStepUp };
+    return { isOpen, requiredMethods, requestStepUp, resolveStepUp, rejectStepUp };
 });

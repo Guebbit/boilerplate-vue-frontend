@@ -207,6 +207,14 @@
         "button-submit": "Conferma la mia nuova email",
         "success": "Indirizzo email modificato."
     },
+    "email-change-undo-page": {
+        "page-title": "Annulla modifica email",
+        "intro": "Usa il link monouso dell'avviso inviato al tuo vecchio indirizzo per annullare una modifica dell'email che non hai richiesto. Tutti i dispositivi vengono disconnessi e potrai accedere di nuovo.",
+        "label-token": "Token di annullamento",
+        "token-required": "Il token di annullamento è obbligatorio",
+        "button-submit": "Annulla la modifica",
+        "success": "La modifica dell'email è stata annullata. Accedi di nuovo."
+    },
     "oauth": {
         "divider": "oppure",
         "continue-with": "Continua con {provider}",

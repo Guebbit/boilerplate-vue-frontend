@@ -25,6 +25,7 @@ import {
     changePassword as apiChangePassword,
     confirmEmailVerification as apiConfirmEmailVerification,
     confirmEmailChange as apiConfirmEmailChange,
+    undoEmailChange as apiUndoEmailChange,
     requestAccountExport as apiRequestAccountExport,
     downloadAccountExport as apiDownloadAccountExport
 } from '@api';
@@ -389,6 +390,17 @@ export const useProfileStore = defineStore('accountProfile', () => {
             )
         );
 
+    /**
+     * Spends the undo link mailed to the OLD address when an email change was requested — public,
+     * the token is the credential. The server cancels a pending change or restores the previous
+     * address and ends every session, so there is nothing to refetch: the visitor signs in again.
+     *
+     * @param token - One-time token from the undo link.
+     * @returns A promise resolving once the change is undone.
+     */
+    const undoEmailChange = (token: string) =>
+        fetchAny(() => apiUndoEmailChange({ token }).then(() => undefined));
+
     // A session that died on its own leaves the last person's record in the cache, and the shell
     // is about to re-run the route guard: drop it so nothing of theirs can flash.
     watch(
@@ -488,6 +500,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         changePassword,
         confirmEmailVerification,
         confirmEmailChange,
+        undoEmailChange,
         requestAccountDelete,
         confirmAccountDelete,
         requestAccountExport,

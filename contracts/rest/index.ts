@@ -2098,6 +2098,12 @@ export const ReauthPasswordRequestMethod = {
 export interface ReauthPasswordRequest {
     method: ReauthPasswordRequestMethod;
     password: Password;
+    /**
+     * A code from an armed second factor, or an unused backup code. Required to pass an identity route (changing the email or password, deleting the account) when the account has 2FA armed; the `401 REAUTH_REQUIRED` that asks for it carries `details.methods` of `[otp]`. Answers 422 when the account has no second factor armed.
+     * @minLength 1
+     * @maxLength 64
+     */
+    otp?: string;
 }
 
 export type ReauthEmailRequestMethod =
@@ -2115,6 +2121,12 @@ export interface ReauthEmailRequest {
      * @maxLength 64
      */
     code: string;
+    /**
+     * A code from an armed second factor, or an unused backup code. Required to pass an identity route (changing the email or password, deleting the account) when the account has 2FA armed; the `401 REAUTH_REQUIRED` that asks for it carries `details.methods` of `[otp]`. Answers 422 when the account has no second factor armed.
+     * @minLength 1
+     * @maxLength 64
+     */
+    otp?: string;
 }
 
 export type ReauthRequest = ReauthPasswordRequest | ReauthEmailRequest;
@@ -5911,7 +5923,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Replace own profile
  */
 export const replaceAccount = (
@@ -5930,7 +5942,7 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (
@@ -5966,7 +5978,7 @@ export const replaceAccountWithMultipart = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Update own profile
  */
 export const updateAccount = (
@@ -5985,7 +5997,7 @@ export const updateAccount = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMergePatchJson = (
@@ -6004,7 +6016,7 @@ export const updateAccountWithMergePatchJson = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice is sent to the OLD address the moment the change is requested. Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMultipart = (
@@ -6049,7 +6061,7 @@ export const updateAccountWithMultipart = (
 };
 
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
+ * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
  * @summary Request account deletion
  */
 export const requestAccountDelete = (
@@ -6112,7 +6124,7 @@ export const getMyAbilities = (
 };
 
 /**
- * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every OTHER session is revoked; the response carries a fresh access token for this one, and sets fresh session cookies.
+ * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every session is revoked and every pending one-time link and login challenge is purged; the response carries a fresh access token for the calling session, and sets fresh session cookies. An account with a second factor armed also needs a fresh session that proved an `otp` (`401 REAUTH_REQUIRED` with `details.methods`); an account without one is asked nothing new.
  * @summary Change password
  */
 export const changePassword = (
@@ -6160,7 +6172,7 @@ export const getReauthMethods = (
 };
 
 /**
- * Re-proves who the caller is to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). The body is tagged by `method`, one of those `GET /account/reauth` lists. Re-mints the session and returns a fresh access token, same as `POST /account/password`. The session keeps the factors it already proved (`amr`) and gains this one.
+ * Re-proves who the caller is to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). The body is tagged by `method`, one of those `GET /account/reauth` lists, and may carry an `otp` code from an armed second factor. Re-mints the session and returns a fresh access token, same as `POST /account/password`. The new session carries ONLY what this call proved (`pwd` or `email`, plus `otp` when a code was given and verified). Proofs from the login are not carried over, so a password-only re-authentication no longer passes a route that demands `otp`. The refresh token the call was made with is retired.
  * @summary Re-authenticate (step-up)
  */
 export const reauth = (
@@ -6366,6 +6378,25 @@ export const confirmEmailChange = (
     return orvalMutator<SuccessResponse>(
         {
             url: `/account/email-change-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: verifyEmailConfirmRequest
+        },
+        options
+    );
+};
+
+/**
+ * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change-confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
+ * @summary Undo an email change
+ */
+export const undoEmailChange = (
+    verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/email-change-undo`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -9135,6 +9166,7 @@ export type ConfirmEmailVerificationResult = NonNullable<
     Awaited<ReturnType<typeof confirmEmailVerification>>
 >;
 export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
+export type UndoEmailChangeResult = NonNullable<Awaited<ReturnType<typeof undoEmailChange>>>;
 export type ConfirmAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof confirmAccountDelete>>
 >;

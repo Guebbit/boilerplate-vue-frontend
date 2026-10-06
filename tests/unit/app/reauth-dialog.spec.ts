@@ -128,6 +128,43 @@ describe('ReauthDialog', () => {
         );
     });
 
+    it('asks for a second-factor code only when the challenge named otp, and sends it beside the password', () => {
+        reauth.mockResolvedValue(undefined);
+        const wrapper = mountDialog();
+        const stepUp = useReauthPromptStore().requestStepUp(['otp']);
+
+        return settled(wrapper).then(() =>
+            wrapper
+                .get('[data-test="reauth-dialog-password"] input')
+                .setValue('correct horse')
+                .then(() => {
+                    // The code is required: with only the password the submit stays disabled.
+                    expect(
+                        wrapper.get('[data-test="reauth-dialog-submit"]').attributes('disabled')
+                    ).toBeDefined();
+                    return wrapper.get('[data-test="reauth-dialog-otp"] input').setValue('123456');
+                })
+                .then(() => wrapper.get('[data-test="reauth-dialog-submit"]').trigger('click'))
+                .then(() => {
+                    expect(reauth).toHaveBeenCalledWith({
+                        method: 'password',
+                        password: 'correct horse',
+                        otp: '123456'
+                    });
+                    return expect(stepUp).resolves.toBeUndefined();
+                })
+        );
+    });
+
+    it('shows no code field for a challenge that asked for recency alone', () => {
+        const wrapper = mountDialog();
+        void useReauthPromptStore().requestStepUp();
+
+        return settled(wrapper).then(() => {
+            expect(wrapper.find('[data-test="reauth-dialog-otp"]').exists()).toBe(false);
+        });
+    });
+
     it('rejects the pending step-up when cancelled, instead of leaving it hanging', () => {
         const wrapper = mountDialog();
         const stepUp = useReauthPromptStore().requestStepUp();

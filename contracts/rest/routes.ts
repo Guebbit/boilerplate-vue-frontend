@@ -30,6 +30,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/account\/addresses$/, schemaName: "AddAddressResponse", bodySchemaName: "AddAddressBody", module: "addresses" },
     { method: "DELETE", pattern: /^\/account\/delete-confirm$/, schemaName: "ConfirmAccountDeleteResponse", bodySchemaName: "ConfirmAccountDeleteBody", module: "account" },
     { method: "POST", pattern: /^\/account\/email-change-confirm$/, schemaName: "ConfirmEmailChangeResponse", bodySchemaName: "ConfirmEmailChangeBody", module: "account" },
+    { method: "POST", pattern: /^\/account\/email-change-undo$/, schemaName: "UndoEmailChangeResponse", bodySchemaName: "UndoEmailChangeBody", module: "account" },
     { method: "POST", pattern: /^\/account\/export$/, schemaName: "RequestAccountExportResponse", bodySchemaName: undefined, module: "account" },
     { method: "POST", pattern: /^\/account\/login\/2fa\/send$/, schemaName: "SendTwoFactorCodeResponse", bodySchemaName: "SendTwoFactorCodeBody", module: "account" },
     { method: "POST", pattern: /^\/account\/login\/2fa$/, schemaName: "LoginTwoFactorResponse", bodySchemaName: "LoginTwoFactorBody", module: "account" },

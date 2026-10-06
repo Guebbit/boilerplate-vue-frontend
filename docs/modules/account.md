@@ -11,18 +11,18 @@ backend's freshness gate — email change, account delete, session revoke, check
 management — is answered through that one prompt.
 :::
 
-| Fact                    | This module                                                                                                                                                                                                      |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                              |
-| **Screens**             | 11 — `Login` · `Signup` · `TwoFactorChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountDeleteConfirm` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `OAuthCallback` · `Profile` · `Logout` |
-| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountTwoFactor`                                                                                         |
-| **Menu entries**        | `Profile`                                                                                                                                                                                                        |
-| **API calls**           | 31                                                                                                                                                                                                               |
-| **Depends on**          | [`users`](./users.md)                                                                                                                                                                                            |
-| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing)                                                                                                                                       |
-| **Languages**           | `en` · `it`                                                                                                                                                                                                      |
-| **Publishes**           | `AddressPicker`                                                                                                                                                                                                  |
-| **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                          |
+| Fact                    | This module                                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                  |
+| **Screens**             | 12 — `Login` · `Signup` · `TwoFactorChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountDeleteConfirm` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `EmailChangeUndo` · `OAuthCallback` · `Profile` · `Logout` |
+| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountTwoFactor`                                                                                                             |
+| **Menu entries**        | `Profile`                                                                                                                                                                                                                            |
+| **API calls**           | 31                                                                                                                                                                                                                                   |
+| **Depends on**          | [`users`](./users.md)                                                                                                                                                                                                                |
+| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing)                                                                                                                                                           |
+| **Languages**           | `en` · `it`                                                                                                                                                                                                                          |
+| **Publishes**           | `AddressPicker`                                                                                                                                                                                                                      |
+| **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                                              |
 
 ## The map
 
@@ -346,7 +346,14 @@ flowchart TD
   field for the mailed code. The body sent is tagged, `{ method: 'email', code }`.
 - empty — no password and no way to mail: a dead end told as one, not a form nobody can pass.
 
-A wrong answer is a 422 and the dialog says "code" or "password" by the method on show; it stays
+For an account with a second factor armed, the identity routes (email, password, delete) answer the
+same `401 REAUTH_REQUIRED` with `details.methods: ['otp']`. The interceptor hands that list to the
+prompt (`requiredMethods`), and the dialog adds a second-factor code field beside the first proof;
+both go in one `reauth()` call, `{ method: 'password', password, otp }`. The field appears only when
+the server asked for it, never from a guess about the profile.
+
+A wrong answer is a 422 and the dialog says "code" or "password" by the method on show (with a code
+field on show it shows the server's own sentence, which says which proof was wrong); it stays
 open either way. See the backend's
 [step-up for an account with no password](https://github.com/Guebbit/boilerplate-node-backend/blob/main/docs/modules/account-sessions.md#step-up-for-an-account-with-no-password).
 

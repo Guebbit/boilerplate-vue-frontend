@@ -67,6 +67,14 @@ export default [
         component: () => import('@/modules/account/views/EmailChangeConfirm.vue')
     },
     {
+        // Public, same reasoning: the undo link goes to the OLD address, whose reader may have no
+        // session at all (that is the point: the change was not theirs).
+        path: 'email-change/undo',
+        name: 'EmailChangeUndo',
+        meta: { title: 'email-change-undo-page.page-title' },
+        component: () => import('@/modules/account/views/EmailChangeUndo.vue')
+    },
+    {
         // Public: the backend's own redirect (`router/index.ts`'s locale-less `/oauth/callback`
         // shell) lands an ANONYMOUS browser here mid-flow, before any session is confirmed.
         path: 'oauth/callback',

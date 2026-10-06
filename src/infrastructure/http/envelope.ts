@@ -27,7 +27,7 @@ export interface ApiErrorItem {
  * @param value - Value to test.
  * @returns `true` when `value` is a non-null object.
  */
-const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+export const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
 
 /**
