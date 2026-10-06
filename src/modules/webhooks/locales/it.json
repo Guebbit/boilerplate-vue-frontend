@@ -57,7 +57,7 @@
         "label-created-at": "Creata il",
         "label-updated-at": "Aggiornata il",
         "section-secrets": "Segreti di firma",
-        "secrets-intro": "Ogni segreto elencato qui può firmare una consegna. Ruota per generarne uno nuovo, poi rimuovi quello vecchio una volta che ogni destinatario è passato al nuovo.",
+        "secrets-intro": "Ogni segreto elencato qui può firmare una consegna. Ruota per generarne uno nuovo, poi rimuovi quello vecchio una volta che ogni destinatario è passato al nuovo. Un segreto sostituito smette di firmare 24 ore dopo la creazione del successivo, e l'elenco ne contiene al massimo due: una terza rotazione elimina il più vecchio.",
         "column-secret-id": "ID segreto",
         "column-secret-actions": "Azioni",
         "button-rotate-secret": "Ruota segreto",
