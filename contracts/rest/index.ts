@@ -54,17 +54,16 @@ export type Text = string;
 export type Email = string;
 
 /**
- * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
+ * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
  * @minLength 8
  * @maxLength 128
  */
 export type Password = string;
 
 /**
- * A password being SET by its owner — signup, reset (or the setup link) and change. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
+ * A password being SET by its owner — signup, reset (or the setup link) and change. Length only, 8 to 128 characters (NIST SP 800-63B-4: no composition rules, no forced mix of classes); what keeps a weak one out is the breached-password check on every set path, not a pattern. Hashed with argon2id, which has no 72-byte limit, so every character counts.
  * @minLength 8
  * @maxLength 128
- * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).{8,}$
  */
 export type PasswordNew = string;
 

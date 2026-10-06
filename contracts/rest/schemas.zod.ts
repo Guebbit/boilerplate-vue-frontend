@@ -1907,9 +1907,6 @@ export const changePasswordBodyCurrentPasswordMin = 8;
 export const changePasswordBodyCurrentPasswordMax = 128;
 export const changePasswordBodyPasswordMin = 8;
 export const changePasswordBodyPasswordMax = 128;
-export const changePasswordBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
 export const changePasswordBodyPasswordConfirmMin = 8;
 export const changePasswordBodyPasswordConfirmMax = 128;
 export const ChangePasswordBody = zod.strictObject({
@@ -1917,11 +1914,7 @@ export const ChangePasswordBody = zod.strictObject({
         .string()
         .min(changePasswordBodyCurrentPasswordMin)
         .max(changePasswordBodyCurrentPasswordMax),
-    password: zod
-        .string()
-        .min(changePasswordBodyPasswordMin)
-        .max(changePasswordBodyPasswordMax)
-        .regex(changePasswordBodyPasswordRegExp),
+    password: zod.string().min(changePasswordBodyPasswordMin).max(changePasswordBodyPasswordMax),
     passwordConfirm: zod
         .string()
         .min(changePasswordBodyPasswordConfirmMin)
@@ -2464,19 +2457,12 @@ export const signupBodyUsernameMin = 3;
 export const signupBodyUsernameMax = 50;
 export const signupBodyPasswordMin = 8;
 export const signupBodyPasswordMax = 128;
-export const signupBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
 export const signupBodyPasswordConfirmMin = 8;
 export const signupBodyPasswordConfirmMax = 128;
 export const SignupBody = zod.strictObject({
     email: zod.email().max(signupBodyEmailMax),
     username: zod.string().min(signupBodyUsernameMin).max(signupBodyUsernameMax),
-    password: zod
-        .string()
-        .min(signupBodyPasswordMin)
-        .max(signupBodyPasswordMax)
-        .regex(signupBodyPasswordRegExp),
+    password: zod.string().min(signupBodyPasswordMin).max(signupBodyPasswordMax),
     passwordConfirm: zod
         .string()
         .min(signupBodyPasswordConfirmMin)
@@ -2552,9 +2538,6 @@ export const RequestPasswordResetResponse = zod.strictObject({
 export const confirmPasswordResetBodyTokenMax = 128;
 export const confirmPasswordResetBodyPasswordMin = 8;
 export const confirmPasswordResetBodyPasswordMax = 128;
-export const confirmPasswordResetBodyPasswordRegExp = new RegExp(
-    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
-);
 export const confirmPasswordResetBodyPasswordConfirmMin = 8;
 export const confirmPasswordResetBodyPasswordConfirmMax = 128;
 export const ConfirmPasswordResetBody = zod.strictObject({
@@ -2562,8 +2545,7 @@ export const ConfirmPasswordResetBody = zod.strictObject({
     password: zod
         .string()
         .min(confirmPasswordResetBodyPasswordMin)
-        .max(confirmPasswordResetBodyPasswordMax)
-        .regex(confirmPasswordResetBodyPasswordRegExp),
+        .max(confirmPasswordResetBodyPasswordMax),
     passwordConfirm: zod
         .string()
         .min(confirmPasswordResetBodyPasswordConfirmMin)

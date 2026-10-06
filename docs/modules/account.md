@@ -374,7 +374,7 @@ infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for t
 `components/PasswordStrengthMeter.vue`'s local strength bar — the maintained TypeScript fork of the
 original `zxcvbn`, which is unmaintained since 2022. English dictionary only, since this is
 advisory feedback rather than an enforced rule; the actual gate stays `usersPasswordSchema` plus
-the server's own composition and breach checks. See `composables/use-password-strength.ts`.
+the server's own breach check. See `composables/use-password-strength.ts`.
 
 ## Related pages
 

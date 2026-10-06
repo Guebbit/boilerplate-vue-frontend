@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
-import { signupBodyUsernameMin, signupBodyPasswordMin } from '@api/schemas';
+import { signupBodyUsernameMin, signupBodyPasswordMin, signupBodyPasswordMax } from '@api/schemas';
 
 /**
  * Validation schema for an email address.
@@ -20,24 +20,14 @@ const usersUsernameSchema = z
     .min(signupBodyUsernameMin, { error: () => translate('users-form.username-min') });
 
 /**
- * Validation schema for a password: the contract's minimum length plus one lowercase, one
- * uppercase, one digit and one special character, each with its own message.
+ * Validation schema for a password: the contract's length bounds and nothing more. No composition
+ * rules (NIST SP 800-63B-4): a long passphrase is a good password, and what keeps a weak one out is
+ * the server's breached-password check, mirrored here as a non-blocking hint.
  */
 export const usersPasswordSchema = z
     .string()
     .min(signupBodyPasswordMin, { error: () => translate('users-form.password-min') })
-    .refine((password) => password && /[a-z]/.test(password), {
-        error: () => translate('users-form.password-minus-required')
-    })
-    .refine((password) => password && /[A-Z]/.test(password), {
-        error: () => translate('users-form.password-maius-required')
-    })
-    .refine((password) => password && /\d/.test(password), {
-        error: () => translate('users-form.password-number-required')
-    })
-    .refine((password) => password && /[^\dA-Za-z]/.test(password), {
-        error: () => translate('users-form.password-special-required')
-    });
+    .max(signupBodyPasswordMax, { error: () => translate('users-form.password-max') });
 
 /**
  * Validation schema of a whole user form: email and username required, everything else

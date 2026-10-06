@@ -52,15 +52,13 @@ describe('users schema messages', () => {
         });
     });
 
-    it('does the same for every password rule, including the refinements', () =>
+    it('does the same for the password length bounds', () =>
         setLocale('it').then(() => {
             expect(messagesOf(usersPasswordSchema, 'short')).toEqual(
-                expect.arrayContaining([
-                    itMessages['users-form']['password-min'],
-                    itMessages['users-form']['password-maius-required'],
-                    itMessages['users-form']['password-number-required'],
-                    itMessages['users-form']['password-special-required']
-                ])
+                expect.arrayContaining([itMessages['users-form']['password-min']])
+            );
+            expect(messagesOf(usersPasswordSchema, 'x'.repeat(129))).toEqual(
+                expect.arrayContaining([itMessages['users-form']['password-max']])
             );
         }));
 });
