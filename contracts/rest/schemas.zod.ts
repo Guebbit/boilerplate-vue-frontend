@@ -7761,19 +7761,9 @@ export const ListPaymentMethodsResponse = zod.strictObject({
     })
 });
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200 — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
  * @summary Create a payment intent
  */
-export const createPaymentIntentHeaderIdempotencyKeyMax = 200;
-export const createPaymentIntentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
-export const CreatePaymentIntentHeader = zod.strictObject({
-    'Idempotency-Key': zod
-        .string()
-        .min(1)
-        .max(createPaymentIntentHeaderIdempotencyKeyMax)
-        .regex(createPaymentIntentHeaderIdempotencyKeyRegExp)
-        .optional()
-});
 export const createPaymentIntentBodyOrderIdMax = 64;
 export const createPaymentIntentBodyOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreatePaymentIntentBody = zod.strictObject({

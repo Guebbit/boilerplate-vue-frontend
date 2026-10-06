@@ -76,6 +76,15 @@ vi.mock('@/infrastructure/http', () => ({
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 
+/** The `Idempotency-Key` header the mocked transport saw on the request whose URL ends in `suffix`. */
+const idempotencyKeyOf = (suffix: string): string | undefined => {
+    const call = vi
+        .mocked(orvalMutator)
+        .mock.calls.find((entry) => (entry[0] as { url: string }).url.endsWith(suffix));
+    const options = call?.[1] as { headers?: Record<string, string> } | undefined;
+    return options?.headers?.['Idempotency-Key'];
+};
+
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
@@ -145,6 +154,14 @@ describe('payForOrder', () => {
         return store.payForOrder('order-1', 'pm_card_visa').then(() => {
             expect(requestedUrls()).toEqual(['/payments/intent', '/payments/payment-1/confirm']);
             expect(store.payment?.status).toBe('succeeded');
+        });
+    });
+
+    it('sends no Idempotency-Key on the intent, which a stored replay would leak a secret through', () => {
+        const store = usePaymentsStore();
+        return store.payForOrder('order-1', 'pm_card_visa').then(() => {
+            expect(idempotencyKeyOf('/payments/intent')).toBeUndefined();
+            expect(idempotencyKeyOf('/confirm')).toEqual(expect.any(String));
         });
     });
 

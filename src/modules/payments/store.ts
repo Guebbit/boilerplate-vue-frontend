@@ -48,16 +48,11 @@ export const usePaymentsStore = defineStore('payments', () => {
     const payment = ref<Payment | undefined>();
 
     /**
-     * `Idempotency-Key` for the intent/confirm pair `payForOrder` sends — the contract
-     * declares the header on both `POST /payments/intent` and `POST /payments/{id}/confirm`, so
-     * both keys settle together: a retry after a network error or a 5xx at EITHER step resends
-     * both unchanged, and any other outcome (success, or a decline the visitor answers with a
-     * different method) mints a fresh pair for whatever `payForOrder` is called with next.
-     */
-    const intentIdempotencyKey = useIdempotencyKey();
-
-    /**
-     * `Idempotency-Key` for `confirmPayment`, settled alongside {@link intentIdempotencyKey}.
+     * `Idempotency-Key` for `confirmPayment` — the contract declares the header on
+     * `POST /payments/{id}/confirm` only: `POST /payments/intent` takes none (asking again already
+     * refreshes the same intent, and a stored replay would keep its `clientSecret`). A retry after
+     * a network error or a 5xx resends the key unchanged; any other outcome (success, or a decline
+     * the visitor answers with a different method) mints a fresh one.
      */
     const confirmIdempotencyKey = useIdempotencyKey();
 
@@ -138,7 +133,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         confirmOptions?: AxiosRequestConfig
     ) =>
         fetchAny(() =>
-            createPaymentIntent({ orderId }, intentIdempotencyKey.withKey())
+            createPaymentIntent({ orderId })
                 .then((intentResponse) =>
                     confirmPayment(
                         intentResponse.data.id,
@@ -147,13 +142,11 @@ export const usePaymentsStore = defineStore('payments', () => {
                     )
                 )
                 .then((response) => {
-                    intentIdempotencyKey.settle();
                     confirmIdempotencyKey.settle();
                     payment.value = response.data;
                     return payment.value;
                 })
                 .catch((error: unknown) => {
-                    intentIdempotencyKey.settle(error);
                     confirmIdempotencyKey.settle(error);
                     throw error;
                 })
