@@ -125,9 +125,7 @@ const submitForm = () => {
             name: form.value.name!,
             permissions: form.value.permissions!,
             // `datetime-local` has no timezone of its own; the contract wants a real ISO instant.
-            ...(form.value.expiresAt
-                ? { expiresAt: new Date(form.value.expiresAt).toISOString() }
-                : {})
+            expiresAt: new Date(form.value.expiresAt!).toISOString()
         };
         return mintCredential(data).then((created) => {
             if (!created?.secret) return;

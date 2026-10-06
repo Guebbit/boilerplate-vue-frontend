@@ -10560,7 +10560,7 @@ export const ListApiKeysResponse = zod.strictObject({
                 publicPrefix: zod.string(),
                 permissions: zod.array(zod.string()).min(1),
                 lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
-                expiresAt: zod.iso.datetime({ offset: true }).optional(),
+                expiresAt: zod.iso.datetime({ offset: true }),
                 revokedAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }),
                 updatedAt: zod.iso.datetime({ offset: true })
@@ -10588,6 +10588,12 @@ export const ListApiKeysResponse = zod.strictObject({
  * currently-held tenant permissions: a key can never reach further than the person
  * who minted it, and that floor is re-checked on every request the key later makes,
  * not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+ *
+ * Minting needs a critically fresh session (`401 REAUTH_REQUIRED`): a key outlives the
+ * session that made it. `expiresAt` is required and at most one year ahead, or the
+ * request is refused with 422. The minter is mailed that a key was created, and every
+ * key a person minted is revoked (and listed to them by mail) when they log out
+ * everywhere or reset their password.
  * @summary Mint a machine-to-machine credential
  */
 export const mintApiKeyBodyNameMax = 200;
@@ -10595,7 +10601,7 @@ export const mintApiKeyBodyPermissionsItemMax = 100;
 export const MintApiKeyBody = zod.strictObject({
     name: zod.string().min(1).max(mintApiKeyBodyNameMax),
     permissions: zod.array(zod.string().max(mintApiKeyBodyPermissionsItemMax)).min(1),
-    expiresAt: zod.iso.datetime({ offset: true }).optional()
+    expiresAt: zod.iso.datetime({ offset: true })
 });
 export const mintApiKeyResponseDataIdMax = 64;
 export const mintApiKeyResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -10613,7 +10619,7 @@ export const MintApiKeyResponse = zod.strictObject({
         publicPrefix: zod.string(),
         permissions: zod.array(zod.string()).min(1),
         lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
-        expiresAt: zod.iso.datetime({ offset: true }).optional(),
+        expiresAt: zod.iso.datetime({ offset: true }),
         revokedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }),
@@ -11076,7 +11082,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             publicPrefix: zod.string(),
             permissions: zod.array(zod.string()).min(1),
             lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
-            expiresAt: zod.iso.datetime({ offset: true }).optional(),
+            expiresAt: zod.iso.datetime({ offset: true }),
             revokedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }),
             updatedAt: zod.iso.datetime({ offset: true })

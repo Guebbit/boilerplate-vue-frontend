@@ -8,6 +8,9 @@
 /** A value unique enough per run that two specs racing the same backend cannot collide. */
 const unique = () => `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+/** A `datetime-local` value a week ahead — the mint form requires an expiry. */
+const weekAhead = (): string => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 16);
+
 describe('API keys', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -37,6 +40,7 @@ describe('API keys', () => {
             cy.visit('/en/api-keys/create');
             cy.get('[data-test=api-key-name] input').type(name);
             cy.get('[data-test=api-key-permissions] input').type('products.any.read{enter}');
+            cy.get('[data-test=api-key-expires-at] input').type(weekAhead());
             cy.get('form').submit();
 
             // The secret is shown exactly once, in a modal — never again after "Done".

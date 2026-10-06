@@ -659,7 +659,7 @@ export interface ApiKey {
      */
     permissions: string[];
     lastUsedAt?: string;
-    expiresAt?: string;
+    expiresAt: string;
     revokedAt?: string;
     createdAt: string;
     updatedAt: string;
@@ -4379,8 +4379,8 @@ export interface MintApiKeyRequest {
      * @items.maxLength 100
      */
     permissions: string[];
-    /** Optional. Once past, the credential is refused exactly like a revoked one. */
-    expiresAt?: string;
+    /** Required, and at most one year from now (422 beyond it). Once past, the credential is refused exactly like a revoked one. */
+    expiresAt: string;
 }
 
 export interface ApiKeyCreated {
@@ -4390,7 +4390,7 @@ export interface ApiKeyCreated {
     /** @minItems 1 */
     permissions: string[];
     lastUsedAt?: string;
-    expiresAt?: string;
+    expiresAt: string;
     revokedAt?: string;
     createdAt: string;
     updatedAt: string;
@@ -8749,6 +8749,12 @@ export const listApiKeys = (
  * currently-held tenant permissions: a key can never reach further than the person
  * who minted it, and that floor is re-checked on every request the key later makes,
  * not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+ *
+ * Minting needs a critically fresh session (`401 REAUTH_REQUIRED`): a key outlives the
+ * session that made it. `expiresAt` is required and at most one year ahead, or the
+ * request is refused with 422. The minter is mailed that a key was created, and every
+ * key a person minted is revoked (and listed to them by mail) when they log out
+ * everywhere or reset their password.
  * @summary Mint a machine-to-machine credential
  */
 export const mintApiKey = (

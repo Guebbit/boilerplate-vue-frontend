@@ -35,6 +35,7 @@ const API_KEY = {
     name: 'CI integration',
     publicPrefix: 'a1b2c3d4',
     permissions: ['products.read'],
+    expiresAt: '2027-01-01T00:00:00.000Z',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -90,12 +91,17 @@ describe('useApiKeysStore', () => {
     describe('mintCredential', () => {
         it('posts to /api-keys', () =>
             useApiKeysStore()
-                .mintCredential({ name: 'CI integration', permissions: ['products.read'] })
+                .mintCredential({
+                    name: 'CI integration',
+                    permissions: ['products.read'],
+                    expiresAt: API_KEY.expiresAt
+                })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/api-keys', method: 'POST' });
                     expect(lastBody(schemas.MintApiKeyBody)).toMatchObject({
                         name: 'CI integration',
-                        permissions: ['products.read']
+                        permissions: ['products.read'],
+                        expiresAt: API_KEY.expiresAt
                     });
                 }));
 
@@ -103,7 +109,11 @@ describe('useApiKeysStore', () => {
             respondOnceWith({ ...API_KEY, secret: 'sk_a1b2c3d4_abc123' });
 
             return useApiKeysStore()
-                .mintCredential({ name: API_KEY.name, permissions: API_KEY.permissions })
+                .mintCredential({
+                    name: API_KEY.name,
+                    permissions: API_KEY.permissions,
+                    expiresAt: API_KEY.expiresAt
+                })
                 .then((created) => {
                     expect(created?.secret).toBe('sk_a1b2c3d4_abc123');
                 });
@@ -113,7 +123,11 @@ describe('useApiKeysStore', () => {
             respondOnceWith({ ...API_KEY, secret: 'sk_a1b2c3d4_abc123' });
 
             return useApiKeysStore()
-                .mintCredential({ name: API_KEY.name, permissions: API_KEY.permissions })
+                .mintCredential({
+                    name: API_KEY.name,
+                    permissions: API_KEY.permissions,
+                    expiresAt: API_KEY.expiresAt
+                })
                 .then(() => {
                     const store = useApiKeysStore();
                     expect(JSON.stringify(store.apiKeys)).not.toContain('sk_a1b2c3d4_abc123');
@@ -125,7 +139,11 @@ describe('useApiKeysStore', () => {
             respondOnceWith({ ...API_KEY, secret: 'sk_a1b2c3d4_abc123' });
 
             return useApiKeysStore()
-                .mintCredential({ name: API_KEY.name, permissions: API_KEY.permissions })
+                .mintCredential({
+                    name: API_KEY.name,
+                    permissions: API_KEY.permissions,
+                    expiresAt: API_KEY.expiresAt
+                })
                 .then(() => {
                     const store = useApiKeysStore();
                     expect(store.apiKeys[API_KEY.id]).toMatchObject({
