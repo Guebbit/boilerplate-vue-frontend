@@ -67,6 +67,9 @@ runs:
               repository: ${{ inputs.repository }}
               path: ${{ inputs.path }}
               token: ${{ inputs.token }}
+              # The token reads the backend repo once, here; the backend's own npm install runs
+              # next and must not find it in `.git/config`.
+              persist-credentials: false
 
         - name: Report an unreachable sibling
           if: inputs.report-failure == 'true' && steps.sibling.outcome == 'failure'
