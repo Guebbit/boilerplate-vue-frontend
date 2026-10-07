@@ -6,9 +6,10 @@
  * one refused. It is switched off, found by the list filter, and stays silent through an order;
  * switched back on, it gets a delivery row. The admin sees it too, and the manager deletes it.
  *
- * Run as the manager on purpose: webhooks are not an admin-only corner. The subscription's URL is
- * `https://127.0.0.1:1/…`: it passes the SSRF guard (which exempts the demo receiver's host) and
- * nothing listens there, so no delivery ever succeeds and none is needed to.
+ * Run as the manager on purpose: webhooks are not an admin-only corner. The subscription's URL is a
+ * unique path on the seeded receiver's origin, the one address the SSRF guard exempts. Whether the
+ * receiver accepts the delivery depends on the profile, so the log's status filter is checked
+ * against the status the row actually shows.
  */
 import {
     deliveriesOf,
@@ -148,8 +149,16 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             cy.pickOption('[data-test=webhook-delivery-filter-subscription]', endpoint);
             cy.get('[data-test=webhook-delivery-row]').should('have.length', 1);
             cy.get('[data-test=webhook-delivery-event]').should('have.text', 'order.created');
-            cy.pickOption('[data-test=webhook-delivery-filter-status]', 'Succeeded');
-            cy.get('[data-test=webhook-delivery-row]').should('not.exist');
+            cy.get('[data-test=webhook-delivery-status]')
+                .invoke('attr', 'data-status')
+                .then((shown) => {
+                    const own = `${shown?.charAt(0).toUpperCase() ?? ''}${shown?.slice(1) ?? ''}`;
+                    const other = shown === 'succeeded' ? 'Exhausted' : 'Succeeded';
+                    cy.pickOption('[data-test=webhook-delivery-filter-status]', own);
+                    cy.get('[data-test=webhook-delivery-row]').should('have.length', 1);
+                    cy.pickOption('[data-test=webhook-delivery-filter-status]', other);
+                    cy.get('[data-test=webhook-delivery-row]').should('not.exist');
+                });
 
             cy.step('the manager deletes it from its own page');
             cy.visit(`/en/webhooks/subscriptions/${mine.id}`);
