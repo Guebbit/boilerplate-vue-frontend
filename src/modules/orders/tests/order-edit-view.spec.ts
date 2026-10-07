@@ -110,6 +110,8 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
     totalItems: 0,
     totalQuantity: 0,
     totalPrice: 0,
+    currency: 'EUR',
+    orderNumber: '2026-000001',
     netTotal: 0,
     taxTotal: 0,
     shippingNetAmount: 0,

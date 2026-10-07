@@ -197,7 +197,7 @@ const { handleSearch, handleReset } = useListSearch({
                             {{ t(`returns-form.reason-${item.reason}`) }}
                         </h2>
                         <p class="text-sm opacity-70">
-                            {{ item.orderNumber ?? item.orderId }} ·
+                            {{ item.orderNumber }} ·
                             {{ formatDateTime(item.createdAt) }}
                         </p>
                     </div>

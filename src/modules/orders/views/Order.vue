@@ -159,8 +159,7 @@ const invoiceAvailable = computed(() => currentOrder.value?.actions?.invoice ===
 
 /**
  * The order's own frozen currency — every price on this page is `currentOrder`'s own money,
- * never the shop's current default. The shop's currency only stands in for an order that predates
- * this field, per the API's own note on `Order.currency`.
+ * never the shop's current default. The shop's currency only stands in while no order is loaded.
  */
 const orderCurrency = computed(() => currentOrder.value?.currency ?? shopCurrency.value);
 
@@ -888,7 +887,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     data-test="order-credit-note-error"
                 />
                 <span
-                    v-if="currentOrder?.orderNumber"
+                    v-if="currentOrder"
                     class="self-center text-sm opacity-75"
                     data-test="order-number"
                 >

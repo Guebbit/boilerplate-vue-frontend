@@ -31,7 +31,9 @@ const anOrder = (id: string): Order => ({
     status: 'pending',
     paymentStatus: 'unpaid',
     fulfillmentStatus: 'unfulfilled',
-    returnStatus: 'none'
+    returnStatus: 'none',
+    currency: 'EUR',
+    orderNumber: '2026-000001'
 });
 
 /** Mounts the reference search with the real i18n and Vuetify. */

@@ -1469,7 +1469,7 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
                 actor_user_id: zod.string(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
                 actor_role_name: zod.string().optional(),
-                actor_scope: zod.enum(['tenant', 'platform']).optional(),
+                actor_scope: zod.enum(['tenant', 'platform']),
                 action: zod.string(),
                 outcome: zod.enum(['success', 'failure']),
                 ip: zod.string().optional(),
@@ -1548,7 +1548,7 @@ export const ListAuditEntriesResponse = zod.strictObject({
                 actor_user_id: zod.string(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
                 actor_role_name: zod.string().optional(),
-                actor_scope: zod.enum(['tenant', 'platform']).optional(),
+                actor_scope: zod.enum(['tenant', 'platform']),
                 action: zod.string(),
                 outcome: zod.enum(['success', 'failure']),
                 ip: zod.string().optional(),
@@ -5201,7 +5201,7 @@ export const CheckoutResponse = zod.strictObject({
         totalItems: zod.number().min(checkoutResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(checkoutResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(checkoutResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(checkoutResponseDataNetTotalMin),
         taxTotal: zod.number().min(checkoutResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(checkoutResponseDataShippingNetAmountMin),
@@ -5245,7 +5245,7 @@ export const CheckoutResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -5641,7 +5641,7 @@ export const ListOrdersResponse = zod.strictObject({
                 totalItems: zod.number().min(listOrdersResponseDataItemsItemTotalItemsMin),
                 totalQuantity: zod.number().min(listOrdersResponseDataItemsItemTotalQuantityMin),
                 totalPrice: zod.number().min(listOrdersResponseDataItemsItemTotalPriceMin),
-                currency: zod.string().optional(),
+                currency: zod.string(),
                 netTotal: zod.number().min(listOrdersResponseDataItemsItemNetTotalMin),
                 taxTotal: zod.number().min(listOrdersResponseDataItemsItemTaxTotalMin),
                 shippingNetAmount: zod
@@ -5700,7 +5700,7 @@ export const ListOrdersResponse = zod.strictObject({
                     .optional(),
                 paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
-                orderNumber: zod.string().optional(),
+                orderNumber: zod.string(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -5922,7 +5922,7 @@ export const CreateOrderResponse = zod.strictObject({
         totalItems: zod.number().min(createOrderResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(createOrderResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(createOrderResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(createOrderResponseDataNetTotalMin),
         taxTotal: zod.number().min(createOrderResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(createOrderResponseDataShippingNetAmountMin),
@@ -5966,7 +5966,7 @@ export const CreateOrderResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6213,7 +6213,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 totalItems: zod.number().min(searchOrdersResponseDataItemsItemTotalItemsMin),
                 totalQuantity: zod.number().min(searchOrdersResponseDataItemsItemTotalQuantityMin),
                 totalPrice: zod.number().min(searchOrdersResponseDataItemsItemTotalPriceMin),
-                currency: zod.string().optional(),
+                currency: zod.string(),
                 netTotal: zod.number().min(searchOrdersResponseDataItemsItemNetTotalMin),
                 taxTotal: zod.number().min(searchOrdersResponseDataItemsItemTaxTotalMin),
                 shippingNetAmount: zod
@@ -6272,7 +6272,7 @@ export const SearchOrdersResponse = zod.strictObject({
                     .optional(),
                 paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
-                orderNumber: zod.string().optional(),
+                orderNumber: zod.string(),
                 transferInstructions: zod
                     .strictObject({
                         beneficiary: zod.string(),
@@ -6468,7 +6468,7 @@ export const GetOrderByIdResponse = zod.strictObject({
         totalItems: zod.number().min(getOrderByIdResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(getOrderByIdResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(getOrderByIdResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(getOrderByIdResponseDataNetTotalMin),
         taxTotal: zod.number().min(getOrderByIdResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(getOrderByIdResponseDataShippingNetAmountMin),
@@ -6512,7 +6512,7 @@ export const GetOrderByIdResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6681,7 +6681,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
         totalItems: zod.number().min(replaceOrderByIdResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(replaceOrderByIdResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(replaceOrderByIdResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(replaceOrderByIdResponseDataNetTotalMin),
         taxTotal: zod.number().min(replaceOrderByIdResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(replaceOrderByIdResponseDataShippingNetAmountMin),
@@ -6727,7 +6727,7 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -6896,7 +6896,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         totalItems: zod.number().min(updateOrderByIdResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(updateOrderByIdResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(updateOrderByIdResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(updateOrderByIdResponseDataNetTotalMin),
         taxTotal: zod.number().min(updateOrderByIdResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(updateOrderByIdResponseDataShippingNetAmountMin),
@@ -6942,7 +6942,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7128,7 +7128,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
         totalItems: zod.number().min(restoreOrderByIdResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(restoreOrderByIdResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(restoreOrderByIdResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(restoreOrderByIdResponseDataNetTotalMin),
         taxTotal: zod.number().min(restoreOrderByIdResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(restoreOrderByIdResponseDataShippingNetAmountMin),
@@ -7174,7 +7174,7 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7357,7 +7357,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
         totalItems: zod.number().min(cancelOrderByIdResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(cancelOrderByIdResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(cancelOrderByIdResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(cancelOrderByIdResponseDataNetTotalMin),
         taxTotal: zod.number().min(cancelOrderByIdResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(cancelOrderByIdResponseDataShippingNetAmountMin),
@@ -7403,7 +7403,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7573,7 +7573,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         totalItems: zod.number().min(overrideOrderStatusResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(overrideOrderStatusResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(overrideOrderStatusResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(overrideOrderStatusResponseDataNetTotalMin),
         taxTotal: zod.number().min(overrideOrderStatusResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(overrideOrderStatusResponseDataShippingNetAmountMin),
@@ -7623,7 +7623,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -7955,7 +7955,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
     })
 });
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An order placed before this field existed has no reference at all and is not reachable here — find it by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReferenceQueryRefMax = 64;
@@ -8074,7 +8074,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
         totalItems: zod.number().min(getOrderByReferenceResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(getOrderByReferenceResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(getOrderByReferenceResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(getOrderByReferenceResponseDataNetTotalMin),
         taxTotal: zod.number().min(getOrderByReferenceResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(getOrderByReferenceResponseDataShippingNetAmountMin),
@@ -8124,7 +8124,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -8839,7 +8839,7 @@ export const StartFulfilmentResponse = zod.strictObject({
         totalItems: zod.number().min(startFulfilmentResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(startFulfilmentResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(startFulfilmentResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(startFulfilmentResponseDataNetTotalMin),
         taxTotal: zod.number().min(startFulfilmentResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(startFulfilmentResponseDataShippingNetAmountMin),
@@ -8885,7 +8885,7 @@ export const StartFulfilmentResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -9134,7 +9134,7 @@ export const FulfillOrderResponse = zod.strictObject({
         totalItems: zod.number().min(fulfillOrderResponseDataTotalItemsMin),
         totalQuantity: zod.number().min(fulfillOrderResponseDataTotalQuantityMin),
         totalPrice: zod.number().min(fulfillOrderResponseDataTotalPriceMin),
-        currency: zod.string().optional(),
+        currency: zod.string(),
         netTotal: zod.number().min(fulfillOrderResponseDataNetTotalMin),
         taxTotal: zod.number().min(fulfillOrderResponseDataTaxTotalMin),
         shippingNetAmount: zod.number().min(fulfillOrderResponseDataShippingNetAmountMin),
@@ -9178,7 +9178,7 @@ export const FulfillOrderResponse = zod.strictObject({
             .optional(),
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         transferInstructions: zod
             .strictObject({
                 beneficiary: zod.string(),
@@ -9283,7 +9283,7 @@ export const ListReturnsResponse = zod.strictObject({
                     .min(1)
                     .max(listReturnsResponseDataItemsItemOrderIdMax)
                     .regex(listReturnsResponseDataItemsItemOrderIdRegExp),
-                orderNumber: zod.string().optional(),
+                orderNumber: zod.string(),
                 currency: zod.string(),
                 status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
                 reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
@@ -9410,7 +9410,7 @@ export const CreateReturnResponse = zod.strictObject({
             .min(1)
             .max(createReturnResponseDataOrderIdMax)
             .regex(createReturnResponseDataOrderIdRegExp),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
@@ -9482,7 +9482,7 @@ export const GetReturnByIdResponse = zod.strictObject({
             .min(1)
             .max(getReturnByIdResponseDataOrderIdMax)
             .regex(getReturnByIdResponseDataOrderIdRegExp),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
@@ -9554,7 +9554,7 @@ export const ApproveReturnResponse = zod.strictObject({
             .min(1)
             .max(approveReturnResponseDataOrderIdMax)
             .regex(approveReturnResponseDataOrderIdRegExp),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
@@ -9630,7 +9630,7 @@ export const DeclineReturnResponse = zod.strictObject({
             .min(1)
             .max(declineReturnResponseDataOrderIdMax)
             .regex(declineReturnResponseDataOrderIdRegExp),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
@@ -9717,7 +9717,7 @@ export const ReceiveReturnResponse = zod.strictObject({
             .min(1)
             .max(receiveReturnResponseDataOrderIdMax)
             .regex(receiveReturnResponseDataOrderIdRegExp),
-        orderNumber: zod.string().optional(),
+        orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
@@ -10945,7 +10945,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .number()
                 .min(downloadAccountExportResponseOrdersItemTotalQuantityMin),
             totalPrice: zod.number().min(downloadAccountExportResponseOrdersItemTotalPriceMin),
-            currency: zod.string().optional(),
+            currency: zod.string(),
             netTotal: zod.number().min(downloadAccountExportResponseOrdersItemNetTotalMin),
             taxTotal: zod.number().min(downloadAccountExportResponseOrdersItemTaxTotalMin),
             shippingNetAmount: zod
@@ -11004,7 +11004,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .optional(),
             paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
             payBy: zod.iso.datetime({ offset: true }).optional(),
-            orderNumber: zod.string().optional(),
+            orderNumber: zod.string(),
             transferInstructions: zod
                 .strictObject({
                     beneficiary: zod.string(),
@@ -11195,7 +11195,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             actor_user_id: zod.string(),
             actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
             actor_role_name: zod.string().optional(),
-            actor_scope: zod.enum(['tenant', 'platform']).optional(),
+            actor_scope: zod.enum(['tenant', 'platform']),
             action: zod.string(),
             outcome: zod.enum(['success', 'failure']),
             ip: zod.string().optional(),

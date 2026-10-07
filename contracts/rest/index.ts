@@ -368,7 +368,7 @@ export interface OrderTransferInstructions {
     iban: string;
     /** Absent when the deployment has not configured one. */
     bic?: string;
-    /** The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. An order that predates this field falls back to its own raw id, which that same endpoint also accepts. */
+    /** The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference. */
     reference: string;
 }
 
@@ -555,7 +555,7 @@ export interface Order {
      */
     totalPrice: number;
     /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency?: string;
+    readonly currency: string;
     /**
      * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
      * @minimum 0
@@ -591,7 +591,7 @@ export interface Order {
     billingAddress?: OrderAddress;
     paymentMethod?: PaymentMethodId;
     payBy?: string;
-    readonly orderNumber?: string;
+    readonly orderNumber: string;
     transferInstructions?: OrderTransferInstructions;
     status: OrderStatus;
     paymentStatus: OrderPaymentStatus;
@@ -776,7 +776,7 @@ export const ExportAuditEntryActorRole = {
 } as const;
 
 /**
- * Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+ * Which world this action happened in — a shop or the installation.
  */
 export type ExportAuditEntryActorScope =
     (typeof ExportAuditEntryActorScope)[keyof typeof ExportAuditEntryActorScope];
@@ -809,8 +809,8 @@ export interface ExportAuditEntry {
     actor_role: ExportAuditEntryActorRole;
     /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
     actor_role_name?: string;
-    /** Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed. */
-    actor_scope?: ExportAuditEntryActorScope;
+    /** Which world this action happened in — a shop or the installation. */
+    actor_scope: ExportAuditEntryActorScope;
     /** Dotted action name, e.g. `order.created`. */
     action: string;
     outcome: ExportAuditEntryOutcome;
@@ -1701,7 +1701,7 @@ export const AuditEventItemActorRole = {
 } as const;
 
 /**
- * Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+ * Which world this action happened in — a shop or the installation.
  */
 export type AuditEventItemActorScope =
     (typeof AuditEventItemActorScope)[keyof typeof AuditEventItemActorScope];
@@ -1733,8 +1733,8 @@ export interface AuditEventItem {
     actor_role: AuditEventItemActorRole;
     /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
     actor_role_name?: string;
-    /** Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed. */
-    actor_scope?: AuditEventItemActorScope;
+    /** Which world this action happened in — a shop or the installation. */
+    actor_scope: AuditEventItemActorScope;
     /** Dot-notation action name (e.g. order.created) */
     action: string;
     outcome: AuditEventItemOutcome;
@@ -1772,7 +1772,7 @@ export const AuditEntryItemActorRole = {
 } as const;
 
 /**
- * Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed.
+ * Which world this action happened in — a shop or the installation.
  */
 export type AuditEntryItemActorScope =
     (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
@@ -1804,8 +1804,8 @@ export interface AuditEntryItem {
     actor_role: AuditEntryItemActorRole;
     /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
     actor_role_name?: string;
-    /** Which world this action happened in — a shop or the installation. Absent on a row recorded before this field existed. */
-    actor_scope?: AuditEntryItemActorScope;
+    /** Which world this action happened in — a shop or the installation. */
+    actor_scope: AuditEntryItemActorScope;
     /** Dot-notation action name (e.g. order.created) */
     action: string;
     outcome: AuditEntryItemOutcome;
@@ -3943,8 +3943,8 @@ export const ReturnReturnPostage = {
 export interface Return {
     id: Id;
     orderId: Id;
-    /** The order's human number, when it has one. */
-    orderNumber?: string;
+    /** The order's human number. */
+    orderNumber: string;
     /** ISO-4217 code of the order's own currency. */
     currency: string;
     status: ReturnStatus;
@@ -8171,7 +8171,7 @@ export const getPaymentByOrder = (
 };
 
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An order placed before this field existed has no reference at all and is not reachable here — find it by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReference = (

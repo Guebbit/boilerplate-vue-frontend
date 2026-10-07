@@ -17,7 +17,6 @@ export default {
  * moves only through the cancel and override actions below.
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
-import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -418,10 +417,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
                     :value="
-                        formatCurrency(
-                            currentOrder?.totalPrice,
-                            currentOrder?.currency ?? shopCurrency
-                        )
+                        currentOrder
+                            ? formatCurrency(currentOrder.totalPrice, currentOrder.currency)
+                            : EMPTY_VALUE
                     "
                     accent="tertiary"
                 />

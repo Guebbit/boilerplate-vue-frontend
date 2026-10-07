@@ -30,6 +30,8 @@ export const anOrder = (overrides: Partial<Order> = {}): Order => ({
     paymentStatus: 'unpaid',
     fulfillmentStatus: 'unfulfilled',
     returnStatus: 'none',
+    currency: 'EUR',
+    orderNumber: '2026-000001',
     ...overrides
 });
 
@@ -56,6 +58,7 @@ export const aUser = (overrides: Partial<User> = {}): User => ({
 export const aReturn = (overrides: Partial<Return> = {}): Return => ({
     id: 'r1',
     orderId: 'o1',
+    orderNumber: '2026-000001',
     currency: 'EUR',
     status: 'approved',
     reason: 'withdrawal',

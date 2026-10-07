@@ -25,6 +25,7 @@ const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
 const EVENT_ITEM: AuditEventItem = {
     actor_user_id: 'ada@example.com',
     actor_role: 'admin',
+    actor_scope: 'tenant',
     action: 'user.login',
     outcome: 'success',
     timestamp: '2026-01-01T00:00:00.000Z',
@@ -35,6 +36,7 @@ const EVENT_ITEM: AuditEventItem = {
 const ENTRY_ITEM: AuditEntryItem = {
     actor_user_id: 'ada@example.com',
     actor_role: 'admin',
+    actor_scope: 'tenant',
     action: 'order.created',
     outcome: 'success',
     target_type: 'Order',

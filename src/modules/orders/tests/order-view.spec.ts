@@ -115,6 +115,8 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     paymentStatus: 'unpaid',
     fulfillmentStatus: 'unfulfilled',
     returnStatus: 'none',
+    currency: 'EUR',
+    orderNumber: '2026-000001',
     actions: {
         transitions: [],
         cancel: false,
@@ -269,15 +271,7 @@ describe('the credit notes', () => {
 });
 
 describe('the order number', () => {
-    it('is absent when the order carries none', () => {
-        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
-
-        expect(wrapper.find('[data-test=order-number]').exists()).toBe(false);
-
-        wrapper.unmount();
-    });
-
-    it('shows once the order has one', () => {
+    it('shows the order own number', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
             orderNumber: '2026-000041',

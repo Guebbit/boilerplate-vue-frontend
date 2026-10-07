@@ -274,16 +274,16 @@ describe('OrdersList — sorting from the header', () => {
     });
 });
 
-/**
- * The first column names an order the way its mail and invoice do: by number, with the id only as
- * the fallback for an order minted without one.
- */
+/** The first column names an order the way its mail and invoice do: by its number. */
 describe('OrdersList — the order column', () => {
-    it('shows the order number, and the id when there is none', async () => {
+    it('shows each order by its number', async () => {
         vi.mocked(searchOrders).mockResolvedValue(
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
                 contractResponse(schemas.SearchOrdersResponse, {
-                    items: [{ ...order('o-numbered'), orderNumber: '2026-0042' }, order('o-plain')],
+                    items: [
+                        { ...order('o-numbered'), orderNumber: '2026-0042' },
+                        { ...order('o-other'), orderNumber: '2026-0043' }
+                    ],
                     meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
                 })
             )
@@ -297,6 +297,6 @@ describe('OrdersList — the order column', () => {
         await flushPromises();
 
         const shown = wrapper.findAll('[data-test="row-order-number"]').map((cell) => cell.text());
-        expect(shown).toEqual(['2026-0042', 'o-plain']);
+        expect(shown).toEqual(['2026-0042', '2026-0043']);
     });
 });
