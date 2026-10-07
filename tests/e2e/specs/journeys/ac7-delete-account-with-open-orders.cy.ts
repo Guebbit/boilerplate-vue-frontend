@@ -20,6 +20,12 @@ interface OrderLike {
     userId?: string;
     email: string;
     shippingAddress?: { fullName: string };
+    items: { product: { id: string }; quantity: number }[];
+}
+
+/** The slice of a product this story reads: the units a shopper could still buy. */
+interface ProductLike {
+    available: number;
 }
 
 /**
@@ -31,6 +37,17 @@ const readAsStaff = (orderId: string): Cypress.Chainable<OrderLike> =>
     cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`).then((order) => {
         expect(order, 'the order').not.to.equal(null);
         return order!;
+    });
+
+/**
+ * Staff read the units a shopper could still buy of a product, as the admin would.
+ *
+ * @param productId - the product
+ */
+const availableAsStaff = (productId: string): Cypress.Chainable<number> =>
+    cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).then((product) => {
+        expect(product, 'the product').not.to.equal(null);
+        return product!.available;
     });
 
 describe('AC7 · Delete my account while an order is still open', () => {
@@ -56,6 +73,11 @@ describe('AC7 · Delete my account while an order is still open', () => {
             expect(order.status).to.equal('pending');
         });
 
+        cy.step('the unpaid order holds stock: staff read what is free before the erasure');
+        cy.get<OrderLike>('@unpaidBefore').then(({ items }) => {
+            availableAsStaff(items[0].product.id).as('freeBefore');
+        });
+
         cy.step('they ask for the deletion and confirm it from the mail');
         cy.loginAs('user');
         cy.visit('/en/profile');
@@ -79,6 +101,18 @@ describe('AC7 · Delete my account while an order is still open', () => {
             cy.get('form').submit();
             cy.get('[data-test=login-error]').should('exist');
             cy.url().should('include', '/login');
+        });
+
+        cy.step(
+            'the unpaid order was cancelled by the erasure: its reservation went back on the shelf'
+        );
+        cy.get<OrderLike>('@unpaidBefore').then(({ items }) => {
+            cy.get<number>('@freeBefore').then((freeBefore) => {
+                availableAsStaff(items[0].product.id).should(
+                    'equal',
+                    freeBefore + items[0].quantity
+                );
+            });
         });
 
         cy.step('the paid order is detached from the person, and is still the shop’s invoice');
