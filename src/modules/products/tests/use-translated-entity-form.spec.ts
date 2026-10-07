@@ -12,7 +12,7 @@ import { i18n, loadLocale } from '@/i18n';
 import {
     useTranslatedEntityForm,
     type TranslatedForm
-} from '@/modules/products/composables/use-translated-entity-form.ts';
+} from '../composables/use-translated-entity-form.ts';
 
 /**
  * The composable's return, captured from inside a mounted component.

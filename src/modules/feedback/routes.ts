@@ -14,7 +14,7 @@ export default [
         path: 'contact',
         name: 'Contact',
         meta: { title: 'contact-page.page-title' },
-        component: () => import('@/modules/feedback/views/Contact.vue')
+        component: () => import('./views/Contact.vue')
     },
     {
         path: 'feedback',
@@ -24,6 +24,6 @@ export default [
             can: ['read', 'Feedback'],
             title: 'feedback-inbox-page.page-title'
         },
-        component: () => import('@/modules/feedback/views/FeedbackInbox.vue')
+        component: () => import('./views/FeedbackInbox.vue')
     }
 ] satisfies RouteRecordRaw[];

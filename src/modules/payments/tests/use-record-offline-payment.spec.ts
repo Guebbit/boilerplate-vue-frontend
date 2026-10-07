@@ -11,7 +11,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
-import { useRecordOfflinePayment } from '@/modules/payments/composables/use-record-offline-payment.ts';
+import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     orvalEnvelope,

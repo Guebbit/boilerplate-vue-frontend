@@ -12,7 +12,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import {
     GUEST_CART_STORAGE_KEY,
     GUEST_MERGE_ATTEMPT_STORAGE_KEY
-} from '@/modules/cart/composables/guest-cart-storage';
+} from '../composables/guest-cart-storage';
 import { getCart, getCartSummary, mergeCart } from '@api';
 import * as schemas from '@api/schemas';
 import { loadLocale } from '@/i18n';

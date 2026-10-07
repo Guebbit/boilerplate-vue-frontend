@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { createProductBodyPriceMin } from '@api/schemas';
-import { productsSchema } from '@/modules/products/schemas';
+import { productsSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validProduct = {

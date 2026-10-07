@@ -9,8 +9,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import ShippingSelector from '@/modules/delivery/components/ShippingSelector.vue';
-import { useDeliveryStore } from '@/modules/delivery/store.ts';
+import ShippingSelector from '../components/ShippingSelector.vue';
+import { useDeliveryStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import vuetify from '@/ui/vuetify';

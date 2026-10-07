@@ -9,8 +9,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
-import Login from '@/modules/account/views/Login.vue';
-import Signup from '@/modules/account/views/Signup.vue';
+import Login from '../views/Login.vue';
+import Signup from '../views/Signup.vue';
 import type { Component } from 'vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

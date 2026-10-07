@@ -17,6 +17,6 @@ export default [
         path: 'cart',
         name: 'Cart',
         meta: { access: 'open', can: ['update', 'Cart'], title: 'cart-page.page-title' },
-        component: () => import('@/modules/cart/views/CartEntry.vue')
+        component: () => import('./views/CartEntry.vue')
     }
 ] satisfies RouteRecordRaw[];

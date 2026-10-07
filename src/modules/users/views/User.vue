@@ -25,8 +25,8 @@ import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useUsersStore } from '@/modules/users/store';
-import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
+import { useUsersStore } from '../store';
+import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { Calendar, Circle, Clock, Hash, Mail, Shield, User } from 'lucide-vue-next';
@@ -37,7 +37,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
+import UserAccessDialog from '../components/UserAccessDialog.vue';
 import { formatText, formatDateTime, formatFlag } from '@/infrastructure/utils/formatters.ts';
 
 /**

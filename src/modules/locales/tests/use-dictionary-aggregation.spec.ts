@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
-import { useDictionaryAggregation } from '@/modules/locales/composables/use-dictionary-aggregation.ts';
+import { useDictionaryAggregation } from '../composables/use-dictionary-aggregation.ts';
 import { LocaleTenantKind } from '@api';
 import type { LocaleEntry } from '@types';
 
@@ -65,7 +65,7 @@ let apiBaselineAnswer: Record<string, string>;
  */
 let appBaselineAnswer: Record<string, string>;
 
-vi.mock('@/modules/locales/store.ts', () => ({
+vi.mock('../store.ts', () => ({
     useLocalesStore: () => ({
         ownTenant: OWN_TENANT,
         capabilities,

@@ -19,7 +19,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Inbox, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFeedbackStore } from '@/modules/feedback/store.ts';
+import { useFeedbackStore } from '../store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';

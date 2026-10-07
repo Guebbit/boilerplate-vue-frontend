@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { deactivateThenDelete } from '@/modules/locales/domain/deactivate-then-delete.ts';
+import { deactivateThenDelete } from '../domain/deactivate-then-delete.ts';
 
 /**
  * `deactivateThenDelete`: an active row deactivates first (the API's guard rail against deleting

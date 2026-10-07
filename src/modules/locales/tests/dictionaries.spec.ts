@@ -6,7 +6,7 @@
  * the deeper-key-wins rule on data the API should never produce but a test can.
  */
 import { describe, expect, it } from 'vitest';
-import { flattenDictionary, expandEntries } from '@/modules/locales/dictionaries.ts';
+import { flattenDictionary, expandEntries } from '../dictionaries.ts';
 
 describe('flattenDictionary', () => {
     it('flattens nested objects into dotted rows', () => {

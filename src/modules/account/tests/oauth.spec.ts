@@ -5,11 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import {
-    useOAuthProvidersStore,
-    oauthStartUrl,
-    providerLabel
-} from '@/modules/account/stores/oauth.ts';
+import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/oauth.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

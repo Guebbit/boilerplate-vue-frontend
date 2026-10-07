@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue';
 import { debounce } from 'lodash-es';
-import { steppedQuantity } from '@/modules/cart/domain';
+import { steppedQuantity } from '../domain';
 
 /**
  * Stepping a cart line's quantity without racing the API.

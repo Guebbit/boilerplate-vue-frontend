@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import { effectScope } from 'vue';
-import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
+import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
 import { checkPasswordBreached } from '@api';
 import type { PasswordCheckEnvelope } from '@types';
 

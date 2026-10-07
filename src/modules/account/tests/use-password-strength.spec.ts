@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
-import { usePasswordStrength } from '@/modules/account/composables/use-password-strength.ts';
+import { usePasswordStrength } from '../composables/use-password-strength.ts';
 
 /** Stub for zxcvbn's `check`, returning a canned result per test. */
 const check = vi.fn();

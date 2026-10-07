@@ -42,13 +42,12 @@ vi.mock('@/i18n/router-link.ts', () => ({
     routerLinkI18n: (location: unknown) => location
 }));
 
-vi.mock('@/modules/account/stores/profile.ts', () => ({
+vi.mock('../stores/profile.ts', () => ({
     useProfileStore: () => profileState
 }));
 
 /** The composable under test, imported after the mocks above are in place. */
-const { usePostLoginRedirect } =
-    await import('@/modules/account/composables/use-post-login-redirect.ts');
+const { usePostLoginRedirect } = await import('../composables/use-post-login-redirect.ts');
 
 describe('redirectAfterLogin', () => {
     beforeEach(() => {

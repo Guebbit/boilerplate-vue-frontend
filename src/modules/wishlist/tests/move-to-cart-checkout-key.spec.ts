@@ -10,7 +10,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useWishlistStore } from '@/modules/wishlist/store.ts';
+import { useWishlistStore } from '../store.ts';
 import { useCartStore } from '@/modules/cart';
 import { orvalMutator } from '@/infrastructure/http';
 import { aCart, lostAnswer } from '../../../../tests/support/unit/cart-fixtures.ts';

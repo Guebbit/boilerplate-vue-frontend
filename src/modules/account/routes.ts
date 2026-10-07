@@ -4,7 +4,7 @@
  * by the kernel. Each entry pairs a path with an access requirement the route guard reads;
  * `Logout` is a routeless component whose `beforeRouteEnter` does the work instead of rendering.
  */
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useAuthStore } from './stores/auth.ts';
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
@@ -16,13 +16,13 @@ export default [
         path: 'login',
         name: 'Login',
         meta: { access: 'guest', title: 'login-page.page-title' },
-        component: () => import('@/modules/account/views/Login.vue')
+        component: () => import('./views/Login.vue')
     },
     {
         path: 'signup',
         name: 'Signup',
         meta: { access: 'guest', title: 'signup-page.page-title' },
-        component: () => import('@/modules/account/views/Signup.vue')
+        component: () => import('./views/Signup.vue')
     },
     {
         // Guest, like `Login`: the challenge token is the credential here, not a session, and a
@@ -30,19 +30,19 @@ export default [
         path: 'login/2fa',
         name: 'TwoFactorChallenge',
         meta: { access: 'guest', title: 'two-factor-challenge-page.page-title' },
-        component: () => import('@/modules/account/views/TwoFactorChallenge.vue')
+        component: () => import('./views/TwoFactorChallenge.vue')
     },
     {
         path: 'password-reset',
         name: 'PasswordResetRequest',
         meta: { access: 'guest', title: 'password-reset-request-page.page-title' },
-        component: () => import('@/modules/account/views/PasswordResetRequest.vue')
+        component: () => import('./views/PasswordResetRequest.vue')
     },
     {
         path: 'password-reset/confirm',
         name: 'PasswordResetConfirm',
         meta: { access: 'guest', title: 'password-reset-confirm-page.page-title' },
-        component: () => import('@/modules/account/views/PasswordResetConfirm.vue')
+        component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
         // Public deliberately: the confirmation link arrives by email, and the visitor following
@@ -50,21 +50,21 @@ export default [
         path: 'account-delete/confirm',
         name: 'AccountDeleteConfirm',
         meta: { title: 'account-delete-confirm-page.page-title' },
-        component: () => import('@/modules/account/views/AccountDeleteConfirm.vue')
+        component: () => import('./views/AccountDeleteConfirm.vue')
     },
     {
         // Public for the same reason as the two confirms above: the token is the credential.
         path: 'verify-email/confirm',
         name: 'VerifyEmailConfirm',
         meta: { title: 'verify-email-confirm-page.page-title' },
-        component: () => import('@/modules/account/views/VerifyEmailConfirm.vue')
+        component: () => import('./views/VerifyEmailConfirm.vue')
     },
     {
         // Public, same reasoning: the emailed token proves the new address, not a live session.
         path: 'email-change/confirm',
         name: 'EmailChangeConfirm',
         meta: { title: 'email-change-confirm-page.page-title' },
-        component: () => import('@/modules/account/views/EmailChangeConfirm.vue')
+        component: () => import('./views/EmailChangeConfirm.vue')
     },
     {
         // Public, same reasoning: the undo link goes to the OLD address, whose reader may have no
@@ -72,7 +72,7 @@ export default [
         path: 'email-change/undo',
         name: 'EmailChangeUndo',
         meta: { title: 'email-change-undo-page.page-title' },
-        component: () => import('@/modules/account/views/EmailChangeUndo.vue')
+        component: () => import('./views/EmailChangeUndo.vue')
     },
     {
         // Public: the backend's own redirect (`router/index.ts`'s locale-less `/oauth/callback`
@@ -80,7 +80,7 @@ export default [
         path: 'oauth/callback',
         name: 'OAuthCallback',
         meta: { title: 'oauth.callback-page.page-title' },
-        component: () => import('@/modules/account/views/OAuthCallback.vue')
+        component: () => import('./views/OAuthCallback.vue')
     },
     {
         // Signed in, unlike the confirms above: the download is the account's own data, and the
@@ -88,13 +88,13 @@ export default [
         path: 'account-export/:id',
         name: 'AccountExportDownload',
         meta: { access: 'auth', title: 'account-export-page.page-title' },
-        component: () => import('@/modules/account/views/AccountExportDownload.vue')
+        component: () => import('./views/AccountExportDownload.vue')
     },
     {
         path: 'profile',
         name: 'Profile',
         meta: { access: 'auth', title: 'profile-page.page-title' },
-        component: () => import('@/modules/account/views/Profile.vue')
+        component: () => import('./views/Profile.vue')
     },
     {
         path: 'logout',

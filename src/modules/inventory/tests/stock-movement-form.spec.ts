@@ -7,8 +7,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import StockMovementForm from '@/modules/inventory/components/StockMovementForm.vue';
-import { useInventoryStore } from '@/modules/inventory/store.ts';
+import StockMovementForm from '../components/StockMovementForm.vue';
+import { useInventoryStore } from '../store.ts';
 import { useProductsStore } from '@/modules/products';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

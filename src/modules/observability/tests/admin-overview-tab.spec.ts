@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import AdminOverviewTab from '@/modules/observability/components/AdminOverviewTab.vue';
+import AdminOverviewTab from '../components/AdminOverviewTab.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

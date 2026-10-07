@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
 import type { AuditEntryItem, AuditEventItem } from '@api';
 import * as schemas from '@api/schemas';
-import { useAuditTrail } from '@/modules/observability/composables/use-audit-trail.ts';
+import { useAuditTrail } from '../composables/use-audit-trail.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 /** A page's worth of meta, as `PaginationMeta` declares it. */

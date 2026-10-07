@@ -23,13 +23,13 @@ import { useRouter } from 'vue-router';
 import { Undo2 } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { useReturnsStore } from '@/modules/returns/store.ts';
+import { useReturnsStore } from '../store.ts';
 import { formatCurrency, formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import ReturnStaffActions from '@/modules/returns/components/ReturnStaffActions.vue';
+import ReturnStaffActions from '../components/ReturnStaffActions.vue';
 
 /**
  * Route return id.

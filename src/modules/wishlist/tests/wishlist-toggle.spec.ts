@@ -6,8 +6,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import WishlistToggle from '@/modules/wishlist/components/WishlistToggle.vue';
-import { useWishlistStore } from '@/modules/wishlist/store';
+import WishlistToggle from '../components/WishlistToggle.vue';
+import { useWishlistStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

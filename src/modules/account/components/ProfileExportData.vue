@@ -22,7 +22,7 @@ export default {
  */
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 

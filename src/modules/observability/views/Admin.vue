@@ -7,11 +7,11 @@
  */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAdminObservability } from '@/modules/observability/composables/use-admin-observability.ts';
-import type { AdminTabKey } from '@/modules/observability/types.ts';
+import { useAdminObservability } from '../composables/use-admin-observability.ts';
+import type { AdminTabKey } from '../types.ts';
 
-import AdminOverviewTab from '@/modules/observability/components/AdminOverviewTab.vue';
-import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
+import AdminOverviewTab from '../components/AdminOverviewTab.vue';
+import AdminAuditTab from '../components/AdminAuditTab.vue';
 
 /**
  * i18n translator for this view's template and messages.

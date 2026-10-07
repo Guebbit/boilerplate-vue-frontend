@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useWebhooksStore } from '@/modules/webhooks/store';
+import { useWebhooksStore } from '../store';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';

@@ -12,7 +12,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useOrdersStore } from '@/modules/orders/store';
+import { useOrdersStore } from '../store';
 import {
     listOrders,
     searchOrders,

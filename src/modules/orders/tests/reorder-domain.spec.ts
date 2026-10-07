@@ -4,7 +4,7 @@
  * cases are plain arrays.
  */
 import { describe, expect, it } from 'vitest';
-import { leftOutByReorder } from '@/modules/orders/domain';
+import { leftOutByReorder } from '../domain';
 
 describe('leftOutByReorder', () => {
     it('names nothing when every product landed', () => {

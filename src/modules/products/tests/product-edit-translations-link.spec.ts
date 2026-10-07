@@ -12,7 +12,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMongoAbility } from '@casl/ability';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import ProductEdit from '@/modules/products/views/ProductEdit.vue';
+import ProductEdit from '../views/ProductEdit.vue';
 import { orvalMutator } from '@/infrastructure/http';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';

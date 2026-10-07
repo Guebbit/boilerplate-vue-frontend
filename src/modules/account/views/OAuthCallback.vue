@@ -21,8 +21,8 @@ import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
+import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import type { TwoFactorMethodSummary } from '@api';
 
 /**

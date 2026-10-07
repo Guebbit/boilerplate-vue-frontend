@@ -20,13 +20,10 @@ import { useI18n } from 'vue-i18n';
 import { RouterLink, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
-import {
-    useExpiryCountdown,
-    useCountdownAnnouncement
-} from '@/modules/account/composables/use-countdown.ts';
-import { useMethodLabel } from '@/modules/account/composables/use-method-label.ts';
+import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
+import { useExpiryCountdown, useCountdownAnnouncement } from '../composables/use-countdown.ts';
+import { useMethodLabel } from '../composables/use-method-label.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { isRateLimited } from '@/infrastructure/utils/errors.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';

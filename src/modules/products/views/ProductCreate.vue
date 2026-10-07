@@ -21,14 +21,10 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useProductsStore } from '@/modules/products/store';
-import {
-    productsSchema,
-    productsOnHandMin,
-    productsOnHandDefault
-} from '@/modules/products/schemas.ts';
-import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
-import { useTranslatedEntityForm } from '@/modules/products/composables/use-translated-entity-form.ts';
+import { useProductsStore } from '../store';
+import { productsSchema, productsOnHandMin, productsOnHandDefault } from '../schemas.ts';
+import { useActiveLocales } from '../composables/use-active-locales.ts';
+import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -36,7 +32,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { toCreateTranslations } from '@/modules/products/composables/translations-body.ts';
+import { toCreateTranslations } from '../composables/translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
 import { loadShopCurrency, shopCurrency } from '@/infrastructure/shop-currency.ts';

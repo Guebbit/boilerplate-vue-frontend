@@ -21,7 +21,7 @@ export default [
             can: ['read', 'Example'],
             title: 'examples-list-page.page-title'
         },
-        component: () => import('@/modules/example/views/ExamplesList.vue')
+        component: () => import('./views/ExamplesList.vue')
     },
     {
         path: 'examples/create',
@@ -31,14 +31,14 @@ export default [
             can: ['create', 'Example'],
             title: 'example-create-page.page-title'
         },
-        component: () => import('@/modules/example/views/ExampleCreate.vue')
+        component: () => import('./views/ExampleCreate.vue')
     },
     {
         // Public: anyone may read a published example, signed in or not.
         path: 'examples/published/:id',
         name: 'ExamplePublished',
         meta: { title: 'example-published-page.page-title' },
-        component: () => import('@/modules/example/views/ExamplePublished.vue'),
+        component: () => import('./views/ExamplePublished.vue'),
         props: true
     },
     {
@@ -49,7 +49,7 @@ export default [
             can: ['read', 'Example'],
             title: 'example-target-page.page-title'
         },
-        component: () => import('@/modules/example/views/ExampleTarget.vue'),
+        component: () => import('./views/ExampleTarget.vue'),
         props: true
     },
     {
@@ -63,7 +63,7 @@ export default [
         // Scoped to this route rather than registered app-wide: a teaching guard has no business
         // running on every navigation.
         beforeEnter: [exampleEditGuard],
-        component: () => import('@/modules/example/views/ExampleEdit.vue'),
+        component: () => import('./views/ExampleEdit.vue'),
         props: true
     }
 ] satisfies RouteRecordRaw[];

@@ -13,7 +13,7 @@ import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { localesEntrySchema } from '@/modules/locales/schemas.ts';
+import { localesEntrySchema } from '../schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import type { LocaleTenantDescriptor } from '@types';
 

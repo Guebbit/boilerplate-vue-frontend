@@ -5,7 +5,7 @@
  * could not be added. The numbers are passed through untouched, and none of them is a stock count.
  */
 import { describe, expect, it } from 'vitest';
-import { changedMergeLines, mergeReportKind } from '@/modules/cart/domain';
+import { changedMergeLines, mergeReportKind } from '../domain';
 import type { MergeLineResult } from '@types';
 
 /**

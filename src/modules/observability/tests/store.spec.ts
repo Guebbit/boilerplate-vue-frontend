@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useRealtimeObservabilityStore } from '@/modules/observability/store';
+import { useRealtimeObservabilityStore } from '../store';
 import type { MetricsSnapshotEvent } from '@types';
 
 // Minimal valid metrics payload used across tests

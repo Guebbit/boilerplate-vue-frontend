@@ -54,13 +54,12 @@ const makeEvent = (timestamp: string): MetricsSnapshotEvent => ({
  */
 const loadComposable = () => {
     vi.resetModules();
-    return Promise.all([
-        import('@/modules/observability/use-realtime-observability'),
-        import('@/modules/observability/store')
-    ]).then(([{ useRealtimeObservability }, { useRealtimeObservabilityStore }]) => ({
-        useRealtimeObservability,
-        useRealtimeObservabilityStore
-    }));
+    return Promise.all([import('../use-realtime-observability'), import('../store')]).then(
+        ([{ useRealtimeObservability }, { useRealtimeObservabilityStore }]) => ({
+            useRealtimeObservability,
+            useRealtimeObservabilityStore
+        })
+    );
 };
 
 /**

@@ -7,14 +7,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import CartEntry from '@/modules/cart/views/CartEntry.vue';
+import CartEntry from '../views/CartEntry.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
-vi.mock('@/modules/cart/views/Cart.vue', () => ({
+vi.mock('../views/Cart.vue', () => ({
     default: { template: '<div data-test="signed-in-cart" />' }
 }));
 
-vi.mock('@/modules/cart/components/GuestCart.vue', () => ({
+vi.mock('../components/GuestCart.vue', () => ({
     default: { template: '<div data-test="guest-cart-stub" />' }
 }));
 

@@ -21,12 +21,9 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useInventoryStore } from '@/modules/inventory/store.ts';
+import { useInventoryStore } from '../store.ts';
 import { useProductsStore } from '@/modules/products';
-import {
-    useProductPicker,
-    useProductPickerPin
-} from '@/modules/inventory/composables/use-product-picker.ts';
+import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';

@@ -12,7 +12,7 @@ import { getCart, setCartShippingMethod, checkout as apiCheckout } from '@api';
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import { loadLocale } from '@/i18n';
 import { asStub } from '../../../../tests/support/stub.ts';
-import { IN_FLIGHT_RETRY_DELAYS_MS } from '@/modules/cart/store.ts';
+import { IN_FLIGHT_RETRY_DELAYS_MS } from '../store.ts';
 import { aCart, apiRejection, answered } from '../../../../tests/support/unit/cart-fixtures.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 import { mountCartPage, router } from '../../../../tests/support/unit/mount-cart-page.ts';

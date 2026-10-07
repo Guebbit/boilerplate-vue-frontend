@@ -8,8 +8,8 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { deleteCookie, getCookie } from '@guebbit/js-toolkit';
 
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useProfileStore } from '../stores/profile.ts';
+import { useAuthStore } from '../stores/auth.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

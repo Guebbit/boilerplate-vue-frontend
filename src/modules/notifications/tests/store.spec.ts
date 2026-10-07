@@ -12,7 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useInboxStore } from '@/modules/notifications/store';
+import { useInboxStore } from '../store';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import type {

@@ -4,7 +4,7 @@
  * contract rather than restated, and the status limited to the closed set.
  */
 import { describe, expect, it } from 'vitest';
-import { exampleCreateSchema, exampleEditSchema } from '@/modules/example/schemas';
+import { exampleCreateSchema, exampleEditSchema } from '../schemas';
 import { createExampleBodyBodyMax, createExampleBodyTitleMax } from '@api/schemas';
 
 /** The fields a valid create carries. */

@@ -9,7 +9,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
-import type { AdminKpiCard } from '@/modules/observability/types.ts';
+import type { AdminKpiCard } from '../types.ts';
 import {
     EMPTY_VALUE,
     formatMegabytes,

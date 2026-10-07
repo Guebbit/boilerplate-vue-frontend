@@ -16,7 +16,7 @@ import type { ZodType } from 'zod';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useApiKeysStore } from '@/modules/api-keys/store';
+import { useApiKeysStore } from '../store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {

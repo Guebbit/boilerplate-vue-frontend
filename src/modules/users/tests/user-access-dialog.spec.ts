@@ -8,7 +8,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
+import UserAccessDialog from '../components/UserAccessDialog.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -16,7 +16,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import type {
     UserAccessDialogRequestOptions,
     UserAccessDialogTarget
-} from '@/modules/users/composables/use-user-access-dialog.ts';
+} from '../composables/use-user-access-dialog.ts';
 
 wireModulesIntoCore();
 

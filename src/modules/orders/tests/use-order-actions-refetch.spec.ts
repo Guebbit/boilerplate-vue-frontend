@@ -9,7 +9,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
-import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
+import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import type { Order, OrderActions } from '@types';
 
 /** A store record for the routed id; `actions` present means the detail representation arrived. */

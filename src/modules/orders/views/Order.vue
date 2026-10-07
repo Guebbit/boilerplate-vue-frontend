@@ -25,9 +25,9 @@ import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useOrdersStore } from '@/modules/orders/store.ts';
-import { leftOutByReorder } from '@/modules/orders/domain';
-import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
+import { useOrdersStore } from '../store.ts';
+import { leftOutByReorder } from '../domain';
+import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import {

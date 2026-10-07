@@ -19,7 +19,7 @@ export default {
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { NotebookPen } from 'lucide-vue-next';
-import { useExampleStore } from '@/modules/example/store';
+import { useExampleStore } from '../store';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';

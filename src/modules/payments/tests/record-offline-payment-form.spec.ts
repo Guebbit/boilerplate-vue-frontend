@@ -7,8 +7,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import RecordOfflinePaymentForm from '@/modules/payments/components/RecordOfflinePaymentForm.vue';
-import { usePaymentsStore } from '@/modules/payments/store.ts';
+import RecordOfflinePaymentForm from '../components/RecordOfflinePaymentForm.vue';
+import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

@@ -13,7 +13,7 @@
  * suite slow AND flaky, which is the usual reason a debounce ends up untested.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity';
+import { useLineQuantity } from '../composables/use-line-quantity';
 
 /** Milliseconds the fake timers advance past the debounce window. */
 const DELAY = 400;

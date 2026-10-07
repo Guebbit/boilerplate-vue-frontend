@@ -8,8 +8,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { effectScope, nextTick } from 'vue';
-import cartModule from '@/modules/cart/module.ts';
-import { useCartStore } from '@/modules/cart/store.ts';
+import cartModule from '../module.ts';
+import { useCartStore } from '../store.ts';
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
 

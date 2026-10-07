@@ -18,8 +18,8 @@ import {
     useAuditTrail,
     type AuditEndpoint,
     type AuditTrailItem
-} from '@/modules/observability/composables/use-audit-trail.ts';
-import type { AdminAuditFilters } from '@/modules/observability/types.ts';
+} from '../composables/use-audit-trail.ts';
+import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 

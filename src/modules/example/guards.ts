@@ -3,7 +3,7 @@
  * A Vue Router `beforeEnter` guard, scoped to the edit route. It teaches what is, and is not,
  * reachable from a guard: a Pinia store works anywhere, translations may not be loaded yet.
  */
-import { useExampleStore } from '@/modules/example/store.ts';
+import { useExampleStore } from './store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
 import type { RouteLocationNormalized } from 'vue-router';

@@ -23,7 +23,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useProfileStore } from '../stores/profile.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';

@@ -18,7 +18,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 
-import { useWebhooksStore } from '@/modules/webhooks/store';
+import { useWebhooksStore } from '../store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {

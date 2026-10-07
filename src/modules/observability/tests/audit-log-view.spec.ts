@@ -8,8 +8,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import AuditLog from '@/modules/observability/views/AuditLog.vue';
-import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
+import AuditLog from '../views/AuditLog.vue';
+import AdminAuditTab from '../components/AdminAuditTab.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';

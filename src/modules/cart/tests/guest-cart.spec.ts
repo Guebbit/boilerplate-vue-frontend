@@ -13,8 +13,8 @@ import {
     removeGuestLines,
     setGuestLineQuantity,
     subtractGuestLines
-} from '@/modules/cart/domain';
-import type { GuestCartLine } from '@/modules/cart/domain';
+} from '../domain';
+import type { GuestCartLine } from '../domain';
 
 /**
  * A full cart: as many different products as a guest may hold.

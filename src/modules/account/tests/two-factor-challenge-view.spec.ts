@@ -8,8 +8,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import TwoFactorChallenge from '@/modules/account/views/TwoFactorChallenge.vue';
-import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
+import TwoFactorChallenge from '../views/TwoFactorChallenge.vue';
+import { useTwoFactorStore } from '../stores/two-factor.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

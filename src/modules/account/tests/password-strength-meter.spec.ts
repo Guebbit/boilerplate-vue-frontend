@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();
@@ -16,7 +16,7 @@ wireModulesIntoCore();
 /** The score the mocked composable reports; unset means not yet scored. */
 const score = ref<0 | 1 | 2 | 3 | 4>();
 
-vi.mock('@/modules/account/composables/use-password-strength.ts', () => ({
+vi.mock('../composables/use-password-strength.ts', () => ({
     usePasswordStrength: () => ({ score })
 }));
 

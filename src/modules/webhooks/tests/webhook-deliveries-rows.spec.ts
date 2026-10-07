@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm';
-import WebhookDeliveriesFilters from '@/modules/webhooks/components/WebhookDeliveriesFilters.vue';
+import WebhookDeliveriesFilters from '../components/WebhookDeliveriesFilters.vue';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { WebhookDelivery } from '@types';

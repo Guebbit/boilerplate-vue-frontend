@@ -11,8 +11,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import ShipmentPanel from '@/modules/delivery/components/ShipmentPanel.vue';
-import { useDeliveryStore } from '@/modules/delivery/store.ts';
+import ShipmentPanel from '../components/ShipmentPanel.vue';
+import { useDeliveryStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import { OrderStatus, deliverOrder } from '@api';
 import vuetify from '@/ui/vuetify';

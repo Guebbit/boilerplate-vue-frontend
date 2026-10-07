@@ -6,10 +6,7 @@
  * request shape `searchProducts` itself builds is what a regression here would actually break.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-    useProductPicker,
-    useProductPickerPin
-} from '@/modules/inventory/composables/use-product-picker.ts';
+import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import {
     contractRequest,

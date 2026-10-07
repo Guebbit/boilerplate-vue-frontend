@@ -19,7 +19,7 @@ import { asStub } from '../../../../tests/support/stub';
 /** Stub for the store's `fetchExample`, which the guard calls. */
 const fetchExample = vi.fn<(id: string) => Promise<unknown>>();
 
-vi.mock('@/modules/example/store.ts', () => ({
+vi.mock('../store.ts', () => ({
     useExampleStore: () => ({ fetchExample })
 }));
 
@@ -28,7 +28,7 @@ vi.mock('@/infrastructure/utils/logger.ts', () => ({
 }));
 
 /** The guard under test, imported after the mocks above are in place. */
-const { exampleEditGuard } = await import('@/modules/example/guards.ts');
+const { exampleEditGuard } = await import('../guards.ts');
 
 /**
  * A minimal route stub carrying just the field the guard reads.

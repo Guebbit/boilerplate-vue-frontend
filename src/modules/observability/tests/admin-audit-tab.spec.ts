@@ -8,7 +8,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
 import * as schemas from '@api/schemas';
-import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
+import AdminAuditTab from '../components/AdminAuditTab.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

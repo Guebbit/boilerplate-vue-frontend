@@ -10,7 +10,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
-import { useDictionaryCellEditor } from '@/modules/locales/composables/use-dictionary-cell-editor.ts';
+import { useDictionaryCellEditor } from '../composables/use-dictionary-cell-editor.ts';
 import type { LocaleCapability, LocaleEntry } from '@types';
 
 /** The column every test writes into. */
@@ -34,7 +34,7 @@ let confirmAnswer = true;
 /** Every toast raised during a test. */
 let messages: string[] = [];
 
-vi.mock('@/modules/locales/store.ts', () => ({
+vi.mock('../store.ts', () => ({
     useLocalesStore: () => ({
         addEntry: (...arguments_: unknown[]) => addEntry(...(arguments_ as [])),
         editEntry: (...arguments_: unknown[]) => editEntry(...(arguments_ as [])),
