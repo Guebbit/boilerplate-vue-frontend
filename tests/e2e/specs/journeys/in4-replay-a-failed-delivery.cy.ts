@@ -21,6 +21,7 @@ import {
     newDelivery,
     placeOrderAsCustomer,
     seededSubscription,
+    sinkEndpoint,
     setEnabledInTheForm
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
@@ -74,54 +75,62 @@ describe('IN4 · Replay a failed delivery', () => {
     it('counts each retry against a dead endpoint, and delivers once a switched-off one is back on', () => {
         seededSubscription().then((seeded) => {
             cy.step('an endpoint that is down, and an order that announces itself to it');
-            cy.apiAs<{ id: string }>('admin', 'POST', '/webhooks/subscriptions', {
-                url: `${new URL(seeded.url).origin}${DEAD_PATH}`,
-                eventTypes: ['order.created']
-            }).then((dead) => {
-                if (!dead) throw new Error('IN4: the dead subscription was not created');
-                placeOrderAsCustomer();
-                newDelivery(dead.id, []).then((delivery) => {
-                    cy.loginAs('admin');
-                    openTheLogOf(dead.id);
+            sinkEndpoint(DEAD_PATH)
+                .then((deadUrl) =>
+                    cy.apiAs<{ id: string }>('admin', 'POST', '/webhooks/subscriptions', {
+                        url: deadUrl,
+                        eventTypes: ['order.created']
+                    })
+                )
+                .then((dead) => {
+                    if (!dead) throw new Error('IN4: the dead subscription was not created');
+                    placeOrderAsCustomer();
+                    newDelivery(dead.id, []).then((delivery) => {
+                        cy.loginAs('admin');
+                        openTheLogOf(dead.id);
 
-                    cy.env(['liveProfile']).then(({ liveProfile }) => {
-                        if (liveProfile === true) {
-                            cy.step('live: the broker has already tried it once, and failed');
-                            eventually(
-                                () => deliveryNow(dead.id, delivery.id),
-                                (row) => row.error !== undefined
-                            );
-                            return;
-                        }
-                        cy.step('demo: nothing has tried it, so the first Replay is the first try');
-                        replayInTheLog(delivery.id);
-                    });
-
-                    cy.step('the row says it failed, and why');
-                    deliveryNow(dead.id, delivery.id).then((failed) => {
-                        expect(failed.error, 'why it failed').to.match(DOWN);
-                        expect(failed.status, 'still waiting for a retry').to.equal('pending');
-                        cy.reload();
-                        replayButtonOf(delivery.id)
-                            .closest('[data-test=webhook-delivery-row]')
-                            .within(() => {
-                                cy.get('[data-test=webhook-delivery-status]').should(
-                                    'have.attr',
-                                    'data-status',
-                                    'pending'
+                        cy.env(['liveProfile']).then(({ liveProfile }) => {
+                            if (liveProfile === true) {
+                                cy.step('live: the broker has already tried it once, and failed');
+                                eventually(
+                                    () => deliveryNow(dead.id, delivery.id),
+                                    (row) => row.error !== undefined
                                 );
-                                cy.contains(DOWN).should('exist');
-                            });
+                                return;
+                            }
+                            cy.step(
+                                'demo: nothing has tried it, so the first Replay is the first try'
+                            );
+                            replayInTheLog(delivery.id);
+                        });
 
-                        cy.step('another Replay is another attempt');
-                        replayInTheLog(delivery.id);
-                        deliveryNow(dead.id, delivery.id).then((again) => {
-                            expect(again.attempt, 'one more attempt').to.equal(failed.attempt + 1);
-                            expect(again.error).to.match(DOWN);
+                        cy.step('the row says it failed, and why');
+                        deliveryNow(dead.id, delivery.id).then((failed) => {
+                            expect(failed.error, 'why it failed').to.match(DOWN);
+                            expect(failed.status, 'still waiting for a retry').to.equal('pending');
+                            cy.reload();
+                            replayButtonOf(delivery.id)
+                                .closest('[data-test=webhook-delivery-row]')
+                                .within(() => {
+                                    cy.get('[data-test=webhook-delivery-status]').should(
+                                        'have.attr',
+                                        'data-status',
+                                        'pending'
+                                    );
+                                    cy.contains(DOWN).should('exist');
+                                });
+
+                            cy.step('another Replay is another attempt');
+                            replayInTheLog(delivery.id);
+                            deliveryNow(dead.id, delivery.id).then((again) => {
+                                expect(again.attempt, 'one more attempt').to.equal(
+                                    failed.attempt + 1
+                                );
+                                expect(again.error).to.match(DOWN);
+                            });
                         });
                     });
                 });
-            });
 
             cy.step('the shop switches its own endpoint off, and an order is placed');
             const known: string[] = [];

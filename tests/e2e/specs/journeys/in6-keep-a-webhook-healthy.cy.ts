@@ -14,6 +14,7 @@ import {
     deliveriesOf,
     placeOrderAsCustomer,
     seededSubscription,
+    sinkEndpoint,
     setEnabledInTheForm
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
@@ -60,8 +61,8 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
         cy.visit('/en');
         cy.restore();
         cy.visit('/en');
-        seededSubscription().then(({ url }) => {
-            endpoint = `${new URL(url).origin}/in6-${String(Date.now())}`;
+        sinkEndpoint(`/in6-${String(Date.now())}`).then((url) => {
+            endpoint = url;
         });
     });
 

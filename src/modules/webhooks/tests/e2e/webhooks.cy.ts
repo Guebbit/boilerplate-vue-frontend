@@ -5,9 +5,13 @@
  * functional coverage of create, edit, delete and list.
  */
 
-/** A value unique enough per run that two specs racing the same backend cannot collide. */
-const unique = () =>
-    `https://example.com/e2e-hook-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+import { sinkEndpoint } from '../../../../../tests/support/e2e/integrator';
+
+/**
+ * A path unique enough per run that two specs racing the same backend cannot collide. Resolved
+ * onto the seeded sink's origin by `sinkEndpoint`; free of the word 'dead', which the sink 503s.
+ */
+const unique = () => `/e2e-hook-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 describe('Webhook subscriptions', () => {
     beforeEach(() => {
@@ -29,10 +33,11 @@ describe('Webhook subscriptions', () => {
 
     describe('Create', () => {
         it('creates a subscription through the real form and lands on its detail page', () => {
-            const url = unique();
-
             cy.visit('/en/webhooks/subscriptions/create');
-            cy.get('[data-test=webhook-url] input').type(url);
+            sinkEndpoint(unique()).then((url) => {
+                cy.get('[data-test=webhook-url] input').type(url);
+                cy.wrap(url, { log: false }).as('createdUrl');
+            });
             cy.get('[data-test=webhook-description] input').type('e2e coverage');
             cy.pickOption('[data-test=webhook-event-types]', 'order.created');
             // The multi-select stays open after one pick; close it before the submit below.
@@ -46,17 +51,22 @@ describe('Webhook subscriptions', () => {
 
             cy.url().should('include', '/webhooks/subscriptions/').and('not.include', '/create');
             cy.contains('Subscription created').should('exist');
-            cy.contains(url).should('exist');
+            cy.get<string>('@createdUrl').then((url) => cy.contains(url).should('exist'));
         });
     });
 
     describe('Edit', () => {
         it('edits a subscription through the real form and the change survives a reload', () => {
-            const originalUrl = unique();
             const editedDescription = `edited-${unique()}`;
 
-            cy.createWebhookSubscription({ url: originalUrl, eventTypes: ['order.created'] }).then(
-                (subscription) => {
+            sinkEndpoint(unique())
+                .then((originalUrl) =>
+                    cy.createWebhookSubscription({
+                        url: originalUrl,
+                        eventTypes: ['order.created']
+                    })
+                )
+                .then((subscription) => {
                     cy.visit(`/en/webhooks/subscriptions/${subscription.id}/edit`);
                     cy.get('[data-test=webhook-description] input').clear();
                     cy.get('[data-test=webhook-description] input').type(editedDescription);
@@ -68,16 +78,14 @@ describe('Webhook subscriptions', () => {
                         'have.value',
                         editedDescription
                     );
-                }
-            );
+                });
         });
     });
 
     describe('Delete', () => {
         it('deletes a subscription after confirming, and it drops out of the list', () => {
-            const url = unique();
-
-            cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }).then(() => {
+            sinkEndpoint(unique()).then((url) => {
+                cy.createWebhookSubscription({ url, eventTypes: ['order.created'] });
                 cy.visit('/en/webhooks/subscriptions');
                 cy.pickOption('[data-test=page-size]', '50');
 
