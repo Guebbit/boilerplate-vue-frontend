@@ -20,13 +20,13 @@ export const ordersStatusSchema = z.enum(OrderStatus, {
 });
 
 /**
- * Validation schema of a whole order form. Every field is optional/nullable, since these forms
+ * Validation schema of a whole order form. Every field is optional (most also nullable), since these forms
  * are also used for partial updates.
  */
 export const ordersSchema = z.object({
     id: z.string().nullish(),
     userId: z.string().nullish(),
-    email: z.email({ error: () => translate('orders-form.email-invalid') }).nullish(),
+    email: z.email({ error: () => translate('orders-form.email-invalid') }).optional(),
     status: ordersStatusSchema.nullish(),
     totalPrice: z.number().nullish(),
     notes: z.string().nullish(),
