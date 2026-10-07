@@ -93,6 +93,11 @@ describe('OP16 · The shop manager’s morning', () => {
                 .its('status')
                 .should('equal', 'processing');
 
+            cy.step("the payment panel shows a customer's payment: the manager reads the money");
+            cy.visit(`/en/orders/${orderId}`);
+            cy.get('[data-test=payment-panel] [data-test=payment-status]').should('exist');
+            cy.get('[data-test=payment-panel]').should('not.contain.text', 'No payment yet.');
+
             cy.step('on the edit page the money is shut: no refund, no offline payment');
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=button-refund-only]').should('be.disabled');

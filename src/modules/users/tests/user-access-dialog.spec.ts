@@ -44,6 +44,8 @@ const mountDialog = (props: {
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    // An admin-like caller: the server answered with the roles they may assign.
+    useSessionStore().grantableRoles = ['customer', 'manager', 'admin'];
     return loadLocale('en');
 });
 
@@ -213,6 +215,33 @@ describe('UserAccessDialog — what the picker offers', () => {
         }).then((wrapper) => {
             expect(disabledOf(wrapper, 'user-access-role')).toBe(true);
             expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
+        });
+    });
+
+    it('disables the role select for a caller who may assign no role', () => {
+        useSessionStore().grantableRoles = [];
+
+        return mountDialog({
+            target: { id: 'u1', name: 'ada', role: 'customer', active: true }
+        }).then((wrapper) => {
+            expect(disabledOf(wrapper, 'user-access-role')).toBe(true);
+            expect(disabledOf(wrapper, 'user-access-active')).toBe(false);
+        });
+    });
+
+    it('offers a moderator-like caller only customer, plus the account’s current role', () => {
+        useSessionStore().grantableRoles = ['customer'];
+
+        return mountDialog({
+            target: { id: 'u1', name: 'ada', role: 'manager', active: true }
+        }).then((wrapper) => {
+            const select = wrapper
+                .findAllComponents({ name: 'VSelect' })
+                .find((candidate) => candidate.attributes('data-test') === 'user-access-role');
+            expect(select?.props('items')).toEqual([
+                { value: 'customer', title: 'customer' },
+                { value: 'manager', title: 'manager' }
+            ]);
         });
     });
 });
