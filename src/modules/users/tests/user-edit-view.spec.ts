@@ -106,6 +106,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     loadedUser = LOADED_USER;
+    // An admin-like caller: the server answered with the roles they may assign.
+    useSessionStore().grantableRoles = ['customer', 'manager', 'admin'];
     mockTransport();
     return loadLocale('en').then(() =>
         router.push('/en/users/u1/edit').then(() => router.isReady())
@@ -399,6 +401,32 @@ describe('UserEdit — what each row allows', () => {
         return flushPromises().then(() => {
             expect(isDisabled(wrapper, 'user-edit-role')).toBe(true);
             expect(isDisabled(wrapper, 'user-edit-username')).toBe(false);
+        });
+    });
+
+    it('disables the role select for a caller who may assign no role', () => {
+        useSessionStore().grantableRoles = [];
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            expect(isDisabled(wrapper, 'user-edit-role')).toBe(true);
+            expect(isDisabled(wrapper, 'user-edit-username')).toBe(false);
+        });
+    });
+
+    it('offers a moderator-like caller only customer, plus the account’s current role', () => {
+        useSessionStore().grantableRoles = ['customer'];
+        loadedUser = aUser({ ...LOADED_USER, role: 'manager' });
+        const wrapper = mountPage();
+
+        return flushPromises().then(() => {
+            const select = wrapper
+                .findAllComponents({ name: 'VSelect' })
+                .find((candidate) => candidate.attributes('data-test') === 'user-edit-role');
+            expect(select?.props('items')).toEqual([
+                { value: 'customer', title: 'customer' },
+                { value: 'manager', title: 'manager' }
+            ]);
         });
     });
 });

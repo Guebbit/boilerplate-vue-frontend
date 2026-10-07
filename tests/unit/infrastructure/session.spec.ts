@@ -92,7 +92,8 @@ beforeEach(() => {
             platform: [],
             tenant: [],
             version: 1,
-            subjects: []
+            subjects: [],
+            grantableRoles: []
         })
     );
     logoutMock.mockResolvedValue(undefined);
@@ -332,7 +333,8 @@ describe('loadViewer', () => {
                 platform: [],
                 tenant: [['delete', 'Product']],
                 version: 1,
-                subjects: ['Product']
+                subjects: ['Product'],
+                grantableRoles: ['customer']
             })
         );
         const store = useSessionStore();
@@ -360,7 +362,8 @@ describe('loadViewer', () => {
                 platform: [],
                 tenant: [['checkout', 'Cart']],
                 version: 1,
-                subjects: ['Cart']
+                subjects: ['Cart'],
+                grantableRoles: ['customer']
             })
         );
         const store = useSessionStore();
@@ -403,7 +406,8 @@ describe('loadViewer', () => {
                 platform: [],
                 tenant: [],
                 version: 1,
-                subjects: ['Order', 'Product']
+                subjects: ['Order', 'Product'],
+                grantableRoles: ['customer']
             })
         );
         const store = useSessionStore();
@@ -412,6 +416,16 @@ describe('loadViewer', () => {
         return store.loadViewer().then(() => {
             expect(store.declaredSubjects).toEqual(new Set(['Order', 'Product']));
         });
+    });
+
+    it('keeps the roles the caller may grant, and empties them with the rest of the abilities', () => {
+        const store = useSessionStore();
+
+        store.setAbilities({ tenant: [], platform: [], grantableRoles: ['customer'] });
+        expect(store.grantableRoles).toEqual(['customer']);
+
+        store.setAbilities();
+        expect(store.grantableRoles).toEqual([]);
     });
 
     /** A response that omits `subjects` altogether must not wipe out a set already known. */

@@ -23,7 +23,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { usersSchema } from '@/modules/users/schemas.ts';
-import { userRoleOptions } from '@/modules/users/domain';
+import { useRoleOptions } from '@/modules/users/composables/use-role-options.ts';
 import { supportedLanguages } from '@/i18n';
 import { z } from 'zod';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -53,6 +53,11 @@ const router = useRouter();
  * Users store
  */
 const { createUser } = useUsersStore();
+
+/**
+ * The server's list of roles the caller may assign, as select items.
+ */
+const { grantableRoles, roleOptions } = useRoleOptions();
 
 /**
  * Form definition
@@ -201,11 +206,12 @@ const submitForm = () => {
                 class="mt-2 mb-2"
             />
             <div class="flex flex-wrap gap-x-8">
-                <!-- One list, not a free-text field: `domain/roles.ts` is the single place every role
-                     select in this module reads from, so it cannot drift into a second copy. -->
+                <!-- One list, not a free-text field: the server's `grantableRoles`. Hidden when the
+                     caller may assign none, so the account gets the server's default role. -->
                 <v-select
+                    v-if="grantableRoles().length > 0"
                     v-model="form.role"
-                    :items="userRoleOptions"
+                    :items="roleOptions()"
                     :label="t('user-create-page.label-role')"
                     data-test="user-role"
                 />

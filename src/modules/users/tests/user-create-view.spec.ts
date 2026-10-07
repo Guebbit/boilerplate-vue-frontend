@@ -10,6 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import UserCreate from '@/modules/users/views/UserCreate.vue';
 import { useUsersStore } from '@/modules/users/store';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -66,6 +67,8 @@ const fillAndSubmit = (
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    // An admin-like caller: the server answered with the roles they may assign.
+    useSessionStore().grantableRoles = ['customer', 'manager', 'admin'];
     return loadLocale('en').then(() =>
         router.push('/en/users/create').then(() => router.isReady())
     );
@@ -229,6 +232,30 @@ describe('UserCreate', () => {
                 'Address already in use'
             );
             expect(wrapper.find('[data-test=user-create-submit-error]').exists()).toBe(false);
+        });
+    });
+
+    it('offers a moderator-like caller only the roles the server listed', () => {
+        useSessionStore().grantableRoles = ['customer'];
+        const { wrapper } = mountPage();
+
+        const select = wrapper
+            .findAllComponents({ name: 'VSelect' })
+            .find((candidate) => candidate.attributes('data-test') === 'user-role');
+        expect(select?.props('items')).toEqual([{ value: 'customer', title: 'customer' }]);
+    });
+
+    it('hides the role field for a caller who may assign no role, and still sends no role', () => {
+        useSessionStore().grantableRoles = [];
+        const { wrapper, create } = mountPage();
+        create.mockResolvedValue(aUser({ id: 'u-new', email: 'ada@example.com' }));
+
+        expect(wrapper.find('[data-test=user-role]').exists()).toBe(false);
+        return fillAndSubmit(wrapper, { email: 'ada@example.com', username: 'ada' }).then(() => {
+            expect(create).toHaveBeenCalledWith(
+                expect.objectContaining({ role: undefined }),
+                expect.anything()
+            );
         });
     });
 });

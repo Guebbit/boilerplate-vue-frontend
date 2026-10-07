@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { userRoleOptions } from '@/modules/users/domain';
+import { useRoleOptions } from '@/modules/users/composables/use-role-options.ts';
 import type {
     UserAccessDialogRequestOptions,
     UserAccessDialogResult,
@@ -67,6 +67,11 @@ useReturnFocus(() => isOpen.value);
 const session = useSessionStore();
 
 /**
+ * The server's list of roles the caller may assign, as select items.
+ */
+const { grantableRoles, roleOptions } = useRoleOptions();
+
+/**
  * The role/active values on screen — seeded on open, below.
  */
 const selectedRole = ref('');
@@ -92,10 +97,13 @@ watch(isOpen, (open) => {
 });
 
 /**
- * Whether the role may be changed here: the row's `update` action, and never one's own — nobody
- * changes their own role, the server refuses it, so the picker does not offer it.
+ * Whether the role may be changed here: the row's `update` action, never one's own — nobody
+ * changes their own role, the server refuses it, so the picker does not offer it — and only when
+ * the caller may assign at least one role.
  */
-const canPickRole = computed(() => (props.target?.actions?.update ?? true) && !isSelf.value);
+const canPickRole = computed(
+    () => (props.target?.actions?.update ?? true) && !isSelf.value && grantableRoles().length > 0
+);
 
 /**
  * Whether the account may be deactivated or reactivated here: the row's `ban` action, which is a
@@ -197,7 +205,7 @@ const handleCancel = () => {
                 <div class="flex flex-col gap-3">
                     <v-select
                         v-model="selectedRole"
-                        :items="userRoleOptions"
+                        :items="roleOptions(target.role)"
                         :label="t('user-access-dialog.label-role')"
                         :disabled="!canPickRole"
                         data-test="user-access-role"

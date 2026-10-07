@@ -1421,7 +1421,7 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
 /**
  * Returns the most recent INCIDENT events, newest first, from the persisted audit trail:
  * security refusals (`security.*`), failed sign-ins, a failed second factor or OAuth
- * sign-in, a replayed refresh token, worker failures, and a webhook subscription
+ * sign-in, a replayed refresh token, and a webhook subscription
  * disabled for failing. Never what a shop's customers did (orders, payments, accounts,
  * successful sign-ins): that is a shop admin's `GET /audit`.
  * Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
@@ -1864,6 +1864,10 @@ export const ResendPendingEmailResponse = zod.strictObject({
  * allowed; every request is re-evaluated server-side. Published here because the
  * alternative is every client inventing the same guess.
  *
+ * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
+ * writes, computed by the same rule as their `409`; a role picker reads it instead of a
+ * hard-coded list. Empty for an anonymous caller. It has no authority either.
+ *
  * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
  * a value in the model rather than an absence, and a shop front that greys nothing
  * out for a visitor is a shop front that lies twice.
@@ -1875,6 +1879,7 @@ export const GetMyAbilitiesResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         subjects: zod.array(zod.string()),
+        grantableRoles: zod.array(zod.string()),
         tenantId: zod.string().optional(),
         tenant: zod.array(
             zod.array(
@@ -2583,6 +2588,8 @@ export const LogoutAllResponse = zod.strictObject({
  * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export/{id}`.
  *
  * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+ *
+ * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged.
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExportResponseDataIdMax = 64;
@@ -2608,7 +2615,7 @@ export const loginTwoFactorBodyChallengeMax = 128;
 export const loginTwoFactorBodyCodeMax = 64;
 export const LoginTwoFactorBody = zod.strictObject({
     challenge: zod.string().min(1).max(loginTwoFactorBodyChallengeMax).optional(),
-    code: zod.string().max(loginTwoFactorBodyCodeMax),
+    code: zod.string().min(1).max(loginTwoFactorBodyCodeMax),
     remember: zod.enum(['short', 'medium', 'long']).optional()
 });
 export const LoginTwoFactorResponse = zod.strictObject({
@@ -2683,7 +2690,7 @@ export const GetTwoFactorStatusResponse = zod.strictObject({
  */
 export const disableTwoFactorBodyCodeMax = 64;
 export const DisableTwoFactorBody = zod.strictObject({
-    code: zod.string().max(disableTwoFactorBodyCodeMax)
+    code: zod.string().min(1).max(disableTwoFactorBodyCodeMax)
 });
 export const DisableTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2700,7 +2707,7 @@ export const RemoveTwoFactorMethodParams = zod.strictObject({
 });
 export const removeTwoFactorMethodBodyCodeMax = 64;
 export const RemoveTwoFactorMethodBody = zod.strictObject({
-    code: zod.string().max(removeTwoFactorMethodBodyCodeMax)
+    code: zod.string().min(1).max(removeTwoFactorMethodBodyCodeMax)
 });
 export const RemoveTwoFactorMethodResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2717,7 +2724,7 @@ export const SetupTwoFactorMethodParams = zod.strictObject({
 });
 export const setupTwoFactorMethodBodyCodeMax = 64;
 export const SetupTwoFactorMethodBody = zod.strictObject({
-    code: zod.string().max(setupTwoFactorMethodBodyCodeMax).optional()
+    code: zod.string().min(1).max(setupTwoFactorMethodBodyCodeMax).optional()
 });
 export const SetupTwoFactorMethodResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2762,7 +2769,7 @@ export const ConfirmTwoFactorMethodParams = zod.strictObject({
 });
 export const confirmTwoFactorMethodBodyCodeMax = 64;
 export const ConfirmTwoFactorMethodBody = zod.strictObject({
-    code: zod.string().max(confirmTwoFactorMethodBodyCodeMax)
+    code: zod.string().min(1).max(confirmTwoFactorMethodBodyCodeMax)
 });
 export const ConfirmTwoFactorMethodResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2780,7 +2787,7 @@ export const ConfirmTwoFactorMethodResponse = zod.strictObject({
  */
 export const regenerateBackupCodesBodyCodeMax = 64;
 export const RegenerateBackupCodesBody = zod.strictObject({
-    code: zod.string().max(regenerateBackupCodesBodyCodeMax)
+    code: zod.string().min(1).max(regenerateBackupCodesBodyCodeMax)
 });
 export const RegenerateBackupCodesResponse = zod.strictObject({
     success: zod.literal(true),
@@ -7856,7 +7863,7 @@ export const CreatePaymentIntentResponse = zod.strictObject({
     })
 });
 /**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `payments.any.read` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
  * @summary Get the payment behind an order
  */
 export const getPaymentByOrderPathOrderIdMax = 64;
