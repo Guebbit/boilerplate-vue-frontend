@@ -301,6 +301,10 @@ export const useCartStore = defineStore('cart', () => {
      * Drops everything held for the previous person: the cart, the badge's seed, the merge report
      * and any pending checkout attempt. Runs when the viewer signs out or another account takes
      * the tab over.
+     *
+     * The device's guest list ends with the session that failed to merge it: a shared browser must
+     * never hand one account's unmerged lines to the next. A reload's session restore is not a
+     * change of viewer, so the list is still kept and retried while the same person stays in.
      */
     useResetOnViewerChange(() => {
         // Any background read still out was asked for the previous person.
@@ -313,6 +317,8 @@ export const useCartStore = defineStore('cart', () => {
         summarySeed.value = undefined;
         mergeReport.value = [];
         endCheckoutAttempt();
+        clearGuestCart();
+        writeMergeAttempt(undefined);
     });
 
     /**
@@ -620,7 +626,7 @@ export const useCartStore = defineStore('cart', () => {
             return mergeCart({ lines: [...sent] }, { headers: { [IDEMPOTENCY_KEY_HEADER]: key } })
                 .then((response) => {
                     if (claim()) cart.value = response.data.cart;
-                    // The guest list belongs to this device, whoever is on the tab: what the call
+                    // The guest list is device-scoped only until the session ends: what the call
                     // carried left it either way.
                     guestLines.value = subtractGuestLines(guestLines.value, sent);
                     writeMergeAttempt(undefined);

@@ -51,7 +51,7 @@
         "merge-reason-unavailable": "Non è più disponibile, quindi non è stato aggiunto.",
         "stock-short-marker": "Disponibilità insufficiente",
         "merge-short-advice": "Riduci la quantità prima del pagamento.",
-        "error-guest-merge": "Non siamo riusciti ad aggiungere al tuo account il carrello creato prima di accedere. Resta su questo dispositivo e riproveremo al prossimo accesso.",
+        "error-guest-merge": "Non siamo riusciti ad aggiungere al tuo account il carrello creato prima di accedere. Resta su questo dispositivo finché sei connesso, riproveremo al prossimo caricamento della pagina e verrà svuotato quando esci.",
         "error-guest-merge-dropped": "Non siamo riusciti ad aggiungere al tuo account il carrello creato prima di accedere e riprovare non servirebbe, quindi è stato svuotato da questo dispositivo.",
         "error-cart-empty": "Il carrello è già vuoto. Se hai appena effettuato un ordine è andato a buon fine: controlla i tuoi ordini.",
         "error-checkout-in-flight": "Il tuo ordine è ancora in elaborazione. Controlla i tuoi ordini tra un momento prima di riprovare.",

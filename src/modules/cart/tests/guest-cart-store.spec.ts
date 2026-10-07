@@ -765,3 +765,49 @@ describe('the merge report', () => {
         expect(store.mergeReport).toEqual([]);
     });
 });
+
+describe('the guest list when the session ends', () => {
+    it('is cleared, with the pending merge key, once a retryable failure meets a sign-out', async () => {
+        vi.mocked(mergeCart).mockRejectedValueOnce(apiRejection(503, 'FAILED'));
+        const store = freshStore();
+        store.addGuestItem('p1', 2);
+        await signInAs('a');
+        await store.seedAfterSignIn();
+        expect(store.guestLines).toEqual([{ productId: 'p1', quantity: 2 }]);
+        expect(localStorage.getItem(GUEST_MERGE_ATTEMPT_STORAGE_KEY)).not.toBeNull();
+
+        await signInAs();
+
+        expect(store.guestLines).toEqual([]);
+        expect(localStorage.getItem(GUEST_CART_STORAGE_KEY)).toBeNull();
+        expect(localStorage.getItem(GUEST_MERGE_ATTEMPT_STORAGE_KEY)).toBeNull();
+    });
+
+    it('is not handed to the next account: B reads its summary and never posts the merge', async () => {
+        vi.mocked(mergeCart).mockRejectedValueOnce(apiRejection(503, 'FAILED'));
+        const store = freshStore();
+        store.addGuestItem('p1', 2);
+        await signInAs('a');
+        await store.seedAfterSignIn();
+        vi.mocked(mergeCart).mockClear();
+        vi.mocked(getCartSummary).mockClear();
+
+        await signInAs('b');
+        await store.seedAfterSignIn();
+
+        expect(mergeCart).not.toHaveBeenCalled();
+        expect(getCartSummary).toHaveBeenCalledTimes(1);
+    });
+
+    it('is kept across a reload: a restored session is not a change of viewer', async () => {
+        const store = freshStore();
+        store.addGuestItem('p1', 2);
+
+        // undefined -> A is what a reload's session restore looks like.
+        await signInAs('a');
+
+        expect(store.guestLines).toEqual([{ productId: 'p1', quantity: 2 }]);
+        await store.seedAfterSignIn();
+        expect(mergeCart).toHaveBeenCalledTimes(1);
+    });
+});
