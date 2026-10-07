@@ -19,7 +19,7 @@ import baseConfig from './vitest.config';
  * directory, which inside the sandbox is the sandbox. That is the correct answer rather than a
  * lucky one: the run should be rooted wherever the copy of the project is.
  *
- * ── THE ONE EXCLUDED SPEC ────────────────────────────────────────────────────────────────────────
+ * ── THE EXCLUDED SPECS ───────────────────────────────────────────────────────────────────────────
  * `mutation-safe-imports.spec.ts` reads the files in the `mutate` scope as TEXT and checks each
  * unsafe import specifier carries a `Stryker disable` directive. Inside the sandbox those files are
  * Babel's instrumented OUTPUT, not the repo's source: a comment survives, but which node it is
@@ -61,7 +61,11 @@ const mutationConfig = mergeConfig(
                 // Reads `docs/theory/sitemap.md`, which the sandbox does not copy (`docs/**` is in
                 // `ignorePatterns`), so it fails the dry run on a missing file. It guards a page,
                 // not the source, and kills no mutants.
-                'tests/cross-cutting/sitemap-document.spec.ts'
+                'tests/cross-cutting/sitemap-document.spec.ts',
+                // Reads every module's `routes.ts` as text, and inside the sandbox those are
+                // Stryker's instrumented output: `path: '...'` no longer matches, so it finds no
+                // routes and fails the dry run. It guards the a11y sweeps, and kills no mutants.
+                'tests/cross-cutting/a11y-coverage.spec.ts'
             ]
         }
     })
