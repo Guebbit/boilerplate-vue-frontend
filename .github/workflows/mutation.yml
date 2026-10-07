@@ -15,6 +15,10 @@ name: Mutation
 #
 # Runs nightly, and on demand from the Actions tab before a refactor.
 # Scope and thresholds live in stryker.config.json.
+#
+# Read-only, on purpose: the job runs `npm ci`, and every package's install script runs with
+# whatever token the job holds. The updated baseline leaves as the `mutation-baseline` artifact;
+# `npm run test:mutation:pull` fetches it, and you commit it.
 
 on:
     schedule:
@@ -36,12 +40,12 @@ jobs:
         # that it is allowed to be slow. It should never be trimmed by narrowing `mutate`.
         timeout-minutes: 60
         permissions:
-            # write: this job commits `mutation-baseline.json` back to main — see "Record this
-            # run's baseline" below.
-            contents: write
+            contents: read
         steps:
             - name: Checkout
               uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+              with:
+                  persist-credentials: false # no step after the checkout needs the token on disk
 
             - name: Setup Node
               uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -84,23 +88,26 @@ jobs:
               run: npm run test:mutation:check
 
             - name: Record this run's baseline
-              # The check above only reads; this step WRITES a new or improved score, which is why
-              # the job holds push permission and commits the file. `--update`
-              # never lowers a regressed file (see scripts/mutation/baseline.ts's `nextBaseline`),
-              # so running it regardless of the check's outcome is safe — a regression stays
-              # failing above, it just also gets an honest, committed record of tonight's number.
+              # The check above only reads; this step WRITES a new or improved score into the
+              # checkout's `mutation-baseline.json`. `--update` never lowers a regressed file (see
+              # scripts/mutation/baseline.ts's `nextBaseline`), so running it regardless of the
+              # check's outcome is safe — a regression stays failing above, it just also gets an
+              # honest record of tonight's number.
+              id: record
               if: always()
-              run: |
-                  npm run test:mutation:baseline
-                  git config user.name 'github-actions[bot]'
-                  git config user.email 'github-actions[bot]@users.noreply.github.com'
-                  if git diff --quiet -- mutation-baseline.json; then
-                    echo "no change to mutation-baseline.json"
-                    exit 0
-                  fi
-                  git add mutation-baseline.json
-                  git commit -m "chore(mutation): fold tonight's sweep into the baseline"
-                  git push
+              run: npm run test:mutation:baseline
+
+            - name: Upload this run's baseline
+              # The record leaves as an artifact, never as a commit: `npm run test:mutation:pull`
+              # fetches the newest one, and a person commits it. Name and path are what
+              # scripts/mutation/github-artifacts.ts and pull-baseline.ts expect.
+              # https://github.com/actions/upload-artifact
+              if: always() && steps.record.outcome == 'success'
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              with:
+                  name: mutation-baseline
+                  path: mutation-baseline.json
+                  retention-days: 90
 
             - name: Upload mutation report
               # Uploaded even on failure: a run that trips the break threshold is exactly the

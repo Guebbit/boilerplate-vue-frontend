@@ -175,6 +175,22 @@ there.
 
 A run re-executes the unit suite once per mutant. `.github/workflows/mutation.yml` is a separate workflow from `ci.yml` — **nightly** (`cron: '30 3 * * *'`) plus manual dispatch. Kept structurally separate rather than folded into `ci.yml` behind a conditional: a separate file can't become a PR gate by accident.
 
+## The nightly holds no write access {#the-nightly-holds-no-write-access}
+
+The nightly runs `npm ci`, and an install script of any package in the tree runs with whatever
+token the job holds. A token that can push to `main`, next to hundreds of packages' install
+scripts, is the supply-chain shape GitHub's own hardening guide warns against
+([GitHub Security Lab](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/)).
+
+So the job is `contents: read`, its checkout sets `persist-credentials: false`, and the updated
+baseline leaves as the `mutation-baseline` artifact (kept 90 days). Bringing it home is one
+command and a commit:
+
+```bash
+npm run test:mutation:pull   # newest unexpired baseline from a run on main; needs `gh auth login`
+git diff mutation-baseline.json
+```
+
 ## Concurrency
 
 `stryker.config.json`'s `concurrency` is only the **fallback** for a bare `npx stryker run`. `npm run test:mutation` goes through `scripts/mutation/run-tests.ts`, which reads `STRYKER_CONCURRENCY` from `.env` and passes it as `--concurrency` — and an explicit CLI flag always wins over the value in the file. The number is a property of the machine, not the project, which is why it lives in `.env` rather than the committed config.
@@ -384,16 +400,18 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 
 ## File map
 
-| Path                                 | Contents                                                                                |
-| ------------------------------------ | --------------------------------------------------------------------------------------- |
-| `stryker.config.json`                | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
-| `scripts/mutation/run-tests.ts`      | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
-| `mutation-baseline.json`             | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
-| `scripts/mutation/baseline.ts`       | Ratchet logic — scoring, comparison, the "never lower" rule                             |
-| `scripts/mutation/check-baseline.ts` | CLI for the two commands below                                                          |
-| `.github/workflows/mutation.yml`     | Nightly schedule + dispatch, uploads the report even on failure                         |
-| `reports/mutation/index.html`        | Human-readable report (generated per run)                                               |
-| `reports/mutation/mutation.json`     | Machine-readable report the ratchet reads                                               |
+| Path                                   | Contents                                                                                |
+| -------------------------------------- | --------------------------------------------------------------------------------------- |
+| `stryker.config.json`                  | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
+| `scripts/mutation/run-tests.ts`        | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
+| `mutation-baseline.json`               | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
+| `scripts/mutation/baseline.ts`         | Ratchet logic — scoring, comparison, the "never lower" rule                             |
+| `scripts/mutation/check-baseline.ts`   | CLI for the two commands below                                                          |
+| `scripts/mutation/pull-baseline.ts`    | `npm run test:mutation:pull` — the newest uploaded baseline, written over the file      |
+| `scripts/mutation/github-artifacts.ts` | Which uploaded baseline that is: the newest unexpired one from a run on `main`          |
+| `.github/workflows/mutation.yml`       | Nightly schedule + dispatch, read-only; uploads the report and the baseline             |
+| `reports/mutation/index.html`          | Human-readable report (generated per run)                                               |
+| `reports/mutation/mutation.json`       | Machine-readable report the ratchet reads                                               |
 
 ## Commands
 
@@ -402,6 +420,7 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 | `npm run test:mutation`          | Full run — slow, meant for a nightly or before a refactor, never mid-PR          |
 | `npm run test:mutation:check`    | Compare the last run against the per-file baseline. Fails naming what regressed. |
 | `npm run test:mutation:baseline` | Record the last run (improvements only). Use when `mutate` changed, and say why. |
+| `npm run test:mutation:pull`     | Download the newest baseline the nightly uploaded. Review the diff, then commit. |
 
 ## Related pages
 
