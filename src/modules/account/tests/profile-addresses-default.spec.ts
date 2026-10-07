@@ -9,7 +9,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
+import ProfileAddresses from '../components/ProfileAddresses.vue';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

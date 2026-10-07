@@ -4,7 +4,7 @@
  * and every other value, however it is spelled, leaves it off.
  */
 import { describe, expect, it } from 'vitest';
-import { stockPollIntervalMs } from '@/modules/cart/domain';
+import { stockPollIntervalMs } from '../domain';
 
 describe('stockPollIntervalMs', () => {
     it.each([

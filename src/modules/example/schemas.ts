@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { translate } from '@/i18n';
 import { createExampleBodyBodyMax, createExampleBodyTitleMax } from '@api/schemas';
-import { EXAMPLE_STATUSES } from '@/modules/example/domain';
+import { EXAMPLE_STATUSES } from './domain';
 
 /**
  * A title: required, and no longer than the contract allows.

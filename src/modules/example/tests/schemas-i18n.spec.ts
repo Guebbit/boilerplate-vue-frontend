@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { exampleCreateSchema } from '@/modules/example/schemas';
+import { exampleCreateSchema } from '../schemas';
 import enMessages from '../locales/en.json';
 import itMessages from '../locales/it.json';
 

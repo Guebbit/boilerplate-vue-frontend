@@ -20,7 +20,7 @@ export default [
             can: ['read', 'ObservabilitySnapshot'],
             title: 'admin-page.page-title'
         },
-        component: () => import('@/modules/observability/views/Admin.vue')
+        component: () => import('./views/Admin.vue')
     },
     {
         path: 'audit',
@@ -34,7 +34,7 @@ export default [
             // its own `PageHeader` for it.
             customHero: true
         },
-        component: () => import('@/modules/observability/views/AuditLog.vue')
+        component: () => import('./views/AuditLog.vue')
     },
     {
         path: 'playground/realtime',
@@ -44,6 +44,6 @@ export default [
             can: ['read', 'ObservabilitySnapshot'],
             title: 'realtime-playground-page.page-title'
         },
-        component: () => import('@/modules/observability/views/RealtimePlayground.vue')
+        component: () => import('./views/RealtimePlayground.vue')
     }
 ] satisfies RouteRecordRaw[];

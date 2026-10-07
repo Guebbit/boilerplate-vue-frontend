@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { steppedQuantity } from '@/modules/cart/domain';
+import { steppedQuantity } from '../domain';
 
 describe('steppedQuantity', () => {
     it('steps up', () => {

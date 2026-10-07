@@ -13,7 +13,7 @@ import type { Component } from 'vue';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { SLOTS_KEY } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import ProductCard from '@/modules/products/components/ProductCard.vue';
+import ProductCard from '../components/ProductCard.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';

@@ -22,7 +22,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { downloadBlob } from '@guebbit/js-toolkit';
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { absentIs } from '@/infrastructure/utils/errors.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';

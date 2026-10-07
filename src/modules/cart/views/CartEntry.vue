@@ -8,8 +8,8 @@
  */
 import { storeToRefs } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import Cart from '@/modules/cart/views/Cart.vue';
-import GuestCart from '@/modules/cart/components/GuestCart.vue';
+import Cart from './Cart.vue';
+import GuestCart from '../components/GuestCart.vue';
 
 /**
  * Whether anyone is signed in: the one fact that decides which cart to show.

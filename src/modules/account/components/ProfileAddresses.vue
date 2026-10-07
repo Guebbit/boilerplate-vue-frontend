@@ -26,7 +26,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
+import { useAddressesStore } from '../stores/addresses.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Address } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';

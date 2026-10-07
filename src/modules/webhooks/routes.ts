@@ -19,7 +19,7 @@ export default [
             can: ['read', 'WebhookSubscription'],
             title: 'webhooks-list-page.page-title'
         },
-        component: () => import('@/modules/webhooks/views/WebhooksList.vue')
+        component: () => import('./views/WebhooksList.vue')
     },
     {
         path: 'webhooks/subscriptions/create',
@@ -29,7 +29,7 @@ export default [
             can: ['create', 'WebhookSubscription'],
             title: 'webhook-create-page.page-title'
         },
-        component: () => import('@/modules/webhooks/views/WebhookCreate.vue')
+        component: () => import('./views/WebhookCreate.vue')
     },
     {
         path: 'webhooks/subscriptions/:id',
@@ -39,7 +39,7 @@ export default [
             can: ['read', 'WebhookSubscription'],
             title: 'webhook-target-page.page-title'
         },
-        component: () => import('@/modules/webhooks/views/WebhookTarget.vue'),
+        component: () => import('./views/WebhookTarget.vue'),
         props: true
     },
     {
@@ -50,7 +50,7 @@ export default [
             can: ['update', 'WebhookSubscription'],
             title: 'webhook-edit-page.page-title'
         },
-        component: () => import('@/modules/webhooks/views/WebhookEdit.vue'),
+        component: () => import('./views/WebhookEdit.vue'),
         props: true
     },
     {
@@ -61,6 +61,6 @@ export default [
             can: ['read', 'WebhookSubscription'],
             title: 'webhook-deliveries-page.page-title'
         },
-        component: () => import('@/modules/webhooks/views/WebhookDeliveries.vue')
+        component: () => import('./views/WebhookDeliveries.vue')
     }
 ] satisfies RouteRecordRaw[];

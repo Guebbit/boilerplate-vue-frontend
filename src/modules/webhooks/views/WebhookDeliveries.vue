@@ -20,11 +20,11 @@ import { onMounted, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useWebhooksStore } from '@/modules/webhooks/store';
+import { useWebhooksStore } from '../store';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useQuerySyncedFilters } from '@/ui/composables/use-query-synced-filters.ts';
-import WebhookDeliveriesFilters from '@/modules/webhooks/components/WebhookDeliveriesFilters.vue';
-import type { WebhookDeliveryFilters } from '@/modules/webhooks/types.ts';
+import WebhookDeliveriesFilters from '../components/WebhookDeliveriesFilters.vue';
+import type { WebhookDeliveryFilters } from '../types.ts';
 import type { WebhookDeliveryStatus } from '@types';
 
 /**

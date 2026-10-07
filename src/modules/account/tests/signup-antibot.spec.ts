@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
-import Signup from '@/modules/account/views/Signup.vue';
+import Signup from '../views/Signup.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { orvalMutator } from '@/infrastructure/http';

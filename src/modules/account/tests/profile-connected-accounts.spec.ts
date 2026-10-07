@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
-import ProfileConnectedAccounts from '@/modules/account/components/ProfileConnectedAccounts.vue';
+import ProfileConnectedAccounts from '../components/ProfileConnectedAccounts.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -20,7 +20,7 @@ const unlinkProvider = vi.fn();
 /** What the mocked store currently lists. */
 let links: { provider: string; connectedAt: string }[] = [];
 
-vi.mock('@/modules/account/stores/oauth-links.ts', () => ({
+vi.mock('../stores/oauth-links.ts', () => ({
     useOAuthLinksStore: () => ({
         links,
         fetchLinks: vi.fn(),

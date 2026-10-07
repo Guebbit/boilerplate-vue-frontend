@@ -23,17 +23,10 @@ import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
-import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import {
-    useOAuthProvidersStore,
-    oauthStartUrl,
-    providerLabel
-} from '@/modules/account/stores/oauth.ts';
-import {
-    usePostLoginRedirect,
-    isSameOriginPath
-} from '@/modules/account/composables/use-post-login-redirect.ts';
+import { useAuthStore } from '../stores/auth.ts';
+import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/oauth.ts';
+import { usePostLoginRedirect, isSameOriginPath } from '../composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';

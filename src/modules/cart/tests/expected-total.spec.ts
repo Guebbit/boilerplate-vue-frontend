@@ -5,12 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import {
-    checkoutFingerprint,
-    expectedTotalOf,
-    fromMinorUnits,
-    toMinorUnits
-} from '@/modules/cart/domain';
+import { checkoutFingerprint, expectedTotalOf, fromMinorUnits, toMinorUnits } from '../domain';
 import type { CartResponse } from '@types';
 import { asStub } from '../../../../tests/support/stub.ts';
 

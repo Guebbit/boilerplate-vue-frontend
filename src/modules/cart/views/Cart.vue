@@ -22,33 +22,29 @@ import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { useCartStore } from '@/modules/cart/store.ts';
+import { useCartStore } from '../store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
 // clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.
-import { MIN_LINE_QUANTITY, classifyCheckoutError, fromMinorUnits } from '@/modules/cart/domain';
-import type {
-    CheckoutShortfallLine,
-    ExpectedTotal,
-    UnavailableCartLine
-} from '@/modules/cart/domain';
+import { MIN_LINE_QUANTITY, classifyCheckoutError, fromMinorUnits } from '../domain';
+import type { CheckoutShortfallLine, ExpectedTotal, UnavailableCartLine } from '../domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity.ts';
-import { useCartStockPoll } from '@/modules/cart/composables/use-cart-stock-poll.ts';
-import { useCartFocusRefresh } from '@/modules/cart/composables/use-cart-focus-refresh.ts';
+import { useLineQuantity } from '../composables/use-line-quantity.ts';
+import { useCartStockPoll } from '../composables/use-cart-stock-poll.ts';
+import { useCartFocusRefresh } from '../composables/use-cart-focus-refresh.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import {
     clearCheckoutDrafts,
     readCheckoutDraft,
     writeCheckoutDraft
-} from '@/modules/cart/composables/use-checkout-draft.ts';
+} from '../composables/use-checkout-draft.ts';
 import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import type { CartResponseItem, PaymentMethodId } from '@types';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import MergeReportAlert from '@/modules/cart/components/MergeReportAlert.vue';
+import MergeReportAlert from '../components/MergeReportAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
 import { AddressPicker } from '@/modules/account';

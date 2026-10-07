@@ -242,6 +242,17 @@ const layerDependencyPolicies = [
         message:
             'A module does not import its own barrel — the export is one relative import away from the real file.'
     },
+    // Inside a module, its own files are reached by RELATIVE path; `@/modules/<name>` is the door
+    // for a SIBLING only (Feature-Sliced Design, Nx). Matches on the import string, so it also
+    // catches the alias spelling of a file the allow above already lets through.
+    {
+        from: { element: { type: 'module' } },
+        disallow: {
+            dependency: { source: '@/modules/{{ from.element.captured.module }}{,/**}' }
+        },
+        message:
+            'Inside a module, import its own files by relative path; `@/modules/<name>` is for reaching a sibling.'
+    },
 
     // The domain layer: plain TypeScript over plain data, reaching only its own folder (`types`
     // above already covers the one thing outside it this codebase lets it take).

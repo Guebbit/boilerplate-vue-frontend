@@ -23,24 +23,17 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
-import {
-    useOAuthProvidersStore,
-    oauthStartUrl,
-    providerLabel
-} from '@/modules/account/stores/oauth.ts';
+import { useAuthStore } from '../stores/auth.ts';
+import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/oauth.ts';
 import { RouterLink, useRoute } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import {
-    usePostLoginRedirect,
-    isSameOriginPath
-} from '@/modules/account/composables/use-post-login-redirect.ts';
+import { usePostLoginRedirect, isSameOriginPath } from '../composables/use-post-login-redirect.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import PasswordStrengthMeter from '@/modules/account/components/PasswordStrengthMeter.vue';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
-import { usePasswordBreachCheck } from '@/modules/account/composables/use-password-breach-check.ts';
+import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';

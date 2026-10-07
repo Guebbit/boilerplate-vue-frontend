@@ -18,7 +18,7 @@ export default [
             can: ['read', 'ApiKey'],
             title: 'api-keys-list-page.page-title'
         },
-        component: () => import('@/modules/api-keys/views/ApiKeysList.vue')
+        component: () => import('./views/ApiKeysList.vue')
     },
     {
         path: 'api-keys/create',
@@ -28,6 +28,6 @@ export default [
             can: ['create', 'ApiKey'],
             title: 'api-key-create-page.page-title'
         },
-        component: () => import('@/modules/api-keys/views/ApiKeyCreate.vue')
+        component: () => import('./views/ApiKeyCreate.vue')
     }
 ] satisfies RouteRecordRaw[];

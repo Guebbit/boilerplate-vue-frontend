@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
 import { orvalMutator } from '@/infrastructure/http';
-import { useReturnsStore } from '@/modules/returns/store.ts';
+import { useReturnsStore } from '../store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import {

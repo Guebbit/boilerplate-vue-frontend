@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
+import { useTwoFactorStore } from '../stores/two-factor.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

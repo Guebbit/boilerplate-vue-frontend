@@ -15,7 +15,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import Wishlist from '@/modules/wishlist/views/Wishlist.vue';
+import Wishlist from '../views/Wishlist.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useWishlistStore } from '../store';
 import { useProductsStore } from '@/modules/products';

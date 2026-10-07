@@ -9,7 +9,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useLocalesStore } from '@/modules/locales/store.ts';
+import { useLocalesStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {

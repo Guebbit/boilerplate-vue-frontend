@@ -7,8 +7,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import ProfileExportData from '@/modules/account/components/ProfileExportData.vue';
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import ProfileExportData from '../components/ProfileExportData.vue';
+import { useProfileStore } from '../stores/profile.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

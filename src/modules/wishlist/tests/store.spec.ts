@@ -10,7 +10,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
-import { useWishlistStore } from '@/modules/wishlist/store.ts';
+import { useWishlistStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

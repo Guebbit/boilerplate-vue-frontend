@@ -8,7 +8,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { IN_FLIGHT_RETRY_DELAYS_MS } from '@/modules/cart/store';
+import { IN_FLIGHT_RETRY_DELAYS_MS } from '../store';
 import { checkout as apiCheckout, getCart } from '@api';
 import {
     aCart,

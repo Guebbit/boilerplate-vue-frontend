@@ -21,12 +21,12 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useExampleStore } from '@/modules/example/store';
+import { useExampleStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
-import { EXAMPLE_STATUSES } from '@/modules/example/domain';
+import { EXAMPLE_STATUSES } from '../domain';
 import type { Example, ExampleStatus } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';

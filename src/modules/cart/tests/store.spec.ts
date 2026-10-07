@@ -18,7 +18,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useCartStore } from '@/modules/cart/store';
+import { useCartStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { nextTick } from 'vue';

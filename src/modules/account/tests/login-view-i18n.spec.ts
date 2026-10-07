@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
-import Login from '@/modules/account/views/Login.vue';
+import Login from '../views/Login.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { usersSchema } from '@/modules/users';

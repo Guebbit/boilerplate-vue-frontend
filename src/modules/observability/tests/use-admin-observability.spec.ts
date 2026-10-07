@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getObservabilityHealth, getObservabilityMetricsOverview } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@api';
 import * as schemas from '@api/schemas';
-import { useAdminObservability } from '@/modules/observability/composables/use-admin-observability';
+import { useAdminObservability } from '../composables/use-admin-observability';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 /**

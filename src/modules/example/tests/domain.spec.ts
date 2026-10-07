@@ -4,7 +4,7 @@
  * lifecycle, so a change there is a change here; the server stays the judge either way.
  */
 import { describe, expect, it } from 'vitest';
-import { EXAMPLE_STATUSES, NEXT_STATUSES } from '@/modules/example/domain';
+import { EXAMPLE_STATUSES, NEXT_STATUSES } from '../domain';
 
 describe('NEXT_STATUSES', () => {
     it.each([

@@ -9,7 +9,7 @@ import {
     clearCheckoutDrafts,
     readCheckoutDraft,
     writeCheckoutDraft
-} from '@/modules/cart/composables/use-checkout-draft';
+} from '../composables/use-checkout-draft';
 
 beforeEach(() => {
     sessionStorage.clear();

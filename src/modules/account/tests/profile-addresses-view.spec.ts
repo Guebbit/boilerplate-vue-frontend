@@ -9,8 +9,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
-import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
+import ProfileAddresses from '../components/ProfileAddresses.vue';
+import { useAddressesStore } from '../stores/addresses.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

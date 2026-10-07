@@ -8,7 +8,7 @@
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { usePasswordStrength } from '@/modules/account/composables/use-password-strength.ts';
+import { usePasswordStrength } from '../composables/use-password-strength.ts';
 
 /**
  * Component props.

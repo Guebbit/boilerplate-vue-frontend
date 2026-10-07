@@ -6,7 +6,7 @@
  * stream.
  */
 import { storeToRefs } from 'pinia';
-import { useRealtimeObservabilityStore } from '@/modules/observability/store';
+import { useRealtimeObservabilityStore } from './store';
 import { createSseClient } from '@/infrastructure/create-sse-client';
 import { OBSERVABILITY_CHANNELS } from '@types';
 import { instance } from '@/infrastructure/http/client';

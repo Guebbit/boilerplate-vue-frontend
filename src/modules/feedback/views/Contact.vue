@@ -18,7 +18,7 @@ import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useFeedbackStore } from '@/modules/feedback/store.ts';
+import { useFeedbackStore } from '../store.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';

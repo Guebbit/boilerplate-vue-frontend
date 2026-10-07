@@ -23,7 +23,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useOrdersStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { OrderReferenceSearch } from '@/modules/payments';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';

@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia';
 import { Heart, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { useWishlistStore } from '@/modules/wishlist/store.ts';
+import { useWishlistStore } from '../store.ts';
 import { useProductLines } from '@/modules/products';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';

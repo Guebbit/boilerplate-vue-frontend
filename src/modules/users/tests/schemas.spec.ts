@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { signupBodyPasswordMax, signupBodyPasswordMin, signupBodyUsernameMin } from '@api/schemas';
-import { usersPasswordSchema, usersSchema } from '@/modules/users/schemas';
+import { usersPasswordSchema, usersSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validUser = {

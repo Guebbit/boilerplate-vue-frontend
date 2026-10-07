@@ -26,12 +26,9 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { useInventoryStore } from '@/modules/inventory/store.ts';
+import { useInventoryStore } from '../store.ts';
 import { useProductLines } from '@/modules/products';
-import {
-    useProductPicker,
-    useProductPickerPin
-} from '@/modules/inventory/composables/use-product-picker.ts';
+import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';

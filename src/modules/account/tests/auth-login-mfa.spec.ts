@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useAuthStore } from '../stores/auth.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';

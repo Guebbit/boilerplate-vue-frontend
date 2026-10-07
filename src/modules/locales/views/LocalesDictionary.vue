@@ -23,14 +23,14 @@ import { ArrowLeft, Check, Plus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { useLocalesStore } from '@/modules/locales/store.ts';
+import { useLocalesStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
+import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { useDictionaryAggregation } from '@/modules/locales/composables/use-dictionary-aggregation.ts';
-import { useDictionaryCellEditor } from '@/modules/locales/composables/use-dictionary-cell-editor.ts';
+import { useDictionaryAggregation } from '../composables/use-dictionary-aggregation.ts';
+import { useDictionaryCellEditor } from '../composables/use-dictionary-cell-editor.ts';
 import type { LocaleCapability } from '@types';
 
 /**

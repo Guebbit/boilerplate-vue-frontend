@@ -26,11 +26,8 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import QRCode from 'qrcode';
-import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
-import {
-    useExpiryCountdown,
-    useCountdownAnnouncement
-} from '@/modules/account/composables/use-countdown.ts';
+import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useExpiryCountdown, useCountdownAnnouncement } from '../composables/use-countdown.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

@@ -7,8 +7,8 @@
  * dictionary entry was reached and with what, not the English wording (the store spec covers that).
  */
 import { describe, expect, it } from 'vitest';
-import { describeNotification, productName } from '@/modules/notifications/domain';
-import type { Translate } from '@/modules/notifications/domain';
+import { describeNotification, productName } from '../domain';
+import type { Translate } from '../domain';
 
 /**
  * Prints the key and its named values, in the order they were given.

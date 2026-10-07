@@ -17,12 +17,12 @@ import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { useRoleOptions } from '@/modules/users/composables/use-role-options.ts';
+import { useRoleOptions } from '../composables/use-role-options.ts';
 import type {
     UserAccessDialogRequestOptions,
     UserAccessDialogResult,
     UserAccessDialogTarget
-} from '@/modules/users/composables/use-user-access-dialog.ts';
+} from '../composables/use-user-access-dialog.ts';
 
 /**
  * Who the dialog acts on, and how it was opened — both `undefined` while the dialog is closed.

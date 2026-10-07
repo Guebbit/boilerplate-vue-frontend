@@ -19,7 +19,7 @@ import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useProductsStore } from '@/modules/products/store';
+import { useProductsStore } from '../store';
 import { useSlot } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { Calendar, Circle, Clock, Euro, FileText, Hash, Package, Tag } from 'lucide-vue-next';

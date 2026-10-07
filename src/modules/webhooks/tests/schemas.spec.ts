@@ -4,7 +4,7 @@
  * messages themselves belong to `schemas-i18n.spec.ts`; these are the rules.
  */
 import { describe, expect, it } from 'vitest';
-import { webhookCreateSchema, webhookEditSchema } from '@/modules/webhooks/schemas';
+import { webhookCreateSchema, webhookEditSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validSubscription = {

@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 
-import ProfileAvatar from '@/modules/account/components/ProfileAvatar.vue';
+import ProfileAvatar from '../components/ProfileAvatar.vue';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -22,7 +22,7 @@ const profile = ref<{ imageUrl?: string } | undefined>();
  * A stand-in store: the panel only reads `profile` and the two loading flags, and the real store
  * would need a transport to seed.
  */
-vi.mock('@/modules/account/stores/profile.ts', () => ({
+vi.mock('../stores/profile.ts', () => ({
     useProfileStore: () => ({
         profile,
         uploadingAvatar: ref(false),

@@ -28,9 +28,9 @@ import {
     removeGuestLines,
     setGuestLineQuantity,
     subtractGuestLines
-} from '@/modules/cart/domain';
-import type { GuestCartLine } from '@/modules/cart/domain';
-import { readGuestCart, writeGuestCart } from '@/modules/cart/composables/guest-cart-storage';
+} from '../domain';
+import type { GuestCartLine } from '../domain';
+import { readGuestCart, writeGuestCart } from '../composables/guest-cart-storage';
 
 /**
  * One seed for the file. `endOnFailure` stops at the first shrunk counterexample, short enough to

@@ -9,8 +9,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { mount } from '@vue/test-utils';
-import { provideExample, providedExampleKey, useProvidedExample } from '@/modules/example/provided';
-import type { ProvidedExample } from '@/modules/example/provided';
+import { provideExample, providedExampleKey, useProvidedExample } from '../provided';
+import type { ProvidedExample } from '../provided';
 import type { Example } from '@types';
 
 /**

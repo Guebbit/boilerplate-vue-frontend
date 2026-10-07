@@ -13,6 +13,6 @@ export default [
         path: 'wishlist',
         name: 'Wishlist',
         meta: { access: 'auth', title: 'wishlist-page.page-title' },
-        component: () => import('@/modules/wishlist/views/Wishlist.vue')
+        component: () => import('./views/Wishlist.vue')
     }
 ] satisfies RouteRecordRaw[];

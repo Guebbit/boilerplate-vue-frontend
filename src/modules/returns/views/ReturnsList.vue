@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia';
 import { Search, Undo2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { useReturnsStore } from '@/modules/returns/store.ts';
+import { useReturnsStore } from '../store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';

@@ -7,9 +7,9 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import AddToCartButton from '@/modules/cart/components/AddToCartButton.vue';
-import { useCartStore } from '@/modules/cart/store.ts';
-import { MAX_GUEST_LINES } from '@/modules/cart/domain';
+import AddToCartButton from '../components/AddToCartButton.vue';
+import { useCartStore } from '../store.ts';
+import { MAX_GUEST_LINES } from '../domain';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { addCartItem } from '@api';
 import { i18n, loadLocale } from '@/i18n';

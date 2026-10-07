@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { effectScope, ref } from 'vue';
 import type { EffectScope } from 'vue';
-import { useCountdownAnnouncement } from '@/modules/account/composables/use-countdown.ts';
+import { useCountdownAnnouncement } from '../composables/use-countdown.ts';
 
 /** Renders a threshold into the same shape a caller's own i18n `message` callback would. */
 const message = (seconds: number) => `expires in ${seconds}s`;

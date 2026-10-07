@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { omit } from 'lodash-es';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { useLocalesStore } from '@/modules/locales/store.ts';
+import { useLocalesStore } from '../store.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { LocaleCapability, LocaleEntry } from '@types';
 

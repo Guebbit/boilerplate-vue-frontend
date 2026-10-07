@@ -11,9 +11,9 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import axe from 'axe-core';
-import Cart from '@/modules/cart/views/Cart.vue';
-import { useCartStore } from '@/modules/cart/store.ts';
-import type { MergeReportLine } from '@/modules/cart/domain';
+import Cart from '../views/Cart.vue';
+import { useCartStore } from '../store.ts';
+import type { MergeReportLine } from '../domain';
 import { useProductsStore } from '@/modules/products';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout } from '@api';
@@ -21,10 +21,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
 import { useSessionStore, type SessionViewer } from '@/infrastructure/session.ts';
-import {
-    readCheckoutDraft,
-    writeCheckoutDraft
-} from '@/modules/cart/composables/use-checkout-draft.ts';
+import { readCheckoutDraft, writeCheckoutDraft } from '../composables/use-checkout-draft.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';

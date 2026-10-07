@@ -11,7 +11,7 @@ import {
     readMergeAttempt,
     writeGuestCart,
     writeMergeAttempt
-} from '@/modules/cart/composables/guest-cart-storage';
+} from '../composables/guest-cart-storage';
 
 beforeEach(() => {
     localStorage.clear();

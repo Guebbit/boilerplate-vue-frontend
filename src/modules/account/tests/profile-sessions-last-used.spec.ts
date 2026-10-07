@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
-import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
+import ProfileSessions from '../components/ProfileSessions.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -22,7 +22,7 @@ const SESSION: Session = {
     lastUsedAt: '2026-09-20T10:00:00.000Z'
 };
 
-vi.mock('@/modules/account/stores/sessions.ts', () => ({
+vi.mock('../stores/sessions.ts', () => ({
     useAccountSessionsStore: () => ({
         sessions: [SESSION],
         fetchSessions: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('pinia', async (importOriginal) => ({
     storeToRefs: (store: unknown) => store
 }));
 
-vi.mock('@/modules/account/stores/auth.ts', () => ({
+vi.mock('../stores/auth.ts', () => ({
     useAuthStore: () => ({ logoutEverywhere: vi.fn() })
 }));
 

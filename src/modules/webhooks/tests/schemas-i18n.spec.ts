@@ -13,7 +13,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { webhookCreateSchema } from '@/modules/webhooks/schemas';
+import { webhookCreateSchema } from '../schemas';
 import enMessages from '../locales/en.json';
 import itMessages from '../locales/it.json';
 

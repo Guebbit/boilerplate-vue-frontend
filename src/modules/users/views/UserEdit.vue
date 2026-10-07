@@ -31,10 +31,10 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { useUsersStore } from '@/modules/users/store';
-import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
-import { usersSchema } from '@/modules/users/schemas.ts';
-import { useRoleOptions } from '@/modules/users/composables/use-role-options.ts';
+import { useUsersStore } from '../store';
+import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
+import { usersSchema } from '../schemas.ts';
+import { useRoleOptions } from '../composables/use-role-options.ts';
 import { supportedLanguages } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { z } from 'zod';
@@ -46,7 +46,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import UserAccessDialog from '@/modules/users/components/UserAccessDialog.vue';
+import UserAccessDialog from '../components/UserAccessDialog.vue';
 import {
     EMPTY_VALUE,
     formatText,
@@ -110,7 +110,7 @@ interface UserEditForm {
  * closed set of codes, enforced by the select's own options, not by string validation).
  *
  * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
- * without being rebuilt — see `@/modules/users/schemas.ts`.
+ * without being rebuilt — see `../schemas.ts`.
  */
 const editSchema = usersSchema.pick({ username: true, phone: true, website: true }).extend({
     role: z.string().optional(),

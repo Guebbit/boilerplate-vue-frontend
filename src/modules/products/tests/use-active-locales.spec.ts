@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getLocales } from '@api';
-import { useActiveLocales } from '@/modules/products/composables/use-active-locales.ts';
+import { useActiveLocales } from '../composables/use-active-locales.ts';
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<object>()),

@@ -18,7 +18,7 @@ export default {
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useAuthStore } from '../stores/auth.ts';
 import { usersSchema } from '@/modules/users';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';

@@ -21,7 +21,7 @@ import { storeToRefs } from 'pinia';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { useInventoryStore } from '@/modules/inventory/store.ts';
+import { useInventoryStore } from '../store.ts';
 import type { InventoryLevel } from '@types';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';

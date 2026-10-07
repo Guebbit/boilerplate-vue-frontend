@@ -10,7 +10,7 @@ import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAsyncAction } from '@guebbit/vue-toolkit';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
 import type { AuditEntryItem, AuditEventItem } from '@types';
-import type { AdminAuditFilters } from '@/modules/observability/types.ts';
+import type { AdminAuditFilters } from '../types.ts';
 import { translate } from '@/i18n';
 
 /**

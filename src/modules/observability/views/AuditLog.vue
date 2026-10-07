@@ -21,7 +21,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import PageHeader from '@/ui/molecules/PageHeader.vue';
-import AdminAuditTab from '@/modules/observability/components/AdminAuditTab.vue';
+import AdminAuditTab from '../components/AdminAuditTab.vue';
 
 /**
  * Translation function.

@@ -20,7 +20,7 @@ import { effectScope, nextTick } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { i18n } from '@/i18n';
 
-import { useProductsStore } from '@/modules/products/store';
+import { useProductsStore } from '../store';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {

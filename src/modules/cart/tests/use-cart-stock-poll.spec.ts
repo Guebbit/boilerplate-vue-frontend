@@ -9,8 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { effectScope, nextTick } from 'vue';
 import type { EffectScope } from 'vue';
-import { useCartStockPoll } from '@/modules/cart/composables/use-cart-stock-poll';
-import { useCartStore } from '@/modules/cart/store';
+import { useCartStockPoll } from '../composables/use-cart-stock-poll';
+import { useCartStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { getCart } from '@api';
 import {

@@ -33,7 +33,8 @@ this kind of application, which is exactly what `src/app` is for. `src/app/route
 names no individual domain: it walks the registry.
 
 A module may import another module's **public barrel** — `@/modules/<name>` — and never its
-internals. That rule is generated per module from the contents of `src/modules/` as a
+internals. Inside a module the opposite holds: its own files are reached by RELATIVE path, and
+`@/modules/<own>` or `@/modules/<own>/…` is refused (Feature-Sliced Design, Nx). That rule is generated per module from the contents of `src/modules/` as a
 `boundaries/dependencies` policy, so adding a domain does not edit the lint config either.
 
 Two modules that each need the other are not a dependency pair: either they are one module, or one

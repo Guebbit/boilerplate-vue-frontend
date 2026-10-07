@@ -14,7 +14,7 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
-import type { WebhookDeliveryFilters } from '@/modules/webhooks/types.ts';
+import type { WebhookDeliveryFilters } from '../types.ts';
 import type { WebhookDelivery, WebhookDeliveryStatus, WebhookSubscription } from '@types';
 
 /**

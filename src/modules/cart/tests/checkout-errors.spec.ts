@@ -7,7 +7,7 @@
  * malformed or absent `errors` field can take, since the value crosses a wire boundary untyped.
  */
 import { describe, it, expect } from 'vitest';
-import { classifyCheckoutError } from '@/modules/cart/domain';
+import { classifyCheckoutError } from '../domain';
 
 describe('classifyCheckoutError', () => {
     it('names CART_CHANGED', () => {

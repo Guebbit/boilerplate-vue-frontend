@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useProfileStore } from '../stores/profile.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';

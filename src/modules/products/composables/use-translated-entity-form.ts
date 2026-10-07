@@ -18,7 +18,7 @@ import {
     translationTabErrorCountsFromZodError,
     translationTabErrorCountsFromServerError,
     type TranslationTabErrorCounts
-} from '@/modules/products/composables/translation-tab-errors.ts';
+} from './translation-tab-errors.ts';
 import type { ProductTranslationsWrite } from '@types';
 
 /**

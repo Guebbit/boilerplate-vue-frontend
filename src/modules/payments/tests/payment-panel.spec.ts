@@ -7,8 +7,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import PaymentPanel from '@/modules/payments/components/PaymentPanel.vue';
-import { usePaymentsStore } from '@/modules/payments/store.ts';
+import PaymentPanel from '../components/PaymentPanel.vue';
+import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import type { Payment, PaymentMethodOption } from '@types';

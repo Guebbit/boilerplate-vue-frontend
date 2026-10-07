@@ -9,7 +9,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useOrdersStore } from '../store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import * as schemas from '@api/schemas';
 import {

@@ -11,7 +11,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { usePaymentsStore } from '@/modules/payments/store.ts';
+import { usePaymentsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import * as schemas from '@api/schemas';

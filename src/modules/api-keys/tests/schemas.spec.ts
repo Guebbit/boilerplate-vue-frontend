@@ -4,7 +4,7 @@
  * messages themselves belong to `schemas-i18n.spec.ts`; these are the rules.
  */
 import { describe, expect, it } from 'vitest';
-import { apiKeyCreateSchema } from '@/modules/api-keys/schemas';
+import { apiKeyCreateSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
 const validCredential = {

@@ -8,11 +8,7 @@
  * schemas are written the way they are — this is the screen where the language changes.
  */
 import { describe, expect, it } from 'vitest';
-import {
-    localesEntrySchema,
-    localesLanguageEditSchema,
-    localesLanguageSchema
-} from '@/modules/locales/schemas';
+import { localesEntrySchema, localesLanguageEditSchema, localesLanguageSchema } from '../schemas';
 
 /**
  * A create-form payload that passes, for tests that vary one field away from valid.

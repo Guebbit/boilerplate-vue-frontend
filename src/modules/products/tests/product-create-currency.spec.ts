@@ -8,7 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { VNumberInput } from 'vuetify/components';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
-import ProductCreate from '@/modules/products/views/ProductCreate.vue';
+import ProductCreate from '../views/ProductCreate.vue';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import { resetShopCurrency } from '@/infrastructure/shop-currency.ts';

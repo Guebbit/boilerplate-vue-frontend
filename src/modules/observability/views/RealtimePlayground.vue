@@ -9,9 +9,9 @@ import { computed, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import { useRealtimeObservability } from '@/modules/observability/use-realtime-observability';
+import { useRealtimeObservability } from '../use-realtime-observability';
 import { formatMegabytes, formatTime, formatUptime } from '@/infrastructure/utils/formatters.ts';
-import type { RealtimeMetricsEntry } from '@/modules/observability/types.ts';
+import type { RealtimeMetricsEntry } from '../types.ts';
 
 /**
  * Localized dictionary helper.

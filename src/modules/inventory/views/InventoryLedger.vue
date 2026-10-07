@@ -17,9 +17,9 @@ export default {
  * `focusProduct`.
  */
 import { ref } from 'vue';
-import StockMovementForm from '@/modules/inventory/components/StockMovementForm.vue';
-import StockBoard from '@/modules/inventory/components/StockBoard.vue';
-import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
+import StockMovementForm from '../components/StockMovementForm.vue';
+import StockBoard from '../components/StockBoard.vue';
+import MovementLedger from '../components/MovementLedger.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**

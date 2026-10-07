@@ -14,13 +14,13 @@ export default [
         path: 'returns',
         name: 'ReturnsList',
         meta: { access: 'auth', title: 'returns-list-page.page-title' },
-        component: () => import('@/modules/returns/views/ReturnsList.vue')
+        component: () => import('./views/ReturnsList.vue')
     },
     {
         path: 'returns/:id',
         name: 'ReturnTarget',
         meta: { access: 'auth', title: 'return-target-page.page-title' },
-        component: () => import('@/modules/returns/views/Return.vue'),
+        component: () => import('./views/Return.vue'),
         props: true
     }
 ] satisfies RouteRecordRaw[];

@@ -22,7 +22,7 @@ import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
+import { useAddressesStore } from '../stores/addresses.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';

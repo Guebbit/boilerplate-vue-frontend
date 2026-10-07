@@ -6,8 +6,8 @@
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NEXT_STATUSES } from '@/modules/example/domain';
-import { useProvidedExample } from '@/modules/example/provided.ts';
+import { NEXT_STATUSES } from '../domain';
+import { useProvidedExample } from '../provided.ts';
 
 /**
  * A separate component rather than a block of the detail screen, because a component that provides
