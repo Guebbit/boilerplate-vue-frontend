@@ -152,10 +152,14 @@ Checkout is where a short line is refused (`CART_INSUFFICIENT_STOCK`).
 - Exactly the lines that were **sent** leave the guest list once the server has answered. A product
   added while the call was out stays, and a line grown meanwhile keeps only its extra units, so
   nothing is merged twice and nothing the guest did is lost.
-- A failed call leaves the list exactly as it was, shows one toast, and tries again at the next
-  sign-in. The badge's summary is still read, so the header is not blank. The exception is a 400,
+- A failed call leaves the list exactly as it was, shows one toast, and tries again when the page
+  next loads, for as long as the same person stays signed in. The badge's summary is still read, so the header is not blank. The exception is a 400,
   413 or 422: the stored list itself is what the server refused, so retrying would only refuse
   again. Those lines are dropped, with a toast saying so.
+- A sign-out or an account switch clears the guest list and the pending merge key, so a shared
+  browser never hands one account's unmerged lines to the next. A reload's session restore is not
+  one, so the lines are kept and retried. Same as Medusa's signout and WooCommerce's `wp_logout`,
+  which end the session's cart with it.
 - Two asks in the same breath (the shell seeding twice) join one call: the guest cart is sent once.
 - The first full `GET /cart` waits for the merge, so a read answered from before it cannot overwrite
   the merged cart.

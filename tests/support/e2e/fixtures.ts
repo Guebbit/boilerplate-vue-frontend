@@ -20,6 +20,7 @@
 
 import { seedAccount, type E2ERole } from './scenario';
 import { asStub } from '../stub';
+import { sinkEndpoint } from './integrator';
 
 /**
  * The slice of Cypress' undocumented, internal `state()` API this file reads: the currently
@@ -369,13 +370,16 @@ Cypress.Commands.add('accountInRole', (role: E2ERole) =>
 );
 
 Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unknown> = {}) =>
-    adminApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
-        // Unique per test, so two specs creating one in the same run never collide on the SSRF
-        // guard's DNS resolution for the same host.
-        url: `https://example.com/hook-${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
-        eventTypes: ['order.created'],
-        ...overrides
-    })
+    // A unique path on the seeded sink's origin: the SSRF guard exempts that origin, so the
+    // subscription never needs public DNS. `overrides` still wins.
+    sinkEndpoint(`/hook-${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`).then(
+        (url) =>
+            adminApi<WebhookSubscriptionLike>('/webhooks/subscriptions', 'POST', {
+                url,
+                eventTypes: ['order.created'],
+                ...overrides
+            })
+    )
 );
 
 Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>

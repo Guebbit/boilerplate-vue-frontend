@@ -111,13 +111,13 @@ closing tab cannot lose it and a console cannot forge it. The names live in the 
 
 ### Environment variables
 
-| Variable                | Purpose                                                              |
-| ----------------------- | -------------------------------------------------------------------- |
-| `VITE_FARO_URL`         | Grafana Alloy Faro receiver URL (empty = Faro disabled)              |
-| `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)                       |
-| `VITE_FARO_APP_VERSION` | App version reported to Faro (default: `package.json`'s version)     |
-| `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                               |
-| `VITE_UMAMI_WEBSITE_ID` | Umami website id (empty = Umami disabled)                            |
-| `VITE_UMAMI_SRC`        | Umami tracker script URL (default `http://localhost:3080/script.js`) |
+| Variable                | Purpose                                                          |
+| ----------------------- | ---------------------------------------------------------------- |
+| `VITE_FARO_URL`         | Grafana Alloy Faro receiver URL (empty = Faro disabled)          |
+| `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)                   |
+| `VITE_FARO_APP_VERSION` | App version reported to Faro (default: `package.json`'s version) |
+| `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                           |
+| `VITE_UMAMI_WEBSITE_ID` | Umami website id (empty = Umami disabled)                        |
+| `VITE_UMAMI_SRC`        | Umami tracker script URL (required with the website id)          |
 
 Trace propagation targets `VITE_API_URL`.

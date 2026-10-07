@@ -39,6 +39,7 @@ const installUmamiTracker = () => {
 const readyStore = () => {
     vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
     vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
+    vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
     const store = useObservabilityStore();
     store.initUmami();
     return store;
@@ -68,6 +69,7 @@ describe('useObservabilityStore', () => {
 
         it('withholds the tracker and sets umami.disabled without consent', () => {
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
 
             expect(useObservabilityStore().setUmamiConsent(false)).toBe(false);
             expect(document.querySelector('script[data-website-id]')).toBeNull();
@@ -84,6 +86,7 @@ describe('useObservabilityStore', () => {
 
         it('ignores consent when VITE_UMAMI_REQUIRE_CONSENT is false', () => {
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
             vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'false');
 
             expect(useObservabilityStore().setUmamiConsent(false)).toBe(true);
@@ -92,6 +95,7 @@ describe('useObservabilityStore', () => {
 
         it('tells the tracker to leave the query string and the fragment out of a pageview', () => {
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
             vi.stubEnv('VITE_UMAMI_REQUIRE_CONSENT', 'false');
 
             useObservabilityStore().setUmamiConsent(true);
@@ -106,6 +110,7 @@ describe('useObservabilityStore', () => {
 
         it('survives blocked storage', () => {
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+            vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
             vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
                 throw new Error('blocked');
             });

@@ -98,6 +98,10 @@ describe('returnPathOf', () => {
         ).toBe('/en/products/p1');
     });
 
+    it('is nothing on Home', () => {
+        expect(returnPathOf({ name: 'Home', fullPath: '/en', query: {} })).toBeUndefined();
+    });
+
     it.each(['Login', 'Signup'])('is the continue the %s page arrived with', (name) => {
         expect(
             returnPathOf({

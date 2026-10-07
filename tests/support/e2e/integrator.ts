@@ -62,6 +62,17 @@ export const seededSubscription = (): Cypress.Chainable<SubscriptionRow> =>
         });
 
 /**
+ * An address on the seeded receiver's own origin: the one origin the SSRF guard exempts, so a
+ * subscription can point there and no spec reaches public DNS. Every webhook the e2e suite makes
+ * goes through this. Keep `path` free of the word `dead`, which the sink answers with a 503.
+ *
+ * @param path - the path to subscribe to, leading slash included, unique per subscription
+ * @returns a chain yielding the full URL
+ */
+export const sinkEndpoint = (path: string): Cypress.Chainable<string> =>
+    seededSubscription().then((seeded) => `${new URL(seeded.url).origin}${path}`);
+
+/**
  * Switches a subscription on or off in its edit form, and waits for the saved notice.
  *
  * @param subscriptionId - which subscription

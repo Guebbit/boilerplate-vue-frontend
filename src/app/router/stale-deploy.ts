@@ -79,3 +79,14 @@ export const recoverFromStaleDeploy = (
     navigate(fullPath);
     return true;
 };
+
+/**
+ * Re-arms the one-shot retry: forgets that this tab already reloaded. Called once a route has
+ * really loaded, so the mark means "this load already retried" rather than "this tab retried at
+ * some point" and a tab left open across two deploys recovers both times.
+ *
+ * @param storage - `sessionStorage` in production; an in-memory stub in tests.
+ */
+export const clearStaleDeployMark = (storage: Pick<Storage, 'removeItem'>): void => {
+    storage.removeItem(RELOADED_ONCE_KEY);
+};

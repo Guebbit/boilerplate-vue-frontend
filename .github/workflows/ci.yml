@@ -14,7 +14,7 @@ name: CI
 #                     spec-identity — the spec is valid, its generated output is committed and
 #                     current, and the paired backend still agrees with it
 #   - correctness     typecheck, build, test-unit, test-e2e
-#   - supply chain    audit
+#   - supply chain    audit — report-only: it is not in the `ci` job's `needs:`
 #   - adoption        demo-strip-measure — report-only: it is not in the `ci` job's `needs:`
 #
 # The slow and non-hermetic suites live in their own workflows: e2e-live.yml (against a real
@@ -242,12 +242,16 @@ jobs:
               run: docker rm -f frontend-smoke || true
 
     audit:
-        # Scoped to the production dependency tree only: devDependencies (build
-        # tooling, codegen, test runners, etc.) are never shipped to users, so a
-        # vulnerability there carries a very different risk than one in a package
-        # that ends up in the bundle. Gating on the full tree (incl. dev) tends to
-        # block on things nobody can actually fix, which just trains people to
-        # ignore the check.
+        # Scoped to the production dependency tree only: devDependencies (build tooling, codegen,
+        # test runners, etc.) are never shipped to users, so a vulnerability there carries a very
+        # different risk than one in a package that ends up in the bundle.
+        #
+        # Deliberately NOT in the `ci` gate's `needs:` below: a new advisory appears upstream
+        # overnight, and blocking every PR on something nobody can fix in the same PR just trains
+        # people to ignore the check. This still runs on every push/PR and still shows red when it
+        # fails — an alert, not a gate, as on the backend and PHP twins. That only stays useful
+        # while it is usually GREEN: if an unfixable advisory ever parks this job on red, add an
+        # allowlist keyed by advisory id rather than raising the threshold back up.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -260,7 +264,7 @@ jobs:
               uses: ./.github/actions/setup-node-and-install
 
             - name: Audit production dependencies
-              run: npm audit --omit=dev --audit-level=high
+              run: npm audit --omit=dev --audit-level=moderate
 
     demo-strip-measure:
         # The backend has a twin of this job: how far "the demo shop is removable" actually is,
@@ -593,7 +597,7 @@ jobs:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
         if: always()
-        # Every job above belongs in this list, `commitlint` included — it now runs on both
+        # Every gating job above belongs in this list, `commitlint` included — it now runs on both
         # pull_request and push (see its own comment), so it is always a real pass/fail here.
         needs:
             - commitlint
@@ -604,7 +608,6 @@ jobs:
             - asyncapi-types-freshness
             - docs-references
             - docker-image
-            - audit
             - api-freshness
             - typecheck
             - build
@@ -612,8 +615,8 @@ jobs:
             - test-e2e
             - test-e2e-live
             - spec-identity
-            # `demo-strip-measure` is deliberately excluded — see its own comment above. `audit`
-            # is listed, so a high-severity advisory in a production dependency blocks the merge.
+            # `audit` and `demo-strip-measure` are deliberately excluded — see their own comments
+            # above.
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:

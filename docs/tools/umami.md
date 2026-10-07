@@ -39,14 +39,15 @@ from the other side of the API.
 Umami waits for the visitor, the same private-by-default rule as the backend's
 `NODE_ANALYTICS_REQUIRE_CONSENT`.
 
-| Moment                        | What happens                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| Boot, no answer yet           | No tag injected; `localStorage['umami.disabled']` set; the banner shows                    |
-| Guest accepts                 | `analyticsConsent` cookie = `granted`, tag injected, opt-out lifted                        |
-| Guest declines / withdraws    | Cookie = `denied`, `umami.disabled` set, the tag (if loaded) goes silent                   |
-| Signed in, profile loaded     | The account's own `analyticsConsent` rules, over the guest cookie                          |
-| Logout / account deletion     | `identify` is reset and the guest cookie's answer applies again                            |
-| Footer "Privacy choices" link | Reopens the banner for any visitor, so withdrawing is as easy as agreeing (GDPR Art. 7(3)) |
+| Moment                        | What happens                                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Boot, no answer yet           | No tag injected; `localStorage['umami.disabled']` set; the banner shows                                                               |
+| Guest accepts                 | `analyticsConsent` cookie = `granted`, tag injected, opt-out lifted                                                                   |
+| Guest declines / withdraws    | Cookie = `denied`, `umami.disabled` set, the tag (if loaded) goes silent                                                              |
+| Signed in, profile loaded     | The account's own `analyticsConsent` rules, over the guest cookie; the banner stays hidden while the account holds an answer          |
+| Signed in, banner or link     | Its buttons write the account (`PATCH /account`), never the guest cookie                                                              |
+| Logout / account deletion     | `identify` is reset and the guest cookie's answer applies again                                                                       |
+| Footer "Privacy choices" link | Reopens the banner for any visitor, so withdrawing is as easy as agreeing (GDPR Art. 7(3)); signed in, its answer goes to the account |
 
 The banner and the link show whenever Umami is configured (`VITE_UMAMI_WEBSITE_ID`); there is no
 separate flag. `VITE_UMAMI_REQUIRE_CONSENT=false` makes the tracker load unasked, for a deployer

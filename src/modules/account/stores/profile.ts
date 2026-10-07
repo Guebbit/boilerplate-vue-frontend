@@ -35,6 +35,7 @@ import {
     isAnalyticsConsentEnabled
 } from '@/infrastructure/analytics-consent.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
+import { warn } from '@/infrastructure/utils/logger.ts';
 
 /**
  * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, none for an
@@ -76,7 +77,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      */
     const {
         selectedIdentifier,
-        resetAll,
+        resetAll: resetRecord,
         selectedRecord: profile,
         loading,
         isLoading,
@@ -87,6 +88,15 @@ export const useProfileStore = defineStore('accountProfile', () => {
         resourceKey: 'accountProfile',
         queryClient
     });
+
+    /**
+     * Drops the cached record and the account's consent answer with it: once the record is gone
+     * the banner follows the guest cookie again.
+     */
+    const resetAll = () => {
+        resetRecord();
+        useAnalyticsConsentStore().setAccountChoice(undefined);
+    };
 
     /**
      * Push what the shell and the guards are allowed to know into the session store.
@@ -145,6 +155,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     const obs = useObservabilityStore();
                     // The account's own answer rules Umami while signed in, over the guest cookie.
                     obs.setUmamiConsent(payload.analyticsConsent === true);
+                    useAnalyticsConsentStore().setAccountChoice(payload.analyticsConsent);
                     if (payload.analyticsConsent === true) obs.identifyUser(payload.id);
                     else obs.unidentifyUser();
                     // Keep the shell's projection in step with the record just loaded, rules
@@ -410,6 +421,17 @@ export const useProfileStore = defineStore('accountProfile', () => {
         }
     );
 
+    // The consent banner's buttons (and the "Privacy choices" link) answer for the account while
+    // signed in: persist the answer, whose refetch re-applies Umami and the account choice.
+    useAnalyticsConsentStore().$onAction(({ name, after }) => {
+        if ((name !== 'grant' && name !== 'deny') || !session.isAuth) return;
+        after(() => {
+            updateProfile({ analyticsConsent: name === 'grant' }).catch((error: unknown) => {
+                warn('analytics consent was not saved to the account', error);
+            });
+        });
+    });
+
     /**
      * Drops the cached record and the session it belongs to. Used once the account itself is
      * gone — a cache that survived would let a stale profile flash before the guard redirects.
@@ -472,6 +494,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
                 const obs = useObservabilityStore();
                 obs.unidentifyUser();
                 // Back to the guest cookie's answer: the account's no longer applies.
+                useAnalyticsConsentStore().setAccountChoice(undefined);
                 useAnalyticsConsentStore().syncTracker();
                 clearSession();
             })

@@ -51,7 +51,7 @@
         "merge-reason-unavailable": "It is no longer available, so it was not added.",
         "stock-short-marker": "Not enough in stock",
         "merge-short-advice": "Lower the quantity before checkout.",
-        "error-guest-merge": "We could not add the cart you built before signing in to your account. It stays on this device and will be tried again the next time you sign in.",
+        "error-guest-merge": "We could not add the cart you built before signing in to your account. It stays on this device while you are signed in, is tried again when the page next loads, and is cleared when you sign out.",
         "error-guest-merge-dropped": "We could not add the cart you built before signing in to your account, and it cannot be fixed by trying again, so it was cleared from this device.",
         "error-cart-empty": "This cart is already empty. If you just placed an order it went through: check your orders.",
         "error-checkout-in-flight": "Your order is still being processed. Check your orders in a moment before trying again.",

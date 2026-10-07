@@ -4,7 +4,11 @@
  * actually headed for, and never a second time in the same session.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { registerStaleDeployRecovery, recoverFromStaleDeploy } from '@/app/router/stale-deploy';
+import {
+    registerStaleDeployRecovery,
+    recoverFromStaleDeploy,
+    clearStaleDeployMark
+} from '@/app/router/stale-deploy';
 import type { PreloadErrorSource } from '@/app/router/stale-deploy';
 
 /** A stub {@link PreloadErrorSource} capturing the one listener it is asked to add. */
@@ -23,7 +27,8 @@ const makeStorage = () => {
     const store = new Map<string, string>();
     return {
         getItem: (key: string) => store.get(key) ?? null,
-        setItem: (key: string, value: string) => store.set(key, value)
+        setItem: (key: string, value: string) => store.set(key, value),
+        removeItem: (key: string) => store.delete(key)
     };
 };
 
@@ -65,6 +70,20 @@ describe('recoverFromStaleDeploy', () => {
         target.fire();
         expect(recoverFromStaleDeploy('/en/products', navigate, storage)).toBe(false);
         expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('reloads again after a successful navigation cleared the mark', () => {
+        const target = makeTarget();
+        registerStaleDeployRecovery(target);
+
+        target.fire();
+        expect(recoverFromStaleDeploy('/en/products', navigate, storage)).toBe(true);
+
+        // The reloaded page landed a route: the next deploy's stale chunk may retry once more.
+        clearStaleDeployMark(storage);
+        target.fire();
+        expect(recoverFromStaleDeploy('/en/orders', navigate, storage)).toBe(true);
+        expect(navigate).toHaveBeenLastCalledWith('/en/orders');
     });
 
     it('consumes the preload-error flag even when the retry was already spent', () => {
