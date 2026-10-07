@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { createMemoryHistory, createRouter } from 'vue-router';
 import { searchProducts } from '@api';
 import MovementLedger from '@/modules/inventory/components/MovementLedger.vue';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
@@ -56,18 +57,29 @@ const batchedIdCalls = () =>
         .filter((id): id is string[] => id !== undefined);
 
 /**
+ * A router that holds only the URL: the ledger keeps its filters and page in the query string.
+ *
+ * @returns A router on an in-memory history.
+ */
+const memoryRouter = () =>
+    createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: '/', component: { template: '<div />' } }]
+    });
+
+/**
  * Mounts the ledger over the movements the spied read will hand it.
  *
  * @param rows - The ledger page.
  * @returns The wrapper.
  */
-const mountLedger = (rows: StockMovement[]) => {
+const mountLedger = (rows: StockMovement[], router = memoryRouter()) => {
     const inventory = useInventoryStore();
     vi.spyOn(inventory, 'fetchMovements').mockImplementation(() => {
         inventory.movements = rows;
         return Promise.resolve(rows);
     });
-    return mount(MovementLedger, { global: { plugins: [vuetify, i18n] } });
+    return mount(MovementLedger, { global: { plugins: [vuetify, i18n, router] } });
 };
 
 beforeEach(() => {
@@ -151,5 +163,24 @@ describe('MovementLedger product titles', () => {
         return flushPromises().then(() => {
             expect(wrapper.text()).toContain('p9');
         });
+    });
+});
+
+describe('MovementLedger URL state', () => {
+    it('opens on the page and filters a deep link carries, under its own movements- keys', () => {
+        const router = memoryRouter();
+        const fetch = vi.spyOn(useInventoryStore(), 'fetchMovements');
+
+        return router
+            .push({ path: '/', query: { 'movements-productId': 'p9', 'movements-page': '2' } })
+            .then(() => {
+                mountLedger([], router);
+                return flushPromises();
+            })
+            .then(() => {
+                expect(fetch).toHaveBeenCalledWith(
+                    expect.objectContaining({ page: 2, productId: 'p9' })
+                );
+            });
     });
 });

@@ -31,6 +31,11 @@ export interface ListUrlStateOptions<TFilters extends object> {
     pageSize?: Ref<number>;
     /** The filters that travel in the URL, by name. A filter not listed here never does. */
     params: Partial<Record<keyof TFilters & string, UrlParameterKind>>;
+    /**
+     * Prepended (as `<prefix>-`) to every query key this list owns, so two lists on one screen
+     * keep separate state in the one query string. Absent for a page with a single list.
+     */
+    prefix?: string;
 }
 
 /**
@@ -103,28 +108,28 @@ export const useListUrlState = <TFilters extends object>(
     const route = useRoute();
     const router = useRouter();
     const names = Object.keys(options.params);
+    const keyOf = (name: string) => (options.prefix ? `${options.prefix}-${name}` : name);
+    const ownKeys = [...names, 'page', 'pageSize'].map((name) => keyOf(name));
     const defaultPageSize = options.pageSize?.value;
 
     /**
      * Copies the URL into the refs, when it names any of this page's parameters.
      */
     const hydrate = (query: LocationQuery) => {
-        const present = [...names, 'page', 'pageSize'].some(
-            (name) => firstOf(query[name]) !== undefined
-        );
+        const present = ownKeys.some((key) => firstOf(query[key]) !== undefined);
         if (!present) return;
 
         const next: Record<string, unknown> = {};
         for (const [name, kind] of Object.entries<UrlParameterKind | undefined>(options.params)) {
-            const raw = firstOf(query[name]);
+            const raw = firstOf(query[keyOf(name)]);
             const value =
                 raw === undefined || kind === undefined ? undefined : parseUrlParameter(raw, kind);
             if (value !== undefined) next[name] = value;
         }
         // `TFilters` is a search-filter shape: every field optional, so a subset of its keys is a `TFilters`.
         options.filters.value = next as TFilters;
-        options.page.value = positiveInteger(firstOf(query.page)) ?? 1;
-        const size = positiveInteger(firstOf(query.pageSize));
+        options.page.value = positiveInteger(firstOf(query[keyOf('page')])) ?? 1;
+        const size = positiveInteger(firstOf(query[keyOf('pageSize')]));
         if (options.pageSize && size !== undefined) options.pageSize.value = size;
     };
 
@@ -137,17 +142,15 @@ export const useListUrlState = <TFilters extends object>(
             const value = current[name];
             // Only the three kinds a filter can be; anything else has no honest string form.
             if (typeof value === 'number' || typeof value === 'boolean')
-                query[name] = String(value);
-            else if (typeof value === 'string' && value !== '') query[name] = value;
+                query[keyOf(name)] = String(value);
+            else if (typeof value === 'string' && value !== '') query[keyOf(name)] = value;
         }
-        if (options.page.value > 1) query.page = String(options.page.value);
+        if (options.page.value > 1) query[keyOf('page')] = String(options.page.value);
         if (options.pageSize && options.pageSize.value !== defaultPageSize)
-            query.pageSize = String(options.pageSize.value);
+            query[keyOf('pageSize')] = String(options.pageSize.value);
         // Keep a query key this page does not own (a tracking tag, say).
         const foreign = Object.fromEntries(
-            Object.entries(route.query).filter(
-                ([name]) => !names.includes(name) && name !== 'page' && name !== 'pageSize'
-            )
+            Object.entries(route.query).filter(([key]) => !ownKeys.includes(key))
         );
         void router.replace({ query: { ...foreign, ...query } });
     };
