@@ -822,8 +822,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -859,8 +857,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1765,8 +1761,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1966,8 +1960,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2002,8 +1994,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2800,8 +2790,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -3087,8 +3075,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -3279,8 +3265,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -3614,8 +3598,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -3863,8 +3845,6 @@ paths:
               $ref: "#/components/headers/ETag"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4083,8 +4063,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4118,8 +4096,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4426,8 +4402,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4599,8 +4573,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4655,8 +4627,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4685,8 +4655,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -4966,8 +4934,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5150,8 +5116,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5313,8 +5277,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5344,8 +5306,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5382,8 +5342,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5505,8 +5463,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5765,8 +5721,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5869,8 +5823,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5909,8 +5861,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6053,8 +6003,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6176,8 +6124,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6211,8 +6157,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6735,8 +6679,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6777,8 +6719,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6903,8 +6843,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7051,8 +6989,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7187,8 +7123,6 @@ paths:
                 $ref: "#/components/schemas/ExampleEnvelope"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7358,8 +7292,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7492,8 +7424,6 @@ paths:
           $ref: "#/components/responses/NotFound"
         "412":
           $ref: "#/components/responses/PreconditionFailed"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7664,8 +7594,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -9527,7 +9455,7 @@ components:
       type: string
       maxLength: 64
       minLength: 1
-      description: "A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema."
+      description: "A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value answers 404, like any path that names nothing; the length bounds here stay 422."
       example: product
     TranslationOrigin:
       type: string
@@ -14207,7 +14135,7 @@ components:
         id:
           $ref: "#/components/schemas/Id"
         subscriptionId:
-          type: string
+          $ref: "#/components/schemas/Id"
         eventId:
           type: string
         eventType:

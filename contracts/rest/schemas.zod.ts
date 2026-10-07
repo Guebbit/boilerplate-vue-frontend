@@ -10411,6 +10411,10 @@ export const ListWebhookDeliveriesQueryParams = zod.strictObject({
 });
 export const listWebhookDeliveriesResponseDataItemsItemIdMax = 64;
 export const listWebhookDeliveriesResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listWebhookDeliveriesResponseDataItemsItemSubscriptionIdMax = 64;
+export const listWebhookDeliveriesResponseDataItemsItemSubscriptionIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const listWebhookDeliveriesResponseDataMetaPageDefault = 1;
 export const listWebhookDeliveriesResponseDataMetaPageMax = 10000;
 export const listWebhookDeliveriesResponseDataMetaPageSizeDefault = 10;
@@ -10429,7 +10433,11 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                     .min(1)
                     .max(listWebhookDeliveriesResponseDataItemsItemIdMax)
                     .regex(listWebhookDeliveriesResponseDataItemsItemIdRegExp),
-                subscriptionId: zod.string(),
+                subscriptionId: zod
+                    .string()
+                    .min(1)
+                    .max(listWebhookDeliveriesResponseDataItemsItemSubscriptionIdMax)
+                    .regex(listWebhookDeliveriesResponseDataItemsItemSubscriptionIdRegExp),
                 eventId: zod.string(),
                 eventType: zod.string(),
                 attempt: zod.number().min(1),
@@ -10478,6 +10486,8 @@ export const ReplayWebhookDeliveryParams = zod.strictObject({
 });
 export const replayWebhookDeliveryResponseDataIdMax = 64;
 export const replayWebhookDeliveryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const replayWebhookDeliveryResponseDataSubscriptionIdMax = 64;
+export const replayWebhookDeliveryResponseDataSubscriptionIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ReplayWebhookDeliveryResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -10488,7 +10498,11 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
             .min(1)
             .max(replayWebhookDeliveryResponseDataIdMax)
             .regex(replayWebhookDeliveryResponseDataIdRegExp),
-        subscriptionId: zod.string(),
+        subscriptionId: zod
+            .string()
+            .min(1)
+            .max(replayWebhookDeliveryResponseDataSubscriptionIdMax)
+            .regex(replayWebhookDeliveryResponseDataSubscriptionIdRegExp),
         eventId: zod.string(),
         eventType: zod.string(),
         attempt: zod.number().min(1),
