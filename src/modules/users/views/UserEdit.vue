@@ -34,7 +34,7 @@ import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progre
 import { useUsersStore } from '@/modules/users/store';
 import { useUserAccessDialog } from '@/modules/users/composables/use-user-access-dialog.ts';
 import { usersSchema } from '@/modules/users/schemas.ts';
-import { userRoleOptions } from '@/modules/users/domain';
+import { useRoleOptions } from '@/modules/users/composables/use-role-options.ts';
 import { supportedLanguages } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { z } from 'zod';
@@ -181,11 +181,20 @@ const rowActions = computed(() => currentUser.value?.actions);
 const session = useSessionStore();
 
 /**
- * Whether the role select is offered: the account may be edited, and it is not the admin's own —
- * nobody changes their own role, the server refuses it.
+ * The server's list of roles the caller may assign, as select items.
+ */
+const { grantableRoles, roleOptions } = useRoleOptions();
+
+/**
+ * Whether the role select is offered: the account may be edited, it is not the admin's own —
+ * nobody changes their own role, the server refuses it — and the caller may assign at least one
+ * role at all.
  */
 const canEditRole = computed(
-    () => !!rowActions.value?.update && currentUser.value?.id !== session.viewer?.id
+    () =>
+        !!rowActions.value?.update &&
+        currentUser.value?.id !== session.viewer?.id &&
+        grantableRoles().length > 0
 );
 
 /**
@@ -423,11 +432,11 @@ watchUser(() => id, { onError: onMissingRecord });
                         :disabled="!rowActions?.update"
                     />
                     <div class="flex flex-wrap gap-x-8">
-                        <!-- One list, not a free-text field: `domain/roles.ts` is the single place every
-                             role select in this module reads from. -->
+                        <!-- One list, not a free-text field: the server's `grantableRoles`, plus the
+                             account's current role so the select can still show it. -->
                         <v-select
                             v-model="form.role"
-                            :items="userRoleOptions"
+                            :items="roleOptions(currentUser?.role)"
                             data-test="user-edit-role"
                             :label="t('user-edit-page.label-role')"
                             :disabled="!canEditRole"

@@ -7,18 +7,18 @@
 **Breaks if you change** — `schemas.ts`. [`account`](./account.md) validates every one of its forms against it.
 :::
 
-| Fact                    | This module                                                              |
-| ----------------------- | ------------------------------------------------------------------------ |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.      |
-| **Screens**             | 4 — `UsersList` · `UserCreate` · `UserTarget` · `UserEdit`               |
-| **Store**               | `users`                                                                  |
-| **Menu entries**        | `UsersList`                                                              |
-| **API calls**           | 10                                                                       |
-| **Depends on**          | _nothing_                                                                |
-| **Depended on by**      | [`account`](./account.md)                                                |
-| **Languages**           | `en` · `it`                                                              |
-| **Publishes**           | `usersPasswordSchema` · `usersSchema` · `USER_ROLES` · `userRoleOptions` |
-| **Backend counterpart** | `users` in `boilerplate-node-backend`                                    |
+| Fact                    | This module                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
+| **Screens**             | 4 — `UsersList` · `UserCreate` · `UserTarget` · `UserEdit`          |
+| **Store**               | `users`                                                             |
+| **Menu entries**        | `UsersList`                                                         |
+| **API calls**           | 10                                                                  |
+| **Depends on**          | _nothing_                                                           |
+| **Depended on by**      | [`account`](./account.md)                                           |
+| **Languages**           | `en` · `it`                                                         |
+| **Publishes**           | `usersPasswordSchema` · `usersSchema`                               |
+| **Backend counterpart** | `users` in `boilerplate-node-backend`                               |
 
 ## The map
 
@@ -57,6 +57,8 @@ Every screen here declares the `users.*` rule it needs — `read` to list or vie
 `update` to edit — so a `support` role that may update an account and not create one gets exactly
 the screens it can use. The equivalent self-service actions — profile read, account deletion —
 live under [`account`](./account.md). The two never share a screen.
+
+Every role picker (`UserCreate`, `UserEdit`, `UserAccessDialog`) is built from `grantableRoles`, which `GET /account/abilities` publishes: the roles the signed-in caller may assign, computed by the same rule as the `409` the write answers. There is no role list in this repo to drift. The select adds the account's current role so it can still show it, and it is disabled (create: hidden) when the caller may assign none.
 
 `users/create` is declared before `users/:id` for the same reason the products routes are: vue-router
 would rank it correctly either way, and a reader should not have to know that.
@@ -117,7 +119,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | File                                     | What it is                                                                                                                                                                                                                                       | Explained in                          |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
 | `index.ts`                               | The public barrel: the only surface a sibling module may import.                                                                                                                                                                                 | [read](../theory/strategic-ddd.md)    |
-| `roles.ts`                               | `USER_ROLES`/`userRoleOptions` — the one role list every select in this module reads from.                                                                                                                                                       | [read](../theory/strategic-ddd.md)    |
+| `composables/use-role-options.ts`        | `useRoleOptions` — the role select's items, built from the server's `grantableRoles` plus the account's current role.                                                                                                                            | [read](../theory/strategic-ddd.md)    |
 | `components/UserAccessDialog.vue`        | Shared role/active-status editor with a confirm step, opened from the list, the detail page and the edit form.                                                                                                                                   | [read](../theory/layers.md)           |
 | `composables/use-user-access-dialog.ts`  | Promise wrapper around `UserAccessDialog.vue`'s `v-model`, so a caller awaits its outcome like `useDialogStore().confirm()`.                                                                                                                     | [read](../theory/layers.md)           |
 | `locales/en.json`                        | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
