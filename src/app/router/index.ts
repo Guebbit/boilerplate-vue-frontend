@@ -15,7 +15,11 @@ import { getDefaultLocale, translate } from '@/i18n';
 import { oauthCallbackLocation } from '@/app/router/oauth-callback.ts';
 import { signInLocation } from '@/app/router/navigation.ts';
 import { announceRouteChange, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
-import { registerStaleDeployRecovery, recoverFromStaleDeploy } from '@/app/router/stale-deploy.ts';
+import {
+    registerStaleDeployRecovery,
+    recoverFromStaleDeploy,
+    clearStaleDeployMark
+} from '@/app/router/stale-deploy.ts';
 import { GENERIC_ERROR_KEY, isKnownErrorMessage } from '@/app/utils/error-messages.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
@@ -344,12 +348,16 @@ router.beforeResolve(localeChoice);
  * `to` was never actually reached, so writing its title over the page the visitor is still on
  * would be wrong regardless of whether the two titles happen to match.
  *
+ * A landed route other than `Error` also re-arms the stale-deploy retry: it proves this load is
+ * healthy. The redirect to `Error` does not count, or a broken build would reload forever.
+ *
  * @param to - Route that has just been entered.
  * @param from - Route that was left; `START_LOCATION` on the initial load.
  * @param failure - Set when the navigation did not actually land on `to`.
  */
 router.afterEach((to, from, failure) => {
     if (failure) return;
+    if (to.name !== 'Error') clearStaleDeployMark(sessionStorage);
 
     const title = to.meta.title ? translate(to.meta.title) : '';
     document.title = title ? `${title} — ${appName}` : appName;

@@ -413,6 +413,27 @@ describe('stale-deploy recovery', () => {
             );
         });
     });
+
+    it('re-arms the retry once a route lands, but not on the Error redirect', () => {
+        const key = 'app:stale-deploy-reloaded';
+
+        return failNavigationWith(Object.assign(new Error('nope'), { status: 500 }))
+            .then((router) => {
+                expect(router.currentRoute.value.name).toBe('Error');
+                sessionStorage.setItem(key, '1');
+
+                return router
+                    .push({ name: 'Error', params: { status: '500', message: 'x' } })
+                    .then(() => {
+                        expect(sessionStorage.getItem(key)).toBe('1');
+
+                        return router.push('/en/examples/published/an-example');
+                    });
+            })
+            .then(() => {
+                expect(sessionStorage.getItem(key)).toBeNull();
+            });
+    });
 });
 
 /**
