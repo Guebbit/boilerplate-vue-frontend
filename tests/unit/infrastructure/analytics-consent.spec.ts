@@ -86,6 +86,41 @@ describe('promptOpen, reopen and the Umami tracker', () => {
         expect(store.promptOpen).toBe(false);
     });
 
+    it('stays closed while the account holds an answer and the cookie is unknown', () => {
+        const store = useAnalyticsConsentStore();
+        store.setAccountChoice(false);
+
+        expect(store.choice).toBe('unknown');
+        expect(store.effective).toBe('denied');
+        expect(store.promptOpen).toBe(false);
+    });
+
+    it('opens while neither the account nor the cookie holds an answer', () => {
+        const store = useAnalyticsConsentStore();
+        store.setAccountChoice(true);
+        store.setAccountChoice(undefined);
+
+        expect(store.promptOpen).toBe(true);
+    });
+
+    it('opens after reopen() even with an account answer', () => {
+        const store = useAnalyticsConsentStore();
+        store.setAccountChoice(true);
+        store.reopen();
+
+        expect(store.promptOpen).toBe(true);
+    });
+
+    it('the account answer outranks a cookie one, for the tracker too', () => {
+        const store = useAnalyticsConsentStore();
+        store.grant();
+        store.setAccountChoice(false);
+        store.syncTracker();
+
+        expect(store.effective).toBe('denied');
+        expect(localStorage.getItem('umami.disabled')).toBe('1');
+    });
+
     it('loads no tracker before the visitor answers', () => {
         useAnalyticsConsentStore().syncTracker();
 

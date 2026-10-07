@@ -145,6 +145,19 @@ describe('AC12 · My privacy choices stick', () => {
 
             cy.step('a cart line added after the new login is recorded too');
             addLine('product.lowStock');
+
+            cy.step('a visitor with no guest cookie sees no banner: the account answers');
+            // Only the guest cookie: the session cookies must survive, the account is what answers.
+            cy.clearCookie('analyticsConsent');
+            cy.visit('/en/profile');
+            cy.get('#profile-page').should('exist');
+            cy.get('[data-test=analytics-consent-banner]').should('not.exist');
+
+            cy.step('withdrawing through Privacy choices writes the account, not a cookie');
+            cy.get('[data-test=privacy-choices-link]').click();
+            cy.get('[data-test=analytics-consent-decline]').click();
+            storedConsent(device).should('equal', false);
+            trackerIsSilenced(true);
         });
 
         cy.step('Umami holds two rows for the story, not three: the unconsenting line left none');

@@ -6,12 +6,17 @@
  * Gated by Umami being configured (`isAnalyticsConsentEnabled`): the banner, the footer link and
  * `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
  * Umami itself: it loads only after `granted`, and a withdrawal silences it.
+ *
+ * While signed in the account's own answer is the effective one (`accountChoice`), the banner
+ * opens only when that answer is unknown, and the buttons write the account (the profile store
+ * listens to `grant`/`deny`) instead of the guest cookie. See `docs/tools/umami.md#consent`.
  */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { getCookie, setCookie } from '@guebbit/js-toolkit';
 import { readUmamiConfig } from '@/infrastructure/observability/config.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * Name of the first-party cookie holding the visitor's own choice.
@@ -77,6 +82,29 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
     const choice = ref<AnalyticsConsentChoice>(readStoredChoice());
 
     /**
+     * The signed-in account's own answer, or `undefined` while signed out or never asked. Pushed
+     * in by the profile store; it outranks the guest cookie for as long as it is defined.
+     */
+    const accountChoice = ref<boolean | undefined>();
+
+    /**
+     * The answer that applies right now: the account's when it holds one, else the cookie's.
+     */
+    const effective = computed<AnalyticsConsentChoice>(() => {
+        if (accountChoice.value === undefined) return choice.value;
+        return accountChoice.value ? 'granted' : 'denied';
+    });
+
+    /**
+     * Records the account's answer (`undefined` clears it, e.g. on sign-out).
+     *
+     * @param value - The account's `analyticsConsent`, or `undefined` for no answer.
+     */
+    const setAccountChoice = (value: boolean | undefined) => {
+        accountChoice.value = value;
+    };
+
+    /**
      * Whether the banner was reopened from the "privacy choices" link, so an answered visitor can
      * change their mind (GDPR Art. 7(3): withdrawing is as easy as consenting).
      */
@@ -85,23 +113,34 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
     /**
      * Whether the banner should be on screen: not yet answered, or deliberately reopened.
      */
-    const promptOpen = computed(() => choice.value === 'unknown' || reopened.value);
+    const promptOpen = computed(() => effective.value === 'unknown' || reopened.value);
 
     /**
      * Pushes the current answer to Umami: load it on `granted`, silence it otherwise. Called at
      * boot, on every answer and after a logout (the account's own answer stops applying then).
      */
     const syncTracker = () => {
-        useObservabilityStore().setUmamiConsent(choice.value === 'granted');
+        useObservabilityStore().setUmamiConsent(effective.value === 'granted');
+    };
+
+    /**
+     * Writes the guest cookie, unless the answer belongs to the account: while a session is
+     * active (or the account already holds an answer) the profile store persists it instead.
+     *
+     * @param value - The button's answer.
+     */
+    const recordGuestChoice = (value: Exclude<AnalyticsConsentChoice, 'unknown'>) => {
+        if (accountChoice.value !== undefined || useSessionStore().isAuth) return;
+        choice.value = value;
+        writeStoredChoice(value);
     };
 
     /**
      * Records that the visitor accepted analytics tracking.
      */
     const grant = () => {
-        choice.value = 'granted';
         reopened.value = false;
-        writeStoredChoice('granted');
+        recordGuestChoice('granted');
         syncTracker();
     };
 
@@ -109,9 +148,8 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
      * Records that the visitor declined analytics tracking (also the withdrawal path).
      */
     const deny = () => {
-        choice.value = 'denied';
         reopened.value = false;
-        writeStoredChoice('denied');
+        recordGuestChoice('denied');
         syncTracker();
     };
 
@@ -122,5 +160,14 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
         reopened.value = true;
     };
 
-    return { choice, promptOpen, grant, deny, reopen, syncTracker };
+    return {
+        choice,
+        effective,
+        promptOpen,
+        grant,
+        deny,
+        reopen,
+        syncTracker,
+        setAccountChoice
+    };
 });
