@@ -86,13 +86,16 @@ describe('readUmamiConfig', () => {
         expect(readUmamiConfig()).toBeUndefined();
     });
 
-    it('defaults the script src when only the website id is set', () => {
+    it('returns undefined when only the website id is set', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
 
-        expect(readUmamiConfig()).toEqual({
-            src: 'http://localhost:3080/script.js',
-            websiteId: 'site-1'
-        });
+        expect(readUmamiConfig()).toBeUndefined();
+    });
+
+    it('returns undefined when only the script src is set', () => {
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/s.js');
+
+        expect(readUmamiConfig()).toBeUndefined();
     });
 
     it('trims both values and keeps an explicit src', () => {
@@ -107,6 +110,7 @@ describe('readUmamiConfig', () => {
 
     it('a runtime-configured website id wins over the build-time one', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'build-time-site');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/s.js');
         (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = {
             UMAMI_WEBSITE_ID: 'runtime-site'
         };
@@ -159,7 +163,8 @@ describe('readFaroConfig', () => {
             // in `src/globals.d.ts`.
             appVersion: __APP_VERSION__,
             environment: import.meta.env.MODE,
-            apiOrigin: 'http://localhost:3000',
+            // No API URL: the API is same-origin, which OpenTelemetry propagates to on its own.
+            propagateTo: [],
             ignoreUrls: ['http://collector/collect']
         });
     });
@@ -175,7 +180,7 @@ describe('readFaroConfig', () => {
             appName: 'shop',
             appVersion: '2.4.0',
             environment: 'staging',
-            apiOrigin: 'https://api.example.com'
+            propagateTo: [originToRegExp('https://api.example.com')]
         });
     });
 

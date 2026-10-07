@@ -161,6 +161,7 @@ describe('LayoutDefault — the privacy choices link', () => {
 
     it('reopens the consent banner of an answered visitor', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         useAnalyticsConsentStore().grant();
         expect(useAnalyticsConsentStore().promptOpen).toBe(false);
 

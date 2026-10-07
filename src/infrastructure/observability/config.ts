@@ -6,7 +6,7 @@
  * calls nothing.
  */
 
-import { runtimeValue } from '@/infrastructure/runtime-config';
+import { readApiUrl, runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
  * Configuration read from `VITE_FARO_*`, passed straight into `initializeFaro()`.
@@ -20,9 +20,12 @@ export interface FaroConfig {
     appVersion: string;
     environment: string;
     /**
-     * API origin(s) to propagate the W3C `traceparent` header to (the API links its span to the browser's, it does not join the trace).
+     * Cross-origin URLs to propagate the W3C `traceparent` header to (the API links its span to the
+     * browser's, it does not join the trace). Empty means the API is on the page's own origin,
+     * which OpenTelemetry propagates to by default (`shouldPropagateTraceHeaders` in
+     * `@opentelemetry/sdk-trace-web`).
      */
-    apiOrigin: string;
+    propagateTo: RegExp[];
     /**
      * URLs Faro must not instrument — the telemetry endpoints themselves.
      *
@@ -41,7 +44,7 @@ export interface UmamiConfig {
      */
     src: string;
     /**
-     * Umami website id, the whole enable/disable switch for analytics.
+     * Umami website id, one of the two enable switches for analytics (the other is `src`).
      */
     websiteId: string;
 }
@@ -60,26 +63,22 @@ export function originToRegExp(origin: string): RegExp {
 /**
  * Reads the Umami configuration from the `VITE_UMAMI_*` environment variables.
  *
- * @returns The config, or `undefined` when `VITE_UMAMI_WEBSITE_ID` is unset/blank, which
- *  disables analytics entirely.
+ * @returns The config, or `undefined` when `VITE_UMAMI_WEBSITE_ID` or `VITE_UMAMI_SRC` is
+ *  unset/blank, which disables analytics entirely.
  */
 export function readUmamiConfig(): UmamiConfig | undefined {
     const websiteId =
         runtimeValue('UMAMI_WEBSITE_ID') ?? import.meta.env.VITE_UMAMI_WEBSITE_ID?.trim();
 
-    // The website id is the whole switch: no id, no analytics, and the script is never injected.
-    if (!websiteId) {
+    const source = runtimeValue('UMAMI_SRC') ?? import.meta.env.VITE_UMAMI_SRC?.trim();
+
+    // Both are required: a website id with no script to load, or a script with no website to
+    // report to, is a misconfiguration and analytics stays off.
+    if (!websiteId || !source) {
         return undefined;
     }
 
-    // Only the src has a default — pointing at nothing is worse than pointing at the local script.
-    return {
-        src:
-            runtimeValue('UMAMI_SRC') ||
-            import.meta.env.VITE_UMAMI_SRC?.trim() ||
-            'http://localhost:3080/script.js',
-        websiteId
-    };
+    return { src: source, websiteId };
 }
 
 /**
@@ -112,6 +111,16 @@ function umamiOriginPattern(): RegExp[] {
 }
 
 /**
+ * The cross-origin patterns `traceparent` must be sent to for a given API URL.
+ *
+ * @param apiUrl - The API base URL; empty when the API shares the page's origin.
+ * @returns One anchored pattern, or `[]` for a same-origin API (OpenTelemetry covers that itself).
+ */
+function propagationTargets(apiUrl: string): RegExp[] {
+    return apiUrl ? [originToRegExp(apiUrl)] : [];
+}
+
+/**
  * Reads the Faro configuration from the `VITE_FARO_*` environment variables.
  *
  * @returns The config, or `undefined` when `VITE_FARO_URL` is unset/blank, which disables Faro
@@ -138,11 +147,8 @@ export function readFaroConfig(): FaroConfig | undefined {
             runtimeValue('FARO_ENVIRONMENT') ||
             import.meta.env.VITE_FARO_ENVIRONMENT?.trim() ||
             import.meta.env.MODE,
-        // Reuse the API origin so the API can link its spans to browser fetch/XHR traces.
-        apiOrigin:
-            runtimeValue('API_URL') ||
-            import.meta.env.VITE_API_URL?.trim() ||
-            'http://localhost:3000',
+        // Reuse the HTTP client's API URL so the API can link its spans to browser fetch/XHR traces.
+        propagateTo: propagationTargets(readApiUrl()),
         /*
          * Telemetry transports must not be traced. Faro instruments every fetch/XHR, including
          * its own POST to the collector and Umami's beacon to `/api/send` — each becomes a root

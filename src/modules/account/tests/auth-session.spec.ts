@@ -232,6 +232,7 @@ describe('logout', () => {
 
     it('resets the Umami identity and falls back to the guest answer, which is none', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         const identify = vi.fn();
         globalThis.umami = { identify };
         const auth = useAuthStore();

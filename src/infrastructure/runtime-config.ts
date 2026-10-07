@@ -48,3 +48,13 @@ export function runtimeValue(name: keyof RuntimeConfig): string | undefined {
     const trimmed = value?.trim();
     return trimmed || undefined;
 }
+
+/**
+ * The API base URL, the single reading shared by the HTTP client and the trace propagation.
+ * Empty means the API is served from the page's own origin.
+ *
+ * @returns The trimmed runtime or build-time `API_URL`, or `''` when neither is set.
+ */
+export function readApiUrl(): string {
+    return runtimeValue('API_URL') || import.meta.env.VITE_API_URL?.trim() || '';
+}

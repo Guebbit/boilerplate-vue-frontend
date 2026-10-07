@@ -280,8 +280,8 @@ jobs:
                 # ghcr.io/umami-software/umami:postgresql-v2.14.0
                 image: ghcr.io/umami-software/umami@sha256:29f3ce0013f7f3cfe19584bda254d1b6b6214ca47023b532e12d850505c1da9e
                 ports:
-                    # 3080 on the host, matching the compose stack and the frontend's
-                    # VITE_UMAMI_SRC default, so nothing has to know it is running in CI.
+                    # 3080 on the host, matching the compose stack, so nothing has to know it
+                    # is running in CI.
                     - 3080:3000
                 env:
                     DATABASE_TYPE: postgresql

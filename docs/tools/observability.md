@@ -66,7 +66,7 @@ Manual exceptions go through `captureException()` — called from `src/infrastru
 | `VITE_FARO_APP_VERSION` | App version (default: `package.json`'s version)        |
 | `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                 |
 
-The trace-propagation origin is derived from `VITE_API_URL`.
+The trace-propagation origin is derived from `VITE_API_URL`, the same value the HTTP client uses. An empty value means the API is on the page's own origin: nothing is listed, and OpenTelemetry still sends `traceparent` to same-origin requests on its own.
 
 ### External references
 
@@ -116,11 +116,11 @@ fact, because a name emitted from both sides writes two rows nothing downstream 
 
 ### Environment variables
 
-| Variable                     | Purpose                                                                          |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `VITE_UMAMI_WEBSITE_ID`      | Umami website id (from the Umami dashboard) — empty disables Umami               |
-| `VITE_UMAMI_SRC`             | Tracker script URL (default `http://localhost:3080/script.js`)                   |
-| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default): the tracker loads only after consent. `false` loads it unasked |
+| Variable                     | Purpose                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| `VITE_UMAMI_WEBSITE_ID`      | Umami website id (from the Umami dashboard); required, with `VITE_UMAMI_SRC`      |
+| `VITE_UMAMI_SRC`             | Tracker script URL; required, with the website id (either missing disables Umami) |
+| `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default): the tracker loads only after consent. `false` loads it unasked  |
 
 ### External references
 

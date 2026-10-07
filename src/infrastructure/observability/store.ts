@@ -21,8 +21,7 @@ import type { Faro, TransportItem } from '@grafana/faro-web-sdk';
 import {
     readFaroConfig,
     readUmamiConfig,
-    readUmamiRequireConsent,
-    originToRegExp
+    readUmamiRequireConsent
 } from '@/infrastructure/observability/config.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
@@ -239,7 +238,7 @@ export const useObservabilityStore = defineStore('observability', () => {
                         new TracingInstrumentation({
                             instrumentationOptions: {
                                 // Send `traceparent` to the API origin: the API records it as a span LINK, not a parent.
-                                propagateTraceHeaderCorsUrls: [originToRegExp(config.apiOrigin)]
+                                propagateTraceHeaderCorsUrls: config.propagateTo
                             }
                         })
                     ]

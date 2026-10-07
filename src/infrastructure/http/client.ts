@@ -5,7 +5,7 @@
  */
 
 import axiosClient from 'axios';
-import { runtimeValue } from '@/infrastructure/runtime-config';
+import { readApiUrl, runtimeValue } from '@/infrastructure/runtime-config';
 
 /**
  * The shared axios instance every generated client goes through.
@@ -33,4 +33,4 @@ export const instance = axiosClient.create({
  * `visit` overwrite) — each shard owns its own demo backend, and one built bundle cannot bake four
  * URLs. Outside e2e, a running container's own `config.js` wins the same way.
  */
-instance.defaults.baseURL = runtimeValue('API_URL') || import.meta.env.VITE_API_URL || '';
+instance.defaults.baseURL = readApiUrl();
