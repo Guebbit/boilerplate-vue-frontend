@@ -156,7 +156,7 @@ same shape of finding as the backend's own supply-chain table, and the same cave
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | Third-party scripts — **open, see above** | the Umami tracker is a `<script src>` injected at runtime; it points at a self-hosted instance this deployment's own `docker-compose` provisions (never a third-party SaaS domain), which lowers the blast radius of a compromise but does not remove the missing-SRI gap | `infrastructure/observability/store.ts#initUmami` |
 | CDN compromise                            | no surface: fonts (`@fontsource/roboto`) are npm-installed and bundled, not loaded from a font CDN; there is no other remote `<script>`/`<link>` in `index.html`                                                                                                          | `index.html`, `package.json`                      |
-| Vulnerable dependencies                   | `npm audit --omit=dev` — see the table above; nothing wired into CI to gate on it yet (open, tracked with the rest of this section)                                                                                                                                       | `package.json`                                    |
+| Vulnerable dependencies                   | `npm audit --omit=dev` — see the table above; it runs on every push/PR outside the `ci` gate in both repos (an alert, not a gate)                                                                                                                                         | `package.json`                                    |
 | Install scripts / lockfile tampering      | `docker/Dockerfile` and `docker/Dockerfile.production` both run `npm ci`, never `npm install`                                                                                                                                                                             | `docker/Dockerfile.production`                    |
 
 ## API consumption and anti-automation — §15 / §21 (shared)
@@ -200,8 +200,8 @@ off` and the Permissions-Policy line argues for closing this too once the script
   stable enough to pin.
 - **§14 Two `high` advisories in the production tree** (`nanoid`, `postcss`) — see
   [Supply chain](#supply-chain--this-repos-own-tree--14). Both are build-time-only and a fix is
-  available; neither has been taken yet, and nothing in CI currently gates a merge on
-  `npm audit` the way the backend's `audit` job does.
+  available; neither has been taken yet. `npm audit --omit=dev` runs on every push/PR outside
+  the `ci` gate in both repos: an alert on its own red square, not a gate.
 
 ## Shared with the backend
 
