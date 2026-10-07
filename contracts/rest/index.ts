@@ -1389,7 +1389,7 @@ export interface UpdateLocaleEntryRequest {
 }
 
 /**
- * A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value is refused at write time with a 422, not by this schema.
+ * A `translatables` registry key — `product` in V1. Not an enum: the set grows as more of the kernel registry declares translatable collections, and this contract does not enumerate a kernel manifest. An unregistered value answers 404, like any path that names nothing; the length bounds here stay 422.
  * @minLength 1
  * @maxLength 64
  */
@@ -4316,7 +4316,7 @@ export const WebhookDeliveryStatus = {
 
 export interface WebhookDelivery {
     id: Id;
-    subscriptionId: string;
+    subscriptionId: Id;
     eventId: string;
     eventType: string;
     /** @minimum 1 */
