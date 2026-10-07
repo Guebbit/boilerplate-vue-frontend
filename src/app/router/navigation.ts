@@ -54,7 +54,10 @@ const authContinueTo = (name: string, path: string | undefined, locale?: string)
 /**
  * Where an app-bar "Log in" / "Sign up" link should send the visitor back to afterwards.
  *
- * On a page that is not itself an auth page, that is the page. ON an auth page it is that page's
+ * On Home there is nothing to return to, and carrying it would override the saved-locale landing
+ * in `usePostLoginRedirect`: a bare auth link lands in the account's own language.
+ *
+ * On any other page that is not itself an auth page, that is the page. ON an auth page it is that page's
  * own `?continue=` (or nothing): the other auth page is a sibling, and returning to it would land
  * an authenticated visitor on a guests-only route. Not validated here: the landing side
  * (`usePostLoginRedirect`) accepts a same-origin relative path only, whatever the link carried.
@@ -67,6 +70,7 @@ export const returnPathOf = (route: {
     fullPath: string;
     query: Record<string, unknown>;
 }): string | undefined => {
+    if (route.name === 'Home') return undefined;
     if (route.name !== SIGN_IN_ROUTE_NAME && route.name !== SIGN_UP_ROUTE_NAME)
         return route.fullPath;
     return typeof route.query.continue === 'string' ? route.query.continue : undefined;
