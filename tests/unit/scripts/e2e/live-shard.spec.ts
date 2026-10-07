@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { liveShardFiles } from '../../../../scripts/e2e/live-shard';
+import { liveShardFiles, liveShardSlices } from '../../../../scripts/e2e/live-shard';
 
 /** Five spec files to slice. */
 const FILES = ['a.cy.ts', 'b.cy.ts', 'c.cy.ts', 'd.cy.ts', 'e.cy.ts'];
@@ -41,5 +41,18 @@ describe('liveShardFiles', () => {
         [1, 0]
     ])('refuses slice %s of %s', (index, total) => {
         expect(() => liveShardFiles(FILES, DURATIONS, index, total)).toThrow(RangeError);
+    });
+});
+
+describe('liveShardSlices', () => {
+    it('is the same partition liveShardFiles hands out one slice at a time', () => {
+        expect(liveShardSlices(FILES, DURATIONS, 3)).toEqual(
+            [1, 2, 3].map((index) => liveShardFiles(FILES, DURATIONS, index, 3))
+        );
+    });
+
+    it('refuses a slice count that is not a positive integer', () => {
+        expect(() => liveShardSlices(FILES, DURATIONS, 0)).toThrow(RangeError);
+        expect(() => liveShardSlices(FILES, DURATIONS, 2.5)).toThrow(RangeError);
     });
 });

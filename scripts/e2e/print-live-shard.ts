@@ -3,13 +3,16 @@
  * Prints one nightly live slice as a comma-separated `--spec` value: `tsx … print-live-shard.ts 2 4`
  * is the second of four. `tsx … print-live-shard.ts antibot` prints the antibot run's specs
  * instead — the matrix entry whose backend boots with the human-challenge provider on.
+ * `tsx … print-live-shard.ts all 4` prints every slice of four, one per line, from ONE read of the
+ * durations file — what a caller that wants several slices uses, so a file another run appends to
+ * in between cannot make two slices disagree.
  * `e2e-live.yml`'s matrix feeds either to `npm run test:e2e:live:spec`.
  */
 import { globSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ANTIBOT_SPEC_GLOBS, FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
-import { liveShardFiles } from './live-shard';
+import { liveShardFiles, liveShardSlices } from './live-shard';
 import { SECONDS } from './shard-balancer';
 import { readSpecDurations } from './spec-durations';
 
@@ -33,8 +36,11 @@ if (first === 'antibot') {
     process.exit(0);
 }
 
+/** `all` prints every slice; otherwise this slice's index and the slice count, as numbers. */
+const printAll = first === 'all';
+
 /** This slice's index and the slice count, as numbers. */
-const [index, total] = [Number(first), Number(second)];
+const [index, total] = printAll ? [1, Number(second)] : [Number(first), Number(second)];
 
 /** Every functional spec file, as posix paths. */
 const files = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT }).map((entry) =>
@@ -54,12 +60,16 @@ const durations = Object.fromEntries(
     })
 );
 
+// Either every slice, from the one `durations` snapshot above, or just this one (which also
+// refuses an out-of-range index).
+const wanted = printAll
+    ? liveShardSlices(files, durations, total)
+    : [liveShardFiles(files, durations, index, total)];
+
 // An empty slice would make `cypress run --spec ""` run the WHOLE suite, in every job.
-const slice = liveShardFiles(files, durations, index, total);
-// Refuse an empty slice, which would make Cypress run everything.
-if (slice.length === 0) {
-    console.error(`live shard ${String(index)}/${String(total)} has no specs`);
+if (wanted.some((slice) => slice.length === 0)) {
+    console.error(`live shard ${String(printAll ? 'all' : index)}/${String(total)} has no specs`);
     process.exit(2);
 }
 
-console.log(slice.join(','));
+for (const slice of wanted) console.log(slice.join(','));
