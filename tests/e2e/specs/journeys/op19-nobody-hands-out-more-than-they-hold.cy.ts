@@ -4,8 +4,8 @@
  * OP19 · Nobody hands out more than they hold. A role may only be granted by someone who holds
  * every permission it carries. The moderator may make a customer a moderator but not an
  * administrator; support may grant nothing above itself; the administrator may promote a customer
- * to the warehouse, and that person's next sign-in shows the warehouse menu. A refused grant is
- * shown on the access dialog's own page, and the role is the same after a reload.
+ * to the warehouse, and that person's next sign-in shows the warehouse menu. A role the caller
+ * cannot grant is not in the picker, and the server refuses it when asked by hand.
  *
  * The person acted on is the seeded `unverified` account: a customer, so the people acting are all
  * above it. The grant is on record in the audit trail.
@@ -15,6 +15,7 @@
  */
 import { eventually } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
+import type { E2ERole } from '../../../support/e2e/scenario';
 
 /** The slice of a user this story reads. */
 interface UserLike {
@@ -73,18 +74,27 @@ const roleIs = (userId: string, role: string): void => {
 };
 
 /**
- * A grant that is refused: the error is shown beside the button, and the role is the same after a
- * reload.
+ * A role the picker does not offer, and the server refusing it all the same: the select lists
+ * only what `grantableRoles` published, and a request made by hand is answered `409` with the
+ * role staying as it was.
  *
  * @param userId - whose role
  * @param role - the role asked for
  * @param stays - the role the person holds all along
+ * @param as - the seeded account making the request
  */
-const refusedGrant = (userId: string, role: string, stays: string): void => {
-    grantRole(userId, role);
-    cy.get('[data-test=user-manage-access-error]').should('exist');
-    cy.reload();
-    cy.get('[data-test=user-manage-access]').should('exist');
+const notOfferedAndRefused = (userId: string, role: string, stays: string, as: E2ERole): void => {
+    cy.visit(`/en/users/${userId}`);
+    cy.get('[data-test=user-manage-access]').click();
+    cy.get('[data-test=user-access-role]').click();
+    cy.get('[role=listbox] [role=option]').should('not.contain', role);
+    cy.get('body').type('{esc}');
+    cy.get('[data-test=user-access-cancel]').click();
+    loginDevice(as).then((device) => {
+        requestAsDevice(device, 'PATCH', `/users/${userId}`, { role })
+            .its('status')
+            .should('equal', 409);
+    });
     roleIs(userId, stays);
 };
 
@@ -99,7 +109,7 @@ describe('OP19 · Nobody hands out more than they hold', () => {
         cy.accountInRole('unverified').then(({ id: targetId }) => {
             cy.step('the moderator may not make anyone an administrator, and the role stays');
             cy.loginAs('moderator');
-            refusedGrant(targetId, 'admin', 'customer');
+            notOfferedAndRefused(targetId, 'admin', 'customer', 'moderator');
 
             cy.step('but may make a moderator, which it holds itself');
             grantRole(targetId, 'moderator');
@@ -109,8 +119,8 @@ describe('OP19 · Nobody hands out more than they hold', () => {
             cy.step('support holds neither, and is refused both, the role staying as it was');
             cy.apiAs('admin', 'PATCH', `/users/${targetId}`, { role: 'customer' });
             cy.switchUser('support');
-            refusedGrant(targetId, 'admin', 'customer');
-            refusedGrant(targetId, 'moderator', 'customer');
+            notOfferedAndRefused(targetId, 'admin', 'customer', 'support');
+            notOfferedAndRefused(targetId, 'moderator', 'customer', 'support');
 
             cy.step('the administrator promotes the same account to the warehouse');
             cy.switchUser('admin');

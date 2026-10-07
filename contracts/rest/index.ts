@@ -198,6 +198,15 @@ export interface Abilities {
      */
     subjects: string[];
     /**
+     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
+     * /users`, in the order `shared/authorization-roles.yaml` declares them.
+     * Computed by the same rule as the `409` those writes answer, so a role
+     * picker built from it offers exactly what the write accepts. Empty for a
+     * caller who may grant nothing, an anonymous one included. It has NO
+     * AUTHORITY: the write is re-checked server-side.
+     */
+    grantableRoles: string[];
+    /**
      * The shop `tenant`'s rules are about. Absent when the caller has no tenant
      * membership at all — a pure platform operator administers the installation
      * rather than acting inside one shop.
@@ -2438,6 +2447,7 @@ export interface LoginTwoFactorRequest {
     challenge?: string;
     /**
      * A code from any armed method, or an unused backup code. Which method it came from is the server's problem, not the client's.
+     * @minLength 1
      * @maxLength 64
      */
     code: string;
@@ -2497,6 +2507,7 @@ export interface TwoFactorStatusEnvelope {
 export interface TwoFactorCodeRequest {
     /**
      * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
+     * @minLength 1
      * @maxLength 64
      */
     code: string;
@@ -2505,6 +2516,7 @@ export interface TwoFactorCodeRequest {
 export interface TwoFactorSetupRequest {
     /**
      * A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor.
+     * @minLength 1
      * @maxLength 64
      */
     code?: string;
@@ -2537,6 +2549,7 @@ export interface TwoFactorSetupEnvelope {
 export interface TwoFactorConfirmRequest {
     /**
      * The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.
+     * @minLength 1
      * @maxLength 64
      */
     code: string;
@@ -5847,7 +5860,7 @@ export const getObservabilityMetricsOverview = (
 /**
  * Returns the most recent INCIDENT events, newest first, from the persisted audit trail:
  * security refusals (`security.*`), failed sign-ins, a failed second factor or OAuth
- * sign-in, a replayed refresh token, worker failures, and a webhook subscription
+ * sign-in, a replayed refresh token, and a webhook subscription
  * disabled for failing. Never what a shop's customers did (orders, payments, accounts,
  * successful sign-ins): that is a shop admin's `GET /audit`.
  * Every `ip` is a keyed digest (`hmac:` and 12 hex characters), comparable across rows
@@ -6106,6 +6119,10 @@ export const resendPendingEmail = (
  * **The client's copy has no authority.** It decides what to RENDER, never what is
  * allowed; every request is re-evaluated server-side. Published here because the
  * alternative is every client inventing the same guess.
+ *
+ * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
+ * writes, computed by the same rule as their `409`; a role picker reads it instead of a
+ * hard-coded list. Empty for an anonymous caller. It has no authority either.
  *
  * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
  * a value in the model rather than an absence, and a shop front that greys nothing
@@ -6517,6 +6534,8 @@ export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessR
  * Starts "give me my data" (Art. 15, 20) and answers at once with `202` and the export's `id` and `status`. The file is built in the background from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail — and a LINK to it is mailed to the account's address when it is ready, never the data itself. Fetch it with `GET /account/export/{id}`.
  *
  * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+ *
+ * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged.
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExport = (
@@ -8157,7 +8176,7 @@ export const createPaymentIntent = (
 };
 
 /**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `payments.any.read` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
  * @summary Get the payment behind an order
  */
 export const getPaymentByOrder = (

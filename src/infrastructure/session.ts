@@ -282,6 +282,14 @@ export const useSessionStore = defineStore('session', () => {
      */
     const declaredSubjects = ref<Set<string>>(new Set());
 
+    /**
+     * The tenant roles this caller may assign through the user writes, as last published by
+     * `GET /account/abilities` — computed by the server's own grant rule, so a role picker built
+     * from it offers what the write accepts. Caller-specific, so unlike {@link declaredSubjects} it
+     * is emptied with the rest of the abilities. No authority: the write is re-checked.
+     */
+    const grantableRoles = ref<string[]>([]);
+
     /** Subjects already warned about, so a route repeatedly asking about the same typo logs once. */
     const warnedSubjects = new Set<string>();
 
@@ -289,13 +297,14 @@ export const useSessionStore = defineStore('session', () => {
      * Replace both rule sets wholesale with what the server just published.
      *
      * @param rules - the payload's two packed-rule lists, exactly as `GET /account/abilities`
-     *  returns them, plus its declared subject set; omit `tenant`/`platform` to empty them
+     *  returns them, plus its declared subject set and grantable roles; omit `tenant`/`platform` to empty them
      */
     const setAbilities = (
-        rules: Pick<Partial<Abilities>, 'tenant' | 'platform' | 'subjects'> = {}
+        rules: Pick<Partial<Abilities>, 'tenant' | 'platform' | 'subjects' | 'grantableRoles'> = {}
     ) => {
         tenantAbility.value = createMongoAbility(unpackAbilityRules(rules.tenant ?? []));
         platformAbility.value = createMongoAbility(unpackAbilityRules(rules.platform ?? []));
+        grantableRoles.value = rules.grantableRoles ?? [];
         if (rules.subjects) declaredSubjects.value = new Set(rules.subjects);
     };
 
@@ -690,6 +699,7 @@ export const useSessionStore = defineStore('session', () => {
         tenantAbility,
         platformAbility,
         declaredSubjects,
+        grantableRoles,
         setAbilities,
         can,
         canOnOthers,
