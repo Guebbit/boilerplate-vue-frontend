@@ -7,8 +7,9 @@
  *
  * The second shopper is the seeded second-shopper customer: staff hold no
  * shopping key, and its address book carries the billing address the invoice needs. Both shoppers also
- * read the product page's count along the way: it follows the hold and the release, because every
- * stock write clears the server cache and the browser revalidates the page.
+ * read the product page's stock flag along the way (in stock, then "Out of stock"): it follows the
+ * hold and the release, because every stock write clears the server cache and the browser
+ * revalidates the page. The exact count is checked as the admin, not read off the page.
  */
 import { addToCartFromStorefront, idFromLocation } from '../../../support/e2e/steps';
 

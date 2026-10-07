@@ -23,6 +23,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import type { InventoryLevel } from '@types';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
@@ -83,9 +84,31 @@ const levelHeaders = computed<CoreDataTableHeader<InventoryLevel>[]>(() => [
 const levelsPage = ref(1);
 
 /**
- * When on, narrows the board to products at or under the server's low-availability threshold.
+ * The board's one filter: `lowOnly` narrows it to products at or under the server's
+ * low-availability threshold.
  */
-const lowOnly = ref(false);
+const filters = ref<{ lowOnly?: boolean }>({});
+
+/**
+ * The switch's model: an absent filter reads as off.
+ */
+const lowOnly = computed({
+    get: () => filters.value.lowOnly === true,
+    set: (value: boolean) => {
+        filters.value = value ? { lowOnly: true } : {};
+    }
+});
+
+/**
+ * Keeps the page and the switch in the URL under `levels-*`, so the ledger below keeps its own
+ * keys (`movements-*`) on the same screen.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: levelsPage,
+    params: { lowOnly: 'boolean' },
+    prefix: 'levels'
+});
 
 /**
  * How many pages the current filter spans.
@@ -101,6 +124,8 @@ const loadLevels = () =>
         pageSize: PAGE_SIZE,
         lowOnly: lowOnly.value || undefined
     });
+
+watch(lowOnly, syncUrl);
 
 watch([levelsPage, lowOnly], () => void loadLevels());
 

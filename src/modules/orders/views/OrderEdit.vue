@@ -24,6 +24,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { ordersSchema } from '@/modules/orders/schemas.ts';
 import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import { z } from 'zod';
@@ -275,13 +276,11 @@ interface OrderEditForm {
 }
 
 /**
- * Validation schema for order updates.
+ * Validation schema for order updates. The email rule is `ordersSchema`'s own, so the edit form
+ * cannot drift from it; an emptied field reads as "unchanged".
  */
 const editSchema = z.object({
-    email: z.preprocess(
-        (v) => (v === '' ? undefined : v),
-        z.email({ error: () => t('orders-form.email-invalid') }).optional()
-    )
+    email: z.preprocess((v) => (v === '' ? undefined : v), ordersSchema.shape.email)
 });
 
 /**

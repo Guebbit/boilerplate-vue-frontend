@@ -6,7 +6,7 @@
  * router over `collectModuleRoutes(enabledModules)`, the store's own fetch stubbed, the cart
  * seeded directly into the store.
  */
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -152,9 +152,22 @@ const mountCart = ({
     return flushPromises().then(() => ({ wrapper, checkoutSpy, clearSpy, cart }));
 };
 
-// The order links point at lazily loaded routes; settle those imports before this file's
-// environment is torn down, or one resolves after it and fails the run.
-afterAll(() => vi.dynamicImportSettled());
+// The order links point at lazily loaded routes. Load the order page's route component up front
+// (through the router, so no module reaches into `orders`), so a checkout's navigation never
+// starts a first import (`orders/domain/reorder.ts` and the rest of its chain) that could still
+// be pending when this file's environment is torn down.
+beforeAll(() =>
+    Promise.all(
+        router.resolve('/en/orders/o1').matched.map((record) => {
+            const component: unknown = record.components?.default;
+            return typeof component === 'function' ? (component as () => unknown)() : undefined;
+        })
+    )
+);
+
+// Whatever import is still in flight (a navigation the last test left running) must settle before
+// teardown; the flush lets a navigation queued by that test start its import first.
+afterAll(() => flushPromises().then(() => vi.dynamicImportSettled()));
 
 beforeEach(() => {
     sessionStorage.clear();

@@ -153,6 +153,61 @@ describe('useListUrlState — sync', () => {
         }));
 });
 
+const mountTwoLists = (query: LocationQuery = {}) => {
+    const first = { filters: ref<TestFilters>({}), page: ref(1) };
+    const second = { filters: ref<TestFilters>({}), page: ref(1) };
+    const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: '/', name: 'Home', component: { template: '<div />' } }]
+    });
+    const Host = defineComponent({
+        setup() {
+            const one = useListUrlState({
+                ...first,
+                params: { text: 'string' },
+                prefix: 'one'
+            });
+            useListUrlState({ ...second, params: { text: 'string' }, prefix: 'two' });
+            return { syncOne: one.sync };
+        },
+        template: '<div />'
+    });
+    return router
+        .push({ name: 'Home', query })
+        .then(() => mount(Host, { global: { plugins: [router] } }))
+        .then((wrapper) => ({ wrapper, router, first, second }));
+};
+
+describe('useListUrlState — prefix', () => {
+    /**
+     * Mounts one host holding two prefixed lists, on a router already at `query`.
+     *
+     * @param query - The URL the visitor arrived on.
+     */
+    it('reads each list from its own prefixed keys only', () =>
+        mountTwoLists({ 'one-text': 'a', 'two-page': '3' }).then(({ first, second }) => {
+            expect(first.filters.value).toEqual({ text: 'a' });
+            expect(first.page.value).toBe(1);
+            expect(second.filters.value).toEqual({});
+            expect(second.page.value).toBe(3);
+        }));
+
+    it('writes prefixed keys and keeps the other list’s keys', () =>
+        mountTwoLists({ 'two-text': 'b' }).then(({ wrapper, first, router }) => {
+            first.filters.value = { text: 'a' };
+            first.page.value = 2;
+            wrapper.vm.syncOne();
+
+            return vi.waitFor(() => {
+                expect(router.currentRoute.value.query).toEqual({
+                    'one-text': 'a',
+                    'one-page': '2',
+                    'two-text': 'b'
+                });
+            });
+        }));
+});
+
 describe('useListSearch', () => {
     it('search restarts from the first page, syncs the URL, then searches', () =>
         mountList().then(async ({ wrapper, page, search, router }) => {

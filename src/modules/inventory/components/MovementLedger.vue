@@ -34,6 +34,7 @@ import {
 } from '@/modules/inventory/composables/use-product-picker.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { StockMovementReason } from '@/types/enums.ts';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
@@ -119,14 +120,40 @@ const movementHeaders = computed<CoreDataTableHeader<StockMovement>[]>(() => [
 const movementsPage = ref(1);
 
 /**
+ * The ledger's filters: one product and/or one kind of transition; a missing key shows everything.
+ */
+const filters = ref<{ productId?: string; reason?: TStockMovementReason }>({});
+
+/**
  * Narrows the ledger to one product; `undefined` shows every product.
  */
-const movementsProductId = ref<string | undefined>();
+const movementsProductId = computed({
+    get: () => filters.value.productId,
+    set: (productId: string | undefined) => {
+        filters.value = { ...filters.value, productId };
+    }
+});
 
 /**
  * Narrows the ledger to one kind of transition; `undefined` shows every reason.
  */
-const movementsReason = ref<TStockMovementReason | undefined>();
+const movementsReason = computed({
+    get: () => filters.value.reason,
+    set: (reason: TStockMovementReason | undefined) => {
+        filters.value = { ...filters.value, reason };
+    }
+});
+
+/**
+ * Keeps the filters and page in the URL under `movements-*`, so the stock board above keeps its
+ * own keys (`levels-*`) on the same screen.
+ */
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page: movementsPage,
+    params: { productId: 'string', reason: Object.values(StockMovementReason) },
+    prefix: 'movements'
+});
 
 /**
  * The product filter's search box and options — `POST /products/search`, not the products store's
@@ -241,6 +268,8 @@ const loadMovements = () =>
     });
 
 watch([movementsPage, movementsProductId, movementsReason], () => void loadMovements());
+
+watch([movementsProductId, movementsReason], syncUrl);
 
 /**
  * The stock board's history button jumps here: this product's story, from the first page.
