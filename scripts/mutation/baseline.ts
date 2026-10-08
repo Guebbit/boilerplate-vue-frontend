@@ -4,7 +4,7 @@
  * ── Why this exists ──────────────────────────────────────────────────────────
  * Stryker's `thresholds` are GLOBAL — `high`, `low`, `break`, and nothing else. There is no
  * per-file threshold. So a single `break` over a whole `mutate` scope has exactly the failure mode
- * that directory-shaped coverage thresholds have one level down: a strong file carries a weak one,
+ * that pooling has one level down: a strong file carries a weak one,
  * and the number that passes the gate is an average nobody can act on.
  *
  * That matters most precisely when `mutate` is widened to cover everything, which is the direction

@@ -402,10 +402,9 @@ jobs:
             - name: Setup Node and install
               uses: ./.github/actions/setup-node-and-install
 
-            - name: Run unit tests with coverage and a JSON report
-              # One vitest invocation, two reporters (`default` for the log, `json` for the
-              # rollup below) plus coverage — one suite run, not two: the report comes from the
-              # same invocation as the coverage.
+            - name: Run unit tests with a JSON report
+              # One vitest invocation, two reporters: `default` for the log, `json` for the
+              # rollup below.
               run: npm run test:unit:ci
 
             - name: Per-module test report
@@ -423,18 +422,6 @@ jobs:
                   path: reports/test-report.json
                   retention-days: 14
                   if-no-files-found: ignore
-
-            - name: Upload coverage report
-              # The gate is "Run unit tests with coverage and a JSON report" above:
-              # `vitest.config.ts` sets per-file thresholds, and a file under its floor fails that
-              # step. This upload is the detail behind that verdict — which lines are missed —
-              # and runs on failure for exactly that.
-              if: always()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-              with:
-                  name: coverage-report
-                  path: coverage/
-                  retention-days: 14
 
     spec-identity:
         # The cross-repo contract gate.

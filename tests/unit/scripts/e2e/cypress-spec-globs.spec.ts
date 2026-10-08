@@ -113,7 +113,7 @@ describe('every spelling of the spec set resolves to the same files', () => {
  *
  * `cypress.config.ts` and `eslint.config.ts` are read as text rather than imported: importing
  * either pulls its whole plugin graph into jsdom, the same reason
- * `coverage-and-mutate-scope.spec.ts` reads `vitest.config.ts` as text. Comments go because all
+ * `mutate-scope.spec.ts` reads `vitest.config.ts` as text. Comments go because all
  * three files discuss these paths in prose at length — and should. What must not survive is a
  * glob in the CODE.
  */

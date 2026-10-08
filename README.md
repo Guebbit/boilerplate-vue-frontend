@@ -106,7 +106,7 @@ npm run complete    # lint + spec lint + contract identity + format + build + un
 ```
 
 The full gate. For now the pre-commit hook runs a faster subset, `npm run complete:light` (no
-build, coverage or Cypress), so run this yourself before merging. It takes **around ten minutes**,
+build or Cypress), so run this yourself before merging. It takes **around ten minutes**,
 mostly Cypress — start it and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
 rather than reported.
 

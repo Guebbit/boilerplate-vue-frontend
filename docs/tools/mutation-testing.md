@@ -334,11 +334,9 @@ A counterintuitive but important consequence of the table above: **untested file
 
 That is why the list above is so short. The bar for excluding something is **"a mutant here could not mean anything to anyone"**, not "our tests would not kill it" — an unkilled mutant is a finding, while a file missing from the report is a blind spot, since an absent file reads exactly like a file with no survivors. Only a module's `index.ts` (a barrel, whose mutants ask whether a re-export changed) and its `tests/` (test code, not code under test) clear that bar.
 
-### Its relationship to the coverage floors
+### Its relationship to the test scopes
 
-`vitest.config.ts`'s coverage thresholds and this `mutate` list deliberately do not match, and the direction is the point: **`mutate` is the wider of the two**, because a file with no coverage is free to mutate and expensive to floor.
-
-The half that matters is enforced rather than described. `tests/cross-cutting/coverage-and-mutate-scope.spec.ts` fails if a file carrying a coverage floor falls outside the mutation scope — a floor says the file is executed, and without a mutant nothing then asks whether executing it proves anything. The reverse is deliberately **not** asserted: requiring a floor for everything mutated would turn every honest zero into a failing gate.
+`tests/cross-cutting/mutate-scope.spec.ts` fails if a `mutate` pattern matches no file, so a moved or renamed directory cannot silently stop being measured. Coverage is not measured anywhere: a line no test ran is a `NoCoverage` mutant in this report, per line.
 
 **`.vue` files are deliberately still out**, and for a reason about the _tool_ rather than about the tests. Stryker _can_ mutate a single-file component — it maps the file to the HTML parser and mutates the `<script>` block — but it does **not** mutate template expressions. An SFC in scope would therefore report a score implying template coverage nobody has, and a misleading number is worse than an absent one. It is sequenced after component tests exist.
 
@@ -360,7 +358,7 @@ The three outcomes are different findings, and the columns keep them apart:
 
 ## The per-file ratchet
 
-Stryker's own thresholds are **global** — `high`, `low`, `break`, and nothing else. That is the same pooling failure that directory-shaped coverage thresholds have: a strong file carries a weak one, and the number that passes is an average nobody can act on. It gets worse as `mutate` widens, not better.
+Stryker's own thresholds are **global** — `high`, `low`, `break`, and nothing else. That is a pooling failure: a strong file carries a weak one, and the number that passes is an average nobody can act on. It gets worse as `mutate` widens, not better.
 
 So `mutation-baseline.json` records a score **per file**, and `scripts/mutation/check-baseline.ts` compares each run against it. It holds one entry per mutated file:
 

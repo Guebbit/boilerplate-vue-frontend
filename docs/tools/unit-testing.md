@@ -21,7 +21,6 @@ flowchart TB
     Source["src/**\ncore · ui · platform · modules"] --> Unit["Vitest\ntests/unit/**/*.spec.ts"]
     Unit --> ModuleMock["vi.mock('@api', ...)\nhand-written return values"]
     Unit --> NodeMSW["msw/node\nreal HTTP, real interceptor chain\n(the transport specs only)"]
-    Unit --> Coverage[("v8 coverage\nnpm run test:unit:coverage")]
     Unit --> Mutation["Stryker\nmutation-tests THIS layer\nsee Mutation Testing"]
 
     classDef src fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -31,7 +30,7 @@ flowchart TB
     class Source src;
     class Unit test;
     class ModuleMock,NodeMSW mock;
-    class Coverage,Mutation out;
+    class Mutation out;
 ```
 
 Everything below this layer (components, Pinia stores, `src/infrastructure/http`, `src/infrastructure`) is exercised **without** a browser and **without** an API — a real browser talking to a real backend starts one layer up, in [The demo profile](./demo-profile.md).
@@ -97,7 +96,7 @@ const server = setupServer(
 | `tests/support/unit/wire-modules.ts`                                        | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it                    |
 | `tests/support/unit/jsdom-quiet-css.environment.ts`                         | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment                                                              |
 | `tests/support/e2e/**`                                                      | Cypress's, not Vitest's — the sweeps, the custom commands, the snapshot task                                                                                          |
-| `vitest.config.ts`                                                          | Test runner config (environment, setup files, coverage)                                                                                                               |
+| `vitest.config.ts`                                                          | Test runner config (environment, setup files)                                                                                                                         |
 | `vitest.config.mutation.ts`                                                 | Narrower variant Stryker drives — see [Mutation Testing](./mutation-testing.md)                                                                                       |
 
 ## The cross-cutting layer
@@ -113,16 +112,16 @@ ESLint rule — `MODULE_EDGES` in `eslint.config.ts` — enforced structurally a
 reads the real imports cannot disagree with them. See
 [Strategic DDD](../theory/strategic-ddd.md) §2 and §4.
 
-| Spec                                | Refuses                                                                                                                |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `registry.spec.ts`                  | A module whose manifest breaks an invariant every enabled module must satisfy                                          |
-| `published-language.spec.ts`        | A barrel exporting more, or less, than its siblings import                                                             |
-| `a11y-coverage.spec.ts`             | A routed module with no accessibility sweep — or a sweep outliving its routes                                          |
-| `store-location.spec.ts`            | A `defineStore` where the coverage floor's globs cannot see it                                                         |
-| `form-idiom.spec.ts`                | A form reaching the toolkit directly, keeping its own "show errors" flag, or leaving a page form with nothing to focus |
-| `schemas-i18n.spec.ts`              | A Zod message that stops following the active locale                                                                   |
-| `coverage-and-mutate-scope.spec.ts` | A floored file that nothing mutates                                                                                    |
-| `mutation-safe-imports.spec.ts`     | An import specifier a mutant could rewrite into something that still runs                                              |
+| Spec                            | Refuses                                                                                                                |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `registry.spec.ts`              | A module whose manifest breaks an invariant every enabled module must satisfy                                          |
+| `published-language.spec.ts`    | A barrel exporting more, or less, than its siblings import                                                             |
+| `a11y-coverage.spec.ts`         | A routed module with no accessibility sweep — or a sweep outliving its routes                                          |
+| `store-location.spec.ts`        | A `defineStore` outside the permitted places                                                                           |
+| `form-idiom.spec.ts`            | A form reaching the toolkit directly, keeping its own "show errors" flag, or leaving a page form with nothing to focus |
+| `schemas-i18n.spec.ts`          | A Zod message that stops following the active locale                                                                   |
+| `mutate-scope.spec.ts`          | A Stryker `mutate` pattern that matches no file                                                                        |
+| `mutation-safe-imports.spec.ts` | An import specifier a mutant could rewrite into something that still runs                                              |
 
 They belong to no module and must never name one — see the rule below. A spec here iterates the
 registry; the moment it writes `products`, deleting that domain breaks a test that is not about it.
@@ -132,11 +131,10 @@ tooling rather than its modules, and live in `tests/unit/scripts/` for that reas
 
 ## Commands
 
-| Command                      | Effect                                        |
-| ---------------------------- | --------------------------------------------- |
-| `npm run test:unit`          | Full suite, CI mode                           |
-| `npm run test:unit:coverage` | Same, with v8 coverage                        |
-| `npx vitest run <path>`      | One file, for fast iteration while editing it |
+| Command                 | Effect                                        |
+| ----------------------- | --------------------------------------------- |
+| `npm run test:unit`     | Full suite, CI mode                           |
+| `npx vitest run <path>` | One file, for fast iteration while editing it |
 
 ## Related pages
 

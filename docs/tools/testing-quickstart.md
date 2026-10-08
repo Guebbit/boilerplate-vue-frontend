@@ -21,7 +21,6 @@ know _which domain_, the third line is the one.
 | ---------------------------------- | --------------------------------------------------------- | ------- | ----------------- |
 | `test:unit -- <path>`              | Did I break the module I'm editing?                       | seconds | —                 |
 | `test:unit`                        | Did I break a unit anywhere?                              | ~9s     | ✅                |
-| `test:unit:coverage`               | …and what is still unexercised?                           | ~25s    | ✅                |
 | `test:unit:report` + `test:report` | Which module owns the failure, and where did the time go? | +1s     | ✅ (prints in CI) |
 | `test:e2e`                         | Does the app work against the real API?                   | ~2m     | ✅                |
 | `test:e2e:spec`                    | …just this one spec?                                      | ~30s    | —                 |
@@ -30,10 +29,8 @@ know _which domain_, the third line is the one.
 | `test:mutation`                    | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
 | `complete`                         | All of the gate, in CI's order                            | ~7m     | —                 |
 
-`test:unit:ci` is what the `test-unit` CI job actually runs — `test:unit:coverage` and
-`test:unit:report` in one vitest invocation (two reporters, one `--coverage`), not two full suite
-runs. Reach for the individual commands above locally; this one exists so the job doesn't pay for
-the suite twice.
+`test:unit:ci` is what the `test-unit` CI job actually runs — the unit run with two reporters (the
+log and the JSON report) in one vitest invocation. Reach for the individual commands above locally.
 
 ## Running one thing
 
@@ -74,10 +71,6 @@ npx vitest src/modules/products     # watches one module
   slowest suites
       3.2s  tests/unit/app/router/router.spec.ts
 
-  line coverage (from coverage/lcov.info)
-  module             lines   covered
-  products             229     13.5%
-  (infrastructure)     390     91.8%
 
   failures
   ✖ [orders] orderService.cancel releases the hold
@@ -85,8 +78,7 @@ npx vitest src/modules/products     # watches one module
       Error: expected 2 to be 3
 ```
 
-It needs a JSON report to read, which `test:unit:report` produces. Coverage rows appear only when
-`coverage/lcov.info` exists — run `test:unit:coverage` first if you want them.
+It needs a JSON report to read, which `test:unit:report` produces.
 
 **A failing e2e shard** writes its full Cypress output to `reports/e2e/shard-<n>.log`. Read that
 before anything else; the terminal copy can be truncated, the file cannot.

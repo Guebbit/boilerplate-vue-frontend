@@ -24,7 +24,7 @@ why there are two web-server configs here and none in the paired backend.
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `docker-compose.yml`            | The development stack. Ports are chosen so this repo and the paired backend can run side by side without collision. | [Docker & Podman](../tools/docker-and-podman.md) · [Environment Variables](../tools/environment.md) |
 | `docker-compose.production.yml` | The production shape of the same stack — the built image, no dev tooling.                                           | [Docker & Podman](../tools/docker-and-podman.md)                                                    |
-| `.dockerignore`                 | What never enters the build context: `node_modules`, the test output, and the coverage and mutation reports.        | [Docker & Podman](../tools/docker-and-podman.md)                                                    |
+| `.dockerignore`                 | What never enters the build context: `node_modules`, the test output, and the mutation reports.                     | [Docker & Podman](../tools/docker-and-podman.md)                                                    |
 
 ## CI
 

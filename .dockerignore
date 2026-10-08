@@ -23,7 +23,6 @@ docs/.vitepress/cache
 
 # Test and analysis output. None of it reaches the bundle, and every megabyte here is copied into
 # the build context on every build.
-coverage
 reports
 .stryker-tmp
 

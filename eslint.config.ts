@@ -678,7 +678,6 @@ export default defineConfigWithVueTs(
         'dist',
         // The e2e bundle `npm run test:e2e` builds and serves; generated output, same as `dist`.
         'dist-e2e',
-        'coverage',
         // The built docs site and its cache; authored docs are markdown, and the VitePress
         // config is linted through the tool-config block below.
         'docs/.vitepress/dist/**',
@@ -1059,8 +1058,7 @@ export default defineConfigWithVueTs(
         }
     },
     {
-        // Config files key objects by path glob (`vitest.config.ts`'s per-directory coverage
-        // thresholds, orval's per-output entries). Those keys are addresses, not identifiers, and
+        // Config files key objects by path glob (orval's per-output entries). Those keys are addresses, not identifiers, and
         // the tool defines their spelling — camelCasing one would just stop it matching anything.
         files: ['**/*.d.ts', '*.config.ts'],
         rules: {

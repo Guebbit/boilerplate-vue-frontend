@@ -65,7 +65,7 @@ Every layer above answers "did it break". None of them answers **which module ow
   products              4     34       0     0.1s
   (infrastructure)     30    771       0     6.1s
 
-  slowest suites / slowest tests / line coverage per module / failures named by module
+  slowest suites / slowest tests / failures named by module
 ```
 
 JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/testing/report-results.ts` is the reader, sharing its core machinery with the backend's own copy because Vitest's `json` reporter emits the shape Jest's `--json` does — though the two have since picked up their own repo-specific differences, and it is not one of the files `check:spec-identity` compares; keeping it in step is a `diff`, by hand.
@@ -284,10 +284,10 @@ not need the load rig that runtime benchmarking does.
 
 ### Diff coverage as a separate gate
 
-Superseded here by two existing gates: `coverage.thresholds.perFile` answers "is this code executed",
-and the per-file mutation baseline answers "did the tests get weaker". A third gate over the same
-ground buys CI complexity and a second number to argue about. It becomes the right tool if a large
-untested area ever lands below the floors, where fixing history is not realistic.
+Coverage is not measured here: the per-file mutation baseline answers "did the tests get weaker",
+and an unrun line is a `NoCoverage` mutant. A coverage gate on top buys CI complexity and a second
+number to argue about. It becomes the right tool if a large untested area ever lands far below the
+baseline, where fixing history is not realistic.
 
 ### Type-level tests
 

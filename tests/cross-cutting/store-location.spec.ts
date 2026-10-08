@@ -1,9 +1,9 @@
 /**
- * A module's stores live where the coverage floor can see them.
+ * A module's stores live in one predictable place.
  *
- * `vitest.config.ts` floors domain stores with one glob per shape below. A glob cannot report
- * what it fails to match, so a store named anything else does not score lower — it does not score
- * at all, silently, and the green number is measuring a smaller set than the reader believes.
+ * "Where is the cart store" must have one answer that tooling and readers can rely on. A glob
+ * cannot report what it fails to match, so a store named anything else is invisible to every
+ * path-based check, silently.
  *
  * Two shapes, and a module picks one:
  *
@@ -41,7 +41,7 @@ const moduleNames = (): string[] =>
  * Where a module declares Pinia stores, as paths relative to the module root.
  *
  * Matched on the `defineStore(` call rather than on the filename, which is the whole point: a
- * filename can be anything, and the call is what the coverage glob is trying to find.
+ * filename can be anything, and the call is what a path-based check is trying to find.
  */
 const storeFilesOf = (name: string): string[] => {
     const moduleRoot = path.join(MODULES_ROOT, name);
@@ -59,7 +59,7 @@ const isPermitted = (relative: string): boolean => {
 };
 
 describe('where a module keeps its stores', () => {
-    it.each(moduleNames())('%s puts every defineStore where the coverage glob looks', (name) => {
+    it.each(moduleNames())('%s puts every defineStore in a permitted place', (name) => {
         const misplaced = storeFilesOf(name).filter((relative) => !isPermitted(relative));
 
         expect(misplaced).toEqual([]);

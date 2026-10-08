@@ -89,7 +89,6 @@ const ALLOWED: { prefix: string; reason: string }[] = [
     { prefix: 'reports/audit/', reason: 'written by an audit prompt run' },
     { prefix: 'reports/test-report.json', reason: 'written by `test:unit:report`' },
     { prefix: 'reports/stryker-incremental.json', reason: "Stryker's local cache, gitignored" },
-    { prefix: 'coverage/', reason: 'written by a coverage run, absent until one happens' },
     { prefix: 'node_modules/', reason: 'a dependency path, cited to locate one — not our tree' },
     { prefix: 'tests/e2e/videos/', reason: 'Cypress artefacts, written by a run' },
     { prefix: 'tests/e2e/screenshots/', reason: 'Cypress artefacts, written by a run' },

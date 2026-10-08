@@ -83,7 +83,7 @@ explanation; an inventory table says which modules have it. This is where the le
 **Excluded.** Generated or vendored, stated once per directory so a reader knows it was a decision
 and not an oversight. `contracts/rest/` is the one — Orval writes it from `openapi.yaml`.
 
-Anything git does not track is out by definition: `dist/`, `coverage/`, `node_modules/`,
+Anything git does not track is out by definition: `dist/`, `node_modules/`,
 `.stryker-tmp/`, `docs/.vitepress/cache/`.
 
 ## Why there are no file counts here

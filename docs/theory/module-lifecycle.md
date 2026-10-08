@@ -91,7 +91,7 @@ A central spec that needs a module says so on a `// requires-module:` line, and 
 deletes it with that module — see [Journeys](../reference/tests.md#journeys--stories-that-cross-modules).
 
 Nothing needs rescoping to add one: `src/modules/<name>/tests/` is already outside
-`tsconfig.app.json`, the Vitest `include`, the coverage `include` and the Stryker `mutate` list.
+`tsconfig.app.json`, the Vitest `include` and the Stryker `mutate` list.
 `tsconfig.cypress.json` claims the `e2e/` folder (so the specs get Cypress' ambient types rather
 than the app's), `tsconfig.vitest.json` excludes it, and both `cypress.config.ts` and
 `scripts/e2e/run-shards.ts` discover the two homes by glob rather than by list.

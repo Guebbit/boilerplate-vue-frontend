@@ -292,9 +292,9 @@ export default defineConfig({
          * modules — stays central under `tests/e2e/specs/`, where a failure after a deletion is
          * correct signal rather than debris.
          *
-         * A module's `tests/` folder is already outside `tsconfig.app.json`, the Vitest `include`,
-         * the coverage `include` and the Stryker `mutate` list, so co-locating these costs no
-         * scoping changes to any of the four. `tsconfig.cypress.json` is what claims them, which
+         * A module's `tests/` folder is already outside `tsconfig.app.json`, the Vitest `include`
+         * and the Stryker `mutate` list, so co-locating these costs no scoping changes to any of the
+         * three. `tsconfig.cypress.json` is what claims them, which
          * is how they get Cypress' ambient types instead of the app's.
          *
          * The visual suite lives in `tests/e2e/visual/` and is run by its own script, deliberately
