@@ -14596,7 +14596,7 @@ components:
         message:
           type: string
         status:
-          type: string
+          $ref: "#/components/schemas/FeedbackRequestStatus"
         respondedAt:
           type: string
           format: date-time

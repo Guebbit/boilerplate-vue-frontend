@@ -834,13 +834,23 @@ export interface ExportAuditEntry {
     level: ExportAuditEntryLevel;
 }
 
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+
+export const FeedbackRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
 export interface ExportFeedbackTicket {
     id: Id;
     name?: string;
     email: Email;
     subject: string;
     message: string;
-    status: string;
+    status: FeedbackRequestStatus;
     respondedAt?: string;
     createdAt?: string;
 }
@@ -2830,16 +2840,6 @@ export interface CreateFeedbackRequest {
      */
     website?: string;
 }
-
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
-
-export const FeedbackRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
 
 export interface FeedbackRequest {
     id: Id;

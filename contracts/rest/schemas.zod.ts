@@ -11242,7 +11242,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 email: zod.email().max(downloadAccountExportResponseFeedbackItemEmailMax),
                 subject: zod.string(),
                 message: zod.string(),
-                status: zod.string(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
                 respondedAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional()
             })
