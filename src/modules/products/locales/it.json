@@ -92,7 +92,7 @@
         "label-tags": "Tag",
         "label-requires-shipping": "Richiede spedizione",
         "label-no-withdrawal": "Nessun diritto di recesso",
-        "hint-no-withdrawal": "Beni personalizzati, sigillati per igiene o deperibili (UE art. 16): il cliente non può recedere. Non per i contenuti digitali: quel diritto si perde solo con il consenso espresso del cliente, che il negozio non sa ancora raccogliere.",
+        "hint-no-withdrawal": "Beni confezionati su misura o chiaramente personalizzati, o che rischiano di deteriorarsi o scadere rapidamente (dir. 2011/83/UE art. 16, lett. c–d): il cliente non può recedere. Non per i beni sigillati per igiene (esclusi solo se aperti dopo la consegna) né per i contenuti digitali (serve il consenso espresso del cliente).",
         "button-submit": "Crea prodotto",
         "button-go-to-list": "Torna alla lista prodotti",
         "success-create": "Prodotto creato con successo"
@@ -113,7 +113,7 @@
         "label-tags": "Tag",
         "label-requires-shipping": "Richiede spedizione",
         "label-no-withdrawal": "Nessun diritto di recesso",
-        "hint-no-withdrawal": "Beni personalizzati, sigillati per igiene o deperibili (UE art. 16): il cliente non può recedere. Non per i contenuti digitali: quel diritto si perde solo con il consenso espresso del cliente, che il negozio non sa ancora raccogliere.",
+        "hint-no-withdrawal": "Beni confezionati su misura o chiaramente personalizzati, o che rischiano di deteriorarsi o scadere rapidamente (dir. 2011/83/UE art. 16, lett. c–d): il cliente non può recedere. Non per i beni sigillati per igiene (esclusi solo se aperti dopo la consegna) né per i contenuti digitali (serve il consenso espresso del cliente).",
         "button-submit": "Salva modifiche",
         "reset-form": "Reimposta modifiche",
         "button-go-to-details": "Torna ai dettagli prodotto",
