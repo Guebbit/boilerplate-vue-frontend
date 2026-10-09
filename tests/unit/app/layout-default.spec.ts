@@ -151,8 +151,9 @@ describe('LayoutDefault — a session that died on its own', () => {
 describe('LayoutDefault — the privacy choices link', () => {
     afterEach(() => vi.unstubAllEnvs());
 
-    it('is absent when Umami is not configured', () => {
+    it('is absent when neither Umami nor Faro is configured', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+        vi.stubEnv('VITE_FARO_URL', '');
 
         return router.push('/plain').then(() => {
             expect(mountLayout().find('[data-test="privacy-choices-link"]').exists()).toBe(false);

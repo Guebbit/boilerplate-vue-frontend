@@ -16,6 +16,7 @@ import type { Component } from 'vue';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import { SLOTS_KEY } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import Product from '../views/Product.vue';
 import { useProductsStore } from '../store';
 import { i18n, loadLocale } from '@/i18n';
@@ -239,5 +240,25 @@ describe('the edit button', () => {
         signInWith([['update', 'Product']]);
 
         expect(mountProduct(widget).find('[data-test=go-to-edit]').exists()).toBe(true);
+    });
+});
+
+describe('the page view', () => {
+    it('is reported to the analytics relay once, with the product opened', () => {
+        const trackBrowsing = vi.spyOn(useAnalyticsConsentStore(), 'trackBrowsing');
+
+        mountProduct({
+            id: 'p-viewed',
+            title: 'Viewed widget',
+            price: 9.99,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
+        });
+
+        expect(trackBrowsing).toHaveBeenCalledExactlyOnceWith({
+            event: 'product_viewed',
+            productId: 'p-viewed'
+        });
     });
 });

@@ -83,6 +83,8 @@ const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
  */
 const UNPAIRED_BACKEND_MODULES: Readonly<Partial<Record<string, string>>> = {
     access: 'Roles and permission checks are read through `GET /account/abilities`, not a module of their own on this side.',
+    analytics:
+        'The relay for browsing events has no screen: the consent store (`infrastructure/analytics-consent.ts`) sends them from the product pages, once the visitor has agreed.',
     antibot:
         'A shared widget (`infrastructure/http/antibot.ts` + `ui/organisms/HumanCheck.vue`), used by account, feedback and payments — not a screen of its own.',
     invoicing:

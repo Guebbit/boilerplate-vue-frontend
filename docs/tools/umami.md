@@ -27,12 +27,13 @@ flowchart LR
     Gate -->|no| Off[umami.disabled set\nno tag injected]
     Store -.injects the tag.-> Umami[Umami tracker\noptional]
     Nav[Route change] -.automatic pageview.-> Umami
-    API[API request] --> Backend[Backend handler] -->|"custom events"| Umami
+    API[API request] --> Backend[Backend handler] -->|"business events"| Umami
+    Browse[Product page, search] -.after consent.-> Relay[POST /analytics/events] --> Backend
 ```
 
 The shape is the point: this app _injects_ the tracker and nothing else. Pageviews are the
 tracker's job rather than the router's, and every custom event arrives at the same Umami website
-from the other side of the API.
+from the other side of the API (browsing ones relayed, after consent).
 
 ## Consent
 
@@ -49,8 +50,9 @@ Umami waits for the visitor, the same private-by-default rule as the backend's
 | Logout / account deletion     | `identify` is reset and the guest cookie's answer applies again                                                                       |
 | Footer "Privacy choices" link | Reopens the banner for any visitor, so withdrawing is as easy as agreeing (GDPR Art. 7(3)); signed in, its answer goes to the account |
 
-The banner and the link show whenever Umami is configured (`VITE_UMAMI_WEBSITE_ID`); there is no
-separate flag. `VITE_UMAMI_REQUIRE_CONSENT=false` makes the tracker load unasked, for a deployer
+The banner and the link show whenever Umami (`VITE_UMAMI_WEBSITE_ID`) or Faro (`VITE_FARO_URL`) is
+configured; there is no separate flag. Faro's measurement follows the same answer
+(`setFaroConsent`), and its crash reports do not wait for it: the banner says so. `VITE_UMAMI_REQUIRE_CONSENT=false` makes the tracker load unasked, for a deployer
 with their own legal basis. That also makes the banner's promise untrue, so change its copy too.
 
 The tag sends the page URL, the full referrer, screen size and language, and for a signed-in,
@@ -58,15 +60,23 @@ consenting user the account id (`identify`). The backend writes into the same Um
 consenting user's pageviews and events join under that id. The shipped Umami v2.14 cannot meet
 CNIL's audience-measurement exemption, so consent is the basis, not an exemption.
 
-## Why the frontend emits no events
+## Who sends which event
 
-Not one. The backend emits every product event — a product view, a cart change, a completed
-checkout, a logout — from the request that performed it, where the data is authoritative and where
-an extension cannot block it, a closing tab cannot lose it and a console cannot forge it.
+One rule: **browsing is sent by this app, business facts by the backend.**
 
-That leaves the frontend nothing to add. Its pageviews are written by the tag itself; its errors,
-web vitals and fetch spans go to [Faro](./observability.md). There is no `track()` on the store,
-because there was nothing left for it to send.
+The backend emits every business fact — a cart change, a completed checkout, an order, a logout —
+from the request that performed it, where the data is authoritative and where an extension cannot
+block it, a closing tab cannot lose it and a console cannot forge it.
+
+Browsing is the exception, because the response cache (Redis, and the browser's own for searches)
+answers most reads without reaching the backend, so it would under-count. A product page opened
+and a search made are reported by the page through the backend's `POST /analytics/events` relay
+(`trackBrowsing` on the consent store), and only after the visitor accepts: nothing is queued from
+before that. The backend then emits them through its own consent gate. The exact event list is the
+backend's contract, not copied here.
+
+Its pageviews are written by the tag itself; its errors, web vitals and fetch spans go to
+[Faro](./observability.md). There is no other `track()`.
 
 Emitting the same event from both sides would double-count it, and letting the frontend own the
 canonical version would make the analytics depend on whether a tracker script loaded.

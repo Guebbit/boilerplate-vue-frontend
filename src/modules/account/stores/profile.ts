@@ -155,6 +155,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     const obs = useObservabilityStore();
                     // The account's own answer rules Umami while signed in, over the guest cookie.
                     obs.setUmamiConsent(payload.analyticsConsent === true);
+                    obs.setFaroConsent(payload.analyticsConsent === true);
                     useAnalyticsConsentStore().setAccountChoice(payload.analyticsConsent);
                     if (payload.analyticsConsent === true) obs.identifyUser(payload.id);
                     else obs.unidentifyUser();

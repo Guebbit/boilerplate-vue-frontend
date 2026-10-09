@@ -56,6 +56,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/account$/, schemaName: "GetAccountResponse", bodySchemaName: undefined, module: "account" },
     { method: "PATCH", pattern: /^\/account$/, schemaName: "UpdateAccountResponse", bodySchemaName: "UpdateAccountBody", module: "account" },
     { method: "PUT", pattern: /^\/account$/, schemaName: "ReplaceAccountResponse", bodySchemaName: "ReplaceAccountBody", module: "account" },
+    { method: "POST", pattern: /^\/analytics\/events$/, schemaName: "CreateAnalyticsEventResponse", bodySchemaName: "CreateAnalyticsEventBody", module: "analytics" },
     { method: "GET", pattern: /^\/antibot\/challenge$/, schemaName: "GetAntibotChallengeResponse", bodySchemaName: undefined, module: "antibot" },
     { method: "GET", pattern: /^\/antibot\/config$/, schemaName: "GetAntibotConfigResponse", bodySchemaName: undefined, module: "antibot" },
     { method: "GET", pattern: /^\/api-keys$/, schemaName: "ListApiKeysResponse", bodySchemaName: undefined, module: "api-keys" },

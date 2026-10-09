@@ -63,13 +63,18 @@ export interface ResponseSchemaRoute {
 }
 
 /**
- * Backend `x-module` names with no owning frontend module at all — `antibot`'s public
+ * Backend `x-module` names with no owning frontend module at all — `analytics`' browsing-event
+ * relay (called by the consent store, which is infrastructure), `antibot`'s public
  * config/challenge (rendered by whichever form is being guarded, not a module of its own) and
  * `audit-logs`' shop-scoped trail (`GET /audit`: `observability`'s `use-audit-trail` reads it, but
  * no module's own `response-schemas.ts` claims it, so it stays on this shelf). A row here moves
  * out the day some module's own file starts claiming it.
  */
-const UNCLAIMED_BACKEND_MODULES: ReadonlySet<string> = new Set(['antibot', 'audit-logs']);
+const UNCLAIMED_BACKEND_MODULES: ReadonlySet<string> = new Set([
+    'analytics',
+    'antibot',
+    'audit-logs'
+]);
 
 /**
  * Response schemas kept on the core shelf despite belonging to a module that DOES exist —

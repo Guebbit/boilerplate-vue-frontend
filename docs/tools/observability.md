@@ -44,12 +44,20 @@ obs.initUmami(); // no-op if VITE_UMAMI_WEBSITE_ID is absent
 
 ### What it captures
 
-Registering `getWebInstrumentations()` automatically captures:
+Faro boots with **crash reports only**, which need no consent, and **no session id** (`sessionTracking`
+is off, so nothing like `com.grafana.faro.session` is written to `sessionStorage`):
 
 - Uncaught errors + unhandled promise rejections
 - Console errors
-- Core Web Vitals (LCP / CLS / INP …)
-- Session tracking
+- Content Security Policy violations
+- Views (which screen an error happened on)
+- Tracing (below)
+
+**Measurement waits for the visitor.** Core Web Vitals, performance and navigation timing are
+added by `setFaroConsent(true)` and removed again on a withdrawal, called next to every
+`setUmamiConsent` (the consent store's `syncTracker`, and the profile store once the account's own
+answer arrives). It is idempotent, and a consent given before Faro has loaded is applied the moment
+it has.
 
 The `TracingInstrumentation` opens a span for every `fetch`/XHR and **propagates the W3C `traceparent` header to the API origin** (`VITE_API_URL`). Because the header is propagated, a single trace spans _"button click in the browser → API handler → Mongoose query"_ inside Grafana/Tempo.
 
@@ -89,8 +97,13 @@ The trace-propagation origin is derived from `VITE_API_URL`, the same value the 
 
 ### Event taxonomy
 
-**This app emits no custom events at all**, and that is the design rather than an omission. Two
-things cover the ground:
+**This app emits almost no custom events**, and that is the design rather than an omission. The one
+exception is browsing: a product page opened and a search made are reported to the backend's
+`POST /analytics/events` relay (`trackBrowsing` on the consent store), because the response cache
+hides most reads from the server. Nothing is sent, and nothing queued, before the visitor accepts
+analytics. The rule, in the backend's words, is in
+`boilerplate-node-backend/docs/tools/analytics.md` under "Who sends which event".
+Two things cover the rest of the ground:
 
 - **Pageviews**, including SPA route changes, are written by the Umami tag itself. There is nothing
   to call and nothing to maintain.
@@ -110,9 +123,10 @@ the other repo's data with nothing comparing the two, which is the same failure 
 sides emitting the same event; the last copy that lived here had already lost four names before
 anyone noticed.
 
-There is no `track()` on the store. An app built on this boilerplate that genuinely has a moment
-only the browser can see adds one back — but check first that the backend cannot report the same
-fact, because a name emitted from both sides writes two rows nothing downstream can tell apart.
+There is no general `track()`; `trackBrowsing` sends only the backend's closed browsing list. An app
+built on this boilerplate that genuinely has another moment only the browser can see adds it to the
+backend's relay contract — but check first that the backend cannot report the same fact, because a
+name emitted from both sides writes two rows nothing downstream can tell apart.
 
 ### Environment variables
 

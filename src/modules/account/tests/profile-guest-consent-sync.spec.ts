@@ -68,8 +68,9 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('the guest-consent sync', () => {
-    it('does nothing when Umami is not configured, even with an answered guest cookie', () => {
+    it('does nothing when neither Umami nor Faro is configured, even with an answered guest cookie', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+        vi.stubEnv('VITE_FARO_URL', '');
         useAnalyticsConsentStore().grant();
 
         return useProfileStore()

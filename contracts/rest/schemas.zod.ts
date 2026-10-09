@@ -1620,6 +1620,36 @@ export const GetAntibotChallengeResponse = zod.strictObject({
     })
 });
 /**
+ * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed (`product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
+ * @summary Report one browsing event
+ */
+export const createAnalyticsEventBodyOneProductIdMax = 64;
+export const createAnalyticsEventBodyTwoTextMax = 200;
+export const createAnalyticsEventBodyTwoResultCountMin = 0;
+export const createAnalyticsEventBodyTwoResultCountMax = 100000;
+export const createAnalyticsEventBodyTwoPageDefault = 1;
+export const createAnalyticsEventBodyTwoPageMax = 10000;
+export const CreateAnalyticsEventBody = zod.union([
+    zod.strictObject({
+        event: zod.enum(['product_viewed']),
+        productId: zod.string().min(1).max(createAnalyticsEventBodyOneProductIdMax)
+    }),
+    zod.strictObject({
+        event: zod.enum(['products_searched']),
+        text: zod.string().max(createAnalyticsEventBodyTwoTextMax).optional(),
+        resultCount: zod
+            .number()
+            .min(createAnalyticsEventBodyTwoResultCountMin)
+            .max(createAnalyticsEventBodyTwoResultCountMax),
+        page: zod
+            .number()
+            .min(1)
+            .max(createAnalyticsEventBodyTwoPageMax)
+            .default(createAnalyticsEventBodyTwoPageDefault)
+    })
+]);
+export const CreateAnalyticsEventResponse = zod.void();
+/**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */

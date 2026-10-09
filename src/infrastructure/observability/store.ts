@@ -9,15 +9,20 @@
  * Umami loads only after the visitor consents (`setUmamiConsent`), unless the build opts out with
  * `VITE_UMAMI_REQUIRE_CONSENT=false`.
  *
- * Umami is here for its PAGEVIEWS only — the tag writes them itself, including SPA route changes.
- * This app emits no custom events: everything with an API request behind it is reported by the
- * backend, from the handler that decided it. So there is no `track()` here to call.
+ * Before consent nothing identifies or measures the visitor. Faro boots with crash reports only
+ * (errors, console, CSP violations, views, tracing) and no session id; consent adds the
+ * measurement instrumentations (`setFaroConsent`), withdrawal removes them.
+ *
+ * Umami writes the PAGEVIEWS itself, including SPA route changes. The only custom events this app
+ * sends are browsing ones (`trackBrowsing` in `analytics-consent.ts`), through the backend's relay
+ * and only after consent; every business fact is reported by the backend, from the handler that
+ * decided it. See `docs/tools/umami.md` for who sends which event.
  */
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { mapValues } from 'lodash-es';
-import type { Faro, TransportItem } from '@grafana/faro-web-sdk';
+import type { Faro, Instrumentation, TransportItem } from '@grafana/faro-web-sdk';
 import {
     readFaroConfig,
     readUmamiConfig,
@@ -189,13 +194,49 @@ export const useObservabilityStore = defineStore('observability', () => {
      */
     let faroInitPromise: Promise<boolean> | undefined;
 
+    /**
+     * Builds the measurement instrumentations (web vitals, performance, navigation) once Faro's SDK
+     * is loaded. Set by {@link initFaro}; absent until then.
+     */
+    let makeMeasurement: (() => Instrumentation[]) | undefined;
+
+    /**
+     * The measurement instrumentations currently attached to Faro: empty before consent and after
+     * a withdrawal.
+     */
+    let measurement: Instrumentation[] = [];
+
+    /**
+     * Whether the visitor currently consents to measurement. Remembered so a consent given before
+     * Faro finished loading is applied the moment it has.
+     */
+    let measurementConsent = false;
+
+    /**
+     * Attaches or detaches the measurement instrumentations to match {@link measurementConsent}.
+     * Idempotent, and a no-op until Faro is ready (`initFaro` calls it again once it is).
+     */
+    const applyMeasurementConsent = (): void => {
+        if (!faro || !makeMeasurement) return;
+
+        if (measurementConsent && measurement.length === 0) {
+            measurement = makeMeasurement();
+            faro.instrumentations.add(...measurement);
+        } else if (!measurementConsent && measurement.length > 0) {
+            faro.instrumentations.remove(...measurement);
+            measurement = [];
+        }
+    };
+
     // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────
 
     /**
      * Initialise Grafana Faro as early as possible in app bootstrap.
      *
-     * `getWebInstrumentations()` captures uncaught errors, promise rejections, console errors,
-     * Core Web Vitals and session tracking; the tracing instrumentation opens a span per
+     * Boots with crash reports only, which need no consent: uncaught errors and rejections,
+     * console errors, CSP violations and views, plus tracing. Session tracking is off (no session id
+     * is generated or stored) and the measurement instrumentations (Core Web Vitals, performance,
+     * navigation) are added by {@link setFaroConsent}. The tracing instrumentation opens a span per
      * fetch/XHR and propagates `traceparent` to the API origin. The API links its request span to that
      * browser span rather than continuing its trace, so the two are findable from each other but
      * stay separate traces. Both SDKs are dynamically imported, off the critical entry bundle.
@@ -215,7 +256,14 @@ export const useObservabilityStore = defineStore('observability', () => {
             import('@grafana/faro-web-sdk'),
             import('@grafana/faro-web-tracing')
         ])
-            .then(([{ initializeFaro, getWebInstrumentations }, { TracingInstrumentation }]) => {
+            .then(([sdk, { TracingInstrumentation }]) => {
+                const { initializeFaro } = sdk;
+                makeMeasurement = () => [
+                    new sdk.WebVitalsInstrumentation(),
+                    new sdk.PerformanceInstrumentation(),
+                    new sdk.NavigationInstrumentation()
+                ];
+
                 // Faro Web SDK `initializeFaro`: `url` = the Alloy Faro receiver, `app` tags every
                 // signal, `instrumentations` = web defaults + tracing.
                 // https://github.com/grafana/faro-web-sdk
@@ -233,8 +281,14 @@ export const useObservabilityStore = defineStore('observability', () => {
                     // a URL query param — this keeps it out of every page-meta and trace-span URL Faro
                     // ships. See `stripTokensFromTelemetry`.
                     beforeSend: stripTokensFromTelemetry,
+                    // No session id before consent: Faro would otherwise store one in
+                    // `sessionStorage` (`com.grafana.faro.session`) and tag every signal with it.
+                    sessionTracking: { enabled: false },
                     instrumentations: [
-                        ...getWebInstrumentations(),
+                        new sdk.ErrorsInstrumentation(),
+                        new sdk.ConsoleInstrumentation(),
+                        new sdk.CSPInstrumentation(),
+                        new sdk.ViewInstrumentation(),
                         new TracingInstrumentation({
                             instrumentationOptions: {
                                 // Send `traceparent` to the API origin: the API records it as a span LINK, not a parent.
@@ -245,6 +299,7 @@ export const useObservabilityStore = defineStore('observability', () => {
                 });
 
                 faroReady.value = true;
+                applyMeasurementConsent();
                 logger.debug(
                     'observability',
                     '[Faro] Initialized',
@@ -270,6 +325,18 @@ export const useObservabilityStore = defineStore('observability', () => {
             });
 
         return faroInitPromise;
+    };
+
+    /**
+     * Applies the visitor's consent to Faro's measurement: granted adds web vitals, performance
+     * and navigation timing, withdrawn removes them. Crash reports are unaffected. Idempotent, and
+     * safe to call before Faro has loaded: the answer is applied once it has.
+     *
+     * @param granted - Whether the visitor currently consents to analytics.
+     */
+    const setFaroConsent = (granted: boolean): void => {
+        measurementConsent = granted;
+        applyMeasurementConsent();
     };
 
     /**
@@ -422,6 +489,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         initFaro,
         initUmami,
         setUmamiConsent,
+        setFaroConsent,
 
         // Unified API
         identifyUser,

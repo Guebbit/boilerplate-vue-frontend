@@ -17,6 +17,7 @@ import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ProductsList from '../views/ProductsList.vue';
 import { useProductsStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -211,5 +212,35 @@ describe('ProductsList — sorting on the server', () => {
         await mountList();
 
         expect(vi.mocked(searchProducts).mock.calls.at(0)?.[0]?.sort).toBeUndefined();
+    });
+});
+
+describe('ProductsList — reporting a search to the analytics relay', () => {
+    it('reports the term, the page and the result count when the search form is submitted', async () => {
+        answerWith('Walnut desk', 'Oak desk');
+        const trackBrowsing = vi.spyOn(useAnalyticsConsentStore(), 'trackBrowsing');
+        const wrapper = await mountList();
+        useProductsStore().filters.text = 'desk';
+
+        await wrapper.get('form').trigger('submit');
+        await flushPromises();
+
+        expect(trackBrowsing).toHaveBeenCalledExactlyOnceWith({
+            event: 'products_searched',
+            text: 'desk',
+            resultCount: 2,
+            page: 1
+        });
+    });
+
+    it('does not report a sort change: it refines a search rather than making one', async () => {
+        answerWith('Walnut desk');
+        const trackBrowsing = vi.spyOn(useAnalyticsConsentStore(), 'trackBrowsing');
+        const wrapper = await mountList();
+
+        emitOn(wrapper.findComponent(SortSelect), 'update:modelValue', '-price');
+        await flushPromises();
+
+        expect(trackBrowsing).not.toHaveBeenCalled();
     });
 });

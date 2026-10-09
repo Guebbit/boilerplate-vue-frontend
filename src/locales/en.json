@@ -60,7 +60,7 @@
     },
     "analytics-consent": {
         "banner-label": "Analytics consent",
-        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is tracked until you say yes, and you can change your mind any time from \"Privacy choices\" in the footer.",
+        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is measured until you say yes. Crash reports are always sent, so we can fix errors. You can change your mind any time from \"Privacy choices\" in the footer.",
         "privacy-choices": "Privacy choices",
         "button-accept": "Accept",
         "button-decline": "Decline"

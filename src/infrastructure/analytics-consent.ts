@@ -3,9 +3,10 @@
  * Guest analytics consent: unknown / granted / denied, persisted in a first-party cookie
  * the same way `session.ts` persists `isAuth`/`rememberMe` — through `@guebbit/js-toolkit`'s
  * `getCookie`/`setCookie`, already a dependency here, rather than a new one or `localStorage`.
- * Gated by Umami being configured (`isAnalyticsConsentEnabled`): the banner, the footer link and
- * `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
- * Umami itself: it loads only after `granted`, and a withdrawal silences it.
+ * Gated by Umami or Faro being configured (`isAnalyticsConsentEnabled`): the banner, the footer link
+ * and `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
+ * Umami (it loads only after `granted`, a withdrawal silences it), Faro's measurement
+ * instrumentations, and the browsing events the page reports to the backend (`trackBrowsing`).
  *
  * While signed in the account's own answer is the effective one (`accountChoice`), the banner
  * opens only when that answer is unknown, and the buttons write the account (the profile store
@@ -14,7 +15,10 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { getCookie, setCookie } from '@guebbit/js-toolkit';
-import { readUmamiConfig } from '@/infrastructure/observability/config.ts';
+import { readFaroConfig, readUmamiConfig } from '@/infrastructure/observability/config.ts';
+import { createAnalyticsEvent } from '@api';
+import type { AnalyticsEventRequest } from '@types';
+import { logger } from '@/infrastructure/utils/logger.ts';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
@@ -36,12 +40,13 @@ const COOKIE_DAYS = 365;
 export type AnalyticsConsentChoice = 'unknown' | 'granted' | 'denied';
 
 /**
- * Whether the app asks for analytics consent at all: exactly when Umami is configured. Without
- * a website id there is no tracker to gate, so no banner, no footer link, no header.
+ * Whether the app asks for analytics consent at all: when Umami or Faro is configured. With
+ * neither there is nothing to gate, so no banner, no footer link, no header.
  *
- * @returns `true` when `VITE_UMAMI_WEBSITE_ID` (or its runtime twin) is set.
+ * @returns `true` when a Umami website id or a Faro receiver URL (or a runtime twin) is set.
  */
-export const isAnalyticsConsentEnabled = (): boolean => readUmamiConfig() !== undefined;
+export const isAnalyticsConsentEnabled = (): boolean =>
+    readUmamiConfig() !== undefined || readFaroConfig() !== undefined;
 
 /**
  * Reads the cookie a previous visit may have left, defaulting to `unknown` for anything else — a
@@ -116,11 +121,32 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
     const promptOpen = computed(() => effective.value === 'unknown' || reopened.value);
 
     /**
-     * Pushes the current answer to Umami: load it on `granted`, silence it otherwise. Called at
-     * boot, on every answer and after a logout (the account's own answer stops applying then).
+     * Pushes the current answer to the trackers: Umami loads on `granted` and is silenced
+     * otherwise, and Faro's measurement follows. Called at boot, on every answer and after a
+     * logout (the account's own answer stops applying then).
      */
     const syncTracker = () => {
-        useObservabilityStore().setUmamiConsent(effective.value === 'granted');
+        const observability = useObservabilityStore();
+        const granted = effective.value === 'granted';
+        observability.setUmamiConsent(granted);
+        observability.setFaroConsent(granted);
+    };
+
+    /**
+     * Reports one browsing event (a product viewed, a search made) to the backend's relay, so the
+     * cached reads the server never sees still count.
+     *
+     * Nothing is sent, and nothing queued, until the visitor has agreed. A failed send is logged
+     * and dropped: a lost page view must never cost the visitor anything.
+     *
+     * @param event - One event from the contract's closed set.
+     */
+    const trackBrowsing = (event: AnalyticsEventRequest): void => {
+        if (!isAnalyticsConsentEnabled() || effective.value !== 'granted') return;
+
+        createAnalyticsEvent(event).catch((error: unknown) => {
+            logger.debug('observability', '[Analytics] browsing event not sent', error);
+        });
     };
 
     /**
@@ -168,6 +194,7 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
         deny,
         reopen,
         syncTracker,
+        trackBrowsing,
         setAccountChoice
     };
 });

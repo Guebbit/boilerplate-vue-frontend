@@ -24,6 +24,7 @@ import { PackagePlus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
@@ -63,6 +64,11 @@ const { addMessage } = useNotificationsStore();
  */
 const { watchSearchProducts, deleteProduct, hardDeleteProduct, restoreProduct, fetchFacets } =
     useProductsStore();
+
+/**
+ * Reports the search to the analytics relay; a no-op until the visitor has agreed.
+ */
+const { trackBrowsing } = useAnalyticsConsentStore();
 
 /**
  * Products store reactive state — filters, current page window and the facets list.
@@ -192,12 +198,27 @@ const { search } = watchSearchProducts({
 /**
  * Apply and clear, both restarting from the first page and keeping the URL in step.
  */
-const { handleSearch, handleReset } = useListSearch({
+const { handleSearch: applySearch, handleReset } = useListSearch({
     filters,
     page: pageCurrent,
     search,
     onApplied: syncUrl
 });
+
+/**
+ * The search form's submit: applies the filters, then reports the search (term, page, how many
+ * came back) to the analytics relay. Sort changes and paging go through {@link applySearch} alone,
+ * since they refine a search rather than make one. Sent only after the visitor consented.
+ */
+const handleSearch = () =>
+    Promise.resolve(applySearch()).then(() =>
+        trackBrowsing({
+            event: 'products_searched',
+            text: filters.value.text || undefined,
+            resultCount: pageItemList.value.length,
+            page: pageCurrent.value
+        })
+    );
 
 /**
  * The columns the API can order by (the contract's `ProductSort` enum) — the staff table's other
@@ -209,7 +230,7 @@ const sortableKeys = sortFieldsOf(ProductSortItem);
  * The sort state, kept in `filters.sort` so it travels in the URL and the request: the staff
  * table edits it through {@link sortBy}, the shopper's select through {@link sortChoice}.
  */
-const { sortBy, choice: sortChoice } = useServerSort({ filters, apply: handleSearch });
+const { sortBy, choice: sortChoice } = useServerSort({ filters, apply: applySearch });
 
 /**
  * The orders the shopper's select offers on top of the default newest-first — a subset of the
@@ -233,7 +254,7 @@ const sortOptions = computed(() => [
  */
 const handleCategoryChip = (name: string) => {
     filters.value.category = filters.value.category === name ? undefined : name;
-    return handleSearch();
+    return applySearch();
 };
 
 /**
@@ -244,7 +265,7 @@ const handleCategoryChip = (name: string) => {
  */
 const handleTagChip = (name: string) => {
     filters.value.tag = filters.value.tag === name ? undefined : name;
-    return handleSearch();
+    return applySearch();
 };
 
 onMounted(fetchFacets);

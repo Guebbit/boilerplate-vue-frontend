@@ -24,6 +24,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     confirmPasswordReset: 'account',
     confirmPayment: 'payments',
     confirmTwoFactorMethod: 'account',
+    createAnalyticsEvent: 'analytics',
     createExample: 'example',
     createFeedbackRequest: 'feedback',
     createLocale: 'locales',

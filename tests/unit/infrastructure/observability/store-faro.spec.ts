@@ -15,6 +15,7 @@ import {
     stripTokensFromTelemetry
 } from '@/infrastructure/observability/store.ts';
 import type { TransportItem } from '@grafana/faro-web-sdk';
+import { asStub } from '../../../support/stub.ts';
 
 /** The `faro.api` surface this store calls, spied so each call can be asserted. */
 const faroApi = {
@@ -23,8 +24,11 @@ const faroApi = {
     pushError: vi.fn()
 };
 
-/** What `initializeFaro` returns — only the `api` handle is ever read. */
-const fakeFaro = { api: faroApi };
+/** The `faro.instrumentations` surface `setFaroConsent` drives. */
+const faroInstrumentations = { add: vi.fn(), remove: vi.fn() };
+
+/** What `initializeFaro` returns — the `api` handle and the instrumentation registry. */
+const fakeFaro = { api: faroApi, instrumentations: faroInstrumentations };
 
 /** Stub for Faro's `initializeFaro`, returning the fake instance. */
 const initializeFaro = vi.fn(() => fakeFaro);
@@ -35,9 +39,24 @@ const initializeFaro = vi.fn(() => fakeFaro);
  */
 const tracingOptions: unknown[] = [];
 
+/**
+ * A stand-in instrumentation class, named so a spec can read back WHICH ones were built. A
+ * function expression, not a class: a class holding only a field is what the lint rejects.
+ */
+const namedInstrumentation = (name: string) =>
+    vi.fn(function (this: { name: string }) {
+        this.name = name;
+    });
+
 vi.mock('@grafana/faro-web-sdk', () => ({
     initializeFaro: (...arguments_: unknown[]) => initializeFaro(...(arguments_ as [])),
-    getWebInstrumentations: () => ['web-instrumentations']
+    ErrorsInstrumentation: namedInstrumentation('ErrorsInstrumentation'),
+    ConsoleInstrumentation: namedInstrumentation('ConsoleInstrumentation'),
+    CSPInstrumentation: namedInstrumentation('CSPInstrumentation'),
+    ViewInstrumentation: namedInstrumentation('ViewInstrumentation'),
+    WebVitalsInstrumentation: namedInstrumentation('WebVitalsInstrumentation'),
+    PerformanceInstrumentation: namedInstrumentation('PerformanceInstrumentation'),
+    NavigationInstrumentation: namedInstrumentation('NavigationInstrumentation')
 }));
 
 // An anonymous `function` rather than a class: a class holding only a constructor is what the lint
@@ -45,7 +64,8 @@ vi.mock('@grafana/faro-web-sdk', () => ({
 // read from the body rather than captured — `vi.mock` hoists above `tracingOptions`, so anything
 // evaluated at factory time would hit the temporal dead zone.
 vi.mock('@grafana/faro-web-tracing', () => ({
-    TracingInstrumentation: vi.fn(function (options: unknown) {
+    TracingInstrumentation: vi.fn(function (this: { name: string }, options: unknown) {
+        this.name = 'TracingInstrumentation';
         tracingOptions.push(options);
     })
 }));
@@ -64,6 +84,105 @@ beforeEach(() => {
 afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+});
+
+/** The instrumentation names `initializeFaro` was last handed. */
+const bootInstrumentations = (): string[] => {
+    const [config] = asStub<[{ instrumentations: { name: string }[] }]>(
+        initializeFaro.mock.calls.at(-1)
+    );
+    return config.instrumentations.map(({ name }) => name);
+};
+
+/** The names carried by one `instrumentations.add` / `remove` call's arguments. */
+const namesOf = (call: unknown[] | undefined): string[] =>
+    (call as { name: string }[]).map(({ name }) => name);
+
+describe('Faro before consent', () => {
+    it('boots with crash reports and tracing only', async () => {
+        await useObservabilityStore().initFaro();
+
+        expect(bootInstrumentations()).toEqual([
+            'ErrorsInstrumentation',
+            'ConsoleInstrumentation',
+            'CSPInstrumentation',
+            'ViewInstrumentation',
+            'TracingInstrumentation'
+        ]);
+    });
+
+    it('tracks no session, so no session id is generated or stored', async () => {
+        await useObservabilityStore().initFaro();
+
+        expect(initializeFaro).toHaveBeenCalledWith(
+            expect.objectContaining({ sessionTracking: { enabled: false } })
+        );
+        expect(sessionStorage.getItem('com.grafana.faro.session')).toBeNull();
+    });
+
+    it('adds no measurement while consent is unknown or denied', async () => {
+        const store = useObservabilityStore();
+        await store.initFaro();
+        store.setFaroConsent(false);
+
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+    });
+});
+
+describe('setFaroConsent', () => {
+    it('adds web vitals, performance and navigation on consent', async () => {
+        const store = useObservabilityStore();
+        await store.initFaro();
+
+        store.setFaroConsent(true);
+
+        expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
+        expect(namesOf(faroInstrumentations.add.mock.calls[0])).toEqual([
+            'WebVitalsInstrumentation',
+            'PerformanceInstrumentation',
+            'NavigationInstrumentation'
+        ]);
+    });
+
+    it('is idempotent: a second grant adds nothing', async () => {
+        const store = useObservabilityStore();
+        await store.initFaro();
+
+        store.setFaroConsent(true);
+        store.setFaroConsent(true);
+
+        expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes exactly what it added on withdrawal, once', async () => {
+        const store = useObservabilityStore();
+        await store.initFaro();
+        store.setFaroConsent(true);
+        const added = faroInstrumentations.add.mock.calls[0];
+
+        store.setFaroConsent(false);
+        store.setFaroConsent(false);
+
+        expect(faroInstrumentations.remove).toHaveBeenCalledTimes(1);
+        expect(faroInstrumentations.remove.mock.calls[0]).toEqual(added);
+    });
+
+    it('applies a consent given before Faro finished loading', async () => {
+        const store = useObservabilityStore();
+        store.setFaroConsent(true);
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+
+        await store.initFaro();
+
+        expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('is a no-op while Faro is disabled by configuration', () => {
+        vi.stubEnv('VITE_FARO_URL', '');
+
+        expect(() => useObservabilityStore().setFaroConsent(true)).not.toThrow();
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+    });
 });
 
 describe('initFaro', () => {

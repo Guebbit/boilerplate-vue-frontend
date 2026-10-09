@@ -8,6 +8,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { setCookie, deleteCookie } from '@guebbit/js-toolkit';
 
+/** The relay call, replaced so a spec can count what the page would have sent. */
+const { createAnalyticsEvent } = vi.hoisted(() => ({
+    createAnalyticsEvent: vi.fn(() => Promise.resolve())
+}));
+
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@api')>()),
+    createAnalyticsEvent
+}));
+
 /** Every cookie jsdom currently holds, as a plain map — same helper as `session.spec.ts`'s own. */
 const cookieJar = () =>
     Object.fromEntries(
@@ -162,13 +172,81 @@ describe('promptOpen, reopen and the Umami tracker', () => {
     });
 });
 
+describe('trackBrowsing', () => {
+    const VIEW = { event: 'product_viewed', productId: 'abc' } as const;
+
+    beforeEach(() => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
+        createAnalyticsEvent.mockClear();
+    });
+
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('sends nothing before the visitor answers', () => {
+        useAnalyticsConsentStore().trackBrowsing(VIEW);
+
+        expect(createAnalyticsEvent).not.toHaveBeenCalled();
+    });
+
+    it('sends nothing after a denial', () => {
+        const store = useAnalyticsConsentStore();
+        store.deny();
+        store.trackBrowsing(VIEW);
+
+        expect(createAnalyticsEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not replay an event from before consent once it is granted', () => {
+        const store = useAnalyticsConsentStore();
+        store.trackBrowsing(VIEW);
+        store.grant();
+
+        expect(createAnalyticsEvent).not.toHaveBeenCalled();
+    });
+
+    it('sends the event once the visitor has granted', () => {
+        const store = useAnalyticsConsentStore();
+        store.grant();
+        store.trackBrowsing(VIEW);
+
+        expect(createAnalyticsEvent).toHaveBeenCalledExactlyOnceWith(VIEW);
+    });
+
+    it('stops sending after a withdrawal', () => {
+        const store = useAnalyticsConsentStore();
+        store.grant();
+        store.deny();
+        store.trackBrowsing(VIEW);
+
+        expect(createAnalyticsEvent).not.toHaveBeenCalled();
+    });
+
+    it('swallows a failed send: a lost page view costs the visitor nothing', async () => {
+        createAnalyticsEvent.mockRejectedValueOnce(new Error('offline'));
+        const store = useAnalyticsConsentStore();
+        store.grant();
+
+        expect(() => store.trackBrowsing(VIEW)).not.toThrow();
+        await Promise.resolve();
+    });
+});
+
 describe('isAnalyticsConsentEnabled', () => {
     afterEach(() => vi.unstubAllEnvs());
 
-    it('is off while Umami has no website id', () => {
+    it('is off while neither Umami nor Faro is configured', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+        vi.stubEnv('VITE_FARO_URL', '');
 
         expect(isAnalyticsConsentEnabled()).toBe(false);
+    });
+
+    it('is on when only Faro is configured: its measurement needs consent too', () => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+        vi.stubEnv('VITE_FARO_URL', 'https://faro.example.com/collect');
+
+        expect(isAnalyticsConsentEnabled()).toBe(true);
     });
 
     it('is on whenever Umami is configured, with no other flag', () => {

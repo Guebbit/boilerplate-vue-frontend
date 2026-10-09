@@ -15,13 +15,14 @@ export default {
  * where other modules put the storefront's visitor writes (add to cart, toggle wishlist).
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '../store';
 import { useSlot } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { Calendar, Circle, Clock, Euro, FileText, Hash, Package, Tag } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -101,6 +102,19 @@ const onMissingRecord = useMissingRecord();
  * page is where a stock number is read.
  */
 watchProduct(() => id, { staleTime: 0, onError: onMissingRecord });
+
+/**
+ * Reports the page view to the analytics relay, once per product opened. The response cache hides
+ * most product reads from the server, so the page says it; a no-op until the visitor has agreed.
+ */
+const { trackBrowsing } = useAnalyticsConsentStore();
+watch(
+    () => id,
+    (productId) => {
+        if (productId) trackBrowsing({ event: 'product_viewed', productId });
+    },
+    { immediate: true }
+);
 
 /**
  * Session store, read for whether the visitor is signed in.

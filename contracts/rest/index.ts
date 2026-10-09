@@ -1928,6 +1928,48 @@ export interface AntibotChallengeEnvelope {
     data: AntibotChallenge;
 }
 
+export type ProductViewedEventEvent =
+    (typeof ProductViewedEventEvent)[keyof typeof ProductViewedEventEvent];
+
+export const ProductViewedEventEvent = {
+    product_viewed: 'product_viewed'
+} as const;
+
+export interface ProductViewedEvent {
+    event: ProductViewedEventEvent;
+    /**
+     * The product whose page was opened.
+     * @minLength 1
+     * @maxLength 64
+     */
+    productId: string;
+}
+
+export type ProductsSearchedEventEvent =
+    (typeof ProductsSearchedEventEvent)[keyof typeof ProductsSearchedEventEvent];
+
+export const ProductsSearchedEventEvent = {
+    products_searched: 'products_searched'
+} as const;
+
+export interface ProductsSearchedEvent {
+    event: ProductsSearchedEventEvent;
+    /**
+     * The free-text term searched for, when there was one.
+     * @maxLength 200
+     */
+    text?: string;
+    /**
+     * How many products the search found.
+     * @minimum 0
+     * @maximum 100000
+     */
+    resultCount: number;
+    page: Page;
+}
+
+export type AnalyticsEventRequest = ProductViewedEvent | ProductsSearchedEvent;
+
 export interface ReplaceAccountRequest {
     email: Email;
     /**
@@ -5923,6 +5965,25 @@ export const getAntibotChallenge = (
 };
 
 /**
+ * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed (`product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
+ * @summary Report one browsing event
+ */
+export const createAnalyticsEvent = (
+    analyticsEventRequest: AnalyticsEventRequest,
+    options?: SecondParameter<typeof orvalMutator<void>>
+) => {
+    return orvalMutator<void>(
+        {
+            url: `/analytics/events`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: analyticsEventRequest
+        },
+        options
+    );
+};
+
+/**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
@@ -9171,6 +9232,9 @@ export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listA
 export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
 export type GetAntibotChallengeResult = NonNullable<
     Awaited<ReturnType<typeof getAntibotChallenge>>
+>;
+export type CreateAnalyticsEventResult = NonNullable<
+    Awaited<ReturnType<typeof createAnalyticsEvent>>
 >;
 export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
 export type ReplaceAccountResult = NonNullable<Awaited<ReturnType<typeof replaceAccount>>>;
