@@ -45,10 +45,10 @@ env:
 
 jobs:
     commitlint:
-        # Lint commit messages against the conventional-commit rules in .commitlintrc.cjs, over
-        # the PR's own base..head range on a pull request, or the pushed range on a direct push to
-        # main. It runs on the PR itself, where an author can still see it fail, not only after
-        # the commit has merged into main.
+        # Push-only backstop: lint the pushed range against .commitlintrc.cjs. A pull request is
+        # squash-merged, so its own commits never land; its TITLE becomes the commit subject and
+        # is linted by `pr-title.yml` instead.
+        if: github.event_name == 'push'
         runs-on: ubuntu-latest
         timeout-minutes: 5
         permissions:
@@ -67,13 +67,7 @@ jobs:
               uses: ./.github/actions/setup-node-and-install
 
             - name: Lint commit messages
-              # A pull_request event carries no before/after SHAs — base/head is its own pair, and
-              # the range a reviewer actually sees. A push event (direct to main) keeps before/after.
-              run: |
-                  npx commitlint \
-                    --from ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }} \
-                    --to ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }} \
-                    --verbose
+              run: npx commitlint --from ${{ github.event.before }} --to ${{ github.event.after }} --verbose
 
     lint:
         # ESLint over src, tests and scripts.
@@ -615,8 +609,8 @@ jobs:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
         if: always()
-        # Every gating job above belongs in this list, `commitlint` included — it now runs on both
-        # pull_request and push (see its own comment), so it is always a real pass/fail here.
+        # Every gating job above belongs in this list, `commitlint` included. It is skipped on a pull
+        # request (see its own comment), and a skipped job is neither a failure nor a cancellation.
         needs:
             - commitlint
             - lint
