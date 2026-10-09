@@ -77,11 +77,11 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 
 Store `locales`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                                                                                                                                   | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `capabilities` · `tenants` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize` · `entriesPageTotal`                                                                                                                                                                                             | The refs the setup function returns — the only writable surface. |
-| **Getters** | `ownTenant` · `backendTenant` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                                                                                  | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `tenantLabel` · `fetchTenants` · `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `fetchEntityTranslations` · `saveEntityTranslations` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                                                                                                             | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `capabilities` · `apps` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize` · `entriesPageTotal`                                                                                                                                                                                          | The refs the setup function returns — the only writable surface. |
+| **Getters** | `ownApp` · `backendApp` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                                                                                  | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `appLabel` · `fetchApps` · `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `fetchEntityTranslations` · `saveEntityTranslations` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -110,12 +110,13 @@ purpose — see the route table's own comment in `routes.ts`.
 | `PUT /locales/{id}`                             | `ReplaceLocaleResponse`             |
 | `DELETE /locales/{id}`                          | `DeleteLocaleResponse`              |
 | `PATCH /locales/{id}`                           | `UpdateLocaleResponse`              |
-| `PATCH /locales/{id}/tenants/{tenant}/entries`  | `MergeLocaleEntriesResponse`        |
-| `POST /locales/{id}/tenants/{tenant}/entries`   | `CreateLocaleEntryResponse`         |
-| `PUT /locales/{id}/tenants/{tenant}/entries`    | `ReplaceLocaleEntriesResponse`      |
+| `PATCH /locales/{id}/apps/{app}/entries`        | `MergeLocaleEntriesResponse`        |
+| `POST /locales/{id}/apps/{app}/entries`         | `CreateLocaleEntryResponse`         |
+| `PUT /locales/{id}/apps/{app}/entries`          | `ReplaceLocaleEntriesResponse`      |
 | `GET /locales/{id}/entries(\?.*)?`              | `ListLocaleEntriesResponse`         |
-| `DELETE /locales/{id}/entries/{id}`             | `DeleteLocaleEntryResponse`         |
-| `PUT /locales/{id}/entries/{id}`                | `UpdateLocaleEntryResponse`         |
+| `GET /locales/{id}/apps/{app}/entries(\?.*)?`   | `ListAppLocaleEntriesResponse`      |
+| `DELETE /locales/{id}/apps/{app}/entries/{id}`  | `DeleteLocaleEntryResponse`         |
+| `PUT /locales/{id}/apps/{app}/entries/{id}`     | `UpdateLocaleEntryResponse`         |
 | `GET /locales/translations/{entityType}/{id}`   | `GetEntityTranslationsResponse`     |
 | `PUT /locales/translations/{entityType}/{id}`   | `ReplaceEntityTranslationsResponse` |
 | `PATCH /locales/translations/{entityType}/{id}` | `UpsertEntityTranslationsResponse`  |

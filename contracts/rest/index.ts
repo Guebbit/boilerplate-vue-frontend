@@ -1075,22 +1075,22 @@ export const LocaleDirection = {
 } as const;
 
 /**
- * The id of one tenant — one keyspace, authored by one team. Which ids exist is
- * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
+ * The id of one app — one keyspace, authored by one team. Which ids exist is
+ * configuration, listed by `GET /locales/apps`; a row naming an unknown app is
  * refused with a 422.
  *
- * On a LANGUAGE it reports capability: the backend tenant means the API can answer
- * requests in it, because a dictionary file is deployed; a frontend tenant means a
+ * On a LANGUAGE it reports capability: the backend app means the API can answer
+ * requests in it, because a dictionary file is deployed; a frontend app means a
  * client dictionary is downloadable for it.
  *
- * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
- * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
+ * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend app's rows
+ * are what `GET /locales/{locale}/messages` serves; the backend app's rows are
  * layered over the API's own deployed files at resolution time.
  * @minLength 1
  * @maxLength 64
  * @pattern ^[a-z0-9][a-z0-9-]*$
  */
-export type LocaleTenant = string;
+export type LocaleApp = string;
 
 /**
  * Which tier a language came from — deployed files, the database, or both.
@@ -1104,7 +1104,7 @@ export const LocaleSource = {
 } as const;
 
 /**
- * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants.
+ * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both apps.
  */
 export interface LocaleCapability {
     tag: Locale;
@@ -1113,10 +1113,10 @@ export interface LocaleCapability {
     direction: LocaleDirection;
     active: boolean;
     /**
-     * Which tenants have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend tenant), or whether it may download a Spanish UI dictionary (a frontend tenant). Those are different questions.
+     * Which apps have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend app), or whether it may download a Spanish UI dictionary (a frontend app). Those are different questions.
      * @minItems 1
      */
-    tenants: LocaleTenant[];
+    apps: LocaleApp[];
     source: LocaleSource;
     /** @minimum 0 */
     entryCount: number;
@@ -1189,35 +1189,35 @@ export interface LanguageEnvelope {
 }
 
 /**
- * What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
+ * What an app is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
  */
-export type LocaleTenantKind = (typeof LocaleTenantKind)[keyof typeof LocaleTenantKind];
+export type LocaleAppKind = (typeof LocaleAppKind)[keyof typeof LocaleAppKind];
 
-export const LocaleTenantKind = {
+export const LocaleAppKind = {
     frontend: 'frontend',
     backend: 'backend'
 } as const;
 
 /**
- * One tenant as the registry describes it.
+ * One app as the registry describes it.
  */
-export interface LocaleTenantDescriptor {
-    id: LocaleTenant;
+export interface LocaleAppDescriptor {
+    id: LocaleApp;
     /** A human name, for an admin screen. */
     label: string;
-    kind: LocaleTenantKind;
+    kind: LocaleAppKind;
 }
 
-export interface LocaleTenants {
+export interface LocaleApps {
     /** @minItems 1 */
-    tenants: LocaleTenantDescriptor[];
+    apps: LocaleAppDescriptor[];
 }
 
-export interface LocaleTenantsEnvelope {
+export interface LocaleAppsEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: LocaleTenants;
+    data: LocaleApps;
 }
 
 /**
@@ -1298,13 +1298,13 @@ export interface LocaleMessagesEnvelope {
 }
 
 /**
- * One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
- * `tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
+ * One translated string: one row per (language, app, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
+ * `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
  */
 export interface LocaleEntry {
     id: Id;
     locale: Locale;
-    tenant: LocaleTenant;
+    app: LocaleApp;
     /** Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
     key: string;
     value: string;
@@ -1340,8 +1340,8 @@ export interface LocaleEntryInput {
 }
 
 /**
- * The COMPLETE set of entries for this language IN THE TENANT the URI names. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
- * The tenant is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
+ * The COMPLETE set of entries for this language IN THE APP the URI names. Anything already stored under that app and not named here is deleted; the other apps are untouched.
+ * The app is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
     entries: LocaleEntryInput[];
@@ -1386,7 +1386,7 @@ export interface LocaleEntryEnvelope {
 }
 
 /**
- * Entries to upsert into the tenant the URI names. Anything already stored is left exactly as it was.
+ * Entries to upsert into the app the URI names. Anything already stored is left exactly as it was.
  */
 export interface MergeLocaleEntriesRequest {
     /** @minItems 1 */
@@ -4706,28 +4706,26 @@ export type ProductIdParamParameter = Id;
  */
 export type HardDeleteParamParameter = boolean;
 
-export type MessagesTenantQueryParamParameter = LocaleTenant;
-
-export type EntryTenantQueryParamParameter = LocaleTenant;
+export type MessagesAppQueryParamParameter = LocaleApp;
 
 export type GetLocaleMessagesParams = {
     /**
-     * The id of one tenant — one keyspace, authored by one team. Which ids exist is
-     * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
+     * The id of one app — one keyspace, authored by one team. Which ids exist is
+     * configuration, listed by `GET /locales/apps`; a row naming an unknown app is
      * refused with a 422.
      *
-     * On a LANGUAGE it reports capability: the backend tenant means the API can answer
-     * requests in it, because a dictionary file is deployed; a frontend tenant means a
+     * On a LANGUAGE it reports capability: the backend app means the API can answer
+     * requests in it, because a dictionary file is deployed; a frontend app means a
      * client dictionary is downloadable for it.
      *
-     * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
-     * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
+     * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend app's rows
+     * are what `GET /locales/{locale}/messages` serves; the backend app's rows are
      * layered over the API's own deployed files at resolution time.
      * @minLength 1
      * @maxLength 64
      * @pattern ^[a-z0-9][a-z0-9-]*$
      */
-    tenant?: MessagesTenantQueryParamParameter;
+    app?: MessagesAppQueryParamParameter;
 };
 
 export type ListLocaleEntriesParams = {
@@ -4749,26 +4747,9 @@ export type ListLocaleEntriesParams = {
      * @maxLength 200
      */
     text?: TextParamParameter;
-    /**
-     * The id of one tenant — one keyspace, authored by one team. Which ids exist is
-     * configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
-     * refused with a 422.
-     *
-     * On a LANGUAGE it reports capability: the backend tenant means the API can answer
-     * requests in it, because a dictionary file is deployed; a frontend tenant means a
-     * client dictionary is downloadable for it.
-     *
-     * On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
-     * are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
-     * layered over the API's own deployed files at resolution time.
-     * @minLength 1
-     * @maxLength 64
-     * @pattern ^[a-z0-9][a-z0-9-]*$
-     */
-    tenant?: EntryTenantQueryParamParameter;
 };
 
-export type ListTenantLocaleEntriesParams = {
+export type ListAppLocaleEntriesParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
@@ -5300,12 +5281,12 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *
- * `tenants` is the field doing the real work: which tenants have words in that
- * language. The backend tenant means the API can answer requests in it — its
- * dictionary is deployed and i18next holds it. A frontend tenant means a client
+ * `apps` is the field doing the real work: which apps have words in that
+ * language. The backend app means the API can answer requests in it — its
+ * dictionary is deployed and i18next holds it. A frontend app means a client
  * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
  * have either, or both, and the two are not the same capability: a language added
- * through the admin routes below carries only the frontend tenant until a file is
+ * through the admin routes below carries only the frontend app until a file is
  * deployed for it.
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
@@ -5326,7 +5307,7 @@ export const getLocales = (
  * Registers a language in the dynamic tier so entries can be translated into it.
  *
  * This does NOT teach the API to answer in the new language — that needs a dictionary
- * file and a deploy. A language created here carries only the frontend tenant until
+ * file and a deploy. A language created here carries only the frontend app until
  * one exists.
  * @summary Add a language
  */
@@ -5346,22 +5327,22 @@ export const createLocale = (
 };
 
 /**
- * Every tenant this deployment holds words for — the keyspaces an entry can belong
+ * Every app this deployment holds words for — the keyspaces an entry can belong
  * to. Configuration, not data: the ids come from the API's environment, so a client
  * cannot invent one and an admin screen need not hardcode them.
  *
- * `kind` is what a client uses the list for. The `backend` tenant is this API's own
+ * `kind` is what a client uses the list for. The `backend` app is this API's own
  * copy — rows under it are layered over the deployed files at resolution time and
- * never leave the API. A `frontend` tenant is a client's copy, downloadable from
- * `GET /locales/{locale}/messages?tenant=`.
+ * never leave the API. A `frontend` app is a client's copy, downloadable from
+ * `GET /locales/{locale}/messages?app=`.
  *
  * Public and cacheable, like every other locale read.
- * @summary Translation tenants
+ * @summary Translation apps
  */
-export const getLocaleTenants = (
-    options?: SecondParameter<typeof orvalMutator<LocaleTenantsEnvelope>>
+export const getLocaleApps = (
+    options?: SecondParameter<typeof orvalMutator<LocaleAppsEnvelope>>
 ) => {
-    return orvalMutator<LocaleTenantsEnvelope>({ url: `/locales/tenants`, method: 'GET' }, options);
+    return orvalMutator<LocaleAppsEnvelope>({ url: `/locales/apps`, method: 'GET' }, options);
 };
 
 /**
@@ -5484,8 +5465,8 @@ export const deleteLocale = (
  * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
- * ONE frontend tenant's rows — the client's own keyspace, the one named by `tenant`
- * or the deployment's default frontend tenant when omitted. The backend tenant is
+ * ONE frontend app's rows — the client's own keyspace, the one named by `app`
+ * or the deployment's default frontend app when omitted. The backend app is
  * refused here with a 404: its rows are layered over the deployed files internally
  * and never leave the API, because a frontend that merged them would be adopting the
  * backend's keys as its own.
@@ -5519,9 +5500,9 @@ export const getLocaleMessages = (
  * translation screen lists. Flat, because a row is what gets edited; the nested tree
  * is `GET /locales/{locale}/messages`.
  *
- * `text` searches keys and values together. Every tenant's rows are listed unless
- * `tenant` narrows them; one tenant's slice is also a resource of its own,
- * `/locales/{locale}/tenants/{tenant}/entries`, which is where it is written.
+ * `text` searches keys and values together. Every app's rows are listed; one app's
+ * slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
+ * where it is written.
  * @summary List translation entries
  */
 export const listLocaleEntries = (
@@ -5540,37 +5521,38 @@ export const listLocaleEntries = (
  * translation screen lists. Flat, because a row is what gets edited; the nested tree
  * is `GET /locales/{locale}/messages`.
  *
- * `text` searches keys and values together. The same rows `GET
- * /locales/{locale}/entries?tenant=` lists, at the address the writes below target.
- * @summary List one tenant's translation entries
+ * `text` searches keys and values together. Only this app's rows, at the address
+ * the writes below target; an app the deployment does not configure is refused
+ * with a 422.
+ * @summary List one app's translation entries
  */
-export const listTenantLocaleEntries = (
+export const listAppLocaleEntries = (
     locale: string,
-    tenant: string,
-    params?: ListTenantLocaleEntriesParams,
+    app: string,
+    params?: ListAppLocaleEntriesParams,
     options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>
 ) => {
     return orvalMutator<LocaleEntriesResponseEnvelope>(
-        { url: `/locales/${locale}/tenants/${tenant}/entries`, method: 'GET', params },
+        { url: `/locales/${locale}/apps/${app}/entries`, method: 'GET', params },
         options
     );
 };
 
 /**
- * Adds a key to this tenant's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
+ * Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
  * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
 export const createLocaleEntry = (
     locale: string,
-    tenant: string,
+    app: string,
     createLocaleEntryRequest: CreateLocaleEntryRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
 ) => {
     return orvalMutator<LocaleEntryEnvelope>(
         {
-            url: `/locales/${locale}/tenants/${tenant}/entries`,
+            url: `/locales/${locale}/apps/${app}/entries`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: createLocaleEntryRequest
@@ -5581,8 +5563,8 @@ export const createLocaleEntry = (
 
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
- * this tenant's entries for this language becomes exactly what the body carries;
- * the other tenants are untouched. The URI names that slice, so the body is the
+ * this app's entries for this language becomes exactly what the body carries;
+ * the other apps are untouched. The URI names that slice, so the body is the
  * same thing `GET` on it lists (RFC 9110 §9.3.4).
  *
  * Paired with `PATCH` on this same collection, which merges instead. "Does an import
@@ -5596,13 +5578,13 @@ export const createLocaleEntry = (
  */
 export const replaceLocaleEntries = (
     locale: string,
-    tenant: string,
+    app: string,
     replaceLocaleEntriesRequest: ReplaceLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
         {
-            url: `/locales/${locale}/tenants/${tenant}/entries`,
+            url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             data: replaceLocaleEntriesRequest
@@ -5621,13 +5603,13 @@ export const replaceLocaleEntries = (
  */
 export const mergeLocaleEntries = (
     locale: string,
-    tenant: string,
+    app: string,
     mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
         {
-            url: `/locales/${locale}/tenants/${tenant}/entries`,
+            url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             data: mergeLocaleEntriesRequest
@@ -5646,13 +5628,13 @@ export const mergeLocaleEntries = (
  */
 export const mergeLocaleEntriesWithMergePatchJson = (
     locale: string,
-    tenant: string,
+    app: string,
     mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
         {
-            url: `/locales/${locale}/tenants/${tenant}/entries`,
+            url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/merge-patch+json' },
             data: mergeLocaleEntriesRequest
@@ -5669,13 +5651,14 @@ export const mergeLocaleEntriesWithMergePatchJson = (
  */
 export const updateLocaleEntry = (
     locale: string,
+    app: string,
     entryId: string,
     updateLocaleEntryRequest: UpdateLocaleEntryRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
 ) => {
     return orvalMutator<LocaleEntryEnvelope>(
         {
-            url: `/locales/${locale}/entries/${entryId}`,
+            url: `/locales/${locale}/apps/${app}/entries/${entryId}`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             data: updateLocaleEntryRequest
@@ -5690,11 +5673,12 @@ export const updateLocaleEntry = (
  */
 export const deleteLocaleEntry = (
     locale: string,
+    app: string,
     entryId: string,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        { url: `/locales/${locale}/entries/${entryId}`, method: 'DELETE' },
+        { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'DELETE' },
         options
     );
 };
@@ -9176,7 +9160,7 @@ export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>
 export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
-export type GetLocaleTenantsResult = NonNullable<Awaited<ReturnType<typeof getLocaleTenants>>>;
+export type GetLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof getLocaleApps>>>;
 export type GetLocaleDictionaryResult = NonNullable<
     Awaited<ReturnType<typeof getLocaleDictionary>>
 >;
@@ -9188,8 +9172,8 @@ export type UpdateLocaleWithMergePatchJsonResult = NonNullable<
 export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
 export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
 export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>;
-export type ListTenantLocaleEntriesResult = NonNullable<
-    Awaited<ReturnType<typeof listTenantLocaleEntries>>
+export type ListAppLocaleEntriesResult = NonNullable<
+    Awaited<ReturnType<typeof listAppLocaleEntries>>
 >;
 export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>;
 export type ReplaceLocaleEntriesResult = NonNullable<

@@ -63,16 +63,16 @@ docker run -e VITE_API_URL=https://api.example.com -p 8080:80 boilerplate-fronte
 Only the keys of `RuntimeConfig` are written, and only these. Adding one means a key in that
 interface, a `config_entry` line in the entrypoint script, and the call site's `runtimeValue()`.
 
-| `config.js` key                                                     | Container variable                                                          |
-| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `API_URL`, `API_SSE`                                                | `VITE_API_URL`, `VITE_API_SSE`                                              |
-| `APP_NAME`, `APP_LOGO`, `APP_EMPTY_VALUE`                           | `VITE_APP_NAME`, `_LOGO`, `_EMPTY_VALUE`                                    |
-| `LOCALE_TENANT`, `APP_DEFAULT_LOCALE`, `APP_FALLBACK_LOCALE`        | `VITE_LOCALE_TENANT`, `VITE_APP_DEFAULT_LOCALE`, `VITE_APP_FALLBACK_LOCALE` |
-| `APP_LOG_LEVEL`, `APP_LOG_SCOPES`                                   | `VITE_APP_LOG_LEVEL`, `VITE_APP_LOG_SCOPES`                                 |
-| `AXIOS_TIMEOUT`, `MAX_UPLOAD_BYTES`                                 | `VITE_AXIOS_TIMEOUT`, `VITE_MAX_UPLOAD_BYTES`                               |
-| `CART_STOCK_POLL_SECONDS`                                           | `VITE_CART_STOCK_POLL_SECONDS`                                              |
-| `FARO_URL`, `FARO_APP_NAME`, `FARO_APP_VERSION`, `FARO_ENVIRONMENT` | `VITE_FARO_*`                                                               |
-| `UMAMI_SRC`, `UMAMI_WEBSITE_ID`, `UMAMI_REQUIRE_CONSENT`            | `VITE_UMAMI_*`                                                              |
+| `config.js` key                                                     | Container variable                                                       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `API_URL`, `API_SSE`                                                | `VITE_API_URL`, `VITE_API_SSE`                                           |
+| `APP_NAME`, `APP_LOGO`, `APP_EMPTY_VALUE`                           | `VITE_APP_NAME`, `_LOGO`, `_EMPTY_VALUE`                                 |
+| `LOCALE_APP`, `APP_DEFAULT_LOCALE`, `APP_FALLBACK_LOCALE`           | `VITE_LOCALE_APP`, `VITE_APP_DEFAULT_LOCALE`, `VITE_APP_FALLBACK_LOCALE` |
+| `APP_LOG_LEVEL`, `APP_LOG_SCOPES`                                   | `VITE_APP_LOG_LEVEL`, `VITE_APP_LOG_SCOPES`                              |
+| `AXIOS_TIMEOUT`, `MAX_UPLOAD_BYTES`                                 | `VITE_AXIOS_TIMEOUT`, `VITE_MAX_UPLOAD_BYTES`                            |
+| `CART_STOCK_POLL_SECONDS`                                           | `VITE_CART_STOCK_POLL_SECONDS`                                           |
+| `FARO_URL`, `FARO_APP_NAME`, `FARO_APP_VERSION`, `FARO_ENVIRONMENT` | `VITE_FARO_*`                                                            |
+| `UMAMI_SRC`, `UMAMI_WEBSITE_ID`, `UMAMI_REQUIRE_CONSENT`            | `VITE_UMAMI_*`                                                           |
 
 The container variable keeps its `VITE_` name, so the same `.env` line works for a dev server and
 for `docker run -e`.
@@ -103,11 +103,11 @@ them from the container at start, but it writes a file for nginx, not `config.js
 
 ## Locales
 
-| Variable                   | Purpose                                                                                                                                                                                                                                 |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_DEFAULT_LOCALE`  | Initial locale (e.g. `en`)                                                                                                                                                                                                              |
-| `VITE_LOCALE_TENANT`       | This frontend's translation tenant — whose dictionary `GET /locales/{locale}/messages` builds for it. Must be one of the ids `GET /locales/tenants` lists; unset means the demo pair's `demo-fe`. See [Internationalisation](./i18n.md) |
-| `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`). Must name a locale this build BUNDLES, or the fallback cannot answer offline                                                        |
+| Variable                   | Purpose                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `VITE_APP_DEFAULT_LOCALE`  | Initial locale (e.g. `en`)                                                                                                                                                                                                           |
+| `VITE_LOCALE_APP`          | This frontend's translation app — whose dictionary `GET /locales/{locale}/messages` builds for it. Must be one of the ids `GET /locales/tenants` lists; unset means the demo pair's `demo-fe`. See [Internationalisation](./i18n.md) |
+| `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`). Must name a locale this build BUNDLES, or the fallback cannot answer offline                                                     |
 
 Which languages the app offers is not configured here. `src/locales/*.json` is the offline floor, discovered by a glob at build time, and `GET /locales` adds whatever the API offers at boot — including languages translated in its database that this build ships no file for. See [Layers → files are defaults, the database overrides them](../theory/layers.md#files-are-defaults-the-database-overrides-them).
 

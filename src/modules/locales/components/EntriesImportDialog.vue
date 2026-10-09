@@ -13,7 +13,7 @@ import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
-import type { LocaleEntryInput, LocaleTenantDescriptor } from '@types';
+import type { LocaleEntryInput, LocaleAppDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/i18n';
 import { flattenDictionary } from '../dictionaries';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -29,13 +29,13 @@ import { useDialogStore } from '@/ui/dialog.ts';
  */
 const props = defineProps<{
     /**
-     * The tenants the API serves, from its registry — what the select offers.
+     * The apps the API serves, from its registry — what the select offers.
      */
-    tenants: LocaleTenantDescriptor[];
+    apps: LocaleAppDescriptor[];
     /**
-     * The tenant preselected on open.
+     * The app preselected on open.
      */
-    initialTenant?: string;
+    initialApp?: string;
     /**
      * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
      * second click cannot send the write twice.
@@ -44,10 +44,10 @@ const props = defineProps<{
 }>();
 
 /**
- * Emits the flattened rows upward on submit, alongside the confirmed mode and destination tenant.
+ * Emits the flattened rows upward on submit, alongside the confirmed mode and destination app.
  */
 const emit = defineEmits<{
-    import: [payload: { mode: 'merge' | 'replace'; tenant: string; entries: LocaleEntryInput[] }];
+    import: [payload: { mode: 'merge' | 'replace'; app: string; entries: LocaleEntryInput[] }];
 }>();
 
 /**
@@ -88,12 +88,12 @@ const titleId = useId();
 const errorId = useId();
 
 /**
- * The selected destination tenant.
+ * The selected destination app.
  */
-const tenant = ref('');
+const app = ref('');
 
 /**
- * `merge` upserts and deletes nothing; `replace` makes the tenant exactly what is sent.
+ * `merge` upserts and deletes nothing; `replace` makes the app exactly what is sent.
  */
 const mode = ref<'merge' | 'replace'>('merge');
 
@@ -104,7 +104,7 @@ const rawJson = ref('');
 
 watch(isOpen, (open) => {
     if (!open) return;
-    tenant.value = props.initialTenant ?? props.tenants.at(0)?.id ?? '';
+    app.value = props.initialApp ?? props.apps.at(0)?.id ?? '';
     mode.value = 'merge';
     rawJson.value = '';
 });
@@ -165,12 +165,12 @@ const modeOptions = computed(() => [
 const handleImport = () => {
     const entries = parsedEntries.value;
     if (!entries) return;
-    // The second look a replace deserves, naming the tenant it is allowed to delete from.
+    // The second look a replace deserves, naming the app it is allowed to delete from.
     const secondLook =
         mode.value === 'replace'
             ? useDialogStore().confirm({
                   message: t('entries-import.confirm-replace', {
-                      tenant: tenant.value,
+                      app: app.value,
                       count: entries.length
                   }),
                   color: 'error'
@@ -178,7 +178,7 @@ const handleImport = () => {
             : Promise.resolve(true);
     return secondLook.then((accepted) => {
         if (!accepted) return;
-        emit('import', { mode: mode.value, tenant: tenant.value, entries });
+        emit('import', { mode: mode.value, app: app.value, entries });
     });
 };
 </script>
@@ -231,17 +231,17 @@ const handleImport = () => {
                 </fieldset>
                 <div class="flex flex-wrap items-start gap-4">
                     <v-select
-                        v-model="tenant"
+                        v-model="app"
                         :items="
-                            tenants.map(({ id, label }) => ({
+                            apps.map(({ id, label }) => ({
                                 value: id,
                                 title: `${label} (${id})`
                             }))
                         "
-                        :label="t('entries-import.label-tenant')"
+                        :label="t('entries-import.label-app')"
                         hide-details
                         class="max-w-72"
-                        data-test="import-tenant"
+                        data-test="import-app"
                     />
                     <v-radio-group
                         v-model="mode"

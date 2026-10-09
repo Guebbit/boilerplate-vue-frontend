@@ -64,12 +64,12 @@ export const GetSecurityTxtResponse = zod.string();
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *
- * `tenants` is the field doing the real work: which tenants have words in that
- * language. The backend tenant means the API can answer requests in it — its
- * dictionary is deployed and i18next holds it. A frontend tenant means a client
+ * `apps` is the field doing the real work: which apps have words in that
+ * language. The backend app means the API can answer requests in it — its
+ * dictionary is deployed and i18next holds it. A frontend app means a client
  * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
  * have either, or both, and the two are not the same capability: a language added
- * through the admin routes below carries only the frontend tenant until a file is
+ * through the admin routes below carries only the frontend app until a file is
  * deployed for it.
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
@@ -82,10 +82,8 @@ export const GetSecurityTxtResponse = zod.string();
  */
 export const getLocalesResponseDataLocalesItemTagMax = 35;
 export const getLocalesResponseDataLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const getLocalesResponseDataLocalesItemTenantsItemMax = 64;
-export const getLocalesResponseDataLocalesItemTenantsItemRegExp = new RegExp(
-    '^[a-z0-9][a-z0-9-]*$'
-);
+export const getLocalesResponseDataLocalesItemAppsItemMax = 64;
+export const getLocalesResponseDataLocalesItemAppsItemRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const getLocalesResponseDataLocalesItemEntryCountMin = 0;
 export const getLocalesResponseDataLocalesItemRevisionMin = 0;
 export const getLocalesResponseDataDefaultMax = 35;
@@ -107,13 +105,13 @@ export const GetLocalesResponse = zod.strictObject({
                 nativeName: zod.string(),
                 direction: zod.enum(['ltr', 'rtl']),
                 active: zod.boolean(),
-                tenants: zod
+                apps: zod
                     .array(
                         zod
                             .string()
                             .min(1)
-                            .max(getLocalesResponseDataLocalesItemTenantsItemMax)
-                            .regex(getLocalesResponseDataLocalesItemTenantsItemRegExp)
+                            .max(getLocalesResponseDataLocalesItemAppsItemMax)
+                            .regex(getLocalesResponseDataLocalesItemAppsItemRegExp)
                     )
                     .min(1),
                 source: zod.enum(['static', 'dynamic', 'both']),
@@ -135,7 +133,7 @@ export const GetLocalesResponse = zod.strictObject({
  * Registers a language in the dynamic tier so entries can be translated into it.
  *
  * This does NOT teach the API to answer in the new language — that needs a dictionary
- * file and a deploy. A language created here carries only the frontend tenant until
+ * file and a deploy. A language created here carries only the frontend app until
  * one exists.
  * @summary Add a language
  */
@@ -182,33 +180,33 @@ export const CreateLocaleResponse = zod.strictObject({
     })
 });
 /**
- * Every tenant this deployment holds words for — the keyspaces an entry can belong
+ * Every app this deployment holds words for — the keyspaces an entry can belong
  * to. Configuration, not data: the ids come from the API's environment, so a client
  * cannot invent one and an admin screen need not hardcode them.
  *
- * `kind` is what a client uses the list for. The `backend` tenant is this API's own
+ * `kind` is what a client uses the list for. The `backend` app is this API's own
  * copy — rows under it are layered over the deployed files at resolution time and
- * never leave the API. A `frontend` tenant is a client's copy, downloadable from
- * `GET /locales/{locale}/messages?tenant=`.
+ * never leave the API. A `frontend` app is a client's copy, downloadable from
+ * `GET /locales/{locale}/messages?app=`.
  *
  * Public and cacheable, like every other locale read.
- * @summary Translation tenants
+ * @summary Translation apps
  */
-export const getLocaleTenantsResponseDataTenantsItemIdMax = 64;
-export const getLocaleTenantsResponseDataTenantsItemIdRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const GetLocaleTenantsResponse = zod.strictObject({
+export const getLocaleAppsResponseDataAppsItemIdMax = 64;
+export const getLocaleAppsResponseDataAppsItemIdRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const GetLocaleAppsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        tenants: zod
+        apps: zod
             .array(
                 zod.strictObject({
                     id: zod
                         .string()
                         .min(1)
-                        .max(getLocaleTenantsResponseDataTenantsItemIdMax)
-                        .regex(getLocaleTenantsResponseDataTenantsItemIdRegExp),
+                        .max(getLocaleAppsResponseDataAppsItemIdMax)
+                        .regex(getLocaleAppsResponseDataAppsItemIdRegExp),
                     label: zod.string(),
                     kind: zod.enum(['frontend', 'backend'])
                 })
@@ -379,8 +377,8 @@ export const DeleteLocaleResponse = zod.strictObject({
  * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
- * ONE frontend tenant's rows — the client's own keyspace, the one named by `tenant`
- * or the deployment's default frontend tenant when omitted. The backend tenant is
+ * ONE frontend app's rows — the client's own keyspace, the one named by `app`
+ * or the deployment's default frontend app when omitted. The backend app is
  * refused here with a 404: its rows are layered over the deployed files internally
  * and never leave the API, because a frontend that merged them would be adopting the
  * backend's keys as its own.
@@ -406,14 +404,14 @@ export const GetLocaleMessagesParams = zod.strictObject({
         .max(getLocaleMessagesPathLocaleMax)
         .regex(getLocaleMessagesPathLocaleRegExp)
 });
-export const getLocaleMessagesQueryTenantMax = 64;
-export const getLocaleMessagesQueryTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const getLocaleMessagesQueryAppMax = 64;
+export const getLocaleMessagesQueryAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const GetLocaleMessagesQueryParams = zod.strictObject({
-    tenant: zod
+    app: zod
         .string()
         .min(1)
-        .max(getLocaleMessagesQueryTenantMax)
-        .regex(getLocaleMessagesQueryTenantRegExp)
+        .max(getLocaleMessagesQueryAppMax)
+        .regex(getLocaleMessagesQueryAppRegExp)
         .optional()
 });
 export const getLocaleMessagesResponseDataLocaleMax = 35;
@@ -437,9 +435,9 @@ export const GetLocaleMessagesResponse = zod.strictObject({
  * translation screen lists. Flat, because a row is what gets edited; the nested tree
  * is `GET /locales/{locale}/messages`.
  *
- * `text` searches keys and values together. Every tenant's rows are listed unless
- * `tenant` narrows them; one tenant's slice is also a resource of its own,
- * `/locales/{locale}/tenants/{tenant}/entries`, which is where it is written.
+ * `text` searches keys and values together. Every app's rows are listed; one app's
+ * slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
+ * where it is written.
  * @summary List translation entries
  */
 export const listLocaleEntriesPathLocaleMax = 35;
@@ -455,8 +453,6 @@ export const listLocaleEntriesQueryPageMax = 10000;
 export const listLocaleEntriesQueryPageSizeDefault = 10;
 export const listLocaleEntriesQueryPageSizeMax = 100;
 export const listLocaleEntriesQueryTextMax = 200;
-export const listLocaleEntriesQueryTenantMax = 64;
-export const listLocaleEntriesQueryTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ListLocaleEntriesQueryParams = zod.strictObject({
     page: zod
         .number()
@@ -468,13 +464,7 @@ export const ListLocaleEntriesQueryParams = zod.strictObject({
         .min(1)
         .max(listLocaleEntriesQueryPageSizeMax)
         .default(listLocaleEntriesQueryPageSizeDefault),
-    text: zod.string().min(1).max(listLocaleEntriesQueryTextMax).optional(),
-    tenant: zod
-        .string()
-        .min(1)
-        .max(listLocaleEntriesQueryTenantMax)
-        .regex(listLocaleEntriesQueryTenantRegExp)
-        .optional()
+    text: zod.string().min(1).max(listLocaleEntriesQueryTextMax).optional()
 });
 export const listLocaleEntriesResponseDataItemsItemIdMax = 64;
 export const listLocaleEntriesResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -482,10 +472,8 @@ export const listLocaleEntriesResponseDataItemsItemLocaleMax = 35;
 export const listLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
-export const listLocaleEntriesResponseDataItemsItemTenantMax = 64;
-export const listLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp(
-    '^[a-z0-9][a-z0-9-]*$'
-);
+export const listLocaleEntriesResponseDataItemsItemAppMax = 64;
+export const listLocaleEntriesResponseDataItemsItemAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const listLocaleEntriesResponseDataMetaPageDefault = 1;
 export const listLocaleEntriesResponseDataMetaPageMax = 10000;
 export const listLocaleEntriesResponseDataMetaPageSizeDefault = 10;
@@ -508,11 +496,11 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                     .string()
                     .max(listLocaleEntriesResponseDataItemsItemLocaleMax)
                     .regex(listLocaleEntriesResponseDataItemsItemLocaleRegExp),
-                tenant: zod
+                app: zod
                     .string()
                     .min(1)
-                    .max(listLocaleEntriesResponseDataItemsItemTenantMax)
-                    .regex(listLocaleEntriesResponseDataItemsItemTenantRegExp),
+                    .max(listLocaleEntriesResponseDataItemsItemAppMax)
+                    .regex(listLocaleEntriesResponseDataItemsItemAppRegExp),
                 key: zod.string(),
                 value: zod.string(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -540,60 +528,61 @@ export const ListLocaleEntriesResponse = zod.strictObject({
  * translation screen lists. Flat, because a row is what gets edited; the nested tree
  * is `GET /locales/{locale}/messages`.
  *
- * `text` searches keys and values together. The same rows `GET
- * /locales/{locale}/entries?tenant=` lists, at the address the writes below target.
- * @summary List one tenant's translation entries
+ * `text` searches keys and values together. Only this app's rows, at the address
+ * the writes below target; an app the deployment does not configure is refused
+ * with a 422.
+ * @summary List one app's translation entries
  */
-export const listTenantLocaleEntriesPathLocaleMax = 35;
-export const listTenantLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const listTenantLocaleEntriesPathTenantMax = 64;
-export const listTenantLocaleEntriesPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const ListTenantLocaleEntriesParams = zod.strictObject({
+export const listAppLocaleEntriesPathLocaleMax = 35;
+export const listAppLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listAppLocaleEntriesPathAppMax = 64;
+export const listAppLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const ListAppLocaleEntriesParams = zod.strictObject({
     locale: zod
         .string()
-        .max(listTenantLocaleEntriesPathLocaleMax)
-        .regex(listTenantLocaleEntriesPathLocaleRegExp),
-    tenant: zod
+        .max(listAppLocaleEntriesPathLocaleMax)
+        .regex(listAppLocaleEntriesPathLocaleRegExp),
+    app: zod
         .string()
         .min(1)
-        .max(listTenantLocaleEntriesPathTenantMax)
-        .regex(listTenantLocaleEntriesPathTenantRegExp)
+        .max(listAppLocaleEntriesPathAppMax)
+        .regex(listAppLocaleEntriesPathAppRegExp)
 });
-export const listTenantLocaleEntriesQueryPageDefault = 1;
-export const listTenantLocaleEntriesQueryPageMax = 10000;
-export const listTenantLocaleEntriesQueryPageSizeDefault = 10;
-export const listTenantLocaleEntriesQueryPageSizeMax = 100;
-export const listTenantLocaleEntriesQueryTextMax = 200;
-export const ListTenantLocaleEntriesQueryParams = zod.strictObject({
+export const listAppLocaleEntriesQueryPageDefault = 1;
+export const listAppLocaleEntriesQueryPageMax = 10000;
+export const listAppLocaleEntriesQueryPageSizeDefault = 10;
+export const listAppLocaleEntriesQueryPageSizeMax = 100;
+export const listAppLocaleEntriesQueryTextMax = 200;
+export const ListAppLocaleEntriesQueryParams = zod.strictObject({
     page: zod
         .number()
         .min(1)
-        .max(listTenantLocaleEntriesQueryPageMax)
-        .default(listTenantLocaleEntriesQueryPageDefault),
+        .max(listAppLocaleEntriesQueryPageMax)
+        .default(listAppLocaleEntriesQueryPageDefault),
     pageSize: zod
         .number()
         .min(1)
-        .max(listTenantLocaleEntriesQueryPageSizeMax)
-        .default(listTenantLocaleEntriesQueryPageSizeDefault),
-    text: zod.string().min(1).max(listTenantLocaleEntriesQueryTextMax).optional()
+        .max(listAppLocaleEntriesQueryPageSizeMax)
+        .default(listAppLocaleEntriesQueryPageSizeDefault),
+    text: zod.string().min(1).max(listAppLocaleEntriesQueryTextMax).optional()
 });
-export const listTenantLocaleEntriesResponseDataItemsItemIdMax = 64;
-export const listTenantLocaleEntriesResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listTenantLocaleEntriesResponseDataItemsItemLocaleMax = 35;
-export const listTenantLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
+export const listAppLocaleEntriesResponseDataItemsItemIdMax = 64;
+export const listAppLocaleEntriesResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listAppLocaleEntriesResponseDataItemsItemLocaleMax = 35;
+export const listAppLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
-export const listTenantLocaleEntriesResponseDataItemsItemTenantMax = 64;
-export const listTenantLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp(
+export const listAppLocaleEntriesResponseDataItemsItemAppMax = 64;
+export const listAppLocaleEntriesResponseDataItemsItemAppRegExp = new RegExp(
     '^[a-z0-9][a-z0-9-]*$'
 );
-export const listTenantLocaleEntriesResponseDataMetaPageDefault = 1;
-export const listTenantLocaleEntriesResponseDataMetaPageMax = 10000;
-export const listTenantLocaleEntriesResponseDataMetaPageSizeDefault = 10;
-export const listTenantLocaleEntriesResponseDataMetaPageSizeMax = 100;
-export const listTenantLocaleEntriesResponseDataMetaTotalItemsMin = 0;
-export const listTenantLocaleEntriesResponseDataMetaTotalPagesMin = 0;
-export const ListTenantLocaleEntriesResponse = zod.strictObject({
+export const listAppLocaleEntriesResponseDataMetaPageDefault = 1;
+export const listAppLocaleEntriesResponseDataMetaPageMax = 10000;
+export const listAppLocaleEntriesResponseDataMetaPageSizeDefault = 10;
+export const listAppLocaleEntriesResponseDataMetaPageSizeMax = 100;
+export const listAppLocaleEntriesResponseDataMetaTotalItemsMin = 0;
+export const listAppLocaleEntriesResponseDataMetaTotalPagesMin = 0;
+export const ListAppLocaleEntriesResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -603,17 +592,17 @@ export const ListTenantLocaleEntriesResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(listTenantLocaleEntriesResponseDataItemsItemIdMax)
-                    .regex(listTenantLocaleEntriesResponseDataItemsItemIdRegExp),
+                    .max(listAppLocaleEntriesResponseDataItemsItemIdMax)
+                    .regex(listAppLocaleEntriesResponseDataItemsItemIdRegExp),
                 locale: zod
                     .string()
-                    .max(listTenantLocaleEntriesResponseDataItemsItemLocaleMax)
-                    .regex(listTenantLocaleEntriesResponseDataItemsItemLocaleRegExp),
-                tenant: zod
+                    .max(listAppLocaleEntriesResponseDataItemsItemLocaleMax)
+                    .regex(listAppLocaleEntriesResponseDataItemsItemLocaleRegExp),
+                app: zod
                     .string()
                     .min(1)
-                    .max(listTenantLocaleEntriesResponseDataItemsItemTenantMax)
-                    .regex(listTenantLocaleEntriesResponseDataItemsItemTenantRegExp),
+                    .max(listAppLocaleEntriesResponseDataItemsItemAppMax)
+                    .regex(listAppLocaleEntriesResponseDataItemsItemAppRegExp),
                 key: zod.string(),
                 value: zod.string(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -624,38 +613,34 @@ export const ListTenantLocaleEntriesResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
-                .max(listTenantLocaleEntriesResponseDataMetaPageMax)
-                .default(listTenantLocaleEntriesResponseDataMetaPageDefault),
+                .max(listAppLocaleEntriesResponseDataMetaPageMax)
+                .default(listAppLocaleEntriesResponseDataMetaPageDefault),
             pageSize: zod
                 .number()
                 .min(1)
-                .max(listTenantLocaleEntriesResponseDataMetaPageSizeMax)
-                .default(listTenantLocaleEntriesResponseDataMetaPageSizeDefault),
-            totalItems: zod.number().min(listTenantLocaleEntriesResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(listTenantLocaleEntriesResponseDataMetaTotalPagesMin)
+                .max(listAppLocaleEntriesResponseDataMetaPageSizeMax)
+                .default(listAppLocaleEntriesResponseDataMetaPageSizeDefault),
+            totalItems: zod.number().min(listAppLocaleEntriesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listAppLocaleEntriesResponseDataMetaTotalPagesMin)
         })
     })
 });
 /**
- * Adds a key to this tenant's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
+ * Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
  * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
 export const createLocaleEntryPathLocaleMax = 35;
 export const createLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const createLocaleEntryPathTenantMax = 64;
-export const createLocaleEntryPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const createLocaleEntryPathAppMax = 64;
+export const createLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryParams = zod.strictObject({
     locale: zod
         .string()
         .max(createLocaleEntryPathLocaleMax)
         .regex(createLocaleEntryPathLocaleRegExp),
-    tenant: zod
-        .string()
-        .min(1)
-        .max(createLocaleEntryPathTenantMax)
-        .regex(createLocaleEntryPathTenantRegExp)
+    app: zod.string().min(1).max(createLocaleEntryPathAppMax).regex(createLocaleEntryPathAppRegExp)
 });
 export const createLocaleEntryBodyKeyMax = 200;
 export const createLocaleEntryBodyValueMax = 2000;
@@ -667,8 +652,8 @@ export const createLocaleEntryResponseDataIdMax = 64;
 export const createLocaleEntryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createLocaleEntryResponseDataLocaleMax = 35;
 export const createLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const createLocaleEntryResponseDataTenantMax = 64;
-export const createLocaleEntryResponseDataTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const createLocaleEntryResponseDataAppMax = 64;
+export const createLocaleEntryResponseDataAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const CreateLocaleEntryResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -683,11 +668,11 @@ export const CreateLocaleEntryResponse = zod.strictObject({
             .string()
             .max(createLocaleEntryResponseDataLocaleMax)
             .regex(createLocaleEntryResponseDataLocaleRegExp),
-        tenant: zod
+        app: zod
             .string()
             .min(1)
-            .max(createLocaleEntryResponseDataTenantMax)
-            .regex(createLocaleEntryResponseDataTenantRegExp),
+            .max(createLocaleEntryResponseDataAppMax)
+            .regex(createLocaleEntryResponseDataAppRegExp),
         key: zod.string(),
         value: zod.string(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -696,8 +681,8 @@ export const CreateLocaleEntryResponse = zod.strictObject({
 });
 /**
  * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
- * this tenant's entries for this language becomes exactly what the body carries;
- * the other tenants are untouched. The URI names that slice, so the body is the
+ * this app's entries for this language becomes exactly what the body carries;
+ * the other apps are untouched. The URI names that slice, so the body is the
  * same thing `GET` on it lists (RFC 9110 §9.3.4).
  *
  * Paired with `PATCH` on this same collection, which merges instead. "Does an import
@@ -711,18 +696,18 @@ export const CreateLocaleEntryResponse = zod.strictObject({
  */
 export const replaceLocaleEntriesPathLocaleMax = 35;
 export const replaceLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const replaceLocaleEntriesPathTenantMax = 64;
-export const replaceLocaleEntriesPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const replaceLocaleEntriesPathAppMax = 64;
+export const replaceLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const ReplaceLocaleEntriesParams = zod.strictObject({
     locale: zod
         .string()
         .max(replaceLocaleEntriesPathLocaleMax)
         .regex(replaceLocaleEntriesPathLocaleRegExp),
-    tenant: zod
+    app: zod
         .string()
         .min(1)
-        .max(replaceLocaleEntriesPathTenantMax)
-        .regex(replaceLocaleEntriesPathTenantRegExp)
+        .max(replaceLocaleEntriesPathAppMax)
+        .regex(replaceLocaleEntriesPathAppRegExp)
 });
 export const replaceLocaleEntriesBodyEntriesItemKeyMax = 200;
 export const replaceLocaleEntriesBodyEntriesItemValueMax = 2000;
@@ -759,18 +744,18 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
  */
 export const mergeLocaleEntriesPathLocaleMax = 35;
 export const mergeLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const mergeLocaleEntriesPathTenantMax = 64;
-export const mergeLocaleEntriesPathTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const mergeLocaleEntriesPathAppMax = 64;
+export const mergeLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const MergeLocaleEntriesParams = zod.strictObject({
     locale: zod
         .string()
         .max(mergeLocaleEntriesPathLocaleMax)
         .regex(mergeLocaleEntriesPathLocaleRegExp),
-    tenant: zod
+    app: zod
         .string()
         .min(1)
-        .max(mergeLocaleEntriesPathTenantMax)
-        .regex(mergeLocaleEntriesPathTenantRegExp)
+        .max(mergeLocaleEntriesPathAppMax)
+        .regex(mergeLocaleEntriesPathAppRegExp)
 });
 export const mergeLocaleEntriesBodyEntriesItemKeyMax = 200;
 export const mergeLocaleEntriesBodyEntriesItemValueMax = 2000;
@@ -807,6 +792,8 @@ export const MergeLocaleEntriesResponse = zod.strictObject({
  */
 export const updateLocaleEntryPathLocaleMax = 35;
 export const updateLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocaleEntryPathAppMax = 64;
+export const updateLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const updateLocaleEntryPathEntryIdMax = 64;
 export const updateLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const UpdateLocaleEntryParams = zod.strictObject({
@@ -814,6 +801,7 @@ export const UpdateLocaleEntryParams = zod.strictObject({
         .string()
         .max(updateLocaleEntryPathLocaleMax)
         .regex(updateLocaleEntryPathLocaleRegExp),
+    app: zod.string().min(1).max(updateLocaleEntryPathAppMax).regex(updateLocaleEntryPathAppRegExp),
     entryId: zod
         .string()
         .min(1)
@@ -828,8 +816,8 @@ export const updateLocaleEntryResponseDataIdMax = 64;
 export const updateLocaleEntryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateLocaleEntryResponseDataLocaleMax = 35;
 export const updateLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const updateLocaleEntryResponseDataTenantMax = 64;
-export const updateLocaleEntryResponseDataTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const updateLocaleEntryResponseDataAppMax = 64;
+export const updateLocaleEntryResponseDataAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const UpdateLocaleEntryResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -844,11 +832,11 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
             .string()
             .max(updateLocaleEntryResponseDataLocaleMax)
             .regex(updateLocaleEntryResponseDataLocaleRegExp),
-        tenant: zod
+        app: zod
             .string()
             .min(1)
-            .max(updateLocaleEntryResponseDataTenantMax)
-            .regex(updateLocaleEntryResponseDataTenantRegExp),
+            .max(updateLocaleEntryResponseDataAppMax)
+            .regex(updateLocaleEntryResponseDataAppRegExp),
         key: zod.string(),
         value: zod.string(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -861,6 +849,8 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
  */
 export const deleteLocaleEntryPathLocaleMax = 35;
 export const deleteLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const deleteLocaleEntryPathAppMax = 64;
+export const deleteLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 export const deleteLocaleEntryPathEntryIdMax = 64;
 export const deleteLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const DeleteLocaleEntryParams = zod.strictObject({
@@ -868,6 +858,7 @@ export const DeleteLocaleEntryParams = zod.strictObject({
         .string()
         .max(deleteLocaleEntryPathLocaleMax)
         .regex(deleteLocaleEntryPathLocaleRegExp),
+    app: zod.string().min(1).max(deleteLocaleEntryPathAppMax).regex(deleteLocaleEntryPathAppRegExp),
     entryId: zod
         .string()
         .min(1)

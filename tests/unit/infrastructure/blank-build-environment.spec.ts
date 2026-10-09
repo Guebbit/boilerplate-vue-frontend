@@ -51,11 +51,11 @@ describe('a blank build variable is treated as unset', () => {
             expect(i18n.global.fallbackLocale.value).toBe('en');
         }));
 
-    it('keeps the demo tenant for the locale overrides', () =>
+    it('keeps the demo app for the locale overrides', () =>
         loadWith(
-            { VITE_LOCALE_TENANT: '' },
+            { VITE_LOCALE_APP: '' },
             () => import('@/infrastructure/locale-overrides.ts')
-        ).then(({ localeTenant }) => {
-            expect(localeTenant()).toBe('demo-fe');
+        ).then(({ localeApp }) => {
+            expect(localeApp()).toBe('demo-fe');
         }));
 });

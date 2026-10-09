@@ -6,7 +6,7 @@
  * falls back to English (Spanish ships no file, so English is the only thing left), complete a
  * new key in all five languages so the "incomplete only" switch drops it, and replace Spanish's
  * dictionary from a file, which removes what the file does not name but leaves the API's own
- * dictionary (another tenant) alone.
+ * dictionary (another app) alone.
  *
  * A cleared cell falls back to the language's own shipped file where it has one (Italian does),
  * and to English only where it does not: Spanish is the language with nothing shipped.
@@ -106,10 +106,10 @@ describe('AT2 · Fix a typo in the dictionary', () => {
         cy.get('[data-test=dictionary-filter-incomplete] input').uncheck({ force: true });
         cy.get(`[data-test=dictionary-cell][data-key="${NEW_KEY}"]`).should('exist');
 
-        cy.step('a replace import removes what the file omits, from that tenant only');
+        cy.step('a replace import removes what the file omits, from that app only');
         cy.visit('/en/locales');
         cy.get('[data-test=row-entries][href$="/locales/es"]').click();
-        cy.pickOption('[data-test=entries-filter-tenant]', /Frontend/);
+        cy.pickOption('[data-test=entries-filter-app]', /Frontend/);
         cy.get('[data-test=entries-filter-text] input').type('{enter}');
         cy.get('[data-test=entry-value-field]').should('have.length.gte', 10);
         cy.get('[data-test=entries-import-open]').click();
@@ -129,8 +129,8 @@ describe('AT2 · Fix a typo in the dictionary', () => {
         cy.get('[data-test=entries-import]').should('not.exist');
         cy.get('[data-test=entry-value-field]').should('have.length', 1);
 
-        cy.step('the API tenant of the same language is untouched');
-        cy.pickOption('[data-test=entries-filter-tenant]', /API/);
+        cy.step('the API app of the same language is untouched');
+        cy.pickOption('[data-test=entries-filter-app]', /API/);
         cy.get('[data-test=entries-filter-text] input').type('{enter}');
         cy.get('[data-test=entry-value-field]').should('have.length', 2);
     });

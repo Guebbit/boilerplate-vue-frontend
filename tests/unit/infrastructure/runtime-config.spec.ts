@@ -34,6 +34,6 @@ describe('runtimeValue', () => {
 
     it('is undefined for a key config.js never set, even with others present', () => {
         (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = { API_URL: 'https://x' };
-        expect(runtimeValue('LOCALE_TENANT')).toBeUndefined();
+        expect(runtimeValue('LOCALE_APP')).toBeUndefined();
     });
 });

@@ -10,18 +10,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useDictionaryAggregation } from '../composables/use-dictionary-aggregation.ts';
-import { LocaleTenantKind } from '@api';
+import { LocaleAppKind } from '@api';
 import type { LocaleEntry } from '@types';
 
 /**
- * This fixture build's own tenant id.
+ * This fixture build's own app id.
  */
-const OWN_TENANT = 'demo-fe';
+const OWN_APP = 'demo-fe';
 
 /**
- * The backend tenant id in this fixture's registry.
+ * The backend app id in this fixture's registry.
  */
-const BACKEND_TENANT = 'demo-be';
+const BACKEND_APP = 'demo-be';
 
 /**
  * The faked manifest: one dynamic language and one static-only one.
@@ -32,20 +32,20 @@ const capabilities = ref([
 ]);
 
 /**
- * The faked tenant registry: this build's own tenant and the backend's.
+ * The faked app registry: this build's own app and the backend's.
  */
-const tenants = ref([
-    { id: OWN_TENANT, kind: LocaleTenantKind.frontend, label: 'Frontend' },
-    { id: BACKEND_TENANT, kind: LocaleTenantKind.backend, label: 'Backend' }
+const apps = ref([
+    { id: OWN_APP, kind: LocaleAppKind.frontend, label: 'Frontend' },
+    { id: BACKEND_APP, kind: LocaleAppKind.backend, label: 'Backend' }
 ]);
 
 /**
  * Builds one stored entry row for the fixtures below.
  */
-const entry = (key: string, value: string, tenant = OWN_TENANT): LocaleEntry => ({
-    id: `entry-${key}-${tenant}`,
+const entry = (key: string, value: string, app = OWN_APP): LocaleEntry => ({
+    id: `entry-${key}-${app}`,
     locale: 'en',
-    tenant,
+    app,
     key,
     value
 });
@@ -67,11 +67,11 @@ let appBaselineAnswer: Record<string, string>;
 
 vi.mock('../store.ts', () => ({
     useLocalesStore: () => ({
-        ownTenant: OWN_TENANT,
+        ownApp: OWN_APP,
         capabilities,
-        tenants,
+        apps,
         loading: ref(false),
-        fetchTenants: vi.fn(() => Promise.resolve(tenants.value)),
+        fetchApps: vi.fn(() => Promise.resolve(apps.value)),
         fetchLanguages: vi.fn(() => Promise.resolve(capabilities.value)),
         fetchAllEntries: vi.fn(() => Promise.resolve(entriesAnswer)),
         fetchApiDictionary: vi.fn(() => Promise.resolve(apiBaselineAnswer)),
@@ -99,8 +99,8 @@ describe('useDictionaryAggregation', () => {
     it('reads an overridden key as an entry, never a baseline', () => {
         entriesAnswer = [entry('generic.search', 'Cerca')];
         appBaselineAnswer = { 'generic.search': 'Search' };
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             expect(board.cellState('en', 'generic.search')).toBe('entry');
@@ -111,8 +111,8 @@ describe('useDictionaryAggregation', () => {
 
     it('reads an un-overridden bundled key as a baseline, not missing', () => {
         appBaselineAnswer = { 'generic.search': 'Search' };
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             expect(board.cellState('en', 'generic.search')).toBe('baseline');
@@ -122,8 +122,8 @@ describe('useDictionaryAggregation', () => {
     });
 
     it('reads a key with neither an entry nor a baseline as missing', () => {
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             expect(board.cellState('en', 'generic.nowhere')).toBe('missing');
@@ -131,21 +131,21 @@ describe('useDictionaryAggregation', () => {
         });
     });
 
-    it('reads the API baseline for the backend tenant, never the bundled one', () => {
+    it('reads the API baseline for the backend app, never the bundled one', () => {
         apiBaselineAnswer = { 'generic.search': 'Buscar (API)' };
         appBaselineAnswer = { 'generic.search': 'Search (bundled)' };
-        const tenant = ref(BACKEND_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(BACKEND_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             expect(board.baselineAt('en', 'generic.search')).toBe('Buscar (API)');
         });
     });
 
-    it('shows no baseline at all for a third-party tenant this build cannot read', () => {
+    it('shows no baseline at all for a third-party app this build cannot read', () => {
         appBaselineAnswer = { 'generic.search': 'Search' };
-        const tenant = ref('some-other-tenant');
-        const board = useDictionaryAggregation(tenant);
+        const app = ref('some-other-app');
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             expect(board.baselineAt('en', 'generic.search')).toBeUndefined();
@@ -156,8 +156,8 @@ describe('useDictionaryAggregation', () => {
     it('unions entry keys, baseline keys and pending keys into allKeys', () => {
         entriesAnswer = [entry('a.entry-only', 'x')];
         appBaselineAnswer = { 'b.baseline-only': 'y' };
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             board.addPendingKey('c.pending-only');
@@ -172,8 +172,8 @@ describe('useDictionaryAggregation', () => {
 
     it('forgets pending keys on resetPendingKeys, without touching saved keys', () => {
         entriesAnswer = [entry('a.entry-only', 'x')];
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             board.addPendingKey('b.pending');
@@ -185,8 +185,8 @@ describe('useDictionaryAggregation', () => {
 
     it("counts each writable language's missing keys independently, skipping static-only languages", () => {
         entriesAnswer = [entry('a.key', 'x')];
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.loadLanguage('en').then(() => {
             board.addPendingKey('b.missing-everywhere');
@@ -196,19 +196,19 @@ describe('useDictionaryAggregation', () => {
         });
     });
 
-    it('reports no baseline for a tenant other than its own or the backend', () => {
-        const tenant = ref('some-other-tenant');
-        const board = useDictionaryAggregation(tenant);
+    it('reports no baseline for an app other than its own or the backend', () => {
+        const app = ref('some-other-app');
+        const board = useDictionaryAggregation(app);
 
         expect(board.hasBaseline.value).toBe(false);
     });
 
-    it("reports a baseline for this build's own tenant and for the backend tenant", () => {
-        const ownTenantRef = ref(OWN_TENANT);
-        expect(useDictionaryAggregation(ownTenantRef).hasBaseline.value).toBe(true);
+    it("reports a baseline for this build's own app and for the backend app", () => {
+        const ownAppRef = ref(OWN_APP);
+        expect(useDictionaryAggregation(ownAppRef).hasBaseline.value).toBe(true);
 
-        const backendTenantRef = ref(BACKEND_TENANT);
-        expect(useDictionaryAggregation(backendTenantRef).hasBaseline.value).toBe(true);
+        const backendAppRef = ref(BACKEND_APP);
+        expect(useDictionaryAggregation(backendAppRef).hasBaseline.value).toBe(true);
     });
 
     /**
@@ -219,8 +219,8 @@ describe('useDictionaryAggregation', () => {
      * be loaded) is `locale-overrides.spec.ts`'s job.
      */
     it("refreshes the running app's dictionary as part of every write's aftermath", () => {
-        const tenant = ref(OWN_TENANT);
-        const board = useDictionaryAggregation(tenant);
+        const app = ref(OWN_APP);
+        const board = useDictionaryAggregation(app);
 
         return board.afterWrite('en').then(() => {
             expect(refreshRunningLocaleMock).toHaveBeenCalledWith('en');

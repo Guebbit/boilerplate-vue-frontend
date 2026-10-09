@@ -37,10 +37,10 @@ import type { LocaleCapability } from '@types';
  * The dictionary board: every key down the side, every language across the top, one cell each.
  *
  * EVERY key — not only the edited ones. The rows are the union of what the dictionaries actually
- * contain: for THIS frontend's tenant, the keys it bundles (shared file plus every module's
- * slice); for the backend tenant, the keys the API's deployed files declare; for any other tenant
+ * contain: for THIS frontend's app, the keys it bundles (shared file plus every module's
+ * slice); for the backend app, the keys the API's deployed files declare; for any other app
  * — another client this API serves — nothing but what is stored, because its files live in a
- * repository this build cannot see; plus, in every tenant, whatever has been stored as an entry.
+ * repository this build cannot see; plus, in every app, whatever has been stored as an entry.
  * The entries page lists edits; this page lists the language.
  *
  * A cell is one of three things, and looks like it:
@@ -51,7 +51,7 @@ import type { LocaleCapability } from '@types';
  *
  * Writing a cell creates, edits or removes the entry; nothing here ever writes a baseline — the
  * files are a deploy, not a form. A language this build does not bundle has no baseline at all
- * in this frontend's tenant, so every key is missing there until translated — which is exactly
+ * in this frontend's app, so every key is missing there until translated — which is exactly
  * the work queue a new language is.
  *
  * Paged client-side. A whole language is a few hundred rows at most and the export already pages
@@ -82,19 +82,19 @@ const localesStore = useLocalesStore();
 const PAGE_SIZE = 25;
 
 /**
- * Whose dictionary the board shows; a key lives in exactly one tenant. This build's own by default.
+ * Whose dictionary the board shows; a key lives in exactly one app. This build's own by default.
  */
-const tenant = ref(localesStore.ownTenant);
+const app = ref(localesStore.ownApp);
 
 /**
  * The dictionary board's aggregated rows and the state behind them.
  */
 const {
     loading,
-    tenantKind,
+    appKind,
     hasBaseline,
     languages,
-    tenantOptions,
+    appOptions,
     allKeys,
     missingByTag,
     entryAt,
@@ -106,7 +106,7 @@ const {
     afterWrite,
     addPendingKey,
     resetPendingKeys
-} = useDictionaryAggregation(tenant);
+} = useDictionaryAggregation(app);
 
 /**
  * Per-cell editing: what is being edited, and the writes that commit it.
@@ -122,7 +122,7 @@ const {
     handleCellEnter,
     handleCellInput,
     cellLabel
-} = useDictionaryCellEditor(tenant, entryAt, baselineAt, afterWrite);
+} = useDictionaryCellEditor(app, entryAt, baselineAt, afterWrite);
 
 /**
  * Client-side text filter over keys and values.
@@ -335,8 +335,8 @@ const handleCreateLanguage = (fields: {
         });
 };
 
-// A tenant switch is a different board: different keys, different page count, stale drafts.
-watch(tenant, () => {
+// An app switch is a different board: different keys, different page count, stale drafts.
+watch(app, () => {
     pageCurrent.value = 1;
     drafts.value = {};
     resetPendingKeys();
@@ -386,12 +386,12 @@ onMounted(() => {
                         data-test="dictionary-filter-text"
                     />
                     <v-select
-                        v-model="tenant"
-                        :items="tenantOptions"
-                        :label="t('locales-dictionary-page.filter-tenant')"
+                        v-model="app"
+                        :items="appOptions"
+                        :label="t('locales-dictionary-page.filter-app')"
                         hide-details
                         class="max-w-64"
-                        data-test="dictionary-filter-tenant"
+                        data-test="dictionary-filter-app"
                     />
                     <v-switch
                         v-model="incompleteOnly"
@@ -426,7 +426,7 @@ onMounted(() => {
         </v-card>
 
         <!--
-            A tenant whose files live elsewhere shows stored rows only; say so, or an empty column
+            An app whose files live elsewhere shows stored rows only; say so, or an empty column
             reads as "nothing translated" when it means "nothing this build can see".
         -->
         <v-alert
@@ -438,7 +438,7 @@ onMounted(() => {
             data-test="dictionary-no-baseline"
             :text="
                 t('locales-dictionary-page.no-baseline', {
-                    tenant: localesStore.tenantLabel(tenant)
+                    app: localesStore.appLabel(app)
                 })
             "
         />
@@ -536,7 +536,7 @@ onMounted(() => {
                                 ? undefined
                                 : cellState(language.tag, item.key) === 'missing'
                                   ? t('locales-dictionary-page.cell-missing')
-                                  : t(`locales-dictionary-page.cell-baseline-${tenantKind}`)
+                                  : t(`locales-dictionary-page.cell-baseline-${appKind}`)
                         "
                         :dir="language.direction"
                         :error-messages="cellErrors[cellId(language.tag, item.key)]"

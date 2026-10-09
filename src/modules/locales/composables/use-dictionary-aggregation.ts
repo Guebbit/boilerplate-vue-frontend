@@ -10,7 +10,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useLocalesStore } from '../store.ts';
 import { refreshRunningLocale } from '@/infrastructure/locale-overrides.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { LocaleTenantKind } from '@api';
+import { LocaleAppKind } from '@api';
 import type { LocaleEntry } from '@types';
 
 /**
@@ -20,33 +20,32 @@ import type { LocaleEntry } from '@types';
  * cell's state through this rather than reading the three sources directly, so "what is this
  * cell" has exactly one answer regardless of who is asking.
  *
- * @param tenant - Whose dictionary is on the board; a key lives in exactly one tenant. Owned by
+ * @param app - Whose dictionary is on the board; a key lives in exactly one app. Owned by
  *  the caller, not here — switching it is a page-level action with page-level side effects
  *  (resetting the current page, drafts) beyond what this aggregation is responsible for.
  */
-export function useDictionaryAggregation(tenant: Ref<string>) {
+export function useDictionaryAggregation(app: Ref<string>) {
     /** Toast dispatcher for load failures. */
     const { addMessage } = useNotificationsStore();
 
-    /** Locales store: the language manifest and tenant registry the board reads. */
+    /** Locales store: the language manifest and app registry the board reads. */
     const localesStore = useLocalesStore();
 
-    /** Reactive capabilities, tenants and loading flag taken off {@link localesStore}. */
-    const { capabilities, tenants, loading } = storeToRefs(localesStore);
+    /** Reactive capabilities, apps and loading flag taken off {@link localesStore}. */
+    const { capabilities, apps, loading } = storeToRefs(localesStore);
 
     /**
-     * What kind of tenant is on the board — decides which baseline, if any, the cells show.
+     * What kind of app is on the board — decides which baseline, if any, the cells show.
      */
-    const tenantKind = computed(
-        () => tenants.value.find(({ id }) => id === tenant.value)?.kind ?? LocaleTenantKind.frontend
+    const appKind = computed(
+        () => apps.value.find(({ id }) => id === app.value)?.kind ?? LocaleAppKind.frontend
     );
 
     /**
-     * Whether the shown tenant has a baseline this build can read: its own bundle, or the API's files.
+     * Whether the shown app has a baseline this build can read: its own bundle, or the API's files.
      */
     const hasBaseline = computed(
-        () =>
-            tenant.value === localesStore.ownTenant || tenantKind.value === LocaleTenantKind.backend
+        () => app.value === localesStore.ownApp || appKind.value === LocaleAppKind.backend
     );
 
     /**
@@ -60,24 +59,24 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
     );
 
     /**
-     * The tenant select's options, from the registry.
+     * The app select's options, from the registry.
      */
-    const tenantOptions = computed(() =>
-        tenants.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
+    const appOptions = computed(() =>
+        apps.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
     );
 
     /**
-     * Every entry of every language, every tenant, by language tag.
+     * Every entry of every language, every app, by language tag.
      */
     const entriesByTag = ref<Partial<Record<string, LocaleEntry[]>>>({});
 
     /**
-     * The API's deployed dictionary by language tag — the backend tenant's baseline.
+     * The API's deployed dictionary by language tag — the backend app's baseline.
      */
     const apiBaselines = ref<Partial<Record<string, Partial<Record<string, string>>>>>({});
 
     /**
-     * This build's bundled dictionary by language tag — its own tenant's baseline.
+     * This build's bundled dictionary by language tag — its own app's baseline.
      */
     const appBaselines = ref<Partial<Record<string, Partial<Record<string, string>>>>>({});
 
@@ -87,25 +86,25 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
     const pendingKeys = ref<string[]>([]);
 
     /**
-     * One language's entries of the shown tenant, by key.
+     * One language's entries of the shown app, by key.
      */
     const entriesIndex = computed(() => {
         const index: Partial<Record<string, Map<string, LocaleEntry>>> = {};
         for (const [tag, entries] of Object.entries(entriesByTag.value))
             index[tag] = new Map(
                 (entries ?? [])
-                    .filter((entry) => entry.tenant === tenant.value)
+                    .filter((entry) => entry.app === app.value)
                     .map((entry) => [entry.key, entry])
             );
         return index;
     });
 
     /**
-     * The shown tenant's baselines, by language tag — none for a tenant this build cannot read.
+     * The shown app's baselines, by language tag — none for an app this build cannot read.
      */
     const baselines = computed<Partial<Record<string, Partial<Record<string, string>>>>>(() => {
-        if (tenant.value === localesStore.ownTenant) return appBaselines.value;
-        if (tenantKind.value === LocaleTenantKind.backend) return apiBaselines.value;
+        if (app.value === localesStore.ownApp) return appBaselines.value;
+        if (appKind.value === LocaleAppKind.backend) return apiBaselines.value;
         return {};
     });
 
@@ -116,7 +115,7 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
         entriesIndex.value[tag]?.get(key);
 
     /**
-     * The baseline text for one cell, when the shown tenant has one.
+     * The baseline text for one cell, when the shown app has one.
      */
     const baselineAt = (tag: string, key: string): string | undefined =>
         baselines.value[tag]?.[key];
@@ -136,7 +135,7 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
     };
 
     /**
-     * Every key on the board: the union, across languages, of the shown tenant's baseline keys and
+     * Every key on the board: the union, across languages, of the shown app's baseline keys and
      * entry keys, plus what was added here and not yet saved anywhere, sorted so related keys sit
      * together.
      */
@@ -179,7 +178,7 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
      * Loads the registry and the manifest, then every writable language's column.
      */
     const loadBoard = () =>
-        Promise.all([localesStore.fetchTenants(), localesStore.fetchLanguages()])
+        Promise.all([localesStore.fetchApps(), localesStore.fetchLanguages()])
             .then(() => Promise.all(languages.value.map((language) => loadLanguage(language.tag))))
             .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
@@ -197,7 +196,7 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
     };
 
     /**
-     * Forgets this tenant's added-but-unsaved keys — a tenant switch is a different board.
+     * Forgets this app's added-but-unsaved keys — an app switch is a different board.
      */
     const resetPendingKeys = () => {
         pendingKeys.value = [];
@@ -205,10 +204,10 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
 
     return {
         loading,
-        tenantKind,
+        appKind,
         hasBaseline,
         languages,
-        tenantOptions,
+        appOptions,
         allKeys,
         missingByTag,
         entryAt,

@@ -43,28 +43,28 @@ import {
  *
  * The API's own dictionary. It resolves its own keys and puts finished text on the wire, so a
  * response already arrives translated and there is nothing for a client to look up. Its overrides
- * (the backend tenant's rows) are layered onto its files inside the API and never leave it — a
+ * (the backend app's rows) are layered onto its files inside the API and never leave it — a
  * frontend that merged them would be adopting the backend's keyspace as its own, and both sides
  * declare a top-level `generic`. See `docs/theory/layers.md`.
  */
 
 /**
- * This frontend's TENANT — whose dictionary `GET /locales/{locale}/messages` builds for it.
+ * This frontend's APP — whose dictionary `GET /locales/{locale}/messages` builds for it.
  *
- * A tenant is one keyspace, authored by one team; the API lists the ones it serves under
- * `GET /locales/tenants`. This build names its own in `VITE_LOCALE_TENANT` and falls back to the
+ * An app is one keyspace, authored by one team; the API lists the ones it serves under
+ * `GET /locales/apps`. This build names its own in `VITE_LOCALE_APP` and falls back to the
  * demo pair's frontend id, so a checkout with no `.env` still talks to the demo backend.
  */
-export const localeTenant = (): string =>
-    runtimeValue('LOCALE_TENANT') || import.meta.env.VITE_LOCALE_TENANT?.trim() || 'demo-fe';
+export const localeApp = (): string =>
+    runtimeValue('LOCALE_APP') || import.meta.env.VITE_LOCALE_APP?.trim() || 'demo-fe';
 
 /**
  * Languages the deployment offers, from the API's manifest.
  *
- * Every tenant is kept, and they answer different questions. A frontend tenant means a dictionary
- * can be downloaded for it; the backend tenant means the API can ANSWER in it. A language with
- * only the backend tenant still belongs in the switcher — the UI falls back per key while every
- * error message arrives in the right language — and a language with only a frontend tenant is
+ * Every app is kept, and they answer different questions. A frontend app means a dictionary
+ * can be downloaded for it; the backend app means the API can ANSWER in it. A language with
+ * only the backend app still belongs in the switcher — the UI falls back per key while every
+ * error message arrives in the right language — and a language with only a frontend app is
  * the opposite: the interface translates and the API answers in the fallback.
  *
  * NEITHER IS CHECKED AGAINST THE OTHER, deliberately. This app can bundle `it.json` while the API
@@ -95,8 +95,8 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
             response.data.locales
                 .filter(
                     (language) =>
-                        // Any tenant at all is "offers some dictionary", which is all the switcher asks.
-                        language.tenants.length > 0
+                        // Any app at all is "offers some dictionary", which is all the switcher asks.
+                        language.apps.length > 0
                 )
                 .map((language) => {
                     localeDirections[language.tag] = language.direction;
@@ -116,7 +116,7 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
  * @returns The overrides, or an empty dictionary. Never rejects.
  */
 export const fetchLocaleOverrides = (locale: string): Promise<TranslationDictionaries> =>
-    getLocaleMessages(locale, { tenant: localeTenant() })
+    getLocaleMessages(locale, { app: localeApp() })
         .then((response) => response.data.messages as TranslationDictionaries)
         .catch(() => ({}));
 

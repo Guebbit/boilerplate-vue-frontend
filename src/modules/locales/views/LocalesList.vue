@@ -58,10 +58,10 @@ const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
 
 /**
- * The locales store's reactive slice: the languages this build offers, the tenants, the two
+ * The locales store's reactive slice: the languages this build offers, the apps, the two
  * fallback settings, and whether a call is in flight.
  */
-const { capabilities, tenants, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
+const { capabilities, apps, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
@@ -100,7 +100,7 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
     { title: t('locales-list-page.column-name'), key: 'name' },
     { title: t('locales-list-page.column-native-name'), key: 'nativeName' },
     { title: t('locales-list-page.column-direction'), key: 'direction' },
-    { title: t('locales-list-page.column-tenants'), key: 'tenants' },
+    { title: t('locales-list-page.column-apps'), key: 'apps' },
     { title: t('locales-list-page.column-source'), key: 'source' },
     { title: t('locales-list-page.column-entries'), key: 'entryCount' },
     { title: t('locales-list-page.column-revision'), key: 'revision' },
@@ -214,14 +214,13 @@ const handleDelete = (language: LocaleCapability) => {
 };
 
 /**
- * What kind of tenant an id is, for the chip's colour and hint; `frontend` until the registry answers.
+ * What kind of app an id is, for the chip's colour and hint; `frontend` until the registry answers.
  */
-const tenantKind = (id: string) =>
-    tenants.value.find((tenant) => tenant.id === id)?.kind ?? 'frontend';
+const appKind = (id: string) => apps.value.find((app) => app.id === id)?.kind ?? 'frontend';
 
 onMounted(() => {
     void localesStore.fetchLanguages();
-    void localesStore.fetchTenants();
+    void localesStore.fetchApps();
 });
 </script>
 
@@ -298,26 +297,26 @@ onMounted(() => {
                 {{ t(`locales-list-page.direction-${item.direction}`) }}
             </template>
 
-            <template v-slot:[`item.tenants`]="{ item }">
+            <template v-slot:[`item.apps`]="{ item }">
                 <div class="flex gap-1">
                     <!--
-                        A native title rather than a v-tooltip: the tenants are the field doing
+                        A native title rather than a v-tooltip: the apps are the field doing
                         the real work, and the explanation has to reach a screen reader too — an
                         ARIA tooltip node with no name fails axe. A non-interactive chip renders
                         as a role-less span, so the explanation is a visually-hidden sibling
                         rather than an `aria-label` (`aria-prohibited-attr`).
                     -->
                     <v-chip
-                        v-for="tenant in item.tenants"
-                        :key="tenant"
+                        v-for="app in item.apps"
+                        :key="app"
                         size="small"
                         variant="tonal"
-                        :color="tenantKind(tenant) === 'backend' ? 'tertiary' : 'secondary'"
-                        :title="t(`locales-list-page.tenant-${tenantKind(tenant)}-hint`)"
+                        :color="appKind(app) === 'backend' ? 'tertiary' : 'secondary'"
+                        :title="t(`locales-list-page.app-${appKind(app)}-hint`)"
                     >
-                        {{ localesStore.tenantLabel(tenant) }}
+                        {{ localesStore.appLabel(app) }}
                         <span class="sr-only">
-                            {{ t(`locales-list-page.tenant-${tenantKind(tenant)}-hint`) }}
+                            {{ t(`locales-list-page.app-${appKind(app)}-hint`) }}
                         </span>
                     </v-chip>
                 </div>

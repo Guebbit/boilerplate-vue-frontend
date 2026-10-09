@@ -28,7 +28,7 @@ const cellId = (tag: string, key: string) => `${tag}|${key}`;
  * "clicked through", the save/clear/enter handlers, and the transient saved-mark and error state
  * a cell shows for its own last write.
  *
- * @param tenant - Whose dictionary a NEW entry is created in; an edit or removal targets the
+ * @param app - Whose dictionary a NEW entry is created in; an edit or removal targets the
  *  entry's own id instead and never reads this.
  * @param entryAt - The aggregation's current entry lookup, so a write reads the record it is
  *  about to replace rather than a stale one.
@@ -36,7 +36,7 @@ const cellId = (tag: string, key: string) => `${tag}|${key}`;
  * @param afterWrite - What runs once a write settles: reload the column, the manifest, the live app.
  */
 export function useDictionaryCellEditor(
-    tenant: Ref<string>,
+    app: Ref<string>,
     entryAt: (tag: string, key: string) => LocaleEntry | undefined,
     baselineAt: (tag: string, key: string) => string | undefined,
     afterWrite: (tag: string) => Promise<unknown>
@@ -153,8 +153,8 @@ export function useDictionaryCellEditor(
             return;
         }
         const request = current
-            ? localesStore.editEntry(language.tag, current.id, draft)
-            : localesStore.addEntry(language.tag, tenant.value, { key, value: draft });
+            ? localesStore.editEntry(language.tag, current.app, current.id, draft)
+            : localesStore.addEntry(language.tag, app.value, { key, value: draft });
         return settleWrite(
             language,
             id,
@@ -199,7 +199,7 @@ export function useDictionaryCellEditor(
                 return settleWrite(
                     language,
                     id,
-                    localesStore.removeEntry(language.tag, current.id).then(() =>
+                    localesStore.removeEntry(language.tag, current.app, current.id).then(() =>
                         addMessage(
                             t('locales-dictionary-page.success-remove-named', {
                                 key,

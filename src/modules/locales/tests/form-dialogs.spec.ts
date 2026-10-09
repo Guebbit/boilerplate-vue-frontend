@@ -13,7 +13,7 @@ import EntryFormDialog from '../components/EntryFormDialog.vue';
 import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import { LocaleTenantKind } from '@api';
+import { LocaleAppKind } from '@api';
 import { asStub } from '../../../../tests/support/stub';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
@@ -57,7 +57,7 @@ const mountEntryDialog = (saving: boolean) =>
         props: {
             modelValue: true,
             saving,
-            tenants: [{ id: 'demo-be', label: 'Demo', kind: LocaleTenantKind.backend }]
+            apps: [{ id: 'demo-be', label: 'Demo', kind: LocaleAppKind.backend }]
         },
         global: GLOBAL
     });

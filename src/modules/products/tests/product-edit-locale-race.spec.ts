@@ -55,7 +55,7 @@ const LOCALES_RESPONSE = {
             nativeName: 'English',
             direction: 'ltr',
             active: true,
-            tenants: ['demo-fe'],
+            apps: ['demo-fe'],
             source: 'static',
             entryCount: 0,
             revision: 1

@@ -16,8 +16,8 @@ import type { LocaleCapability, LocaleEntry } from '@types';
 /** The column every test writes into. */
 const ENGLISH = { tag: 'en', nativeName: 'English', source: 'dynamic' } as LocaleCapability;
 
-/** The tenant a NEW entry is created in. */
-const OWN_TENANT = 'demo-fe';
+/** The app a NEW entry is created in. */
+const OWN_APP = 'demo-fe';
 
 /** The store's three writes, re-created per test so call counts start at zero. */
 const addEntry = vi.fn(() => Promise.resolve());
@@ -79,7 +79,7 @@ vi.mock('@/infrastructure/utils/use-blocking-error.ts', () => ({
 const entry = (key: string, value: string): LocaleEntry => ({
     id: `entry-${key}`,
     locale: 'en',
-    tenant: OWN_TENANT,
+    app: OWN_APP,
     key,
     value
 });
@@ -96,7 +96,7 @@ const editorWith = (
 ) => {
     const afterWrite = vi.fn(() => Promise.resolve());
     const editor = useDictionaryCellEditor(
-        ref(OWN_TENANT),
+        ref(OWN_APP),
         (_tag, key) => stored[key],
         (_tag, key) => baselines[key],
         afterWrite
@@ -143,12 +143,12 @@ describe('handleCellBlur', () => {
         expect(addEntry).not.toHaveBeenCalled();
     });
 
-    it('creates an entry in the chosen tenant when the cell was empty', () => {
+    it('creates an entry in the chosen app when the cell was empty', () => {
         const { editor, afterWrite } = editorWith();
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
-            expect(addEntry).toHaveBeenCalledWith('en', OWN_TENANT, {
+            expect(addEntry).toHaveBeenCalledWith('en', OWN_APP, {
                 key: 'greeting',
                 value: 'Ciao'
             });
@@ -162,7 +162,7 @@ describe('handleCellBlur', () => {
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellBlur(ENGLISH, 'greeting')!.then(() => {
-            expect(editEntry).toHaveBeenCalledWith('en', 'entry-greeting', 'Ciao');
+            expect(editEntry).toHaveBeenCalledWith('en', 'demo-fe', 'entry-greeting', 'Ciao');
             expect(addEntry).not.toHaveBeenCalled();
         });
     });
@@ -251,7 +251,7 @@ describe('handleCellClear', () => {
         const { editor, afterWrite } = editorWith({ greeting: entry('greeting', 'Hello') });
 
         return editor.handleCellClear(ENGLISH, 'greeting', new Event('click'))!.then(() => {
-            expect(removeEntry).toHaveBeenCalledWith('en', 'entry-greeting');
+            expect(removeEntry).toHaveBeenCalledWith('en', 'demo-fe', 'entry-greeting');
             expect(messages).toContain('locales-dictionary-page.success-remove-named');
             expect(afterWrite).toHaveBeenCalledWith('en');
         });
@@ -315,7 +315,7 @@ describe('handleCellEnter', () => {
         editor.handleCellInput(ENGLISH, 'greeting', 'Ciao');
 
         return editor.handleCellEnter(ENGLISH, 'greeting', new Event('keydown'))!.then(() => {
-            expect(editEntry).toHaveBeenCalledWith('en', 'entry-greeting', 'Ciao');
+            expect(editEntry).toHaveBeenCalledWith('en', 'demo-fe', 'entry-greeting', 'Ciao');
             expect(removeEntry).not.toHaveBeenCalled();
         });
     });

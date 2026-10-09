@@ -25,7 +25,7 @@ const configuredFallbackLocale = (): string =>
 /**
  * A single-tab manifest good enough for `TranslationTabs` to render a form with — everything a
  * real manifest row carries, filled with the least assuming values: this deployment can only
- * confirm the language exists (`@/i18n` has it bundled), not what tenants or rows
+ * confirm the language exists (`@/i18n` has it bundled), not what apps or rows
  * the (unreachable) `locales` collection would otherwise report.
  */
 const fallbackOnlyManifest = (tag: string): LocaleCapability => ({
@@ -34,7 +34,7 @@ const fallbackOnlyManifest = (tag: string): LocaleCapability => ({
     nativeName: tag,
     direction: LocaleDirection.ltr,
     active: true,
-    tenants: ['frontend'],
+    apps: ['frontend'],
     source: LocaleSource.static,
     entryCount: 0,
     revision: 0

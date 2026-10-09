@@ -37,7 +37,7 @@ interface ImportMetaEnv {
     readonly VITE_FARO_APP_VERSION?: string;
     readonly VITE_FARO_ENVIRONMENT?: string;
     readonly VITE_FARO_URL?: string;
-    readonly VITE_LOCALE_TENANT?: string;
+    readonly VITE_LOCALE_APP?: string;
     readonly VITE_MAX_UPLOAD_BYTES?: string;
     readonly VITE_TEST_CARDS?: string;
     readonly VITE_UMAMI_SRC?: string;

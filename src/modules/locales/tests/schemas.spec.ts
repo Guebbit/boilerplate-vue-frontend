@@ -103,13 +103,15 @@ describe('localesLanguageEditSchema', () => {
 
 describe('localesEntrySchema', () => {
     it('accepts a complete entry', () => {
-        expect(localesEntrySchema.parse({ tenant: 'demo-fe', key: 'a.b', value: 'Hello' })).toEqual(
-            { tenant: 'demo-fe', key: 'a.b', value: 'Hello' }
-        );
+        expect(localesEntrySchema.parse({ app: 'demo-fe', key: 'a.b', value: 'Hello' })).toEqual({
+            app: 'demo-fe',
+            key: 'a.b',
+            value: 'Hello'
+        });
     });
 
-    it.each(['tenant', 'key', 'value'] as const)('rejects an empty %s', (field) => {
-        const entry = { tenant: 'demo-fe', key: 'a.b', value: 'Hello', [field]: '' };
+    it.each(['app', 'key', 'value'] as const)('rejects an empty %s', (field) => {
+        const entry = { app: 'demo-fe', key: 'a.b', value: 'Hello', [field]: '' };
 
         expect(localesEntrySchema.safeParse(entry).success).toBe(false);
     });
@@ -126,7 +128,7 @@ describe('every message is resolved at parse time', () => {
      */
     it.each([
         [localesLanguageSchema, { tag: '', name: '', nativeName: '' }],
-        [localesEntrySchema, { tenant: '', key: '', value: '' }]
+        [localesEntrySchema, { app: '', key: '', value: '' }]
     ])('names an i18n key for every failure', (schema, payload) => {
         const result = schema.safeParse(payload);
 

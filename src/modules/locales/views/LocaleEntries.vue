@@ -69,10 +69,10 @@ const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
 
 /**
- * The locales store's reactive slice: what this build offers, the tenants, and the search's
+ * The locales store's reactive slice: what this build offers, the apps, and the search's
  * filters and page window.
  */
-const { capabilities, tenants, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
+const { capabilities, apps, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
     storeToRefs(localesStore);
 
 /**
@@ -147,29 +147,29 @@ const drafts = ref<Record<string, string>>({});
 const savedRows = ref<Record<string, true>>({});
 
 /**
- * The "every tenant" choice of the tenant select.
+ * The "every app" choice of the app select.
  */
-const ANY_TENANT = '';
+const ANY_APP = '';
 
 /**
- * The tenant filter's options: an "every tenant" sentinel plus the registry.
+ * The app filter's options: an "every app" sentinel plus the registry.
  */
-const tenantFilterOptions = computed(() => [
+const appFilterOptions = computed(() => [
     /*
      * A real empty-string value, NOT `undefined`: Vuetify reads an item with no value as
      * "use the title", and the page then sent the title itself to the API.
      */
-    { value: ANY_TENANT, title: t('locale-entries-page.filter-tenant-all') },
-    ...tenants.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
+    { value: ANY_APP, title: t('locale-entries-page.filter-app-all') },
+    ...apps.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
 ]);
 
 /**
  * The select's model: the sentinel on screen, `undefined` — no filter — in the store.
  */
-const tenantChoice = computed({
-    get: () => filters.value.tenant ?? ANY_TENANT,
+const appChoice = computed({
+    get: () => filters.value.app ?? ANY_APP,
     set: (choice: string) => {
-        filters.value.tenant = choice === ANY_TENANT ? undefined : choice;
+        filters.value.app = choice === ANY_APP ? undefined : choice;
     }
 });
 
@@ -196,11 +196,11 @@ watch(tag, (nextTag) => {
 // The header needs the manifest and the selects the registry; harmless when the list page
 // already loaded them.
 if (capabilities.value.length === 0) void localesStore.fetchLanguages();
-// Likewise for the tenant registry.
-if (tenants.value.length === 0) void localesStore.fetchTenants();
+// Likewise for the app registry.
+if (apps.value.length === 0) void localesStore.fetchApps();
 
 /**
- * Applies the text/tenant filters, returning to the first page.
+ * Applies the text/app filters, returning to the first page.
  */
 const handleSearch = () => {
     pageCurrent.value = 1;
@@ -214,11 +214,11 @@ const handleSearch = () => {
  * @returns A promise resolving once the write settles; a failure blocks the dialog in place
  *  ({@link addError}) rather than closing it.
  */
-const handleAdd = (fields: { tenant: string; key: string; value: string }) => {
+const handleAdd = (fields: { app: string; key: string; value: string }) => {
     clearAddError();
-    const { tenant, ...entry } = fields;
+    const { app, ...entry } = fields;
     return localesStore
-        .addEntry(tag.value, tenant, entry)
+        .addEntry(tag.value, app, entry)
         .then(() => {
             entryFormOpen.value = false;
             addMessage(t('locale-entries-page.success-add'));
@@ -240,7 +240,7 @@ const handleAdd = (fields: { tenant: string; key: string; value: string }) => {
  * @returns The localized headers, re-translated on locale change.
  */
 const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
-    { title: t('locale-entries-page.column-tenant'), key: 'tenant' },
+    { title: t('locale-entries-page.column-app'), key: 'app' },
     { title: t('locale-entries-page.column-key'), key: 'key' },
     { title: t('locale-entries-page.column-value'), key: 'value', width: '40%' },
     { title: t('locale-entries-page.column-updated-at'), key: 'updatedAt' },
@@ -272,7 +272,7 @@ const handleValueBlur = (entry: LocaleEntry) => {
     if (draft === undefined || draft === entry.value) return;
     clearRowActionError();
     return localesStore
-        .editEntry(tag.value, entry.id, draft)
+        .editEntry(tag.value, entry.app, entry.id, draft)
         .then(() => {
             // Feedback on the row, not a toast: ten edits in a row would be ten toasts.
             savedRows.value[entry.id] = true;
@@ -301,7 +301,7 @@ const handleDelete = (entry: LocaleEntry) => {
             if (!accepted) return;
             clearRowActionError();
             return localesStore
-                .removeEntry(tag.value, entry.id)
+                .removeEntry(tag.value, entry.app, entry.id)
                 .then(() => {
                     addMessage(t('locale-entries-page.success-delete'));
                     return Promise.all([search(true), refreshRunningLocale(tag.value)]);
@@ -313,18 +313,18 @@ const handleDelete = (entry: LocaleEntry) => {
 /**
  * Runs the import dialog's batch, then refreshes the page, the manifest and the running app.
  *
- * @param payload - The dialog's own confirmed mode, destination tenant and parsed rows.
+ * @param payload - The dialog's own confirmed mode, destination app and parsed rows.
  * @returns A promise resolving once the write settles; a failure blocks the dialog in place
  *  ({@link importError}) rather than closing it.
  */
 const handleImport = (payload: {
     mode: 'merge' | 'replace';
-    tenant: string;
+    app: string;
     entries: LocaleEntryInput[];
 }) => {
     clearImportError();
     return localesStore
-        .importEntries(tag.value, payload.mode, payload.tenant, payload.entries)
+        .importEntries(tag.value, payload.mode, payload.app, payload.entries)
         .then((result) => {
             importOpen.value = false;
             addMessage(t('locale-entries-page.success-import', { ...result }));
@@ -354,7 +354,7 @@ const {
 } = useBlockingError();
 
 /**
- * Downloads the whole language as nested JSON — every tenant, paged to completion.
+ * Downloads the whole language as nested JSON — every app, paged to completion.
  *
  * Reads the entries collection rather than the messages route, which is `app`-only and invisible
  * for an inactive language; an export carries what is STORED.
@@ -433,12 +433,12 @@ const handleExport = () => {
                         data-test="entries-filter-text"
                     />
                     <v-select
-                        v-model="tenantChoice"
-                        :items="tenantFilterOptions"
-                        :label="t('locale-entries-page.filter-tenant')"
+                        v-model="appChoice"
+                        :items="appFilterOptions"
+                        :label="t('locale-entries-page.filter-app')"
                         hide-details
                         class="max-w-64"
-                        data-test="entries-filter-tenant"
+                        data-test="entries-filter-app"
                     />
                     <v-btn type="submit" color="primary">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
@@ -486,19 +486,19 @@ const handleExport = () => {
             :loading-text="t('generic.loading')"
             :no-data-text="t('generic.no-data')"
         >
-            <template v-slot:[`item.tenant`]="{ item }">
+            <template v-slot:[`item.app`]="{ item }">
                 <v-chip
                     size="small"
                     variant="tonal"
-                    :color="item.tenant === localesStore.backendTenant ? 'tertiary' : 'secondary'"
+                    :color="item.app === localesStore.backendApp ? 'tertiary' : 'secondary'"
                 >
-                    {{ localesStore.tenantLabel(item.tenant) }}
+                    {{ localesStore.appLabel(item.app) }}
                 </v-chip>
             </template>
 
             <template v-slot:[`item.key`]="{ item }">
                 <!--
-                    Same native-title rule as the board's tenant chips; the visually-hidden
+                    Same native-title rule as the board's app chips; the visually-hidden
                     sibling repeats it for the reader, because a title alone is mouse-only. Not
                     an `aria-label`: a bare span has no role, and axe (`aria-prohibited-attr`)
                     rightly refuses to let one carry a name.
@@ -560,8 +560,8 @@ const handleExport = () => {
         <EntryFormDialog
             ref="entryDialog"
             v-model="entryFormOpen"
-            :tenants="tenants"
-            :initial-tenant="filters.tenant"
+            :apps="apps"
+            :initial-app="filters.app"
             :saving="loading"
             @save="handleAdd"
         >
@@ -571,8 +571,8 @@ const handleExport = () => {
         </EntryFormDialog>
         <EntriesImportDialog
             v-model="importOpen"
-            :tenants="tenants"
-            :initial-tenant="filters.tenant"
+            :apps="apps"
+            :initial-app="filters.app"
             :saving="loading"
             @import="handleImport"
         >

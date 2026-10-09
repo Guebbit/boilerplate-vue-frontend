@@ -15,7 +15,7 @@ import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '../schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
-import type { LocaleTenantDescriptor } from '@types';
+import type { LocaleAppDescriptor } from '@types';
 
 /**
  * The "add one entry" dialog. Only adding: a stored entry's key is immutable and its value edits
@@ -23,13 +23,13 @@ import type { LocaleTenantDescriptor } from '@types';
  */
 const props = defineProps<{
     /**
-     * The tenants the API serves, from its registry — what the select offers.
+     * The apps the API serves, from its registry — what the select offers.
      */
-    tenants: LocaleTenantDescriptor[];
+    apps: LocaleAppDescriptor[];
     /**
-     * The tenant preselected on open — whatever the page's tenant filter is on.
+     * The app preselected on open — whatever the page's app filter is on.
      */
-    initialTenant?: string;
+    initialApp?: string;
     /**
      * Whether the parent's save is in flight — the submit is disabled meanwhile, so Enter or a
      * second click cannot send the write twice.
@@ -41,7 +41,7 @@ const props = defineProps<{
  * Emits the saved fields upward on submit — no store access of its own.
  */
 const emit = defineEmits<{
-    save: [fields: { tenant: string; key: string; value: string }];
+    save: [fields: { app: string; key: string; value: string }];
 }>();
 
 /**
@@ -75,15 +75,15 @@ useReturnFocus(() => isOpen.value);
 const titleId = useId();
 
 /**
- * The first tenant the registry lists — the default when the page has no filter on.
+ * The first app the registry lists — the default when the page has no filter on.
  */
-const defaultTenant = computed(() => props.initialTenant ?? props.tenants.at(0)?.id ?? '');
+const defaultApp = computed(() => props.initialApp ?? props.apps.at(0)?.id ?? '');
 
 /**
  * Field state, errors and submit gating, validated against {@link localesEntrySchema}.
  */
 const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
-    useStructureFormValidation({ tenant: '', key: '', value: '' }, localesEntrySchema, {
+    useStructureFormValidation({ app: '', key: '', value: '' }, localesEntrySchema, {
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -95,22 +95,22 @@ const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErro
  */
 watch(isOpen, (open) => {
     if (!open) return;
-    setForm({ tenant: defaultTenant.value, key: '', value: '' });
+    setForm({ app: defaultApp.value, key: '', value: '' });
 });
 
 /**
- * The select's options, from the tenants the API's registry serves.
+ * The select's options, from the apps the API's registry serves.
  */
-const tenantOptions = computed(() =>
-    props.tenants.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
+const appOptions = computed(() =>
+    props.apps.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
 );
 
 /**
  * Validates and emits, or shows the form's errors — `handleSubmit`'s job either way.
  */
 const handleSave = () =>
-    handleSubmit(({ tenant, key, value }) => {
-        emit('save', { tenant, key, value });
+    handleSubmit(({ app, key, value }) => {
+        emit('save', { app, key, value });
     });
 
 /**
@@ -127,11 +127,11 @@ defineExpose({ applyServerErrors });
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h2>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">
                 <v-select
-                    v-model="form.tenant"
-                    :items="tenantOptions"
-                    :label="t('entry-form.label-tenant')"
-                    :error-messages="showFormErrors ? (formErrors.tenant ?? []) : []"
-                    data-test="entry-tenant"
+                    v-model="form.app"
+                    :items="appOptions"
+                    :label="t('entry-form.label-app')"
+                    :error-messages="showFormErrors ? (formErrors.app ?? []) : []"
+                    data-test="entry-app"
                 />
                 <v-text-field
                     v-model="form.key"

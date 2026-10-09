@@ -16,7 +16,7 @@ export interface RuntimeConfig {
     API_SSE?: string;
     APP_NAME?: string;
     APP_LOGO?: string;
-    LOCALE_TENANT?: string;
+    LOCALE_APP?: string;
     APP_DEFAULT_LOCALE?: string;
     APP_FALLBACK_LOCALE?: string;
     APP_LOG_LEVEL?: string;

@@ -50,7 +50,7 @@ describe('useActiveLocales — GET /locales answers', () => {
                         nativeName: 'Italiano',
                         direction: 'ltr',
                         active: true,
-                        tenants: ['frontend'],
+                        apps: ['frontend'],
                         source: 'static',
                         entryCount: 0,
                         revision: 1

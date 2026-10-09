@@ -83,7 +83,7 @@ reachable in the demo — _no_ to the first, _yes_ to the second.
 
 `LocalesList` manages the languages themselves; `LocaleEntries` manages the rows inside one. Three
 dialogs sit behind them, including an import that merges a batch of entries in one call
-(`PATCH /locales/{id}/entries`) rather than one request per key.
+(`PATCH /locales/{id}/apps/{app}/entries`) rather than one request per key.
 
 Both routes are `admin`. Editing what an application says to everyone is not a self-service action.
 

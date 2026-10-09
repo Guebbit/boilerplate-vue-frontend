@@ -60,7 +60,7 @@ const openEntriesOfNewLanguage = (): void => {
     cy.visit('/en/locales');
     cy.get(`[data-test=row-entries][href$="/locales/${TAG}"]`).click();
     cy.get('[data-test=entry-create]').should('be.visible');
-    cy.pickOption('[data-test=entries-filter-tenant]', /Frontend/);
+    cy.pickOption('[data-test=entries-filter-app]', /Frontend/);
     cy.get('[data-test=entries-filter-text] input').type('{enter}');
 };
 

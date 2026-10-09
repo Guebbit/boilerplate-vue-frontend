@@ -29,7 +29,7 @@ vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getLocales: (options?: { timeout?: number }) => getLocalesMock(options),
-    getLocaleMessages: (locale: string, parameters?: { tenant?: string }) =>
+    getLocaleMessages: (locale: string, parameters?: { app?: string }) =>
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
         getLocaleMessagesMock(locale, parameters)
 }));
@@ -52,20 +52,20 @@ let snapshot: string[] = [];
 /**
  * A capability row as `GET /locales` publishes one.
  *
- * The endpoint answers CAPABILITIES, not bare tags: `tenants` says whether the API can answer in
+ * The endpoint answers CAPABILITIES, not bare tags: `apps` says whether the API can answer in
  * that language (`api`), whether a dictionary can be downloaded for it (`app`), or both.
  *
  * @param tag - the language tag
- * @param tenants - which tenants have words in that language
+ * @param apps - which apps have words in that language
  * @returns the capability row
  */
-const capability = (tag: string, tenants: string[] = ['demo-be', 'demo-fe']) => ({
+const capability = (tag: string, apps: string[] = ['demo-be', 'demo-fe']) => ({
     tag,
     name: tag,
     nativeName: tag,
     direction: 'ltr',
     active: true,
-    tenants,
+    apps,
     source: 'both',
     entryCount: 0,
     revision: 1
@@ -100,7 +100,7 @@ describe('fetchRemoteLocales', () => {
     });
 
     /**
-     * Both tenants belong in the switcher, and they are different offers — the frontend translates the
+     * Both apps belong in the switcher, and they are different offers — the frontend translates the
      * interface, `api` translates what the API says. A language with one and not the other is
      * half-usable, which is a state a person chose and not one to filter away: see the note on
      * `fetchRemoteLocales` about why nothing here reconciles the two sides.
@@ -109,10 +109,10 @@ describe('fetchRemoteLocales', () => {
         ['downloadable only', ['demo-fe']],
         ['answerable only', ['demo-be']],
         ['both', ['demo-be', 'demo-fe']]
-    ])('keeps a language that is %s', (_label, tenants) => {
+    ])('keeps a language that is %s', (_label, apps) => {
         getLocalesMock.mockResolvedValue(
             contractResponse(schemas.GetLocalesResponse, {
-                locales: [capability('es', tenants)],
+                locales: [capability('es', apps)],
                 default: 'en',
                 fallback: 'en'
             })
@@ -120,15 +120,15 @@ describe('fetchRemoteLocales', () => {
         return expect(fetchRemoteLocales()).resolves.toEqual(['es']);
     });
 
-    it('drops a language that claims no tenant at all', () => {
-        // Off-contract on purpose (`tenants` has `minItems: 1`), so not run through the schema:
+    it('drops a language that claims no app at all', () => {
+        // Off-contract on purpose (`apps` has `minItems: 1`), so not run through the schema:
         // this is the defence against a counterpart that breaks that rule.
         getLocalesMock.mockResolvedValue({
             success: true,
             status: 200,
             message: 'OK',
             data: {
-                locales: [capability('en'), { ...capability('es'), tenants: [] }],
+                locales: [capability('en'), { ...capability('es'), apps: [] }],
                 default: 'en',
                 fallback: 'en'
             }
@@ -171,8 +171,8 @@ describe('fetchLocaleOverrides', () => {
         return expect(fetchLocaleOverrides('it'))
             .resolves.toEqual({ greeting: 'Ciao' })
             .then(() => {
-                // Named tenant: the API builds THIS frontend's dictionary, never another client's.
-                expect(getLocaleMessagesMock).toHaveBeenCalledWith('it', { tenant: 'demo-fe' });
+                // Named app: the API builds THIS frontend's dictionary, never another client's.
+                expect(getLocaleMessagesMock).toHaveBeenCalledWith('it', { app: 'demo-fe' });
             });
     });
 

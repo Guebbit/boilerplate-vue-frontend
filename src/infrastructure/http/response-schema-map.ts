@@ -88,7 +88,7 @@ const SESSION_AND_BOOT_SCHEMA_NAMES: ReadonlySet<string> = new Set([
     'RefreshTokenResponse',
     'LogoutAllResponse',
     'GetLocalesResponse',
-    'GetLocaleTenantsResponse',
+    'GetLocaleAppsResponse',
     'GetLocaleMessagesResponse',
     'GetLocaleDictionaryResponse'
 ]);

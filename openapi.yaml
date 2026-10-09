@@ -154,12 +154,12 @@ paths:
         Every language this deployment offers, from both tiers, each stating what it can
         actually do.
 
-        `tenants` is the field doing the real work: which tenants have words in that
-        language. The backend tenant means the API can answer requests in it — its
-        dictionary is deployed and i18next holds it. A frontend tenant means a client
+        `apps` is the field doing the real work: which apps have words in that
+        language. The backend app means the API can answer requests in it — its
+        dictionary is deployed and i18next holds it. A frontend app means a client
         dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
         have either, or both, and the two are not the same capability: a language added
-        through the admin routes below carries only the frontend tenant until a file is
+        through the admin routes below carries only the frontend app until a file is
         deployed for it.
 
         Public, unauthenticated and cacheable. A client that has just failed to reach the
@@ -194,7 +194,7 @@ paths:
         Registers a language in the dynamic tier so entries can be translated into it.
 
         This does NOT teach the API to answer in the new language — that needs a dictionary
-        file and a deploy. A language created here carries only the frontend tenant until
+        file and a deploy. A language created here carries only the frontend app until
         one exists.
       operationId: createLocale
       security:
@@ -236,31 +236,31 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
-  /locales/tenants:
+  /locales/apps:
     get:
       tags:
         - System
-      summary: Translation tenants
+      summary: Translation apps
       description: |
-        Every tenant this deployment holds words for — the keyspaces an entry can belong
+        Every app this deployment holds words for — the keyspaces an entry can belong
         to. Configuration, not data: the ids come from the API's environment, so a client
         cannot invent one and an admin screen need not hardcode them.
 
-        `kind` is what a client uses the list for. The `backend` tenant is this API's own
+        `kind` is what a client uses the list for. The `backend` app is this API's own
         copy — rows under it are layered over the deployed files at resolution time and
-        never leave the API. A `frontend` tenant is a client's copy, downloadable from
-        `GET /locales/{locale}/messages?tenant=`.
+        never leave the API. A `frontend` app is a client's copy, downloadable from
+        `GET /locales/{locale}/messages?app=`.
 
         Public and cacheable, like every other locale read.
-      operationId: getLocaleTenants
+      operationId: getLocaleApps
       security: []
       responses:
         "200":
-          description: The configured tenants
+          description: The configured apps
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleTenantsEnvelope"
+                $ref: "#/components/schemas/LocaleAppsEnvelope"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -460,8 +460,8 @@ paths:
         same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
         for both tiers rather than two.
 
-        ONE frontend tenant's rows — the client's own keyspace, the one named by `tenant`
-        or the deployment's default frontend tenant when omitted. The backend tenant is
+        ONE frontend app's rows — the client's own keyspace, the one named by `app`
+        or the deployment's default frontend app when omitted. The backend app is
         refused here with a 404: its rows are layered over the deployed files internally
         and never leave the API, because a frontend that merged them would be adopting the
         backend's keys as its own.
@@ -481,7 +481,7 @@ paths:
       security: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
-        - $ref: "#/components/parameters/MessagesTenantQueryParam"
+        - $ref: "#/components/parameters/MessagesAppQueryParam"
       responses:
         "200":
           description: The built dictionary for the requested language
@@ -510,9 +510,9 @@ paths:
         translation screen lists. Flat, because a row is what gets edited; the nested tree
         is `GET /locales/{locale}/messages`.
 
-        `text` searches keys and values together. Every tenant's rows are listed unless
-        `tenant` narrows them; one tenant's slice is also a resource of its own,
-        `/locales/{locale}/tenants/{tenant}/entries`, which is where it is written.
+        `text` searches keys and values together. Every app's rows are listed; one app's
+        slice is a resource of its own, `/locales/{locale}/apps/{app}/entries`, which is
+        where it is written.
       operationId: listLocaleEntries
       security:
         - bearerAuth: []
@@ -521,7 +521,6 @@ paths:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
         - $ref: "#/components/parameters/TextParam"
-        - $ref: "#/components/parameters/EntryTenantQueryParam"
       responses:
         "200":
           description: A page of entries
@@ -544,24 +543,25 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
-  /locales/{locale}/tenants/{tenant}/entries:
+  /locales/{locale}/apps/{app}/entries:
     get:
       tags:
         - System
-      summary: List one tenant's translation entries
+      summary: List one app's translation entries
       description: |
         The rows behind one language's dictionary, paginated and searchable — what a
         translation screen lists. Flat, because a row is what gets edited; the nested tree
         is `GET /locales/{locale}/messages`.
 
-        `text` searches keys and values together. The same rows `GET
-        /locales/{locale}/entries?tenant=` lists, at the address the writes below target.
-      operationId: listTenantLocaleEntries
+        `text` searches keys and values together. Only this app's rows, at the address
+        the writes below target; an app the deployment does not configure is refused
+        with a 422.
+      operationId: listAppLocaleEntries
       security:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
-        - $ref: "#/components/parameters/TenantPathParam"
+        - $ref: "#/components/parameters/AppPathParam"
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
         - $ref: "#/components/parameters/TextParam"
@@ -592,7 +592,7 @@ paths:
         - System
       summary: Add one translation entry
       description: |
-        Adds a key to this tenant's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
+        Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
         — see `LocaleEntryInput.key` for what a collision is and why it is refused here
         rather than discovered when the tree is built.
       operationId: createLocaleEntry
@@ -600,7 +600,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
-        - $ref: "#/components/parameters/TenantPathParam"
+        - $ref: "#/components/parameters/AppPathParam"
       requestBody:
         required: true
         content:
@@ -646,8 +646,8 @@ paths:
       summary: Replace every entry
       description: |
         Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
-        this tenant's entries for this language becomes exactly what the body carries;
-        the other tenants are untouched. The URI names that slice, so the body is the
+        this app's entries for this language becomes exactly what the body carries;
+        the other apps are untouched. The URI names that slice, so the body is the
         same thing `GET` on it lists (RFC 9110 §9.3.4).
 
         Paired with `PATCH` on this same collection, which merges instead. "Does an import
@@ -662,7 +662,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
-        - $ref: "#/components/parameters/TenantPathParam"
+        - $ref: "#/components/parameters/AppPathParam"
       requestBody:
         required: true
         content:
@@ -714,7 +714,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
-        - $ref: "#/components/parameters/TenantPathParam"
+        - $ref: "#/components/parameters/AppPathParam"
       requestBody:
         required: true
         content:
@@ -754,7 +754,7 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
-  /locales/{locale}/entries/{entryId}:
+  /locales/{locale}/apps/{app}/entries/{entryId}:
     put:
       tags:
         - System
@@ -768,6 +768,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/AppPathParam"
         - $ref: "#/components/parameters/EntryIdPathParam"
       requestBody:
         required: true
@@ -813,6 +814,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/AppPathParam"
         - $ref: "#/components/parameters/EntryIdPathParam"
       responses:
         "200":
@@ -823,6 +825,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -7771,27 +7775,20 @@ components:
       schema:
         $ref: "#/components/schemas/Locale"
       description: A language tag from `GET /locales`.
-    MessagesTenantQueryParam:
-      name: tenant
+    MessagesAppQueryParam:
+      name: app
       in: query
       required: false
       schema:
-        $ref: "#/components/schemas/LocaleTenant"
-      description: "Which frontend tenant's dictionary to build. Omitted, the deployment's default frontend tenant — a client paired one-to-one with this API never needs to say. Given, it must be a tenant id: an empty value, or the parameter repeated, is refused with 422 rather than read as \"the default\" (omit it to ask for that)."
-    EntryTenantQueryParam:
-      name: tenant
-      in: query
-      required: false
-      schema:
-        $ref: "#/components/schemas/LocaleTenant"
-      description: Restrict the listing to one tenant's dictionary. Omitted lists every tenant, which is what an admin screen wants before the operator has picked one.
-    TenantPathParam:
-      name: tenant
+        $ref: "#/components/schemas/LocaleApp"
+      description: "Which frontend app's dictionary to build. Omitted, the deployment's default frontend app — a client paired one-to-one with this API never needs to say. Given, it must be an app id: an empty value, or the parameter repeated, is refused with 422 rather than read as \"the default\" (omit it to ask for that)."
+    AppPathParam:
+      name: app
       in: path
       required: true
       schema:
-        $ref: "#/components/schemas/LocaleTenant"
-      description: The tenant whose slice of the language's entries this is. An id the deployment does not configure is refused with a 422 — see `GET /locales/tenants`.
+        $ref: "#/components/schemas/LocaleApp"
+      description: The app whose slice of the language's entries this is. An id the deployment does not configure is refused with a 422 — see `GET /locales/apps`.
     EntryIdPathParam:
       name: entryId
       in: path
@@ -8973,22 +8970,22 @@ components:
         - rtl
       description: Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.
       example: ltr
-    LocaleTenant:
+    LocaleApp:
       type: string
       pattern: ^[a-z0-9][a-z0-9-]*$
       minLength: 1
       maxLength: 64
       description: |
-        The id of one tenant — one keyspace, authored by one team. Which ids exist is
-        configuration, listed by `GET /locales/tenants`; a row naming an unknown tenant is
+        The id of one app — one keyspace, authored by one team. Which ids exist is
+        configuration, listed by `GET /locales/apps`; a row naming an unknown app is
         refused with a 422.
 
-        On a LANGUAGE it reports capability: the backend tenant means the API can answer
-        requests in it, because a dictionary file is deployed; a frontend tenant means a
+        On a LANGUAGE it reports capability: the backend app means the API can answer
+        requests in it, because a dictionary file is deployed; a frontend app means a
         client dictionary is downloadable for it.
 
-        On an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows
-        are what `GET /locales/{locale}/messages` serves; the backend tenant's rows are
+        On an ENTRY it says whose dictionary that row OVERRIDES. A frontend app's rows
+        are what `GET /locales/{locale}/messages` serves; the backend app's rows are
         layered over the API's own deployed files at resolution time.
       example: demo-fe
     LocaleSource:
@@ -9008,11 +9005,11 @@ components:
         - nativeName
         - direction
         - active
-        - tenants
+        - apps
         - source
         - entryCount
         - revision
-      description: "One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants."
+      description: "One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both apps."
       properties:
         tag:
           $ref: "#/components/schemas/Locale"
@@ -9026,12 +9023,12 @@ components:
           $ref: "#/components/schemas/LocaleDirection"
         active:
           type: boolean
-        tenants:
+        apps:
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/LocaleTenant"
-          description: "Which tenants have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend tenant), or whether it may download a Spanish UI dictionary (a frontend tenant). Those are different questions."
+            $ref: "#/components/schemas/LocaleApp"
+          description: "Which apps have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend app), or whether it may download a Spanish UI dictionary (a frontend app). Those are different questions."
         source:
           $ref: "#/components/schemas/LocaleSource"
         entryCount:
@@ -9161,42 +9158,42 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/Language"
-    LocaleTenantKind:
+    LocaleAppKind:
       type: string
       enum:
         - frontend
         - backend
-      description: What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
+      description: What an app is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
       example: frontend
-    LocaleTenantDescriptor:
+    LocaleAppDescriptor:
       type: object
       additionalProperties: false
       required:
         - id
         - label
         - kind
-      description: One tenant as the registry describes it.
+      description: One app as the registry describes it.
       properties:
         id:
-          $ref: "#/components/schemas/LocaleTenant"
+          $ref: "#/components/schemas/LocaleApp"
         label:
           type: string
           description: A human name, for an admin screen.
           example: Demo frontend
         kind:
-          $ref: "#/components/schemas/LocaleTenantKind"
-    LocaleTenants:
+          $ref: "#/components/schemas/LocaleAppKind"
+    LocaleApps:
       type: object
       additionalProperties: false
       required:
-        - tenants
+        - apps
       properties:
-        tenants:
+        apps:
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/LocaleTenantDescriptor"
-    LocaleTenantsEnvelope:
+            $ref: "#/components/schemas/LocaleAppDescriptor"
+    LocaleAppsEnvelope:
       type: object
       additionalProperties: false
       required:
@@ -9212,7 +9209,7 @@ components:
         message:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
-          $ref: "#/components/schemas/LocaleTenants"
+          $ref: "#/components/schemas/LocaleApps"
     LocaleDictionary:
       type: object
       additionalProperties: false
@@ -9323,19 +9320,19 @@ components:
       required:
         - id
         - locale
-        - tenant
+        - app
         - key
         - value
       description: |-
-        One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
-        `tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
+        One translated string: one row per (language, app, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
+        `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
       properties:
         id:
           $ref: "#/components/schemas/Id"
         locale:
           $ref: "#/components/schemas/Locale"
-        tenant:
-          $ref: "#/components/schemas/LocaleTenant"
+        app:
+          $ref: "#/components/schemas/LocaleApp"
         key:
           type: string
           description: "Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting."
@@ -9405,8 +9402,8 @@ components:
       required:
         - entries
       description: |-
-        The COMPLETE set of entries for this language IN THE TENANT the URI names. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.
-        The tenant is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
+        The COMPLETE set of entries for this language IN THE APP the URI names. Anything already stored under that app and not named here is deleted; the other apps are untouched.
+        The app is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
       properties:
         entries:
           type: array
@@ -9489,7 +9486,7 @@ components:
       additionalProperties: false
       required:
         - entries
-      description: Entries to upsert into the tenant the URI names. Anything already stored is left exactly as it was.
+      description: Entries to upsert into the app the URI names. Anything already stored is left exactly as it was.
       properties:
         entries:
           type: array

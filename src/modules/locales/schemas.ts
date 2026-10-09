@@ -67,7 +67,7 @@ export const localesLanguageEditSchema = localesLanguageSchema.extend({
  */
 export const localesEntrySchema = z.object({
     // An id from the registry the dialog lists; the API refuses a stranger with a 422.
-    tenant: z.string().min(1, { error: () => translate('entry-form.tenant-required') }),
+    app: z.string().min(1, { error: () => translate('entry-form.app-required') }),
     key: z.string().min(1, { error: () => translate('entry-form.key-required') }),
     value: z.string().min(1, { error: () => translate('entry-form.value-required') })
 });

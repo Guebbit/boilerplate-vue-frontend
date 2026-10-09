@@ -13,18 +13,18 @@ import EntriesImportDialog from '../components/EntriesImportDialog.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { LocaleTenantDescriptor } from '@types';
-import { LocaleTenantKind } from '@api';
+import type { LocaleAppDescriptor } from '@types';
+import { LocaleAppKind } from '@api';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 
 wireModulesIntoCore();
 
-/** The tenant the dialog imports into. */
-const TENANT: LocaleTenantDescriptor = {
+/** The app the dialog imports into. */
+const APP: LocaleAppDescriptor = {
     id: 'demo-be',
     label: 'Demo backend',
-    kind: LocaleTenantKind.backend
+    kind: LocaleAppKind.backend
 };
 
 /** A well-formed import payload. */
@@ -32,13 +32,13 @@ const VALID_JSON = JSON.stringify({ generic: { 'error-internal': 'Oops' } });
 
 /**
  * Mounts the dialog closed, then opens it via `v-model` — the same transition a real visit makes,
- * and the one `watch(isOpen, ...)` resets `mode` to `merge` and `tenant` to its default on.
+ * and the one `watch(isOpen, ...)` resets `mode` to `merge` and `app` to its default on.
  *
  * @returns The mounted wrapper.
  */
 const mountDialog = () => {
     const wrapper = mount(EntriesImportDialog, {
-        props: { modelValue: false, tenants: [TENANT] },
+        props: { modelValue: false, apps: [APP] },
         global: {
             plugins: [vuetify, i18n],
             stubs: { VDialog: { template: '<div><slot /></div>' } }
@@ -94,7 +94,7 @@ describe('a replace-mode import', () => {
                             expect(emitted).toHaveLength(1);
                             expect(emitted?.[0]?.[0]).toMatchObject({
                                 mode: 'replace',
-                                tenant: TENANT.id
+                                app: APP.id
                             });
                         });
                 });

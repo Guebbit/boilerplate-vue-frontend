@@ -31,7 +31,7 @@ const CAPABILITY = {
     nativeName: 'Español',
     direction: 'ltr',
     active: true,
-    tenants: ['demo-fe'],
+    apps: ['demo-fe'],
     source: 'dynamic',
     entryCount: 2,
     revision: 3
@@ -57,7 +57,7 @@ const LANGUAGE = {
 const ENTRY = {
     id: 'locale-entry-1',
     locale: 'es',
-    tenant: 'demo-fe',
+    app: 'demo-fe',
     key: 'generic.search',
     value: 'Buscar'
 };
@@ -94,30 +94,33 @@ beforeEach(() => {
         'GET /locales': orvalEnvelope({ locales: [CAPABILITY], default: 'en', fallback: 'en' }),
         'POST /locales': orvalEnvelope(LANGUAGE),
         'PATCH /locales/es': orvalEnvelope(LANGUAGE),
-        'GET /locales/tenants': orvalEnvelope({
-            tenants: [
+        'GET /locales/apps': orvalEnvelope({
+            apps: [
                 { id: 'demo-be', label: 'API', kind: 'backend' },
                 { id: 'demo-fe', label: 'Frontend', kind: 'frontend' }
             ]
         }),
         // Bodyless per the real contract — no `data` at all — unlike the write endpoints above.
         'DELETE /locales/es': orvalEnvelope(),
-        'POST /locales/es/tenants/demo-fe/entries': orvalEnvelope(ENTRY),
-        'PATCH /locales/es/tenants/demo-be/entries': orvalEnvelope({
+        'POST /locales/es/apps/demo-fe/entries': orvalEnvelope(ENTRY),
+        'PATCH /locales/es/apps/demo-be/entries': orvalEnvelope({
             created: 0,
             updated: 1,
             removed: 0,
             revision: 4
         }),
-        'PUT /locales/es/entries/locale-entry-1': orvalEnvelope({ ...ENTRY, value: 'Cercar' }),
-        'DELETE /locales/es/entries/locale-entry-1': orvalEnvelope(),
-        'PATCH /locales/es/tenants/demo-fe/entries': orvalEnvelope({
+        'PUT /locales/es/apps/demo-fe/entries/locale-entry-1': orvalEnvelope({
+            ...ENTRY,
+            value: 'Cercar'
+        }),
+        'DELETE /locales/es/apps/demo-fe/entries/locale-entry-1': orvalEnvelope(),
+        'PATCH /locales/es/apps/demo-fe/entries': orvalEnvelope({
             created: 2,
             updated: 1,
             removed: 0,
             revision: 4
         }),
-        'PUT /locales/es/tenants/demo-fe/entries': orvalEnvelope({
+        'PUT /locales/es/apps/demo-fe/entries': orvalEnvelope({
             created: 2,
             updated: 1,
             removed: 5,
@@ -174,13 +177,13 @@ describe('entry writes', () => {
             .addEntry('es', 'demo-fe', { key: 'generic.search', value: 'Buscar' })
             .then((entry) => {
                 expect(entry).toEqual(ENTRY);
-                expect(requestedUrls()).toEqual(['POST /locales/es/tenants/demo-fe/entries']);
+                expect(requestedUrls()).toEqual(['POST /locales/es/apps/demo-fe/entries']);
             });
     });
 
     it('edits only the value — the key is identity and stays out of the body', () => {
         const store = useLocalesStore();
-        return store.editEntry('es', 'locale-entry-1', 'Cercar').then((entry) => {
+        return store.editEntry('es', 'demo-fe', 'locale-entry-1', 'Cercar').then((entry) => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(contractRequest(schemas.UpdateLocaleEntryBody, call.data)).toEqual({
                 value: 'Cercar'
@@ -194,7 +197,7 @@ describe('entry writes', () => {
         return store
             .importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then((result) => {
-                expect(requestedUrls()).toEqual(['PATCH /locales/es/tenants/demo-fe/entries']);
+                expect(requestedUrls()).toEqual(['PATCH /locales/es/apps/demo-fe/entries']);
                 expect(result?.removed).toBe(0);
             });
     });
@@ -204,12 +207,12 @@ describe('entry writes', () => {
         return store
             .importEntries('es', 'replace', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then((result) => {
-                expect(requestedUrls()).toEqual(['PUT /locales/es/tenants/demo-fe/entries']);
+                expect(requestedUrls()).toEqual(['PUT /locales/es/apps/demo-fe/entries']);
                 expect(result?.removed).toBe(5);
             });
     });
 
-    it('names the tenant in the path, once for the whole batch — the body is only the rows', () => {
+    it('names the app in the path, once for the whole batch — the body is only the rows', () => {
         const store = useLocalesStore();
         return store
             .importEntries('es', 'merge', 'demo-be', [{ key: 'a', value: 'b' }])
@@ -218,7 +221,7 @@ describe('entry writes', () => {
                     url?: string;
                     data?: unknown;
                 };
-                expect(call.url).toBe('/locales/es/tenants/demo-be/entries');
+                expect(call.url).toBe('/locales/es/apps/demo-be/entries');
                 expect(contractRequest(schemas.MergeLocaleEntriesBody, call.data)).toEqual({
                     entries: [{ key: 'a', value: 'b' }]
                 });
@@ -257,16 +260,31 @@ describe('fetchAllEntries', () => {
 describe('entry search and removal', () => {
     it('searches the language the filters name, through the toolkit search cache', () => {
         const store = useLocalesStore();
-        responses['GET /locales/es/entries'] = orvalEnvelope({
+        responses['GET /locales/es/apps/demo-fe/entries'] = orvalEnvelope({
             items: [ENTRY],
             meta: { totalItems: 1, totalPages: 1 }
         });
-        store.filters = { tag: 'es', text: 'bus', tenant: 'demo-fe' };
+        store.filters = { tag: 'es', text: 'bus', app: 'demo-fe' };
         return store
             .watchSearchEntries()
             .search()
             .then(() => {
-                expect(requestedUrls()).toContain('GET /locales/es/entries');
+                expect(requestedUrls()).toEqual(['GET /locales/es/apps/demo-fe/entries']);
+            });
+    });
+
+    it('searches every app through the all-apps route when no app is picked', () => {
+        const store = useLocalesStore();
+        responses['GET /locales/es/entries'] = orvalEnvelope({
+            items: [ENTRY],
+            meta: { totalItems: 1, totalPages: 1 }
+        });
+        store.filters = { tag: 'es', text: 'bus' };
+        return store
+            .watchSearchEntries()
+            .search()
+            .then(() => {
+                expect(requestedUrls()).toEqual(['GET /locales/es/entries']);
             });
     });
 
@@ -287,8 +305,10 @@ describe('entry search and removal', () => {
 
     it('removes an entry against the row named in the call', () => {
         const store = useLocalesStore();
-        return store.removeEntry('es', ENTRY.id).then(() => {
-            expect(requestedUrls()).toContain('DELETE /locales/es/entries/locale-entry-1');
+        return store.removeEntry('es', 'demo-fe', ENTRY.id).then(() => {
+            expect(requestedUrls()).toContain(
+                'DELETE /locales/es/apps/demo-fe/entries/locale-entry-1'
+            );
         });
     });
 });
@@ -354,19 +374,19 @@ describe('fetchBundledDictionary', () => {
             }));
 });
 
-describe('the tenant registry', () => {
-    it('loads the tenants and names the backend one', () => {
+describe('the app registry', () => {
+    it('loads the apps and names the backend one', () => {
         const store = useLocalesStore();
-        return store.fetchTenants().then(() => {
-            expect(store.tenants.map(({ id }) => id)).toEqual(['demo-be', 'demo-fe']);
-            expect(store.backendTenant).toBe('demo-be');
-            expect(store.tenantLabel('demo-be')).toBe('API');
+        return store.fetchApps().then(() => {
+            expect(store.apps.map(({ id }) => id)).toEqual(['demo-be', 'demo-fe']);
+            expect(store.backendApp).toBe('demo-be');
+            expect(store.appLabel('demo-be')).toBe('API');
             // A stranger renders as its id rather than as nothing.
-            expect(store.tenantLabel('nobody')).toBe('nobody');
+            expect(store.appLabel('nobody')).toBe('nobody');
         });
     });
 
-    it("knows this build's own tenant without asking the API", () => {
-        expect(useLocalesStore().ownTenant).toBe('demo-fe');
+    it("knows this build's own app without asking the API", () => {
+        expect(useLocalesStore().ownApp).toBe('demo-fe');
     });
 });
