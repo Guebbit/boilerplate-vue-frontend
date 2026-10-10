@@ -4106,7 +4106,7 @@ export interface WebhookSubscription {
     url: string;
     description?: string;
     /**
-     * Names from `GET /webhooks/events` this subscription receives.
+     * Names from `GET /webhooks/events` this subscription receives, or `*` for every event.
      * @minItems 1
      */
     eventTypes: string[];
@@ -4146,6 +4146,7 @@ export interface CreateWebhookSubscriptionRequest {
      */
     description?: string;
     /**
+     * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
      * @items.minLength 1
      * @items.maxLength 100
@@ -4194,6 +4195,7 @@ export interface ReplaceWebhookSubscriptionRequest {
      */
     description?: string | null;
     /**
+     * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
      * @items.minLength 1
      * @items.maxLength 100
@@ -4224,6 +4226,7 @@ export interface UpdateWebhookSubscriptionRequest {
      */
     description?: string | null;
     /**
+     * A name from `GET /webhooks/events`, or `*` for every event. Any other name is a 422 naming `eventTypes`.
      * @minItems 1
      * @items.minLength 1
      * @items.maxLength 100
@@ -8702,9 +8705,10 @@ export const replayWebhookDelivery = (
 };
 
 /**
- * Read straight from this module's own `asyncapi.yaml` fragment — the same source
- * `asyncapi.public.yaml` is generated from — so this list and what the module can
- * actually fire can never drift apart. See `docs/api/asyncapi-workflow.md`.
+ * The events of the modules this deployment runs, read from each one's own
+ * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
+ * so this list and what can actually fire can never drift apart. A module that is
+ * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
  * @summary The public event catalogue
  */
 export const listWebhookEvents = (

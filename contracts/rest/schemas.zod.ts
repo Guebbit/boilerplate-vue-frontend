@@ -10640,9 +10640,10 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
     })
 });
 /**
- * Read straight from this module's own `asyncapi.yaml` fragment — the same source
- * `asyncapi.public.yaml` is generated from — so this list and what the module can
- * actually fire can never drift apart. See `docs/api/asyncapi-workflow.md`.
+ * The events of the modules this deployment runs, read from each one's own
+ * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
+ * so this list and what can actually fire can never drift apart. A module that is
+ * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
  * @summary The public event catalogue
  */
 export const ListWebhookEventsResponse = zod.strictObject({
