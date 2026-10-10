@@ -1615,7 +1615,7 @@ export const GetAntibotChallengeResponse = zod.strictObject({
     })
 });
 /**
- * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed (`product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
+ * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed: the events the deployed modules declare (today `product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
  * @summary Report one browsing event
  */
 export const createAnalyticsEventBodyOneProductIdOneMax = 64;
@@ -10646,9 +10646,10 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
     })
 });
 /**
- * Read straight from this module's own `asyncapi.yaml` fragment — the same source
- * `asyncapi.public.yaml` is generated from — so this list and what the module can
- * actually fire can never drift apart. See `docs/api/asyncapi-workflow.md`.
+ * The events of the modules this deployment runs, read from each one's own
+ * `asyncapi.webhooks.yaml` — the same files `asyncapi.public.yaml` is generated from —
+ * so this list and what can actually fire can never drift apart. A module that is
+ * not deployed lists nothing. See `docs/api/asyncapi-workflow.md`.
  * @summary The public event catalogue
  */
 export const ListWebhookEventsResponse = zod.strictObject({
