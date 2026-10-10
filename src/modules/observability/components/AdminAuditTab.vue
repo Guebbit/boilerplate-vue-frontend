@@ -98,13 +98,13 @@ const pageSizeOptions = [20, 50, 100];
  */
 const tableHeaders = computed<CoreDataTableHeader<AuditEntryItem>[]>(() => [
     { title: t('admin-page.audit-col-timestamp'), key: 'timestamp' },
-    { title: t('admin-page.audit-col-actor'), key: 'actor_user_id' },
-    { title: t('admin-page.audit-col-role'), key: 'actor_role' },
+    { title: t('admin-page.audit-col-actor'), key: 'actorUserId' },
+    { title: t('admin-page.audit-col-role'), key: 'actorRole' },
     { title: t('admin-page.audit-col-action'), key: 'action' },
     { title: t('admin-page.audit-col-outcome'), key: 'outcome' },
     { title: t('admin-page.audit-col-ip'), key: 'ip' },
-    { title: t('admin-page.audit-col-request-id'), key: 'request_id' },
-    { title: t('admin-page.audit-col-trace-id'), key: 'trace_id' }
+    { title: t('admin-page.audit-col-request-id'), key: 'requestId' },
+    { title: t('admin-page.audit-col-trace-id'), key: 'traceId' }
 ]);
 
 /**
@@ -244,13 +244,13 @@ void fetchPage({ ...filters });
                 <span class="whitespace-nowrap">{{ formatDateTime(item.timestamp) }}</span>
             </template>
 
-            <template v-slot:[`item.actor_role`]="{ item }">
+            <template v-slot:[`item.actorRole`]="{ item }">
                 <v-chip
                     size="small"
                     variant="tonal"
-                    :color="item.actor_role === 'admin' ? 'tertiary' : 'secondary'"
+                    :color="item.actorRole === 'admin' ? 'tertiary' : 'secondary'"
                 >
-                    {{ item.actor_role }}
+                    {{ item.actorRole }}
                 </v-chip>
             </template>
 
@@ -268,24 +268,24 @@ void fetchPage({ ...filters });
                 {{ item.ip ?? EMPTY_VALUE }}
             </template>
 
-            <template v-slot:[`item.request_id`]="{ item }">
+            <template v-slot:[`item.requestId`]="{ item }">
                 <!--
                     The full id for the reader too — a title alone is mouse-only. As hidden text
                     rather than an `aria-label`: a role-less span may not carry a name
                     (`aria-prohibited-attr`), and the visible span is hidden from the reader so
                     the id is not announced twice.
                 -->
-                <span :title="item.request_id" class="font-mono text-xs" aria-hidden="true">
-                    {{ truncateId(item.request_id) }}
+                <span :title="item.requestId" class="font-mono text-xs" aria-hidden="true">
+                    {{ truncateId(item.requestId) }}
                 </span>
-                <span class="sr-only">{{ item.request_id }}</span>
+                <span class="sr-only">{{ item.requestId }}</span>
             </template>
 
-            <template v-slot:[`item.trace_id`]="{ item }">
-                <span :title="item.trace_id" class="font-mono text-xs" aria-hidden="true">
-                    {{ truncateId(item.trace_id) }}
+            <template v-slot:[`item.traceId`]="{ item }">
+                <span :title="item.traceId" class="font-mono text-xs" aria-hidden="true">
+                    {{ truncateId(item.traceId) }}
                 </span>
-                <span class="sr-only">{{ item.trace_id }}</span>
+                <span class="sr-only">{{ item.traceId }}</span>
             </template>
         </DataTable>
 

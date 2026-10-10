@@ -22,8 +22,8 @@ import { eventually } from '../../../support/e2e/steps';
 interface AuditRowLike {
     action: string;
     outcome: string;
-    actor_role: string;
-    target_id?: string;
+    actorRole: string;
+    targetId?: string;
     metadata?: { reason?: string; mode?: string; from?: string; to?: string };
 }
 
@@ -98,7 +98,7 @@ describe('OP14 · The audit trail follows the action', () => {
                         for (const row of rows.filter((found) =>
                             ['order.updated', 'order.cancelled'].includes(found.action)
                         )) {
-                            expect(row.actor_role).to.equal('admin');
+                            expect(row.actorRole).to.equal('admin');
                             expect(row.outcome).to.equal('success');
                         }
                     });

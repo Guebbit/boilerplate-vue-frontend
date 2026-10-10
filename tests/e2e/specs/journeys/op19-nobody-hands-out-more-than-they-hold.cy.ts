@@ -25,7 +25,7 @@ interface UserLike {
 /** One audit row, as far as this story reads it. */
 interface AuditRowLike {
     action: string;
-    actor_role: string;
+    actorRole: string;
 }
 
 /**
@@ -147,7 +147,7 @@ describe('OP19 · Nobody hands out more than they hold', () => {
                         .then((list) => list?.items ?? []),
                 (rows) =>
                     rows.some(
-                        (row) => row.action === 'access.role.assigned' && row.actor_role === 'admin'
+                        (row) => row.action === 'access.role.assigned' && row.actorRole === 'admin'
                     )
             );
         });

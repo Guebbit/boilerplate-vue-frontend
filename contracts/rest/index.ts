@@ -817,24 +817,24 @@ export const AuditEntryItemLevel = {
 export type AuditEntryItemMetadata = { [key: string]: unknown };
 
 export interface AuditEntryItem {
-    actor_user_id: string;
+    actorUserId: string;
     /** The API key the action was done with. Absent when a person did it themselves. */
-    actor_credential_id?: string;
-    actor_role: AuditEntryItemActorRole;
-    /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
-    actor_role_name?: string;
+    actorCredentialId?: string;
+    actorRole: AuditEntryItemActorRole;
+    /** The tenant role behind actorRole, e.g. moderator. Absent when the request never resolved one. */
+    actorRoleName?: string;
     /** Which world this action happened in — a shop or the installation. */
-    actor_scope: AuditEntryItemActorScope;
+    actorScope: AuditEntryItemActorScope;
     /** Dot-notation action name (e.g. order.created) */
     action: string;
     outcome: AuditEntryItemOutcome;
     /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
     ip?: string;
-    user_agent?: string;
-    request_id?: string;
-    trace_id?: string;
-    target_type?: string;
-    target_id?: string;
+    userAgent?: string;
+    requestId?: string;
+    traceId?: string;
+    targetType?: string;
+    targetId?: string;
     metadata?: AuditEntryItemMetadata;
     timestamp: string;
     level: AuditEntryItemLevel;

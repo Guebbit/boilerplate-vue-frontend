@@ -23,9 +23,9 @@ const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
 
 /** One platform-trail row; the platform trail answers the same `AuditEntryItem` as the shop one. */
 const EVENT_ITEM: AuditEntryItem = {
-    actor_user_id: 'ada@example.com',
-    actor_role: 'admin',
-    actor_scope: 'tenant',
+    actorUserId: 'ada@example.com',
+    actorRole: 'admin',
+    actorScope: 'tenant',
     action: 'user.login',
     outcome: 'success',
     timestamp: '2026-01-01T00:00:00.000Z',
@@ -34,13 +34,13 @@ const EVENT_ITEM: AuditEntryItem = {
 
 /** One shop-trail row exactly as `AuditEntryItem` declares it. */
 const ENTRY_ITEM: AuditEntryItem = {
-    actor_user_id: 'ada@example.com',
-    actor_role: 'admin',
-    actor_scope: 'tenant',
+    actorUserId: 'ada@example.com',
+    actorRole: 'admin',
+    actorScope: 'tenant',
     action: 'order.created',
     outcome: 'success',
-    target_type: 'Order',
-    target_id: 'o1',
+    targetType: 'Order',
+    targetId: 'o1',
     timestamp: '2026-01-01T00:00:00.000Z',
     level: 'info'
 };

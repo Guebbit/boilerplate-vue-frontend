@@ -10015,30 +10015,30 @@ components:
       type: object
       additionalProperties: false
       required:
-        - actor_user_id
-        - actor_role
-        - actor_scope
+        - actorUserId
+        - actorRole
+        - actorScope
         - action
         - outcome
         - timestamp
         - level
       properties:
-        actor_user_id:
+        actorUserId:
           type: string
-        actor_credential_id:
+        actorCredentialId:
           type: string
           description: The API key the action was done with. Absent when a person did it themselves.
-        actor_role:
+        actorRole:
           type: string
           enum:
             - admin
             - user
             - anonymous
             - system
-        actor_role_name:
+        actorRoleName:
           type: string
-          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
-        actor_scope:
+          description: The tenant role behind actorRole, e.g. moderator. Absent when the request never resolved one.
+        actorScope:
           type: string
           enum:
             - tenant
@@ -10055,15 +10055,15 @@ components:
         ip:
           type: string
           description: "The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters."
-        user_agent:
+        userAgent:
           type: string
-        request_id:
+        requestId:
           type: string
-        trace_id:
+        traceId:
           type: string
-        target_type:
+        targetType:
           type: string
-        target_id:
+        targetId:
           type: string
         metadata:
           type: object

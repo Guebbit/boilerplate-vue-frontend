@@ -28,7 +28,7 @@ const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
 /** One audit row, as far as this story reads it. */
 interface AuditRowLike {
     action: string;
-    actor_role: string;
+    actorRole: string;
 }
 
 /** A ticket, as far as this story reads it. */
@@ -89,7 +89,7 @@ const auditedAsSupport = (targetId: string, action: string): void => {
                     `/audit?target=${targetId}&pageSize=100`
                 )
                 .then((list) => list?.items ?? []),
-        (rows) => rows.some((row) => row.action === action && row.actor_role === 'support')
+        (rows) => rows.some((row) => row.action === action && row.actorRole === 'support')
     );
 };
 
