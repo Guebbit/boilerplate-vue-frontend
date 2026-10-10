@@ -92,7 +92,7 @@ The Audit Log tab passes these filters from `AdminAuditFilters` reactive state d
 ## Types
 
 All response types are driven by `openapi.yaml` and generated into `contracts/rest/index.ts`:
-`ObservabilityHealth`, `ObservabilityMetricsSummary`, `AuditEventItem`, etc.
+`ObservabilityHealth`, `ObservabilityMetricsSummary`, `AuditEntryItem` (shared with the shop audit trail), etc.
 
 View-model types specific to the FE layout (`AdminKpiCard`, `AdminAuditFilters`) live in `src/modules/observability/types.ts`.
 

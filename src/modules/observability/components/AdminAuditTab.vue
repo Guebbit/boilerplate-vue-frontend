@@ -14,11 +14,8 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { Search } from 'lucide-vue-next';
-import {
-    useAuditTrail,
-    type AuditEndpoint,
-    type AuditTrailItem
-} from '../composables/use-audit-trail.ts';
+import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
+import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
@@ -99,7 +96,7 @@ const pageSizeOptions = [20, 50, 100];
  *
  * @returns The localized headers, keyed on the audit event fields.
  */
-const tableHeaders = computed<CoreDataTableHeader<AuditTrailItem>[]>(() => [
+const tableHeaders = computed<CoreDataTableHeader<AuditEntryItem>[]>(() => [
     { title: t('admin-page.audit-col-timestamp'), key: 'timestamp' },
     { title: t('admin-page.audit-col-actor'), key: 'actor_user_id' },
     { title: t('admin-page.audit-col-role'), key: 'actor_role' },
