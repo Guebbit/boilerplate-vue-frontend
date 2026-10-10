@@ -2,7 +2,10 @@
 # Sources: shared/contracts/openapi.root.yaml and src/modules/*/openapi.yaml
 openapi: 3.0.3
 info:
-  title: Ecommerce Demo API
+  title: Boilerplate API
+  license:
+    name: AGPL-3.0-or-later
+    url: https://www.gnu.org/licenses/agpl-3.0.html
   version: 0.1.0
   description: |
     Stable, codegen-oriented OpenAPI contract.
@@ -16,7 +19,7 @@ info:
     Accept-Language` is always set. `GET /locales` lists what a deployment supports.
 
     The header is intentionally not declared per operation: it applies to all of them and
-    clients set it once in an interceptor, so declaring it 33 times would only add a
+    clients set it once in an interceptor, so declaring it on every operation would only add a
     redundant argument to every generated function. This paragraph is its contract.
   contact:
     name: API Team
@@ -27,25 +30,41 @@ servers:
     description: Production
 tags:
   - name: Auth
+    description: Sign up, log in, refresh and end a session, and recover or verify an account by email.
   - name: Antibot
+    description: The human-check challenge a protected form asks for before it submits.
   - name: Analytics
+    description: Browsing events a browser reports, relayed only after the visitor agreed to be measured.
   - name: Account
+    description: The signed-in user's own account - profile, credentials, two-factor, data export and deletion.
   - name: Users
+    description: Administration of user accounts and their roles.
   - name: Products
+    description: The catalogue - browsing, searching and managing products and their images.
   - name: Cart
+    description: The signed-in user's cart, and turning it into an order.
   - name: Wishlist
+    description: Products a user saved for later.
   - name: Notifications
+    description: The signed-in user's in-app notifications and their delivery preferences.
   - name: Orders
+    description: Placing, reading and managing orders and their lifecycle.
   - name: Payments
+    description: Paying for an order - payment intents, confirmation, offline payments and refunds.
   - name: Invoicing
     description: The frozen invoice and credit-note PDFs — issued at payment and at refund, never before.
   - name: Delivery
+    description: Shipping an order and marking it delivered.
   - name: Returns
     description: Sending goods back — including the EU withdrawal button, which is a return with `reason` `withdrawal`.
   - name: Inventory
+    description: Stock counters and the holds placed against them.
   - name: Feedback
+    description: What visitors tell the shop, and the admin queue that reads it.
   - name: Examples
     description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
+  - name: Locales
+    description: Supported languages, and the translations a deployment serves for its API messages, client screens and entities.
   - name: System
     description: Public system endpoints (ping, liveness).
   - name: Observability
@@ -148,7 +167,7 @@ paths:
   /locales:
     get:
       tags:
-        - System
+        - Locales
       summary: Supported languages
       description: |
         Every language this deployment offers, from both tiers, each stating what it can
@@ -188,7 +207,7 @@ paths:
       x-module: locales
     post:
       tags:
-        - System
+        - Locales
       summary: Add a language
       description: |
         Registers a language in the dynamic tier so entries can be translated into it.
@@ -239,7 +258,7 @@ paths:
   /locales/apps:
     get:
       tags:
-        - System
+        - Locales
       summary: Translation apps
       description: |
         Every app this deployment holds words for — the keyspaces an entry can belong
@@ -271,7 +290,7 @@ paths:
   /locales/{locale}:
     get:
       tags:
-        - System
+        - Locales
       summary: API message dictionary
       description: |
         This API's own dictionary for one language — tier 1, the deployed files.
@@ -309,7 +328,7 @@ paths:
       x-module: locales
     put:
       tags:
-        - System
+        - Locales
       summary: Replace a language
       description: |
         Replaces a language's display names, writing direction and visibility (RFC 9110
@@ -363,7 +382,7 @@ paths:
       x-module: locales
     patch:
       tags:
-        - System
+        - Locales
       summary: Edit a language
       description: |
         Merges a language's display names, writing direction or visibility (RFC 7396, an
@@ -419,7 +438,7 @@ paths:
       x-module: locales
     delete:
       tags:
-        - System
+        - Locales
       summary: Remove a language
       description: |
         Removes the language AND every entry translated into it.
@@ -453,7 +472,7 @@ paths:
   /locales/{locale}/messages:
     get:
       tags:
-        - System
+        - Locales
       summary: Client message dictionary
       description: |
         The dynamic dictionary for one language, built from its stored entries into the
@@ -503,7 +522,7 @@ paths:
   /locales/{locale}/entries:
     get:
       tags:
-        - System
+        - Locales
       summary: List translation entries
       description: |
         The rows behind one language's dictionary, paginated and searchable — what a
@@ -546,7 +565,7 @@ paths:
   /locales/{locale}/apps/{app}/entries:
     get:
       tags:
-        - System
+        - Locales
       summary: List one app's translation entries
       description: |
         The rows behind one language's dictionary, paginated and searchable — what a
@@ -589,7 +608,7 @@ paths:
       x-module: locales
     post:
       tags:
-        - System
+        - Locales
       summary: Add one translation entry
       description: |
         Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
@@ -642,7 +661,7 @@ paths:
       x-module: locales
     put:
       tags:
-        - System
+        - Locales
       summary: Replace every entry
       description: |
         Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
@@ -701,7 +720,7 @@ paths:
       x-module: locales
     patch:
       tags:
-        - System
+        - Locales
       summary: Merge entries
       description: |
         Bulk import, MERGING semantics: what is sent is upserted, everything else is left
@@ -757,7 +776,7 @@ paths:
   /locales/{locale}/apps/{app}/entries/{entryId}:
     put:
       tags:
-        - System
+        - Locales
       summary: Edit one translation entry
       description: |
         Updates the value of one entry. The key is not editable — a key is the identity a
@@ -806,7 +825,7 @@ paths:
       x-module: locales
     delete:
       tags:
-        - System
+        - Locales
       summary: Remove one translation entry
       description: Removes a single key from one language. The other languages keep theirs.
       operationId: deleteLocaleEntry
@@ -837,7 +856,7 @@ paths:
   /locales/translations/{entityType}/{id}:
     get:
       tags:
-        - System
+        - Locales
       summary: Read every translation an entity has
       description: |
         Every locale this entity has a row for, in one response — the admin shape a
@@ -871,7 +890,7 @@ paths:
       x-module: locales
     put:
       tags:
-        - System
+        - Locales
       summary: Replace every translation an entity has
       description: |
         REPLACING semantics: a locale currently stored but absent from the body is deleted
@@ -933,7 +952,7 @@ paths:
       x-module: locales
     patch:
       tags:
-        - System
+        - Locales
       summary: Merge one or more of an entity's translations
       description: |
         MERGING semantics: a locale key absent from the body is left exactly as it is. Three
@@ -10310,9 +10329,8 @@ components:
           enum:
             - product_viewed
         productId:
-          type: string
-          minLength: 1
-          maxLength: 64
+          allOf:
+            - $ref: "#/components/schemas/Id"
           description: The product whose page was opened.
     ProductsSearchedEvent:
       type: object
@@ -10327,8 +10345,8 @@ components:
           enum:
             - products_searched
         text:
-          type: string
-          maxLength: 200
+          allOf:
+            - $ref: "#/components/schemas/Text"
           description: The free-text term searched for, when there was one.
         resultCount:
           type: integer
