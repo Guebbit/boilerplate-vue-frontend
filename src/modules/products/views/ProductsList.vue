@@ -127,6 +127,29 @@ const activeOptions = computed(() => [
 ]);
 
 /**
+ * Options of the admin-only "Sale status" filter: on sale, or taken off sale (`purchasable`).
+ * `null` for the "all" row, for the same reason as {@link activeOptions}.
+ *
+ * @returns The localized options, re-translated on locale change.
+ */
+const purchasableOptions = computed(() => [
+    { value: null, label: t('products-list-page.filter-active-all') },
+    { value: true, label: t('products-list-page.filter-purchasable-yes') },
+    { value: false, label: t('products-list-page.filter-purchasable-no') }
+]);
+
+/**
+ * The "Sale status" select's model: `null` (the "all" row) on screen, no `purchasable` filter in
+ * {@link filters}.
+ */
+const purchasableChoice = useAnyFilterChoice(
+    () => filters.value.purchasable,
+    (value) => {
+        filters.value.purchasable = value;
+    }
+);
+
+/**
  * The "Active" select's model: `null` (the "all" row) on screen, no `active` filter in
  * {@link filters}.
  */
@@ -163,6 +186,7 @@ const tableHeaders = computed<CoreDataTableHeader<Product>[]>(() => [
     { title: t('products-list-page.column-title'), key: 'title' },
     { title: t('products-list-page.column-price'), key: 'price' },
     { title: t('products-list-page.column-active'), key: 'active' },
+    { title: t('products-list-page.column-purchasable'), key: 'purchasable' },
     { title: t('products-list-page.column-created-at'), key: 'createdAt' },
     // Reads no field on the row: the cell is the `item.actions` slot below.
     { title: t('products-list-page.column-actions'), key: 'actions', synthetic: true }
@@ -183,6 +207,7 @@ const { sync: syncUrl } = useListUrlState({
         category: 'string',
         tag: 'string',
         active: 'boolean',
+        purchasable: 'boolean',
         deleted: 'boolean',
         sort: 'string'
     }
@@ -436,6 +461,16 @@ const handleHardDelete = (productId: string, title: string) =>
                     />
                     <v-select
                         v-if="session.can('delete', 'Product')"
+                        v-model="purchasableChoice"
+                        :label="t('products-list-page.filter-purchasable')"
+                        :items="purchasableOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-purchasable"
+                        hide-details
+                    />
+                    <v-select
+                        v-if="session.can('delete', 'Product')"
                         v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
                         :items="deletedOptions"
@@ -526,6 +561,20 @@ const handleHardDelete = (productId: string, title: string) =>
 
             <template v-slot:[`item.price`]="{ item }">
                 {{ formatCurrency(item.price, item.currency) }}
+            </template>
+
+            <template v-slot:[`item.purchasable`]="{ item }">
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="item.purchasable === false ? 'warning' : 'success'"
+                >
+                    {{
+                        item.purchasable === false
+                            ? t('products-list-page.filter-purchasable-no')
+                            : t('products-list-page.filter-purchasable-yes')
+                    }}
+                </v-chip>
             </template>
 
             <template v-slot:[`item.active`]="{ item }">

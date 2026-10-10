@@ -344,6 +344,7 @@ export interface Product {
     readonly available?: number;
     description?: string;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /** @minimum 0 */
@@ -390,7 +391,6 @@ export interface OrderLineProduct {
      */
     price: number;
     description?: string;
-    active?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     sku?: Sku;
@@ -761,7 +761,7 @@ export interface Shipment {
     updatedAt?: string;
 }
 
-export interface WishlistItem {
+export interface WishlistExportItem {
     productId: Id;
 }
 
@@ -1034,7 +1034,7 @@ export interface AccountExportResponse {
     payments: ExportPayment[];
     shipments: Shipment[];
     cart: CartItem[];
-    wishlist: WishlistItem[];
+    wishlist: WishlistExportItem[];
     sessions: ExportSession[];
     auditLog: AuditEntryItem[];
     /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
@@ -2902,6 +2902,7 @@ export interface CreateProductRequest {
     /** @minimum 0 */
     onHand?: number;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2939,6 +2940,7 @@ export interface CreateProductRequestMultipart {
     /** @minimum 0 */
     onHand?: number;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -3016,6 +3018,7 @@ export interface ReplaceProductRequest {
     /** @nullable */
     sku?: string | null;
     active: boolean;
+    purchasable: boolean;
     requiresShipping: boolean;
     noWithdrawal?: boolean;
     /**
@@ -3052,6 +3055,7 @@ export interface ReplaceProductRequestMultipart {
     rateType?: string;
     sku?: string;
     active: boolean;
+    purchasable: boolean;
     requiresShipping: boolean;
     noWithdrawal?: boolean;
     /**
@@ -3109,6 +3113,7 @@ export interface UpdateProductRequest {
     /** @nullable */
     sku?: string | null;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -3145,6 +3150,7 @@ export interface UpdateProductRequestMultipart {
     rateType?: string;
     sku?: string;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -3201,6 +3207,7 @@ export interface ProductAdmin {
     readonly available?: number;
     description?: string;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -3246,18 +3253,35 @@ export interface SearchProductsRequest {
     /** @maxLength 200 */
     title?: string;
     active?: boolean;
+    purchasable?: boolean;
     deleted?: boolean;
 }
 
 /**
- * One line of the basket as the cart answers it: the stored line plus whether it fits what is for sale. Not `CartItem`, which stays the bare stored line the export and the order request use.
+ * Whether a saved line can be bought right now.
+ * - `in_stock`: buyable, enough stock. - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
+ *   and returns to a stock value if the product is shown again.
+ *
+ * Never a number: exact stock stays behind `inventory.any.read`.
+ */
+export type LineAvailability = (typeof LineAvailability)[keyof typeof LineAvailability];
+
+export const LineAvailability = {
+    in_stock: 'in_stock',
+    insufficient_stock: 'insufficient_stock',
+    out_of_stock: 'out_of_stock',
+    unavailable: 'unavailable',
+    removed: 'removed'
+} as const;
+
+/**
+ * One line of the basket as the cart answers it: the stored line plus whether it can be bought as it stands. Not `CartItem`, which stays the bare stored line the export and the order request use.
  */
 export interface CartResponseItem {
     productId: Id;
     /** @minimum 1 */
     quantity: number;
-    /** True when `quantity` is more than is for sale right now. A flag and never the number left: exact stock is for callers holding `inventory.any.read`, the same level of disclosure as checkout's `CART_INSUFFICIENT_STOCK`. Read from the stock ledger by the cart view, the merge and checkout through one rule; `POST /cart` and `PUT` still do not refuse a line for stock, so a client polling `GET /cart` is how it learns a line has gone short. */
-    insufficientStock: boolean;
+    availability: LineAvailability;
 }
 
 export interface CartSummaryResponse {
@@ -3410,6 +3434,11 @@ export interface CheckoutResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Order;
+}
+
+export interface WishlistItem {
+    productId: Id;
+    availability: LineAvailability;
 }
 
 export interface WishlistResponse {
@@ -4322,17 +4351,17 @@ export interface MergeCartRequest {
 
 /**
  * Why a guest line did not land exactly as asked. Absent when it did.
- * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `unavailable`: the product is not publicly visible any more (deleted or hidden);
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
  *   nothing was added, `resulting` is what the cart already held (often 0). A product
- *   that is merely sold out is NOT unavailable: it is added and flagged
- *   `insufficientStock`.
+ *   that is merely sold out, or taken off sale, is NOT removed: it is added and
+ *   flagged through `availability`.
  */
 export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
 
 export const MergeLineReason = {
     summed: 'summed',
     capped: 'capped',
-    unavailable: 'unavailable'
+    removed: 'removed'
 } as const;
 
 export interface MergeLineResult {
@@ -4348,8 +4377,7 @@ export interface MergeLineResult {
      */
     resulting: number;
     reason?: MergeLineReason;
-    /** True when `resulting` is more than is for sale. A flag, never the number left. Independent of `reason`: a line can be `summed` and short. */
-    insufficientStock: boolean;
+    availability: LineAvailability;
 }
 
 export interface MergeCartResponse {
@@ -4864,6 +4892,10 @@ export type ListProductsParams = {
      */
     title?: string;
     active?: boolean;
+    /**
+     * `true` lists only products that can be bought, `false` only the ones taken off sale. Open to every caller: an off-sale product is publicly listed.
+     */
+    purchasable?: boolean;
     /**
      * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
      */
@@ -7161,6 +7193,9 @@ export const createProductWithMultipart = (
     if (createProductRequestMultipart.active !== undefined) {
         formData.append(`active`, createProductRequestMultipart.active.toString());
     }
+    if (createProductRequestMultipart.purchasable !== undefined) {
+        formData.append(`purchasable`, createProductRequestMultipart.purchasable.toString());
+    }
     if (createProductRequestMultipart.requiresShipping !== undefined) {
         formData.append(
             `requiresShipping`,
@@ -7310,6 +7345,7 @@ export const replaceProductByIdWithMultipart = (
         formData.append(`sku`, replaceProductRequestMultipart.sku);
     }
     formData.append(`active`, replaceProductRequestMultipart.active.toString());
+    formData.append(`purchasable`, replaceProductRequestMultipart.purchasable.toString());
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
     if (replaceProductRequestMultipart.noWithdrawal !== undefined) {
         formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
@@ -7451,6 +7487,9 @@ export const updateProductByIdWithMultipart = (
     }
     if (updateProductRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductRequestMultipart.active.toString());
+    }
+    if (updateProductRequestMultipart.purchasable !== undefined) {
+        formData.append(`purchasable`, updateProductRequestMultipart.purchasable.toString());
     }
     if (updateProductRequestMultipart.requiresShipping !== undefined) {
         formData.append(
@@ -7734,7 +7773,7 @@ export const getWishlist = (
 };
 
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+ * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
 export const addWishlistItem = (
@@ -8761,7 +8800,7 @@ export const downloadAccountExport = (
 };
 
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged `insufficientStock`, with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`unavailable`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCart = (

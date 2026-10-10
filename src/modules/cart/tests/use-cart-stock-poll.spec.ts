@@ -179,7 +179,7 @@ describe('the knob: no polling unless it asks for it', () => {
 
         await passSeconds(5);
 
-        expect(store.cartItems[0]?.insufficientStock).toBe(true);
+        expect(store.cartItems[0]?.availability).toBe('insufficient_stock');
     });
 });
 

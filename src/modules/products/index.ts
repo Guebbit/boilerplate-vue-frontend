@@ -11,3 +11,4 @@
 
 export { useProductsStore, invalidateProductsCache } from './store';
 export { useProductLines } from './composables/use-product-lines';
+export { shelfStateOf } from './domain';

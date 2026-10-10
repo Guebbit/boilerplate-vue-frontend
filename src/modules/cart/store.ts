@@ -387,7 +387,7 @@ export const useCartStore = defineStore('cart', () => {
     let pollInFlight = false;
 
     /**
-     * Background re-read of the cart, for the per-line stock flags (`insufficientStock`) the
+     * Background re-read of the cart, for the per-line `availability` the
      * server computes on every cart answer. Plain interval polling, driven by
      * `useCartStockPoll`; it is not `fetchCart`, because a read nobody asked for must not toggle
      * `loading` (that disables the buttons) or wait on the sign-in read.

@@ -1,10 +1,14 @@
 {
     "product-lines": {
-        "unavailable": "Non più disponibile"
+        "unavailable": "Non disponibile al momento",
+        "removed": "Non più disponibile",
+        "out-of-stock": "Esaurito",
+        "insufficient-stock": "Disponibilità insufficiente"
     },
     "product-card": {
         "in-stock": "Disponibile",
         "out-of-stock": "Esaurito",
+        "off-sale": "Non disponibile al momento",
         "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto."
     },
     "products-list-page": {
@@ -30,6 +34,7 @@
         "column-title": "Titolo",
         "column-price": "Prezzo",
         "column-active": "Attivo",
+        "column-purchasable": "In vendita",
         "column-created-at": "Creato il",
         "column-actions": "Azioni",
         "filter-text": "Cerca",
@@ -40,6 +45,9 @@
         "filter-active-all": "Tutti",
         "filter-active-yes": "Attivo",
         "filter-active-no": "Inattivo",
+        "filter-purchasable": "Stato di vendita",
+        "filter-purchasable-yes": "In vendita",
+        "filter-purchasable-no": "Fuori vendita",
         "label-categories": "Categorie:",
         "label-tags": "Tag:",
         "table-caption": "Prodotti",
@@ -66,12 +74,14 @@
         "label-price": "Prezzo",
         "label-description": "Descrizione",
         "label-active": "Attivo",
+        "label-purchasable": "In vendita",
         "label-created-at": "Creato il",
         "label-updated-at": "Aggiornato il",
         "label-stock": "Disponibilità",
         "in-stock": "Disponibile",
         "low-stock": "Scorte in esaurimento",
         "out-of-stock": "Esaurito",
+        "off-sale": "Non disponibile al momento",
         "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto.",
         "image-alt": "Foto di {name}"
     },
@@ -81,6 +91,8 @@
         "label-price": "Prezzo",
         "label-description": "Descrizione",
         "label-active": "Attivo",
+        "label-purchasable": "In vendita",
+        "hint-purchasable": "Fuori vendita: il prodotto resta in catalogo, ma non si può acquistare finché non torna in vendita. Nasconderlo (Attivo) prevale su questa opzione.",
         "label-weight": "Peso (grammi)",
         "hint-weight-missing": "Nessun peso impostato — questo prodotto viene considerato senza peso per l'idoneità dei metodi di spedizione.",
         "label-tax-class": "Aliquota IVA",
@@ -103,6 +115,8 @@
         "label-price": "Prezzo",
         "label-description": "Descrizione",
         "label-active": "Attivo",
+        "label-purchasable": "In vendita",
+        "hint-purchasable": "Fuori vendita: il prodotto resta in catalogo, ma non si può acquistare finché non torna in vendita. Nasconderlo (Attivo) prevale su questa opzione.",
         "label-weight": "Peso (grammi)",
         "hint-weight-missing": "Nessun peso impostato — questo prodotto viene considerato senza peso per l'idoneità dei metodi di spedizione.",
         "label-tax-class": "Aliquota IVA",

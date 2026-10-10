@@ -15,6 +15,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { Product } from '@types';
+import { shelfStateOf, type ShelfState } from '../domain';
 
 /**
  * The product to show.
@@ -40,9 +41,18 @@ const { isAuth } = storeToRefs(useSessionStore());
 const productActions = useSlot('product-actions');
 
 /**
- * Whether the shelf holds nothing — the `inStock` flag every reader gets.
+ * The badge text of each shelf state, as literal keys so a translation check can see every one.
  */
-const outOfStock = computed(() => !product.inStock);
+const SHELF_LABELS: Record<ShelfState, string> = {
+    'in-stock': 'product-card.in-stock',
+    'out-of-stock': 'product-card.out-of-stock',
+    'off-sale': 'product-card.off-sale'
+};
+
+/**
+ * The shelf as the shopper reads it: off sale outranks the stock badge.
+ */
+const shelf = computed(() => shelfStateOf(product));
 </script>
 
 <template>
@@ -76,10 +86,11 @@ const outOfStock = computed(() => !product.inStock);
                 size="small"
                 variant="tonal"
                 class="self-start"
-                :color="outOfStock ? 'error' : 'success'"
+                :color="shelf === 'in-stock' ? 'success' : 'error'"
+                :data-shelf="shelf"
                 data-test="product-card-availability"
             >
-                {{ outOfStock ? t('product-card.out-of-stock') : t('product-card.in-stock') }}
+                {{ t(SHELF_LABELS[shelf]) }}
             </v-chip>
             <div class="mt-auto flex flex-wrap items-start gap-2 pt-2">
                 <component

@@ -113,6 +113,23 @@ Stock is read-only here. `onHand`, `reserved` and `available` arrive serialized 
 and no form on these screens writes them: changing stock is an [`inventory`](./inventory.md)
 operation.
 
+## Product states on screen
+
+The backend keeps two independent flags, `active` (can a shopper see it) and `purchasable` (can it
+be bought, stock aside). The screens rank them in one place, `src/modules/products/domain/shelf-state.ts`, so the card, the
+product page and the add-to-cart button never disagree: **off sale outranks the stock badge**.
+
+| `purchasable` | `inStock` | Shelf state    | Card badge                | Add to cart                         |
+| ------------- | --------- | -------------- | ------------------------- | ----------------------------------- |
+| `false`       | any       | `off-sale`     | "Not available right now" | disabled, "Not available right now" |
+| `true`        | `false`   | `out-of-stock` | "Out of stock"            | disabled, "Out of stock"            |
+| `true`        | `true`    | `in-stock`     | "In stock"                | enabled                             |
+
+A hidden product is a 404 for a shopper, so there is nothing to rank: a cart or wishlist line that
+points at one reads "No longer available" (see [cart](./cart.md#a-product-that-is-gone)). Staff
+edit the flag with the "On sale" switch on the create and edit forms; the admin list has a column
+and a "Sale status" filter beside `active`.
+
 ## State
 
 Store `products`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.

@@ -27,7 +27,7 @@ wireModulesIntoCore();
  * The cart the server holds after a merge: the guest's one line, added.
  */
 const MERGED_CART = {
-    items: [{ productId: 'p1', quantity: 3, insufficientStock: false }],
+    items: [{ productId: 'p1', quantity: 3, availability: 'in_stock' }],
     summary: {
         itemsCount: 1,
         totalQuantity: 3,
@@ -45,7 +45,7 @@ const MERGED_CART = {
 const RESPONSES = {
     merged: contractEnvelope<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
-        lines: [{ productId: 'p1', requested: 3, resulting: 3, insufficientStock: false }]
+        lines: [{ productId: 'p1', requested: 3, resulting: 3, availability: 'in_stock' }]
     }),
     mergedWithChanges: contractEnvelope<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
@@ -55,17 +55,17 @@ const RESPONSES = {
                 requested: 2,
                 resulting: 5,
                 reason: 'summed',
-                insufficientStock: false
+                availability: 'in_stock'
             },
             {
                 productId: 'p2',
                 requested: 1,
                 resulting: 0,
-                reason: 'unavailable',
-                insufficientStock: false
+                reason: 'removed',
+                availability: 'in_stock'
             },
-            { productId: 'p3', requested: 4, resulting: 4, insufficientStock: true },
-            { productId: 'p4', requested: 1, resulting: 1, insufficientStock: false }
+            { productId: 'p3', requested: 4, resulting: 4, availability: 'insufficient_stock' },
+            { productId: 'p4', requested: 1, resulting: 1, availability: 'in_stock' }
         ]
     }),
     mergedAgain: contractEnvelope<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
@@ -76,7 +76,7 @@ const RESPONSES = {
                 requested: 999,
                 resulting: 999,
                 reason: 'capped',
-                insufficientStock: false
+                availability: 'in_stock'
             }
         ]
     }),
@@ -652,16 +652,16 @@ describe('the merge report', () => {
                 requested: 2,
                 resulting: 5,
                 reason: 'summed',
-                insufficientStock: false
+                availability: 'in_stock'
             },
             {
                 productId: 'p2',
                 requested: 1,
                 resulting: 0,
-                reason: 'unavailable',
-                insufficientStock: false
+                reason: 'removed',
+                availability: 'in_stock'
             },
-            { productId: 'p3', requested: 4, resulting: 4, insufficientStock: true }
+            { productId: 'p3', requested: 4, resulting: 4, availability: 'insufficient_stock' }
         ]);
     });
 
@@ -670,7 +670,11 @@ describe('the merge report', () => {
 
         const short = store.mergeReport.find(({ productId }) => productId === 'p3');
 
-        expect(short).toMatchObject({ requested: 4, resulting: 4, insufficientStock: true });
+        expect(short).toMatchObject({
+            requested: 4,
+            resulting: 4,
+            availability: 'insufficient_stock'
+        });
         expect(short?.reason).toBeUndefined();
     });
 
@@ -679,7 +683,7 @@ describe('the merge report', () => {
 
         for (const line of store.mergeReport)
             expect(Object.keys(line).toSorted()).toEqual(
-                ['insufficientStock', 'productId', 'reason', 'requested', 'resulting'].toSorted()
+                ['availability', 'productId', 'reason', 'requested', 'resulting'].toSorted()
             );
     });
 
@@ -722,7 +726,7 @@ describe('the merge report', () => {
                 requested: 999,
                 resulting: 999,
                 reason: 'capped',
-                insufficientStock: false
+                availability: 'in_stock'
             }
         ]);
 

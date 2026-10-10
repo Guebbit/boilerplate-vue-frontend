@@ -2,6 +2,7 @@
     "add-to-cart-button": {
         "label": "Aggiungi al carrello",
         "out-of-stock": "Esaurito",
+        "off-sale": "Non disponibile al momento",
         "success": "Prodotto aggiunto al carrello.",
         "guest-full": "Il tuo carrello contiene già il massimo di prodotti diversi. Rimuovine uno, o accedi, per aggiungerne un altro."
     },
@@ -28,12 +29,15 @@
         "error-total-changed-generic": "Il totale è cambiato da quando la pagina lo mostrava. Controllalo e invia di nuovo l'ordine.",
         "error-insufficient-stock": "Alcuni articoli nel carrello non sono più disponibili nella quantità richiesta.",
         "shortfall-line": "{title}: ne hai chiesti {requested}, ma non ce ne sono abbastanza",
+        "shortfall-line-out-of-stock": "{title}: esaurito",
+        "shortfall-line-unavailable": "{title}: non disponibile al momento",
         "error-address-not-found": "Non abbiamo trovato l'indirizzo di spedizione per questo ordine — controlla i tuoi indirizzi salvati e riprova.",
         "error-billing-address-required": "Ogni ordine richiede un indirizzo di fatturazione per la fattura — scegline o aggiungine uno per continuare.",
         "error-shipping-method-weight": "Il tuo carrello è troppo pesante per il metodo di spedizione scelto — scegline un altro.",
         "error-shipping-method-generic": "Non è stato possibile impostare quel metodo di spedizione — scegline un altro.",
         "error-ship-to-country-not-supported": "Non spediamo al paese di quell'indirizzo — scegli o aggiungi un indirizzo in un paese che serviamo.",
         "error-product-unavailable": "Alcuni prodotti nel carrello non sono più disponibili — rimuovili per completare l'acquisto.",
+        "error-line-needs-attention": "Alcune righe non si possono acquistare ora: sistemale per completare l'acquisto.",
         "error-open-order-limit": "Hai già ordini non pagati aperti. Paga o annulla uno di questi prima di piazzarne un altro.",
         "open-order-link": "Ordine non pagato {n}",
         "button-decrease": "Diminuisci quantità",
@@ -48,9 +52,10 @@
         "merge-alert-dismiss": "Chiudi",
         "merge-reason-summed": "Il tuo carrello ne conteneva già alcuni, quindi le due quantità sono state sommate.",
         "merge-reason-capped": "È il massimo che una riga può contenere.",
-        "merge-reason-unavailable": "Non è più disponibile, quindi non è stato aggiunto.",
+        "merge-reason-removed": "Non è più disponibile, quindi non è stato aggiunto.",
         "stock-short-marker": "Disponibilità insufficiente",
         "merge-short-advice": "Riduci la quantità prima del pagamento.",
+        "merge-off-sale-advice": "Non è disponibile al momento. Rimuovilo, o aspetta che torni in vendita: con lui nel carrello non puoi completare l'acquisto.",
         "error-guest-merge": "Non siamo riusciti ad aggiungere al tuo account il carrello creato prima di accedere. Resta su questo dispositivo finché sei connesso, riproveremo al prossimo caricamento della pagina e verrà svuotato quando esci.",
         "error-guest-merge-dropped": "Non siamo riusciti ad aggiungere al tuo account il carrello creato prima di accedere e riprovare non servirebbe, quindi è stato svuotato da questo dispositivo.",
         "error-cart-empty": "Il carrello è già vuoto. Se hai appena effettuato un ordine è andato a buon fine: controlla i tuoi ordini.",
@@ -59,9 +64,7 @@
     },
     "guest-cart-page": {
         "intro": "Questo carrello è salvato su questo dispositivo. Accedi per completare l'acquisto: il suo contenuto viene aggiunto al carrello del tuo account.",
-        "button-sign-in": "Accedi per completare l'acquisto",
-        "vanished-toast": "Un prodotto nel tuo carrello non è più disponibile ed è stato rimosso. | {count} prodotti nel tuo carrello non sono più disponibili e sono stati rimossi.",
-        "vanished-note": "Un prodotto non più disponibile è stato rimosso dal carrello. | {count} prodotti non più disponibili sono stati rimossi dal carrello."
+        "button-sign-in": "Accedi per completare l'acquisto"
     },
     "navigation": {
         "label-cart": "Carrello"

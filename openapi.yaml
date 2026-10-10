@@ -3725,6 +3725,11 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: purchasable
+          in: query
+          description: "`true` lists only products that can be bought, `false` only the ones taken off sale. Open to every caller: an off-sale product is publicly listed."
+          schema:
+            type: boolean
         - name: deleted
           in: query
           description: "`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`."
@@ -4673,7 +4678,7 @@ paths:
       tags:
         - Wishlist
       summary: Save a product
-      description: Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+      description: "Saves the product identified by `{productId}` to the authenticated user's wishlist. \"This product is saved\" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other."
       operationId: addWishlistItem
       security:
         - bearerAuth: []
@@ -7127,7 +7132,7 @@ paths:
       tags:
         - Cart
       summary: Merge a guest cart into the cart
-      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged `insufficientStock`, with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`unavailable`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers."
+      description: "Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers."
       operationId: mergeCart
       security:
         - bearerAuth: []
@@ -8389,6 +8394,9 @@ components:
           type: string
         active:
           type: boolean
+        purchasable:
+          type: boolean
+          default: true
         requiresShipping:
           type: boolean
           default: true
@@ -8491,8 +8499,6 @@ components:
           description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
         description:
           type: string
-        active:
-          type: boolean
         requiresShipping:
           type: boolean
           default: true
@@ -8900,7 +8906,7 @@ components:
         wishlist:
           type: array
           items:
-            $ref: "#/components/schemas/WishlistItem"
+            $ref: "#/components/schemas/WishlistExportItem"
         sessions:
           type: array
           items:
@@ -11954,6 +11960,9 @@ components:
         active:
           type: boolean
           default: true
+        purchasable:
+          type: boolean
+          default: true
         requiresShipping:
           type: boolean
           default: true
@@ -12005,6 +12014,9 @@ components:
           minimum: 0
           default: 0
         active:
+          type: boolean
+          default: true
+        purchasable:
           type: boolean
           default: true
         requiresShipping:
@@ -12138,6 +12150,7 @@ components:
         - price
         - translations
         - active
+        - purchasable
         - requiresShipping
         - categories
         - tags
@@ -12165,6 +12178,8 @@ components:
           allOf:
             - $ref: "#/components/schemas/Sku"
         active:
+          type: boolean
+        purchasable:
           type: boolean
         requiresShipping:
           type: boolean
@@ -12196,6 +12211,7 @@ components:
         - price
         - translations
         - active
+        - purchasable
         - requiresShipping
         - categories
         - tags
@@ -12222,6 +12238,8 @@ components:
           allOf:
             - $ref: "#/components/schemas/Sku"
         active:
+          type: boolean
+        purchasable:
           type: boolean
         requiresShipping:
           type: boolean
@@ -12300,6 +12318,8 @@ components:
             - $ref: "#/components/schemas/Sku"
         active:
           type: boolean
+        purchasable:
+          type: boolean
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -12349,6 +12369,8 @@ components:
           allOf:
             - $ref: "#/components/schemas/Sku"
         active:
+          type: boolean
+        purchasable:
           type: boolean
         requiresShipping:
           type: boolean
@@ -12440,6 +12462,8 @@ components:
           type: string
         active:
           type: boolean
+        purchasable:
+          type: boolean
         requiresShipping:
           type: boolean
           default: true
@@ -12529,25 +12553,40 @@ components:
           maxLength: 200
         active:
           type: boolean
+        purchasable:
+          type: boolean
         deleted:
           type: boolean
+    LineAvailability:
+      type: string
+      description: |-
+        Whether a saved line can be bought right now.
+        - `in_stock`: buyable, enough stock. - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
+          and returns to a stock value if the product is shown again.
+
+        Never a number: exact stock stays behind `inventory.any.read`.
+      enum:
+        - in_stock
+        - insufficient_stock
+        - out_of_stock
+        - unavailable
+        - removed
     CartResponseItem:
       type: object
       additionalProperties: false
       required:
         - productId
         - quantity
-        - insufficientStock
-      description: "One line of the basket as the cart answers it: the stored line plus whether it fits what is for sale. Not `CartItem`, which stays the bare stored line the export and the order request use."
+        - availability
+      description: "One line of the basket as the cart answers it: the stored line plus whether it can be bought as it stands. Not `CartItem`, which stays the bare stored line the export and the order request use."
       properties:
         productId:
           $ref: "#/components/schemas/Id"
         quantity:
           type: integer
           minimum: 1
-        insufficientStock:
-          type: boolean
-          description: "True when `quantity` is more than is for sale right now. A flag and never the number left: exact stock is for callers holding `inventory.any.read`, the same level of disclosure as checkout's `CART_INSUFFICIENT_STOCK`. Read from the stock ledger by the cart view, the merge and checkout through one rule; `POST /cart` and `PUT` still do not refuse a line for stock, so a client polling `GET /cart` is how it learns a line has gone short."
+        availability:
+          $ref: "#/components/schemas/LineAvailability"
     CartSummaryResponse:
       type: object
       additionalProperties: false
@@ -12789,9 +12828,12 @@ components:
       additionalProperties: false
       required:
         - productId
+        - availability
       properties:
         productId:
           $ref: "#/components/schemas/Id"
+        availability:
+          $ref: "#/components/schemas/LineAvailability"
     WishlistResponse:
       type: object
       additionalProperties: false
@@ -14498,6 +14540,14 @@ components:
         updatedAt:
           type: string
           format: date-time
+    WishlistExportItem:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
     ExportSession:
       type: object
       additionalProperties: false
@@ -14813,14 +14863,14 @@ components:
       type: string
       description: |-
         Why a guest line did not land exactly as asked. Absent when it did.
-        - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `unavailable`: the product is not publicly visible any more (deleted or hidden);
+        - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
           nothing was added, `resulting` is what the cart already held (often 0). A product
-          that is merely sold out is NOT unavailable: it is added and flagged
-          `insufficientStock`.
+          that is merely sold out, or taken off sale, is NOT removed: it is added and
+          flagged through `availability`.
       enum:
         - summed
         - capped
-        - unavailable
+        - removed
     MergeLineResult:
       type: object
       additionalProperties: false
@@ -14828,7 +14878,7 @@ components:
         - productId
         - requested
         - resulting
-        - insufficientStock
+        - availability
       properties:
         productId:
           $ref: "#/components/schemas/Id"
@@ -14842,9 +14892,8 @@ components:
           description: What the cart holds for this product after the merge.
         reason:
           $ref: "#/components/schemas/MergeLineReason"
-        insufficientStock:
-          type: boolean
-          description: "True when `resulting` is more than is for sale. A flag, never the number left. Independent of `reason`: a line can be `summed` and short."
+        availability:
+          $ref: "#/components/schemas/LineAvailability"
     MergeCartResponse:
       type: object
       additionalProperties: false
@@ -15067,7 +15116,7 @@ x-error-codes:
     description: Checkout was attempted on a cart with no lines.
   CART_INSUFFICIENT_STOCK:
     status: 409
-    description: "One or more lines exceed the product's available stock — see `errors[].details.lines`, one entry per short line with its `productId`, `title` and the `requested` quantity. The number left is not part of the answer: exact stock is for callers who read it (`inventory.any.read`)."
+    description: "One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`inventory.any.read`)."
   CART_OPEN_ORDER_LIMIT:
     status: 409
     description: "The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again."
@@ -15076,7 +15125,7 @@ x-error-codes:
     description: The chosen payment method is not enabled for this deployment or this cart.
   CART_PRODUCT_UNAVAILABLE:
     status: 409
-    description: A line references a product that was deleted or deactivated since it was added.
+    description: "A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`."
   CART_QUANTITY_LIMIT:
     status: 422
     description: The requested quantity exceeds the per-line limit.

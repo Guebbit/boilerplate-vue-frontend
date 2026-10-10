@@ -20,6 +20,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '../store';
+import { shelfStateOf } from '../domain';
 import { useSlot } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
@@ -142,6 +143,8 @@ const productActions = useSlot('product-actions');
 const stockLabel = computed(() => {
     const shown = currentProduct.value;
     if (!shown) return formatText(undefined);
+    // Off sale outranks the stock badge: the product is listed, but cannot be bought.
+    if (shelfStateOf(shown) === 'off-sale') return t('product-target-page.off-sale');
     if (!shown.inStock) return t('product-target-page.out-of-stock');
     if (shown.lowStock) return t('product-target-page.low-stock');
     return shown.available === undefined
@@ -230,6 +233,18 @@ const stockLabel = computed(() => {
                             {{ productStatus }}
                         </v-chip>
                     </ItemDetailField>
+                    <ItemDetailField
+                        :label="t('product-target-page.label-purchasable')"
+                        :value="
+                            formatFlag(
+                                currentProduct.purchasable,
+                                t('generic.enabled'),
+                                t('generic.disabled')
+                            )
+                        "
+                        :icon="Circle"
+                        data-test="product-purchasable"
+                    />
                     <ItemDetailField
                         :label="t('product-target-page.label-description')"
                         :value="formatText(currentProduct.description)"

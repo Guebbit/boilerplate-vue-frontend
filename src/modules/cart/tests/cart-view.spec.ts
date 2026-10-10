@@ -51,7 +51,7 @@ vi.mock('@api', async (importOriginal) => {
  * One line, one summary — the shared non-empty cart every case starts from.
  */
 const A_CART: CartResponse = {
-    items: [{ productId: 'p1', quantity: 2, insufficientStock: false }],
+    items: [{ productId: 'p1', quantity: 2, availability: 'in_stock' }],
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
@@ -239,8 +239,30 @@ describe('the checkout refusals', () => {
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
                     lines: [
-                        { productId: 'p1', title: 'Widget', requested: 5 },
-                        { productId: 'p2', title: 'Gadget', requested: 3 }
+                        {
+                            productId: 'p1',
+                            title: 'Widget',
+                            requested: 5,
+                            availability: 'insufficient_stock'
+                        },
+                        {
+                            productId: 'p2',
+                            title: 'Gadget',
+                            requested: 3,
+                            availability: 'insufficient_stock'
+                        },
+                        {
+                            productId: 'p3',
+                            title: 'Lamp',
+                            requested: 1,
+                            availability: 'out_of_stock'
+                        },
+                        {
+                            productId: 'p4',
+                            title: 'Heater',
+                            requested: 1,
+                            availability: 'unavailable'
+                        }
                     ]
                 })
             );
@@ -261,7 +283,10 @@ describe('the checkout refusals', () => {
                         i18n.global.t('cart-page.shortfall-line', {
                             title: 'Gadget',
                             requested: 3
-                        })
+                        }),
+                        // Sold out and off sale each get their own sentence, with no quantity.
+                        i18n.global.t('cart-page.shortfall-line-out-of-stock', { title: 'Lamp' }),
+                        i18n.global.t('cart-page.shortfall-line-unavailable', { title: 'Heater' })
                     ]);
                 });
         }));
@@ -270,7 +295,14 @@ describe('the checkout refusals', () => {
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(
                 checkoutRejection(409, 'CART_INSUFFICIENT_STOCK', {
-                    lines: [{ productId: 'p1', title: 'Widget', requested: 5 }]
+                    lines: [
+                        {
+                            productId: 'p1',
+                            title: 'Widget',
+                            requested: 5,
+                            availability: 'insufficient_stock'
+                        }
+                    ]
                 })
             );
 
@@ -839,13 +871,13 @@ describe('a reload in the middle of checkout', () => {
  * What a merge that changed two lines leaves in the store.
  */
 const A_REPORT: MergeReportLine[] = [
-    { productId: 'p1', requested: 2, resulting: 5, reason: 'summed', insufficientStock: false },
+    { productId: 'p1', requested: 2, resulting: 5, reason: 'summed', availability: 'in_stock' },
     {
         productId: 'p2',
         requested: 1,
         resulting: 0,
-        reason: 'unavailable',
-        insufficientStock: false
+        reason: 'removed',
+        availability: 'in_stock'
     }
 ];
 
@@ -854,7 +886,7 @@ const A_REPORT: MergeReportLine[] = [
  */
 const A_SHORT_CART: CartResponse = {
     ...A_CART,
-    items: [{ productId: 'p1', quantity: 2, insufficientStock: true }]
+    items: [{ productId: 'p1', quantity: 2, availability: 'insufficient_stock' }]
 };
 
 describe('the merge alert', () => {
@@ -879,8 +911,8 @@ describe('the merge alert', () => {
                     productId: 'p2',
                     requested: 1,
                     resulting: 0,
-                    reason: 'unavailable',
-                    insufficientStock: false
+                    reason: 'removed',
+                    availability: 'in_stock'
                 }
             ],
             held: { ...A_CART, items: [] }
@@ -926,7 +958,7 @@ describe('the merge alert', () => {
                     productId: 'p1',
                     requested: 2,
                     resulting: 2,
-                    insufficientStock: true
+                    availability: 'insufficient_stock'
                 }
             ],
             held: A_SHORT_CART,
@@ -953,20 +985,22 @@ describe('the short marker on a line', () => {
             held: {
                 ...A_CART,
                 items: [
-                    { productId: 'p1', quantity: 2, insufficientStock: true },
-                    { productId: 'p2', quantity: 1, insufficientStock: false }
+                    { productId: 'p1', quantity: 2, availability: 'insufficient_stock' },
+                    { productId: 'p2', quantity: 1, availability: 'in_stock' }
                 ]
             }
         }).then(({ wrapper }) => {
             const [first, second] = wrapper.findAll('[data-test=cart-item]');
 
-            expect(first?.get('[data-test=cart-line-short]').text()).toBe('Not enough in stock');
-            expect(second?.find('[data-test=cart-line-short]').exists()).toBe(false);
+            expect(first?.get('[data-test=cart-line-availability]').text()).toBe(
+                'Not enough in stock'
+            );
+            expect(second?.find('[data-test=cart-line-availability]').exists()).toBe(false);
         }));
 
     it('is absent when no line is short', () =>
         mountCart().then(({ wrapper }) => {
-            expect(wrapper.find('[data-test=cart-line-short]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=cart-line-availability]').exists()).toBe(false);
         }));
 
     it('follows the cart in the store: it appears when a later answer flags the line', () =>
@@ -974,18 +1008,18 @@ describe('the short marker on a line', () => {
             cart.cart = A_SHORT_CART;
 
             return flushPromises().then(() => {
-                expect(wrapper.find('[data-test=cart-line-short]').exists()).toBe(true);
+                expect(wrapper.find('[data-test=cart-line-availability]').exists()).toBe(true);
 
                 cart.cart = A_CART;
                 return flushPromises().then(() => {
-                    expect(wrapper.find('[data-test=cart-line-short]').exists()).toBe(false);
+                    expect(wrapper.find('[data-test=cart-line-availability]').exists()).toBe(false);
                 });
             });
         }));
 
     it('adds no live region of its own: the quantity line that holds it is the one that speaks', () =>
         mountCart({ held: A_SHORT_CART }).then(({ wrapper }) => {
-            const marker = wrapper.get('[data-test=cart-line-short]');
+            const marker = wrapper.get('[data-test=cart-line-availability]');
 
             // The line's quantity and the total are the page's two statuses, short or not.
             expect(wrapper.findAll('[role=status]')).toHaveLength(2);
@@ -999,6 +1033,42 @@ describe('the short marker on a line', () => {
 
             expect(line).toContain('Quantity: 2');
             expect(line.match(/\d+/g)).toEqual(['2']);
+        }));
+});
+
+describe('every availability on a line', () => {
+    it.each([
+        ['out_of_stock', 'Sold out'],
+        ['unavailable', 'Not available right now'],
+        ['removed', 'No longer available']
+    ] as const)('words a %s line as "%s"', (availability, words) =>
+        mountCart({
+            held: { ...A_CART, items: [{ productId: 'p1', quantity: 2, availability }] }
+        }).then(({ wrapper }) => {
+            const marker = wrapper.get('[data-test=cart-line-availability]');
+
+            expect(marker.text()).toBe(words);
+            expect(marker.attributes('data-availability')).toBe(availability);
+        })
+    );
+
+    it.each(['insufficient_stock', 'out_of_stock', 'unavailable', 'removed'] as const)(
+        'holds "Place order" back for a %s line, and says why',
+        (availability) =>
+            mountCart({
+                held: { ...A_CART, items: [{ productId: 'p1', quantity: 2, availability }] }
+            }).then(({ wrapper }) => {
+                expect(
+                    wrapper.get('[data-test=cart-checkout]').attributes('disabled')
+                ).toBeDefined();
+                expect(wrapper.find('[data-test=cart-lines-need-attention]').exists()).toBe(true);
+            })
+    );
+
+    it('leaves "Place order" live, and says nothing, when every line can be bought', () =>
+        mountCart().then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
+            expect(wrapper.find('[data-test=cart-lines-need-attention]').exists()).toBe(false);
         }));
 });
 

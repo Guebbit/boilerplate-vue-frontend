@@ -157,6 +157,7 @@ const priceStep = computed(() => 10 ** -pricePrecision.value);
 interface ProductEditForm {
     price?: number;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
@@ -251,6 +252,7 @@ activateAutoHydrate(
             ? {
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
+                  purchasable: adminProduct.value.purchasable ?? true,
                   requiresShipping: adminProduct.value.requiresShipping ?? true,
                   noWithdrawal: adminProduct.value.noWithdrawal ?? false,
                   weight: adminProduct.value.weight,
@@ -311,6 +313,7 @@ const submitForm = () => {
         const {
             price,
             active,
+            purchasable,
             requiresShipping,
             noWithdrawal,
             weight,
@@ -326,6 +329,7 @@ const submitForm = () => {
         return toRequestBody('UpdateProductByIdBody', {
             price,
             active,
+            purchasable,
             requiresShipping,
             noWithdrawal,
             weight,
@@ -517,6 +521,13 @@ const submitForm = () => {
                         v-model="form.active"
                         :label="t('product-edit-page.label-active')"
                         data-test="product-active-field"
+                    />
+                    <v-switch
+                        v-model="form.purchasable"
+                        :label="t('product-edit-page.label-purchasable')"
+                        :hint="t('product-edit-page.hint-purchasable')"
+                        persistent-hint
+                        data-test="product-purchasable-field"
                     />
                     <v-switch
                         v-model="form.requiresShipping"

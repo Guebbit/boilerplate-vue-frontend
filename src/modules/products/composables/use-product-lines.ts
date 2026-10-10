@@ -6,7 +6,7 @@
  */
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import type { Product } from '@types';
+import type { LineAvailability, Product } from '@types';
 import { useProductsStore } from '../store';
 
 /**
@@ -37,12 +37,40 @@ export interface ProductLines {
      * @param productId - The line's product id.
      */
     titleOf: (productId: string) => string;
+
+    /**
+     * The short label a line wears for its availability: "Sold out", "Not available right now",
+     * "No longer available", "Not enough in stock". Nothing for `in_stock`, which needs none.
+     *
+     * @param availability - The line's `availability` from the server.
+     * @returns The label, or `undefined` for a line that can be bought as it stands.
+     */
+    availabilityLabel: (availability: LineAvailability) => string | undefined;
+
+    /**
+     * Whether a line's product is gone for this shopper: its read has settled without it, which
+     * is how a hidden or deleted product looks from the outside. `false` while a read is out.
+     *
+     * @param productId - The line's product id.
+     */
+    isRemoved: (productId: string) => boolean;
 }
+
+/**
+ * The label key of every availability that has one, as literals so a translation check can see
+ * each of them.
+ */
+const LABEL_KEYS: Record<Exclude<LineAvailability, 'in_stock'>, string> = {
+    insufficient_stock: 'product-lines.insufficient-stock',
+    out_of_stock: 'product-lines.out-of-stock',
+    unavailable: 'product-lines.unavailable',
+    removed: 'product-lines.removed'
+};
 
 /**
  * The line-to-product join, bound to the products store and the active language.
  *
- * @returns Its three readers; call once in a component's setup.
+ * @returns Its readers; call once in a component's setup.
  */
 export const useProductLines = (): ProductLines => {
     const { t } = useI18n();
@@ -56,6 +84,9 @@ export const useProductLines = (): ProductLines => {
             productIds.length > 0 ? store.fetchProductsByIds(productIds) : Promise.resolve([]),
         productOf,
         titleOf: (productId) =>
-            productOf(productId)?.title ?? (loading.value ? '' : t('product-lines.unavailable'))
+            productOf(productId)?.title ?? (loading.value ? '' : t('product-lines.removed')),
+        availabilityLabel: (availability) =>
+            availability === 'in_stock' ? undefined : t(LABEL_KEYS[availability]),
+        isRemoved: (productId) => !loading.value && productOf(productId) === undefined
     };
 };

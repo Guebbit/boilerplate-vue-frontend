@@ -4,15 +4,15 @@
  * The cart a signed-out visitor sees: the lines they added, kept in their browser, priced by one
  * batched product read. It has no shipping, address or payment, because checkout needs an
  * account; what it offers instead is a way to sign in and come straight back here, where the same
- * lines are waiting in the real cart. A product the read no longer returns leaves the cart with a
- * toast and a note on the page.
+ * lines are waiting in the real cart. A product the read no longer returns (hidden or deleted) stays
+ * in the cart, marked "No longer available" with its Remove button: only the shopper drops a line,
+ * and a hidden product that comes back is still there.
  */
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
-import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { shopCurrency } from '@/infrastructure/shop-currency.ts';
@@ -42,11 +42,6 @@ const route = useRoute();
 const router = useRouter();
 
 /**
- * Toast notifications.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
  * The cart store: the guest list, and the writes that change it.
  */
 const cartStore = useCartStore();
@@ -59,12 +54,13 @@ const { guestLines, guestQuantity } = storeToRefs(cartStore);
 /**
  * The lines' product join: one batched read, then title and price off the products dictionary.
  */
-const { loadProducts, productOf, titleOf } = useProductLines();
+const { loadProducts, productOf, titleOf, availabilityLabel, isRemoved } = useProductLines();
 
 /**
- * How many lines this visit removed because their product is gone. The note on the page.
+ * Whether the last product read answered in full, in the language still on screen. Only then does
+ * a missing product mean "gone": a failed or cancelled read is no evidence of it.
  */
-const vanishedCount = ref(0);
+const readAnswered = ref(false);
 
 /**
  * The page's blocked state, for a product read that failed. The lines stay as they are.
@@ -108,31 +104,29 @@ const itemsTotal = computed(() =>
 );
 
 /**
- * Reads the products behind the lines and drops the ones that did not come back.
+ * Reads the products behind the lines, to price them. A line whose product did not come back is
+ * left alone: the template marks it removed, and only the shopper takes it out.
  *
- * Does nothing to the cart when the read fails, or when the language changed meanwhile: neither is
- * evidence that a product is gone.
- *
- * @returns A promise settling once the lines are priced and the vanished ones are gone.
+ * @returns A promise settling once the lines are priced.
  */
 const refreshLines = () => {
-    const productIds = guestLines.value.map(({ productId }) => productId);
     const languageAtStart = locale.value;
     clearLoadError();
-    return loadProducts(productIds)
+    readAnswered.value = false;
+    return loadProducts(guestLines.value.map(({ productId }) => productId))
         .then(() => {
-            if (locale.value !== languageAtStart) return;
-            const gone = productIds.filter((productId) => productOf(productId) === undefined);
-            if (gone.length === 0) return;
-            cartStore.removeGuestItems(gone);
-            vanishedCount.value += gone.length;
-            addMessage(
-                t('guest-cart-page.vanished-toast', { count: gone.length }, gone.length),
-                EToastType.WARNING
-            );
+            readAnswered.value = locale.value === languageAtStart;
         })
         .catch(reportLoadError);
 };
+
+/**
+ * Whether a line's product is gone for this visitor, as far as the last read can say.
+ *
+ * @param productId - The line's product.
+ * @returns `true` once a full read has answered without it.
+ */
+const isGone = (productId: string): boolean => readAnswered.value && isRemoved(productId);
 
 /**
  * Steps a line's quantity by one, within what a line may hold.
@@ -181,17 +175,6 @@ onMounted(refreshLines);
         </v-empty-state>
 
         <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <!-- Said once, in the page: the toast is gone in a few seconds. -->
-            <v-alert
-                v-if="vanishedCount > 0"
-                type="warning"
-                variant="tonal"
-                class="lg:col-span-2"
-                data-test="guest-cart-vanished"
-            >
-                {{ t('guest-cart-page.vanished-note', { count: vanishedCount }, vanishedCount) }}
-            </v-alert>
-
             <InlineErrorAlert
                 :message="loadError"
                 class="lg:col-span-2"
@@ -211,6 +194,17 @@ onMounted(refreshLines);
                     <!-- A status: the steppers below change it, and a reader should hear the new number. -->
                     <p class="mt-1 opacity-80" role="status">
                         {{ t('cart-page.label-quantity') }}: {{ line.quantity }}
+                        <v-chip
+                            v-if="isGone(line.productId)"
+                            size="small"
+                            color="warning"
+                            variant="tonal"
+                            label
+                            class="ml-2"
+                            data-test="guest-cart-line-removed"
+                        >
+                            {{ availabilityLabel('removed') }}
+                        </v-chip>
                     </p>
                     <p
                         v-if="productOf(line.productId)"

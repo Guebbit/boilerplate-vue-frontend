@@ -29,7 +29,8 @@ vi.mock('@api', async (importOriginal) => ({
  * @param ids - The saved product ids.
  * @returns The envelope the generated client resolves with.
  */
-const answer = (...ids: string[]) => answered({ items: ids.map((productId) => ({ productId })) });
+const answer = (...ids: string[]) =>
+    answered({ items: ids.map((productId) => ({ productId, availability: 'in_stock' as const })) });
 
 /**
  * Signs a person in or out and lets the stores' watchers run.

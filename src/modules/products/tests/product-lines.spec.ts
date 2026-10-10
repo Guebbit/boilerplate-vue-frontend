@@ -143,6 +143,25 @@ describe('useProductLines', () => {
         });
     });
 
+    it.each([
+        ['in_stock', undefined],
+        ['insufficient_stock', 'Not enough in stock'],
+        ['out_of_stock', 'Sold out'],
+        ['unavailable', 'Not available right now'],
+        ['removed', 'No longer available']
+    ] as const)('words availability %s as %s', (availability, label) => {
+        expect(mountLines().availabilityLabel(availability)).toBe(label);
+    });
+
+    it('tells a product the shopper cannot see from one that is loaded, once the read has settled', () => {
+        const lines = mountLines();
+
+        return lines.loadProducts(['p1', 'gone-1']).then(() => {
+            expect(lines.isRemoved('gone-1')).toBe(true);
+            expect(lines.isRemoved('p1')).toBe(false);
+        });
+    });
+
     it('sends no request for a list with no lines', () =>
         mountLines()
             .loadProducts([])

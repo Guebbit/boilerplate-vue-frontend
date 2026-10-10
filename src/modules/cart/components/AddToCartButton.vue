@@ -15,6 +15,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Product } from '@types';
+import { shelfStateOf } from '@/modules/products';
 import { useCartStore } from '../store';
 
 /**
@@ -60,10 +61,20 @@ const cartStore = useCartStore();
 const { loading } = storeToRefs(cartStore);
 
 /**
- * Whether the shelf holds nothing — the server's `inStock` flag, which every reader gets (the
- * exact counters are for stock readers only).
+ * The shelf as the shopper reads it, from the flags every reader gets (`purchasable`, `inStock`;
+ * the exact counters are for stock readers only). Off sale and sold out both hold the button back.
  */
-const outOfStock = computed(() => !product.inStock);
+const shelf = computed(() => shelfStateOf(product));
+
+/**
+ * The label the button wears: the action, or why it is not on offer.
+ */
+const label = computed(() => {
+    if (shelf.value === 'off-sale') return t('add-to-cart-button.off-sale');
+    return shelf.value === 'out-of-stock'
+        ? t('add-to-cart-button.out-of-stock')
+        : t('add-to-cart-button.label');
+});
 
 /**
  * The button's own blocked state — see docs/theory/request-flow.md.
@@ -104,11 +115,11 @@ const handleAddToCart = () => {
         <v-btn
             color="primary"
             data-test="add-to-cart"
-            :disabled="outOfStock || loading"
+            :disabled="shelf !== 'in-stock' || loading"
             @click="handleAddToCart"
         >
             <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />
-            {{ outOfStock ? t('add-to-cart-button.out-of-stock') : t('add-to-cart-button.label') }}
+            {{ label }}
         </v-btn>
         <InlineErrorAlert :message="error" data-test="add-to-cart-error" />
     </div>

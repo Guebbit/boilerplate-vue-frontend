@@ -2,6 +2,7 @@
     "add-to-cart-button": {
         "label": "Add to cart",
         "out-of-stock": "Out of stock",
+        "off-sale": "Not available right now",
         "success": "Product added to cart.",
         "guest-full": "Your cart already holds as many different products as it can. Remove one, or sign in, to add another."
     },
@@ -28,12 +29,15 @@
         "error-total-changed-generic": "The total changed since this page showed it. Check it and place the order again.",
         "error-insufficient-stock": "Some items in your cart are no longer available in the quantity you asked for.",
         "shortfall-line": "{title}: you asked for {requested}, and there is not enough in stock",
+        "shortfall-line-out-of-stock": "{title}: sold out",
+        "shortfall-line-unavailable": "{title}: not available right now",
         "error-address-not-found": "We couldn't find the shipping address for this order — check your saved addresses and try again.",
         "error-billing-address-required": "Every order needs a billing address for its invoice — choose or add one to continue.",
         "error-shipping-method-weight": "Your basket is too heavy for the chosen shipping method — pick another one.",
         "error-shipping-method-generic": "That shipping method could not be set — pick another one.",
         "error-ship-to-country-not-supported": "We don't ship to that address's country — choose or add an address in a country we deliver to.",
         "error-product-unavailable": "Some products in your cart are no longer available — remove them to check out.",
+        "error-line-needs-attention": "Some lines cannot be bought right now: fix them to check out.",
         "error-open-order-limit": "You already have unpaid orders open. Pay or cancel one of them before placing another.",
         "open-order-link": "Unpaid order {n}",
         "button-decrease": "Decrease quantity",
@@ -48,9 +52,10 @@
         "merge-alert-dismiss": "Dismiss",
         "merge-reason-summed": "Your cart already held some of it, so the two were added together.",
         "merge-reason-capped": "That is the most one line can hold.",
-        "merge-reason-unavailable": "It is no longer available, so it was not added.",
+        "merge-reason-removed": "It is no longer available, so it was not added.",
         "stock-short-marker": "Not enough in stock",
         "merge-short-advice": "Lower the quantity before checkout.",
+        "merge-off-sale-advice": "It is not available right now. Remove it, or wait until it is back on sale: you cannot check out with it in the cart.",
         "error-guest-merge": "We could not add the cart you built before signing in to your account. It stays on this device while you are signed in, is tried again when the page next loads, and is cleared when you sign out.",
         "error-guest-merge-dropped": "We could not add the cart you built before signing in to your account, and it cannot be fixed by trying again, so it was cleared from this device.",
         "error-cart-empty": "This cart is already empty. If you just placed an order it went through: check your orders.",
@@ -59,9 +64,7 @@
     },
     "guest-cart-page": {
         "intro": "This cart is saved on this device. Sign in to check out: what is in it is added to your account's cart.",
-        "button-sign-in": "Sign in to check out",
-        "vanished-toast": "A product in your cart is no longer available and was removed. | {count} products in your cart are no longer available and were removed.",
-        "vanished-note": "A product that is no longer available was removed from your cart. | {count} products that are no longer available were removed from your cart."
+        "button-sign-in": "Sign in to check out"
     },
     "navigation": {
         "label-cart": "Cart"

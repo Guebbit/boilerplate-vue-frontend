@@ -1,7 +1,7 @@
 /**
  * @module
  * The cart a guest sees: lines priced by one batched product read, steppers that change a list in
- * the browser, a way to sign in and come back, and what happens when a product has gone. Mounted
+ * the browser, a way to sign in and come back, and what happens when a product has gone (the line stays, marked). Mounted
  * against a real router (for the `continue` link) with the products read stubbed.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,7 +10,7 @@ import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
 import axe from 'axe-core';
-import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import GuestCart from '../components/GuestCart.vue';
 import { MAX_GUEST_LINE_QUANTITY } from '../domain';
 import { useCartStore } from '../store';
@@ -274,7 +274,7 @@ describe('clearing the cart', () => {
 });
 
 describe('a product that is no longer there', () => {
-    it('leaves the cart with a toast and a note on the page, and the rest stays', async () => {
+    it('keeps the line, marked no longer available, with its Remove button; the rest is untouched', async () => {
         const { wrapper: page, cart } = await mountPage(
             [
                 ['gone', 2],
@@ -283,17 +283,25 @@ describe('a product that is no longer there', () => {
             [aProduct('kept', 10)]
         );
 
-        expect(cart.guestLines).toEqual([{ productId: 'kept', quantity: 1 }]);
-        expect(page.get('[data-test=guest-cart-vanished]').text()).toContain(
-            'A product that is no longer available was removed'
+        expect(cart.guestLines).toEqual([
+            { productId: 'gone', quantity: 2 },
+            { productId: 'kept', quantity: 1 }
+        ]);
+        const [goneLine, keptLine] = page.findAll('[data-test=guest-cart-item]');
+        expect(goneLine?.get('[data-test=guest-cart-line-removed]').text()).toBe(
+            'No longer available'
         );
-        const toast = useNotificationsStore().messages.find(({ message }) =>
-            message.includes('no longer available')
-        );
-        expect(toast?.type).toBe(EToastType.WARNING);
+        expect(goneLine?.find('[data-test=guest-cart-remove]').exists()).toBe(true);
+        expect(keptLine?.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
     });
 
-    it('counts several, in the plural', async () => {
+    it('raises no toast: the shopper decides what leaves the cart', async () => {
+        await mountPage([['gone', 1]], []);
+
+        expect(useNotificationsStore().messages).toEqual([]);
+    });
+
+    it('marks every missing product, one line each', async () => {
         const { wrapper: page } = await mountPage(
             [
                 ['gone1', 1],
@@ -303,15 +311,21 @@ describe('a product that is no longer there', () => {
             [aProduct('kept', 10)]
         );
 
-        expect(page.get('[data-test=guest-cart-vanished]').text()).toContain(
-            '2 products that are no longer available were removed'
-        );
+        expect(page.findAll('[data-test=guest-cart-line-removed]')).toHaveLength(2);
     });
 
-    it('says nothing when every product came back', async () => {
+    it('lets the shopper remove the marked line', async () => {
+        const { wrapper: page, cart } = await mountPage([['gone', 1]], []);
+
+        await page.get('[data-test=guest-cart-remove]').trigger('click');
+
+        expect(cart.guestLines).toEqual([]);
+    });
+
+    it('marks nothing when every product came back', async () => {
         const { wrapper: page } = await mountPage([['p1', 1]]);
 
-        expect(page.find('[data-test=guest-cart-vanished]').exists()).toBe(false);
+        expect(page.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
     });
 
     it('does not take a failed read for a vanished product: the lines stay, with an error', async () => {
@@ -321,17 +335,19 @@ describe('a product that is no longer there', () => {
 
         expect(cart.guestLines).toHaveLength(1);
         expect(page.get('[data-test=guest-cart-error]').text()).toContain('network down');
+        expect(page.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
     });
 
     it('does not take a read the language switch cancelled for a vanished product', async () => {
         const read = Promise.withResolvers<undefined>();
-        const { cart } = await mountPage([['p1', 1]], [], () => read.promise);
+        const { cart, wrapper: page } = await mountPage([['p1', 1]], [], () => read.promise);
 
         await loadLocale('it');
         read.resolve(undefined);
         await flushPromises();
 
         expect(cart.guestLines).toHaveLength(1);
+        expect(page.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
         await loadLocale('en');
     });
 });

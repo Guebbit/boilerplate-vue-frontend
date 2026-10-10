@@ -112,7 +112,7 @@ sequenceDiagram
     G->>S: open /cart
     S->>API: GET /products?id=a&id=b (price the lines)
     API-->>S: the products still visible
-    S-->>G: lines, and a toast + note for any that vanished
+    S-->>G: lines, a marker on any whose product vanished
     G->>API: sign in (continue=/cart)
     S->>API: POST /cart/merge (every line, one call, Idempotency-Key)
     API-->>S: the merged cart + one result per line
@@ -138,14 +138,15 @@ When a session that may shop appears, the shell's badge accessor calls `seedAfte
 guest cart it sends every line in one `POST /cart/merge`, which adds each by the rule of
 `POST /cart`: a product already in the cart **grows** by the line's quantity. The answer is the
 merged cart and **one result per submitted line**:
-`{ productId, requested, resulting, reason?, insufficientStock }`. `reason` is absent when the line
-landed as chosen, and otherwise one of `summed`, `capped` or `unavailable`. A line the cart cannot
-take is not a failure: the call still answers 200, and for the lines that were `unavailable` the
+`{ productId, requested, resulting, reason?, availability }`. `reason` is absent when the line
+landed as chosen, and otherwise one of `summed`, `capped` or `removed`. A line the cart cannot
+take is not a failure: the call still answers 200, and for the lines that were `removed` the
 server also writes one `notifications.cart-merge-refused` notification, which the
 [bell](./notifications.md) shows. Without a guest cart it reads the summary for the badge, as before.
 
 **Stock is checked, never enforced, and never revealed.** A line the shelf does not cover is still
-added, at the summed quantity, and carries `insufficientStock: true`. The merge does not lower it,
+added, at the summed quantity, and carries an `availability` that says why (`insufficient_stock`,
+`out_of_stock`, or `unavailable` for a product taken off sale). The merge does not lower it,
 and no answer says how many are for sale: the client never needs that number and never has it.
 Checkout is where a short line is refused (`CART_INSUFFICIENT_STOCK`).
 
@@ -185,13 +186,14 @@ What the merge changed is told **once, on the cart page**, in an inline closable
 lines (`components/MergeReportAlert.vue`). It is neither a toast (it must outlive a few seconds) nor
 a bell notification (it is tied to this screen and goes with it).
 
-It lists three kinds of line (`mergeReportKind`):
+It lists four kinds of line (`mergeReportKind`):
 
-| Kind      | When                                               | What it says                                                                         |
-| --------- | -------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `changed` | a `reason` of `summed` or `capped`                 | the quantities, and the reason in plain words                                        |
-| `short`   | `insufficientStock`, and the product is still sold | the quantities, a "Not enough in stock" marker, "Lower the quantity before checkout" |
-| `gone`    | a `reason` of `unavailable`                        | the quantities, and "no longer available, so it was not added"                       |
+| Kind       | When                                                     | What it says                                                                         |
+| ---------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `changed`  | a `reason` of `summed` or `capped`                       | the quantities, and the reason in plain words                                        |
+| `short`    | `availability` is `insufficient_stock` or `out_of_stock` | the quantities, a "Not enough in stock" marker, "Lower the quantity before checkout" |
+| `off-sale` | `availability` is `unavailable`                          | the quantities, a "Not available right now" marker, "Remove it, or wait"             |
+| `gone`     | a `reason` of `removed`                                  | the quantities, and "no longer available, so it was not added"                       |
 
 Each line names the product in the reader's language, the quantity the guest chose and the quantity
 the cart holds now. The title comes from the same product lookup the lines use; a product that
@@ -217,13 +219,22 @@ stateDiagram-v2
   page's quantities and total are live regions already, and the alert adds exactly one more.
 - A short line is marked in words, never by colour alone, and never prints a stock number.
 
-### A short line on the cart page
+### A line's availability on the cart page
 
-Every cart answer (`GET /cart` and every write) carries `insufficientStock` on each line. The page
-shows a small "Not enough in stock" marker beside the quantity of a flagged line. The marker is
-text, and it sits inside the quantity's own live region, so a line turning short is announced
-without a live region per row. The quantity on screen is never changed for it: lowering the line,
-or removing it, is the shopper's call. It is a flag, never the number left.
+Every cart answer (`GET /cart` and every write) carries an `availability` on each line, and the
+page prints one marker beside the quantity of any line that is not `in_stock`:
+
+| `availability`       | Marker                    |
+| -------------------- | ------------------------- |
+| `insufficient_stock` | "Not enough in stock"     |
+| `out_of_stock`       | "Sold out"                |
+| `unavailable`        | "Not available right now" |
+| `removed`            | "No longer available"     |
+
+The marker is text, and it sits inside the quantity's own live region, so a line turning short is
+announced without a live region per row. The quantity on screen is never changed for it: lowering
+the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is
+not `in_stock`, matching checkout, which refuses all four. It is a name, never the number left.
 
 ### The stock poll
 
@@ -365,10 +376,11 @@ fingerprint, so that press is a new call under a new key.
 
 ### A product that is gone
 
-The page prices its lines with one batched read. A product that does not come back (deleted,
-deactivated) leaves the cart with a toast, and a note on the page says so for the rest of the visit.
-A failed read removes nothing, and neither does a read that a language switch cancelled: neither is
-evidence that a product is gone.
+The page prices its lines with one batched read. A product that does not come back (hidden or
+deleted) keeps its line, marked "No longer available" beside its Remove button: only the shopper
+drops a line, and a hidden product that comes back is still in the cart. A failed read marks
+nothing, and neither does a read that a language switch cancelled: neither is evidence that a
+product is gone. At sign-in the merge reports such a line as `removed`.
 
 ## State
 

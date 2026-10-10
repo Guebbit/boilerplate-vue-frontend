@@ -3,7 +3,7 @@
  * @module
  * The cart page's merge alert: after a guest cart is merged into the account's, one inline,
  * closable alert lists the lines that need a look: quantities that are not what the guest chose,
- * lines the stock does not cover, and products that could not be added. Each names the product,
+ * lines the stock does not cover, products taken off sale, and products that could not be added. Each names the product,
  * the quantity asked for and the quantity the cart holds now; a short line is marked and told to
  * be lowered before checkout, and never says how many are for sale (the server does not tell).
  * Reads the cart store's `mergeReport` and renders nothing while it is empty. Not a toast and not
@@ -37,7 +37,7 @@ const { mergeReport } = storeToRefs(cartStore);
  * The existing product join. A product the merge could not take at all is not in the cart, so
  * the cart page's own read does not cover it; this component reads what its lines need.
  */
-const { loadProducts, productOf } = useProductLines();
+const { loadProducts, productOf, availabilityLabel } = useProductLines();
 
 /**
  * Each reason's sentence, as a literal key so a translation check can see every one.
@@ -45,7 +45,7 @@ const { loadProducts, productOf } = useProductLines();
 const REASON_KEYS: Record<MergeLineReason, string> = {
     summed: 'cart-page.merge-reason-summed',
     capped: 'cart-page.merge-reason-capped',
-    unavailable: 'cart-page.merge-reason-unavailable'
+    removed: 'cart-page.merge-reason-removed'
 };
 
 /**
@@ -121,6 +121,18 @@ watch(
                         {{ t('cart-page.stock-short-marker') }}
                     </v-chip>
                     {{ t('cart-page.merge-short-advice') }}
+                </template>
+                <template v-else-if="mergeReportKind(line) === 'off-sale'">
+                    <v-chip
+                        size="small"
+                        color="warning"
+                        variant="tonal"
+                        label
+                        data-test="cart-merge-report-off-sale"
+                    >
+                        {{ availabilityLabel('unavailable') }}
+                    </v-chip>
+                    {{ t('cart-page.merge-off-sale-advice') }}
                 </template>
             </li>
         </ul>

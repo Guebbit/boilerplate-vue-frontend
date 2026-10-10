@@ -45,7 +45,7 @@ import { answered, type Answer } from '../../../../tests/support/unit/cart-fixtu
  * The cart every read answers with: one line of two units.
  */
 const CART = {
-    items: [{ productId: 'p1', quantity: 2, insufficientStock: false }],
+    items: [{ productId: 'p1', quantity: 2, availability: 'in_stock' }],
     summary: {
         itemsCount: 1,
         totalQuantity: 2,

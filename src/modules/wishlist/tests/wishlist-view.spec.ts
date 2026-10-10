@@ -24,6 +24,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import type { LineAvailability } from '@types';
 
 wireModulesIntoCore();
 
@@ -55,11 +56,17 @@ const router = createRouter({
  * @param productIds - The saved lines, in order.
  * @returns The mounted wrapper.
  */
-const mountWishlist = (productIds: string[]) => {
+const mountWishlist = (
+    productIds: string[],
+    availabilities: Record<string, LineAvailability> = {}
+) => {
     const wishlist = useWishlistStore();
     const products = useProductsStore();
 
-    wishlist.items = productIds.map((productId) => ({ productId }));
+    wishlist.items = productIds.map((productId) => ({
+        productId,
+        availability: availabilities[productId] ?? 'in_stock'
+    }));
     products.addProduct({
         id: PRODUCT_ID,
         title: PRODUCT_TITLE,
@@ -158,5 +165,44 @@ describe('the move-to-cart button and the cart key', () => {
 
         expect(wrapper.find('[data-test=wishlist-move-to-cart]').exists()).toBe(false);
         expect(wrapper.find('[data-test=wishlist-item]').exists()).toBe(true);
+    });
+});
+
+describe('each line wears its availability', () => {
+    it('shows no marker for a line that can be bought', () => {
+        const wrapper = mountWishlist([PRODUCT_ID]);
+
+        expect(wrapper.find('[data-test=wishlist-line-availability]').exists()).toBe(false);
+        expect(
+            wrapper.get('[data-test=wishlist-move-to-cart]').attributes('disabled')
+        ).toBeUndefined();
+    });
+
+    it.each([
+        ['out_of_stock', 'Sold out'],
+        ['unavailable', 'Not available right now']
+    ] as const)(
+        'words a %s line as "%s" and still lets it move to the cart',
+        (availability, words) => {
+            const wrapper = mountWishlist([PRODUCT_ID], { [PRODUCT_ID]: availability });
+
+            expect(wrapper.get('[data-test=wishlist-line-availability]').text()).toBe(words);
+            // Off sale moves like sold out: the cart accepts both.
+            expect(
+                wrapper.get('[data-test=wishlist-move-to-cart]').attributes('disabled')
+            ).toBeUndefined();
+        }
+    );
+
+    it('words a removed line, and is the only one that cannot move to the cart', () => {
+        const wrapper = mountWishlist([PRODUCT_ID], { [PRODUCT_ID]: 'removed' });
+
+        expect(wrapper.get('[data-test=wishlist-line-availability]').text()).toBe(
+            'No longer available'
+        );
+        expect(
+            wrapper.get('[data-test=wishlist-move-to-cart]').attributes('disabled')
+        ).toBeDefined();
+        expect(wrapper.get('[data-test=wishlist-remove]').attributes('disabled')).toBeUndefined();
     });
 });

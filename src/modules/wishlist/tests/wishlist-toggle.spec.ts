@@ -44,7 +44,7 @@ const signIn = () => {
  */
 const mountToggle = (saved: string[]) => {
     const wishlist = useWishlistStore();
-    wishlist.items = saved.map((productId) => ({ productId }));
+    wishlist.items = saved.map((productId) => ({ productId, availability: 'in_stock' as const }));
     // Decoration on the page, not under test — no transport to answer a real fetch here.
     vi.spyOn(wishlist, 'ensureWishlist').mockResolvedValue(wishlist.items);
     return {

@@ -73,6 +73,17 @@ describe('ProductCard — what a shopper reads', () => {
         expect(wrapper.get('[data-test=product-card-availability]').text()).toBe('Out of stock');
     });
 
+    it('marks an off-sale product as not available, ahead of its stock', () => {
+        const wrapper = mountCard(aProduct({ purchasable: false, inStock: true }));
+
+        expect(wrapper.get('[data-test=product-card-availability]').text()).toBe(
+            'Not available right now'
+        );
+        expect(wrapper.get('[data-test=product-card-availability]').attributes('data-shelf')).toBe(
+            'off-sale'
+        );
+    });
+
     it.each([[3], [undefined]])(
         'marks an in-stock product with %j available as in stock — the flag decides, not the count',
         (available) => {

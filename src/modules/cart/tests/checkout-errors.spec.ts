@@ -101,8 +101,18 @@ describe('classifyCheckoutError', () => {
                     message: 'x',
                     details: {
                         lines: [
-                            { productId: 'p1', title: 'Widget', requested: 5 },
-                            { productId: 'p2', title: 'Gadget', requested: 1 }
+                            {
+                                productId: 'p1',
+                                title: 'Widget',
+                                requested: 5,
+                                availability: 'insufficient_stock'
+                            },
+                            {
+                                productId: 'p2',
+                                title: 'Gadget',
+                                requested: 1,
+                                availability: 'unavailable'
+                            }
                         ]
                     }
                 }
@@ -112,8 +122,18 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({
             kind: 'insufficient-stock',
             lines: [
-                { productId: 'p1', title: 'Widget', requested: 5 },
-                { productId: 'p2', title: 'Gadget', requested: 1 }
+                {
+                    productId: 'p1',
+                    title: 'Widget',
+                    requested: 5,
+                    availability: 'insufficient_stock'
+                },
+                {
+                    productId: 'p2',
+                    title: 'Gadget',
+                    requested: 1,
+                    availability: 'unavailable'
+                }
             ]
         });
     });

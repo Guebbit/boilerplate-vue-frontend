@@ -177,6 +177,7 @@ export const useProductsStore = defineStore('products', () => {
                     // forces `active: true` at the API regardless of what this sends — see
                     // `SearchProductsRequest.active`'s own doc in the contract.
                     active: filters.active,
+                    purchasable: filters.purchasable,
                     deleted: filters.deleted
                 }).then((response) => ({
                     items: response.data.items,

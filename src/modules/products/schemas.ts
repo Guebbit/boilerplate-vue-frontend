@@ -84,6 +84,7 @@ export const productsSchema = z.object({
     id: z.string().nullish(),
     price: productsPriceSchema,
     active: z.boolean().nullish(),
+    purchasable: z.boolean().nullish(),
     requiresShipping: z.boolean().nullish(),
     noWithdrawal: z.boolean().nullish(),
     weight: z.number().nullish(),

@@ -103,6 +103,21 @@ describe('the shelf', () => {
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Out of stock');
     });
 
+    it('blocks buying what is off sale, and says so instead of "Out of stock"', () => {
+        signIn();
+        const wrapper = mountButton({ ...IN_STOCK, purchasable: false });
+
+        expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
+        expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
+    });
+
+    it('ranks off sale above a sold-out shelf', () => {
+        signIn();
+        const wrapper = mountButton({ ...IN_STOCK, purchasable: false, inStock: false });
+
+        expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
+    });
+
     it('allows buying what is in stock', () => {
         signIn();
 
@@ -188,7 +203,7 @@ describe('adding', () => {
         // store. A client that computed `existing + 1` from it would send 6.
         cart.cart = {
             ...EMPTY_CART,
-            items: [{ productId: IN_STOCK.id, quantity: 5, insufficientStock: false }]
+            items: [{ productId: IN_STOCK.id, quantity: 5, availability: 'in_stock' }]
         };
         const addSpy = vi.spyOn(cart, 'addCartItem').mockResolvedValue(EMPTY_CART);
 

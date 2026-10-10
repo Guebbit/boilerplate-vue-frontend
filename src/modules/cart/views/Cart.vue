@@ -81,7 +81,7 @@ const {
  * The lines' product join: one batched read, then title and price off the products dictionary —
  * the record the product page shows, not a copy this store keeps.
  */
-const { loadProducts, productOf, titleOf } = useProductLines();
+const { loadProducts, productOf, titleOf, availabilityLabel } = useProductLines();
 
 /**
  * Cart store state, reactive. `loading` is the in-flight guard for checkout and clear: both
@@ -203,11 +203,20 @@ watch([notes, paymentMethodId, addressId], () => {
 });
 
 /**
- * Whether checkout may run yet: a physical basket needs a method, and — only when that method
- * demands it — an address. Reads the cart's own `shipping.required` flag rather than
- * re-deriving it from the lines: the server already decided.
+ * Whether any line cannot be bought as it stands (short, sold out, off sale, removed). Checkout
+ * refuses every one of those, so "Place order" waits until the shopper has fixed them.
+ */
+const linesNeedAttention = computed(() =>
+    cartItems.value.some(({ availability }) => availability !== 'in_stock')
+);
+
+/**
+ * Whether checkout may run yet: every line buyable, a physical basket with a method, and — only
+ * when that method demands it — an address. Reads the cart's own `shipping.required` flag rather
+ * than re-deriving it from the lines: the server already decided.
  */
 const canCheckout = computed(() => {
+    if (linesNeedAttention.value) return false;
     // Billing is asked on its own when nothing ships to an address: an entry must be chosen
     // (the picker pre-selects the default, so this only holds back an empty book).
     if (!shipsToAddress.value && billingAddressId.value === undefined) return false;
@@ -224,10 +233,24 @@ const canCheckout = computed(() => {
 const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
 
 /**
- * The lines a `CART_PRODUCT_UNAVAILABLE` refusal named — a product removed or deactivated since
+ * The lines a `CART_PRODUCT_UNAVAILABLE` refusal named — a product removed or hidden since
  * the basket was built. Empty whenever the last checkout did not end in this refusal.
  */
 const unavailableLines = ref<UnavailableCartLine[]>([]);
+
+/**
+ * The sentence for one refused line: fewer left, none left, or off sale. Literal keys, so a
+ * translation check can see each of them.
+ *
+ * @param line - A line the stock refusal named.
+ * @returns The line's message.
+ */
+const shortfallText = ({ title, requested, availability }: CheckoutShortfallLine): string => {
+    if (availability === 'out_of_stock')
+        return t('cart-page.shortfall-line-out-of-stock', { title });
+    if (availability === 'unavailable') return t('cart-page.shortfall-line-unavailable', { title });
+    return t('cart-page.shortfall-line', { title, requested });
+};
 
 /**
  * The unpaid orders `CART_OPEN_ORDER_LIMIT` named, as links the shopper can follow to pay or
@@ -519,7 +542,7 @@ onBeforeUnmount(() => {
 });
 
 /**
- * Keeps each line's `insufficientStock` flag fresh while this page is open, when the deployment
+ * Keeps each line's `availability` fresh while this page is open, when the deployment
  * turned the poll on (`VITE_CART_STOCK_POLL_SECONDS`). Checkout is this same page.
  */
 useCartStockPoll();
@@ -576,12 +599,7 @@ onMounted(() =>
                         :key="line.productId"
                         data-test="checkout-shortfall-line"
                     >
-                        {{
-                            t('cart-page.shortfall-line', {
-                                title: line.title,
-                                requested: line.requested
-                            })
-                        }}
+                        {{ shortfallText(line) }}
                     </li>
                 </ul>
             </v-alert>
@@ -630,6 +648,20 @@ onMounted(() =>
                 </ul>
             </v-alert>
 
+            <!--
+                "Place order" is held back while any line cannot be bought; this says why, so the
+                shopper is not left with a dead button and no reason.
+            -->
+            <v-alert
+                v-if="linesNeedAttention"
+                type="info"
+                variant="tonal"
+                data-test="cart-lines-need-attention"
+                class="lg:col-span-2"
+            >
+                {{ t('cart-page.error-line-needs-attention') }}
+            </v-alert>
+
             <InlineErrorAlert
                 :message="lineActionError"
                 class="lg:col-span-2"
@@ -648,7 +680,7 @@ onMounted(() =>
                     </h2>
                     <!--
                         A status: the steppers below change it, and a reader should hear the new number.
-                        The short marker lives inside it, so a line turning short is announced
+                        The availability marker lives inside it, so a line turning short is announced
                         without a live region of its own per row. Text, not colour alone.
                     -->
                     <p class="mt-1" role="status">
@@ -656,15 +688,16 @@ onMounted(() =>
                             {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
                         </span>
                         <v-chip
-                            v-if="item.insufficientStock"
+                            v-if="availabilityLabel(item.availability)"
                             size="small"
                             color="warning"
                             variant="tonal"
                             label
                             class="ml-2"
-                            data-test="cart-line-short"
+                            :data-availability="item.availability"
+                            data-test="cart-line-availability"
                         >
-                            {{ t('cart-page.stock-short-marker') }}
+                            {{ availabilityLabel(item.availability) }}
                         </v-chip>
                     </p>
                     <!-- Absent until the product read has answered for this line — no price

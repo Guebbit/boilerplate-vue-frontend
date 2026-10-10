@@ -73,6 +73,7 @@ void fetchActiveLocales();
 interface ProductCreateForm {
     price?: number;
     active?: boolean;
+    purchasable?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
@@ -133,6 +134,7 @@ const {
     initial: {
         price: 0,
         active: true,
+        purchasable: true,
         requiresShipping: true,
         noWithdrawal: false,
         onHand: productsOnHandDefault,
@@ -355,6 +357,13 @@ const submitForm = () => {
                 v-model="form.active"
                 :label="t('product-create-page.label-active')"
                 data-test="product-active-field"
+            />
+            <v-switch
+                v-model="form.purchasable"
+                :label="t('product-create-page.label-purchasable')"
+                :hint="t('product-create-page.hint-purchasable')"
+                persistent-hint
+                data-test="product-purchasable-field"
             />
             <v-switch
                 v-model="form.requiresShipping"

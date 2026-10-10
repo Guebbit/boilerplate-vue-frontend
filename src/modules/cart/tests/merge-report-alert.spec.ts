@@ -67,7 +67,7 @@ const mountAlert = async (report: MergeReportLine[]) => {
  */
 const aLine = (
     line: Partial<MergeReportLine> & Pick<MergeReportLine, 'productId'>
-): MergeReportLine => ({ requested: 2, resulting: 2, insufficientStock: false, ...line });
+): MergeReportLine => ({ requested: 2, resulting: 2, availability: 'in_stock', ...line });
 
 /**
  * The text of every listed line.
@@ -103,7 +103,12 @@ describe('what it shows', () => {
     it('lists each line with its product, what was asked and what the cart holds', async () => {
         await mountAlert([
             aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' }),
-            aLine({ productId: 'p2', requested: 4, resulting: 4, insufficientStock: true })
+            aLine({
+                productId: 'p2',
+                requested: 4,
+                resulting: 4,
+                availability: 'insufficient_stock'
+            })
         ]);
 
         const texts = lineTexts();
@@ -115,7 +120,7 @@ describe('what it shows', () => {
     it.each([
         ['summed', 'already held some of it'],
         ['capped', 'the most one line can hold'],
-        ['unavailable', 'no longer available']
+        ['removed', 'no longer available']
     ] as const)('says why in plain words for a line that is %s', async (reason, words) => {
         await mountAlert([aLine({ productId: 'p1', requested: 3, resulting: 3, reason })]);
 
@@ -126,7 +131,12 @@ describe('what it shows', () => {
 
     it('marks a short line and tells the shopper to lower it, without any stock number', async () => {
         await mountAlert([
-            aLine({ productId: 'p2', requested: 4, resulting: 4, insufficientStock: true })
+            aLine({
+                productId: 'p2',
+                requested: 4,
+                resulting: 4,
+                availability: 'insufficient_stock'
+            })
         ]);
 
         const line = wrapper?.get('[data-test=cart-merge-report-line]');
@@ -144,7 +154,7 @@ describe('what it shows', () => {
                 requested: 2,
                 resulting: 5,
                 reason: 'summed',
-                insufficientStock: true
+                availability: 'insufficient_stock'
             })
         ]);
 
@@ -159,8 +169,8 @@ describe('what it shows', () => {
                 productId: 'gone',
                 requested: 1,
                 resulting: 0,
-                reason: 'unavailable',
-                insufficientStock: true
+                reason: 'removed',
+                availability: 'insufficient_stock'
             })
         ]);
 
@@ -183,7 +193,7 @@ describe('what it shows', () => {
     it('reads the products it names, including one the cart no longer holds', async () => {
         const { read } = await mountAlert([
             aLine({ productId: 'p1', requested: 2, resulting: 2, reason: 'summed' }),
-            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'unavailable' })
+            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);
 
         expect(read).toHaveBeenCalledWith(['p1', 'gone']);
@@ -212,7 +222,12 @@ describe('what it shows', () => {
         i18n.global.locale.value = 'it';
 
         await mountAlert([
-            aLine({ productId: 'p2', requested: 4, resulting: 4, insufficientStock: true })
+            aLine({
+                productId: 'p2',
+                requested: 4,
+                resulting: 4,
+                availability: 'insufficient_stock'
+            })
         ]);
 
         expect(wrapper?.get('[data-test=cart-merge-report-short]').text()).toBe(
@@ -224,7 +239,7 @@ describe('what it shows', () => {
 
     it('falls back to a generic label for a product the lookup cannot return', async () => {
         await mountAlert([
-            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'unavailable' })
+            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);
 
         expect(lineTexts()[0]).toContain('A product: you chose 1, your cart now has 0.');
@@ -253,7 +268,12 @@ describe('what it shows', () => {
         ]);
 
         cart.mergeReport = [
-            aLine({ productId: 'p2', requested: 9, resulting: 9, insufficientStock: true })
+            aLine({
+                productId: 'p2',
+                requested: 9,
+                resulting: 9,
+                availability: 'insufficient_stock'
+            })
         ];
         await flushPromises();
 
@@ -281,8 +301,13 @@ describe('for assistive technology', () => {
     it('is exactly one polite live region, however many lines it lists', async () => {
         await mountAlert([
             aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' }),
-            aLine({ productId: 'p2', requested: 4, resulting: 4, insufficientStock: true }),
-            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'unavailable' })
+            aLine({
+                productId: 'p2',
+                requested: 4,
+                resulting: 4,
+                availability: 'insufficient_stock'
+            }),
+            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);
 
         const root = wrapper?.get('[data-test=cart-merge-report]');
@@ -305,8 +330,13 @@ describe('for assistive technology', () => {
     it('breaks no accessibility rule axe can check without a rendered page', async () => {
         await mountAlert([
             aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' }),
-            aLine({ productId: 'p2', requested: 4, resulting: 4, insufficientStock: true }),
-            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'unavailable' })
+            aLine({
+                productId: 'p2',
+                requested: 4,
+                resulting: 4,
+                availability: 'insufficient_stock'
+            }),
+            aLine({ productId: 'gone', requested: 1, resulting: 0, reason: 'removed' })
         ]);
 
         // https://github.com/dequelabs/axe-core/blob/master/doc/API.md#api-name-axerun

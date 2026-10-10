@@ -118,7 +118,7 @@ describe('answers that arrive after the person they were for is gone', () => {
                         requested: 2,
                         resulting: 5,
                         reason: 'summed',
-                        insufficientStock: false
+                        availability: 'in_stock'
                     }
                 ]
             })

@@ -3869,6 +3869,7 @@ export const ListProductsQueryParams = zod.strictObject({
     maxPrice: zod.number().min(listProductsQueryMaxPriceMin).optional(),
     title: zod.string().max(listProductsQueryTitleMax).optional(),
     active: zod.boolean().optional(),
+    purchasable: zod.boolean().optional(),
     deleted: zod.boolean().optional()
 });
 export const listProductsResponseDataItemsItemIdMax = 64;
@@ -3878,6 +3879,7 @@ export const listProductsResponseDataItemsItemSkuMax = 64;
 export const listProductsResponseDataItemsItemOnHandMin = 0;
 export const listProductsResponseDataItemsItemReservedMin = 0;
 export const listProductsResponseDataItemsItemAvailableMin = 0;
+export const listProductsResponseDataItemsItemPurchasableDefault = true;
 export const listProductsResponseDataItemsItemRequiresShippingDefault = true;
 export const listProductsResponseDataItemsItemNoWithdrawalDefault = false;
 export const listProductsResponseDataItemsItemWeightMin = 0;
@@ -3915,6 +3917,9 @@ export const ListProductsResponse = zod.strictObject({
                     .optional(),
                 description: zod.string().optional(),
                 active: zod.boolean().optional(),
+                purchasable: zod
+                    .boolean()
+                    .default(listProductsResponseDataItemsItemPurchasableDefault),
                 requiresShipping: zod
                     .boolean()
                     .default(listProductsResponseDataItemsItemRequiresShippingDefault),
@@ -3958,6 +3963,7 @@ export const createProductBodySkuMax = 64;
 export const createProductBodyOnHandDefault = 0;
 export const createProductBodyOnHandMin = 0;
 export const createProductBodyActiveDefault = true;
+export const createProductBodyPurchasableDefault = true;
 export const createProductBodyRequiresShippingDefault = true;
 export const createProductBodyNoWithdrawalDefault = false;
 export const createProductBodyWeightMin = 0;
@@ -3983,6 +3989,7 @@ export const CreateProductBody = zod.strictObject({
     sku: zod.string().min(1).max(createProductBodySkuMax).optional(),
     onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
     active: zod.boolean().default(createProductBodyActiveDefault),
+    purchasable: zod.boolean().default(createProductBodyPurchasableDefault),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
@@ -3997,6 +4004,7 @@ export const createProductResponseDataSkuMax = 64;
 export const createProductResponseDataOnHandMin = 0;
 export const createProductResponseDataReservedMin = 0;
 export const createProductResponseDataAvailableMin = 0;
+export const createProductResponseDataPurchasableDefault = true;
 export const createProductResponseDataRequiresShippingDefault = true;
 export const createProductResponseDataNoWithdrawalDefault = false;
 export const createProductResponseDataWeightMin = 0;
@@ -4023,6 +4031,7 @@ export const CreateProductResponse = zod.strictObject({
         available: zod.number().min(createProductResponseDataAvailableMin).optional(),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        purchasable: zod.boolean().default(createProductResponseDataPurchasableDefault),
         requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
         noWithdrawal: zod.boolean().default(createProductResponseDataNoWithdrawalDefault),
         weight: zod.number().min(createProductResponseDataWeightMin).optional(),
@@ -4105,6 +4114,7 @@ export const getProductByIdResponseDataSkuMax = 64;
 export const getProductByIdResponseDataOnHandMin = 0;
 export const getProductByIdResponseDataReservedMin = 0;
 export const getProductByIdResponseDataAvailableMin = 0;
+export const getProductByIdResponseDataPurchasableDefault = true;
 export const getProductByIdResponseDataRequiresShippingDefault = true;
 export const getProductByIdResponseDataNoWithdrawalDefault = false;
 export const getProductByIdResponseDataWeightMin = 0;
@@ -4131,6 +4141,7 @@ export const GetProductByIdResponse = zod.strictObject({
         available: zod.number().min(getProductByIdResponseDataAvailableMin).optional(),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        purchasable: zod.boolean().default(getProductByIdResponseDataPurchasableDefault),
         requiresShipping: zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
         noWithdrawal: zod.boolean().default(getProductByIdResponseDataNoWithdrawalDefault),
         weight: zod.number().min(getProductByIdResponseDataWeightMin).optional(),
@@ -4189,6 +4200,7 @@ export const ReplaceProductByIdBody = zod.strictObject({
     rateType: zod.enum(['standard', 'zero-rated', 'exempt']).nullish(),
     sku: zod.string().min(1).max(replaceProductByIdBodySkuOneMax).nullish(),
     active: zod.boolean(),
+    purchasable: zod.boolean(),
     requiresShipping: zod.boolean(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
@@ -4203,6 +4215,7 @@ export const replaceProductByIdResponseDataSkuMax = 64;
 export const replaceProductByIdResponseDataOnHandMin = 0;
 export const replaceProductByIdResponseDataReservedMin = 0;
 export const replaceProductByIdResponseDataAvailableMin = 0;
+export const replaceProductByIdResponseDataPurchasableDefault = true;
 export const replaceProductByIdResponseDataRequiresShippingDefault = true;
 export const replaceProductByIdResponseDataNoWithdrawalDefault = false;
 export const replaceProductByIdResponseDataWeightMin = 0;
@@ -4229,6 +4242,7 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         available: zod.number().min(replaceProductByIdResponseDataAvailableMin).optional(),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        purchasable: zod.boolean().default(replaceProductByIdResponseDataPurchasableDefault),
         requiresShipping: zod
             .boolean()
             .default(replaceProductByIdResponseDataRequiresShippingDefault),
@@ -4303,6 +4317,7 @@ export const UpdateProductByIdBody = zod.strictObject({
     rateType: zod.enum(['standard', 'zero-rated', 'exempt']).nullish(),
     sku: zod.string().min(1).max(updateProductByIdBodySkuOneMax).nullish(),
     active: zod.boolean().optional(),
+    purchasable: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
@@ -4319,6 +4334,7 @@ export const updateProductByIdResponseDataSkuMax = 64;
 export const updateProductByIdResponseDataOnHandMin = 0;
 export const updateProductByIdResponseDataReservedMin = 0;
 export const updateProductByIdResponseDataAvailableMin = 0;
+export const updateProductByIdResponseDataPurchasableDefault = true;
 export const updateProductByIdResponseDataRequiresShippingDefault = true;
 export const updateProductByIdResponseDataNoWithdrawalDefault = false;
 export const updateProductByIdResponseDataWeightMin = 0;
@@ -4345,6 +4361,7 @@ export const UpdateProductByIdResponse = zod.strictObject({
         available: zod.number().min(updateProductByIdResponseDataAvailableMin).optional(),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        purchasable: zod.boolean().default(updateProductByIdResponseDataPurchasableDefault),
         requiresShipping: zod
             .boolean()
             .default(updateProductByIdResponseDataRequiresShippingDefault),
@@ -4426,6 +4443,7 @@ export const GetProductAdminResponse = zod.strictObject({
         available: zod.number().min(getProductAdminResponseDataAvailableMin).optional(),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        purchasable: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductAdminResponseDataRequiresShippingDefault),
         noWithdrawal: zod.boolean().default(getProductAdminResponseDataNoWithdrawalDefault),
         weight: zod.number().min(getProductAdminResponseDataWeightMin).optional(),
@@ -4461,6 +4479,7 @@ export const restoreProductByIdResponseDataSkuMax = 64;
 export const restoreProductByIdResponseDataOnHandMin = 0;
 export const restoreProductByIdResponseDataReservedMin = 0;
 export const restoreProductByIdResponseDataAvailableMin = 0;
+export const restoreProductByIdResponseDataPurchasableDefault = true;
 export const restoreProductByIdResponseDataRequiresShippingDefault = true;
 export const restoreProductByIdResponseDataNoWithdrawalDefault = false;
 export const restoreProductByIdResponseDataWeightMin = 0;
@@ -4487,6 +4506,7 @@ export const RestoreProductByIdResponse = zod.strictObject({
         available: zod.number().min(restoreProductByIdResponseDataAvailableMin).optional(),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        purchasable: zod.boolean().default(restoreProductByIdResponseDataPurchasableDefault),
         requiresShipping: zod
             .boolean()
             .default(restoreProductByIdResponseDataRequiresShippingDefault),
@@ -4571,6 +4591,7 @@ export const SearchProductsBody = zod.strictObject({
     tag: zod.string().max(searchProductsBodyTagMax).optional(),
     title: zod.string().max(searchProductsBodyTitleMax).optional(),
     active: zod.boolean().optional(),
+    purchasable: zod.boolean().optional(),
     deleted: zod.boolean().optional()
 });
 export const searchProductsResponseDataItemsItemIdMax = 64;
@@ -4580,6 +4601,7 @@ export const searchProductsResponseDataItemsItemSkuMax = 64;
 export const searchProductsResponseDataItemsItemOnHandMin = 0;
 export const searchProductsResponseDataItemsItemReservedMin = 0;
 export const searchProductsResponseDataItemsItemAvailableMin = 0;
+export const searchProductsResponseDataItemsItemPurchasableDefault = true;
 export const searchProductsResponseDataItemsItemRequiresShippingDefault = true;
 export const searchProductsResponseDataItemsItemNoWithdrawalDefault = false;
 export const searchProductsResponseDataItemsItemWeightMin = 0;
@@ -4620,6 +4642,9 @@ export const SearchProductsResponse = zod.strictObject({
                     .optional(),
                 description: zod.string().optional(),
                 active: zod.boolean().optional(),
+                purchasable: zod
+                    .boolean()
+                    .default(searchProductsResponseDataItemsItemPurchasableDefault),
                 requiresShipping: zod
                     .boolean()
                     .default(searchProductsResponseDataItemsItemRequiresShippingDefault),
@@ -4677,7 +4702,13 @@ export const GetCartResponse = zod.strictObject({
                     .max(getCartResponseDataItemsItemProductIdMax)
                     .regex(getCartResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -4738,7 +4769,13 @@ export const AddCartItemResponse = zod.strictObject({
                     .max(addCartItemResponseDataItemsItemProductIdMax)
                     .regex(addCartItemResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -4799,7 +4836,13 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                     .max(removeCartItemByBodyResponseDataItemsItemProductIdMax)
                     .regex(removeCartItemByBodyResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -4853,7 +4896,13 @@ export const ClearCartResponse = zod.strictObject({
                     .max(clearCartResponseDataItemsItemProductIdMax)
                     .regex(clearCartResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -4918,7 +4967,13 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                     .max(updateCartItemByIdResponseDataItemsItemProductIdMax)
                     .regex(updateCartItemByIdResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -4979,7 +5034,13 @@ export const RemoveCartItemResponse = zod.strictObject({
                     .max(removeCartItemResponseDataItemsItemProductIdMax)
                     .regex(removeCartItemResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -5039,7 +5100,13 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                     .max(setCartShippingMethodResponseDataItemsItemProductIdMax)
                     .regex(setCartShippingMethodResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -5193,7 +5260,6 @@ export const CheckoutResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(checkoutResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(checkoutResponseDataItemsItemProductRequiresShippingDefault),
@@ -5354,7 +5420,13 @@ export const ReorderResponse = zod.strictObject({
                     .max(reorderResponseDataItemsItemProductIdMax)
                     .regex(reorderResponseDataItemsItemProductIdRegExp),
                 quantity: zod.number().min(1),
-                insufficientStock: zod.boolean()
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         ),
         summary: zod.strictObject({
@@ -5396,13 +5468,20 @@ export const GetWishlistResponse = zod.strictObject({
                     .string()
                     .min(1)
                     .max(getWishlistResponseDataItemsItemProductIdMax)
-                    .regex(getWishlistResponseDataItemsItemProductIdRegExp)
+                    .regex(getWishlistResponseDataItemsItemProductIdRegExp),
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         )
     })
 });
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+ * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
 export const addWishlistItemPathProductIdMax = 64;
@@ -5427,7 +5506,14 @@ export const AddWishlistItemResponse = zod.strictObject({
                     .string()
                     .min(1)
                     .max(addWishlistItemResponseDataItemsItemProductIdMax)
-                    .regex(addWishlistItemResponseDataItemsItemProductIdRegExp)
+                    .regex(addWishlistItemResponseDataItemsItemProductIdRegExp),
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         )
     })
@@ -5460,7 +5546,14 @@ export const RemoveWishlistItemResponse = zod.strictObject({
                     .string()
                     .min(1)
                     .max(removeWishlistItemResponseDataItemsItemProductIdMax)
-                    .regex(removeWishlistItemResponseDataItemsItemProductIdRegExp)
+                    .regex(removeWishlistItemResponseDataItemsItemProductIdRegExp),
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         )
     })
@@ -5493,7 +5586,14 @@ export const MoveWishlistItemToCartResponse = zod.strictObject({
                     .string()
                     .min(1)
                     .max(moveWishlistItemToCartResponseDataItemsItemProductIdMax)
-                    .regex(moveWishlistItemToCartResponseDataItemsItemProductIdRegExp)
+                    .regex(moveWishlistItemToCartResponseDataItemsItemProductIdRegExp),
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         )
     })
@@ -5627,7 +5727,6 @@ export const ListOrdersResponse = zod.strictObject({
                                 .number()
                                 .min(listOrdersResponseDataItemsItemItemsItemProductPriceMin),
                             description: zod.string().optional(),
-                            active: zod.boolean().optional(),
                             requiresShipping: zod
                                 .boolean()
                                 .default(
@@ -5914,7 +6013,6 @@ export const CreateOrderResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(createOrderResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
@@ -6199,7 +6297,6 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .number()
                                 .min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin),
                             description: zod.string().optional(),
-                            active: zod.boolean().optional(),
                             requiresShipping: zod
                                 .boolean()
                                 .default(
@@ -6460,7 +6557,6 @@ export const GetOrderByIdResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(getOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
@@ -6671,7 +6767,6 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(replaceOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -6886,7 +6981,6 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(updateOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -7118,7 +7212,6 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(restoreOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -7347,7 +7440,6 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(cancelOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -7563,7 +7655,6 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                         .number()
                         .min(overrideOrderStatusResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -8064,7 +8155,6 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                         .number()
                         .min(getOrderByReferenceResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -8829,7 +8919,6 @@ export const StartFulfilmentResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(startFulfilmentResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(
@@ -9126,7 +9215,6 @@ export const FulfillOrderResponse = zod.strictObject({
                     title: zod.string(),
                     price: zod.number().min(fulfillOrderResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
-                    active: zod.boolean().optional(),
                     requiresShipping: zod
                         .boolean()
                         .default(fulfillOrderResponseDataItemsItemProductRequiresShippingDefault),
@@ -10944,7 +11032,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
                             .number()
                             .min(downloadAccountExportResponseOrdersItemItemsItemProductPriceMin),
                         description: zod.string().optional(),
-                        active: zod.boolean().optional(),
                         requiresShipping: zod
                             .boolean()
                             .default(
@@ -11438,7 +11525,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
     )
 });
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged `insufficientStock`, with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`unavailable`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCartHeaderIdempotencyKeyMax = 200;
@@ -11495,7 +11582,13 @@ export const MergeCartResponse = zod.strictObject({
                         .max(mergeCartResponseDataCartItemsItemProductIdMax)
                         .regex(mergeCartResponseDataCartItemsItemProductIdRegExp),
                     quantity: zod.number().min(1),
-                    insufficientStock: zod.boolean()
+                    availability: zod.enum([
+                        'in_stock',
+                        'insufficient_stock',
+                        'out_of_stock',
+                        'unavailable',
+                        'removed'
+                    ])
                 })
             ),
             summary: zod.strictObject({
@@ -11530,8 +11623,14 @@ export const MergeCartResponse = zod.strictObject({
                     .regex(mergeCartResponseDataLinesItemProductIdRegExp),
                 requested: zod.number().min(1),
                 resulting: zod.number().min(mergeCartResponseDataLinesItemResultingMin),
-                reason: zod.enum(['summed', 'capped', 'unavailable']).optional(),
-                insufficientStock: zod.boolean()
+                reason: zod.enum(['summed', 'capped', 'removed']).optional(),
+                availability: zod.enum([
+                    'in_stock',
+                    'insufficient_stock',
+                    'out_of_stock',
+                    'unavailable',
+                    'removed'
+                ])
             })
         )
     })

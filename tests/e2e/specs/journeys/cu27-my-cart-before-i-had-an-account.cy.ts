@@ -209,7 +209,7 @@ describe('CU27 · I filled a cart before I had signed in', () => {
             );
 
             cy.step('the cart line carries the same marker, in words');
-            cy.get('[data-test=cart-line-short]')
+            cy.get('[data-test=cart-line-availability]')
                 .should('have.length', 1)
                 .and('contain.text', 'Not enough in stock');
             cy.checkPageA11y('cart with a short line and the merge alert');
@@ -218,12 +218,12 @@ describe('CU27 · I filled a cart before I had signed in', () => {
             cy.reload();
             cy.get('#cart-page').should('exist');
             cy.get(MERGE_ALERT).should('not.exist');
-            cy.get('[data-test=cart-line-short]').should('have.length', 1);
+            cy.get('[data-test=cart-line-availability]').should('have.length', 1);
 
             cy.step('lowering it to what is for sale clears the marker');
             cy.get('[data-test=cart-decrease]').click();
             cy.contains('[data-test=cart-item]', title).should('contain.text', 'Quantity: 1');
-            cy.get('[data-test=cart-line-short]').should('not.exist');
+            cy.get('[data-test=cart-line-availability]').should('not.exist');
         });
     });
 });

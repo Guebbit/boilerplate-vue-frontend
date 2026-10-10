@@ -12,7 +12,9 @@ export default {
 /**
  * @module
  * Wishlist page. Renders the store's saved lines, joined against the cart store's
- * product-title cache, with the two exits: move-to-cart and remove.
+ * product-title cache, with the two exits: move-to-cart and remove. Each line wears its
+ * `availability` ("Sold out", "Not available right now", "No longer available"); only a removed
+ * line cannot be moved, since an off-sale product moves like a sold-out one.
  */
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -82,7 +84,7 @@ const { items, loading } = storeToRefs(useWishlistStore());
  * The saved products' titles — the wishlist answers ids only, and the products store holds the
  * records.
  */
-const { titleOf, loadProducts } = useProductLines();
+const { titleOf, loadProducts, availabilityLabel } = useProductLines();
 
 /**
  * The saved lines' own blocked state — moving a line to the cart or removing it has no per-line
@@ -162,6 +164,18 @@ onMounted(() =>
                     </router-link>
                     <span v-else>{{ titleOf(item.productId) }}</span>
                 </h2>
+                <v-chip
+                    v-if="availabilityLabel(item.availability)"
+                    size="small"
+                    color="warning"
+                    variant="tonal"
+                    label
+                    class="mt-1"
+                    :data-availability="item.availability"
+                    data-test="wishlist-line-availability"
+                >
+                    {{ availabilityLabel(item.availability) }}
+                </v-chip>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn
                         v-if="session.can('update', 'Cart')"
@@ -169,7 +183,7 @@ onMounted(() =>
                         variant="tonal"
                         size="small"
                         data-test="wishlist-move-to-cart"
-                        :disabled="loading"
+                        :disabled="loading || item.availability === 'removed'"
                         :aria-label="
                             t('wishlist-page.button-move-to-cart-named', {
                                 id: titleOf(item.productId)

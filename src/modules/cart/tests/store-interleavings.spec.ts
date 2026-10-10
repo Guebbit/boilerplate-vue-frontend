@@ -138,7 +138,7 @@ describe('answers that arrive in the order the requests left', () => {
         await read.settled;
 
         expect(store.cartItems).toEqual([
-            { productId: 'p1', quantity: 3, insufficientStock: false }
+            { productId: 'p1', quantity: 3, availability: 'in_stock' }
         ]);
     });
 });
