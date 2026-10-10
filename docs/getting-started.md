@@ -107,9 +107,9 @@ port pointing at nothing.
 npm run complete    # lint + spec lint + contract identity + format check + build + unit + e2e
 ```
 
-For now the pre-commit hook runs a faster subset, `npm run complete:light`: every static check,
+The pre-commit hook runs a faster subset permanently, `npm run complete:light`: every static check,
 `vue-tsc` and the unit suite, but no build or Cypress. Run the full `complete` yourself
-before merging. Its mutating twin, `npm run complete:fix`, fixes lint and formatting instead of
+before merging a lane and once on main after; CI on push is authoritative. Its mutating twin, `npm run complete:fix`, fixes lint and formatting instead of
 reporting them.
 
 ::: warning It is slow — around ten minutes
