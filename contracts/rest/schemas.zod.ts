@@ -5917,6 +5917,7 @@ export const ListOrdersResponse = zod.strictObject({
 });
 /**
  * Creates a new order directly from the supplied payload, for the account named in `userId`. The rank rule applies to that account: an operator raises orders for customers, never for an equal or a superior (`OUTRANKED`). Raising one for oneself is allowed, but the steps that move its money then refuse the caller.
+ * A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
  * @summary Create order
  */
 export const createOrderHeaderIdempotencyKeyMax = 200;
@@ -5934,6 +5935,8 @@ export const createOrderBodyUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createOrderBodyEmailMax = 254;
 export const createOrderBodyItemsItemProductIdMax = 64;
 export const createOrderBodyItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createOrderBodyItemsItemQuantityMax = 999999;
+export const createOrderBodyItemsMax = 1000;
 export const CreateOrderBody = zod.strictObject({
     userId: zod.string().min(1).max(createOrderBodyUserIdMax).regex(createOrderBodyUserIdRegExp),
     email: zod.email().max(createOrderBodyEmailMax),
@@ -5945,10 +5948,11 @@ export const CreateOrderBody = zod.strictObject({
                     .min(1)
                     .max(createOrderBodyItemsItemProductIdMax)
                     .regex(createOrderBodyItemsItemProductIdRegExp),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1).max(createOrderBodyItemsItemQuantityMax)
             })
         )
         .min(1)
+        .max(createOrderBodyItemsMax)
 });
 export const createOrderResponseDataIdMax = 64;
 export const createOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -10821,6 +10825,17 @@ export const downloadAccountExportResponseAddressesItemIdMax = 64;
 export const downloadAccountExportResponseAddressesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseAddressesItemCountryMax = 2;
 export const downloadAccountExportResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const downloadAccountExportResponseSessionsItemIdMax = 64;
+export const downloadAccountExportResponseSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseFeedbackItemIdMax = 64;
+export const downloadAccountExportResponseFeedbackItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseFeedbackItemEmailMax = 254;
+export const downloadAccountExportResponseCartItemProductIdMax = 64;
+export const downloadAccountExportResponseCartItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseWishlistItemProductIdMax = 64;
+export const downloadAccountExportResponseWishlistItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseOrdersItemIdMax = 64;
 export const downloadAccountExportResponseOrdersItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseOrdersItemUserIdMax = 64;
@@ -10862,8 +10877,6 @@ export const downloadAccountExportResponseOrdersItemBillingAddressCountryMax = 2
 export const downloadAccountExportResponseOrdersItemBillingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
-export const downloadAccountExportResponseApiKeysItemIdMax = 64;
-export const downloadAccountExportResponseApiKeysItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponsePaymentsItemIdMax = 64;
 export const downloadAccountExportResponsePaymentsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponsePaymentsItemOrderIdMax = 64;
@@ -10881,23 +10894,6 @@ export const downloadAccountExportResponsePaymentsItemRefundsItemReturnIdMax = 6
 export const downloadAccountExportResponsePaymentsItemRefundsItemReturnIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseShipmentsItemIdMax = 64;
-export const downloadAccountExportResponseShipmentsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseShipmentsItemOrderIdMax = 64;
-export const downloadAccountExportResponseShipmentsItemOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseCartItemProductIdMax = 64;
-export const downloadAccountExportResponseCartItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseWishlistItemProductIdMax = 64;
-export const downloadAccountExportResponseWishlistItemProductIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseSessionsItemIdMax = 64;
-export const downloadAccountExportResponseSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseFeedbackItemIdMax = 64;
-export const downloadAccountExportResponseFeedbackItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseFeedbackItemEmailMax = 254;
 export const downloadAccountExportResponseInvoicingInvoicesItemOrderIdMax = 64;
 export const downloadAccountExportResponseInvoicingInvoicesItemOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
@@ -10908,6 +10904,12 @@ export const downloadAccountExportResponseInvoicingCreditNotesItemOrderIdRegExp 
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseInvoicingCreditNotesItemGrandTotalMin = 0;
+export const downloadAccountExportResponseShipmentsItemIdMax = 64;
+export const downloadAccountExportResponseShipmentsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseShipmentsItemOrderIdMax = 64;
+export const downloadAccountExportResponseShipmentsItemOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponseReturnsItemIdMax = 64;
 export const downloadAccountExportResponseReturnsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseReturnsItemOrderIdMax = 64;
@@ -10916,6 +10918,8 @@ export const downloadAccountExportResponseReturnsItemLinesItemProductIdMax = 64;
 export const downloadAccountExportResponseReturnsItemLinesItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseApiKeysItemIdMax = 64;
+export const downloadAccountExportResponseApiKeysItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseExamplesItemIdMax = 64;
 export const downloadAccountExportResponseExamplesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseExamplesItemUserIdMax = 64;
@@ -10980,10 +10984,24 @@ export const DownloadAccountExportResponse = zod.strictObject({
             })
             .optional()
     }),
-    roles: zod.array(
+    auditLog: zod.array(
         zod.strictObject({
-            role: zod.string(),
-            scope: zod.enum(['tenant', 'platform'])
+            actor_user_id: zod.string(),
+            actor_credential_id: zod.string().optional(),
+            actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
+            actor_role_name: zod.string().optional(),
+            actor_scope: zod.enum(['tenant', 'platform']),
+            action: zod.string(),
+            outcome: zod.enum(['success', 'failure']),
+            ip: zod.string().optional(),
+            user_agent: zod.string().optional(),
+            request_id: zod.string().optional(),
+            trace_id: zod.string().optional(),
+            target_type: zod.string().optional(),
+            target_id: zod.string().optional(),
+            metadata: zod.record(zod.string(), zod.unknown()).optional(),
+            timestamp: zod.iso.datetime({ offset: true }),
+            level: zod.enum(['info', 'warn'])
         })
     ),
     addresses: zod.array(
@@ -11004,6 +11022,55 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .regex(downloadAccountExportResponseAddressesItemCountryRegExp),
             phone: zod.string().optional(),
             default: zod.boolean()
+        })
+    ),
+    sessions: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseSessionsItemIdMax)
+                .regex(downloadAccountExportResponseSessionsItemIdRegExp),
+            type: zod.enum(['refresh']),
+            expiration: zod.iso.datetime({ offset: true }).optional(),
+            lastUsedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
+    feedback: zod
+        .array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseFeedbackItemIdMax)
+                    .regex(downloadAccountExportResponseFeedbackItemIdRegExp),
+                name: zod.string().optional(),
+                email: zod.email().max(downloadAccountExportResponseFeedbackItemEmailMax),
+                subject: zod.string(),
+                message: zod.string(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                respondedAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        )
+        .optional(),
+    cart: zod.array(
+        zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseCartItemProductIdMax)
+                .regex(downloadAccountExportResponseCartItemProductIdRegExp),
+            quantity: zod.number().min(1)
+        })
+    ),
+    wishlist: zod.array(
+        zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseWishlistItemProductIdMax)
+                .regex(downloadAccountExportResponseWishlistItemProductIdRegExp)
         })
     ),
     orders: zod.array(
@@ -11207,23 +11274,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
             deletedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
-    apiKeys: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseApiKeysItemIdMax)
-                .regex(downloadAccountExportResponseApiKeysItemIdRegExp),
-            name: zod.string(),
-            publicPrefix: zod.string(),
-            permissions: zod.array(zod.string()).min(1),
-            lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
-            expiresAt: zod.iso.datetime({ offset: true }),
-            revokedAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true })
-        })
-    ),
     payments: zod.array(
         zod.strictObject({
             id: zod
@@ -11278,94 +11328,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
-    shipments: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseShipmentsItemIdMax)
-                .regex(downloadAccountExportResponseShipmentsItemIdRegExp),
-            orderId: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseShipmentsItemOrderIdMax)
-                .regex(downloadAccountExportResponseShipmentsItemOrderIdRegExp),
-            trackingCode: zod.string().optional(),
-            status: zod.enum(['shipped', 'delivered']),
-            deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
-        })
-    ),
-    cart: zod.array(
-        zod.strictObject({
-            productId: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseCartItemProductIdMax)
-                .regex(downloadAccountExportResponseCartItemProductIdRegExp),
-            quantity: zod.number().min(1)
-        })
-    ),
-    wishlist: zod.array(
-        zod.strictObject({
-            productId: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseWishlistItemProductIdMax)
-                .regex(downloadAccountExportResponseWishlistItemProductIdRegExp)
-        })
-    ),
-    sessions: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseSessionsItemIdMax)
-                .regex(downloadAccountExportResponseSessionsItemIdRegExp),
-            type: zod.enum(['refresh']),
-            expiration: zod.iso.datetime({ offset: true }).optional(),
-            lastUsedAt: zod.iso.datetime({ offset: true }).optional()
-        })
-    ),
-    auditLog: zod.array(
-        zod.strictObject({
-            actor_user_id: zod.string(),
-            actor_credential_id: zod.string().optional(),
-            actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
-            actor_role_name: zod.string().optional(),
-            actor_scope: zod.enum(['tenant', 'platform']),
-            action: zod.string(),
-            outcome: zod.enum(['success', 'failure']),
-            ip: zod.string().optional(),
-            user_agent: zod.string().optional(),
-            request_id: zod.string().optional(),
-            trace_id: zod.string().optional(),
-            target_type: zod.string().optional(),
-            target_id: zod.string().optional(),
-            metadata: zod.record(zod.string(), zod.unknown()).optional(),
-            timestamp: zod.iso.datetime({ offset: true }),
-            level: zod.enum(['info', 'warn'])
-        })
-    ),
-    feedback: zod
-        .array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(downloadAccountExportResponseFeedbackItemIdMax)
-                    .regex(downloadAccountExportResponseFeedbackItemIdRegExp),
-                name: zod.string().optional(),
-                email: zod.email().max(downloadAccountExportResponseFeedbackItemEmailMax),
-                subject: zod.string(),
-                message: zod.string(),
-                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-                respondedAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        )
-        .optional(),
     invoicing: zod.strictObject({
         invoices: zod.array(
             zod.strictObject({
@@ -11398,6 +11360,25 @@ export const DownloadAccountExportResponse = zod.strictObject({
             })
         )
     }),
+    shipments: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseShipmentsItemIdMax)
+                .regex(downloadAccountExportResponseShipmentsItemIdRegExp),
+            orderId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseShipmentsItemOrderIdMax)
+                .regex(downloadAccountExportResponseShipmentsItemOrderIdRegExp),
+            trackingCode: zod.string().optional(),
+            status: zod.enum(['shipped', 'delivered']),
+            deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
     returns: zod.array(
         zod.strictObject({
             id: zod
@@ -11426,6 +11407,29 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 })
             ),
             createdAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
+    apiKeys: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseApiKeysItemIdMax)
+                .regex(downloadAccountExportResponseApiKeysItemIdRegExp),
+            name: zod.string(),
+            publicPrefix: zod.string(),
+            permissions: zod.array(zod.string()).min(1),
+            lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+            expiresAt: zod.iso.datetime({ offset: true }),
+            revokedAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }),
+            updatedAt: zod.iso.datetime({ offset: true })
+        })
+    ),
+    roles: zod.array(
+        zod.strictObject({
+            role: zod.string(),
+            scope: zod.enum(['tenant', 'platform'])
         })
     ),
     examples: zod.array(

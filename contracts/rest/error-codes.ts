@@ -100,6 +100,8 @@ export const ERROR_CODES = {
     ORDER_INVOICED: 'ORDER_INVOICED',
     /** 404 — The order exists but no invoice has been issued for it yet. */
     ORDER_INVOICE_NOT_ISSUED: 'ORDER_INVOICE_NOT_ISSUED',
+    /** 422 — An admin-created order has more lines, or a larger quantity on one line, than this deployment allows (`NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The message names the limit. */
+    ORDER_LINE_LIMIT_EXCEEDED: 'ORDER_LINE_LIMIT_EXCEEDED',
     /** 409 — The order has no physical lines left to ship. */
     ORDER_NOTHING_TO_SHIP: 'ORDER_NOTHING_TO_SHIP',
     /** 409 — The order is not in a state that can still be cancelled. */
