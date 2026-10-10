@@ -49,7 +49,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | `complete:gates`                  | everything `complete` runs after lint and prettier: both spec lints, generated-file freshness, spec identity, docs references, build, tests                                 | [Testing](./testing-and-docs.md)                 |
 | `complete:light:gates`            | the static checks + `type-check-only` + unit tests that `complete:light` runs after lint and prettier                                                                       | [Testing](./testing-and-docs.md)                 |
 | `complete:fix`                    | the same gate, with lint and formatting fixed rather than reported                                                                                                          | [Testing](./testing-and-docs.md)                 |
-| `complete:light`                  | the fast subset pre-commit runs for now: every static check + `vue-tsc` + unit tests; no build or e2e                                                                       | [Testing](./testing-and-docs.md)                 |
+| `complete:light`                  | the fast subset behind pre-commit: every static check + `vue-tsc` + unit tests; no build or e2e                                                                             | [Testing](./testing-and-docs.md)                 |
 | `complete:manual`                 | what the gate cannot run for you: `test:e2e:live`                                                                                                                           | [Testing](./testing-and-docs.md)                 |
 
 ## Test scripts
