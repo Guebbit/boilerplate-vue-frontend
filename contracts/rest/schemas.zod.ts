@@ -11316,6 +11316,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
             reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
             note: zod.string().optional(),
+            declineReason: zod.string().optional(),
             lines: zod.array(
                 zod.strictObject({
                     productId: zod
