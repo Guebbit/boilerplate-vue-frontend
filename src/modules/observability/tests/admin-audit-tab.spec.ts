@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
-import { getObservabilityAuditLogs, listAuditEntries } from '@api';
+import { listObservabilityAuditEntries, listAuditEntries } from '@api';
 import * as schemas from '@api/schemas';
 import AdminAuditTab from '../components/AdminAuditTab.vue';
 import { i18n, loadLocale } from '@/i18n';
@@ -20,8 +20,8 @@ wireModulesIntoCore();
 const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 50, totalItems: 0, totalPages: 0 } };
 
 vi.mock('@api', () => ({
-    getObservabilityAuditLogs: vi.fn(() =>
-        Promise.resolve(contractResponse(schemas.GetObservabilityAuditLogsResponse, EMPTY_PAGE))
+    listObservabilityAuditEntries: vi.fn(() =>
+        Promise.resolve(contractResponse(schemas.ListObservabilityAuditEntriesResponse, EMPTY_PAGE))
     ),
     listAuditEntries: vi.fn(() =>
         Promise.resolve(contractResponse(schemas.ListAuditEntriesResponse, EMPTY_PAGE))
@@ -42,7 +42,7 @@ describe('endpoint selection', () => {
         mountTab({ endpoint: 'platform' });
 
         return flushPromises().then(() => {
-            expect(getObservabilityAuditLogs).toHaveBeenCalledTimes(1);
+            expect(listObservabilityAuditEntries).toHaveBeenCalledTimes(1);
             expect(listAuditEntries).not.toHaveBeenCalled();
         });
     });
@@ -52,7 +52,7 @@ describe('endpoint selection', () => {
 
         return flushPromises().then(() => {
             expect(listAuditEntries).toHaveBeenCalledTimes(1);
-            expect(getObservabilityAuditLogs).not.toHaveBeenCalled();
+            expect(listObservabilityAuditEntries).not.toHaveBeenCalled();
         });
     });
 

@@ -7,7 +7,7 @@
  * disagree, and that a dead endpoint degrades to `error` instead of rejecting.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getObservabilityAuditLogs, listAuditEntries } from '@api';
+import { listObservabilityAuditEntries, listAuditEntries } from '@api';
 import type { AuditEntryItem } from '@api';
 import * as schemas from '@api/schemas';
 import { useAuditTrail } from '../composables/use-audit-trail.ts';
@@ -46,9 +46,9 @@ const ENTRY_ITEM: AuditEntryItem = {
 };
 
 vi.mock('@api', () => ({
-    getObservabilityAuditLogs: vi.fn(() =>
+    listObservabilityAuditEntries: vi.fn(() =>
         Promise.resolve(
-            contractResponse(schemas.GetObservabilityAuditLogsResponse, {
+            contractResponse(schemas.ListObservabilityAuditEntriesResponse, {
                 items: [EVENT_ITEM],
                 meta: meta(1)
             })
@@ -79,7 +79,7 @@ describe('useAuditTrail — platform endpoint', () => {
         const { entries, total, pages, fetchPage } = useAuditTrail('platform');
 
         return fetchPage().then(() => {
-            expect(getObservabilityAuditLogs).toHaveBeenCalledTimes(1);
+            expect(listObservabilityAuditEntries).toHaveBeenCalledTimes(1);
             expect(listAuditEntries).not.toHaveBeenCalled();
             expect(entries.value).toEqual([EVENT_ITEM]);
             expect(total.value).toBe(1);
@@ -91,7 +91,7 @@ describe('useAuditTrail — platform endpoint', () => {
         const { fetchPage } = useAuditTrail('platform', 'some-user-id');
 
         return fetchPage().then(() => {
-            expect(getObservabilityAuditLogs).toHaveBeenCalledWith(
+            expect(listObservabilityAuditEntries).toHaveBeenCalledWith(
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Vitest types `expect.anything()` as `any`, since it is a placeholder matcher usable against anything
                 expect.not.objectContaining({ target: expect.anything() })
             );
@@ -109,7 +109,7 @@ describe('useAuditTrail — platform endpoint', () => {
                 pageSize: 25
             })
             .then(() => {
-                expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
+                expect(listObservabilityAuditEntries).toHaveBeenCalledWith({
                     actor: 'ada@example.com',
                     action: 'user.login',
                     outcome: 'failure',
@@ -125,7 +125,7 @@ describe('useAuditTrail — platform endpoint', () => {
         useAuditTrail('platform')
             .fetchPage({ since: '2026-09-24T10:00' })
             .then(() => {
-                expect(getObservabilityAuditLogs).toHaveBeenCalledWith(
+                expect(listObservabilityAuditEntries).toHaveBeenCalledWith(
                     expect.objectContaining({
                         since: new Date('2026-09-24T10:00').toISOString()
                     })
@@ -133,7 +133,7 @@ describe('useAuditTrail — platform endpoint', () => {
             }));
 
     it('falls back to an empty page when the call fails', () => {
-        vi.mocked(getObservabilityAuditLogs).mockRejectedValueOnce(
+        vi.mocked(listObservabilityAuditEntries).mockRejectedValueOnce(
             apiFailure(500, 'Audit store unavailable')
         );
         const { entries, total, pages, error, fetchPage } = useAuditTrail('platform');
@@ -153,7 +153,7 @@ describe('useAuditTrail — shop endpoint', () => {
 
         return fetchPage().then(() => {
             expect(listAuditEntries).toHaveBeenCalledTimes(1);
-            expect(getObservabilityAuditLogs).not.toHaveBeenCalled();
+            expect(listObservabilityAuditEntries).not.toHaveBeenCalled();
             expect(entries.value).toEqual([ENTRY_ITEM]);
             expect(total.value).toBe(1);
             expect(pages.value).toBe(1);

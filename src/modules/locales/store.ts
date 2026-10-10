@@ -11,7 +11,7 @@ import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     getLocales,
     getLocaleDictionary,
-    getLocaleApps,
+    listLocaleApps,
     createLocale,
     updateLocale as apiUpdateLocale,
     deleteLocale,
@@ -215,7 +215,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const fetchApps = () =>
         fetchAny(() =>
-            getLocaleApps().then((response) => {
+            listLocaleApps().then((response) => {
                 apps.value = response.data.apps;
                 return apps.value;
             })

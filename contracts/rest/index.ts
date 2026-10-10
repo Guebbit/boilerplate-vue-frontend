@@ -1716,7 +1716,7 @@ export interface ObservabilityMetricsSummaryResponseEnvelope {
     data: ObservabilityMetricsSummary;
 }
 
-export interface AuditLogsPage {
+export interface AuditLogsResponse {
     items: AuditEntryItem[];
     meta: PaginationMeta;
 }
@@ -1725,19 +1725,19 @@ export interface AuditLogsResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: AuditLogsPage;
+    data: AuditLogsResponse;
 }
 
-export interface AuditEntryList {
+export interface AuditEntriesResponse {
     items: AuditEntryItem[];
     meta: PaginationMeta;
 }
 
-export interface AuditEntryListResponseEnvelope {
+export interface AuditEntriesResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: AuditEntryList;
+    data: AuditEntriesResponse;
 }
 
 /**
@@ -3563,7 +3563,7 @@ export interface CreditNoteSummary {
     refundId: Id;
 }
 
-export interface CreditNoteListEnvelope {
+export interface CreditNotesResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
@@ -4656,7 +4656,7 @@ export type ListAppLocaleEntriesParams = {
     text?: TextParamParameter;
 };
 
-export type GetObservabilityAuditLogsParams = {
+export type ListObservabilityAuditEntriesParams = {
     /**
      * Filter by actor user ID
      * @maxLength 64
@@ -4670,7 +4670,7 @@ export type GetObservabilityAuditLogsParams = {
     /**
      * Filter by outcome
      */
-    outcome?: GetObservabilityAuditLogsOutcome;
+    outcome?: ListObservabilityAuditEntriesOutcome;
     /**
      * Return events strictly after this ISO-8601 timestamp — an exclusive bound
      */
@@ -4689,10 +4689,10 @@ export type GetObservabilityAuditLogsParams = {
     pageSize?: PageSizeParamParameter;
 };
 
-export type GetObservabilityAuditLogsOutcome =
-    (typeof GetObservabilityAuditLogsOutcome)[keyof typeof GetObservabilityAuditLogsOutcome];
+export type ListObservabilityAuditEntriesOutcome =
+    (typeof ListObservabilityAuditEntriesOutcome)[keyof typeof ListObservabilityAuditEntriesOutcome];
 
-export const GetObservabilityAuditLogsOutcome = {
+export const ListObservabilityAuditEntriesOutcome = {
     success: 'success',
     failure: 'failure'
 } as const;
@@ -5229,7 +5229,7 @@ export const createLocale = (
  * Public and cacheable, like every other locale read.
  * @summary Translation apps
  */
-export const getLocaleApps = (
+export const listLocaleApps = (
     options?: SecondParameter<typeof orvalMutator<LocaleAppsEnvelope>>
 ) => {
     return orvalMutator<LocaleAppsEnvelope>({ url: `/locales/apps`, method: 'GET' }, options);
@@ -5786,8 +5786,8 @@ export const getObservabilityMetricsOverview = (
  * Requires the platform operator's observability key.
  * @summary Recent incidents from the audit trail
  */
-export const getObservabilityAuditLogs = (
-    params?: GetObservabilityAuditLogsParams,
+export const listObservabilityAuditEntries = (
+    params?: ListObservabilityAuditEntriesParams,
     options?: SecondParameter<typeof orvalMutator<AuditLogsResponseEnvelope>>
 ) => {
     return orvalMutator<AuditLogsResponseEnvelope>(
@@ -5807,9 +5807,9 @@ export const getObservabilityAuditLogs = (
  */
 export const listAuditEntries = (
     params?: ListAuditEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<AuditEntryListResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuditEntriesResponseEnvelope>>
 ) => {
-    return orvalMutator<AuditEntryListResponseEnvelope>(
+    return orvalMutator<AuditEntriesResponseEnvelope>(
         { url: `/audit`, method: 'GET', params },
         options
     );
@@ -6149,7 +6149,7 @@ export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResp
  * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
  * @summary List active sessions
  */
-export const getSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
+export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
     return orvalMutator<SessionsEnvelope>({ url: `/account/sessions`, method: 'GET' }, options);
 };
 
@@ -6171,7 +6171,9 @@ export const revokeSession = (
  * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
  * @summary List saved addresses
  */
-export const getAddresses = (options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>) => {
+export const listAddresses = (
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
     return orvalMutator<AddressesEnvelope>({ url: `/account/addresses`, method: 'GET' }, options);
 };
 
@@ -8062,9 +8064,9 @@ export const getOrderInvoice = (
  */
 export const listOrderCreditNotes = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<CreditNoteListEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CreditNotesResponseEnvelope>>
 ) => {
-    return orvalMutator<CreditNoteListEnvelope>(
+    return orvalMutator<CreditNotesResponseEnvelope>(
         { url: `/orders/${id}/credit-notes`, method: 'GET' },
         options
     );
@@ -9057,7 +9059,7 @@ export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>
 export type GetSecurityTxtResult = NonNullable<Awaited<ReturnType<typeof getSecurityTxt>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
 export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
-export type GetLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof getLocaleApps>>>;
+export type ListLocaleAppsResult = NonNullable<Awaited<ReturnType<typeof listLocaleApps>>>;
 export type GetLocaleDictionaryResult = NonNullable<
     Awaited<ReturnType<typeof getLocaleDictionary>>
 >;
@@ -9106,8 +9108,8 @@ export type GetObservabilityMetricsResult = NonNullable<
 export type GetObservabilityMetricsOverviewResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityMetricsOverview>>
 >;
-export type GetObservabilityAuditLogsResult = NonNullable<
-    Awaited<ReturnType<typeof getObservabilityAuditLogs>>
+export type ListObservabilityAuditEntriesResult = NonNullable<
+    Awaited<ReturnType<typeof listObservabilityAuditEntries>>
 >;
 export type ListAuditEntriesResult = NonNullable<Awaited<ReturnType<typeof listAuditEntries>>>;
 export type GetAntibotConfigResult = NonNullable<Awaited<ReturnType<typeof getAntibotConfig>>>;
@@ -9144,9 +9146,9 @@ export type CheckPasswordBreachedResult = NonNullable<
 export type GetReauthMethodsResult = NonNullable<Awaited<ReturnType<typeof getReauthMethods>>>;
 export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
-export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>;
+export type ListSessionsResult = NonNullable<Awaited<ReturnType<typeof listSessions>>>;
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
-export type GetAddressesResult = NonNullable<Awaited<ReturnType<typeof getAddresses>>>;
+export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>;
 export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
 export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
 export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;

@@ -10,7 +10,7 @@ import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
-    getAddresses as apiGetAddresses,
+    listAddresses as apiListAddresses,
     addAddress as apiAddAddress,
     updateAddress as apiUpdateAddress,
     setDefaultAddress as apiSetDefaultAddress,
@@ -66,7 +66,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
      * @returns A promise resolving with the addresses.
      */
     const fetchAddresses = () =>
-        fetchAny(() => apiGetAddresses().then((data) => readAddressesResponse(data)));
+        fetchAny(() => apiListAddresses().then((data) => readAddressesResponse(data)));
 
     /**
      * Re-reads the book after a write that answered one entry. Called inside a write's own
@@ -74,7 +74,7 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
      *
      * @returns A promise resolving with the addresses as the server now holds them.
      */
-    const reloadBook = () => apiGetAddresses().then((data) => readAddressesResponse(data));
+    const reloadBook = () => apiListAddresses().then((data) => readAddressesResponse(data));
 
     /**
      * Adds an entry, then reloads the book. The first one becomes the default server-side, and

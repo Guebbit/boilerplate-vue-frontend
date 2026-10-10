@@ -8,7 +8,7 @@
  */
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAsyncAction } from '@guebbit/vue-toolkit';
-import { getObservabilityAuditLogs, listAuditEntries } from '@api';
+import { listObservabilityAuditEntries, listAuditEntries } from '@api';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { translate } from '@/i18n';
@@ -54,7 +54,7 @@ export const useAuditTrail = (endpoint: AuditEndpoint, target?: string): UseAudi
     const { data, error, loading, run } = useAsyncAction(
         (filters: AdminAuditFilters = {}) =>
             (endpoint === 'platform'
-                ? getObservabilityAuditLogs({
+                ? listObservabilityAuditEntries({
                       actor: filters.actor,
                       action: filters.action,
                       outcome: filters.outcome,

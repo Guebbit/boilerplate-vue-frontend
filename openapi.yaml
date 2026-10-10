@@ -271,7 +271,7 @@ paths:
         `GET /locales/{locale}/messages?app=`.
 
         Public and cacheable, like every other locale read.
-      operationId: getLocaleApps
+      operationId: listLocaleApps
       security: []
       responses:
         "200":
@@ -1166,7 +1166,7 @@ paths:
         Entries are retained for a deployment-configured period (90 days by default) and expire after.
         `meta.totalItems` counts every incident matching the filters, not just the returned page.
         Requires the platform operator's observability key.
-      operationId: getObservabilityAuditLogs
+      operationId: listObservabilityAuditEntries
       security:
         - bearerAuth: []
       parameters:
@@ -1274,7 +1274,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuditEntryListResponseEnvelope"
+                $ref: "#/components/schemas/AuditEntriesResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1780,7 +1780,7 @@ paths:
         - Account
       summary: List active sessions
       description: Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
-      operationId: getSessions
+      operationId: listSessions
       security:
         - bearerAuth: []
       responses:
@@ -1835,7 +1835,7 @@ paths:
         - Account
       summary: List saved addresses
       description: The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
-      operationId: getAddresses
+      operationId: listAddresses
       security:
         - bearerAuth: []
       responses:
@@ -2597,7 +2597,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/TwoFactorMethodPath"
+        - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       requestBody:
         required: true
         content:
@@ -2636,7 +2636,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/TwoFactorMethodPath"
+        - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       requestBody:
         required: false
         content:
@@ -2679,7 +2679,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/TwoFactorMethodPath"
+        - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       responses:
         "200":
           description: A code is on its way
@@ -2710,7 +2710,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/TwoFactorMethodPath"
+        - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       requestBody:
         required: true
         content:
@@ -5369,7 +5369,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreditNoteListEnvelope"
+                $ref: "#/components/schemas/CreditNotesResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -7074,7 +7074,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/ReauthMethodPath"
+        - $ref: "#/components/parameters/ReauthMethodPathParam"
       responses:
         "200":
           description: A code is on its way
@@ -7834,7 +7834,7 @@ components:
       schema:
         $ref: "#/components/schemas/Id"
       description: Identifier of the translated entity — a product id, in V1.
-    TwoFactorMethodPath:
+    TwoFactorMethodPathParam:
       name: method
       in: path
       required: true
@@ -7842,7 +7842,7 @@ components:
         type: string
         maxLength: 32
       description: "Wire name of a second factor — a `method` from `GET /account/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel."
-    ReauthMethodPath:
+    ReauthMethodPathParam:
       name: method
       in: path
       required: true
@@ -10076,7 +10076,7 @@ components:
           enum:
             - info
             - warn
-    AuditLogsPage:
+    AuditLogsResponse:
       type: object
       additionalProperties: false
       required:
@@ -10105,8 +10105,8 @@ components:
         message:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
-          $ref: "#/components/schemas/AuditLogsPage"
-    AuditEntryList:
+          $ref: "#/components/schemas/AuditLogsResponse"
+    AuditEntriesResponse:
       type: object
       additionalProperties: false
       required:
@@ -10119,7 +10119,7 @@ components:
             $ref: "#/components/schemas/AuditEntryItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    AuditEntryListResponseEnvelope:
+    AuditEntriesResponseEnvelope:
       type: object
       additionalProperties: false
       required:
@@ -10135,7 +10135,7 @@ components:
         message:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
-          $ref: "#/components/schemas/AuditEntryList"
+          $ref: "#/components/schemas/AuditEntriesResponse"
     AntibotRungs:
       type: object
       additionalProperties: false
@@ -13046,7 +13046,7 @@ components:
           description: The gross amount this credit note reverses.
         refundId:
           $ref: "#/components/schemas/Id"
-    CreditNoteListEnvelope:
+    CreditNotesResponseEnvelope:
       type: object
       additionalProperties: false
       required:

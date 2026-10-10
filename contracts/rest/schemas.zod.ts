@@ -192,9 +192,9 @@ export const CreateLocaleResponse = zod.strictObject({
  * Public and cacheable, like every other locale read.
  * @summary Translation apps
  */
-export const getLocaleAppsResponseDataAppsItemIdMax = 64;
-export const getLocaleAppsResponseDataAppsItemIdRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const GetLocaleAppsResponse = zod.strictObject({
+export const listLocaleAppsResponseDataAppsItemIdMax = 64;
+export const listLocaleAppsResponseDataAppsItemIdRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const ListLocaleAppsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -205,8 +205,8 @@ export const GetLocaleAppsResponse = zod.strictObject({
                     id: zod
                         .string()
                         .min(1)
-                        .max(getLocaleAppsResponseDataAppsItemIdMax)
-                        .regex(getLocaleAppsResponseDataAppsItemIdRegExp),
+                        .max(listLocaleAppsResponseDataAppsItemIdMax)
+                        .regex(listLocaleAppsResponseDataAppsItemIdRegExp),
                     label: zod.string(),
                     kind: zod.enum(['frontend', 'backend'])
                 })
@@ -1422,35 +1422,35 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
  * Requires the platform operator's observability key.
  * @summary Recent incidents from the audit trail
  */
-export const getObservabilityAuditLogsQueryActorMax = 64;
-export const getObservabilityAuditLogsQueryActionMax = 100;
-export const getObservabilityAuditLogsQueryPageDefault = 1;
-export const getObservabilityAuditLogsQueryPageMax = 10000;
-export const getObservabilityAuditLogsQueryPageSizeDefault = 10;
-export const getObservabilityAuditLogsQueryPageSizeMax = 100;
-export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
-    actor: zod.string().max(getObservabilityAuditLogsQueryActorMax).optional(),
-    action: zod.string().max(getObservabilityAuditLogsQueryActionMax).optional(),
+export const listObservabilityAuditEntriesQueryActorMax = 64;
+export const listObservabilityAuditEntriesQueryActionMax = 100;
+export const listObservabilityAuditEntriesQueryPageDefault = 1;
+export const listObservabilityAuditEntriesQueryPageMax = 10000;
+export const listObservabilityAuditEntriesQueryPageSizeDefault = 10;
+export const listObservabilityAuditEntriesQueryPageSizeMax = 100;
+export const ListObservabilityAuditEntriesQueryParams = zod.strictObject({
+    actor: zod.string().max(listObservabilityAuditEntriesQueryActorMax).optional(),
+    action: zod.string().max(listObservabilityAuditEntriesQueryActionMax).optional(),
     outcome: zod.enum(['success', 'failure']).optional(),
     since: zod.iso.datetime({ offset: true }).optional(),
     page: zod
         .number()
         .min(1)
-        .max(getObservabilityAuditLogsQueryPageMax)
-        .default(getObservabilityAuditLogsQueryPageDefault),
+        .max(listObservabilityAuditEntriesQueryPageMax)
+        .default(listObservabilityAuditEntriesQueryPageDefault),
     pageSize: zod
         .number()
         .min(1)
-        .max(getObservabilityAuditLogsQueryPageSizeMax)
-        .default(getObservabilityAuditLogsQueryPageSizeDefault)
+        .max(listObservabilityAuditEntriesQueryPageSizeMax)
+        .default(listObservabilityAuditEntriesQueryPageSizeDefault)
 });
-export const getObservabilityAuditLogsResponseDataMetaPageDefault = 1;
-export const getObservabilityAuditLogsResponseDataMetaPageMax = 10000;
-export const getObservabilityAuditLogsResponseDataMetaPageSizeDefault = 10;
-export const getObservabilityAuditLogsResponseDataMetaPageSizeMax = 100;
-export const getObservabilityAuditLogsResponseDataMetaTotalItemsMin = 0;
-export const getObservabilityAuditLogsResponseDataMetaTotalPagesMin = 0;
-export const GetObservabilityAuditLogsResponse = zod.strictObject({
+export const listObservabilityAuditEntriesResponseDataMetaPageDefault = 1;
+export const listObservabilityAuditEntriesResponseDataMetaPageMax = 10000;
+export const listObservabilityAuditEntriesResponseDataMetaPageSizeDefault = 10;
+export const listObservabilityAuditEntriesResponseDataMetaPageSizeMax = 100;
+export const listObservabilityAuditEntriesResponseDataMetaTotalItemsMin = 0;
+export const listObservabilityAuditEntriesResponseDataMetaTotalPagesMin = 0;
+export const ListObservabilityAuditEntriesResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -1479,15 +1479,17 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
-                .max(getObservabilityAuditLogsResponseDataMetaPageMax)
-                .default(getObservabilityAuditLogsResponseDataMetaPageDefault),
+                .max(listObservabilityAuditEntriesResponseDataMetaPageMax)
+                .default(listObservabilityAuditEntriesResponseDataMetaPageDefault),
             pageSize: zod
                 .number()
                 .min(1)
-                .max(getObservabilityAuditLogsResponseDataMetaPageSizeMax)
-                .default(getObservabilityAuditLogsResponseDataMetaPageSizeDefault),
-            totalItems: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalItemsMin),
-            totalPages: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalPagesMin)
+                .max(listObservabilityAuditEntriesResponseDataMetaPageSizeMax)
+                .default(listObservabilityAuditEntriesResponseDataMetaPageSizeDefault),
+            totalItems: zod
+                .number()
+                .min(listObservabilityAuditEntriesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listObservabilityAuditEntriesResponseDataMetaTotalPagesMin)
         })
     })
 });
@@ -2039,9 +2041,9 @@ export const LogoutResponse = zod.strictObject({
  * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
  * @summary List active sessions
  */
-export const getSessionsResponseDataSessionsItemIdMax = 64;
-export const getSessionsResponseDataSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetSessionsResponse = zod.strictObject({
+export const listSessionsResponseDataSessionsItemIdMax = 64;
+export const listSessionsResponseDataSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ListSessionsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -2051,8 +2053,8 @@ export const GetSessionsResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(getSessionsResponseDataSessionsItemIdMax)
-                    .regex(getSessionsResponseDataSessionsItemIdRegExp),
+                    .max(listSessionsResponseDataSessionsItemIdMax)
+                    .regex(listSessionsResponseDataSessionsItemIdRegExp),
                 expiration: zod.iso.datetime({ offset: true }).optional(),
                 lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
                 current: zod.boolean()
@@ -2082,11 +2084,11 @@ export const RevokeSessionResponse = zod.strictObject({
  * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
  * @summary List saved addresses
  */
-export const getAddressesResponseDataAddressesItemIdMax = 64;
-export const getAddressesResponseDataAddressesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getAddressesResponseDataAddressesItemCountryMax = 2;
-export const getAddressesResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const GetAddressesResponse = zod.strictObject({
+export const listAddressesResponseDataAddressesItemIdMax = 64;
+export const listAddressesResponseDataAddressesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listAddressesResponseDataAddressesItemCountryMax = 2;
+export const listAddressesResponseDataAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const ListAddressesResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -2096,8 +2098,8 @@ export const GetAddressesResponse = zod.strictObject({
                 id: zod
                     .string()
                     .min(1)
-                    .max(getAddressesResponseDataAddressesItemIdMax)
-                    .regex(getAddressesResponseDataAddressesItemIdRegExp),
+                    .max(listAddressesResponseDataAddressesItemIdMax)
+                    .regex(listAddressesResponseDataAddressesItemIdRegExp),
                 label: zod.string().optional(),
                 fullName: zod.string(),
                 street: zod.string(),
@@ -2105,8 +2107,8 @@ export const GetAddressesResponse = zod.strictObject({
                 zip: zod.string(),
                 country: zod
                     .string()
-                    .max(getAddressesResponseDataAddressesItemCountryMax)
-                    .regex(getAddressesResponseDataAddressesItemCountryRegExp),
+                    .max(listAddressesResponseDataAddressesItemCountryMax)
+                    .regex(listAddressesResponseDataAddressesItemCountryRegExp),
                 phone: zod.string().optional(),
                 default: zod.boolean()
             })
