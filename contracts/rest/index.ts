@@ -54,20 +54,6 @@ export type Text = string;
 export type Email = string;
 
 /**
- * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
- * @minLength 8
- * @maxLength 128
- */
-export type Password = string;
-
-/**
- * A password being SET by its owner — signup, reset (or the setup link) and change. Length only, 8 to 128 characters (NIST SP 800-63B-4: no composition rules, no forced mix of classes); what keeps a weak one out is the breached-password check on every set path, not a pattern. Hashed with argon2id, which has no 72-byte limit, so every character counts.
- * @minLength 8
- * @maxLength 128
- */
-export type PasswordNew = string;
-
-/**
  * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
  * @maxLength 35
  * @pattern ^[a-z]{2}(-[A-Za-z0-9]+)*$
@@ -158,88 +144,6 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
-export type PackedRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
-
-/**
- * CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
- * with trailing absent members omitted.
- */
-export type PackedRules = PackedRulesItemItem[][];
-
-/**
- * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
- * takes. A tuple per rule rather than an object, which is what makes shipping a few
- * dozen of them cheap.
- *
- * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
- * list. A request resolves to exactly one scope — the one the key it is asking about
- * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
- * the installation's health dashboard sit in one navigation. Publishing only the
- * caller's tenant rules left every platform screen with no rule to grey out, so it
- * was gated on a tenant key that happened to correlate, which is exactly the
- * hand-maintained guess this endpoint exists to abolish.
- *
- * The two lists never merge. A tenant rule can never satisfy a platform key and the
- * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
- * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
- *
- * The client's copy has NO AUTHORITY: it decides what to render, never what is
- * allowed, and every request is re-evaluated server-side. Published so a client greys
- * out what it would be refused from the same rules the server enforces, rather than
- * from a hand-maintained duplicate that drifts — the drift is silent until somebody
- * is shown a button that answers 403.
- */
-export interface Abilities {
-    /**
-     * Every CASL subject a declared key names, deduplicated and sorted — the
-     * `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
-     * a client's own `meta.can` rules are typed against the real set rather than
-     * an unchecked string a typo can silently fail closed on.
-     */
-    subjects: string[];
-    /**
-     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
-     * /users`, in the order `shared/authorization-roles.yaml` declares them.
-     * Computed by the same rule as the `409` those writes answer, so a role
-     * picker built from it offers exactly what the write accepts. Empty for a
-     * caller who may grant nothing, an anonymous one included. It has NO
-     * AUTHORITY: the write is re-checked server-side.
-     */
-    grantableRoles: string[];
-    /**
-     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
-     * membership at all — a pure platform operator administers the installation
-     * rather than acting inside one shop.
-     */
-    tenantId?: string;
-    /**
-     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
-     * membership; for an anonymous visitor it is the `guest` role's rules, which
-     * are a value in the model rather than an absence.
-     */
-    tenant: PackedRules;
-    /**
-     * What the caller may do ACROSS the installation — health, metrics, the
-     * operational audit. Empty for everyone but a platform operator, which is
-     * most callers: an operator is not a super-member and holds no shop's keys.
-     */
-    platform: PackedRules;
-    /**
-     * The permission model's own version, bumped when the KEYS change rather than
-     * when a role does. A client caches these; this is what tells it the cache is
-     * about a different model, not merely a different person. One number for both
-     * lists — the keys file they are declared in is one file.
-     */
-    version: number;
-}
-
-export interface AbilitiesEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Abilities;
-}
-
 /**
  * What the requesting caller may do to this account. Each is the route's permission key AND the rank rule: an account at the caller's own level or above is `false` for all three, the caller's own account is judged by the keys alone.
  */
@@ -280,770 +184,6 @@ export interface UserEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: User;
-}
-
-/**
- * A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
- */
-export type TaxClass = (typeof TaxClass)[keyof typeof TaxClass];
-
-export const TaxClass = {
-    reduced: 'reduced',
-    zero: 'zero'
-} as const;
-
-/**
- * WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%.
- */
-export type RateType = (typeof RateType)[keyof typeof RateType];
-
-export const RateType = {
-    standard: 'standard',
-    'zero-rated': 'zero-rated',
-    exempt: 'exempt'
-} as const;
-
-/**
- * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
- * @minLength 1
- * @maxLength 64
- */
-export type Sku = string;
-
-export interface Product {
-    id: Id;
-    title: string;
-    /**
-     * Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.
-     * @minimum 0
-     */
-    price: number;
-    /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
-    readonly currency: string;
-    taxClass?: TaxClass;
-    rateType?: RateType;
-    sku?: Sku;
-    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). */
-    readonly inStock: boolean;
-    /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
-    readonly lowStock: boolean;
-    /**
-     * Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
-     * @minimum 0
-     */
-    readonly onHand?: number;
-    /**
-     * Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
-     * @minimum 0
-     */
-    readonly reserved?: number;
-    /**
-     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
-     * @minimum 0
-     */
-    readonly available?: number;
-    description?: string;
-    active?: boolean;
-    purchasable?: boolean;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    /** @minimum 0 */
-    weight?: number;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    categories?: string[];
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-}
-
-export interface CartItem {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-}
-
-export interface OrderAddress {
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: CountryCode;
-    phone?: string;
-}
-
-export interface OrderTransferInstructions {
-    beneficiary: string;
-    iban: string;
-    /** Absent when the deployment has not configured one. */
-    bic?: string;
-    /** The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference. */
-    reference: string;
-}
-
-export interface OrderLineProduct {
-    id: Id;
-    title: string;
-    /**
-     * Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
-     * @minimum 0
-     */
-    price: number;
-    description?: string;
-    requiresShipping?: boolean;
-    noWithdrawal?: boolean;
-    sku?: Sku;
-    /** @minimum 0 */
-    weight?: number;
-    categories?: string[];
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    /**
-     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
-     * @minimum 0
-     * @maximum 1
-     */
-    taxRate: number;
-    rateType?: RateType;
-}
-
-export interface OrderLineCurrent {
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-}
-
-export interface OrderItem {
-    product: OrderLineProduct;
-    /** @minimum 1 */
-    quantity: number;
-    locale: Locale;
-    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
-    current: OrderLineCurrent | null;
-    /**
-     * VAT included in this line's total, at its own frozen `taxRate`.
-     * @minimum 0
-     */
-    readonly taxAmount: number;
-    /**
-     * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
-     * @minimum 0
-     */
-    readonly netAmount: number;
-}
-
-/**
- * How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
- */
-export type PaymentMethodId = (typeof PaymentMethodId)[keyof typeof PaymentMethodId];
-
-export const PaymentMethodId = {
-    card: 'card',
-    bank_transfer: 'bank_transfer'
-} as const;
-
-/**
- * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
- */
-export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
-
-export const OrderStatus = {
-    pending: 'pending',
-    paid: 'paid',
-    processing: 'processing',
-    shipped: 'shipped',
-    delivered: 'delivered',
-    cancelled: 'cancelled'
-} as const;
-
-/**
- * Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two.
- */
-export type OrderPaymentStatus = (typeof OrderPaymentStatus)[keyof typeof OrderPaymentStatus];
-
-export const OrderPaymentStatus = {
-    unpaid: 'unpaid',
-    paid: 'paid',
-    partially_refunded: 'partially_refunded',
-    refunded: 'refunded'
-} as const;
-
-/**
- * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only.
- */
-export type OrderFulfillmentStatus =
-    (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
-
-export const OrderFulfillmentStatus = {
-    unfulfilled: 'unfulfilled',
-    in_progress: 'in_progress',
-    shipped: 'shipped',
-    fulfilled: 'fulfilled'
-} as const;
-
-/**
- * Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status.
- */
-export type OrderReturnStatus = (typeof OrderReturnStatus)[keyof typeof OrderReturnStatus];
-
-export const OrderReturnStatus = {
-    none: 'none',
-    requested: 'requested',
-    in_progress: 'in_progress',
-    partially_returned: 'partially_returned',
-    returned: 'returned'
-} as const;
-
-/**
- * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles. Nobody handles their own money: recording a payment by hand is withheld on the caller's own order too.
- */
-export interface OrderActions {
-    /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
-    transitions: OrderStatus[];
-    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further. */
-    cancel: boolean;
-    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
-    pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment, the caller holds the key that records one and their rank reaches the buyer. Never true for the buyer, whose own step is `pay` — not even for a buyer who is staff or an administrator. */
-    recordPayment: boolean;
-    /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
-    start: boolean;
-    /** Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead. */
-    ship: boolean;
-    /** Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
-    deliver: boolean;
-    /** Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not. */
-    fulfill: boolean;
-    /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
-    override: OrderStatus[];
-    /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
-    withdraw: boolean;
-    /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
-    withdrawUntil?: string;
-    /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
-    invoice: boolean;
-}
-
-export interface OrderTaxSummaryRow {
-    /**
-     * The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
-     * @minimum 0
-     */
-    rate: number;
-    /** @minimum 0 */
-    netAmount: number;
-    /** @minimum 0 */
-    taxAmount: number;
-    /**
-     * `netAmount + taxAmount`, not re-derived from a price.
-     * @minimum 0
-     */
-    grossAmount: number;
-}
-
-export interface Order {
-    id: Id;
-    userId?: Id;
-    email: Email;
-    items: OrderItem[];
-    /**
-     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
-     * @minimum 0
-     */
-    totalItems: number;
-    /**
-     * Sum of `quantity` across every line item.
-     * @minimum 0
-     */
-    totalQuantity: number;
-    /**
-     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-     * @minimum 0
-     */
-    totalPrice: number;
-    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
-    readonly currency: string;
-    /**
-     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-     * @minimum 0
-     */
-    readonly netTotal: number;
-    /**
-     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
-     * @minimum 0
-     */
-    readonly taxTotal: number;
-    /**
-     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingNetAmount: number;
-    /**
-     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-     * @minimum 0
-     */
-    readonly shippingTaxAmount: number;
-    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
-    readonly taxSummary: readonly OrderTaxSummaryRow[];
-    /** Optional order notes */
-    notes?: string;
-    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
-    shippingMethod?: string;
-    /**
-     * What that method cost at checkout time — a later rate change cannot re-price history.
-     * @minimum 0
-     */
-    shippingCost?: number;
-    shippingAddress?: OrderAddress;
-    billingAddress?: OrderAddress;
-    paymentMethod?: PaymentMethodId;
-    payBy?: string;
-    readonly orderNumber: string;
-    transferInstructions?: OrderTransferInstructions;
-    status: OrderStatus;
-    paymentStatus: OrderPaymentStatus;
-    fulfillmentStatus: OrderFulfillmentStatus;
-    returnStatus: OrderReturnStatus;
-    actions?: OrderActions;
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-}
-
-export type AccountExportResponseRolesItemScope =
-    (typeof AccountExportResponseRolesItemScope)[keyof typeof AccountExportResponseRolesItemScope];
-
-export const AccountExportResponseRolesItemScope = {
-    tenant: 'tenant',
-    platform: 'platform'
-} as const;
-
-export type AccountExportResponseRolesItem = {
-    role: string;
-    scope: AccountExportResponseRolesItemScope;
-};
-
-export interface ExportInvoiceDocument {
-    orderId: Id;
-    number: string;
-    issuedAt: string;
-    currency: string;
-    /** @minimum 0 */
-    grandTotal: number;
-}
-
-export type AccountExportResponseInvoicing = {
-    invoices: ExportInvoiceDocument[];
-    creditNotes: ExportInvoiceDocument[];
-};
-
-export interface Address {
-    id: Id;
-    /** The caller's own name for the entry — "home", "office". */
-    label?: string;
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: CountryCode;
-    phone?: string;
-    default: boolean;
-}
-
-export interface ApiKey {
-    id: Id;
-    name: string;
-    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
-    publicPrefix: string;
-    /**
-     * The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
-     * @minItems 1
-     */
-    permissions: string[];
-    lastUsedAt?: string;
-    expiresAt: string;
-    revokedAt?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-/**
- * `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator).
- */
-export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
-
-export const RefundStatus = {
-    pending: 'pending',
-    succeeded: 'succeeded',
-    failed: 'failed'
-} as const;
-
-/**
- * Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
- */
-export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
-
-export const RefundReason = {
-    cancellation: 'cancellation',
-    goodwill: 'goodwill',
-    return: 'return'
-} as const;
-
-/**
- * One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
- */
-export interface Refund {
-    id: Id;
-    /**
-     * The amount returned, in the payment's own `currency`.
-     * @minimum 0
-     */
-    amount: number;
-    /** ISO-4217 currency code, copied from the payment. */
-    currency: string;
-    /** `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator). */
-    status: RefundStatus;
-    reason: RefundReason;
-    returnId?: Id;
-    /** When the refund succeeded. Absent while it has not. */
-    settledAt?: string;
-    createdAt: string;
-}
-
-export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
-
-export const ExportPaymentStatus = {
-    requires_confirmation: 'requires_confirmation',
-    requires_action: 'requires_action',
-    processing: 'processing',
-    succeeded: 'succeeded',
-    declined: 'declined',
-    refunded: 'refunded'
-} as const;
-
-export interface ExportPayment {
-    id: Id;
-    orderId: Id;
-    /** @minimum 0 */
-    amount: number;
-    currency: string;
-    /** @minimum 0 */
-    amountRefunded: number;
-    refunds: Refund[];
-    status: ExportPaymentStatus;
-    provider: string;
-    cardLast4?: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-/**
- * The tail of the order's lifecycle, as the carrier sees it.
- */
-export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
-
-export const ShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
-} as const;
-
-export interface Shipment {
-    id: Id;
-    orderId: Id;
-    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
-    trackingCode?: string;
-    /** The tail of the order's lifecycle, as the carrier sees it. */
-    status: ShipmentStatus;
-    deliveredAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-export interface WishlistExportItem {
-    productId: Id;
-}
-
-export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
-
-export const ExportSessionType = {
-    refresh: 'refresh'
-} as const;
-
-export interface ExportSession {
-    id: Id;
-    type: ExportSessionType;
-    expiration?: string;
-    lastUsedAt?: string;
-}
-
-export type AuditEntryItemActorRole =
-    (typeof AuditEntryItemActorRole)[keyof typeof AuditEntryItemActorRole];
-
-export const AuditEntryItemActorRole = {
-    admin: 'admin',
-    user: 'user',
-    anonymous: 'anonymous',
-    system: 'system'
-} as const;
-
-/**
- * Which world this action happened in — a shop or the installation.
- */
-export type AuditEntryItemActorScope =
-    (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
-
-export const AuditEntryItemActorScope = {
-    tenant: 'tenant',
-    platform: 'platform'
-} as const;
-
-export type AuditEntryItemOutcome =
-    (typeof AuditEntryItemOutcome)[keyof typeof AuditEntryItemOutcome];
-
-export const AuditEntryItemOutcome = {
-    success: 'success',
-    failure: 'failure'
-} as const;
-
-export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
-
-export const AuditEntryItemLevel = {
-    info: 'info',
-    warn: 'warn'
-} as const;
-
-export type AuditEntryItemMetadata = { [key: string]: unknown };
-
-export interface AuditEntryItem {
-    actorUserId: string;
-    /** The API key the action was done with. Absent when a person did it themselves. */
-    actorCredentialId?: string;
-    actorRole: AuditEntryItemActorRole;
-    /** The tenant role behind actorRole, e.g. moderator. Absent when the request never resolved one. */
-    actorRoleName?: string;
-    /** Which world this action happened in — a shop or the installation. */
-    actorScope: AuditEntryItemActorScope;
-    /** Dot-notation action name (e.g. order.created) */
-    action: string;
-    outcome: AuditEntryItemOutcome;
-    /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
-    ip?: string;
-    userAgent?: string;
-    requestId?: string;
-    traceId?: string;
-    targetType?: string;
-    targetId?: string;
-    metadata?: AuditEntryItemMetadata;
-    timestamp: string;
-    level: AuditEntryItemLevel;
-}
-
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
-
-export const FeedbackRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
-
-export interface ExportFeedbackTicket {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    status: FeedbackRequestStatus;
-    respondedAt?: string;
-    createdAt?: string;
-}
-
-/**
- * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
- */
-export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
-
-export const ReturnStatus = {
-    requested: 'requested',
-    approved: 'approved',
-    declined: 'declined',
-    received: 'received',
-    closed: 'closed'
-} as const;
-
-/**
- * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
- */
-export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
-
-export const ReturnReason = {
-    withdrawal: 'withdrawal',
-    defective: 'defective',
-    wrong_item: 'wrong_item',
-    other: 'other'
-} as const;
-
-export type ExportReturnLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
-    title: string;
-};
-
-export interface ExportReturn {
-    id: Id;
-    orderId: Id;
-    status: ReturnStatus;
-    reason: ReturnReason;
-    note?: string;
-    declineReason?: string;
-    lines: ExportReturnLinesItem[];
-    createdAt?: string;
-}
-
-export type ExampleStatus = (typeof ExampleStatus)[keyof typeof ExampleStatus];
-
-export const ExampleStatus = {
-    draft: 'draft',
-    published: 'published',
-    archived: 'archived'
-} as const;
-
-export interface Example {
-    id: Id;
-    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
-    title: string;
-    body: string;
-    status: ExampleStatus;
-    userId: Id;
-    /** The owner's display name. */
-    ownerName: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    /** Stamped the first time the example is published, never moved again. */
-    publishedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-export type NotificationCartLineRemovedCode =
-    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
-
-export const NotificationCartLineRemovedCode = {
-    'notificationscart-line-removed': 'notifications.cart-line-removed'
-} as const;
-
-export interface ProductTitles {
-    [key: string]: string;
-}
-
-export interface CartLineRemovedParams {
-    productId: Id;
-    titles: ProductTitles;
-}
-
-/**
- * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
- */
-export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
-
-export const NotificationSeverity = {
-    info: 'info',
-    success: 'success',
-    warning: 'warning',
-    error: 'error'
-} as const;
-
-/**
- * A product left the catalogue and left the caller's cart with it.
- */
-export interface NotificationCartLineRemoved {
-    id: Id;
-    code: NotificationCartLineRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationWishlistItemRemovedCode =
-    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
-
-export const NotificationWishlistItemRemovedCode = {
-    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed'
-} as const;
-
-/**
- * A product left the catalogue and left the caller's wishlist with it.
- */
-export interface NotificationWishlistItemRemoved {
-    id: Id;
-    code: NotificationWishlistItemRemovedCode;
-    params: CartLineRemovedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationCartMergeRefusedCode =
-    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
-
-export const NotificationCartMergeRefusedCode = {
-    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
-} as const;
-
-export type CartMergeRefusedParamsLinesItem = {
-    productId: Id;
-    /** @minimum 1 */
-    requested: number;
-    titles: ProductTitles;
-};
-
-export interface CartMergeRefusedParams {
-    /** The guest-cart lines `POST /cart/merge` could not add at all. */
-    lines: CartMergeRefusedParamsLinesItem[];
-}
-
-/**
- * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
- */
-export interface NotificationCartMergeRefused {
-    id: Id;
-    code: NotificationCartMergeRefusedCode;
-    params: CartMergeRefusedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type Notification =
-    NotificationCartLineRemoved | NotificationWishlistItemRemoved | NotificationCartMergeRefused;
-
-export interface AccountExportResponse {
-    exportedAt: string;
-    profile: User;
-    roles: AccountExportResponseRolesItem[];
-    addresses: Address[];
-    orders: Order[];
-    apiKeys: ApiKey[];
-    payments: ExportPayment[];
-    shipments: Shipment[];
-    cart: CartItem[];
-    wishlist: WishlistExportItem[];
-    sessions: ExportSession[];
-    auditLog: AuditEntryItem[];
-    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
-    feedback?: ExportFeedbackTicket[];
-    invoicing: AccountExportResponseInvoicing;
-    returns: ExportReturn[];
-    examples: Example[];
-    notifications: Notification[];
 }
 
 export interface HardDeleteRequest {
@@ -1716,6 +856,68 @@ export interface ObservabilityMetricsSummaryResponseEnvelope {
     data: ObservabilityMetricsSummary;
 }
 
+export type AuditEntryItemActorRole =
+    (typeof AuditEntryItemActorRole)[keyof typeof AuditEntryItemActorRole];
+
+export const AuditEntryItemActorRole = {
+    admin: 'admin',
+    user: 'user',
+    anonymous: 'anonymous',
+    system: 'system'
+} as const;
+
+/**
+ * Which world this action happened in — a shop or the installation.
+ */
+export type AuditEntryItemActorScope =
+    (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
+
+export const AuditEntryItemActorScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
+export type AuditEntryItemOutcome =
+    (typeof AuditEntryItemOutcome)[keyof typeof AuditEntryItemOutcome];
+
+export const AuditEntryItemOutcome = {
+    success: 'success',
+    failure: 'failure'
+} as const;
+
+export type AuditEntryItemMetadata = { [key: string]: unknown };
+
+export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
+
+export const AuditEntryItemLevel = {
+    info: 'info',
+    warn: 'warn'
+} as const;
+
+export interface AuditEntryItem {
+    actorUserId: string;
+    /** The API key the action was done with. Absent when a person did it themselves. */
+    actorCredentialId?: string;
+    actorRole: AuditEntryItemActorRole;
+    /** The tenant role behind actorRole, e.g. moderator. Absent when the request never resolved one. */
+    actorRoleName?: string;
+    /** Which world this action happened in — a shop or the installation. */
+    actorScope: AuditEntryItemActorScope;
+    /** Dot-notation action name (e.g. order.created) */
+    action: string;
+    outcome: AuditEntryItemOutcome;
+    /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
+    ip?: string;
+    userAgent?: string;
+    requestId?: string;
+    traceId?: string;
+    targetType?: string;
+    targetId?: string;
+    metadata?: AuditEntryItemMetadata;
+    timestamp: string;
+    level: AuditEntryItemLevel;
+}
+
 export interface AuditLogsResponse {
     items: AuditEntryItem[];
     meta: PaginationMeta;
@@ -1960,6 +1162,102 @@ export interface EmailVerificationRequestedEnvelope {
     data: EmailVerificationRequested;
 }
 
+export type PackedRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
+
+/**
+ * CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
+ * with trailing absent members omitted.
+ */
+export type PackedRules = PackedRulesItemItem[][];
+
+/**
+ * What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+ * takes. A tuple per rule rather than an object, which is what makes shipping a few
+ * dozen of them cheap.
+ *
+ * BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
+ * list. A request resolves to exactly one scope — the one the key it is asking about
+ * declares — but a CLIENT renders screens from both at once: a shop's catalogue and
+ * the installation's health dashboard sit in one navigation. Publishing only the
+ * caller's tenant rules left every platform screen with no rule to grey out, so it
+ * was gated on a tenant key that happened to correlate, which is exactly the
+ * hand-maintained guess this endpoint exists to abolish.
+ *
+ * The two lists never merge. A tenant rule can never satisfy a platform key and the
+ * reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
+ * so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
+ *
+ * The client's copy has NO AUTHORITY: it decides what to render, never what is
+ * allowed, and every request is re-evaluated server-side. Published so a client greys
+ * out what it would be refused from the same rules the server enforces, rather than
+ * from a hand-maintained duplicate that drifts — the drift is silent until somebody
+ * is shown a button that answers 403.
+ */
+export interface Abilities {
+    /**
+     * Every CASL subject a declared key names, deduplicated and sorted — the
+     * `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
+     * a client's own `meta.can` rules are typed against the real set rather than
+     * an unchecked string a typo can silently fail closed on.
+     */
+    subjects: string[];
+    /**
+     * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
+     * /users`, in the order `shared/authorization-roles.yaml` declares them.
+     * Computed by the same rule as the `409` those writes answer, so a role
+     * picker built from it offers exactly what the write accepts. Empty for a
+     * caller who may grant nothing, an anonymous one included. It has NO
+     * AUTHORITY: the write is re-checked server-side.
+     */
+    grantableRoles: string[];
+    /**
+     * The shop `tenant`'s rules are about. Absent when the caller has no tenant
+     * membership at all — a pure platform operator administers the installation
+     * rather than acting inside one shop.
+     */
+    tenantId?: string;
+    /**
+     * What the caller may do INSIDE their shop. Empty for a caller with no tenant
+     * membership; for an anonymous visitor it is the `guest` role's rules, which
+     * are a value in the model rather than an absence.
+     */
+    tenant: PackedRules;
+    /**
+     * What the caller may do ACROSS the installation — health, metrics, the
+     * operational audit. Empty for everyone but a platform operator, which is
+     * most callers: an operator is not a super-member and holds no shop's keys.
+     */
+    platform: PackedRules;
+    /**
+     * The permission model's own version, bumped when the KEYS change rather than
+     * when a role does. A client caches these; this is what tells it the cache is
+     * about a different model, not merely a different person. One number for both
+     * lists — the keys file they are declared in is one file.
+     */
+    version: number;
+}
+
+export interface AbilitiesEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Abilities;
+}
+
+/**
+ * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
+ * @minLength 8
+ * @maxLength 128
+ */
+export type Password = string;
+
+/**
+ * A password being SET by its owner — signup, reset (or the setup link) and change. Length only, 8 to 128 characters (NIST SP 800-63B-4: no composition rules, no forced mix of classes); what keeps a weak one out is the breached-password check on every set path, not a pattern. Hashed with argon2id, which has no 72-byte limit, so every character counts.
+ * @minLength 8
+ * @maxLength 128
+ */
+export type PasswordNew = string;
+
 export interface ChangePasswordRequest {
     currentPassword: Password;
     password: PasswordNew;
@@ -2099,6 +1397,19 @@ export interface SessionsEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: SessionsResponse;
+}
+
+export interface Address {
+    id: Id;
+    /** The caller's own name for the entry — "home", "office". */
+    label?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: CountryCode;
+    phone?: string;
+    default: boolean;
 }
 
 export interface AddressesResponse {
@@ -2765,6 +2076,16 @@ export interface CreateFeedbackRequest {
     website?: string;
 }
 
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+
+export const FeedbackRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
 export interface FeedbackRequest {
     id: Id;
     name?: string;
@@ -2860,6 +2181,82 @@ export const ProductSortItem = {
  * @maxItems 3
  */
 export type ProductSort = ProductSortItem[];
+
+/**
+ * A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
+ */
+export type TaxClass = (typeof TaxClass)[keyof typeof TaxClass];
+
+export const TaxClass = {
+    reduced: 'reduced',
+    zero: 'zero'
+} as const;
+
+/**
+ * WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%.
+ */
+export type RateType = (typeof RateType)[keyof typeof RateType];
+
+export const RateType = {
+    standard: 'standard',
+    'zero-rated': 'zero-rated',
+    exempt: 'exempt'
+} as const;
+
+/**
+ * An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of "absent". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards.
+ * @minLength 1
+ * @maxLength 64
+ */
+export type Sku = string;
+
+export interface Product {
+    id: Id;
+    title: string;
+    /**
+     * Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around.
+     * @minimum 0
+     */
+    price: number;
+    /** ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting. */
+    readonly currency: string;
+    taxClass?: TaxClass;
+    rateType?: RateType;
+    sku?: Sku;
+    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). */
+    readonly inStock: boolean;
+    /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
+    readonly lowStock: boolean;
+    /**
+     * Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
+     * @minimum 0
+     */
+    readonly onHand?: number;
+    /**
+     * Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
+     * @minimum 0
+     */
+    readonly reserved?: number;
+    /**
+     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
+     * @minimum 0
+     */
+    readonly available?: number;
+    description?: string;
+    active?: boolean;
+    purchasable?: boolean;
+    requiresShipping?: boolean;
+    noWithdrawal?: boolean;
+    /** @minimum 0 */
+    weight?: number;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+}
 
 export interface ProductsResponse {
     items: Product[];
@@ -3414,6 +2811,16 @@ export interface ExpectedTotal {
     currency: string;
 }
 
+/**
+ * How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
+ */
+export type PaymentMethodId = (typeof PaymentMethodId)[keyof typeof PaymentMethodId];
+
+export const PaymentMethodId = {
+    card: 'card',
+    bank_transfer: 'bank_transfer'
+} as const;
+
 export interface CheckoutRequest {
     expectedTotal: ExpectedTotal;
     /**
@@ -3428,6 +2835,244 @@ export interface CheckoutRequest {
     billingAddressId?: Id;
     /** How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way. */
     paymentMethod?: PaymentMethodId;
+}
+
+export interface OrderLineProduct {
+    id: Id;
+    title: string;
+    /**
+     * Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
+     * @minimum 0
+     */
+    price: number;
+    description?: string;
+    requiresShipping?: boolean;
+    noWithdrawal?: boolean;
+    sku?: Sku;
+    /** @minimum 0 */
+    weight?: number;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    /**
+     * The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
+     * @minimum 0
+     * @maximum 1
+     */
+    taxRate: number;
+    rateType?: RateType;
+}
+
+export interface OrderLineCurrent {
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+}
+
+export interface OrderItem {
+    product: OrderLineProduct;
+    /** @minimum 1 */
+    quantity: number;
+    locale: Locale;
+    /** The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`. */
+    current: OrderLineCurrent | null;
+    /**
+     * VAT included in this line's total, at its own frozen `taxRate`.
+     * @minimum 0
+     */
+    readonly taxAmount: number;
+    /**
+     * This line's total excluding VAT — `price × quantity` minus `taxAmount`.
+     * @minimum 0
+     */
+    readonly netAmount: number;
+}
+
+export interface OrderTaxSummaryRow {
+    /**
+     * The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
+     * @minimum 0
+     */
+    rate: number;
+    /** @minimum 0 */
+    netAmount: number;
+    /** @minimum 0 */
+    taxAmount: number;
+    /**
+     * `netAmount + taxAmount`, not re-derived from a price.
+     * @minimum 0
+     */
+    grossAmount: number;
+}
+
+export interface OrderAddress {
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: CountryCode;
+    phone?: string;
+}
+
+export interface OrderTransferInstructions {
+    beneficiary: string;
+    iban: string;
+    /** Absent when the deployment has not configured one. */
+    bic?: string;
+    /** The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference. */
+    reference: string;
+}
+
+/**
+ * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
+ */
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+
+export const OrderStatus = {
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
+} as const;
+
+/**
+ * Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two.
+ */
+export type OrderPaymentStatus = (typeof OrderPaymentStatus)[keyof typeof OrderPaymentStatus];
+
+export const OrderPaymentStatus = {
+    unpaid: 'unpaid',
+    paid: 'paid',
+    partially_refunded: 'partially_refunded',
+    refunded: 'refunded'
+} as const;
+
+/**
+ * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only.
+ */
+export type OrderFulfillmentStatus =
+    (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
+
+export const OrderFulfillmentStatus = {
+    unfulfilled: 'unfulfilled',
+    in_progress: 'in_progress',
+    shipped: 'shipped',
+    fulfilled: 'fulfilled'
+} as const;
+
+/**
+ * Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status.
+ */
+export type OrderReturnStatus = (typeof OrderReturnStatus)[keyof typeof OrderReturnStatus];
+
+export const OrderReturnStatus = {
+    none: 'none',
+    requested: 'requested',
+    in_progress: 'in_progress',
+    partially_returned: 'partially_returned',
+    returned: 'returned'
+} as const;
+
+/**
+ * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles. Nobody handles their own money: recording a payment by hand is withheld on the caller's own order too.
+ */
+export interface OrderActions {
+    /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
+    transitions: OrderStatus[];
+    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further. */
+    cancel: boolean;
+    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
+    pay: boolean;
+    /** Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment, the caller holds the key that records one and their rank reaches the buyer. Never true for the buyer, whose own step is `pay` — not even for a buyer who is staff or an administrator. */
+    recordPayment: boolean;
+    /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
+    start: boolean;
+    /** Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead. */
+    ship: boolean;
+    /** Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
+    deliver: boolean;
+    /** Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not. */
+    fulfill: boolean;
+    /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
+    override: OrderStatus[];
+    /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
+    withdraw: boolean;
+    /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
+    withdrawUntil?: string;
+    /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
+    invoice: boolean;
+}
+
+export interface Order {
+    id: Id;
+    userId?: Id;
+    email: Email;
+    items: OrderItem[];
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+     * @minimum 0
+     */
+    totalPrice: number;
+    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+    readonly currency: string;
+    /**
+     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+     * @minimum 0
+     */
+    readonly netTotal: number;
+    /**
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
+     * @minimum 0
+     */
+    readonly taxTotal: number;
+    /**
+     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingNetAmount: number;
+    /**
+     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingTaxAmount: number;
+    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+    readonly taxSummary: readonly OrderTaxSummaryRow[];
+    /** Optional order notes */
+    notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
+    billingAddress?: OrderAddress;
+    paymentMethod?: PaymentMethodId;
+    payBy?: string;
+    readonly orderNumber: string;
+    transferInstructions?: OrderTransferInstructions;
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
+    actions?: OrderActions;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface CheckoutResponseEnvelope {
@@ -3482,14 +3127,26 @@ export interface OrdersResponseEnvelope {
     data: OrdersResponse;
 }
 
+export interface OrderLineInput {
+    productId: Id;
+    /**
+     * @minimum 1
+     * @maximum 999999
+     */
+    quantity: number;
+}
+
 /**
  * Create a new order.
  */
 export interface CreateOrderRequest {
     userId: Id;
     email: Email;
-    /** @minItems 1 */
-    items: CartItem[];
+    /**
+     * @minItems 1
+     * @maxItems 1000
+     */
+    items: OrderLineInput[];
 }
 
 export interface OrderEnvelope {
@@ -3592,6 +3249,49 @@ export interface PaymentMethodsResponseEnvelope {
 
 export interface CreatePaymentIntentRequest {
     orderId: Id;
+}
+
+/**
+ * Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
+ */
+export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
+
+export const RefundReason = {
+    cancellation: 'cancellation',
+    goodwill: 'goodwill',
+    return: 'return'
+} as const;
+
+/**
+ * `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator).
+ */
+export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
+
+export const RefundStatus = {
+    pending: 'pending',
+    succeeded: 'succeeded',
+    failed: 'failed'
+} as const;
+
+/**
+ * One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
+ */
+export interface Refund {
+    id: Id;
+    /**
+     * The amount returned, in the payment's own `currency`.
+     * @minimum 0
+     */
+    amount: number;
+    /** ISO-4217 currency code, copied from the payment. */
+    currency: string;
+    /** `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator). */
+    status: RefundStatus;
+    reason: RefundReason;
+    returnId?: Id;
+    /** When the refund succeeded. Absent while it has not. */
+    settledAt?: string;
+    createdAt: string;
 }
 
 /**
@@ -3807,6 +3507,28 @@ export interface ShippingMethodsResponseEnvelope {
     data: ShippingMethodsResponse;
 }
 
+/**
+ * The tail of the order's lifecycle, as the carrier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+export interface Shipment {
+    id: Id;
+    orderId: Id;
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
+    trackingCode?: string;
+    /** The tail of the order's lifecycle, as the carrier sees it. */
+    status: ShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 export interface ShipmentEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -3841,6 +3563,31 @@ export interface DeliverOrderRequest {
      */
     reason?: string;
 }
+
+/**
+ * Where a return stands: `requested → approved → received → closed`, or `requested → declined`. A withdrawal is born `approved` — or `closed`, when it reached the order before dispatch. Which move may follow which is the server's rule, answered per caller by `Return.actions`.
+ */
+export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus];
+
+export const ReturnStatus = {
+    requested: 'requested',
+    approved: 'approved',
+    declined: 'declined',
+    received: 'received',
+    closed: 'closed'
+} as const;
+
+/**
+ * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+ */
+export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
+
+export const ReturnReason = {
+    withdrawal: 'withdrawal',
+    defective: 'defective',
+    wrong_item: 'wrong_item',
+    other: 'other'
+} as const;
 
 /**
  * One line of a return — a snapshot of what is coming back, so it reads the same later.
@@ -4290,6 +4037,23 @@ export interface WebhookEventCatalogueResponseEnvelope {
     data: WebhookEventCatalogueEntry[];
 }
 
+export interface ApiKey {
+    id: Id;
+    name: string;
+    /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
+    publicPrefix: string;
+    /**
+     * The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+     * @minItems 1
+     */
+    permissions: string[];
+    lastUsedAt?: string;
+    expiresAt: string;
+    revokedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface ApiKeysResponse {
     items: ApiKey[];
     meta: PaginationMeta;
@@ -4339,6 +4103,254 @@ export interface ApiKeyCreatedEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: ApiKeyCreated;
+}
+
+export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
+
+export const ExportSessionType = {
+    refresh: 'refresh'
+} as const;
+
+export interface ExportSession {
+    id: Id;
+    type: ExportSessionType;
+    expiration?: string;
+    lastUsedAt?: string;
+}
+
+export interface ExportFeedbackTicket {
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: FeedbackRequestStatus;
+    respondedAt?: string;
+    createdAt?: string;
+}
+
+export interface CartItem {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+export interface WishlistExportItem {
+    productId: Id;
+}
+
+export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
+
+export const ExportPaymentStatus = {
+    requires_confirmation: 'requires_confirmation',
+    requires_action: 'requires_action',
+    processing: 'processing',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
+} as const;
+
+export interface ExportPayment {
+    id: Id;
+    orderId: Id;
+    /** @minimum 0 */
+    amount: number;
+    currency: string;
+    /** @minimum 0 */
+    amountRefunded: number;
+    refunds: Refund[];
+    status: ExportPaymentStatus;
+    provider: string;
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ExportInvoiceDocument {
+    orderId: Id;
+    number: string;
+    issuedAt: string;
+    currency: string;
+    /** @minimum 0 */
+    grandTotal: number;
+}
+
+export type ExportReturnLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+    title: string;
+};
+
+export interface ExportReturn {
+    id: Id;
+    orderId: Id;
+    status: ReturnStatus;
+    reason: ReturnReason;
+    note?: string;
+    declineReason?: string;
+    lines: ExportReturnLinesItem[];
+    createdAt?: string;
+}
+
+export type ExampleStatus = (typeof ExampleStatus)[keyof typeof ExampleStatus];
+
+export const ExampleStatus = {
+    draft: 'draft',
+    published: 'published',
+    archived: 'archived'
+} as const;
+
+export interface Example {
+    id: Id;
+    /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
+    title: string;
+    body: string;
+    status: ExampleStatus;
+    userId: Id;
+    /** The owner's display name. */
+    ownerName: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    /** Stamped the first time the example is published, never moved again. */
+    publishedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface ProductTitles {
+    [key: string]: string;
+}
+
+export interface CartLineRemovedParams {
+    productId: Id;
+    titles: ProductTitles;
+}
+
+/**
+ * Meaning, not look — a client picks the colour. The four words most notification APIs share (Ant Design, Atlassian flags).
+ */
+export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
+
+export const NotificationSeverity = {
+    info: 'info',
+    success: 'success',
+    warning: 'warning',
+    error: 'error'
+} as const;
+
+export type NotificationCartLineRemovedCode =
+    (typeof NotificationCartLineRemovedCode)[keyof typeof NotificationCartLineRemovedCode];
+
+export const NotificationCartLineRemovedCode = {
+    'notificationscart-line-removed': 'notifications.cart-line-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's cart with it.
+ */
+export interface NotificationCartLineRemoved {
+    id: Id;
+    code: NotificationCartLineRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationWishlistItemRemovedCode =
+    (typeof NotificationWishlistItemRemovedCode)[keyof typeof NotificationWishlistItemRemovedCode];
+
+export const NotificationWishlistItemRemovedCode = {
+    'notificationswishlist-item-removed': 'notifications.wishlist-item-removed'
+} as const;
+
+/**
+ * A product left the catalogue and left the caller's wishlist with it.
+ */
+export interface NotificationWishlistItemRemoved {
+    id: Id;
+    code: NotificationWishlistItemRemovedCode;
+    params: CartLineRemovedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type CartMergeRefusedParamsLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    requested: number;
+    titles: ProductTitles;
+};
+
+export interface CartMergeRefusedParams {
+    /** The guest-cart lines `POST /cart/merge` could not add at all. */
+    lines: CartMergeRefusedParamsLinesItem[];
+}
+
+export type NotificationCartMergeRefusedCode =
+    (typeof NotificationCartMergeRefusedCode)[keyof typeof NotificationCartMergeRefusedCode];
+
+export const NotificationCartMergeRefusedCode = {
+    'notificationscart-merge-refused': 'notifications.cart-merge-refused'
+} as const;
+
+/**
+ * Guest-cart lines `POST /cart/merge` could not add at all, because the product is no longer available.
+ */
+export interface NotificationCartMergeRefused {
+    id: Id;
+    code: NotificationCartMergeRefusedCode;
+    params: CartMergeRefusedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type Notification =
+    NotificationCartLineRemoved | NotificationWishlistItemRemoved | NotificationCartMergeRefused;
+
+export type AccountExportResponseInvoicing = {
+    invoices: ExportInvoiceDocument[];
+    creditNotes: ExportInvoiceDocument[];
+};
+
+export type AccountExportResponseRolesItemScope =
+    (typeof AccountExportResponseRolesItemScope)[keyof typeof AccountExportResponseRolesItemScope];
+
+export const AccountExportResponseRolesItemScope = {
+    tenant: 'tenant',
+    platform: 'platform'
+} as const;
+
+export type AccountExportResponseRolesItem = {
+    role: string;
+    scope: AccountExportResponseRolesItemScope;
+};
+
+export interface AccountExportResponse {
+    exportedAt: string;
+    profile: User;
+    auditLog: AuditEntryItem[];
+    addresses: Address[];
+    sessions: ExportSession[];
+    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
+    feedback?: ExportFeedbackTicket[];
+    cart: CartItem[];
+    wishlist: WishlistExportItem[];
+    orders: Order[];
+    payments: ExportPayment[];
+    invoicing: AccountExportResponseInvoicing;
+    shipments: Shipment[];
+    returns: ExportReturn[];
+    apiKeys: ApiKey[];
+    roles: AccountExportResponseRolesItem[];
+    examples: Example[];
+    notifications: Notification[];
 }
 
 export interface MergeCartRequest {
@@ -4583,16 +4595,16 @@ export type IfMatchHeaderParameter = string;
 
 export type IdParamParameter = Id[];
 
-export type UserIdParamParameter = Id;
-
-export type ProductIdParamParameter = Id;
-
 /**
  * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
  */
 export type HardDeleteParamParameter = boolean;
 
 export type MessagesAppQueryParamParameter = LocaleApp;
+
+export type UserIdParamParameter = Id;
+
+export type ProductIdParamParameter = Id;
 
 export type GetLocaleMessagesParams = {
     /**
@@ -7831,6 +7843,7 @@ export const listOrders = (
 
 /**
  * Creates a new order directly from the supplied payload, for the account named in `userId`. The rank rule applies to that account: an operator raises orders for customers, never for an equal or a superior (`OUTRANKED`). Raising one for oneself is allowed, but the steps that move its money then refuse the caller.
+ * A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
  * @summary Create order
  */
 export const createOrder = (
