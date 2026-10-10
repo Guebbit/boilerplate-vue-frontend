@@ -7730,6 +7730,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    apiKeyAuth:
+      type: http
+      scheme: bearer
+      description: An opaque `sk_...` machine-to-machine credential, minted via `POST /api-keys`.
     cookieAuth:
       type: apiKey
       in: cookie
