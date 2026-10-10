@@ -5842,7 +5842,7 @@ export const getAntibotChallenge = (
 };
 
 /**
- * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed (`product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
+ * The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed: the events the deployed modules declare (today `product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
  * @summary Report one browsing event
  */
 export const createAnalyticsEvent = (

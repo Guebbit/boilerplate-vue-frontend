@@ -218,6 +218,7 @@ paths:
       operationId: createLocale
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -342,6 +343,7 @@ paths:
       operationId: replaceLocale
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       requestBody:
@@ -395,6 +397,7 @@ paths:
       operationId: updateLocale
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       requestBody:
@@ -449,6 +452,7 @@ paths:
       operationId: deleteLocale
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       responses:
@@ -535,6 +539,7 @@ paths:
       operationId: listLocaleEntries
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/PageParam"
@@ -578,6 +583,7 @@ paths:
       operationId: listAppLocaleEntries
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -617,6 +623,7 @@ paths:
       operationId: createLocaleEntry
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -679,6 +686,7 @@ paths:
       operationId: replaceLocaleEntries
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -731,6 +739,7 @@ paths:
       operationId: mergeLocaleEntries
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -785,6 +794,7 @@ paths:
       operationId: updateLocaleEntry
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -831,6 +841,7 @@ paths:
       operationId: deleteLocaleEntry
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -865,6 +876,7 @@ paths:
       operationId: getEntityTranslations
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
@@ -913,6 +925,7 @@ paths:
       operationId: replaceEntityTranslations
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
@@ -983,6 +996,7 @@ paths:
       operationId: upsertEntityTranslations
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
@@ -1233,6 +1247,7 @@ paths:
       operationId: listAuditEntries
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - name: actor
           in: query
@@ -1342,7 +1357,7 @@ paths:
         - Analytics
       summary: Report one browsing event
       description: |
-        The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed (`product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
+        The relay for events a browser sees and the server cannot: the response cache answers most reads without reaching the application. The set is closed: the events the deployed modules declare (today `product_viewed`, `products_searched`); a business fact (cart, checkout, order, payment, signup, login) is never accepted here, it is emitted by the service that makes it true. A visitor who has not agreed to analytics is not measured: the answer is the same `204`, and nothing is recorded or forwarded. A page should not call this before the visitor has agreed.
       operationId: createAnalyticsEvent
       security: []
       requestBody:
@@ -2967,6 +2982,7 @@ paths:
       operationId: listUsers
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3025,6 +3041,7 @@ paths:
       operationId: createUser
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -3120,6 +3137,7 @@ paths:
       operationId: getUserById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3153,6 +3171,7 @@ paths:
       operationId: replaceUserById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -3208,6 +3227,7 @@ paths:
       operationId: updateUserById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -3380,6 +3400,7 @@ paths:
       x-alias-of: listUsers
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -3467,6 +3488,7 @@ paths:
       operationId: listFeedbackRequests
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3518,6 +3540,7 @@ paths:
       x-alias-of: listFeedbackRequests
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -3559,6 +3582,7 @@ paths:
       operationId: replaceFeedbackRequestStatus
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -3603,6 +3627,7 @@ paths:
       operationId: updateFeedbackRequestStatus
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -3650,6 +3675,7 @@ paths:
       operationId: deleteFeedbackRequest
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3678,6 +3704,7 @@ paths:
       security:
         - {}
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3759,6 +3786,7 @@ paths:
       operationId: createProduct
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -3808,6 +3836,7 @@ paths:
       x-alias-of: deleteProductById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/HardDeleteParam"
       requestBody:
@@ -3899,6 +3928,7 @@ paths:
       security:
         - {}
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3936,6 +3966,7 @@ paths:
       operationId: replaceProductById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -4008,6 +4039,7 @@ paths:
       operationId: updateProductById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -4066,6 +4098,7 @@ paths:
       operationId: deleteProductById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
@@ -4113,6 +4146,7 @@ paths:
       operationId: getProductAdmin
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -4147,6 +4181,7 @@ paths:
       operationId: restoreProductById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -4183,6 +4218,7 @@ paths:
       x-alias-of: deleteProductById
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -4216,6 +4252,7 @@ paths:
       security:
         - {}
         - bearerAuth: []
+        - apiKeyAuth: []
       x-alias-of: listProducts
       requestBody:
         required: true
@@ -6338,6 +6375,7 @@ paths:
       operationId: listInventoryLevels
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6377,6 +6415,7 @@ paths:
       operationId: listStockMovements
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6421,6 +6460,7 @@ paths:
       operationId: receiveStock
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -6468,6 +6508,7 @@ paths:
       operationId: adjustStock
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -6522,6 +6563,7 @@ paths:
       operationId: sweepReservations
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       responses:
         "200":
           description: How many holds were expired
@@ -6551,6 +6593,7 @@ paths:
       operationId: listWebhookSubscriptions
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6596,6 +6639,7 @@ paths:
       operationId: createWebhookSubscription
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -6643,6 +6687,7 @@ paths:
       operationId: replaceWebhookSubscription
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -6689,6 +6734,7 @@ paths:
       operationId: updateWebhookSubscription
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -6736,6 +6782,7 @@ paths:
       operationId: deleteWebhookSubscription
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -6772,6 +6819,7 @@ paths:
       operationId: rotateWebhookSubscriptionSecret
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -6806,6 +6854,7 @@ paths:
       operationId: removeWebhookSubscriptionSecret
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - name: secretId
@@ -6846,6 +6895,7 @@ paths:
       operationId: listWebhookDeliveries
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6894,6 +6944,7 @@ paths:
       operationId: replayWebhookDelivery
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -6931,6 +6982,7 @@ paths:
       operationId: listWebhookEvents
       security:
         - bearerAuth: []
+        - apiKeyAuth: []
       responses:
         "200":
           description: Every event a subscription may filter on
@@ -10261,6 +10313,15 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/AntibotChallenge"
+    AnalyticsEventRequest:
+      oneOf:
+        - $ref: "#/components/schemas/ProductViewedEvent"
+        - $ref: "#/components/schemas/ProductsSearchedEvent"
+      discriminator:
+        propertyName: event
+        mapping:
+          product_viewed: "#/components/schemas/ProductViewedEvent"
+          products_searched: "#/components/schemas/ProductsSearchedEvent"
     ProductViewedEvent:
       type: object
       additionalProperties: false
@@ -10299,15 +10360,6 @@ components:
           description: How many products the search found.
         page:
           $ref: "#/components/schemas/Page"
-    AnalyticsEventRequest:
-      oneOf:
-        - $ref: "#/components/schemas/ProductViewedEvent"
-        - $ref: "#/components/schemas/ProductsSearchedEvent"
-      discriminator:
-        propertyName: event
-        mapping:
-          product_viewed: "#/components/schemas/ProductViewedEvent"
-          products_searched: "#/components/schemas/ProductsSearchedEvent"
     ReplaceAccountRequest:
       type: object
       additionalProperties: false
