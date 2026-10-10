@@ -6,18 +6,23 @@ rules:
     operation-operationId: error
     operation-tags: error
 
-    # Its `given` filter dereferences every visited node, and Spectral 6.16 visits the `null`
-    # member of `ImageRemoval`'s `enum: [null]` (the null-only write-side `imageUrl`) — a crash,
-    # not a finding. The enum has one member, so there is nothing for the rule to catch.
+    # Its `given` filter dereferences every visited node, and Spectral 6.16 visits a `null` value
+    # (the `null` member of a 3.1 `type: 'null'` union, an `example: null`) — a crash, not a
+    # finding. No schema here has an `enum` worth checking for duplicates that codegen would not.
     duplicated-entry-in-enum: off
 
-    # --- Avoid nullable (optional) ---
-    avoid-nullable:
-        description: 'Prefer optional properties over nullable=true for codegen friendliness.'
-        severity: warn
-        given: '$..nullable'
+    # --- OpenAPI 3.1 has no `nullable` ---
+    # 3.1 adopted JSON Schema 2020-12, where `nullable: true` is an unknown keyword that tools
+    # ignore silently. Write `type: [X, 'null']`, or `oneOf` with `{ type: 'null' }` around a `$ref`.
+    no-nullable-keyword:
+        description: "`nullable` is OpenAPI 3.0. In 3.1 write `type: [X, 'null']`, or `oneOf` with `{ type: 'null' }` around a `$ref`."
+        severity: error
+        given: "$..[?(@property === 'nullable' && @parentProperty !== 'properties')]"
         then:
-            function: falsy
+            function: schema
+            functionOptions:
+                schema:
+                    not: {}
 
     # --- Catch the common typo: $refs instead of $ref ---
     no-refs-typo:

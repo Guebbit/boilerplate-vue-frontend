@@ -989,8 +989,8 @@ export const replaceEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const replaceEntityTranslationsBodyOneOriginDefault = `human`;
 export const ReplaceEntityTranslationsBody = zod.record(
     zod.string(),
-    zod
-        .strictObject({
+    zod.union([
+        zod.strictObject({
             fields: zod.record(
                 zod.string(),
                 zod.string().min(1).max(replaceEntityTranslationsBodyOneFieldsMaxOne)
@@ -998,8 +998,9 @@ export const ReplaceEntityTranslationsBody = zod.record(
             origin: zod
                 .enum(['machine', 'human'])
                 .default(replaceEntityTranslationsBodyOneOriginDefault)
-        })
-        .nullable()
+        }),
+        zod.null()
+    ])
 );
 export const replaceEntityTranslationsResponseDataEntityTypeMax = 64;
 export const replaceEntityTranslationsResponseDataEntityIdMax = 64;
@@ -1112,8 +1113,8 @@ export const upsertEntityTranslationsBodyOneFieldsMaxOne = 10000;
 export const upsertEntityTranslationsBodyOneOriginDefault = `human`;
 export const UpsertEntityTranslationsBody = zod.record(
     zod.string(),
-    zod
-        .strictObject({
+    zod.union([
+        zod.strictObject({
             fields: zod.record(
                 zod.string(),
                 zod.string().min(1).max(upsertEntityTranslationsBodyOneFieldsMaxOne).nullable()
@@ -1121,8 +1122,9 @@ export const UpsertEntityTranslationsBody = zod.record(
             origin: zod
                 .enum(['machine', 'human'])
                 .default(upsertEntityTranslationsBodyOneOriginDefault)
-        })
-        .nullable()
+        }),
+        zod.null()
+    ])
 );
 export const upsertEntityTranslationsResponseDataEntityTypeMax = 64;
 export const upsertEntityTranslationsResponseDataEntityIdMax = 64;
@@ -1717,11 +1719,15 @@ export const ReplaceAccountBody = zod.strictObject({
     email: zod.email().max(replaceAccountBodyEmailMax),
     username: zod.string().min(replaceAccountBodyUsernameMin).max(replaceAccountBodyUsernameMax),
     locale: zod
-        .string()
-        .max(replaceAccountBodyLocaleOneMax)
-        .regex(replaceAccountBodyLocaleOneRegExp)
-        .nullish(),
-    imageUrl: zod.literal(null).nullish(),
+        .union([
+            zod
+                .string()
+                .max(replaceAccountBodyLocaleOneMax)
+                .regex(replaceAccountBodyLocaleOneRegExp),
+            zod.null()
+        ])
+        .optional(),
+    imageUrl: zod.null().optional(),
     phone: zod.string().min(1).max(replaceAccountBodyPhoneMax).nullish(),
     website: zod.string().min(1).max(replaceAccountBodyWebsiteMax).nullish(),
     analyticsConsent: zod.boolean()
@@ -1794,11 +1800,12 @@ export const UpdateAccountBody = zod.strictObject({
         .max(updateAccountBodyUsernameMax)
         .optional(),
     locale: zod
-        .string()
-        .max(updateAccountBodyLocaleOneMax)
-        .regex(updateAccountBodyLocaleOneRegExp)
-        .nullish(),
-    imageUrl: zod.literal(null).nullish(),
+        .union([
+            zod.string().max(updateAccountBodyLocaleOneMax).regex(updateAccountBodyLocaleOneRegExp),
+            zod.null()
+        ])
+        .optional(),
+    imageUrl: zod.null().optional(),
     phone: zod.string().min(1).max(updateAccountBodyPhoneMax).nullish(),
     website: zod.string().min(1).max(updateAccountBodyWebsiteMax).nullish(),
     analyticsConsent: zod.boolean().optional()
@@ -3025,7 +3032,7 @@ export const CreateUserBody = zod.strictObject({
     username: zod.string().min(createUserBodyUsernameMin).max(createUserBodyUsernameMax),
     role: zod.string().min(1).max(createUserBodyRoleMax).optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
-    imageUrl: zod.literal(null).nullish(),
+    imageUrl: zod.null().optional(),
     locale: zod.string().max(createUserBodyLocaleMax).regex(createUserBodyLocaleRegExp).optional()
 });
 export const createUserResponseDataIdMax = 64;
@@ -3170,12 +3177,16 @@ export const ReplaceUserByIdBody = zod.strictObject({
     username: zod.string().min(replaceUserByIdBodyUsernameMin).max(replaceUserByIdBodyUsernameMax),
     role: zod.string().min(1).max(replaceUserByIdBodyRoleMax),
     active: zod.boolean(),
-    imageUrl: zod.literal(null).nullish(),
+    imageUrl: zod.null().optional(),
     locale: zod
-        .string()
-        .max(replaceUserByIdBodyLocaleOneMax)
-        .regex(replaceUserByIdBodyLocaleOneRegExp)
-        .nullish(),
+        .union([
+            zod
+                .string()
+                .max(replaceUserByIdBodyLocaleOneMax)
+                .regex(replaceUserByIdBodyLocaleOneRegExp),
+            zod.null()
+        ])
+        .optional(),
     phone: zod.string().min(1).max(replaceUserByIdBodyPhoneMax).nullish(),
     website: zod.string().min(1).max(replaceUserByIdBodyWebsiteMax).nullish()
 });
@@ -3252,12 +3263,16 @@ export const UpdateUserByIdBody = zod.strictObject({
         .optional(),
     role: zod.string().min(1).max(updateUserByIdBodyRoleMax).optional(),
     active: zod.boolean().optional(),
-    imageUrl: zod.literal(null).nullish(),
+    imageUrl: zod.null().optional(),
     locale: zod
-        .string()
-        .max(updateUserByIdBodyLocaleOneMax)
-        .regex(updateUserByIdBodyLocaleOneRegExp)
-        .nullish(),
+        .union([
+            zod
+                .string()
+                .max(updateUserByIdBodyLocaleOneMax)
+                .regex(updateUserByIdBodyLocaleOneRegExp),
+            zod.null()
+        ])
+        .optional(),
     phone: zod.string().min(1).max(updateUserByIdBodyPhoneMax).nullish(),
     website: zod.string().min(1).max(updateUserByIdBodyWebsiteMax).nullish()
 });
@@ -3974,16 +3989,17 @@ export const createProductBodyTagsItemMax = 50;
 export const CreateProductBody = zod.strictObject({
     translations: zod.record(
         zod.string(),
-        zod
-            .strictObject({
+        zod.union([
+            zod.strictObject({
                 title: zod.string().max(createProductBodyTranslationsOneTitleMax),
                 description: zod
                     .string()
                     .min(1)
                     .max(createProductBodyTranslationsOneDescriptionMax)
                     .optional()
-            })
-            .nullable()
+            }),
+            zod.null()
+        ])
     ),
     price: zod.number().min(createProductBodyPriceMin),
     taxClass: zod.enum(['reduced', 'zero']).optional(),
@@ -3995,7 +4011,7 @@ export const CreateProductBody = zod.strictObject({
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
-    imageUrl: zod.literal(null).nullish(),
+    imageUrl: zod.null().optional(),
     categories: zod.array(zod.string().min(1).max(createProductBodyCategoriesItemMax)).optional(),
     tags: zod.array(zod.string().min(1).max(createProductBodyTagsItemMax)).optional()
 });
@@ -4186,27 +4202,30 @@ export const replaceProductByIdBodyTagsItemMax = 50;
 export const ReplaceProductByIdBody = zod.strictObject({
     translations: zod.record(
         zod.string(),
-        zod
-            .strictObject({
+        zod.union([
+            zod.strictObject({
                 title: zod.string().max(replaceProductByIdBodyTranslationsOneTitleMax),
                 description: zod
                     .string()
                     .min(1)
                     .max(replaceProductByIdBodyTranslationsOneDescriptionMax)
                     .optional()
-            })
-            .nullable()
+            }),
+            zod.null()
+        ])
     ),
     price: zod.number().min(replaceProductByIdBodyPriceMin),
-    taxClass: zod.enum(['reduced', 'zero']).nullish(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).nullish(),
-    sku: zod.string().min(1).max(replaceProductByIdBodySkuOneMax).nullish(),
+    taxClass: zod.union([zod.enum(['reduced', 'zero']), zod.null()]).optional(),
+    rateType: zod.union([zod.enum(['standard', 'zero-rated', 'exempt']), zod.null()]).optional(),
+    sku: zod
+        .union([zod.string().min(1).max(replaceProductByIdBodySkuOneMax), zod.null()])
+        .optional(),
     active: zod.boolean(),
     purchasable: zod.boolean(),
     requiresShipping: zod.boolean(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
-    imageUrl: zod.literal(null).nullish(),
+    imageUrl: zod.null().optional(),
     categories: zod.array(zod.string().min(1).max(replaceProductByIdBodyCategoriesItemMax)),
     tags: zod.array(zod.string().min(1).max(replaceProductByIdBodyTagsItemMax))
 });
@@ -4299,8 +4318,8 @@ export const UpdateProductByIdBody = zod.strictObject({
     translations: zod
         .record(
             zod.string(),
-            zod
-                .strictObject({
+            zod.union([
+                zod.strictObject({
                     title: zod
                         .string()
                         .max(updateProductByIdBodyTranslationsOneTitleMax)
@@ -4310,20 +4329,23 @@ export const UpdateProductByIdBody = zod.strictObject({
                         .min(1)
                         .max(updateProductByIdBodyTranslationsOneDescriptionMax)
                         .nullish()
-                })
-                .nullable()
+                }),
+                zod.null()
+            ])
         )
         .optional(),
     price: zod.number().min(updateProductByIdBodyPriceMin).optional(),
-    taxClass: zod.enum(['reduced', 'zero']).nullish(),
-    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).nullish(),
-    sku: zod.string().min(1).max(updateProductByIdBodySkuOneMax).nullish(),
+    taxClass: zod.union([zod.enum(['reduced', 'zero']), zod.null()]).optional(),
+    rateType: zod.union([zod.enum(['standard', 'zero-rated', 'exempt']), zod.null()]).optional(),
+    sku: zod
+        .union([zod.string().min(1).max(updateProductByIdBodySkuOneMax), zod.null()])
+        .optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().optional(),
     requiresShipping: zod.boolean().optional(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
-    imageUrl: zod.literal(null).nullish(),
+    imageUrl: zod.null().optional(),
     categories: zod
         .array(zod.string().min(1).max(updateProductByIdBodyCategoriesItemMax))
         .optional(),
@@ -5291,12 +5313,13 @@ export const CheckoutResponse = zod.strictObject({
                     .string()
                     .max(checkoutResponseDataItemsItemLocaleMax)
                     .regex(checkoutResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(checkoutResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(checkoutResponseDataItemsItemNetAmountMin)
             })
@@ -5760,12 +5783,13 @@ export const ListOrdersResponse = zod.strictObject({
                             .string()
                             .max(listOrdersResponseDataItemsItemItemsItemLocaleMax)
                             .regex(listOrdersResponseDataItemsItemItemsItemLocaleRegExp),
-                        current: zod
-                            .strictObject({
+                        current: zod.union([
+                            zod.strictObject({
                                 imageUrl: zod.string().min(1).optional(),
                                 thumbnailUrl: zod.string().optional()
-                            })
-                            .nullable(),
+                            }),
+                            zod.null()
+                        ]),
                         taxAmount: zod
                             .number()
                             .min(listOrdersResponseDataItemsItemItemsItemTaxAmountMin),
@@ -6048,12 +6072,13 @@ export const CreateOrderResponse = zod.strictObject({
                     .string()
                     .max(createOrderResponseDataItemsItemLocaleMax)
                     .regex(createOrderResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(createOrderResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(createOrderResponseDataItemsItemNetAmountMin)
             })
@@ -6334,12 +6359,13 @@ export const SearchOrdersResponse = zod.strictObject({
                             .string()
                             .max(searchOrdersResponseDataItemsItemItemsItemLocaleMax)
                             .regex(searchOrdersResponseDataItemsItemItemsItemLocaleRegExp),
-                        current: zod
-                            .strictObject({
+                        current: zod.union([
+                            zod.strictObject({
                                 imageUrl: zod.string().min(1).optional(),
                                 thumbnailUrl: zod.string().optional()
-                            })
-                            .nullable(),
+                            }),
+                            zod.null()
+                        ]),
                         taxAmount: zod
                             .number()
                             .min(searchOrdersResponseDataItemsItemItemsItemTaxAmountMin),
@@ -6592,12 +6618,13 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(getOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(getOrderByIdResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(getOrderByIdResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(getOrderByIdResponseDataItemsItemNetAmountMin)
             })
@@ -6804,12 +6831,13 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(replaceOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(replaceOrderByIdResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(replaceOrderByIdResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(replaceOrderByIdResponseDataItemsItemNetAmountMin)
             })
@@ -7018,12 +7046,13 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(updateOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(updateOrderByIdResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(updateOrderByIdResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(updateOrderByIdResponseDataItemsItemNetAmountMin)
             })
@@ -7249,12 +7278,13 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(restoreOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(restoreOrderByIdResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(restoreOrderByIdResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(restoreOrderByIdResponseDataItemsItemNetAmountMin)
             })
@@ -7477,12 +7507,13 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(cancelOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(cancelOrderByIdResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(cancelOrderByIdResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(cancelOrderByIdResponseDataItemsItemNetAmountMin)
             })
@@ -7692,12 +7723,13 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .string()
                     .max(overrideOrderStatusResponseDataItemsItemLocaleMax)
                     .regex(overrideOrderStatusResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(overrideOrderStatusResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(overrideOrderStatusResponseDataItemsItemNetAmountMin)
             })
@@ -8192,12 +8224,13 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     .string()
                     .max(getOrderByReferenceResponseDataItemsItemLocaleMax)
                     .regex(getOrderByReferenceResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(getOrderByReferenceResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(getOrderByReferenceResponseDataItemsItemNetAmountMin)
             })
@@ -8956,12 +8989,13 @@ export const StartFulfilmentResponse = zod.strictObject({
                     .string()
                     .max(startFulfilmentResponseDataItemsItemLocaleMax)
                     .regex(startFulfilmentResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(startFulfilmentResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(startFulfilmentResponseDataItemsItemNetAmountMin)
             })
@@ -9250,12 +9284,13 @@ export const FulfillOrderResponse = zod.strictObject({
                     .string()
                     .max(fulfillOrderResponseDataItemsItemLocaleMax)
                     .regex(fulfillOrderResponseDataItemsItemLocaleRegExp),
-                current: zod
-                    .strictObject({
+                current: zod.union([
+                    zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
                         thumbnailUrl: zod.string().optional()
-                    })
-                    .nullable(),
+                    }),
+                    zod.null()
+                ]),
                 taxAmount: zod.number().min(fulfillOrderResponseDataItemsItemTaxAmountMin),
                 netAmount: zod.number().min(fulfillOrderResponseDataItemsItemNetAmountMin)
             })
@@ -11133,12 +11168,13 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .string()
                         .max(downloadAccountExportResponseOrdersItemItemsItemLocaleMax)
                         .regex(downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp),
-                    current: zod
-                        .strictObject({
+                    current: zod.union([
+                        zod.strictObject({
                             imageUrl: zod.string().min(1).optional(),
                             thumbnailUrl: zod.string().optional()
-                        })
-                        .nullable(),
+                        }),
+                        zod.null()
+                    ]),
                     taxAmount: zod
                         .number()
                         .min(downloadAccountExportResponseOrdersItemItemsItemTaxAmountMin),

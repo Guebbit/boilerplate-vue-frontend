@@ -75,10 +75,9 @@ export type ImageUrl = string;
 
 /**
  * Write-side `imageUrl`: the ONLY accepted value is `null`, meaning "remove the current image". A new image is sent as multipart `imageUpload` bytes. A client never names a path in this server's store, because it cannot know which files are its own (a path would let one record delete another's file). Responses carry the real path under `ImageUrl`.
+ * @nullable
  */
-export type ImageRemoval = (typeof ImageRemoval)[keyof typeof ImageRemoval] | null;
-
-export const ImageRemoval = {} as const;
+export type ImageRemoval = null;
 
 /**
  * Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs/tools/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.
@@ -1061,9 +1060,8 @@ export interface ReplaceAccountRequest {
      * @maxLength 50
      */
     username: string;
-    /** @nullable */
-    locale?: string | null;
-    imageUrl?: ImageRemoval | null;
+    locale?: Locale | null;
+    imageUrl?: ImageRemoval;
     /**
      * @minLength 1
      * @maxLength 32
@@ -1109,9 +1107,8 @@ export interface UpdateAccountRequest {
      * @maxLength 50
      */
     username?: string;
-    /** @nullable */
-    locale?: string | null;
-    imageUrl?: ImageRemoval | null;
+    locale?: Locale | null;
+    imageUrl?: ImageRemoval;
     /**
      * @minLength 1
      * @maxLength 32
@@ -1902,7 +1899,7 @@ export interface CreateUserRequest {
      */
     role?: string;
     active?: boolean;
-    imageUrl?: ImageRemoval | null;
+    imageUrl?: ImageRemoval;
     locale?: Locale;
 }
 
@@ -1941,9 +1938,8 @@ export interface ReplaceUserByIdRequest {
      */
     role: string;
     active: boolean;
-    imageUrl?: ImageRemoval | null;
-    /** @nullable */
-    locale?: string | null;
+    imageUrl?: ImageRemoval;
+    locale?: Locale | null;
     /**
      * @minLength 1
      * @maxLength 32
@@ -1997,9 +1993,8 @@ export interface UpdateUserByIdRequest {
      */
     role?: string;
     active?: boolean;
-    imageUrl?: ImageRemoval | null;
-    /** @nullable */
-    locale?: string | null;
+    imageUrl?: ImageRemoval;
+    locale?: Locale | null;
     /**
      * @minLength 1
      * @maxLength 32
@@ -2308,7 +2303,7 @@ export interface CreateProductRequest {
      * @minimum 0
      */
     weight?: number;
-    imageUrl?: ImageRemoval | null;
+    imageUrl?: ImageRemoval;
     /**
      * @items.minLength 1
      * @items.maxLength 100
@@ -2409,12 +2404,9 @@ export interface ReplaceProductRequest {
      * @minimum 0
      */
     price: number;
-    /** @nullable */
-    taxClass?: string | null;
-    /** @nullable */
-    rateType?: string | null;
-    /** @nullable */
-    sku?: string | null;
+    taxClass?: TaxClass | null;
+    rateType?: RateType | null;
+    sku?: Sku | null;
     active: boolean;
     purchasable: boolean;
     requiresShipping: boolean;
@@ -2425,7 +2417,7 @@ export interface ReplaceProductRequest {
      * @nullable
      */
     weight?: number | null;
-    imageUrl?: ImageRemoval | null;
+    imageUrl?: ImageRemoval;
     /**
      * @items.minLength 1
      * @items.maxLength 100
@@ -2504,12 +2496,9 @@ export interface UpdateProductRequest {
      * @minimum 0
      */
     price?: number;
-    /** @nullable */
-    taxClass?: string | null;
-    /** @nullable */
-    rateType?: string | null;
-    /** @nullable */
-    sku?: string | null;
+    taxClass?: TaxClass | null;
+    rateType?: RateType | null;
+    sku?: Sku | null;
     active?: boolean;
     purchasable?: boolean;
     requiresShipping?: boolean;
@@ -2520,7 +2509,7 @@ export interface UpdateProductRequest {
      * @nullable
      */
     weight?: number | null;
-    imageUrl?: ImageRemoval | null;
+    imageUrl?: ImageRemoval;
     /**
      * @items.minLength 1
      * @items.maxLength 100
@@ -7771,7 +7760,7 @@ export const checkout = (
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
-    orderId: Id,
+    orderId: string,
     options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
 ) => {
     return orvalMutator<CartResponseEnvelope>(
@@ -8140,7 +8129,7 @@ export const createPaymentIntent = (
  * @summary Get the payment behind an order
  */
 export const getPaymentByOrder = (
-    orderId: Id,
+    orderId: string,
     options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
 ) => {
     return orvalMutator<PaymentEnvelope>(
@@ -8168,7 +8157,7 @@ export const getOrderByReference = (
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrder = (
-    orderId: Id,
+    orderId: string,
     refundPaymentRequest?: RefundPaymentRequest,
     options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
 ) => {
@@ -8188,7 +8177,7 @@ export const refundPaymentByOrder = (
  * @summary Record a payment that arrived outside the provider
  */
 export const recordOfflinePayment = (
-    orderId: Id,
+    orderId: string,
     recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
     options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
 ) => {
@@ -8272,7 +8261,7 @@ export const listShippingMethods = (
  * @summary Get the shipment behind an order
  */
 export const getShipmentByOrder = (
-    orderId: Id,
+    orderId: string,
     options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
 ) => {
     return orvalMutator<ShipmentEnvelope>(
@@ -8286,7 +8275,7 @@ export const getShipmentByOrder = (
  * @summary Begin fulfilling a paid order
  */
 export const startFulfilment = (
-    orderId: Id,
+    orderId: string,
     options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
 ) => {
     return orvalMutator<OrderEnvelope>(
@@ -8300,7 +8289,7 @@ export const startFulfilment = (
  * @summary Record a parcel's handover to the carrier
  */
 export const shipOrder = (
-    orderId: Id,
+    orderId: string,
     shipOrderRequest?: ShipOrderRequest,
     options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
 ) => {
@@ -8320,7 +8309,7 @@ export const shipOrder = (
  * @summary Record a parcel's arrival
  */
 export const deliverOrder = (
-    orderId: Id,
+    orderId: string,
     deliverOrderRequest?: DeliverOrderRequest,
     options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
 ) => {
@@ -8340,7 +8329,7 @@ export const deliverOrder = (
  * @summary Mark a digital-only order fulfilled, with no shipment
  */
 export const fulfillOrder = (
-    orderId: Id,
+    orderId: string,
     options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
 ) => {
     return orvalMutator<OrderEnvelope>(
