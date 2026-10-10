@@ -899,6 +899,7 @@ export interface ExportReturn {
     status: ReturnStatus;
     reason: ReturnReason;
     note?: string;
+    declineReason?: string;
     lines: ExportReturnLinesItem[];
     createdAt?: string;
 }

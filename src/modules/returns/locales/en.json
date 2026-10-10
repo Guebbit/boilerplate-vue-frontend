@@ -57,6 +57,7 @@
         "label-quantity": "Quantity (up to {max})",
         "label-reason": "Reason",
         "label-note": "Anything we should know? (optional)",
+        "hint-note": "Describe the item. Don't include phone numbers or addresses.",
         "button-submit": "Request return",
         "button-cancel": "Cancel",
         "error-reason-required": "Choose a reason",

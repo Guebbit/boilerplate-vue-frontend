@@ -57,6 +57,7 @@
         "label-quantity": "Quantità (fino a {max})",
         "label-reason": "Motivo",
         "label-note": "Qualcosa da dirci? (facoltativo)",
+        "hint-note": "Descrivi l'articolo. Non inserire numeri di telefono o indirizzi.",
         "button-submit": "Richiedi il reso",
         "button-cancel": "Annulla",
         "error-reason-required": "Scegli un motivo",

@@ -14638,6 +14638,8 @@ components:
           $ref: "#/components/schemas/ReturnReason"
         note:
           type: string
+        declineReason:
+          type: string
         lines:
           type: array
           items:
