@@ -4,7 +4,7 @@
  * playground assemble that no single endpoint answers with, plus the feed entry and connection
  * lifecycle of the SSE stream.
  *
- * Contract types (ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem, etc.)
+ * Contract types (ObservabilityHealth, ObservabilityMetricsSummary, AuditEntryItem, etc.)
  * come from `@types`, which re-exports the generated `@api` client types.
  * Only UI/composition-specific types belong here.
  */

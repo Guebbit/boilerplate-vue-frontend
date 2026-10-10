@@ -9,7 +9,7 @@
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAsyncAction } from '@guebbit/vue-toolkit';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
-import type { AuditEntryItem, AuditEventItem } from '@types';
+import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { translate } from '@/i18n';
 
@@ -21,18 +21,11 @@ import { translate } from '@/i18n';
 export type AuditEndpoint = 'platform' | 'shop';
 
 /**
- * One row of either trail. The two contracts declare separate schema names
- * (`AuditEventItem`/`AuditEntryItem`) but the same fields — this is the shape a caller reading
- * either can rely on.
- */
-export type AuditTrailItem = AuditEventItem | AuditEntryItem;
-
-/**
  * Shape returned by {@link useAuditTrail}.
  */
 export interface UseAuditTrailReturn {
     /** Rows of the current page. */
-    entries: ComputedRef<AuditTrailItem[]>;
+    entries: ComputedRef<AuditEntryItem[]>;
     /** Every row matching the filters, not just the page. */
     total: ComputedRef<number>;
     /** How many pages the current filters span. */

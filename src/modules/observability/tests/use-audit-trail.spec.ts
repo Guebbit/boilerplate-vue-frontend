@@ -8,7 +8,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getObservabilityAuditLogs, listAuditEntries } from '@api';
-import type { AuditEntryItem, AuditEventItem } from '@api';
+import type { AuditEntryItem } from '@api';
 import * as schemas from '@api/schemas';
 import { useAuditTrail } from '../composables/use-audit-trail.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
@@ -21,8 +21,8 @@ const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
     totalPages
 });
 
-/** One platform-trail row exactly as `AuditEventItem` declares it. */
-const EVENT_ITEM: AuditEventItem = {
+/** One platform-trail row; the platform trail answers the same `AuditEntryItem` as the shop one. */
+const EVENT_ITEM: AuditEntryItem = {
     actor_user_id: 'ada@example.com',
     actor_role: 'admin',
     actor_scope: 'tenant',

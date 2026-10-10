@@ -1458,6 +1458,7 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
         items: zod.array(
             zod.strictObject({
                 actor_user_id: zod.string(),
+                actor_credential_id: zod.string().optional(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
                 actor_role_name: zod.string().optional(),
                 actor_scope: zod.enum(['tenant', 'platform']),
@@ -1537,6 +1538,7 @@ export const ListAuditEntriesResponse = zod.strictObject({
         items: zod.array(
             zod.strictObject({
                 actor_user_id: zod.string(),
+                actor_credential_id: zod.string().optional(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
                 actor_role_name: zod.string().optional(),
                 actor_scope: zod.enum(['tenant', 'platform']),
@@ -11235,6 +11237,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
     auditLog: zod.array(
         zod.strictObject({
             actor_user_id: zod.string(),
+            actor_credential_id: zod.string().optional(),
             actor_role: zod.enum(['admin', 'user', 'anonymous', 'system']),
             actor_role_name: zod.string().optional(),
             actor_scope: zod.enum(['tenant', 'platform']),

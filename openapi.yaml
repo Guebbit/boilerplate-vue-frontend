@@ -8873,7 +8873,7 @@ components:
         shipments:
           type: array
           items:
-            $ref: "#/components/schemas/ExportShipment"
+            $ref: "#/components/schemas/Shipment"
         cart:
           type: array
           items:
@@ -8881,13 +8881,7 @@ components:
         wishlist:
           type: array
           items:
-            type: object
-            additionalProperties: false
-            required:
-              - productId
-            properties:
-              productId:
-                $ref: "#/components/schemas/Id"
+            $ref: "#/components/schemas/WishlistItem"
         sessions:
           type: array
           items:
@@ -8895,7 +8889,7 @@ components:
         auditLog:
           type: array
           items:
-            $ref: "#/components/schemas/ExportAuditEntry"
+            $ref: "#/components/schemas/AuditEntryItem"
         feedback:
           type: array
           description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
@@ -9992,7 +9986,7 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ObservabilityMetricsSummary"
-    AuditEventItem:
+    AuditEntryItem:
       type: object
       additionalProperties: false
       required:
@@ -10006,6 +10000,9 @@ components:
       properties:
         actor_user_id:
           type: string
+        actor_credential_id:
+          type: string
+          description: The API key the action was done with. Absent when a person did it themselves.
         actor_role:
           type: string
           enum:
@@ -10032,6 +10029,7 @@ components:
             - failure
         ip:
           type: string
+          description: "The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters."
         user_agent:
           type: string
         request_id:
@@ -10063,7 +10061,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/AuditEventItem"
+            $ref: "#/components/schemas/AuditEntryItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
     AuditLogsResponseEnvelope:
@@ -10083,67 +10081,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/AuditLogsPage"
-    AuditEntryItem:
-      type: object
-      additionalProperties: false
-      required:
-        - actor_user_id
-        - actor_role
-        - actor_scope
-        - action
-        - outcome
-        - timestamp
-        - level
-      properties:
-        actor_user_id:
-          type: string
-        actor_role:
-          type: string
-          enum:
-            - admin
-            - user
-            - anonymous
-            - system
-        actor_role_name:
-          type: string
-          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
-        actor_scope:
-          type: string
-          enum:
-            - tenant
-            - platform
-          description: Which world this action happened in — a shop or the installation.
-        action:
-          type: string
-          description: Dot-notation action name (e.g. order.created)
-        outcome:
-          type: string
-          enum:
-            - success
-            - failure
-        ip:
-          type: string
-        user_agent:
-          type: string
-        request_id:
-          type: string
-        trace_id:
-          type: string
-        target_type:
-          type: string
-        target_id:
-          type: string
-        metadata:
-          type: object
-          additionalProperties: true
-        timestamp:
-          type: string
-          format: date-time
-        level:
-          type: string
-          enum:
-            - info
-            - warn
     AuditEntryList:
       type: object
       additionalProperties: false
@@ -14541,35 +14478,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    ExportShipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        trackingCode:
-          type: string
-          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false).
-        status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-        deliveredAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     ExportSession:
       type: object
       additionalProperties: false
@@ -14589,67 +14497,6 @@ components:
         lastUsedAt:
           type: string
           format: date-time
-    ExportAuditEntry:
-      type: object
-      additionalProperties: false
-      required:
-        - actor_user_id
-        - actor_role
-        - actor_scope
-        - action
-        - outcome
-        - timestamp
-        - level
-      properties:
-        actor_user_id:
-          type: string
-        actor_role:
-          type: string
-          enum:
-            - admin
-            - user
-            - anonymous
-            - system
-        actor_role_name:
-          type: string
-          description: The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one.
-        actor_scope:
-          type: string
-          enum:
-            - tenant
-            - platform
-          description: Which world this action happened in — a shop or the installation.
-        action:
-          type: string
-          description: Dotted action name, e.g. `order.created`.
-        outcome:
-          type: string
-          enum:
-            - success
-            - failure
-        ip:
-          type: string
-        user_agent:
-          type: string
-        request_id:
-          type: string
-        trace_id:
-          type: string
-        target_type:
-          type: string
-        target_id:
-          type: string
-        metadata:
-          type: object
-          additionalProperties: true
-        timestamp:
-          type: string
-          format: date-time
-        level:
-          type: string
-          enum:
-            - info
-            - warn
     ExportFeedbackTicket:
       type: object
       additionalProperties: false

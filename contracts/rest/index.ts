@@ -625,10 +625,6 @@ export type AccountExportResponseRolesItem = {
     scope: AccountExportResponseRolesItemScope;
 };
 
-export type AccountExportResponseWishlistItem = {
-    productId: Id;
-};
-
 export interface ExportInvoiceDocument {
     orderId: Id;
     number: string;
@@ -743,22 +739,30 @@ export interface ExportPayment {
     updatedAt?: string;
 }
 
-export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
+/**
+ * The tail of the order's lifecycle, as the carrier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
 
-export const ExportShipmentStatus = {
+export const ShipmentStatus = {
     shipped: 'shipped',
     delivered: 'delivered'
 } as const;
 
-export interface ExportShipment {
+export interface Shipment {
     id: Id;
     orderId: Id;
     /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
     trackingCode?: string;
-    status: ExportShipmentStatus;
+    /** The tail of the order's lifecycle, as the carrier sees it. */
+    status: ShipmentStatus;
     deliveredAt?: string;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface WishlistItem {
+    productId: Id;
 }
 
 export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
@@ -774,10 +778,10 @@ export interface ExportSession {
     lastUsedAt?: string;
 }
 
-export type ExportAuditEntryActorRole =
-    (typeof ExportAuditEntryActorRole)[keyof typeof ExportAuditEntryActorRole];
+export type AuditEntryItemActorRole =
+    (typeof AuditEntryItemActorRole)[keyof typeof AuditEntryItemActorRole];
 
-export const ExportAuditEntryActorRole = {
+export const AuditEntryItemActorRole = {
     admin: 'admin',
     user: 'user',
     anonymous: 'anonymous',
@@ -787,51 +791,53 @@ export const ExportAuditEntryActorRole = {
 /**
  * Which world this action happened in — a shop or the installation.
  */
-export type ExportAuditEntryActorScope =
-    (typeof ExportAuditEntryActorScope)[keyof typeof ExportAuditEntryActorScope];
+export type AuditEntryItemActorScope =
+    (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
 
-export const ExportAuditEntryActorScope = {
+export const AuditEntryItemActorScope = {
     tenant: 'tenant',
     platform: 'platform'
 } as const;
 
-export type ExportAuditEntryOutcome =
-    (typeof ExportAuditEntryOutcome)[keyof typeof ExportAuditEntryOutcome];
+export type AuditEntryItemOutcome =
+    (typeof AuditEntryItemOutcome)[keyof typeof AuditEntryItemOutcome];
 
-export const ExportAuditEntryOutcome = {
+export const AuditEntryItemOutcome = {
     success: 'success',
     failure: 'failure'
 } as const;
 
-export type ExportAuditEntryLevel =
-    (typeof ExportAuditEntryLevel)[keyof typeof ExportAuditEntryLevel];
+export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
 
-export const ExportAuditEntryLevel = {
+export const AuditEntryItemLevel = {
     info: 'info',
     warn: 'warn'
 } as const;
 
-export type ExportAuditEntryMetadata = { [key: string]: unknown };
+export type AuditEntryItemMetadata = { [key: string]: unknown };
 
-export interface ExportAuditEntry {
+export interface AuditEntryItem {
     actor_user_id: string;
-    actor_role: ExportAuditEntryActorRole;
+    /** The API key the action was done with. Absent when a person did it themselves. */
+    actor_credential_id?: string;
+    actor_role: AuditEntryItemActorRole;
     /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
     actor_role_name?: string;
     /** Which world this action happened in — a shop or the installation. */
-    actor_scope: ExportAuditEntryActorScope;
-    /** Dotted action name, e.g. `order.created`. */
+    actor_scope: AuditEntryItemActorScope;
+    /** Dot-notation action name (e.g. order.created) */
     action: string;
-    outcome: ExportAuditEntryOutcome;
+    outcome: AuditEntryItemOutcome;
+    /** The caller address as recorded. The platform trail (`GET /observability/audit`) answers a keyed digest instead: `hmac:` and 12 hex characters. */
     ip?: string;
     user_agent?: string;
     request_id?: string;
     trace_id?: string;
     target_type?: string;
     target_id?: string;
-    metadata?: ExportAuditEntryMetadata;
+    metadata?: AuditEntryItemMetadata;
     timestamp: string;
-    level: ExportAuditEntryLevel;
+    level: AuditEntryItemLevel;
 }
 
 export type FeedbackRequestStatus =
@@ -1026,11 +1032,11 @@ export interface AccountExportResponse {
     orders: Order[];
     apiKeys: ApiKey[];
     payments: ExportPayment[];
-    shipments: ExportShipment[];
+    shipments: Shipment[];
     cart: CartItem[];
-    wishlist: AccountExportResponseWishlistItem[];
+    wishlist: WishlistItem[];
     sessions: ExportSession[];
-    auditLog: ExportAuditEntry[];
+    auditLog: AuditEntryItem[];
     /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
     feedback?: ExportFeedbackTicket[];
     invoicing: AccountExportResponseInvoicing;
@@ -1709,67 +1715,8 @@ export interface ObservabilityMetricsSummaryResponseEnvelope {
     data: ObservabilityMetricsSummary;
 }
 
-export type AuditEventItemActorRole =
-    (typeof AuditEventItemActorRole)[keyof typeof AuditEventItemActorRole];
-
-export const AuditEventItemActorRole = {
-    admin: 'admin',
-    user: 'user',
-    anonymous: 'anonymous',
-    system: 'system'
-} as const;
-
-/**
- * Which world this action happened in — a shop or the installation.
- */
-export type AuditEventItemActorScope =
-    (typeof AuditEventItemActorScope)[keyof typeof AuditEventItemActorScope];
-
-export const AuditEventItemActorScope = {
-    tenant: 'tenant',
-    platform: 'platform'
-} as const;
-
-export type AuditEventItemOutcome =
-    (typeof AuditEventItemOutcome)[keyof typeof AuditEventItemOutcome];
-
-export const AuditEventItemOutcome = {
-    success: 'success',
-    failure: 'failure'
-} as const;
-
-export type AuditEventItemMetadata = { [key: string]: unknown };
-
-export type AuditEventItemLevel = (typeof AuditEventItemLevel)[keyof typeof AuditEventItemLevel];
-
-export const AuditEventItemLevel = {
-    info: 'info',
-    warn: 'warn'
-} as const;
-
-export interface AuditEventItem {
-    actor_user_id: string;
-    actor_role: AuditEventItemActorRole;
-    /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
-    actor_role_name?: string;
-    /** Which world this action happened in — a shop or the installation. */
-    actor_scope: AuditEventItemActorScope;
-    /** Dot-notation action name (e.g. order.created) */
-    action: string;
-    outcome: AuditEventItemOutcome;
-    ip?: string;
-    user_agent?: string;
-    request_id?: string;
-    trace_id?: string;
-    target_type?: string;
-    target_id?: string;
-    metadata?: AuditEventItemMetadata;
-    timestamp: string;
-    level: AuditEventItemLevel;
-}
-
 export interface AuditLogsPage {
-    items: AuditEventItem[];
+    items: AuditEntryItem[];
     meta: PaginationMeta;
 }
 
@@ -1778,65 +1725,6 @@ export interface AuditLogsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: AuditLogsPage;
-}
-
-export type AuditEntryItemActorRole =
-    (typeof AuditEntryItemActorRole)[keyof typeof AuditEntryItemActorRole];
-
-export const AuditEntryItemActorRole = {
-    admin: 'admin',
-    user: 'user',
-    anonymous: 'anonymous',
-    system: 'system'
-} as const;
-
-/**
- * Which world this action happened in — a shop or the installation.
- */
-export type AuditEntryItemActorScope =
-    (typeof AuditEntryItemActorScope)[keyof typeof AuditEntryItemActorScope];
-
-export const AuditEntryItemActorScope = {
-    tenant: 'tenant',
-    platform: 'platform'
-} as const;
-
-export type AuditEntryItemOutcome =
-    (typeof AuditEntryItemOutcome)[keyof typeof AuditEntryItemOutcome];
-
-export const AuditEntryItemOutcome = {
-    success: 'success',
-    failure: 'failure'
-} as const;
-
-export type AuditEntryItemMetadata = { [key: string]: unknown };
-
-export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
-
-export const AuditEntryItemLevel = {
-    info: 'info',
-    warn: 'warn'
-} as const;
-
-export interface AuditEntryItem {
-    actor_user_id: string;
-    actor_role: AuditEntryItemActorRole;
-    /** The tenant role behind actor_role, e.g. moderator. Absent when the request never resolved one. */
-    actor_role_name?: string;
-    /** Which world this action happened in — a shop or the installation. */
-    actor_scope: AuditEntryItemActorScope;
-    /** Dot-notation action name (e.g. order.created) */
-    action: string;
-    outcome: AuditEntryItemOutcome;
-    ip?: string;
-    user_agent?: string;
-    request_id?: string;
-    trace_id?: string;
-    target_type?: string;
-    target_id?: string;
-    metadata?: AuditEntryItemMetadata;
-    timestamp: string;
-    level: AuditEntryItemLevel;
 }
 
 export interface AuditEntryList {
@@ -3531,10 +3419,6 @@ export interface CheckoutResponseEnvelope {
     data: Order;
 }
 
-export interface WishlistItem {
-    productId: Id;
-}
-
 export interface WishlistResponse {
     items: WishlistItem[];
 }
@@ -3898,28 +3782,6 @@ export interface ShippingMethodsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: ShippingMethodsResponse;
-}
-
-/**
- * The tail of the order's lifecycle, as the carrier sees it.
- */
-export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
-
-export const ShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
-} as const;
-
-export interface Shipment {
-    id: Id;
-    orderId: Id;
-    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
-    trackingCode?: string;
-    /** The tail of the order's lifecycle, as the carrier sees it. */
-    status: ShipmentStatus;
-    deliveredAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
 }
 
 export interface ShipmentEnvelope {
