@@ -86,6 +86,15 @@ describe('ReturnRequestForm', () => {
         expect(wrapper.find('[data-test=return-request-form]').exists()).toBe(false);
     });
 
+    it('tells the customer not to type phone numbers or addresses into the note', async () => {
+        const { wrapper } = mountForm();
+        await openForm(wrapper);
+
+        expect(wrapper.get('[data-test=return-note]').text()).toContain(
+            "Don't include phone numbers or addresses."
+        );
+    });
+
     it('offers each returnable line and no withdrawal reason', async () => {
         const { wrapper } = mountForm();
         await openForm(wrapper);

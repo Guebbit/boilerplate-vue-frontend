@@ -308,6 +308,8 @@ const submit = () =>
             <v-textarea
                 v-model="form.note"
                 :label="t('returns-request.label-note')"
+                :hint="t('returns-request.hint-note')"
+                persistent-hint
                 rows="3"
                 maxlength="1000"
                 counter
