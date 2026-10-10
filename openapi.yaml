@@ -29,24 +29,32 @@ servers:
   - url: https://api.example.com
     description: Production
 tags:
-  - name: Auth
-    description: Sign up, log in, refresh and end a session, and recover or verify an account by email.
+  - name: System
+    description: Public system endpoints (ping, liveness).
+  - name: Locales
+    description: Supported languages, and the translations a deployment serves for its API messages, client screens and entities.
+  - name: Observability
+    description: Operational observability endpoints (metrics, health, audit, events). Protected endpoints require admin role.
+  - name: Audit
+    description: The tenant's own action history — who did what, when, to which row. Read-only, and separate from Observability's operational audit, which is the platform operator's view across every shop.
   - name: Antibot
     description: The human-check challenge a protected form asks for before it submits.
   - name: Analytics
     description: Browsing events a browser reports, relayed only after the visitor agreed to be measured.
+  - name: Auth
+    description: Sign up, log in, refresh and end a session, and recover or verify an account by email.
   - name: Account
     description: The signed-in user's own account - profile, credentials, two-factor, data export and deletion.
   - name: Users
     description: Administration of user accounts and their roles.
+  - name: Feedback
+    description: What visitors tell the shop, and the admin queue that reads it.
   - name: Products
     description: The catalogue - browsing, searching and managing products and their images.
   - name: Cart
     description: The signed-in user's cart, and turning it into an order.
   - name: Wishlist
     description: Products a user saved for later.
-  - name: Notifications
-    description: The signed-in user's in-app notifications and their delivery preferences.
   - name: Orders
     description: Placing, reading and managing orders and their lifecycle.
   - name: Payments
@@ -59,22 +67,14 @@ tags:
     description: Sending goods back — including the EU withdrawal button, which is a return with `reason` `withdrawal`.
   - name: Inventory
     description: Stock counters and the holds placed against them.
-  - name: Feedback
-    description: What visitors tell the shop, and the admin queue that reads it.
-  - name: Examples
-    description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
-  - name: Locales
-    description: Supported languages, and the translations a deployment serves for its API messages, client screens and entities.
-  - name: System
-    description: Public system endpoints (ping, liveness).
-  - name: Observability
-    description: Operational observability endpoints (metrics, health, audit, events). Protected endpoints require admin role.
-  - name: Audit
-    description: The tenant's own action history — who did what, when, to which row. Read-only, and separate from Observability's operational audit, which is the platform operator's view across every shop.
   - name: Webhooks
     description: Outbound webhook subscriptions, the delivery log, replay, and the public event catalogue.
   - name: ApiKeys
     description: Machine-to-machine credentials — list, mint, revoke.
+  - name: Examples
+    description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
+  - name: Notifications
+    description: The signed-in user's in-app notifications and their delivery preferences.
 paths:
   /:
     get:
@@ -4827,7 +4827,9 @@ paths:
       tags:
         - Orders
       summary: Create order
-      description: "Creates a new order directly from the supplied payload, for the account named in `userId`. The rank rule applies to that account: an operator raises orders for customers, never for an equal or a superior (`OUTRANKED`). Raising one for oneself is allowed, but the steps that move its money then refuse the caller."
+      description: |-
+        Creates a new order directly from the supplied payload, for the account named in `userId`. The rank rule applies to that account: an operator raises orders for customers, never for an equal or a superior (`OUTRANKED`). Raising one for oneself is allowed, but the steps that move its money then refuse the caller.
+        A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
       operationId: createOrder
       security:
         - bearerAuth: []
@@ -7675,10 +7677,6 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    apiKeyAuth:
-      type: http
-      scheme: bearer
-      description: An opaque `sk_...` machine-to-machine credential, minted via `POST /api-keys`.
     cookieAuth:
       type: apiKey
       in: cookie
@@ -7759,18 +7757,6 @@ components:
         maxItems: 100
         items:
           $ref: "#/components/schemas/Id"
-    UserIdParam:
-      name: userId
-      in: query
-      required: false
-      schema:
-        $ref: "#/components/schemas/Id"
-    ProductIdParam:
-      name: productId
-      in: query
-      required: false
-      schema:
-        $ref: "#/components/schemas/Id"
     HardDeleteParam:
       name: hardDelete
       in: query
@@ -7842,6 +7828,18 @@ components:
         type: string
         maxLength: 32
       description: "Wire name of a second factor — a `method` from `GET /account/2fa`. A bare string, not an enum: the set of methods is a deployment fact, and a contract that enumerated them would need regenerating to add a channel."
+    UserIdParam:
+      name: userId
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/Id"
+    ProductIdParam:
+      name: productId
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/Id"
     ReauthMethodPath:
       name: method
       in: path
@@ -7969,16 +7967,6 @@ components:
       type: string
       maxLength: 254
       format: email
-    Password:
-      type: string
-      maxLength: 128
-      minLength: 8
-      description: "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
-    PasswordNew:
-      type: string
-      maxLength: 128
-      minLength: 8
-      description: "A password being SET by its owner — signup, reset (or the setup link) and change. Length only, 8 to 128 characters (NIST SP 800-63B-4: no composition rules, no forced mix of classes); what keeps a weak one out is the breached-password check on every set path, not a pattern. Hashed with argon2id, which has no 72-byte limit, so every character counts."
     Locale:
       type: string
       maxLength: 35
@@ -8115,121 +8103,6 @@ components:
           items:
             $ref: "#/components/schemas/ErrorItem"
           description: Structured machine-friendly errors
-    Abilities:
-      type: object
-      additionalProperties: false
-      description: |
-        What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
-        takes. A tuple per rule rather than an object, which is what makes shipping a few
-        dozen of them cheap.
-
-        BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
-        list. A request resolves to exactly one scope — the one the key it is asking about
-        declares — but a CLIENT renders screens from both at once: a shop's catalogue and
-        the installation's health dashboard sit in one navigation. Publishing only the
-        caller's tenant rules left every platform screen with no rule to grey out, so it
-        was gated on a tenant key that happened to correlate, which is exactly the
-        hand-maintained guess this endpoint exists to abolish.
-
-        The two lists never merge. A tenant rule can never satisfy a platform key and the
-        reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
-        so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
-
-        The client's copy has NO AUTHORITY: it decides what to render, never what is
-        allowed, and every request is re-evaluated server-side. Published so a client greys
-        out what it would be refused from the same rules the server enforces, rather than
-        from a hand-maintained duplicate that drifts — the drift is silent until somebody
-        is shown a button that answers 403.
-      required:
-        - tenant
-        - platform
-        - version
-        - subjects
-        - grantableRoles
-      properties:
-        subjects:
-          type: array
-          items:
-            type: string
-          description: |
-            Every CASL subject a declared key names, deduplicated and sorted — the
-            `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
-            a client's own `meta.can` rules are typed against the real set rather than
-            an unchecked string a typo can silently fail closed on.
-        grantableRoles:
-          type: array
-          items:
-            type: string
-          description: |
-            The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
-            /users`, in the order `shared/authorization-roles.yaml` declares them.
-            Computed by the same rule as the `409` those writes answer, so a role
-            picker built from it offers exactly what the write accepts. Empty for a
-            caller who may grant nothing, an anonymous one included. It has NO
-            AUTHORITY: the write is re-checked server-side.
-        tenantId:
-          type: string
-          description: |
-            The shop `tenant`'s rules are about. Absent when the caller has no tenant
-            membership at all — a pure platform operator administers the installation
-            rather than acting inside one shop.
-        tenant:
-          allOf:
-            - $ref: "#/components/schemas/PackedRules"
-          description: |
-            What the caller may do INSIDE their shop. Empty for a caller with no tenant
-            membership; for an anonymous visitor it is the `guest` role's rules, which
-            are a value in the model rather than an absence.
-        platform:
-          allOf:
-            - $ref: "#/components/schemas/PackedRules"
-          description: |
-            What the caller may do ACROSS the installation — health, metrics, the
-            operational audit. Empty for everyone but a platform operator, which is
-            most callers: an operator is not a super-member and holds no shop's keys.
-        version:
-          type: integer
-          description: |
-            The permission model's own version, bumped when the KEYS change rather than
-            when a role does. A client caches these; this is what tells it the cache is
-            about a different model, not merely a different person. One number for both
-            lists — the keys file they are declared in is one file.
-    PackedRules:
-      type: array
-      description: |
-        CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
-        with trailing absent members omitted.
-      items:
-        type: array
-        description: |
-          One packed rule. OpenAPI 3.0 has no tuple, so a position is declared as the
-          union of what it may hold: the action and the subject are strings, `conditions`
-          an object, `fields` a list of strings and `inverted` a boolean.
-        items:
-          oneOf:
-            - type: string
-            - type: boolean
-            - type: object
-            - type: array
-              items:
-                type: string
-    AbilitiesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Abilities"
     UserEnvelope:
       type: object
       additionalProperties: false
@@ -8319,634 +8192,6 @@ components:
         delete:
           type: boolean
           description: Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `users.any.delete`, and the account ranks below the caller.
-    TaxClass:
-      type: string
-      enum:
-        - reduced
-        - zero
-      description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
-    RateType:
-      type: string
-      enum:
-        - standard
-        - zero-rated
-        - exempt
-      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
-    Sku:
-      type: string
-      maxLength: 64
-      minLength: 1
-      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
-    Product:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - price
-        - currency
-        - inStock
-        - lowStock
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        price:
-          type: number
-          format: double
-          minimum: 0
-          description: "Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around."
-        currency:
-          type: string
-          readOnly: true
-          description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
-        taxClass:
-          $ref: "#/components/schemas/TaxClass"
-        rateType:
-          $ref: "#/components/schemas/RateType"
-        sku:
-          $ref: "#/components/schemas/Sku"
-        inStock:
-          type: boolean
-          readOnly: true
-          description: Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`).
-        lowStock:
-          type: boolean
-          readOnly: true
-          description: What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false.
-        onHand:
-          type: integer
-          minimum: 0
-          readOnly: true
-          description: Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
-        reserved:
-          type: integer
-          minimum: 0
-          readOnly: true
-          description: Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
-        available:
-          type: integer
-          minimum: 0
-          readOnly: true
-          description: Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
-        description:
-          type: string
-        active:
-          type: boolean
-        purchasable:
-          type: boolean
-          default: true
-        requiresShipping:
-          type: boolean
-          default: true
-        noWithdrawal:
-          type: boolean
-          default: false
-        weight:
-          type: integer
-          minimum: 0
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-        categories:
-          type: array
-          items:
-            type: string
-        tags:
-          type: array
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-    CartItem:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - quantity
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        quantity:
-          type: integer
-          minimum: 1
-    OrderAddress:
-      type: object
-      additionalProperties: false
-      required:
-        - fullName
-        - street
-        - city
-        - zip
-        - country
-      properties:
-        fullName:
-          type: string
-        street:
-          type: string
-        city:
-          type: string
-        zip:
-          type: string
-        country:
-          $ref: "#/components/schemas/CountryCode"
-        phone:
-          type: string
-    OrderTransferInstructions:
-      type: object
-      additionalProperties: false
-      required:
-        - beneficiary
-        - iban
-        - reference
-      properties:
-        beneficiary:
-          type: string
-        iban:
-          type: string
-        bic:
-          type: string
-          description: Absent when the deployment has not configured one.
-        reference:
-          type: string
-          description: The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference.
-    OrderLineProduct:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - title
-        - price
-        - taxRate
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        price:
-          type: number
-          format: double
-          minimum: 0
-          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
-        description:
-          type: string
-        requiresShipping:
-          type: boolean
-          default: true
-        noWithdrawal:
-          type: boolean
-        sku:
-          $ref: "#/components/schemas/Sku"
-        weight:
-          type: integer
-          minimum: 0
-        categories:
-          type: array
-          items:
-            type: string
-        tags:
-          type: array
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-        taxRate:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
-        rateType:
-          $ref: "#/components/schemas/RateType"
-    OrderLineCurrent:
-      type: object
-      additionalProperties: false
-      properties:
-        imageUrl:
-          $ref: "#/components/schemas/ImageUrl"
-        thumbnailUrl:
-          $ref: "#/components/schemas/ThumbnailUrl"
-    OrderItem:
-      type: object
-      additionalProperties: false
-      required:
-        - product
-        - quantity
-        - locale
-        - current
-        - taxAmount
-        - netAmount
-      properties:
-        product:
-          $ref: "#/components/schemas/OrderLineProduct"
-        quantity:
-          type: integer
-          minimum: 1
-        locale:
-          $ref: "#/components/schemas/Locale"
-        current:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/OrderLineCurrent"
-          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
-        taxAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: VAT included in this line's total, at its own frozen `taxRate`.
-        netAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
-    PaymentMethodId:
-      type: string
-      enum:
-        - card
-        - bank_transfer
-      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
-    OrderStatus:
-      type: string
-      enum:
-        - pending
-        - paid
-        - processing
-        - shipped
-        - delivered
-        - cancelled
-      description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
-    OrderPaymentStatus:
-      type: string
-      enum:
-        - unpaid
-        - paid
-        - partially_refunded
-        - refunded
-      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
-    OrderFulfillmentStatus:
-      type: string
-      enum:
-        - unfulfilled
-        - in_progress
-        - shipped
-        - fulfilled
-      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only."
-    OrderReturnStatus:
-      type: string
-      enum:
-        - none
-        - requested
-        - in_progress
-        - partially_returned
-        - returned
-      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
-    OrderActions:
-      type: object
-      additionalProperties: false
-      required:
-        - transitions
-        - cancel
-        - pay
-        - recordPayment
-        - start
-        - ship
-        - deliver
-        - fulfill
-        - override
-        - invoice
-        - withdraw
-      description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles. Nobody handles their own money: recording a payment by hand is withheld on the caller's own order too."
-      properties:
-        transitions:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderStatus"
-          description: The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status.
-          example:
-            - processing
-            - cancelled
-        cancel:
-          type: boolean
-          description: Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.
-        pay:
-          type: boolean
-          description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest."
-        recordPayment:
-          type: boolean
-          description: "Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment, the caller holds the key that records one and their rank reaches the buyer. Never true for the buyer, whose own step is `pay` — not even for a buyer who is staff or an administrator."
-        start:
-          type: boolean
-          description: "Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
-        ship:
-          type: boolean
-          description: Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead.
-        deliver:
-          type: boolean
-          description: Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.
-        fulfill:
-          type: boolean
-          description: "Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not."
-        override:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderStatus"
-          description: The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.
-          example:
-            - processing
-            - shipped
-            - delivered
-        withdraw:
-          type: boolean
-          description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`."
-        withdrawUntil:
-          type: string
-          format: date-time
-          description: "The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet."
-        invoice:
-          type: boolean
-          description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
-    OrderTaxSummaryRow:
-      type: object
-      additionalProperties: false
-      required:
-        - rate
-        - netAmount
-        - taxAmount
-        - grossAmount
-      properties:
-        rate:
-          type: number
-          format: double
-          minimum: 0
-          description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
-        netAmount:
-          type: number
-          format: double
-          minimum: 0
-        taxAmount:
-          type: number
-          format: double
-          minimum: 0
-        grossAmount:
-          type: number
-          format: double
-          minimum: 0
-          description: "`netAmount + taxAmount`, not re-derived from a price."
-    Order:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - items
-        - totalItems
-        - totalQuantity
-        - totalPrice
-        - status
-        - paymentStatus
-        - fulfillmentStatus
-        - returnStatus
-        - currency
-        - orderNumber
-        - netTotal
-        - taxTotal
-        - shippingNetAmount
-        - shippingTaxAmount
-        - taxSummary
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        userId:
-          $ref: "#/components/schemas/Id"
-        email:
-          $ref: "#/components/schemas/Email"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderItem"
-        totalItems:
-          type: integer
-          minimum: 0
-          description: Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
-          example: 2
-        totalQuantity:
-          type: integer
-          minimum: 0
-          description: Sum of `quantity` across every line item.
-          example: 5
-        totalPrice:
-          type: number
-          format: double
-          minimum: 0
-          description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
-          example: 149.97
-        currency:
-          type: string
-          readOnly: true
-          description: ISO-4217 currency code this order was priced in (e.g. EUR).
-        netTotal:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
-        taxTotal:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
-        shippingNetAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
-        shippingTaxAmount:
-          type: number
-          format: double
-          minimum: 0
-          readOnly: true
-          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
-        taxSummary:
-          type: array
-          readOnly: true
-          items:
-            $ref: "#/components/schemas/OrderTaxSummaryRow"
-          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
-        notes:
-          type: string
-          description: Optional order notes
-        shippingMethod:
-          type: string
-          description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
-        shippingCost:
-          type: number
-          format: double
-          minimum: 0
-          description: What that method cost at checkout time — a later rate change cannot re-price history.
-        shippingAddress:
-          $ref: "#/components/schemas/OrderAddress"
-        billingAddress:
-          $ref: "#/components/schemas/OrderAddress"
-        paymentMethod:
-          $ref: "#/components/schemas/PaymentMethodId"
-        payBy:
-          type: string
-          format: date-time
-        orderNumber:
-          type: string
-          readOnly: true
-          example: 2026-000041
-        transferInstructions:
-          $ref: "#/components/schemas/OrderTransferInstructions"
-        status:
-          $ref: "#/components/schemas/OrderStatus"
-        paymentStatus:
-          $ref: "#/components/schemas/OrderPaymentStatus"
-        fulfillmentStatus:
-          $ref: "#/components/schemas/OrderFulfillmentStatus"
-        returnStatus:
-          $ref: "#/components/schemas/OrderReturnStatus"
-        actions:
-          $ref: "#/components/schemas/OrderActions"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-    AccountExportResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - exportedAt
-        - profile
-        - roles
-        - addresses
-        - orders
-        - payments
-        - shipments
-        - cart
-        - wishlist
-        - sessions
-        - auditLog
-        - apiKeys
-        - invoicing
-        - returns
-        - examples
-        - notifications
-      properties:
-        exportedAt:
-          type: string
-          format: date-time
-        profile:
-          $ref: "#/components/schemas/User"
-        roles:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required:
-              - role
-              - scope
-            properties:
-              role:
-                type: string
-              scope:
-                type: string
-                enum:
-                  - tenant
-                  - platform
-        addresses:
-          type: array
-          items:
-            $ref: "#/components/schemas/Address"
-        orders:
-          type: array
-          items:
-            $ref: "#/components/schemas/Order"
-        apiKeys:
-          type: array
-          items:
-            $ref: "#/components/schemas/ApiKey"
-        payments:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportPayment"
-        shipments:
-          type: array
-          items:
-            $ref: "#/components/schemas/Shipment"
-        cart:
-          type: array
-          items:
-            $ref: "#/components/schemas/CartItem"
-        wishlist:
-          type: array
-          items:
-            $ref: "#/components/schemas/WishlistExportItem"
-        sessions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportSession"
-        auditLog:
-          type: array
-          items:
-            $ref: "#/components/schemas/AuditEntryItem"
-        feedback:
-          type: array
-          description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
-          items:
-            $ref: "#/components/schemas/ExportFeedbackTicket"
-        invoicing:
-          type: object
-          additionalProperties: false
-          required:
-            - invoices
-            - creditNotes
-          properties:
-            invoices:
-              type: array
-              items:
-                $ref: "#/components/schemas/ExportInvoiceDocument"
-            creditNotes:
-              type: array
-              items:
-                $ref: "#/components/schemas/ExportInvoiceDocument"
-        returns:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExportReturn"
-        examples:
-          type: array
-          items:
-            $ref: "#/components/schemas/Example"
-        notifications:
-          type: array
-          items:
-            $ref: "#/components/schemas/Notification"
     HardDeleteRequest:
       type: object
       additionalProperties: false
@@ -10455,6 +9700,131 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/EmailVerificationRequested"
+    PackedRules:
+      type: array
+      description: |
+        CASL packed rules — `[action, subject, conditions?, fields?, inverted?, reason?]`,
+        with trailing absent members omitted.
+      items:
+        type: array
+        description: |
+          One packed rule. OpenAPI 3.0 has no tuple, so a position is declared as the
+          union of what it may hold: the action and the subject are strings, `conditions`
+          an object, `fields` a list of strings and `inverted` a boolean.
+        items:
+          oneOf:
+            - type: string
+            - type: boolean
+            - type: object
+            - type: array
+              items:
+                type: string
+    Abilities:
+      type: object
+      additionalProperties: false
+      description: |
+        What the caller may do, as CASL's packed-rule format — the shape `unpackRules`
+        takes. A tuple per rule rather than an object, which is what makes shipping a few
+        dozen of them cheap.
+
+        BOTH SCOPES ARE ANSWERED, and that is the whole reason this is not a single rule
+        list. A request resolves to exactly one scope — the one the key it is asking about
+        declares — but a CLIENT renders screens from both at once: a shop's catalogue and
+        the installation's health dashboard sit in one navigation. Publishing only the
+        caller's tenant rules left every platform screen with no rule to grey out, so it
+        was gated on a tenant key that happened to correlate, which is exactly the
+        hand-maintained guess this endpoint exists to abolish.
+
+        The two lists never merge. A tenant rule can never satisfy a platform key and the
+        reverse is equally impossible (`shared/authorization-keys.yaml`'s one invariant),
+        so a client builds ONE ABILITY PER SCOPE and asks the one that owns the subject.
+
+        The client's copy has NO AUTHORITY: it decides what to render, never what is
+        allowed, and every request is re-evaluated server-side. Published so a client greys
+        out what it would be refused from the same rules the server enforces, rather than
+        from a hand-maintained duplicate that drifts — the drift is silent until somebody
+        is shown a button that answers 403.
+      required:
+        - tenant
+        - platform
+        - version
+        - subjects
+        - grantableRoles
+      properties:
+        subjects:
+          type: array
+          items:
+            type: string
+          description: |
+            Every CASL subject a declared key names, deduplicated and sorted — the
+            `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
+            a client's own `meta.can` rules are typed against the real set rather than
+            an unchecked string a typo can silently fail closed on.
+        grantableRoles:
+          type: array
+          items:
+            type: string
+          description: |
+            The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
+            /users`, in the order `shared/authorization-roles.yaml` declares them.
+            Computed by the same rule as the `409` those writes answer, so a role
+            picker built from it offers exactly what the write accepts. Empty for a
+            caller who may grant nothing, an anonymous one included. It has NO
+            AUTHORITY: the write is re-checked server-side.
+        tenantId:
+          type: string
+          description: |
+            The shop `tenant`'s rules are about. Absent when the caller has no tenant
+            membership at all — a pure platform operator administers the installation
+            rather than acting inside one shop.
+        tenant:
+          allOf:
+            - $ref: "#/components/schemas/PackedRules"
+          description: |
+            What the caller may do INSIDE their shop. Empty for a caller with no tenant
+            membership; for an anonymous visitor it is the `guest` role's rules, which
+            are a value in the model rather than an absence.
+        platform:
+          allOf:
+            - $ref: "#/components/schemas/PackedRules"
+          description: |
+            What the caller may do ACROSS the installation — health, metrics, the
+            operational audit. Empty for everyone but a platform operator, which is
+            most callers: an operator is not a super-member and holds no shop's keys.
+        version:
+          type: integer
+          description: |
+            The permission model's own version, bumped when the KEYS change rather than
+            when a role does. A client caches these; this is what tells it the cache is
+            about a different model, not merely a different person. One number for both
+            lists — the keys file they are declared in is one file.
+    AbilitiesEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Abilities"
+    Password:
+      type: string
+      maxLength: 128
+      minLength: 8
+      description: "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+    PasswordNew:
+      type: string
+      maxLength: 128
+      minLength: 8
+      description: "A password being SET by its owner — signup, reset (or the setup link) and change. Length only, 8 to 128 characters (NIST SP 800-63B-4: no composition rules, no forced mix of classes); what keeps a weak one out is the breached-password check on every set path, not a pattern. Hashed with argon2id, which has no 72-byte limit, so every character counts."
     ChangePasswordRequest:
       type: object
       additionalProperties: false
@@ -11875,6 +11245,114 @@ components:
           - -price
           - title
           - -title
+    TaxClass:
+      type: string
+      enum:
+        - reduced
+        - zero
+      description: A category of goods taxed below the shop's standard VAT rate — books, food, medicine and similar, depending on the deployment's own jurisdiction. Absent means the standard rate.
+    RateType:
+      type: string
+      enum:
+        - standard
+        - zero-rated
+        - exempt
+      description: "WHY a product's resolved VAT rate is 0%, when it is — `TaxClass: zero` alone cannot say. Meaningless when the resolved rate isn't 0%."
+    Sku:
+      type: string
+      maxLength: 64
+      minLength: 1
+      description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+    Product:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - price
+        - currency
+        - inStock
+        - lowStock
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: "Gross — what the customer pays, VAT included. Never net-of-tax: the invoice derives the net amount and the VAT amount FROM this, at whatever rate applies, rather than the other way around."
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code (e.g. EUR) — this deployment's own `NODE_DEFAULT_CURRENCY`, read live, never stored on the product itself. An order freezes it onto its own `currency` at checkout; this field always reports the shop's CURRENT setting.
+        taxClass:
+          $ref: "#/components/schemas/TaxClass"
+        rateType:
+          $ref: "#/components/schemas/RateType"
+        sku:
+          $ref: "#/components/schemas/Sku"
+        inStock:
+          type: boolean
+          readOnly: true
+          description: Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`).
+        lowStock:
+          type: boolean
+          readOnly: true
+          description: What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false.
+        onHand:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
+        reserved:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
+        available:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
+        description:
+          type: string
+        active:
+          type: boolean
+        purchasable:
+          type: boolean
+          default: true
+        requiresShipping:
+          type: boolean
+          default: true
+        noWithdrawal:
+          type: boolean
+          default: false
+        weight:
+          type: integer
+          minimum: 0
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
     ProductsResponse:
       type: object
       additionalProperties: false
@@ -12780,6 +12258,12 @@ components:
           minLength: 3
           maxLength: 3
           description: The ISO-4217 code the total is priced in.
+    PaymentMethodId:
+      type: string
+      enum:
+        - card
+        - bank_transfer
+      description: How an order is being paid for. A preference recorded at checkout, not a lock — a card payment still settles normally regardless of this value.
     CheckoutRequest:
       type: object
       additionalProperties: false
@@ -12806,6 +12290,398 @@ components:
             - $ref: "#/components/schemas/PaymentMethodId"
           default: card
           description: "How the customer intends to pay (see `GET /payments/methods`). `card` holds stock for `NODE_RESERVATION_TTL_MINUTES`; `bank_transfer` holds it for `NODE_BANK_TRANSFER_HOLD_HOURS` instead, and the response carries `transferInstructions`. A method this deployment does not offer refuses the checkout with 409, `errors[].code` `CART_PAYMENT_METHOD_NOT_AVAILABLE`. That includes the default: a request that names no method asks for `card`, so a deployment with no card provider refuses it the same way."
+    OrderLineProduct:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - price
+        - taxRate
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        price:
+          type: number
+          format: double
+          minimum: 0
+          description: Gross — what the customer paid, VAT included, frozen at checkout. Same convention as `Product.price`.
+        description:
+          type: string
+        requiresShipping:
+          type: boolean
+          default: true
+        noWithdrawal:
+          type: boolean
+        sku:
+          $ref: "#/components/schemas/Sku"
+        weight:
+          type: integer
+          minimum: 0
+        categories:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        taxRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: The VAT rate this line was actually charged, as a decimal (0.22 for 22%). Frozen at checkout, same reasoning as `price`.
+        rateType:
+          $ref: "#/components/schemas/RateType"
+    OrderLineCurrent:
+      type: object
+      additionalProperties: false
+      properties:
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+    OrderItem:
+      type: object
+      additionalProperties: false
+      required:
+        - product
+        - quantity
+        - locale
+        - current
+        - taxAmount
+        - netAmount
+      properties:
+        product:
+          $ref: "#/components/schemas/OrderLineProduct"
+        quantity:
+          type: integer
+          minimum: 1
+        locale:
+          $ref: "#/components/schemas/Locale"
+        current:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/OrderLineCurrent"
+          description: The product's picture, resolved live — `null` when the catalogue product (`product.id`) has been hard-deleted. Never the terms of the sale, so it is never frozen; see `OrderLineCurrent`.
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: VAT included in this line's total, at its own frozen `taxRate`.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: This line's total excluding VAT — `price × quantity` minus `taxAmount`.
+    OrderTaxSummaryRow:
+      type: object
+      additionalProperties: false
+      required:
+        - rate
+        - netAmount
+        - taxAmount
+        - grossAmount
+      properties:
+        rate:
+          type: number
+          format: double
+          minimum: 0
+          description: The decimal rate this row is for (`0.22` for 22%) — never repeated across rows.
+        netAmount:
+          type: number
+          format: double
+          minimum: 0
+        taxAmount:
+          type: number
+          format: double
+          minimum: 0
+        grossAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: "`netAmount + taxAmount`, not re-derived from a price."
+    OrderAddress:
+      type: object
+      additionalProperties: false
+      required:
+        - fullName
+        - street
+        - city
+        - zip
+        - country
+      properties:
+        fullName:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        zip:
+          type: string
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        phone:
+          type: string
+    OrderTransferInstructions:
+      type: object
+      additionalProperties: false
+      required:
+        - beneficiary
+        - iban
+        - reference
+      properties:
+        beneficiary:
+          type: string
+        iban:
+          type: string
+        bic:
+          type: string
+          description: Absent when the deployment has not configured one.
+        reference:
+          type: string
+          description: The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference.
+    OrderStatus:
+      type: string
+      enum:
+        - pending
+        - paid
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+      description: Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
+    OrderPaymentStatus:
+      type: string
+      enum:
+        - unpaid
+        - paid
+        - partially_refunded
+        - refunded
+      description: "Where the order's MONEY stands, beside `status` — Shopify's `financial_status`. `unpaid` until a payment lands; `paid`; then `partially_refunded` once some but not all of it went back, and `refunded` once all of it did. Read-only: `payments` stamps the refund states, `orders` derives the first two."
+    OrderFulfillmentStatus:
+      type: string
+      enum:
+        - unfulfilled
+        - in_progress
+        - shipped
+        - fulfilled
+      description: "Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only."
+    OrderReturnStatus:
+      type: string
+      enum:
+        - none
+        - requested
+        - in_progress
+        - partially_returned
+        - returned
+      description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
+    OrderActions:
+      type: object
+      additionalProperties: false
+      required:
+        - transitions
+        - cancel
+        - pay
+        - recordPayment
+        - start
+        - ship
+        - deliver
+        - fulfill
+        - override
+        - invoice
+        - withdraw
+      description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles. Nobody handles their own money: recording a payment by hand is withheld on the caller's own order too."
+      properties:
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderStatus"
+          description: The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status.
+          example:
+            - processing
+            - cancelled
+        cancel:
+          type: boolean
+          description: Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.
+        pay:
+          type: boolean
+          description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest."
+        recordPayment:
+          type: boolean
+          description: "Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment, the caller holds the key that records one and their rank reaches the buyer. Never true for the buyer, whose own step is `pay` — not even for a buyer who is staff or an administrator."
+        start:
+          type: boolean
+          description: "Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+        ship:
+          type: boolean
+          description: Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead.
+        deliver:
+          type: boolean
+          description: Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not.
+        fulfill:
+          type: boolean
+          description: "Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not."
+        override:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderStatus"
+          description: The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status.
+          example:
+            - processing
+            - shipped
+            - delivered
+        withdraw:
+          type: boolean
+          description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`."
+        withdrawUntil:
+          type: string
+          format: date-time
+          description: "The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet."
+        invoice:
+          type: boolean
+          description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
+    Order:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - items
+        - totalItems
+        - totalQuantity
+        - totalPrice
+        - status
+        - paymentStatus
+        - fulfillmentStatus
+        - returnStatus
+        - currency
+        - orderNumber
+        - netTotal
+        - taxTotal
+        - shippingNetAmount
+        - shippingTaxAmount
+        - taxSummary
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        userId:
+          $ref: "#/components/schemas/Id"
+        email:
+          $ref: "#/components/schemas/Email"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        totalItems:
+          type: integer
+          minimum: 0
+          description: Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+          example: 2
+        totalQuantity:
+          type: integer
+          minimum: 0
+          description: Sum of `quantity` across every line item.
+          example: 5
+        totalPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+          example: 149.97
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code this order was priced in (e.g. EUR).
+        netTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+        taxTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+        shippingNetAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+        shippingTaxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+        taxSummary:
+          type: array
+          readOnly: true
+          items:
+            $ref: "#/components/schemas/OrderTaxSummaryRow"
+          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
+        notes:
+          type: string
+          description: Optional order notes
+        shippingMethod:
+          type: string
+          description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
+        shippingCost:
+          type: number
+          format: double
+          minimum: 0
+          description: What that method cost at checkout time — a later rate change cannot re-price history.
+        shippingAddress:
+          $ref: "#/components/schemas/OrderAddress"
+        billingAddress:
+          $ref: "#/components/schemas/OrderAddress"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethodId"
+        payBy:
+          type: string
+          format: date-time
+        orderNumber:
+          type: string
+          readOnly: true
+          example: 2026-000041
+        transferInstructions:
+          $ref: "#/components/schemas/OrderTransferInstructions"
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/OrderPaymentStatus"
+        fulfillmentStatus:
+          $ref: "#/components/schemas/OrderFulfillmentStatus"
+        returnStatus:
+          $ref: "#/components/schemas/OrderReturnStatus"
+        actions:
+          $ref: "#/components/schemas/OrderActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
     CheckoutResponseEnvelope:
       type: object
       additionalProperties: false
@@ -12904,6 +12780,19 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/OrdersResponse"
+    OrderLineInput:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 999999
     CreateOrderRequest:
       type: object
       additionalProperties: false
@@ -12919,8 +12808,9 @@ components:
         items:
           type: array
           minItems: 1
+          maxItems: 1000
           items:
-            $ref: "#/components/schemas/CartItem"
+            $ref: "#/components/schemas/OrderLineInput"
       description: Create a new order.
     OrderEnvelope:
       type: object
@@ -14490,6 +14380,73 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+    ExportSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        type:
+          type: string
+          enum:
+            - refresh
+        expiration:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+    ExportFeedbackTicket:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - subject
+        - message
+        - status
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: string
+        email:
+          $ref: "#/components/schemas/Email"
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          $ref: "#/components/schemas/FeedbackRequestStatus"
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    CartItem:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        quantity:
+          type: integer
+          minimum: 1
+    WishlistExportItem:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
     ExportPayment:
       type: object
       additionalProperties: false
@@ -14538,61 +14495,6 @@ components:
           type: string
           format: date-time
         updatedAt:
-          type: string
-          format: date-time
-    WishlistExportItem:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-    ExportSession:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - type
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        type:
-          type: string
-          enum:
-            - refresh
-        expiration:
-          type: string
-          format: date-time
-        lastUsedAt:
-          type: string
-          format: date-time
-    ExportFeedbackTicket:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - email
-        - subject
-        - message
-        - status
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        name:
-          type: string
-        email:
-          $ref: "#/components/schemas/Email"
-        subject:
-          type: string
-        message:
-          type: string
-        status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
-        respondedAt:
-          type: string
-          format: date-time
-        createdAt:
           type: string
           format: date-time
     ExportInvoiceDocument:
@@ -14848,6 +14750,116 @@ components:
           notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
           notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
           notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
+    AccountExportResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - exportedAt
+        - profile
+        - auditLog
+        - addresses
+        - sessions
+        - cart
+        - wishlist
+        - orders
+        - payments
+        - invoicing
+        - shipments
+        - returns
+        - apiKeys
+        - roles
+        - examples
+        - notifications
+      properties:
+        exportedAt:
+          type: string
+          format: date-time
+        profile:
+          $ref: "#/components/schemas/User"
+        auditLog:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntryItem"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportSession"
+        feedback:
+          type: array
+          description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
+          items:
+            $ref: "#/components/schemas/ExportFeedbackTicket"
+        cart:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        wishlist:
+          type: array
+          items:
+            $ref: "#/components/schemas/WishlistExportItem"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportPayment"
+        invoicing:
+          type: object
+          additionalProperties: false
+          required:
+            - invoices
+            - creditNotes
+          properties:
+            invoices:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportInvoiceDocument"
+            creditNotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportInvoiceDocument"
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
+        returns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportReturn"
+        apiKeys:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKey"
+        roles:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - role
+              - scope
+            properties:
+              role:
+                type: string
+              scope:
+                type: string
+                enum:
+                  - tenant
+                  - platform
+        examples:
+          type: array
+          items:
+            $ref: "#/components/schemas/Example"
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
     MergeCartRequest:
       type: object
       additionalProperties: false
@@ -15227,6 +15239,9 @@ x-error-codes:
   ORDER_INVOICE_NOT_ISSUED:
     status: 404
     description: The order exists but no invoice has been issued for it yet.
+  ORDER_LINE_LIMIT_EXCEEDED:
+    status: 422
+    description: An admin-created order has more lines, or a larger quantity on one line, than this deployment allows (`NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The message names the limit.
   ORDER_NOTHING_TO_SHIP:
     status: 409
     description: The order has no physical lines left to ship.
