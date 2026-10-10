@@ -105,8 +105,8 @@ Four ideas carry the whole repository:
 npm run complete    # lint + spec lint + contract identity + format + build + unit + e2e
 ```
 
-The full gate. For now the pre-commit hook runs a faster subset, `npm run complete:light` (no
-build or Cypress), so run this yourself before merging. It takes **around ten minutes**,
+The full gate. The pre-commit hook runs a faster subset, `npm run complete:light` (no
+build or Cypress), so run this yourself before merging a lane and once on main after; CI is authoritative. It takes **around ten minutes**,
 mostly Cypress — start it and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
 rather than reported.
 
@@ -120,6 +120,11 @@ See [Test timings](./docs/tools/testing-and-docs.md#test-timings) for what each 
 ## License
 
 AGPL-3.0-or-later. See [LICENSE](./LICENSE).
+
+Copyright (C) 2023-2026 Andrea Guerzoni. This program is free software: you can redistribute it
+and/or modify it under the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any later version. It is
+distributed WITHOUT ANY WARRANTY; see the GNU Affero General Public License for details.
 
 This app is shipped straight to browsers, so AGPL §13 applies the same way it does to the paired
 backend: if you modify it, you must offer everyone who interacts with it remotely a way to get the
