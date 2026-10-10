@@ -4119,18 +4119,20 @@ export interface InventoryLevelsResponseEnvelope {
 
 /**
  * * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
- * * `commit` — the order was paid for and the units left. Both down.
- * * `release` — the hold was given up (the order was cancelled). `reserved` down.
+ * * `commit` — the order was paid for. The claim is settled and nothing moves: the units stay on the shelf, still spoken for.
+ * * `ship` — the parcel left (or a digital order was fulfilled). Both down: the units are off the shelf.
+ * * `release` — the hold was given up (the order was cancelled, paid or not). `reserved` down.
  * * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
  * * `receive` — a supplier delivery. `onHand` up.
  * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
- * * `restock` — a paid order's committed units came back (the order was cancelled after payment). `onHand` up.
+ * * `restock` — returned goods were received back on the shelf. `onHand` up.
  */
 export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
 
 export const StockMovementReason = {
     reserve: 'reserve',
     commit: 'commit',
+    ship: 'ship',
     release: 'release',
     expire: 'expire',
     receive: 'receive',

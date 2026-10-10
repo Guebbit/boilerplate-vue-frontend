@@ -2,11 +2,12 @@
 /**
  * @module
  * OP21 · The stock counters follow an order. One product with five units on the shelf: a customer
- * checks out two (they are held: reserved, not yet gone), the order is paid (the units are sold),
- * a second order is placed and cancelled (held, then released), and the administrator writes the
- * rest off. At each step the board's on-hand, reserved and available counts say what the order
- * did, the ledger names the movement and links it to the order, and a guest who looked at the
- * product before sees "out of stock" the moment it is true.
+ * checks out two (they are held: reserved, not yet gone), the order is paid (still on the shelf,
+ * still reserved: the units leave at shipment), a second order is placed and cancelled (held,
+ * then released), and the administrator writes the unsold units off. At each step the board's
+ * on-hand, reserved and available counts say what the order did, the ledger names the movement
+ * and links it to the order, and a guest who looked at the product before sees "out of stock" the
+ * moment it is true.
  *
  * Staff read the live counters; a guest's product page is cached, and a stock write clears that
  * cache. With no cache (the demo backend) the last step is trivially true; with Redis and a
@@ -83,7 +84,7 @@ describe('OP21 · The stock counters follow an order', () => {
         cy.visit('/en');
     });
 
-    it('reserve, sold, released and written off each move the counts and name their order, and a guest sees the end of stock at once', () => {
+    it('reserve, paid, released and written off each move the counts and name their order, and a guest sees the end of stock at once', () => {
         const title = `E2E OP21 ${String(Date.now())}`;
         cy.createProduct({ title, onHand: SHELF }).then((product) => {
             cy.step('a guest looks at the product while it is in stock');
@@ -98,27 +99,27 @@ describe('OP21 · The stock counters follow an order', () => {
             placeOrder(product.id, FIRST_ORDER).as('first');
             boardShows(title, [SHELF, FIRST_ORDER, SHELF - FIRST_ORDER]);
 
-            cy.step('the order is paid: the held units are sold');
+            cy.step('the order is paid: the units stay on the shelf, still reserved');
             cy.get<string>('@first').then((orderId) => {
                 cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, {
                     method: 'cash'
                 });
             });
-            boardShows(title, [SHELF - FIRST_ORDER, 0, SHELF - FIRST_ORDER]);
+            boardShows(title, [SHELF, FIRST_ORDER, SHELF - FIRST_ORDER]);
 
             cy.step('a second order is placed and then cancelled: held, then released');
             placeOrder(product.id, SECOND_ORDER).as('second');
             boardShows(title, [
-                SHELF - FIRST_ORDER,
-                SECOND_ORDER,
+                SHELF,
+                FIRST_ORDER + SECOND_ORDER,
                 SHELF - FIRST_ORDER - SECOND_ORDER
             ]);
             cy.get<string>('@second').then((orderId) => {
                 cy.apiAs('user', 'POST', `/orders/${orderId}/cancel`);
             });
-            boardShows(title, [SHELF - FIRST_ORDER, 0, SHELF - FIRST_ORDER]);
+            boardShows(title, [SHELF, FIRST_ORDER, SHELF - FIRST_ORDER]);
 
-            cy.step('the administrator writes the rest off');
+            cy.step('the administrator writes the unsold units off');
             cy.get('[data-test=adjust-product] input').clear();
             cy.get('[data-test=adjust-product] input').type(title);
             cy.get('[role=listbox] [role=option]').contains(title).click();
@@ -129,7 +130,8 @@ describe('OP21 · The stock counters follow an order', () => {
             cy.get('[data-test=adjust-submit]').click();
             cy.wait('@adjust').its('response.statusCode').should('be.within', 200, 299);
             cy.get('[data-test=adjust-error]').should('not.exist');
-            boardShows(title, [0, 0, 0]);
+            // The paid order's units are still on the shelf, so the count cannot drop below them.
+            boardShows(title, [FIRST_ORDER, FIRST_ORDER, 0]);
 
             cy.step(
                 'the ledger names every movement, oldest to newest, each order on its own rows'
@@ -140,7 +142,7 @@ describe('OP21 · The stock counters follow an order', () => {
                 expect(newestFirst.toReversed()).to.deep.equal([
                     'Received',
                     'Reserved',
-                    'Sold',
+                    'Paid',
                     'Reserved',
                     'Released',
                     'Adjusted'
@@ -148,7 +150,7 @@ describe('OP21 · The stock counters follow an order', () => {
             });
             for (const alias of ['first', 'second']) {
                 cy.get<string>(`@${alias}`).then((orderId) => {
-                    // Each order is held, then sold or released: two rows.
+                    // Each order is held, then paid or released: two rows.
                     cy.get(`[data-test=movement-row]:has(a[href$="/orders/${orderId}"])`).should(
                         'have.length',
                         2

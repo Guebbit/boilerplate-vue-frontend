@@ -9880,7 +9880,7 @@ export const ListStockMovementsQueryParams = zod.strictObject({
         .regex(listStockMovementsQueryProductIdRegExp)
         .optional(),
     reason: zod
-        .enum(['reserve', 'commit', 'release', 'expire', 'receive', 'adjust', 'restock'])
+        .enum(['reserve', 'commit', 'ship', 'release', 'expire', 'receive', 'adjust', 'restock'])
         .optional()
 });
 export const listStockMovementsResponseDataItemsItemIdMax = 64;
@@ -9915,6 +9915,7 @@ export const ListStockMovementsResponse = zod.strictObject({
                 reason: zod.enum([
                     'reserve',
                     'commit',
+                    'ship',
                     'release',
                     'expire',
                     'receive',
