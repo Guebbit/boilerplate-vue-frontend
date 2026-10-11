@@ -76,20 +76,23 @@ env:
     LIVE_RESET_COMMAND: NODE_ENV=development npm --prefix {backend} run host -- scenario:apply:reset -- {scenario} --describe-to={describeTo}
     # The at-rest encryption keys, job-wide rather than per step: the seed step, the running
     # backend AND every `cy.restore()` (which re-seeds through LIVE_RESET_COMMAND from the Cypress
-    # step) must encrypt and decrypt with the same keys. Throwaway values.
-    NODE_PII_ENCRYPTION_KEY: ci-not-a-secret-pii-key
-    NODE_TOTP_ENCRYPTION_KEY: ci-not-a-secret-totp-key
-    NODE_WEBHOOK_SECRET_ENCRYPTION_KEY: ci-not-a-secret-webhook-key
+    # step) must encrypt and decrypt with the same keys. Throwaway values, NOT SECRETS: random
+    # 32-byte hex generated once for this file, because the backend refuses to boot on a key or
+    # token that decodes to fewer than 32 bytes (`minBytes` in its config).
+    NODE_PII_ENCRYPTION_KEY: fd8adbebee39fcf2b348dc78f9a98863630fc6ac38ca586fe7a9125e7c6cdef6
+    NODE_TOTP_ENCRYPTION_KEY: 12ec2210f4e1555e74fffa342078eb7b04d5fd9215cd2b8ca9cce14cb05e1765
+    NODE_WEBHOOK_SECRET_ENCRYPTION_KEY: 1c6619210e02960e4b91177d816dae89421037bd7734cc5877433af47095a79f
     #
     # The backend's boot config, job-wide because the seed, the running backend AND every
     # `cy.restore()` reseed (from the Cypress step) all boot the app and refuse without it.
     # `host` (below) points the database and Redis at 127.0.0.1; the broker is not
-    # among what it sets, so it is named here.
-    NODE_RABBITMQ_HOST: 127.0.0.1
+    # among what it sets, so it is named here. As a full URL, because a `.env` in the checkout
+    # would otherwise win with its own broker address.
+    NODE_RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     # One process. The default is one worker per core, all fighting over port 3000.
     NODE_CLUSTER_WORKERS: '1'
     # A required key for the personal-data pseudonyms; throwaway, like the ones above.
-    NODE_PSEUDONYM_KEY: ci-not-a-secret-pseudonym-key
+    NODE_PSEUDONYM_KEY: c8e0d50d06a8d4990987b30b0ff4b4416d6655ed483352063abe5f43706c28de
     # Webhook deliveries go to the tester service through its TLS proxy (a webhook URL must be
     # https); the literal IP is deliberate, as the SSRF guard's DNS lookup skips /etc/hosts. The
     # backend trusts the proxy's certificate through the NODE_EXTRA_CA_CERTS its `e2e:serve`
@@ -99,8 +102,8 @@ env:
     # values, same reasoning as scenarios/run-server.ts's own REQUIRED_DEFAULTS:
     # a real deployment's secrets have no place in a CI runner that dies with the job.
     NODE_URL: http://localhost:3000/
-    NODE_TOKEN_ACCESS: ci-not-a-secret-access-token
-    NODE_TOKEN_REFRESH: ci-not-a-secret-refresh-token
+    NODE_TOKEN_ACCESS: 9820d656685f03de1e1451356a31a6e80b2655a8aaa0cc7e404cec910d3909fd
+    NODE_TOKEN_REFRESH: 50b35fc2a8ee9766f7a64b974fc6d1cf6c8cf49576b8e63ea9f2bde48875f439
     # The e2e preview serves the app on 8085; the backend's CORS default names only
     # the dev server, and a refused preflight fails every spec before any assertion.
     NODE_CORS_ORIGIN: http://localhost:8085
@@ -140,7 +143,8 @@ env:
     NODE_AUTH_RATE_LIMIT_ADDRESS_MAX: '1000'
     NODE_SIGNUP_RATE_LIMIT_MAX: '1000'
     NODE_RESET_RATE_LIMIT_MAX: '1000'
-    NODE_METRICS_TOKEN: ci-metrics-token
+    # Throwaway, NOT A SECRET (32-byte hex, like the keys above).
+    NODE_METRICS_TOKEN: 786f2f6930240de02a0ad3f60d875d62cb01b6e1122c45b82382f877b398d8e9
     # The provider's webhook signing secret. Known, so a spec can sign a delivery itself
     # (`postPaymentWebhook`, scripts/e2e/payment-webhook.ts reads the second name).
     NODE_PAYMENT_WEBHOOK_SECRET: ci-not-a-secret-payment-webhook
