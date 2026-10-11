@@ -2,7 +2,7 @@
 /**
  * @module
  * CU7 · Two shoppers, one last unit. Both have the last unit of a product in their cart. The
- * customer checks out first, which holds it; the second shopper is refused, naming the line and what was asked.
+ * customer checks out first, which holds it; the second shopper's cart marks the line "Sold out" and holds "Place order" back.
  * When the customer cancels, the hold is released and the second shopper's next attempt goes through.
  *
  * The second shopper is the seeded second-shopper customer: staff hold no
@@ -37,7 +37,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
         cy.visit('/en');
     });
 
-    it('the second shopper is refused while the hold stands, and served once it is released', () => {
+    it('the second shopper is held back while the hold stands, and served once it is released', () => {
         cy.subjectId('product.lowStock').then((productId) => {
             cy.subjectProduct('product.lowStock').then(({ title }) => {
                 cy.step('both shoppers have the last unit in their cart');
@@ -60,27 +60,18 @@ describe('CU7 · Two shoppers, one last unit', () => {
                     cy.visit(`/en/products/${productId}`);
                     cy.get('[data-test=product-stock]').should('contain.text', 'Out of stock');
 
-                    cy.step(
-                        'the second shopper sees it gone, and checkout refuses naming the line'
-                    );
+                    cy.step('the second shopper sees it gone, and the cart holds checkout back');
                     cy.switchUser('secondShopper');
                     cy.visit(`/en/products/${productId}`);
                     cy.get('[data-test=product-stock]').should('contain.text', 'Out of stock');
                     cy.goToCart();
                     cy.get('[data-test=cart-item]').should('have.length', 1);
                     cy.get('[data-test=shipping-method-pickup]').click();
-                    cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
-                    cy.get('[data-test=checkout-shortfall-line]')
-                        .should('have.length', 1)
-                        .invoke('text')
-                        .should((text) => {
-                            expect(text).to.contain(title);
-                            expect(text, 'one asked for, and not enough left').to.match(
-                                /asked for 1\b.*not enough in stock/
-                            );
-                            expect(text, 'the stock left is not told').not.to.match(/\b0\b/);
-                        });
-                    cy.get('#cart-page').should('exist');
+                    cy.contains('[data-test=cart-item]', title)
+                        .find('[data-test=cart-line-availability]')
+                        .should('contain.text', 'Sold out')
+                        .and('have.attr', 'data-availability', 'out_of_stock');
+                    cy.get('[data-test=cart-checkout]').should('be.disabled');
 
                     cy.step('the customer cancels: the hold is released');
                     cy.switchUser('user');

@@ -3,13 +3,11 @@
  * @module
  * CU6 · Out of stock between wishlist and checkout. A customer saves a product, the shop's last
  * units of it go (a stocktake correction), and the customer moves it to the cart anyway. Adding
- * to a cart never looks at stock — only checkout does — so the move works and checkout refuses,
- * naming the line and how many were asked for. Removing that line lets the rest of the basket
- * through.
+ * to a cart never looks at stock, so the move works; the cart then marks the line "Sold out" and
+ * holds "Place order" back. Removing that line lets the rest of the basket through.
  *
- * The shortfall line is checked for what it must carry, not for its wording: the product's title
- * and the number requested. The number left is never in it: exact stock is for whoever may read
- * inventory, and a shopper may not.
+ * The server's own refusal (a shortfall the page had not yet seen) is covered by the cart view's
+ * stale-refusal spec: the page never offers the click this journey could use to reach it.
  */
 import {
     addToCartFromStorefront,
@@ -29,7 +27,7 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
         cy.visit('/en');
     });
 
-    it('moves a sold-out product to the cart, is refused at checkout with the shortfall, and buys the rest', () => {
+    it('moves a sold-out product to the cart, finds the line sold out with checkout held back, and buys the rest', () => {
         cy.step(
             'the customer keeps an ordinary product in the cart and saves another to the wishlist'
         );
@@ -67,21 +65,16 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
             cy.goToCart();
             cy.get('[data-test=cart-item]').should('have.length', 2);
 
-            cy.step('checkout refuses, naming the line and what was asked');
-            // `pickup` needs no address, so choosing it alone enables the button.
+            cy.step('the cart marks the line sold out and holds "Place order" back');
+            // `pickup` needs no address, so choosing it alone would enable the button.
             cy.get('[data-test=shipping-method-pickup]').click();
-            cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
-            cy.get('[data-test=checkout-shortfall-line]').should('have.length', 1);
-            cy.get('[data-test=checkout-shortfall-line]')
-                .invoke('text')
-                .should((text) => {
-                    expect(text).to.contain(title);
-                    expect(text, 'one asked for, and not enough left').to.match(
-                        /asked for 1\b.*not enough in stock/
-                    );
-                    expect(text, 'the stock left is not told').not.to.match(/\b0\b/);
-                });
-            cy.get('#cart-page').should('exist');
+            cy.contains('[data-test=cart-item]', title)
+                .find('[data-test=cart-line-availability]')
+                .should('contain.text', 'Sold out')
+                .and('have.attr', 'data-availability', 'out_of_stock');
+            cy.get('[data-test=cart-lines-need-attention]').should('exist');
+            cy.get('[data-test=cart-checkout]').should('be.disabled');
+            cy.get('[data-test=checkout-shortfall-line]').should('not.exist');
 
             cy.step('the customer removes that line and the rest of the basket goes through');
             cy.contains('[data-test=cart-item]', title).find('[data-test=cart-remove]').click();
