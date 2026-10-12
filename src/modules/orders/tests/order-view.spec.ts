@@ -123,9 +123,6 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         pay: false,
         recordPayment: false,
         start: false,
-        ship: false,
-        deliver: false,
-        fulfill: false,
         override: [],
         invoice: false,
         withdraw: false
@@ -166,9 +163,6 @@ describe('the invoice buttons', () => {
                 pay: false,
                 recordPayment: false,
                 start: false,
-                ship: false,
-                deliver: false,
-                fulfill: false,
                 override: [],
                 invoice: true,
                 withdraw: false

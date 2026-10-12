@@ -1,11 +1,9 @@
 /**
  * @module
  * The delivery store — transport-mocked like the wishlist's spec. Worth pinning: the methods
- * list mirrors the API, and a 404 on the shipment read is "nothing shipped yet" while any other
- * failure still rejects.
- *
- * The stub rejects with the envelope `onResponseReject` builds. The store tells "nothing shipped
- * yet" from a real failure by reading `status` off it, so nothing else would tell the two apart.
+ * list mirrors the API, the fulfilment read fills both lists (empty is an answer, not an error),
+ * every write sends the body the contract accepts and ends by re-reading the order's fulfilment,
+ * and a failure still rejects.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -16,6 +14,8 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+
+import { aFulfillmentOrder, aShipment } from '../../../../tests/support/unit/fixtures.ts';
 
 import * as schemas from '@api/schemas';
 
@@ -63,24 +63,24 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /delivery/methods': orvalEnvelope({ methods: METHODS, shipToCountries: ['IT'] }),
-        'GET /delivery/order/order-1': orvalEnvelope({
-            id: 's1',
-            orderId: 'order-1',
-            trackingCode: 'TRK-1',
-            status: 'shipped'
+        'GET /delivery/order/o1': orvalEnvelope({
+            fulfillmentOrders: [aFulfillmentOrder()],
+            shipments: [aShipment({ trackingCode: 'TRK-1' })]
         }),
-        'POST /delivery/order/order-2/ship': orvalEnvelope({
-            id: 's2',
-            orderId: 'order-2',
-            trackingCode: 'TRK-2',
-            status: 'shipped'
-        }),
-        'POST /delivery/order/order-1/deliver': orvalEnvelope({
-            id: 's1',
-            orderId: 'order-1',
-            trackingCode: 'TRK-1',
-            status: 'delivered'
-        }),
+        'POST /delivery/fulfillment-orders/fo1/shipments': orvalEnvelope(
+            aShipment({ id: 's2', trackingCode: 'TRK-2' }),
+            201
+        ),
+        'POST /delivery/fulfillment-orders/fo1/fulfill': orvalEnvelope(
+            aShipment({ id: 's3', status: 'delivered' }),
+            201
+        ),
+        'POST /delivery/fulfillment-orders/fo1/hold': orvalEnvelope(
+            aFulfillmentOrder({ status: 'on_hold', holdReason: 'high_risk' })
+        ),
+        'POST /delivery/fulfillment-orders/fo1/release': orvalEnvelope(aFulfillmentOrder()),
+        'PATCH /delivery/shipments/s1': orvalEnvelope(aShipment({ trackingCode: 'TRK-9' })),
+        'POST /delivery/shipments/s1/deliver': orvalEnvelope(aShipment({ status: 'delivered' })),
         'POST /delivery/order/order-3/start': orvalEnvelope({
             id: 'order-3',
             userId: 'u1',
@@ -95,24 +95,25 @@ beforeEach(() => {
             shippingTaxAmount: 0,
             taxSummary: [],
             status: 'processing'
-        }),
-        'POST /delivery/order/order-4/fulfill': orvalEnvelope({
-            id: 'order-4',
-            userId: 'u1',
-            email: 'shopper@example.com',
-            items: [],
-            totalItems: 0,
-            totalQuantity: 0,
-            totalPrice: 0,
-            netTotal: 0,
-            taxTotal: 0,
-            shippingNetAmount: 0,
-            shippingTaxAmount: 0,
-            taxSummary: [],
-            status: 'delivered'
         })
     };
 });
+
+/**
+ * The body a write was sent with, read off the mocked transport.
+ *
+ * @param method - HTTP method of the call.
+ * @param url - URL of the call.
+ * @returns The `data` the call carried.
+ */
+const sentBody = async (method: string, url: string) => {
+    const { orvalMutator } = await import('@/infrastructure/http');
+    const call = vi
+        .mocked(orvalMutator)
+        .mock.calls.find(([config]) => config.method === method && config.url === url);
+    const data: unknown = call?.[0].data;
+    return data;
+};
 
 describe('fetchMethods', () => {
     it('mirrors the API list', () => {
@@ -145,120 +146,175 @@ describe('fetchMethods', () => {
     });
 });
 
-describe('fetchShipmentForOrder', () => {
-    it('mirrors the parcel, and reads a 404 as "nothing shipped yet"', () => {
+describe('fetchFulfillmentForOrder', () => {
+    it('mirrors both lists', () => {
         const store = useDeliveryStore();
-        return store
-            .fetchShipmentForOrder('order-1')
-            .then(() => {
-                expect(store.shipment?.trackingCode).toBe('TRK-1');
-                responses = {};
-                return store.fetchShipmentForOrder('order-1');
-            })
-            .then((shipment) => {
-                expect(shipment).toBeUndefined();
-                expect(store.shipment).toBeUndefined();
-            });
+        return store.fetchFulfillmentForOrder('o1').then(() => {
+            expect(store.fulfillmentOrders.map(({ id }) => id)).toEqual(['fo1']);
+            expect(store.shipments.map(({ trackingCode }) => trackingCode)).toEqual(['TRK-1']);
+        });
     });
 
     /**
-     * Only 404 means "nothing shipped yet". A 500 swallowed here tells the customer their order
-     * has not shipped while the parcel is in transit, which is the one wrong answer this panel
-     * can give.
+     * An order not paid yet answers 200 with two empty lists: absence is the answer.
      */
-    it('lets any other failure through instead of calling it "nothing shipped yet"', () => {
-        responses = { 'GET /delivery/order/order-1': new Error('Internal Server Error') };
-        const store = useDeliveryStore();
-        return expect(store.fetchShipmentForOrder('order-1')).rejects.toMatchObject({
-            status: 500
+    it('reads two empty lists as "nothing to ship yet"', () => {
+        responses['GET /delivery/order/o1'] = orvalEnvelope({
+            fulfillmentOrders: [],
+            shipments: []
         });
+        const store = useDeliveryStore();
+        return store.fetchFulfillmentForOrder('o1').then(() => {
+            expect(store.fulfillmentOrders).toEqual([]);
+            expect(store.shipments).toEqual([]);
+        });
+    });
+
+    /**
+     * A 500 swallowed here would tell the customer nothing has shipped while a parcel is in
+     * transit, the one wrong answer this panel can give.
+     */
+    it('lets a failure through instead of calling it "nothing to ship"', () => {
+        responses['GET /delivery/order/o1'] = new Error('Internal Server Error');
+        const store = useDeliveryStore();
+        return expect(store.fetchFulfillmentForOrder('o1')).rejects.toMatchObject({ status: 500 });
     });
 });
 
 describe('start', () => {
-    it('resolves once fulfilment starts, without touching `shipment` — this module owns no order data', () => {
+    it('resolves once fulfilment starts, without touching the lists — this module owns no order data', () => {
         const store = useDeliveryStore();
         return store.start('order-3').then((result) => {
             expect(result).toBeUndefined();
-            expect(store.shipment).toBeUndefined();
+            expect(store.fulfillmentOrders).toEqual([]);
         });
-    });
-});
-
-describe('fulfill', () => {
-    it('resolves once a digital-only order is fulfilled, without touching `shipment` — no parcel ever exists for it', () => {
-        const store = useDeliveryStore();
-        return store.fulfill('order-4').then((result) => {
-            expect(result).toBeUndefined();
-            expect(store.shipment).toBeUndefined();
-        });
-    });
-
-    it('rejects the same way any other refusal does — a 409 on a non-digital-only order', () => {
-        responses['POST /delivery/order/order-4/fulfill'] = new Error('ORDER_NOT_DIGITAL_ONLY');
-        const store = useDeliveryStore();
-        return expect(store.fulfill('order-4')).rejects.toBeDefined();
     });
 });
 
 describe('ship', () => {
-    it('records the handover and stores the shipment', () => {
+    it('sends only what it was given, and re-reads the order afterwards', async () => {
         const store = useDeliveryStore();
-        return store.ship('order-2', 'TRK-2').then((shipment) => {
-            expect(shipment?.status).toBe('shipped');
-            expect(store.shipment?.trackingCode).toBe('TRK-2');
+        const shipment = await store.ship('fo1', {
+            lines: [{ productId: 'p1', quantity: 1 }],
+            trackingCode: 'TRK-2'
+        });
+
+        expect(shipment?.id).toBe('s2');
+        expect(
+            contractRequest(
+                schemas.ShipFulfillmentOrderBody,
+                await sentBody('POST', '/delivery/fulfillment-orders/fo1/shipments')
+            )
+        ).toEqual({ lines: [{ productId: 'p1', quantity: 1 }], trackingCode: 'TRK-2' });
+        expect(store.fulfillmentOrders).toHaveLength(1);
+    });
+
+    it('carries forced and its reason when overriding', async () => {
+        const store = useDeliveryStore();
+        await store.ship('fo1', { forced: true, reason: 'warehouse system was down' });
+
+        expect(
+            contractRequest(
+                schemas.ShipFulfillmentOrderBody,
+                await sentBody('POST', '/delivery/fulfillment-orders/fo1/shipments')
+            )
+        ).toEqual({ forced: true, reason: 'warehouse system was down' });
+    });
+
+    it('rejects on a refusal', () => {
+        responses['POST /delivery/fulfillment-orders/fo1/shipments'] = new Error(
+            'DELIVERY_LINES_INVALID'
+        );
+        const store = useDeliveryStore();
+        return expect(store.ship('fo1')).rejects.toBeDefined();
+    });
+});
+
+describe('fulfill', () => {
+    it('fulfils a digital fulfillment order and re-reads', () => {
+        const store = useDeliveryStore();
+        return store.fulfill('fo1').then((shipment) => {
+            expect(shipment?.status).toBe('delivered');
+            expect(store.fulfillmentOrders).toHaveLength(1);
         });
     });
 
-    it('omits forced/reason when not forcing', async () => {
-        const { orvalMutator } = await import('@/infrastructure/http');
+    it('rejects the same way any other refusal does — a 409 on a physical one', () => {
+        responses['POST /delivery/fulfillment-orders/fo1/fulfill'] = new Error(
+            'DELIVERY_NOT_DIGITAL'
+        );
         const store = useDeliveryStore();
-        return store.ship('order-2', 'TRK-2').then(() => {
-            const call = vi
-                .mocked(orvalMutator)
-                .mock.calls.find(([config]) => config.url === '/delivery/order/order-2/ship');
-            expect(contractRequest(schemas.ShipOrderBody, call?.[0].data)).toEqual({
-                trackingCode: 'TRK-2'
-            });
-        });
+        return expect(store.fulfill('fo1')).rejects.toBeDefined();
+    });
+});
+
+describe('hold and release', () => {
+    it('sends the staff reason and note', async () => {
+        const store = useDeliveryStore();
+        const held = await store.hold('fo1', { reason: 'high_risk', note: 'check the card' });
+
+        expect(held?.status).toBe('on_hold');
+        expect(
+            contractRequest(
+                schemas.HoldFulfillmentOrderBody,
+                await sentBody('POST', '/delivery/fulfillment-orders/fo1/hold')
+            )
+        ).toEqual({ reason: 'high_risk', note: 'check the card' });
     });
 
-    it('carries forced/reason when overriding', async () => {
-        const { orvalMutator } = await import('@/infrastructure/http');
+    it('releases and re-reads', () => {
         const store = useDeliveryStore();
-        return store.ship('order-2', 'TRK-2', true, 'warehouse system was down').then(() => {
-            const call = vi
-                .mocked(orvalMutator)
-                .mock.calls.find(([config]) => config.url === '/delivery/order/order-2/ship');
-            expect(contractRequest(schemas.ShipOrderBody, call?.[0].data)).toEqual({
-                trackingCode: 'TRK-2',
-                forced: true,
-                reason: 'warehouse system was down'
-            });
+        return store.release('fo1').then((released) => {
+            expect(released?.status).toBe('open');
+            expect(store.fulfillmentOrders).toHaveLength(1);
         });
     });
 });
 
 describe('deliver', () => {
-    it('records the arrival and stores the shipment', () => {
+    it('records the arrival of one shipment and re-reads', () => {
         const store = useDeliveryStore();
-        return store.deliver('order-1').then((shipment) => {
+        return store.deliver('s1').then((shipment) => {
             expect(shipment?.status).toBe('delivered');
-            expect(store.shipment?.status).toBe('delivered');
         });
     });
 
-    it('carries forced/reason when overriding', async () => {
-        const { orvalMutator } = await import('@/infrastructure/http');
+    it('omits forced/reason when not forcing', async () => {
         const store = useDeliveryStore();
-        return store.deliver('order-1', true, 'customer disputed delivery').then(() => {
-            const call = vi
-                .mocked(orvalMutator)
-                .mock.calls.find(([config]) => config.url === '/delivery/order/order-1/deliver');
-            expect(contractRequest(schemas.DeliverOrderBody, call?.[0].data)).toEqual({
-                forced: true,
-                reason: 'customer disputed delivery'
-            });
-        });
+        await store.deliver('s1');
+
+        expect(
+            contractRequest(
+                schemas.DeliverShipmentBody,
+                await sentBody('POST', '/delivery/shipments/s1/deliver')
+            )
+        ).toEqual({});
+    });
+
+    it('carries forced/reason when overriding', async () => {
+        const store = useDeliveryStore();
+        await store.deliver('s1', true, 'customer disputed delivery');
+
+        expect(
+            contractRequest(
+                schemas.DeliverShipmentBody,
+                await sentBody('POST', '/delivery/shipments/s1/deliver')
+            )
+        ).toEqual({ forced: true, reason: 'customer disputed delivery' });
+    });
+});
+
+describe('editTracking', () => {
+    it('sends the corrected code and re-reads', async () => {
+        const store = useDeliveryStore();
+        const shipment = await store.editTracking('s1', 'TRK-9');
+
+        expect(shipment?.trackingCode).toBe('TRK-9');
+        expect(
+            contractRequest(
+                schemas.UpdateShipmentBody,
+                await sentBody('PATCH', '/delivery/shipments/s1')
+            )
+        ).toEqual({ trackingCode: 'TRK-9' });
     });
 });

@@ -40,12 +40,6 @@ export interface OrderPaidEnvelope {
   'data': OrderIdPayload;
 }
 export type OrderPaidEventType = "order.paid";
-export interface OrderShippedEnvelope {
-  'type': OrderShippedEventType;
-  'timestamp': string;
-  'data': OrderIdPayload;
-}
-export type OrderShippedEventType = "order.shipped";
 export interface OrderCancelledEnvelope {
   'type': OrderCancelledEventType;
   'timestamp': string;
@@ -56,6 +50,28 @@ export interface OrderCancelledPayload {
   'orderId': string;
   'refund': boolean;
 }
+export interface ShipmentShippedEnvelope {
+  'type': ShipmentShippedEventType;
+  'timestamp': string;
+  'data': ShipmentPayload;
+}
+export type ShipmentShippedEventType = "shipment.shipped";
+export interface ShipmentPayload {
+  'orderId': string;
+  'shipmentId': string;
+  'fulfillmentOrderId': string;
+  'lines': AnonymousSchema31[];
+}
+export interface AnonymousSchema31 {
+  'productId': string;
+  'quantity': number;
+}
+export interface ShipmentDeliveredEnvelope {
+  'type': ShipmentDeliveredEventType;
+  'timestamp': string;
+  'data': ShipmentPayload;
+}
+export type ShipmentDeliveredEventType = "shipment.delivered";
 export interface PaymentSucceededEnvelope {
   'type': PaymentSucceededEventType;
   'timestamp': string;
@@ -133,37 +149,37 @@ export interface NotificationCreatedPayload {
 }
 export interface NotificationCartLineRemovedPayload {
   'id': string;
-  'code': AnonymousSchema60;
+  'code': AnonymousSchema69;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema64;
+  'severity': AnonymousSchema73;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema60 = "notifications.cart-line-removed";
+export type AnonymousSchema69 = "notifications.cart-line-removed";
 export interface CartLineRemovedParamsPayload {
   'productId': string;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema64 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema73 = "info" | "success" | "warning" | "error";
 export interface NotificationWishlistItemRemovedPayload {
   'id': string;
-  'code': AnonymousSchema68;
+  'code': AnonymousSchema77;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema69;
+  'severity': AnonymousSchema78;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema68 = "notifications.wishlist-item-removed";
-export type AnonymousSchema69 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema77 = "notifications.wishlist-item-removed";
+export type AnonymousSchema78 = "info" | "success" | "warning" | "error";
 export interface NotificationCartMergeRefusedPayload {
   'id': string;
-  'code': AnonymousSchema73;
+  'code': AnonymousSchema82;
   'params': CartMergeRefusedParamsPayload;
-  'severity': AnonymousSchema79;
+  'severity': AnonymousSchema88;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema73 = "notifications.cart-merge-refused";
+export type AnonymousSchema82 = "notifications.cart-merge-refused";
 export interface CartMergeRefusedParamsPayload {
   'lines': CartMergeRefusedLinePayload[];
 }
@@ -172,7 +188,7 @@ export interface CartMergeRefusedLinePayload {
   'requested': number;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema79 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema88 = "info" | "success" | "warning" | "error";
 export interface NotificationsDeletedPayload {
   'all': boolean;
   'ids': string[];
@@ -186,8 +202,9 @@ export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
 export type HeartbeatEvent = ObservabilityMetricsPayload;
 export type OrderCreatedEvent = OrderCreatedEnvelope;
 export type OrderPaidEvent = OrderPaidEnvelope;
-export type OrderShippedEvent = OrderShippedEnvelope;
 export type OrderCancelledEvent = OrderCancelledEnvelope;
+export type ShipmentShippedEvent = ShipmentShippedEnvelope;
+export type ShipmentDeliveredEvent = ShipmentDeliveredEnvelope;
 export type PaymentSucceededEvent = PaymentSucceededEnvelope;
 export type PaymentFailedEvent = PaymentFailedEnvelope;
 export type PaymentRefundedEvent = PaymentRefundedEnvelope;
@@ -215,12 +232,20 @@ export type ObservabilityChannel = (typeof OBSERVABILITY_CHANNELS)[keyof typeof 
 export const ORDER_CHANNELS = {
     CREATED: 'order.created',
     PAID: 'order.paid',
-    SHIPPED: 'order.shipped',
     CANCELLED: 'order.cancelled',
 } as const;
 
 /* Union of every "order." channel name */
 export type OrderChannel = (typeof ORDER_CHANNELS)[keyof typeof ORDER_CHANNELS];
+
+/* Channel names in the "shipment." namespace */
+export const SHIPMENT_CHANNELS = {
+    SHIPPED: 'shipment.shipped',
+    DELIVERED: 'shipment.delivered',
+} as const;
+
+/* Union of every "shipment." channel name */
+export type ShipmentChannel = (typeof SHIPMENT_CHANNELS)[keyof typeof SHIPMENT_CHANNELS];
 
 /* Channel names in the "payment." namespace */
 export const PAYMENT_CHANNELS = {

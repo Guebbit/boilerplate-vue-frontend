@@ -5,7 +5,7 @@
  * compile error in every spec at once — rather than a hand-typed `{ id, totalPrice }` that only
  * fails when something finally parses it.
  */
-import type { Order, Product, Return, User } from '@types';
+import type { FulfillmentOrder, Order, Product, Return, Shipment, User } from '@types';
 
 /**
  * A valid, empty order — every required field the contract declares, all totals zero.
@@ -62,6 +62,7 @@ export const aReturn = (overrides: Partial<Return> = {}): Return => ({
     currency: 'EUR',
     status: 'approved',
     reason: 'withdrawal',
+    kind: 'return',
     lines: [{ productId: 'p1', quantity: 1, title: 'Shirt', unitPrice: 30 }],
     returnPostage: 'consumer',
     createdAt: '2026-09-01T10:00:00.000Z',
@@ -83,5 +84,52 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => ({
     inStock: true,
     lowStock: false,
     active: true,
+    ...overrides
+});
+
+/**
+ * A valid fulfillment order as `GET /delivery/order/{id}` answers it — one physical line, open,
+ * nothing shipped, and no action offered.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `FulfillmentOrder` that parses against the generated schema
+ */
+export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): FulfillmentOrder => ({
+    id: 'fo1',
+    orderId: 'o1',
+    number: 1,
+    kind: 'physical',
+    status: 'open',
+    lines: [
+        {
+            productId: 'p1',
+            title: 'Shirt',
+            quantity: 2,
+            shippedQuantity: 0,
+            cancelledQuantity: 0,
+            remaining: 2
+        }
+    ],
+    actions: { ship: false, fulfill: false, hold: false, release: false },
+    createdAt: '2026-09-01T10:00:00.000Z',
+    ...overrides
+});
+
+/**
+ * A valid shipment as the delivery routes answer it — shipped, one line, no action offered.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `Shipment` that parses against the generated schema
+ */
+export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
+    id: 's1',
+    orderId: 'o1',
+    fulfillmentOrderId: 'fo1',
+    number: 1,
+    status: 'shipped',
+    lines: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
+    forced: false,
+    shippedAt: '2026-09-02T10:00:00.000Z',
+    actions: { deliver: false, editTracking: false },
     ...overrides
 });

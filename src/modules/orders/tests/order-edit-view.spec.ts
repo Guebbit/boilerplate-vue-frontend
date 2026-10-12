@@ -81,7 +81,7 @@ const signInAsAdmin = (abilities: [string, string][] = [['create', 'Payment']]) 
 
 /**
  * `OrderActions`, defaulted to "nothing" — each case overrides only the fields its own scenario
- * is about, rather than restating `start`/`ship`/`deliver`/`override` (this suite's concern only
+ * is about, rather than restating `start`/`override` (this suite's concern only
  * in "the correct-status door" below) at every call site.
  */
 const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
@@ -90,9 +90,6 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     pay: false,
     recordPayment: false,
     start: false,
-    ship: false,
-    deliver: false,
-    fulfill: false,
     override: [],
     invoice: false,
     withdraw: false,

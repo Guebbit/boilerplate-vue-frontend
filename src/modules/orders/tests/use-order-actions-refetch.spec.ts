@@ -22,9 +22,6 @@ const NO_MOVES: OrderActions = {
     pay: false,
     recordPayment: false,
     start: false,
-    ship: false,
-    deliver: false,
-    fulfill: false,
     override: [],
     invoice: false,
     withdraw: false

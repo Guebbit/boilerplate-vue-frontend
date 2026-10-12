@@ -50,9 +50,23 @@ export const ERROR_CODES = {
     CART_TOTAL_CHANGED: 'CART_TOTAL_CHANGED',
     /** 409 — The request is well-formed but conflicts with the resource's current state. */
     CONFLICT: 'CONFLICT',
-    /** 422 — An admin status override requires a reason and none was supplied. */
+    /** 422 — A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice. */
+    DELIVERY_LINES_INVALID: 'DELIVERY_LINES_INVALID',
+    /** 409 — The shipment has already been delivered, or its order is no longer in a state this can run from. */
+    DELIVERY_NOT_DELIVERABLE: 'DELIVERY_NOT_DELIVERABLE',
+    /** 409 — A physical fulfillment order cannot be fulfilled without a shipment; ship it instead. */
+    DELIVERY_NOT_DIGITAL: 'DELIVERY_NOT_DIGITAL',
+    /** 409 — Only an open or in-progress fulfillment order can be put on hold. */
+    DELIVERY_NOT_HOLDABLE: 'DELIVERY_NOT_HOLDABLE',
+    /** 409 — A digital fulfillment order has nothing to ship; fulfil it instead. */
+    DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
+    /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */
+    DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
+    /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled. */
+    DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
+    /** 422 — A forced shipment or delivery requires a reason and none was supplied. */
     DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',
-    /** 422 — Marking a shipment shipped requires a tracking code and none was supplied. */
+    /** 422 — Shipping a tracked method requires a tracking code and none was supplied. */
     DELIVERY_TRACKING_CODE_REQUIRED: 'DELIVERY_TRACKING_CODE_REQUIRED',
     /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
     EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
@@ -102,18 +116,14 @@ export const ERROR_CODES = {
     ORDER_INVOICE_NOT_ISSUED: 'ORDER_INVOICE_NOT_ISSUED',
     /** 422 — An admin-created order has more lines, or a larger quantity on one line, than this deployment allows (`NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The message names the limit. */
     ORDER_LINE_LIMIT_EXCEEDED: 'ORDER_LINE_LIMIT_EXCEEDED',
-    /** 409 — The order has no physical lines left to ship. */
-    ORDER_NOTHING_TO_SHIP: 'ORDER_NOTHING_TO_SHIP',
     /** 409 — The order is not in a state that can still be cancelled. */
     ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
-    /** 409 — This action only applies to an order with no physical lines. */
-    ORDER_NOT_DIGITAL_ONLY: 'ORDER_NOT_DIGITAL_ONLY',
     /** 409 — The order must be paid before this delivery action. */
     ORDER_NOT_PAID: 'ORDER_NOT_PAID',
     /** 409 — The order is not in a state this delivery action can run from. */
     ORDER_NOT_PROCESSING: 'ORDER_NOT_PROCESSING',
-    /** 409 — The order must be shipped before this delivery action. */
-    ORDER_NOT_SHIPPED: 'ORDER_NOT_SHIPPED',
+    /** 409 — The order still has units awaiting stock; overriding it forward would ship goods the stock ledger never counted out. */
+    ORDER_OVERRIDE_AWAITING_STOCK: 'ORDER_OVERRIDE_AWAITING_STOCK',
     /** 409 — This status transition is not on the admin override's allowed list. */
     ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',
     /** 403 — The caller holds the permission this route requires, but the person whose account, order, payment, return or API key it would change ranks at or above the caller. The one exception is the caller's own: staff and administrators change what is theirs, never what belongs to an equal or a superior. The four steps that move money (recording a payment by hand, a refund, approving a return, receiving a return) refuse the caller's own order too, with a plain `FORBIDDEN`. */
@@ -144,10 +154,14 @@ export const ERROR_CODES = {
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
     /** 422 — A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name. */
     REQUEST_ERROR: 'REQUEST_ERROR',
+    /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. */
+    RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
     /** 422 — The handling deduction is more than the refund is worth. */
     RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',
     /** 422 — A line names a product that is not on the order, asks for more than is left of it, is excluded from the right of withdrawal (Art. 16), or nothing on the order is left to return. */
     RETURN_LINES_INVALID: 'RETURN_LINES_INVALID',
+    /** 409 — The fulfillment order has nothing left to cancel, or nothing has shipped from the order yet (cancel the whole order instead). */
+    RETURN_NOTHING_TO_CANCEL: 'RETURN_NOTHING_TO_CANCEL',
     /** 409 — The return has already been decided. */
     RETURN_NOT_DECIDABLE: 'RETURN_NOT_DECIDABLE',
     /** 409 — The return is not an approved one awaiting its goods. */

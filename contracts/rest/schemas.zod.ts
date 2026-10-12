@@ -5382,7 +5382,14 @@ export const CheckoutResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -5399,9 +5406,6 @@ export const CheckoutResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -5674,6 +5678,16 @@ export const ListOrdersQueryParams = zod.strictObject({
     status: zod
         .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
         .optional(),
+    fulfillmentStatus: zod
+        .enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ])
+        .optional(),
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     deleted: zod.boolean().optional()
 });
@@ -5878,7 +5892,14 @@ export const ListOrdersResponse = zod.strictObject({
                     'cancelled'
                 ]),
                 paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-                fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+                fulfillmentStatus: zod.enum([
+                    'unfulfilled',
+                    'in_progress',
+                    'on_hold',
+                    'partially_fulfilled',
+                    'shipped',
+                    'fulfilled'
+                ]),
                 returnStatus: zod.enum([
                     'none',
                     'requested',
@@ -5902,9 +5923,6 @@ export const ListOrdersResponse = zod.strictObject({
                         pay: zod.boolean(),
                         recordPayment: zod.boolean(),
                         start: zod.boolean(),
-                        ship: zod.boolean(),
-                        deliver: zod.boolean(),
-                        fulfill: zod.boolean(),
                         override: zod.array(
                             zod.enum([
                                 'pending',
@@ -6141,7 +6159,14 @@ export const CreateOrderResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -6158,9 +6183,6 @@ export const CreateOrderResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -6245,6 +6267,16 @@ export const SearchOrdersBody = zod.strictObject({
     email: zod.email().max(searchOrdersBodyEmailMax).optional(),
     status: zod
         .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+        .optional(),
+    fulfillmentStatus: zod
+        .enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ])
         .optional(),
     paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
     deleted: zod.boolean().optional()
@@ -6454,7 +6486,14 @@ export const SearchOrdersResponse = zod.strictObject({
                     'cancelled'
                 ]),
                 paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-                fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+                fulfillmentStatus: zod.enum([
+                    'unfulfilled',
+                    'in_progress',
+                    'on_hold',
+                    'partially_fulfilled',
+                    'shipped',
+                    'fulfilled'
+                ]),
                 returnStatus: zod.enum([
                     'none',
                     'requested',
@@ -6478,9 +6517,6 @@ export const SearchOrdersResponse = zod.strictObject({
                         pay: zod.boolean(),
                         recordPayment: zod.boolean(),
                         start: zod.boolean(),
-                        ship: zod.boolean(),
-                        deliver: zod.boolean(),
-                        fulfill: zod.boolean(),
                         override: zod.array(
                             zod.enum([
                                 'pending',
@@ -6687,7 +6723,14 @@ export const GetOrderByIdResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -6704,9 +6747,6 @@ export const GetOrderByIdResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -6902,7 +6942,14 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -6919,9 +6966,6 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -7117,7 +7161,14 @@ export const UpdateOrderByIdResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -7134,9 +7185,6 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -7349,7 +7397,14 @@ export const RestoreOrderByIdResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -7366,9 +7421,6 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -7578,7 +7630,14 @@ export const CancelOrderByIdResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -7595,9 +7654,6 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -7612,7 +7668,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     })
 });
 /**
- * Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatusPathIdMax = 64;
@@ -7798,7 +7854,14 @@ export const OverrideOrderStatusResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -7815,9 +7878,6 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -8299,7 +8359,14 @@ export const GetOrderByReferenceResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -8316,9 +8383,6 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -8844,46 +8908,168 @@ export const ListShippingMethodsResponse = zod.strictObject({
     })
 });
 /**
- * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
- * @summary Get the shipment behind an order
+ * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. `holdNote` is staff's own and is left out for anyone else.
+ * @summary Get the fulfilment of an order
  */
-export const getShipmentByOrderPathOrderIdMax = 64;
-export const getShipmentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetShipmentByOrderParams = zod.strictObject({
+export const getFulfillmentByOrderPathOrderIdMax = 64;
+export const getFulfillmentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetFulfillmentByOrderParams = zod.strictObject({
     orderId: zod
         .string()
         .min(1)
-        .max(getShipmentByOrderPathOrderIdMax)
-        .regex(getShipmentByOrderPathOrderIdRegExp)
+        .max(getFulfillmentByOrderPathOrderIdMax)
+        .regex(getFulfillmentByOrderPathOrderIdRegExp)
 });
-export const getShipmentByOrderResponseDataIdMax = 64;
-export const getShipmentByOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getShipmentByOrderResponseDataOrderIdMax = 64;
-export const getShipmentByOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetShipmentByOrderResponse = zod.strictObject({
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdMax = 64;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdMax = 64;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdMax = 64;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemShippedQuantityMin = 0;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemCancelledQuantityMin = 0;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemRemainingMin = 0;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldNoteMax = 1000;
+export const getFulfillmentByOrderResponseDataShipmentsItemIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataShipmentsItemOrderIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const GetFulfillmentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(getShipmentByOrderResponseDataIdMax)
-            .regex(getShipmentByOrderResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(getShipmentByOrderResponseDataOrderIdMax)
-            .regex(getShipmentByOrderResponseDataOrderIdRegExp),
-        trackingCode: zod.string().optional(),
-        status: zod.enum(['shipped', 'delivered']),
-        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        fulfillmentOrders: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdMax)
+                    .regex(getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdRegExp),
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdMax)
+                    .regex(getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdRegExp),
+                number: zod.number().min(1),
+                kind: zod.enum(['physical', 'digital']),
+                status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdMax
+                            )
+                            .regex(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdRegExp
+                            ),
+                        title: zod.string(),
+                        quantity: zod.number().min(1),
+                        shippedQuantity: zod
+                            .number()
+                            .min(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemShippedQuantityMin
+                            ),
+                        cancelledQuantity: zod
+                            .number()
+                            .min(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemCancelledQuantityMin
+                            ),
+                        remaining: zod
+                            .number()
+                            .min(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemRemainingMin
+                            )
+                    })
+                ),
+                holdReason: zod
+                    .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+                    .optional(),
+                holdNote: zod
+                    .string()
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldNoteMax)
+                    .optional(),
+                agreedAt: zod.iso.datetime({ offset: true }).optional(),
+                expectedAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod.strictObject({
+                    ship: zod.boolean(),
+                    fulfill: zod.boolean(),
+                    hold: zod.boolean(),
+                    release: zod.boolean()
+                }),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        shipments: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataShipmentsItemIdMax)
+                    .regex(getFulfillmentByOrderResponseDataShipmentsItemIdRegExp),
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataShipmentsItemOrderIdMax)
+                    .regex(getFulfillmentByOrderResponseDataShipmentsItemOrderIdRegExp),
+                fulfillmentOrderId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdMax)
+                    .regex(getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdRegExp),
+                number: zod.number().min(1),
+                trackingCode: zod.string().optional(),
+                status: zod.enum(['shipped', 'delivered']),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(
+                                getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdMax
+                            )
+                            .regex(
+                                getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdRegExp
+                            ),
+                        title: zod.string(),
+                        quantity: zod.number().min(1)
+                    })
+                ),
+                forced: zod.boolean(),
+                shippedAt: zod.iso.datetime({ offset: true }),
+                deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod.strictObject({
+                    deliver: zod.boolean(),
+                    editTracking: zod.boolean()
+                }),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        )
     })
 });
 /**
- * Reports that fulfilment has started — the order moves `paid → processing`. No parcel exists yet at this point; that comes later, at `POST /delivery/order/{orderId}/ship`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
  * @summary Begin fulfilling a paid order
  */
 export const startFulfilmentPathOrderIdMax = 64;
@@ -9060,7 +9246,14 @@ export const StartFulfilmentResponse = zod.strictObject({
             .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
         returnStatus: zod.enum([
             'none',
             'requested',
@@ -9077,9 +9270,6 @@ export const StartFulfilmentResponse = zod.strictObject({
                 pay: zod.boolean(),
                 recordPayment: zod.boolean(),
                 start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
                 override: zod.array(
                     zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ),
@@ -9094,140 +9284,53 @@ export const StartFulfilmentResponse = zod.strictObject({
     })
 });
 /**
- * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`. Refuses a digital-only order outright, also 409 (`ORDER_NOTHING_TO_SHIP`) — nothing on it would ever ride in a parcel; `POST /delivery/order/{orderId}/fulfill` is that order's door instead.
- * @summary Record a parcel's handover to the carrier
+ * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is not `processing` (`ORDER_NOT_PROCESSING`) — unless `forced`, which lets a shipment skip the `start` step from `paid`. Never ships from `on_hold`, forced or not.
+ * @summary Ship some or all of a fulfillment order
  */
-export const shipOrderPathOrderIdMax = 64;
-export const shipOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ShipOrderParams = zod.strictObject({
-    orderId: zod.string().min(1).max(shipOrderPathOrderIdMax).regex(shipOrderPathOrderIdRegExp)
-});
-export const shipOrderBodyTrackingCodeMax = 100;
-export const shipOrderBodyReasonMax = 1000;
-export const ShipOrderBody = zod.strictObject({
-    trackingCode: zod.string().min(1).max(shipOrderBodyTrackingCodeMax).optional(),
-    forced: zod.boolean().optional(),
-    reason: zod.string().min(1).max(shipOrderBodyReasonMax).optional()
-});
-export const shipOrderResponseDataIdMax = 64;
-export const shipOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const shipOrderResponseDataOrderIdMax = 64;
-export const shipOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ShipOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(shipOrderResponseDataIdMax)
-            .regex(shipOrderResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(shipOrderResponseDataOrderIdMax)
-            .regex(shipOrderResponseDataOrderIdRegExp),
-        trackingCode: zod.string().optional(),
-        status: zod.enum(['shipped', 'delivered']),
-        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * Stamps the shipment delivered and reports the fact to `orders` — the order moves `shipped → delivered`. Refuses an order that is not `shipped` with a named 409.
- * @summary Record a parcel's arrival
- */
-export const deliverOrderPathOrderIdMax = 64;
-export const deliverOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const DeliverOrderParams = zod.strictObject({
-    orderId: zod
+export const shipFulfillmentOrderPathIdMax = 64;
+export const shipFulfillmentOrderPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ShipFulfillmentOrderParams = zod.strictObject({
+    id: zod
         .string()
         .min(1)
-        .max(deliverOrderPathOrderIdMax)
-        .regex(deliverOrderPathOrderIdRegExp)
+        .max(shipFulfillmentOrderPathIdMax)
+        .regex(shipFulfillmentOrderPathIdRegExp)
 });
-export const deliverOrderBodyReasonMax = 1000;
-export const DeliverOrderBody = zod.strictObject({
-    forced: zod.boolean().optional(),
-    reason: zod.string().min(1).max(deliverOrderBodyReasonMax).optional()
-});
-export const deliverOrderResponseDataIdMax = 64;
-export const deliverOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const deliverOrderResponseDataOrderIdMax = 64;
-export const deliverOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const DeliverOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(deliverOrderResponseDataIdMax)
-            .regex(deliverOrderResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(deliverOrderResponseDataOrderIdMax)
-            .regex(deliverOrderResponseDataOrderIdRegExp),
-        trackingCode: zod.string().optional(),
-        status: zod.enum(['shipped', 'delivered']),
-        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * The digital-only alternative to `ship`/`deliver` — reports that a `processing` order with no physical lines is done, moving it straight to `delivered` with no parcel record. Refuses an order that is not `processing` with a named 409 (`ORDER_NOT_PROCESSING`), and one that carries any line that still needs shipping with a named 409 (`ORDER_NOT_DIGITAL_ONLY`) — that order ships through the ordinary door instead.
- * @summary Mark a digital-only order fulfilled, with no shipment
- */
-export const fulfillOrderPathOrderIdMax = 64;
-export const fulfillOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const FulfillOrderParams = zod.strictObject({
-    orderId: zod
-        .string()
+export const shipFulfillmentOrderBodyLinesItemProductIdMax = 64;
+export const shipFulfillmentOrderBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const shipFulfillmentOrderBodyTrackingCodeMax = 100;
+export const shipFulfillmentOrderBodyReasonMax = 1000;
+export const ShipFulfillmentOrderBody = zod.strictObject({
+    lines: zod
+        .array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(shipFulfillmentOrderBodyLinesItemProductIdMax)
+                    .regex(shipFulfillmentOrderBodyLinesItemProductIdRegExp),
+                quantity: zod.number().min(1)
+            })
+        )
         .min(1)
-        .max(fulfillOrderPathOrderIdMax)
-        .regex(fulfillOrderPathOrderIdRegExp)
+        .optional(),
+    trackingCode: zod.string().min(1).max(shipFulfillmentOrderBodyTrackingCodeMax).optional(),
+    forced: zod.boolean().optional(),
+    reason: zod.string().min(1).max(shipFulfillmentOrderBodyReasonMax).optional()
 });
-export const fulfillOrderResponseDataIdMax = 64;
-export const fulfillOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const fulfillOrderResponseDataUserIdMax = 64;
-export const fulfillOrderResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const fulfillOrderResponseDataEmailMax = 254;
-export const fulfillOrderResponseDataItemsItemProductIdMax = 64;
-export const fulfillOrderResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const fulfillOrderResponseDataItemsItemProductPriceMin = 0;
-export const fulfillOrderResponseDataItemsItemProductRequiresShippingDefault = true;
-export const fulfillOrderResponseDataItemsItemProductSkuMax = 64;
-export const fulfillOrderResponseDataItemsItemProductWeightMin = 0;
-export const fulfillOrderResponseDataItemsItemProductTaxRateMin = 0;
-export const fulfillOrderResponseDataItemsItemProductTaxRateMax = 1;
-export const fulfillOrderResponseDataItemsItemLocaleMax = 35;
-export const fulfillOrderResponseDataItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+export const shipFulfillmentOrderResponseDataIdMax = 64;
+export const shipFulfillmentOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const shipFulfillmentOrderResponseDataOrderIdMax = 64;
+export const shipFulfillmentOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const shipFulfillmentOrderResponseDataFulfillmentOrderIdMax = 64;
+export const shipFulfillmentOrderResponseDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
 );
-export const fulfillOrderResponseDataItemsItemTaxAmountMin = 0;
-export const fulfillOrderResponseDataItemsItemNetAmountMin = 0;
-export const fulfillOrderResponseDataTotalItemsMin = 0;
-export const fulfillOrderResponseDataTotalQuantityMin = 0;
-export const fulfillOrderResponseDataTotalPriceMin = 0;
-export const fulfillOrderResponseDataNetTotalMin = 0;
-export const fulfillOrderResponseDataTaxTotalMin = 0;
-export const fulfillOrderResponseDataShippingNetAmountMin = 0;
-export const fulfillOrderResponseDataShippingTaxAmountMin = 0;
-export const fulfillOrderResponseDataTaxSummaryItemRateMin = 0;
-export const fulfillOrderResponseDataTaxSummaryItemNetAmountMin = 0;
-export const fulfillOrderResponseDataTaxSummaryItemTaxAmountMin = 0;
-export const fulfillOrderResponseDataTaxSummaryItemGrossAmountMin = 0;
-export const fulfillOrderResponseDataShippingCostMin = 0;
-export const fulfillOrderResponseDataShippingAddressCountryMax = 2;
-export const fulfillOrderResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const fulfillOrderResponseDataBillingAddressCountryMax = 2;
-export const fulfillOrderResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const FulfillOrderResponse = zod.strictObject({
+export const shipFulfillmentOrderResponseDataLinesItemProductIdMax = 64;
+export const shipFulfillmentOrderResponseDataLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const ShipFulfillmentOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -9235,155 +9338,405 @@ export const FulfillOrderResponse = zod.strictObject({
         id: zod
             .string()
             .min(1)
-            .max(fulfillOrderResponseDataIdMax)
-            .regex(fulfillOrderResponseDataIdRegExp),
-        userId: zod
+            .max(shipFulfillmentOrderResponseDataIdMax)
+            .regex(shipFulfillmentOrderResponseDataIdRegExp),
+        orderId: zod
             .string()
             .min(1)
-            .max(fulfillOrderResponseDataUserIdMax)
-            .regex(fulfillOrderResponseDataUserIdRegExp)
-            .optional(),
-        email: zod.email().max(fulfillOrderResponseDataEmailMax),
-        items: zod.array(
+            .max(shipFulfillmentOrderResponseDataOrderIdMax)
+            .regex(shipFulfillmentOrderResponseDataOrderIdRegExp),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(shipFulfillmentOrderResponseDataFulfillmentOrderIdMax)
+            .regex(shipFulfillmentOrderResponseDataFulfillmentOrderIdRegExp),
+        number: zod.number().min(1),
+        trackingCode: zod.string().optional(),
+        status: zod.enum(['shipped', 'delivered']),
+        lines: zod.array(
             zod.strictObject({
-                product: zod.strictObject({
-                    id: zod
-                        .string()
-                        .min(1)
-                        .max(fulfillOrderResponseDataItemsItemProductIdMax)
-                        .regex(fulfillOrderResponseDataItemsItemProductIdRegExp),
-                    title: zod.string(),
-                    price: zod.number().min(fulfillOrderResponseDataItemsItemProductPriceMin),
-                    description: zod.string().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(fulfillOrderResponseDataItemsItemProductRequiresShippingDefault),
-                    noWithdrawal: zod.boolean().optional(),
-                    sku: zod
-                        .string()
-                        .min(1)
-                        .max(fulfillOrderResponseDataItemsItemProductSkuMax)
-                        .optional(),
-                    weight: zod
-                        .number()
-                        .min(fulfillOrderResponseDataItemsItemProductWeightMin)
-                        .optional(),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
-                    taxRate: zod
-                        .number()
-                        .min(fulfillOrderResponseDataItemsItemProductTaxRateMin)
-                        .max(fulfillOrderResponseDataItemsItemProductTaxRateMax),
-                    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
-                }),
-                quantity: zod.number().min(1),
-                locale: zod
+                productId: zod
                     .string()
-                    .max(fulfillOrderResponseDataItemsItemLocaleMax)
-                    .regex(fulfillOrderResponseDataItemsItemLocaleRegExp),
-                current: zod.union([
-                    zod.strictObject({
-                        imageUrl: zod.string().min(1).optional(),
-                        thumbnailUrl: zod.string().optional()
-                    }),
-                    zod.null()
-                ]),
-                taxAmount: zod.number().min(fulfillOrderResponseDataItemsItemTaxAmountMin),
-                netAmount: zod.number().min(fulfillOrderResponseDataItemsItemNetAmountMin)
+                    .min(1)
+                    .max(shipFulfillmentOrderResponseDataLinesItemProductIdMax)
+                    .regex(shipFulfillmentOrderResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1)
             })
         ),
-        totalItems: zod.number().min(fulfillOrderResponseDataTotalItemsMin),
-        totalQuantity: zod.number().min(fulfillOrderResponseDataTotalQuantityMin),
-        totalPrice: zod.number().min(fulfillOrderResponseDataTotalPriceMin),
-        currency: zod.string(),
-        netTotal: zod.number().min(fulfillOrderResponseDataNetTotalMin),
-        taxTotal: zod.number().min(fulfillOrderResponseDataTaxTotalMin),
-        shippingNetAmount: zod.number().min(fulfillOrderResponseDataShippingNetAmountMin),
-        shippingTaxAmount: zod.number().min(fulfillOrderResponseDataShippingTaxAmountMin),
-        taxSummary: zod.array(
-            zod.strictObject({
-                rate: zod.number().min(fulfillOrderResponseDataTaxSummaryItemRateMin),
-                netAmount: zod.number().min(fulfillOrderResponseDataTaxSummaryItemNetAmountMin),
-                taxAmount: zod.number().min(fulfillOrderResponseDataTaxSummaryItemTaxAmountMin),
-                grossAmount: zod.number().min(fulfillOrderResponseDataTaxSummaryItemGrossAmountMin)
-            })
-        ),
-        notes: zod.string().optional(),
-        shippingMethod: zod.string().optional(),
-        shippingCost: zod.number().min(fulfillOrderResponseDataShippingCostMin).optional(),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod
-                    .string()
-                    .max(fulfillOrderResponseDataShippingAddressCountryMax)
-                    .regex(fulfillOrderResponseDataShippingAddressCountryRegExp),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        billingAddress: zod
-            .strictObject({
-                fullName: zod.string(),
-                street: zod.string(),
-                city: zod.string(),
-                zip: zod.string(),
-                country: zod
-                    .string()
-                    .max(fulfillOrderResponseDataBillingAddressCountryMax)
-                    .regex(fulfillOrderResponseDataBillingAddressCountryRegExp),
-                phone: zod.string().optional()
-            })
-            .optional(),
-        paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-        payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
-        status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
-        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
-        returnStatus: zod.enum([
-            'none',
-            'requested',
-            'in_progress',
-            'partially_returned',
-            'returned'
-        ]),
-        actions: zod
-            .strictObject({
-                transitions: zod.array(
-                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                ),
-                cancel: zod.boolean(),
-                pay: zod.boolean(),
-                recordPayment: zod.boolean(),
-                start: zod.boolean(),
-                ship: zod.boolean(),
-                deliver: zod.boolean(),
-                fulfill: zod.boolean(),
-                override: zod.array(
-                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                ),
-                withdraw: zod.boolean(),
-                withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
-                invoice: zod.boolean()
-            })
-            .optional(),
+        forced: zod.boolean(),
+        shippedAt: zod.iso.datetime({ offset: true }),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            deliver: zod.boolean(),
+            editTracking: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)).
+ * @summary Fulfil a digital fulfillment order
+ */
+export const fulfillFulfillmentOrderPathIdMax = 64;
+export const fulfillFulfillmentOrderPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const FulfillFulfillmentOrderParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(fulfillFulfillmentOrderPathIdMax)
+        .regex(fulfillFulfillmentOrderPathIdRegExp)
+});
+export const fulfillFulfillmentOrderResponseDataIdMax = 64;
+export const fulfillFulfillmentOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const fulfillFulfillmentOrderResponseDataOrderIdMax = 64;
+export const fulfillFulfillmentOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const fulfillFulfillmentOrderResponseDataFulfillmentOrderIdMax = 64;
+export const fulfillFulfillmentOrderResponseDataFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const fulfillFulfillmentOrderResponseDataLinesItemProductIdMax = 64;
+export const fulfillFulfillmentOrderResponseDataLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const FulfillFulfillmentOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(fulfillFulfillmentOrderResponseDataIdMax)
+            .regex(fulfillFulfillmentOrderResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(fulfillFulfillmentOrderResponseDataOrderIdMax)
+            .regex(fulfillFulfillmentOrderResponseDataOrderIdRegExp),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(fulfillFulfillmentOrderResponseDataFulfillmentOrderIdMax)
+            .regex(fulfillFulfillmentOrderResponseDataFulfillmentOrderIdRegExp),
+        number: zod.number().min(1),
+        trackingCode: zod.string().optional(),
+        status: zod.enum(['shipped', 'delivered']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(fulfillFulfillmentOrderResponseDataLinesItemProductIdMax)
+                    .regex(fulfillFulfillmentOrderResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1)
+            })
+        ),
+        forced: zod.boolean(),
+        shippedAt: zod.iso.datetime({ offset: true }),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            deliver: zod.boolean(),
+            editTracking: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Staff stops a fulfillment order from shipping, with a reason. Only an open or in-progress one can be held (`DELIVERY_NOT_HOLDABLE`). `awaiting_stock` is never a reason staff can give: only the allocation of stock sets it.
+ * @summary Put a fulfillment order on hold
+ */
+export const holdFulfillmentOrderPathIdMax = 64;
+export const holdFulfillmentOrderPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const HoldFulfillmentOrderParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(holdFulfillmentOrderPathIdMax)
+        .regex(holdFulfillmentOrderPathIdRegExp)
+});
+export const holdFulfillmentOrderBodyNoteMax = 1000;
+export const HoldFulfillmentOrderBody = zod.strictObject({
+    reason: zod.enum(['incorrect_address', 'high_risk', 'other']),
+    note: zod.string().min(1).max(holdFulfillmentOrderBodyNoteMax).optional()
+});
+export const holdFulfillmentOrderResponseDataIdMax = 64;
+export const holdFulfillmentOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const holdFulfillmentOrderResponseDataOrderIdMax = 64;
+export const holdFulfillmentOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const holdFulfillmentOrderResponseDataLinesItemProductIdMax = 64;
+export const holdFulfillmentOrderResponseDataLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const holdFulfillmentOrderResponseDataLinesItemShippedQuantityMin = 0;
+export const holdFulfillmentOrderResponseDataLinesItemCancelledQuantityMin = 0;
+export const holdFulfillmentOrderResponseDataLinesItemRemainingMin = 0;
+export const holdFulfillmentOrderResponseDataHoldNoteMax = 1000;
+export const HoldFulfillmentOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(holdFulfillmentOrderResponseDataIdMax)
+            .regex(holdFulfillmentOrderResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(holdFulfillmentOrderResponseDataOrderIdMax)
+            .regex(holdFulfillmentOrderResponseDataOrderIdRegExp),
+        number: zod.number().min(1),
+        kind: zod.enum(['physical', 'digital']),
+        status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(holdFulfillmentOrderResponseDataLinesItemProductIdMax)
+                    .regex(holdFulfillmentOrderResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1),
+                shippedQuantity: zod
+                    .number()
+                    .min(holdFulfillmentOrderResponseDataLinesItemShippedQuantityMin),
+                cancelledQuantity: zod
+                    .number()
+                    .min(holdFulfillmentOrderResponseDataLinesItemCancelledQuantityMin),
+                remaining: zod.number().min(holdFulfillmentOrderResponseDataLinesItemRemainingMin)
+            })
+        ),
+        holdReason: zod
+            .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+            .optional(),
+        holdNote: zod.string().max(holdFulfillmentOrderResponseDataHoldNoteMax).optional(),
+        agreedAt: zod.iso.datetime({ offset: true }).optional(),
+        expectedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            ship: zod.boolean(),
+            fulfill: zod.boolean(),
+            hold: zod.boolean(),
+            release: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Staff lets a held fulfillment order ship again. A hold for `awaiting_stock` is refused (`DELIVERY_NOT_RELEASABLE`): a hand release would ship goods the ledger never counted out, so only the stock arriving releases it.
+ * @summary Release a fulfillment order from hold
+ */
+export const releaseFulfillmentOrderPathIdMax = 64;
+export const releaseFulfillmentOrderPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReleaseFulfillmentOrderParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(releaseFulfillmentOrderPathIdMax)
+        .regex(releaseFulfillmentOrderPathIdRegExp)
+});
+export const releaseFulfillmentOrderResponseDataIdMax = 64;
+export const releaseFulfillmentOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const releaseFulfillmentOrderResponseDataOrderIdMax = 64;
+export const releaseFulfillmentOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const releaseFulfillmentOrderResponseDataLinesItemProductIdMax = 64;
+export const releaseFulfillmentOrderResponseDataLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const releaseFulfillmentOrderResponseDataLinesItemShippedQuantityMin = 0;
+export const releaseFulfillmentOrderResponseDataLinesItemCancelledQuantityMin = 0;
+export const releaseFulfillmentOrderResponseDataLinesItemRemainingMin = 0;
+export const releaseFulfillmentOrderResponseDataHoldNoteMax = 1000;
+export const ReleaseFulfillmentOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(releaseFulfillmentOrderResponseDataIdMax)
+            .regex(releaseFulfillmentOrderResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(releaseFulfillmentOrderResponseDataOrderIdMax)
+            .regex(releaseFulfillmentOrderResponseDataOrderIdRegExp),
+        number: zod.number().min(1),
+        kind: zod.enum(['physical', 'digital']),
+        status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(releaseFulfillmentOrderResponseDataLinesItemProductIdMax)
+                    .regex(releaseFulfillmentOrderResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1),
+                shippedQuantity: zod
+                    .number()
+                    .min(releaseFulfillmentOrderResponseDataLinesItemShippedQuantityMin),
+                cancelledQuantity: zod
+                    .number()
+                    .min(releaseFulfillmentOrderResponseDataLinesItemCancelledQuantityMin),
+                remaining: zod
+                    .number()
+                    .min(releaseFulfillmentOrderResponseDataLinesItemRemainingMin)
+            })
+        ),
+        holdReason: zod
+            .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+            .optional(),
+        holdNote: zod.string().max(releaseFulfillmentOrderResponseDataHoldNoteMax).optional(),
+        agreedAt: zod.iso.datetime({ offset: true }).optional(),
+        expectedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            ship: zod.boolean(),
+            fulfill: zod.boolean(),
+            hold: zod.boolean(),
+            release: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
+ * @summary Correct a shipment's tracking code
+ */
+export const updateShipmentPathIdMax = 64;
+export const updateShipmentPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateShipmentParams = zod.strictObject({
+    id: zod.string().min(1).max(updateShipmentPathIdMax).regex(updateShipmentPathIdRegExp)
+});
+export const updateShipmentBodyTrackingCodeMax = 100;
+export const UpdateShipmentBody = zod.strictObject({
+    trackingCode: zod.string().min(1).max(updateShipmentBodyTrackingCodeMax).optional()
+});
+export const updateShipmentResponseDataIdMax = 64;
+export const updateShipmentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateShipmentResponseDataOrderIdMax = 64;
+export const updateShipmentResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateShipmentResponseDataFulfillmentOrderIdMax = 64;
+export const updateShipmentResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const updateShipmentResponseDataLinesItemProductIdMax = 64;
+export const updateShipmentResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const UpdateShipmentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(updateShipmentResponseDataIdMax)
+            .regex(updateShipmentResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(updateShipmentResponseDataOrderIdMax)
+            .regex(updateShipmentResponseDataOrderIdRegExp),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(updateShipmentResponseDataFulfillmentOrderIdMax)
+            .regex(updateShipmentResponseDataFulfillmentOrderIdRegExp),
+        number: zod.number().min(1),
+        trackingCode: zod.string().optional(),
+        status: zod.enum(['shipped', 'delivered']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(updateShipmentResponseDataLinesItemProductIdMax)
+                    .regex(updateShipmentResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1)
+            })
+        ),
+        forced: zod.boolean(),
+        shippedAt: zod.iso.datetime({ offset: true }),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            deliver: zod.boolean(),
+            editTracking: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+ * @summary Record a shipment's arrival
+ */
+export const deliverShipmentPathIdMax = 64;
+export const deliverShipmentPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeliverShipmentParams = zod.strictObject({
+    id: zod.string().min(1).max(deliverShipmentPathIdMax).regex(deliverShipmentPathIdRegExp)
+});
+export const deliverShipmentBodyReasonMax = 1000;
+export const DeliverShipmentBody = zod.strictObject({
+    forced: zod.boolean().optional(),
+    reason: zod.string().min(1).max(deliverShipmentBodyReasonMax).optional()
+});
+export const deliverShipmentResponseDataIdMax = 64;
+export const deliverShipmentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deliverShipmentResponseDataOrderIdMax = 64;
+export const deliverShipmentResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deliverShipmentResponseDataFulfillmentOrderIdMax = 64;
+export const deliverShipmentResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deliverShipmentResponseDataLinesItemProductIdMax = 64;
+export const deliverShipmentResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeliverShipmentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(deliverShipmentResponseDataIdMax)
+            .regex(deliverShipmentResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(deliverShipmentResponseDataOrderIdMax)
+            .regex(deliverShipmentResponseDataOrderIdRegExp),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(deliverShipmentResponseDataFulfillmentOrderIdMax)
+            .regex(deliverShipmentResponseDataFulfillmentOrderIdRegExp),
+        number: zod.number().min(1),
+        trackingCode: zod.string().optional(),
+        status: zod.enum(['shipped', 'delivered']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(deliverShipmentResponseDataLinesItemProductIdMax)
+                    .regex(deliverShipmentResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1)
+            })
+        ),
+        forced: zod.boolean(),
+        shippedAt: zod.iso.datetime({ offset: true }),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            deliver: zod.boolean(),
+            editTracking: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -9416,6 +9769,10 @@ export const listReturnsResponseDataItemsItemIdMax = 64;
 export const listReturnsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listReturnsResponseDataItemsItemOrderIdMax = 64;
 export const listReturnsResponseDataItemsItemOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listReturnsResponseDataItemsItemFulfillmentOrderIdMax = 64;
+export const listReturnsResponseDataItemsItemFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const listReturnsResponseDataItemsItemNoteMax = 1000;
 export const listReturnsResponseDataItemsItemLinesItemProductIdMax = 64;
 export const listReturnsResponseDataItemsItemLinesItemProductIdRegExp = new RegExp(
@@ -9451,6 +9808,13 @@ export const ListReturnsResponse = zod.strictObject({
                 currency: zod.string(),
                 status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
                 reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+                kind: zod.enum(['return', 'cancellation']),
+                fulfillmentOrderId: zod
+                    .string()
+                    .min(1)
+                    .max(listReturnsResponseDataItemsItemFulfillmentOrderIdMax)
+                    .regex(listReturnsResponseDataItemsItemFulfillmentOrderIdRegExp)
+                    .optional(),
                 note: zod.string().max(listReturnsResponseDataItemsItemNoteMax).optional(),
                 lines: zod.array(
                     zod.strictObject({
@@ -9509,7 +9873,8 @@ export const ListReturnsResponse = zod.strictObject({
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
- * Only the order's own buyer may do this, an operator included. Sending `Idempotency-Key` makes a retry safe.
+ * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical` — and the buyer must be someone else who ranks below them. `GET /returns/options` says what each door would take and refund.
+ * A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
 export const createReturnHeaderIdempotencyKeyMax = 200;
@@ -9525,6 +9890,8 @@ export const CreateReturnHeader = zod.strictObject({
 export const createReturnBodyOrderIdMax = 64;
 export const createReturnBodyOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnBodyNoteMax = 1000;
+export const createReturnBodyFulfillmentOrderIdMax = 64;
+export const createReturnBodyFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnBodyLinesItemProductIdMax = 64;
 export const createReturnBodyLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const CreateReturnBody = zod.strictObject({
@@ -9535,6 +9902,13 @@ export const CreateReturnBody = zod.strictObject({
         .regex(createReturnBodyOrderIdRegExp),
     reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
     note: zod.string().min(1).max(createReturnBodyNoteMax).optional(),
+    kind: zod.enum(['return', 'cancellation']).optional(),
+    fulfillmentOrderId: zod
+        .string()
+        .min(1)
+        .max(createReturnBodyFulfillmentOrderIdMax)
+        .regex(createReturnBodyFulfillmentOrderIdRegExp)
+        .optional(),
     lines: zod
         .array(
             zod.strictObject({
@@ -9553,6 +9927,8 @@ export const createReturnResponseDataIdMax = 64;
 export const createReturnResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnResponseDataOrderIdMax = 64;
 export const createReturnResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const createReturnResponseDataFulfillmentOrderIdMax = 64;
+export const createReturnResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createReturnResponseDataNoteMax = 1000;
 export const createReturnResponseDataLinesItemProductIdMax = 64;
 export const createReturnResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -9578,6 +9954,13 @@ export const CreateReturnResponse = zod.strictObject({
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        kind: zod.enum(['return', 'cancellation']),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(createReturnResponseDataFulfillmentOrderIdMax)
+            .regex(createReturnResponseDataFulfillmentOrderIdRegExp)
+            .optional(),
         note: zod.string().max(createReturnResponseDataNoteMax).optional(),
         lines: zod.array(
             zod.strictObject({
@@ -9613,6 +9996,88 @@ export const CreateReturnResponse = zod.strictObject({
     })
 });
 /**
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `returns.any.read`.
+ * @summary What an order can still send back or cancel
+ */
+export const getReturnOptionsQueryOrderIdMax = 64;
+export const getReturnOptionsQueryOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetReturnOptionsQueryParams = zod.strictObject({
+    orderId: zod
+        .string()
+        .min(1)
+        .max(getReturnOptionsQueryOrderIdMax)
+        .regex(getReturnOptionsQueryOrderIdRegExp)
+});
+export const getReturnOptionsResponseDataOrderIdMax = 64;
+export const getReturnOptionsResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getReturnOptionsResponseDataReturnableItemProductIdMax = 64;
+export const getReturnOptionsResponseDataReturnableItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getReturnOptionsResponseDataCancellableItemFulfillmentOrderIdMax = 64;
+export const getReturnOptionsResponseDataCancellableItemFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getReturnOptionsResponseDataCancellableItemLinesItemProductIdMax = 64;
+export const getReturnOptionsResponseDataCancellableItemLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getReturnOptionsResponseDataCancellableItemRefundAmountMin = 0;
+export const getReturnOptionsResponseDataCancellableItemShippingRefundMin = 0;
+export const GetReturnOptionsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        orderId: zod
+            .string()
+            .min(1)
+            .max(getReturnOptionsResponseDataOrderIdMax)
+            .regex(getReturnOptionsResponseDataOrderIdRegExp),
+        currency: zod.string(),
+        returnable: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(getReturnOptionsResponseDataReturnableItemProductIdMax)
+                    .regex(getReturnOptionsResponseDataReturnableItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1)
+            })
+        ),
+        cancellable: zod.array(
+            zod.strictObject({
+                fulfillmentOrderId: zod
+                    .string()
+                    .min(1)
+                    .max(getReturnOptionsResponseDataCancellableItemFulfillmentOrderIdMax)
+                    .regex(getReturnOptionsResponseDataCancellableItemFulfillmentOrderIdRegExp),
+                number: zod.number().min(1),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(getReturnOptionsResponseDataCancellableItemLinesItemProductIdMax)
+                            .regex(
+                                getReturnOptionsResponseDataCancellableItemLinesItemProductIdRegExp
+                            ),
+                        title: zod.string(),
+                        quantity: zod.number().min(1)
+                    })
+                ),
+                refundAmount: zod
+                    .number()
+                    .min(getReturnOptionsResponseDataCancellableItemRefundAmountMin),
+                shippingRefund: zod
+                    .number()
+                    .min(getReturnOptionsResponseDataCancellableItemShippingRefundMin)
+            })
+        )
+    })
+});
+/**
  * One return with the caller's `actions`. A return on someone else's order answers 404, the same as one that does not exist.
  * @summary Get a return
  */
@@ -9625,6 +10090,8 @@ export const getReturnByIdResponseDataIdMax = 64;
 export const getReturnByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getReturnByIdResponseDataOrderIdMax = 64;
 export const getReturnByIdResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getReturnByIdResponseDataFulfillmentOrderIdMax = 64;
+export const getReturnByIdResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getReturnByIdResponseDataNoteMax = 1000;
 export const getReturnByIdResponseDataLinesItemProductIdMax = 64;
 export const getReturnByIdResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -9650,6 +10117,13 @@ export const GetReturnByIdResponse = zod.strictObject({
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        kind: zod.enum(['return', 'cancellation']),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(getReturnByIdResponseDataFulfillmentOrderIdMax)
+            .regex(getReturnByIdResponseDataFulfillmentOrderIdRegExp)
+            .optional(),
         note: zod.string().max(getReturnByIdResponseDataNoteMax).optional(),
         lines: zod.array(
             zod.strictObject({
@@ -9697,6 +10171,8 @@ export const approveReturnResponseDataIdMax = 64;
 export const approveReturnResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const approveReturnResponseDataOrderIdMax = 64;
 export const approveReturnResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const approveReturnResponseDataFulfillmentOrderIdMax = 64;
+export const approveReturnResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const approveReturnResponseDataNoteMax = 1000;
 export const approveReturnResponseDataLinesItemProductIdMax = 64;
 export const approveReturnResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -9722,6 +10198,13 @@ export const ApproveReturnResponse = zod.strictObject({
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        kind: zod.enum(['return', 'cancellation']),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(approveReturnResponseDataFulfillmentOrderIdMax)
+            .regex(approveReturnResponseDataFulfillmentOrderIdRegExp)
+            .optional(),
         note: zod.string().max(approveReturnResponseDataNoteMax).optional(),
         lines: zod.array(
             zod.strictObject({
@@ -9773,6 +10256,8 @@ export const declineReturnResponseDataIdMax = 64;
 export const declineReturnResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const declineReturnResponseDataOrderIdMax = 64;
 export const declineReturnResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const declineReturnResponseDataFulfillmentOrderIdMax = 64;
+export const declineReturnResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const declineReturnResponseDataNoteMax = 1000;
 export const declineReturnResponseDataLinesItemProductIdMax = 64;
 export const declineReturnResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -9798,6 +10283,13 @@ export const DeclineReturnResponse = zod.strictObject({
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        kind: zod.enum(['return', 'cancellation']),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(declineReturnResponseDataFulfillmentOrderIdMax)
+            .regex(declineReturnResponseDataFulfillmentOrderIdRegExp)
+            .optional(),
         note: zod.string().max(declineReturnResponseDataNoteMax).optional(),
         lines: zod.array(
             zod.strictObject({
@@ -9860,6 +10352,8 @@ export const receiveReturnResponseDataIdMax = 64;
 export const receiveReturnResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveReturnResponseDataOrderIdMax = 64;
 export const receiveReturnResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const receiveReturnResponseDataFulfillmentOrderIdMax = 64;
+export const receiveReturnResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveReturnResponseDataNoteMax = 1000;
 export const receiveReturnResponseDataLinesItemProductIdMax = 64;
 export const receiveReturnResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -9885,6 +10379,13 @@ export const ReceiveReturnResponse = zod.strictObject({
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
         reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
+        kind: zod.enum(['return', 'cancellation']),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(receiveReturnResponseDataFulfillmentOrderIdMax)
+            .regex(receiveReturnResponseDataFulfillmentOrderIdRegExp)
+            .optional(),
         note: zod.string().max(receiveReturnResponseDataNoteMax).optional(),
         lines: zod.array(
             zod.strictObject({
@@ -10947,6 +11448,28 @@ export const downloadAccountExportResponseShipmentsItemOrderIdMax = 64;
 export const downloadAccountExportResponseShipmentsItemOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const downloadAccountExportResponseShipmentsItemFulfillmentOrderIdMax = 64;
+export const downloadAccountExportResponseShipmentsItemFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseShipmentsItemLinesItemProductIdMax = 64;
+export const downloadAccountExportResponseShipmentsItemLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseFulfillmentOrdersItemIdMax = 64;
+export const downloadAccountExportResponseFulfillmentOrdersItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseFulfillmentOrdersItemOrderIdMax = 64;
+export const downloadAccountExportResponseFulfillmentOrdersItemOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductIdMax = 64;
+export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemShippedQuantityMin = 0;
+export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemCancelledQuantityMin = 0;
+export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemRemainingMin = 0;
 export const downloadAccountExportResponseReturnsItemIdMax = 64;
 export const downloadAccountExportResponseReturnsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseReturnsItemOrderIdMax = 64;
@@ -11265,7 +11788,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'cancelled'
             ]),
             paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-            fulfillmentStatus: zod.enum(['unfulfilled', 'in_progress', 'shipped', 'fulfilled']),
+            fulfillmentStatus: zod.enum([
+                'unfulfilled',
+                'in_progress',
+                'on_hold',
+                'partially_fulfilled',
+                'shipped',
+                'fulfilled'
+            ]),
             returnStatus: zod.enum([
                 'none',
                 'requested',
@@ -11289,9 +11819,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     pay: zod.boolean(),
                     recordPayment: zod.boolean(),
                     start: zod.boolean(),
-                    ship: zod.boolean(),
-                    deliver: zod.boolean(),
-                    fulfill: zod.boolean(),
                     override: zod.array(
                         zod.enum([
                             'pending',
@@ -11410,11 +11937,79 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .min(1)
                 .max(downloadAccountExportResponseShipmentsItemOrderIdMax)
                 .regex(downloadAccountExportResponseShipmentsItemOrderIdRegExp),
+            fulfillmentOrderId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseShipmentsItemFulfillmentOrderIdMax)
+                .regex(downloadAccountExportResponseShipmentsItemFulfillmentOrderIdRegExp),
+            number: zod.number().min(1),
             trackingCode: zod.string().optional(),
             status: zod.enum(['shipped', 'delivered']),
-            deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-            createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
+            lines: zod.array(
+                zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseShipmentsItemLinesItemProductIdMax)
+                        .regex(downloadAccountExportResponseShipmentsItemLinesItemProductIdRegExp),
+                    title: zod.string(),
+                    quantity: zod.number().min(1)
+                })
+            ),
+            shippedAt: zod.iso.datetime({ offset: true }),
+            deliveredAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
+    fulfillmentOrders: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseFulfillmentOrdersItemIdMax)
+                .regex(downloadAccountExportResponseFulfillmentOrdersItemIdRegExp),
+            orderId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseFulfillmentOrdersItemOrderIdMax)
+                .regex(downloadAccountExportResponseFulfillmentOrdersItemOrderIdRegExp),
+            number: zod.number().min(1),
+            kind: zod.enum(['physical', 'digital']),
+            status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+            lines: zod.array(
+                zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(
+                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductIdMax
+                        )
+                        .regex(
+                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductIdRegExp
+                        ),
+                    title: zod.string(),
+                    quantity: zod.number().min(1),
+                    shippedQuantity: zod
+                        .number()
+                        .min(
+                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemShippedQuantityMin
+                        ),
+                    cancelledQuantity: zod
+                        .number()
+                        .min(
+                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemCancelledQuantityMin
+                        ),
+                    remaining: zod
+                        .number()
+                        .min(
+                            downloadAccountExportResponseFulfillmentOrdersItemLinesItemRemainingMin
+                        )
+                })
+            ),
+            holdReason: zod
+                .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+                .optional(),
+            agreedAt: zod.iso.datetime({ offset: true }).optional(),
+            expectedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
     returns: zod.array(

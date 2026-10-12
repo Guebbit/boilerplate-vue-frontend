@@ -2940,7 +2940,7 @@ export const OrderPaymentStatus = {
 } as const;
 
 /**
- * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from `status` alone: `unfulfilled` before work starts (and for a cancelled order), `in_progress` while being prepared, `shipped` once handed to the carrier, `fulfilled` on arrival. Read-only.
+ * Where the goods stand, beside `status` — Shopify's `fulfillment_status`. Derived from the status and the fulfilment summary delivery reports. First match wins: `fulfilled` once everything arrived; `shipped` once everything has left; `partially_fulfilled` once something left and more remains; `on_hold` while every remaining unit is held back; `in_progress` while being prepared; `unfulfilled` before work starts, and for a pending or cancelled order. Read-only.
  */
 export type OrderFulfillmentStatus =
     (typeof OrderFulfillmentStatus)[keyof typeof OrderFulfillmentStatus];
@@ -2948,6 +2948,8 @@ export type OrderFulfillmentStatus =
 export const OrderFulfillmentStatus = {
     unfulfilled: 'unfulfilled',
     in_progress: 'in_progress',
+    on_hold: 'on_hold',
+    partially_fulfilled: 'partially_fulfilled',
     shipped: 'shipped',
     fulfilled: 'fulfilled'
 } as const;
@@ -2971,7 +2973,7 @@ export const OrderReturnStatus = {
 export interface OrderActions {
     /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
     transitions: OrderStatus[];
-    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further. */
+    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`). */
     cancel: boolean;
     /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
     pay: boolean;
@@ -2979,12 +2981,6 @@ export interface OrderActions {
     recordPayment: boolean;
     /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
     start: boolean;
-    /** Whether `POST /delivery/order/{id}/ship` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. `false` for a digital-only order — nothing on it would ever ride in a parcel; `fulfill` is that order's door instead. */
-    ship: boolean;
-    /** Whether `POST /delivery/order/{id}/deliver` would be accepted for this caller. Not in `transitions`, for the same reason `start` is not. */
-    deliver: boolean;
-    /** Whether `POST /delivery/order/{id}/fulfill` would be accepted for this caller — the digital-only alternative to `ship`/`deliver`: `true` only for an order with no physical lines, once it is `processing`. Not in `transitions`, for the same reason `start` is not. */
-    fulfill: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
     override: OrderStatus[];
     /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
@@ -3163,6 +3159,7 @@ export interface SearchOrdersRequest {
     productId?: Id;
     email?: Email;
     status?: OrderStatus;
+    fulfillmentStatus?: OrderFulfillmentStatus;
     paymentMethod?: PaymentMethodId;
     deleted?: boolean;
 }
@@ -3241,7 +3238,7 @@ export interface CreatePaymentIntentRequest {
 }
 
 /**
- * Why the money went back. `cancellation` — the order was cancelled after payment; `return` — goods came back and were received; `goodwill` — an operator chose to.
+ * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to.
  */
 export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
 
@@ -3497,6 +3494,132 @@ export interface ShippingMethodsResponseEnvelope {
 }
 
 /**
+ * `digital` when no line rides in a parcel; its act is `fulfill`, not a shipment.
+ */
+export type FulfillmentOrderKind = (typeof FulfillmentOrderKind)[keyof typeof FulfillmentOrderKind];
+
+export const FulfillmentOrderKind = {
+    physical: 'physical',
+    digital: 'digital'
+} as const;
+
+/**
+ * Where a fulfillment order stands (Shopify's names). `open` until something ships; `in_progress` once part of it has shipped and lines remain; `on_hold` while staff, or the stock it awaits, holds it back; `closed` once nothing remains and something shipped from it; `cancelled` once nothing remains and nothing ever shipped from it.
+ */
+export type FulfillmentOrderStatus =
+    (typeof FulfillmentOrderStatus)[keyof typeof FulfillmentOrderStatus];
+
+export const FulfillmentOrderStatus = {
+    open: 'open',
+    in_progress: 'in_progress',
+    on_hold: 'on_hold',
+    closed: 'closed',
+    cancelled: 'cancelled'
+} as const;
+
+/**
+ * One product on a fulfillment order, with how much has shipped, been cancelled and still remains.
+ */
+export interface FulfillmentOrderLine {
+    productId: Id;
+    /** The product's title as the order froze it. */
+    title: string;
+    /**
+     * Units this fulfillment order carries.
+     * @minimum 1
+     */
+    quantity: number;
+    /** @minimum 0 */
+    shippedQuantity: number;
+    /**
+     * Units cancelled before they shipped — a remainder cancel.
+     * @minimum 0
+     */
+    cancelledQuantity: number;
+    /**
+     * `quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts.
+     * @minimum 0
+     */
+    remaining: number;
+}
+
+/**
+ * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
+ */
+export type FulfillmentHoldReason =
+    (typeof FulfillmentHoldReason)[keyof typeof FulfillmentHoldReason];
+
+export const FulfillmentHoldReason = {
+    awaiting_stock: 'awaiting_stock',
+    incorrect_address: 'incorrect_address',
+    high_risk: 'high_risk',
+    other: 'other'
+} as const;
+
+/**
+ * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. All are false when the buyer of the order ranks at or above the caller, and for anyone without `delivery.any.update`.
+ */
+export interface FulfillmentOrderActions {
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
+    ship: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
+    fulfill: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
+    hold: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
+    release: boolean;
+}
+
+/**
+ * A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
+ */
+export interface FulfillmentOrder {
+    id: Id;
+    orderId: Id;
+    /**
+     * 1-based position within the order — `#1` is the one that ships now.
+     * @minimum 1
+     */
+    number: number;
+    kind: FulfillmentOrderKind;
+    status: FulfillmentOrderStatus;
+    lines: FulfillmentOrderLine[];
+    holdReason?: FulfillmentHoldReason;
+    /**
+     * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
+     * @maxLength 1000
+     */
+    holdNote?: string;
+    /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
+    agreedAt?: string;
+    /** When it is now expected to ship, when that differs from what was agreed. */
+    expectedAt?: string;
+    actions: FulfillmentOrderActions;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+/**
+ * One product in a shipment.
+ */
+export interface ShipmentLine {
+    productId: Id;
+    title: string;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+/**
+ * What the requesting caller may do to this shipment, decided by the server.
+ */
+export interface ShipmentActions {
+    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
+    deliver: boolean;
+    /** Whether `PATCH /delivery/shipments/{id}` would be accepted — still `shipped`. */
+    editTracking: boolean;
+}
+
+/**
  * The tail of the order's lifecycle, as the carrier sees it.
  */
 export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
@@ -3506,33 +3629,66 @@ export const ShipmentStatus = {
     delivered: 'delivered'
 } as const;
 
+/**
+ * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+ */
 export interface Shipment {
     id: Id;
     orderId: Id;
-    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false). */
+    fulfillmentOrderId: Id;
+    /**
+     * 1-based position within the order, in the order shipments were cut.
+     * @minimum 1
+     */
+    number: number;
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment. */
     trackingCode?: string;
     /** The tail of the order's lifecycle, as the carrier sees it. */
     status: ShipmentStatus;
+    lines: ShipmentLine[];
+    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
+    forced: boolean;
+    shippedAt: string;
     deliveredAt?: string;
+    actions: ShipmentActions;
     createdAt?: string;
     updatedAt?: string;
 }
 
-export interface ShipmentEnvelope {
+/**
+ * An order's fulfilment — both lists empty until the order is paid.
+ */
+export interface OrderFulfillment {
+    fulfillmentOrders: FulfillmentOrder[];
+    shipments: Shipment[];
+}
+
+export interface OrderFulfillmentEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: Shipment;
+    data: OrderFulfillment;
 }
 
-export interface ShipOrderRequest {
+export type ShipFulfillmentOrderRequestLinesItem = {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
+};
+
+export interface ShipFulfillmentOrderRequest {
+    /**
+     * What ships, per product. Absent means everything that remains on the fulfillment order.
+     * @minItems 1
+     */
+    lines?: ShipFulfillmentOrderRequestLinesItem[];
     /**
      * The carrier's handle on the parcel. Required when the order's shipping method is tracked; optional otherwise.
      * @minLength 1
      * @maxLength 100
      */
     trackingCode?: string;
-    /** Skip the normal `processing`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still creates the parcel record and sends the shipped email; still refuses a tracked method with no `trackingCode`. */
+    /** Skip the `start` step — ship from `paid`. The caller must hold `orders.any.override`, and `reason` is then required. Never ships from `on_hold`. */
     forced?: boolean;
     /**
      * Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
@@ -3542,8 +3698,54 @@ export interface ShipOrderRequest {
     reason?: string;
 }
 
-export interface DeliverOrderRequest {
-    /** Skip the normal `shipped`-only gate — the caller must hold `orders.any.override`, and `reason` is then required. Still stamps the shipment delivered and reports the fact. */
+export interface ShipmentEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Shipment;
+}
+
+/**
+ * Why it is held. `awaiting_stock` is not staff's to give.
+ */
+export type HoldFulfillmentOrderRequestReason =
+    (typeof HoldFulfillmentOrderRequestReason)[keyof typeof HoldFulfillmentOrderRequestReason];
+
+export const HoldFulfillmentOrderRequestReason = {
+    incorrect_address: 'incorrect_address',
+    high_risk: 'high_risk',
+    other: 'other'
+} as const;
+
+export interface HoldFulfillmentOrderRequest {
+    /** Why it is held. `awaiting_stock` is not staff's to give. */
+    reason: HoldFulfillmentOrderRequestReason;
+    /**
+     * Free text for the staff who read the hold later; reaped with the other free text.
+     * @minLength 1
+     * @maxLength 1000
+     */
+    note?: string;
+}
+
+export interface FulfillmentOrderEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: FulfillmentOrder;
+}
+
+export interface UpdateShipmentRequest {
+    /**
+     * The corrected tracking code.
+     * @minLength 1
+     * @maxLength 100
+     */
+    trackingCode?: string;
+}
+
+export interface DeliverShipmentRequest {
+    /** Record the arrival without a carrier confirmation — the caller must hold `orders.any.override`, and `reason` is then required. */
     forced?: boolean;
     /**
      * Required exactly when `forced` is `true`.
@@ -3576,6 +3778,16 @@ export const ReturnReason = {
     defective: 'defective',
     wrong_item: 'wrong_item',
     other: 'other'
+} as const;
+
+/**
+ * What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, cancelled and refunded, closed when made.
+ */
+export type ReturnKind = (typeof ReturnKind)[keyof typeof ReturnKind];
+
+export const ReturnKind = {
+    return: 'return',
+    cancellation: 'cancellation'
 } as const;
 
 /**
@@ -3625,12 +3837,14 @@ export interface Return {
     currency: string;
     status: ReturnStatus;
     reason: ReturnReason;
+    kind: ReturnKind;
+    fulfillmentOrderId?: Id;
     /**
      * What the customer wrote. Free text.
      * @maxLength 1000
      */
     note?: string;
-    /** What is coming back. Empty on a withdrawal before dispatch — no goods are expected. */
+    /** What is coming back — or, for a `cancellation`, the remainder that was cancelled. Empty on a withdrawal before dispatch — no goods are expected. */
     lines: ReturnLine[];
     /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
     returnPostage: ReturnReturnPostage;
@@ -3683,8 +3897,11 @@ export interface CreateReturnRequest {
      * @maxLength 1000
      */
     note?: string;
+    kind?: ReturnKind;
+    /** Required exactly when `kind` is `cancellation` — the fulfillment order whose remainder is cancelled. */
+    fulfillmentOrderId?: Id;
     /**
-     * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal.
+     * What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines.
      * @minItems 1
      */
     lines?: CreateReturnRequestLinesItem[];
@@ -3695,6 +3912,49 @@ export interface ReturnEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Return;
+}
+
+export interface ReturnOptionLine {
+    productId: Id;
+    title: string;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+/**
+ * A fulfillment order with a remainder that can still be cancelled, and what cancelling it would refund.
+ */
+export interface CancellableFulfillmentOrder {
+    fulfillmentOrderId: Id;
+    /** @minimum 1 */
+    number: number;
+    lines: ReturnOptionLine[];
+    /**
+     * What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`.
+     * @minimum 0
+     */
+    refundAmount: number;
+    /**
+     * The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order.
+     * @minimum 0
+     */
+    shippingRefund: number;
+}
+
+export interface ReturnOptions {
+    orderId: Id;
+    /** ISO-4217 code of the order's own currency. */
+    currency: string;
+    /** Per product, what has shipped and not yet been returned. Goods excluded from withdrawal (Art. 16) are not listed. */
+    returnable: ReturnOptionLine[];
+    cancellable: CancellableFulfillmentOrder[];
+}
+
+export interface ReturnOptionsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReturnOptions;
 }
 
 export interface DeclineReturnRequest {
@@ -4167,6 +4427,45 @@ export interface ExportInvoiceDocument {
     grandTotal: number;
 }
 
+export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
+
+export const ExportShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+/**
+ * A shipment as an account export carries it — the record, without the caller's `actions`.
+ */
+export interface ExportShipment {
+    id: Id;
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /** @minimum 1 */
+    number: number;
+    trackingCode?: string;
+    status: ExportShipmentStatus;
+    lines: ShipmentLine[];
+    shippedAt: string;
+    deliveredAt?: string;
+}
+
+/**
+ * A fulfillment order as an account export carries it. Staff's hold note is not the buyer's data and is left out.
+ */
+export interface ExportFulfillmentOrder {
+    id: Id;
+    orderId: Id;
+    /** @minimum 1 */
+    number: number;
+    kind: FulfillmentOrderKind;
+    status: FulfillmentOrderStatus;
+    lines: FulfillmentOrderLine[];
+    holdReason?: FulfillmentHoldReason;
+    agreedAt?: string;
+    expectedAt?: string;
+}
+
 export type ExportReturnLinesItem = {
     productId: Id;
     /** @minimum 1 */
@@ -4337,7 +4636,8 @@ export interface AccountExportResponse {
     orders: Order[];
     payments: ExportPayment[];
     invoicing: AccountExportResponseInvoicing;
-    shipments: Shipment[];
+    shipments: ExportShipment[];
+    fulfillmentOrders: ExportFulfillmentOrder[];
     returns: ExportReturn[];
     apiKeys: ApiKey[];
     roles: AccountExportResponseRolesItem[];
@@ -4957,6 +5257,10 @@ export type ListOrdersParams = {
     email?: Email;
     status?: OrderStatus;
     /**
+     * Filter to orders whose goods stand here — the same derived value `Order.fulfillmentStatus` carries, so `on_hold` and `partially_fulfilled` can be listed.
+     */
+    fulfillmentStatus?: OrderFulfillmentStatus;
+    /**
      * Filter to orders placed with this method — the admin "awaiting transfer" view combines this with `status=pending`.
      */
     paymentMethod?: PaymentMethodId;
@@ -5005,6 +5309,10 @@ export type ListReturnsParams = {
     orderId?: Id;
     status?: ReturnStatus;
     reason?: ReturnReason;
+};
+
+export type GetReturnOptionsParams = {
+    orderId: Id;
 };
 
 export type ListInventoryLevelsParams = {
@@ -8030,7 +8338,7 @@ export const cancelOrderById = (
 };
 
 /**
- * Moves the order identified by `{id}` forward to `to` with no parcel record and no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/order/{orderId}/ship` and `.../deliver` are that door, with their own `forced` option). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatus = (
@@ -8257,21 +8565,21 @@ export const listShippingMethods = (
 };
 
 /**
- * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
- * @summary Get the shipment behind an order
+ * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. `holdNote` is staff's own and is left out for anyone else.
+ * @summary Get the fulfilment of an order
  */
-export const getShipmentByOrder = (
+export const getFulfillmentByOrder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OrderFulfillmentEnvelope>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
+    return orvalMutator<OrderFulfillmentEnvelope>(
         { url: `/delivery/order/${orderId}`, method: 'GET' },
         options
     );
 };
 
 /**
- * Reports that fulfilment has started — the order moves `paid → processing`. No parcel exists yet at this point; that comes later, at `POST /delivery/order/{orderId}/ship`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
  * @summary Begin fulfilling a paid order
  */
 export const startFulfilment = (
@@ -8285,55 +8593,129 @@ export const startFulfilment = (
 };
 
 /**
- * Creates the parcel record and sends the shipped email, then reports the fact to `orders` — the order moves `processing → shipped`. `trackingCode` is required exactly when the order's shipping method is `tracked` (looked up live, not frozen); refused with a named 422 when a tracked method's code is missing. Refuses an order that is not `processing` with a named 409 — this door is how that move happens now, not `PUT /orders/{id}`. Refuses a digital-only order outright, also 409 (`ORDER_NOTHING_TO_SHIP`) — nothing on it would ever ride in a parcel; `POST /delivery/order/{orderId}/fulfill` is that order's door instead.
- * @summary Record a parcel's handover to the carrier
+ * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is not `processing` (`ORDER_NOT_PROCESSING`) — unless `forced`, which lets a shipment skip the `start` step from `paid`. Never ships from `on_hold`, forced or not.
+ * @summary Ship some or all of a fulfillment order
  */
-export const shipOrder = (
-    orderId: string,
-    shipOrderRequest?: ShipOrderRequest,
+export const shipFulfillmentOrder = (
+    id: string,
+    shipFulfillmentOrderRequest?: ShipFulfillmentOrderRequest,
     options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
 ) => {
     return orvalMutator<ShipmentEnvelope>(
         {
-            url: `/delivery/order/${orderId}/ship`,
+            url: `/delivery/fulfillment-orders/${id}/shipments`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: shipOrderRequest
+            data: shipFulfillmentOrderRequest
         },
         options
     );
 };
 
 /**
- * Stamps the shipment delivered and reports the fact to `orders` — the order moves `shipped → delivered`. Refuses an order that is not `shipped` with a named 409.
- * @summary Record a parcel's arrival
+ * The digital act: a shipment with no tracking, born and delivered in the same write. A `digital` fulfillment order has nothing to carry, so this is its only door. Refuses a physical one with `DELIVERY_NOT_DIGITAL` (ship it instead). When it leaves nothing remaining and nothing undelivered the order moves to `delivered`, its withdrawal clock counted from payment (digital content, Art. 9(2)(c)).
+ * @summary Fulfil a digital fulfillment order
  */
-export const deliverOrder = (
-    orderId: string,
-    deliverOrderRequest?: DeliverOrderRequest,
+export const fulfillFulfillmentOrder = (
+    id: string,
     options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
 ) => {
     return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/fulfillment-orders/${id}/fulfill`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Staff stops a fulfillment order from shipping, with a reason. Only an open or in-progress one can be held (`DELIVERY_NOT_HOLDABLE`). `awaiting_stock` is never a reason staff can give: only the allocation of stock sets it.
+ * @summary Put a fulfillment order on hold
+ */
+export const holdFulfillmentOrder = (
+    id: string,
+    holdFulfillmentOrderRequest: HoldFulfillmentOrderRequest,
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+) => {
+    return orvalMutator<FulfillmentOrderEnvelope>(
         {
-            url: `/delivery/order/${orderId}/deliver`,
+            url: `/delivery/fulfillment-orders/${id}/hold`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: deliverOrderRequest
+            data: holdFulfillmentOrderRequest
         },
         options
     );
 };
 
 /**
- * The digital-only alternative to `ship`/`deliver` — reports that a `processing` order with no physical lines is done, moving it straight to `delivered` with no parcel record. Refuses an order that is not `processing` with a named 409 (`ORDER_NOT_PROCESSING`), and one that carries any line that still needs shipping with a named 409 (`ORDER_NOT_DIGITAL_ONLY`) — that order ships through the ordinary door instead.
- * @summary Mark a digital-only order fulfilled, with no shipment
+ * Staff lets a held fulfillment order ship again. A hold for `awaiting_stock` is refused (`DELIVERY_NOT_RELEASABLE`): a hand release would ship goods the ledger never counted out, so only the stock arriving releases it.
+ * @summary Release a fulfillment order from hold
  */
-export const fulfillOrder = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+export const releaseFulfillmentOrder = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
-        { url: `/delivery/order/${orderId}/fulfill`, method: 'POST' },
+    return orvalMutator<FulfillmentOrderEnvelope>(
+        { url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
+ * @summary Correct a shipment's tracking code
+ */
+export const updateShipment = (
+    id: string,
+    updateShipmentRequest: UpdateShipmentRequest,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        {
+            url: `/delivery/shipments/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateShipmentRequest
+        },
+        options
+    );
+};
+
+/**
+ * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
+ * @summary Correct a shipment's tracking code
+ */
+export const updateShipmentWithMergePatchJson = (
+    id: string,
+    updateShipmentRequest: UpdateShipmentRequest,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        {
+            url: `/delivery/shipments/${id}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
+            data: updateShipmentRequest
+        },
+        options
+    );
+};
+
+/**
+ * Stamps the shipment delivered. The order moves `shipped → delivered` when this was the last undelivered shipment and nothing remains to ship; its withdrawal clock then starts from the LAST delivery (CRD Art. 9(2)(b)(i)). Refuses a shipment already delivered with `DELIVERY_NOT_DELIVERABLE`.
+ * @summary Record a shipment's arrival
+ */
+export const deliverShipment = (
+    id: string,
+    deliverShipmentRequest?: DeliverShipmentRequest,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        {
+            url: `/delivery/shipments/${id}/deliver`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: deliverShipmentRequest
+        },
         options
     );
 };
@@ -8355,7 +8737,8 @@ export const listReturns = (
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
- * Only the order's own buyer may do this, an operator included. Sending `Idempotency-Key` makes a retry safe.
+ * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical` — and the buyer must be someone else who ranks below them. `GET /returns/options` says what each door would take and refund.
+ * A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
 export const createReturn = (
@@ -8369,6 +8752,20 @@ export const createReturn = (
             headers: { 'Content-Type': 'application/json' },
             data: createReturnRequest
         },
+        options
+    );
+};
+
+/**
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `returns.any.read`.
+ * @summary What an order can still send back or cancel
+ */
+export const getReturnOptions = (
+    params: GetReturnOptionsParams,
+    options?: SecondParameter<typeof orvalMutator<ReturnOptionsEnvelope>>
+) => {
+    return orvalMutator<ReturnOptionsEnvelope>(
+        { url: `/returns/options`, method: 'GET', params },
         options
     );
 };
@@ -9349,13 +9746,30 @@ export type ReceivePaymentWebhookResult = NonNullable<
 export type ListShippingMethodsResult = NonNullable<
     Awaited<ReturnType<typeof listShippingMethods>>
 >;
-export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
+export type GetFulfillmentByOrderResult = NonNullable<
+    Awaited<ReturnType<typeof getFulfillmentByOrder>>
+>;
 export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
-export type ShipOrderResult = NonNullable<Awaited<ReturnType<typeof shipOrder>>>;
-export type DeliverOrderResult = NonNullable<Awaited<ReturnType<typeof deliverOrder>>>;
-export type FulfillOrderResult = NonNullable<Awaited<ReturnType<typeof fulfillOrder>>>;
+export type ShipFulfillmentOrderResult = NonNullable<
+    Awaited<ReturnType<typeof shipFulfillmentOrder>>
+>;
+export type FulfillFulfillmentOrderResult = NonNullable<
+    Awaited<ReturnType<typeof fulfillFulfillmentOrder>>
+>;
+export type HoldFulfillmentOrderResult = NonNullable<
+    Awaited<ReturnType<typeof holdFulfillmentOrder>>
+>;
+export type ReleaseFulfillmentOrderResult = NonNullable<
+    Awaited<ReturnType<typeof releaseFulfillmentOrder>>
+>;
+export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>;
+export type UpdateShipmentWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateShipmentWithMergePatchJson>>
+>;
+export type DeliverShipmentResult = NonNullable<Awaited<ReturnType<typeof deliverShipment>>>;
 export type ListReturnsResult = NonNullable<Awaited<ReturnType<typeof listReturns>>>;
 export type CreateReturnResult = NonNullable<Awaited<ReturnType<typeof createReturn>>>;
+export type GetReturnOptionsResult = NonNullable<Awaited<ReturnType<typeof getReturnOptions>>>;
 export type GetReturnByIdResult = NonNullable<Awaited<ReturnType<typeof getReturnById>>>;
 export type ApproveReturnResult = NonNullable<Awaited<ReturnType<typeof approveReturn>>>;
 export type DeclineReturnResult = NonNullable<Awaited<ReturnType<typeof declineReturn>>>;

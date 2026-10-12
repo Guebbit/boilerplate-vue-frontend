@@ -578,9 +578,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :shipping-method-id="currentOrder.shippingMethod"
                         :can-start="currentOrder.actions?.start ?? false"
-                        :can-fulfill="currentOrder.actions?.fulfill ?? false"
-                        :can-ship="currentOrder.actions?.ship ?? false"
-                        :can-deliver="currentOrder.actions?.deliver ?? false"
                         :override="currentOrder.actions?.override ?? []"
                         @moved="fetchOrder(currentOrder.id, { forced: true })"
                     />

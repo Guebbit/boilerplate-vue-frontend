@@ -11,17 +11,26 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
     listShippingMethods,
-    getShipmentByOrder,
+    getFulfillmentByOrder,
     startFulfilment,
-    shipOrder,
-    deliverOrder,
-    fulfillOrder
+    shipFulfillmentOrder,
+    fulfillFulfillmentOrder,
+    holdFulfillmentOrder,
+    releaseFulfillmentOrder,
+    updateShipment,
+    deliverShipment
 } from '@api';
-import type { ShippingMethod, Shipment } from '@types';
-import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
+import type {
+    FulfillmentOrder,
+    HoldFulfillmentOrderRequest,
+    ShippingMethod,
+    Shipment,
+    ShipFulfillmentOrderRequest
+} from '@types';
 
 /**
- * Shipping — the methods a checkout can choose and the parcel an order ends up with.
+ * Shipping — the methods a checkout can choose, and the fulfillment orders and shipments an order
+ * ends up with.
  *
  * The methods list is quoted, not authoritative: the checkout re-prices the chosen method
  * server-side against the lines actually bought, so this store's numbers can inform a choice
@@ -49,13 +58,18 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const shipToCountries = ref<string[]>([]);
 
     /**
-     * The current order's parcel, or undefined while nothing has shipped.
+     * The fulfillment orders of the order last read — the groups of lines that leave together.
      */
-    const shipment = ref<Shipment | undefined>();
+    const fulfillmentOrders = ref<FulfillmentOrder[]>([]);
 
     /**
-     * Loads the full shipping methods list, unfiltered — `PUT /cart/shipping-method` and checkout
-     * are what check a method against the caller's real basket, server-side.
+     * The shipments of the order last read — what actually left, each with its own tracking code.
+     */
+    const shipments = ref<Shipment[]>([]);
+
+    /**
+     * Loads the methods, unfiltered — `PUT /cart/shipping-method` and checkout are what check a
+     * method against the caller's real basket, server-side.
      *
      * @returns A promise resolving with the methods.
      */
@@ -69,32 +83,31 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
-     * Loads the parcel behind an order. A 404 is an answer — nothing shipped yet.
+     * Reads an order's fulfilment into state, with no loading flag of its own: every write below
+     * ends with it, inside the write's own wrapper.
      *
      * @param orderId - The order in question.
-     * @returns A promise resolving with the shipment, or undefined.
+     * @returns A promise resolving once both lists are replaced.
      */
-    const fetchShipmentForOrder = (orderId: string) =>
-        fetchAny(() =>
-            getShipmentByOrder(orderId)
-                .then((response) => {
-                    shipment.value = response.data;
-                    return shipment.value;
-                })
-                .catch((error: unknown) => {
-                    // 404 only: anything else is a real failure, and swallowing it would say
-                    // "nothing shipped yet" about an order that has a parcel in transit.
-                    rethrowUnlessAbsent(error, 404);
-                    shipment.value = undefined;
-                    return undefined;
-                })
-        );
+    const readFulfillment = (orderId: string) =>
+        getFulfillmentByOrder(orderId).then((response) => {
+            fulfillmentOrders.value = response.data.fulfillmentOrders;
+            shipments.value = response.data.shipments;
+        });
+
+    /**
+     * Loads an order's fulfillment orders and shipments. Both come back empty until the order is
+     * paid — absence is an answer, never a 404.
+     *
+     * @param orderId - The order in question.
+     * @returns A promise resolving once state holds that order's fulfilment.
+     */
+    const fetchFulfillmentForOrder = (orderId: string) => fetchAny(() => readFulfillment(orderId));
 
     /**
      * Reports that fulfilment has started on a paid order (admin): the order moves
-     * `paid → processing`, before any parcel exists. No result stored here — this module owns
-     * the shipment, not the order — the caller re-reads the order the same way it already does
-     * after {@link ship}/{@link deliver}.
+     * `paid → processing`. No result stored here — this module owns the fulfilment, not the order
+     * — the caller re-reads the order.
      *
      * @param orderId - The order to start fulfilling.
      * @returns A promise resolving once the move lands.
@@ -103,65 +116,107 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fetchAny(() => startFulfilment(orderId).then(() => undefined));
 
     /**
-     * Record a parcel's handover to the carrier (admin): the order moves `processing → shipped`.
+     * Cuts a shipment from a fulfillment order (admin). The order moves to `shipped` only when
+     * nothing remains anywhere; otherwise it is `partially_fulfilled`.
      *
-     * @param orderId - The order being shipped.
-     * @param trackingCode - Required when the order's shipping method is `tracked`.
-     * @param forced - Bypasses the `processing`-only gate for an `orders.any.override` holder.
-     *  `reason` is then required by the API.
-     * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
-     * @returns A promise resolving with the shipment.
+     * @param fulfillmentOrderId - The fulfillment order shipping.
+     * @param input - `lines` (absent = everything remaining), `trackingCode`, and `forced` +
+     *  `reason` for an `orders.any.override` holder skipping the `start` step.
+     * @returns A promise resolving with the new shipment, after the lists are re-read.
      */
-    const ship = (orderId: string, trackingCode?: string, forced?: boolean, reason?: string) =>
+    const ship = (fulfillmentOrderId: string, input: ShipFulfillmentOrderRequest = {}) =>
         fetchAny(() =>
-            shipOrder(orderId, {
-                ...(trackingCode ? { trackingCode } : {}),
-                ...(forced ? { forced, reason } : {})
-            }).then((response) => {
-                shipment.value = response.data;
-                return shipment.value;
-            })
+            shipFulfillmentOrder(fulfillmentOrderId, input).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
         );
 
     /**
-     * Record a parcel's arrival (admin): the order moves `shipped → delivered`.
+     * Fulfils a `digital` fulfillment order (admin): no parcel, the shipment is born delivered.
      *
-     * @param orderId - The order that arrived.
-     * @param forced - Bypasses the `shipped`-only gate for an `orders.any.override` holder.
-     *  `reason` is then required by the API.
-     * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
-     * @returns A promise resolving with the shipment.
+     * @param fulfillmentOrderId - The digital fulfillment order.
+     * @returns A promise resolving with the shipment, after the lists are re-read.
      */
-    const deliver = (orderId: string, forced?: boolean, reason?: string) =>
+    const fulfill = (fulfillmentOrderId: string) =>
         fetchAny(() =>
-            deliverOrder(orderId, forced ? { forced, reason } : {}).then((response) => {
-                shipment.value = response.data;
-                return shipment.value;
-            })
+            fulfillFulfillmentOrder(fulfillmentOrderId).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
         );
 
     /**
-     * Marks a digital-only order fulfilled (admin): the order moves `processing → delivered`
-     * directly, with no parcel record. The `ship`/`deliver` alternative for an order with nothing
-     * to ship. No result stored here, for the same reason {@link start} stores none — this module
-     * owns the shipment, not the order.
+     * Holds a fulfillment order back (admin). `awaiting_stock` is never staff's to give.
      *
-     * @param orderId - The digital-only order to mark fulfilled.
-     * @returns A promise resolving once the move lands.
+     * @param fulfillmentOrderId - The fulfillment order to hold.
+     * @param input - Why (`incorrect_address`, `high_risk`, `other`) and an optional staff note.
+     * @returns A promise resolving with the held fulfillment order, after the lists are re-read.
      */
-    const fulfill = (orderId: string) =>
-        fetchAny(() => fulfillOrder(orderId).then(() => undefined));
+    const hold = (fulfillmentOrderId: string, input: HoldFulfillmentOrderRequest) =>
+        fetchAny(() =>
+            holdFulfillmentOrder(fulfillmentOrderId, input).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
+        );
+
+    /**
+     * Lifts a staff hold (admin). The server refuses `awaiting_stock`: the stock's own arrival
+     * releases that one.
+     *
+     * @param fulfillmentOrderId - The fulfillment order to release.
+     * @returns A promise resolving with the released fulfillment order, after the re-read.
+     */
+    const release = (fulfillmentOrderId: string) =>
+        fetchAny(() =>
+            releaseFulfillmentOrder(fulfillmentOrderId).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
+        );
+
+    /**
+     * Records one shipment's arrival (admin). The order moves to `delivered` only once every
+     * shipment has arrived and nothing remains.
+     *
+     * @param shipmentId - The shipment that arrived.
+     * @param forced - Records it without a carrier confirmation, for an `orders.any.override`
+     *  holder; `reason` is then required by the API.
+     * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
+     * @returns A promise resolving with the shipment, after the lists are re-read.
+     */
+    const deliver = (shipmentId: string, forced?: boolean, reason?: string) =>
+        fetchAny(() =>
+            deliverShipment(shipmentId, forced ? { forced, reason } : {}).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
+        );
+
+    /**
+     * Corrects a shipment's tracking code (admin), while it is still `shipped`.
+     *
+     * @param shipmentId - The shipment to correct.
+     * @param trackingCode - The corrected code.
+     * @returns A promise resolving with the shipment, after the lists are re-read.
+     */
+    const editTracking = (shipmentId: string, trackingCode: string) =>
+        fetchAny(() =>
+            updateShipment(shipmentId, { trackingCode }).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
+        );
 
     return {
         loading,
         methods,
         shipToCountries,
-        shipment,
+        fulfillmentOrders,
+        shipments,
         fetchMethods,
-        fetchShipmentForOrder,
+        fetchFulfillmentForOrder,
         start,
         ship,
+        fulfill,
+        hold,
+        release,
         deliver,
-        fulfill
+        editTracking
     };
 });
