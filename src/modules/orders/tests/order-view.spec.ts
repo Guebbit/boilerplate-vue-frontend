@@ -83,7 +83,9 @@ const mountOrder = (order: OrderType) => {
             stubs: {
                 PaymentPanel: true,
                 ShipmentPanel: true,
-                WithdrawalPanel: true
+                WithdrawalPanel: true,
+                // Its own spec reads it; here only that the page mounts it.
+                OrderTimeline: true
             }
         }
     });
@@ -273,6 +275,24 @@ describe('the order number', () => {
         });
 
         expect(wrapper.get('[data-test=order-number]').text()).toContain('2026-000041');
+
+        wrapper.unmount();
+    });
+});
+
+describe('the timeline', () => {
+    it('is mounted for the order shown, and keyed on the state the order is in', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            status: 'paid',
+            paymentStatus: 'paid',
+            items: [lineWith(null)]
+        });
+
+        const timeline = wrapper.getComponent({ name: 'OrderTimeline' });
+        expect(timeline.props('orderId')).toBe('o1');
+        // A move in any of the four states must change the key, or the history would go stale.
+        expect(timeline.props('refreshKey')).toContain('paid|paid|unfulfilled|none');
 
         wrapper.unmount();
     });

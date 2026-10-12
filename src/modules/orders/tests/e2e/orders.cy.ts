@@ -62,10 +62,30 @@ describe('Orders', () => {
             });
         });
 
+        it('exports the filtered list as a CSV the server answers', () => {
+            cy.intercept('GET', '**/orders/export*').as('exportOrders');
+            cy.get('[data-test=orders-export]').click();
+            cy.wait('@exportOrders').then(({ request, response }) => {
+                expect(request.headers).to.have.property('authorization');
+                expect(response?.statusCode).to.eq(200);
+                expect(response?.headers['content-type']).to.contain('text/csv');
+            });
+        });
+
         it('navigates to order detail when clicking View', () => {
             cy.get('[data-test=list-row]').eq(0).find('[data-test=row-view]').click();
             cy.url().should('include', '/orders/');
             cy.get('#order-target').should('exist');
+        });
+    });
+
+    describe('Order detail — the timeline', () => {
+        it('lists what happened to the order, starting with its placing', () => {
+            cy.loginAs('admin');
+            cy.subjectId('order.paid').then((id) => cy.visit(`/en/orders/${id}`));
+            cy.get('[data-test=order-timeline]', { timeout: 10_000 }).should('exist');
+            cy.get('[data-test=order-timeline-entry]').should('have.length.at.least', 1);
+            cy.get('[data-test=order-timeline-entry]').first().should('have.attr', 'data-type');
         });
     });
 

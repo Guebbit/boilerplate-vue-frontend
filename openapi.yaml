@@ -5351,7 +5351,7 @@ paths:
       tags:
         - Orders
       summary: Force-correct an order's status by hand
-      description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does."
+      description: "Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does."
       operationId: overrideOrderStatus
       security:
         - bearerAuth: []
@@ -7638,6 +7638,147 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: cart
+  /orders/export:
+    get:
+      tags:
+        - Orders
+      summary: Export orders as CSV
+      description: |
+        The list's filters, answered as one `text/csv` file: every matching order in the list's own
+        order, one line each, streamed. Columns: `createdAt`, `orderNumber`, `status`,
+        `paymentStatus`, `fulfillmentStatus`, `returnStatus`, `email`, `lines`, `units`, `total`,
+        `currency`, `paymentMethod`, `paidAt`. No address: both are encrypted at rest and an export is
+        no reason to read them.
+
+        Requires `orders.any.export` (manager and admin), which is step-up gated (`sensitive`): the file
+        carries every customer's email, so the caller must have proved themselves recently. An API key
+        holds no session and cannot export. Over `NODE_ORDER_EXPORT_MAX_ROWS` rows the answer is `422`
+        `ORDER_EXPORT_TOO_LARGE`, before any byte of the file; narrow the filters. A cell that would
+        start a formula in a spreadsheet (`=`, `+`, `-`, `@`, tab, carriage return) is prefixed with
+        `'`. Every export is audited (`admin.orders.exported`: the filter and the row count, never a
+        row) and has its own per-account rate budget.
+
+        The response is never cached: `Cache-Control: private, no-store`.
+      operationId: exportOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sort
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            $ref: "#/components/schemas/OrderSort"
+        - $ref: "#/components/parameters/IdParam"
+        - $ref: "#/components/parameters/UserIdParam"
+        - $ref: "#/components/parameters/ProductIdParam"
+        - name: email
+          in: query
+          schema:
+            $ref: "#/components/schemas/Email"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/OrderStatus"
+        - name: fulfillmentStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/OrderFulfillmentStatus"
+        - name: paymentMethod
+          in: query
+          schema:
+            $ref: "#/components/schemas/PaymentMethodId"
+        - name: deleted
+          in: query
+          schema:
+            type: boolean
+        - name: createdFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: createdTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: paidFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: paidTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: paymentStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/OrderPaymentStatus"
+        - name: returnStatus
+          in: query
+          schema:
+            $ref: "#/components/schemas/OrderReturnStatus"
+      responses:
+        "200":
+          description: The orders, as CSV
+          headers:
+            Content-Disposition:
+              description: '`attachment; filename="orders.csv"`'
+              schema:
+                type: string
+            Cache-Control:
+              description: "`private, no-store`"
+              schema:
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
+  /orders/{id}/timeline:
+    get:
+      tags:
+        - Orders
+      summary: The order's timeline
+      description: "What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `orders.any.read` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff."
+      operationId: getOrderTimeline
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The order's timeline, oldest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderTimelineEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: orders
   /payments:
     get:
       tags:
@@ -13957,7 +14098,7 @@ components:
           type: string
           maxLength: 1000
           minLength: 1
-          description: Why the normal door didn't apply. Recorded on the order's override history, never optional.
+          description: Why the normal door didn't apply. Recorded on the order's timeline, never optional.
     CreditNoteSummary:
       type: object
       additionalProperties: false
@@ -16260,6 +16401,69 @@ components:
       properties:
         productId:
           $ref: "#/components/schemas/Id"
+    OrderTimelineType:
+      type: string
+      enum:
+        - created
+        - paid
+        - processing
+        - shipped
+        - delivered
+        - cancelled
+        - status_overridden
+        - payment_declined
+        - refund_issued
+        - refund_settled
+        - refund_failed
+        - shipment_shipped
+        - shipment_delivered
+        - fulfillment_held
+        - fulfillment_released
+        - remainder_cancelled
+        - return_requested
+        - return_approved
+        - return_declined
+        - return_received
+        - return_closed
+        - invoice_issued
+        - credit_note_issued
+      description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`."
+    OrderTimelineEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - at
+        - type
+        - data
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        at:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/OrderTimelineType"
+        actor:
+          allOf:
+            - $ref: "#/components/schemas/Id"
+          description: The account that made the change. Staff view only, and absent for the system or once that account was erased.
+        text:
+          type: string
+          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
+        data:
+          type: object
+          additionalProperties: true
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`. Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+    OrderTimelineExportEntry:
+      allOf:
+        - $ref: "#/components/schemas/OrderTimelineEntry"
+        - type: object
+          required:
+            - orderId
+          properties:
+            orderId:
+              $ref: "#/components/schemas/Id"
     ExportPayment:
       type: object
       additionalProperties: false
@@ -16749,6 +16953,7 @@ components:
         - cart
         - wishlist
         - orders
+        - orderTimeline
         - payments
         - invoicing
         - shipments
@@ -16793,6 +16998,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Order"
+        orderTimeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderTimelineExportEntry"
         payments:
           type: array
           items:
@@ -16931,6 +17140,25 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/MergeCartResponse"
+    OrderTimelineEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderTimelineEntry"
     PaymentSort:
       type: array
       minItems: 1
@@ -18017,6 +18245,9 @@ x-error-codes:
   ORDER_CREDIT_NOTE_NOT_ISSUED:
     status: 404
     description: The order exists but has no such credit note.
+  ORDER_EXPORT_TOO_LARGE:
+    status: 422
+    description: The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again.
   ORDER_INSUFFICIENT_STOCK:
     status: 409
     description: An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`inventory.any.read`).

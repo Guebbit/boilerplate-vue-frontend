@@ -110,6 +110,8 @@ export const ERROR_CODES = {
     NOT_FOUND: 'NOT_FOUND',
     /** 404 — The order exists but has no such credit note. */
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
+    /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
+    ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
     /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`inventory.any.read`). */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
     /** 409 — This action is not allowed once an order has been invoiced. */

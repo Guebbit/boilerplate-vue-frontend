@@ -3219,7 +3219,7 @@ export interface StatusOverrideRequest {
     /** Must be `processing`, `shipped` or `delivered`, and forward of the order's current status — every other value is a 409. */
     to: OrderStatus;
     /**
-     * Why the normal door didn't apply. Recorded on the order's override history, never optional.
+     * Why the normal door didn't apply. Recorded on the order's timeline, never optional.
      * @minLength 1
      * @maxLength 1000
      */
@@ -4682,6 +4682,58 @@ export interface WishlistExportItem {
     productId: Id;
 }
 
+/**
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`.
+ */
+export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
+
+export const OrderTimelineType = {
+    created: 'created',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled',
+    status_overridden: 'status_overridden',
+    payment_declined: 'payment_declined',
+    refund_issued: 'refund_issued',
+    refund_settled: 'refund_settled',
+    refund_failed: 'refund_failed',
+    shipment_shipped: 'shipment_shipped',
+    shipment_delivered: 'shipment_delivered',
+    fulfillment_held: 'fulfillment_held',
+    fulfillment_released: 'fulfillment_released',
+    remainder_cancelled: 'remainder_cancelled',
+    return_requested: 'return_requested',
+    return_approved: 'return_approved',
+    return_declined: 'return_declined',
+    return_received: 'return_received',
+    return_closed: 'return_closed',
+    invoice_issued: 'invoice_issued',
+    credit_note_issued: 'credit_note_issued'
+} as const;
+
+/**
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`. Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ */
+export type OrderTimelineEntryData = { [key: string]: unknown };
+
+export interface OrderTimelineEntry {
+    id: Id;
+    at: string;
+    type: OrderTimelineType;
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. */
+    actor?: Id;
+    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`. Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    data: OrderTimelineEntryData;
+}
+
+export type OrderTimelineExportEntry = OrderTimelineEntry & {
+    orderId: Id;
+};
+
 export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
 
 export const ExportPaymentStatus = {
@@ -4988,6 +5040,7 @@ export interface AccountExportResponse {
     cart: CartItem[];
     wishlist: WishlistExportItem[];
     orders: Order[];
+    orderTimeline: OrderTimelineExportEntry[];
     payments: ExportPayment[];
     invoicing: AccountExportResponseInvoicing;
     shipments: ExportShipment[];
@@ -5050,6 +5103,13 @@ export interface MergeCartResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: MergeCartResponse;
+}
+
+export interface OrderTimelineEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OrderTimelineEntry[];
 }
 
 export type PaymentSortItem = (typeof PaymentSortItem)[keyof typeof PaymentSortItem];
@@ -6223,6 +6283,40 @@ export type ListApiKeysParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+};
+
+export type ExportOrdersParams = {
+    sort?: OrderSort;
+    /**
+     * @minItems 1
+     * @maxItems 100
+     */
+    id?: IdParamParameter;
+    /**
+     * Resource identifier
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[0-9A-Za-z_-]+$
+     */
+    userId?: UserIdParamParameter;
+    /**
+     * Resource identifier
+     * @minLength 1
+     * @maxLength 64
+     * @pattern ^[0-9A-Za-z_-]+$
+     */
+    productId?: ProductIdParamParameter;
+    email?: Email;
+    status?: OrderStatus;
+    fulfillmentStatus?: OrderFulfillmentStatus;
+    paymentMethod?: PaymentMethodId;
+    deleted?: boolean;
+    createdFrom?: string;
+    createdTo?: string;
+    paidFrom?: string;
+    paidTo?: string;
+    paymentStatus?: OrderPaymentStatus;
+    returnStatus?: OrderReturnStatus;
 };
 
 export type ListPaymentsParams = {
@@ -9317,7 +9411,7 @@ export const cancelOrderById = (
 };
 
 /**
- * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatus = (
@@ -10297,6 +10391,45 @@ export const mergeCart = (
 };
 
 /**
+ * The list's filters, answered as one `text/csv` file: every matching order in the list's own
+ * order, one line each, streamed. Columns: `createdAt`, `orderNumber`, `status`,
+ * `paymentStatus`, `fulfillmentStatus`, `returnStatus`, `email`, `lines`, `units`, `total`,
+ * `currency`, `paymentMethod`, `paidAt`. No address: both are encrypted at rest and an export is
+ * no reason to read them.
+ *
+ * Requires `orders.any.export` (manager and admin), which is step-up gated (`sensitive`): the file
+ * carries every customer's email, so the caller must have proved themselves recently. An API key
+ * holds no session and cannot export. Over `NODE_ORDER_EXPORT_MAX_ROWS` rows the answer is `422`
+ * `ORDER_EXPORT_TOO_LARGE`, before any byte of the file; narrow the filters. A cell that would
+ * start a formula in a spreadsheet (`=`, `+`, `-`, `@`, tab, carriage return) is prefixed with
+ * `'`. Every export is audited (`admin.orders.exported`: the filter and the row count, never a
+ * row) and has its own per-account rate budget.
+ *
+ * The response is never cached: `Cache-Control: private, no-store`.
+ * @summary Export orders as CSV
+ */
+export const exportOrders = (
+    params?: ExportOrdersParams,
+    options?: SecondParameter<typeof orvalMutator<string>>
+) => {
+    return orvalMutator<string>({ url: `/orders/export`, method: 'GET', params }, options);
+};
+
+/**
+ * What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `orders.any.read` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
+ * @summary The order's timeline
+ */
+export const getOrderTimeline = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderTimelineEnvelope>>
+) => {
+    return orvalMutator<OrderTimelineEnvelope>(
+        { url: `/orders/${id}/timeline`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Every payment in the shop, newest first, for the staff Payments page. Needs `payments.any.read`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
@@ -11072,6 +11205,8 @@ export type DownloadAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof downloadAccountExport>>
 >;
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
+export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
+export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;
 export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
 export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
 export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;

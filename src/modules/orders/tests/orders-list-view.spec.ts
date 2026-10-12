@@ -13,6 +13,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { searchOrders } from '@api';
+import { downloadBlob } from '@guebbit/js-toolkit';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import OrdersList from '../views/OrdersList.vue';
@@ -30,6 +31,11 @@ import { contractResponse } from '../../../../tests/unit/infrastructure/http/orv
 import * as schemas from '@api/schemas';
 
 wireModulesIntoCore();
+
+vi.mock('@guebbit/js-toolkit', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@guebbit/js-toolkit')>()),
+    downloadBlob: vi.fn()
+}));
 
 /*
  * The one client call the soft-deleted-row suite needs answered for real; every other suite here
@@ -548,6 +554,97 @@ describe('OrdersList — payment, return and date columns and filters', () => {
 
         expect(searchOrders).toHaveBeenLastCalledWith(
             expect.objectContaining({ sort: ['paidAt'] })
+        );
+    });
+});
+
+/**
+ * Signs in holding the export key (`orders.any.export`) and the wide read the staff page needs.
+ */
+const signInAsExporter = () => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'manager@example.com', role: 'owner' };
+    session.setAbilities({
+        tenant: [
+            ['read', 'Order', {}],
+            ['export', 'Order', {}]
+        ],
+        platform: []
+    });
+};
+
+/**
+ * The CSV export: offered on the staff page to the key's holder only, sends the page's current
+ * filters, hands the file to the browser, and words its two expected refusals itself.
+ */
+describe('OrdersList — the CSV export', () => {
+    it('is absent without the key, and absent from the account page even with it', () => {
+        signInReadingOrders(false);
+        expect(mountList('all').find('[data-test="orders-export"]').exists()).toBe(false);
+
+        signInAsExporter();
+        expect(mountList('mine').find('[data-test="orders-export"]').exists()).toBe(false);
+    });
+
+    it('downloads the file for the filters on screen', async () => {
+        signInAsExporter();
+        const file = new Blob(['createdAt\n'], { type: 'text/csv' });
+        const exportCsv = vi.spyOn(useOrdersStore(), 'exportOrdersCsv').mockResolvedValue(file);
+        const wrapper = mountList('all');
+        useOrdersStore().filters.status = 'paid';
+
+        await wrapper.get('[data-test="orders-export"]').trigger('click');
+        await flushPromises();
+
+        expect(exportCsv).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid' }));
+        expect(downloadBlob).toHaveBeenCalledWith(file, expect.stringMatching(/^orders-.*\.csv$/));
+    });
+
+    it('says to narrow the filters when the server refuses a file that big', async () => {
+        signInAsExporter();
+        vi.spyOn(useOrdersStore(), 'exportOrdersCsv').mockRejectedValue({
+            status: 422,
+            errors: [{ code: 'ORDER_EXPORT_TOO_LARGE', message: 'Over the cap' }]
+        });
+        const wrapper = mountList('all');
+
+        await wrapper.get('[data-test="orders-export"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="orders-export-error"]').text()).toContain(
+            'Narrow the filters'
+        );
+        expect(downloadBlob).not.toHaveBeenCalled();
+    });
+
+    it('asks to wait when the export budget is spent', async () => {
+        signInAsExporter();
+        vi.spyOn(useOrdersStore(), 'exportOrdersCsv').mockRejectedValue({
+            status: 429,
+            errors: [{ message: 'Too many requests' }]
+        });
+        const wrapper = mountList('all');
+
+        await wrapper.get('[data-test="orders-export"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="orders-export-error"]').text()).toContain('Wait a little');
+    });
+
+    it('shows any other failure as the server worded it', async () => {
+        signInAsExporter();
+        vi.spyOn(useOrdersStore(), 'exportOrdersCsv').mockRejectedValue({
+            status: 500,
+            errors: [{ message: 'Export unavailable' }]
+        });
+        const wrapper = mountList('all');
+
+        await wrapper.get('[data-test="orders-export"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="orders-export-error"]').text()).toContain(
+            'Export unavailable'
         );
     });
 });

@@ -2,7 +2,7 @@
  * @module
  * Pinia store built on `useStructureCrudApi` for orders CRUD and paginated
  * search, plus hand-written actions (`cancelOrder`, `fetchInvoice`, `fetchCreditNotes`,
- * `fetchCreditNote`)
+ * `fetchCreditNote`, `fetchTimeline`, `exportOrdersCsv`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
 import { ref } from 'vue';
@@ -25,6 +25,8 @@ import {
     getOrderInvoice,
     listOrderCreditNotes,
     getOrderCreditNote,
+    getOrderTimeline,
+    exportOrders,
     overrideOrderStatus,
     OrderSortItem
 } from '@api';
@@ -34,7 +36,8 @@ import type {
     UpdateOrderByIdRequest,
     SearchOrdersRequest,
     OrderStatus,
-    CreditNoteSummary
+    CreditNoteSummary,
+    OrderTimelineEntry
 } from '@types';
 
 /**
@@ -48,7 +51,7 @@ import type {
  * The four date filters hold calendar days (`YYYY-MM-DD`: what a date input and a URL carry), and
  * `search:` turns each into the instant the API takes, inclusive at both ends.
  */
-type OrdersFilters = Omit<
+export type OrdersFilters = Omit<
     SearchOrdersRequest,
     'page' | 'pageSize' | 'id' | 'sort' | 'createdFrom' | 'createdTo' | 'paidFrom' | 'paidTo'
 > & {
@@ -64,6 +67,44 @@ type OrdersFilters = Omit<
     /** The API's `sort` as one CSV (`-createdAt`): the form a URL holds. */
     sort?: string;
 };
+
+/**
+ * The list's filters as the API's query: everything the search and the CSV export both take, i.e.
+ * everything but paging. One mapping, so the file a manager downloads is the list they were looking
+ * at, never a near miss of it.
+ *
+ * @param filters - The page's filters, calendar days and all.
+ * @returns The criteria in the API's own shape (instants, id as a batch, sort as tokens).
+ */
+const criteriaOf = (filters: OrdersFilters) => ({
+    // The API reads a batch of ids; the filter box searches for one.
+    id: filters.id ? [filters.id] : undefined,
+    sort: sortTokensOf(filters.sort, OrderSortItem),
+    userId: filters.userId,
+    productId: filters.productId,
+    email: filters.email,
+    status: filters.status,
+    fulfillmentStatus: filters.fulfillmentStatus,
+    paymentMethod: filters.paymentMethod,
+    deleted: filters.deleted,
+    createdFrom: startOfDayInstant(filters.createdFrom),
+    createdTo: endOfDayInstant(filters.createdTo),
+    paidFrom: startOfDayInstant(filters.paidFrom),
+    paidTo: endOfDayInstant(filters.paidTo),
+    paymentStatus: filters.paymentStatus,
+    returnStatus: filters.returnStatus
+});
+
+/**
+ * Reads an order's timeline, oldest first. A background read like {@link listCreditNotes}: outside
+ * `fetchAny`, so it never flips the store's shared `loading` and disables the page's buttons. The
+ * server decides the rows: staff get every one with its actor, the buyer only the buyer-visible ones.
+ *
+ * @param orderId - Identifier of the order.
+ * @returns A promise resolving with the entries.
+ */
+const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
+    getOrderTimeline(orderId).then((response) => response.data);
 
 /**
  * Lists the credit notes of an order, oldest first — one per settled refund, `[]` for an order
@@ -132,22 +173,7 @@ export const useOrdersStore = defineStore('orders', () => {
                 searchOrders({
                     page,
                     pageSize,
-                    // The API reads a batch of ids; the filter box searches for one.
-                    id: filters.id ? [filters.id] : undefined,
-                    sort: sortTokensOf(filters.sort, OrderSortItem),
-                    userId: filters.userId,
-                    productId: filters.productId,
-                    email: filters.email,
-                    status: filters.status,
-                    fulfillmentStatus: filters.fulfillmentStatus,
-                    paymentMethod: filters.paymentMethod,
-                    deleted: filters.deleted,
-                    createdFrom: startOfDayInstant(filters.createdFrom),
-                    createdTo: endOfDayInstant(filters.createdTo),
-                    paidFrom: startOfDayInstant(filters.paidFrom),
-                    paidTo: endOfDayInstant(filters.paidTo),
-                    paymentStatus: filters.paymentStatus,
-                    returnStatus: filters.returnStatus
+                    ...criteriaOf(filters)
                 }).then((response) => ({
                     items: response.data.items,
                     totalItems: response.data.meta.totalItems
@@ -300,6 +326,21 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
+     * Downloads every order the filters match as one CSV file — `GET /orders/export`
+     * (`orders.any.export`, step-up). Held outside `fetchAny`: a file is not a record, and the
+     * page keeps its own `exporting` flag so the table stays usable meanwhile. The step-up
+     * prompt is the HTTP layer's job; a 422 (too many rows) and a 429 reach the caller as is.
+     *
+     * @param filters - The page's current filters; paging does not apply.
+     * @returns A promise resolving with the CSV as a file-ready Blob.
+     */
+    const exportOrdersCsv = (filters: OrdersFilters): Promise<Blob> =>
+        // `responseType: 'text'`: axios would otherwise try to JSON-parse the body first.
+        exportOrders(criteriaOf(filters), { responseType: 'text' }).then(
+            (csv) => new Blob([csv], { type: 'text/csv;charset=utf-8' })
+        );
+
+    /**
      * Fetches an order's invoice, rendered by the server on every request — there is no pending
      * state to wait out any more.
      *
@@ -350,6 +391,8 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchAwaitingTransfers,
         fetchInvoice,
         fetchCreditNotes: listCreditNotes,
+        fetchTimeline,
+        exportOrdersCsv,
         fetchCreditNote
     };
 });

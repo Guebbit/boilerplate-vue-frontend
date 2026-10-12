@@ -18,13 +18,14 @@ export default {
  * per-row view/edit/delete/hard-delete actions gated on the signed-in role. The RF-reference
  * lookup is `payments`' own `OrderReferenceSearch`, mounted here rather than reimplemented.
  */
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
+import { Download, Search } from 'lucide-vue-next';
+import { downloadBlob } from '@guebbit/js-toolkit';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -34,7 +35,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
-import { canHardDelete } from '../domain';
+import { canHardDelete, exportRefusalOf } from '../domain';
 import {
     OrderFulfillmentStatus,
     OrderPaymentStatus,
@@ -97,7 +98,8 @@ const { addMessage } = useNotificationsStore();
 /**
  * Orders store actions and reactive list/pagination state.
  */
-const { watchSearchOrders, deleteOrder, hardDeleteOrder, restoreOrder } = useOrdersStore();
+const { watchSearchOrders, deleteOrder, hardDeleteOrder, restoreOrder, exportOrdersCsv } =
+    useOrdersStore();
 
 /**
  * Options of the staff-only "Deleted" filter.
@@ -447,6 +449,55 @@ const handleHardDelete = (orderId: string) =>
                 .then(() => addMessage(t('orders-list-page.success-hard-delete')))
                 .catch((error: unknown) => reportRowActionError(error));
         });
+
+/**
+ * Whether an export is running. Its own flag, not the store's `loading`: the table stays usable
+ * while the file streams in.
+ */
+const exporting = ref(false);
+
+/**
+ * The export's own blocked state, shown beside its button rather than as a toast.
+ */
+const {
+    message: exportError,
+    type: exportErrorType,
+    report: reportExportError,
+    warn: warnExport,
+    clear: clearExportError
+} = useBlockingError();
+
+/**
+ * Shows a failed export: the two expected refusals in the page's own words (a spent budget or too
+ * many rows is the visitor's to fix, not a fault), anything else as a real error.
+ *
+ * @param error - The rejection from the export call.
+ */
+const showExportFailure = (error: unknown) => {
+    const refusal = exportRefusalOf(error);
+    if (refusal) warnExport(t(`orders-export.error-${refusal}`));
+    else reportExportError(error);
+};
+
+/**
+ * Downloads the orders the current filters match as a CSV file. A fresh sign-in may be asked for
+ * first: the HTTP layer's step-up prompt answers it and replays the request.
+ *
+ * @returns A promise settling once the file was handed to the browser or the failure is on screen.
+ */
+const handleExport = () => {
+    exporting.value = true;
+    clearExportError();
+    return exportOrdersCsv(filters.value)
+        .then((file) => {
+            downloadBlob(file, `orders-${new Date().toISOString().slice(0, 10)}.csv`);
+            addMessage(t('orders-export.done'));
+        })
+        .catch(showExportFailure)
+        .finally(() => {
+            exporting.value = false;
+        });
+};
 </script>
 
 <template>
@@ -579,7 +630,26 @@ const handleHardDelete = (orderId: string) =>
                     <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
                         {{ t('generic.reset') }}
                     </v-btn>
+                    <v-btn
+                        v-if="isStaff && session.can('export', 'Order')"
+                        variant="tonal"
+                        color="secondary"
+                        data-test="orders-export"
+                        :title="t('orders-export.button-hint')"
+                        :disabled="exporting"
+                        :loading="exporting"
+                        @click="handleExport"
+                    >
+                        <Download :size="16" class="mr-1" aria-hidden="true" />
+                        {{ t('orders-export.button') }}
+                    </v-btn>
                 </div>
+                <InlineErrorAlert
+                    :message="exportError"
+                    :type="exportErrorType"
+                    class="mt-4"
+                    data-test="orders-export-error"
+                />
             </form>
         </v-card>
 

@@ -27,6 +27,7 @@ import { storeToRefs } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
 import { leftOutByReorder } from '../domain';
+import OrderTimeline from '../components/OrderTimeline.vue';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -133,6 +134,20 @@ const auditLogTo = computed(() =>
     currentOrder.value
         ? linkIfRouted(router, 'AuditLog', undefined, { target: currentOrder.value.id })
         : undefined
+);
+
+/**
+ * Changes whenever the order moves — status, money, parcels, returns or any edit — so the timeline
+ * reads again instead of showing the state before.
+ */
+const timelineRefreshKey = computed(() =>
+    [
+        currentOrder.value?.status,
+        currentOrder.value?.paymentStatus,
+        currentOrder.value?.fulfillmentStatus,
+        currentOrder.value?.returnStatus,
+        currentOrder.value?.updatedAt
+    ].join('|')
 );
 
 /**
@@ -551,6 +566,10 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     />
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('order-target-page.loading') }}</p>
+            </CardDetail>
+
+            <CardDetail v-if="currentOrder">
+                <OrderTimeline :order-id="currentOrder.id" :refresh-key="timelineRefreshKey" />
             </CardDetail>
 
             <template #aside>

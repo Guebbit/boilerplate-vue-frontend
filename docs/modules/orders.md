@@ -112,6 +112,38 @@ flowchart LR
     paid[paid or refunded] -. no action offered .-> gone
 ```
 
+## The timeline
+
+`src/modules/orders/components/OrderTimeline.vue` sits under the order's details and lists what happened to it, oldest first
+(`GET /orders/{id}/timeline`). **The server decides who sees what**: staff (`orders.any.read`) get
+every row with the acting account and any note, the buyer only the buyer-visible rows and never an
+actor. The component filters nothing; it only flags, for staff, the rows the buyer cannot see
+(`TIMELINE_AUDIENCE` in `src/modules/orders/domain/timeline.ts` mirrors the API's table, and is checked against the
+contract's type enum at compile time).
+
+Each line is `describeTimelineEntry`'s: a title per type, and a detail built from the row's ids and
+codes (an amount, a parcel number, a reason code through its own dictionary). A code the dictionary
+does not know is shown raw, so a newer API never leaves a blank. The page re-reads the timeline when
+the order's status, payment, fulfilment or return state changes.
+
+```mermaid
+flowchart LR
+    page[Order.vue] -- orderId + refreshKey --> tl[OrderTimeline]
+    tl --> api["GET /orders/id/timeline"]
+    api -- rows for this caller --> tl
+    tl --> dom[describeTimelineEntry]
+    dom --> line[title + detail]
+```
+
+## The CSV export
+
+The staff list (`/sales/orders`) offers **Export CSV** to whoever holds `orders.any.export`
+(manager, admin). It sends the filters on screen through the same mapping as the search
+(`criteriaOf` in `store.ts`), so the file is the list the viewer was looking at, minus paging. The
+key is step-up gated: the HTTP layer's prompt asks for the password and replays the request. Two
+refusals have their own words: `422 ORDER_EXPORT_TOO_LARGE` (narrow the filters) and `429` (the
+per-account budget is spent); anything else shows the server's sentence.
+
 ## The statuses beside `status`, and the withdrawal button
 
 The detail page shows three read-only words next to the order's own status, each straight from the
@@ -169,6 +201,8 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /orders/{id}/invoice`          | `GetOrderInvoiceResponse`      |
 | `GET /orders/{id}/credit-notes`     | `ListOrderCreditNotesResponse` |
 | `POST /orders/search`               | `SearchOrdersResponse`         |
+| `GET /orders/export`                | `ExportOrdersResponse`         |
+| `GET /orders/{id}/timeline`         | `GetOrderTimelineResponse`     |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

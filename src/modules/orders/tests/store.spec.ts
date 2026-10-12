@@ -24,7 +24,9 @@ import {
     restoreOrderById,
     getOrderInvoice,
     listOrderCreditNotes,
-    getOrderCreditNote
+    getOrderCreditNote,
+    getOrderTimeline,
+    exportOrders
 } from '@api';
 import * as schemas from '@api/schemas';
 import {
@@ -43,6 +45,11 @@ const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netT
  * Fixture PDF blob returned by the mocked invoice endpoint.
  */
 const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+
+/**
+ * Fixture timeline, as the endpoint's envelope carries it.
+ */
+const TIMELINE = [{ id: 'e1', at: '2026-10-01T10:00:00.000Z', type: 'created', data: {} }];
 
 /**
  * Fixture credit-note list, as the list endpoint's envelope carries it.
@@ -90,6 +97,8 @@ vi.mock('@api', () => ({
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE)),
     listOrderCreditNotes: vi.fn(() => Promise.resolve({ data: CREDIT_NOTES })),
     getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
+    getOrderTimeline: vi.fn(() => Promise.resolve({ data: TIMELINE })),
+    exportOrders: vi.fn(() => Promise.resolve('createdAt,orderNumber\n')),
     // The contract's sort enum: the store reads it to drop a sort the API would refuse.
     OrderSortItem: { createdAt: 'createdAt', '-createdAt': '-createdAt', status: 'status' }
 }));
@@ -240,6 +249,53 @@ describe('useOrdersStore', () => {
                     expect(getOrderCreditNote).toHaveBeenCalledExactlyOnceWith('o1', 'cn1');
                     expect(result).toBe(INVOICE);
                 }));
+    });
+
+    describe('fetchTimeline', () => {
+        it('unwraps the envelope to the entries', () =>
+            useOrdersStore()
+                .fetchTimeline('o1')
+                .then((result) => {
+                    expect(getOrderTimeline).toHaveBeenCalledExactlyOnceWith('o1');
+                    expect(result).toEqual(TIMELINE);
+                }));
+    });
+
+    describe('exportOrdersCsv', () => {
+        it('asks for the own criteria of the list, without paging, and returns a CSV file', () =>
+            useOrdersStore()
+                .exportOrdersCsv({
+                    status: 'paid',
+                    email: 'a@b.c',
+                    id: 'o1',
+                    createdFrom: '2026-10-01'
+                })
+                .then((file) => {
+                    expect(exportOrders).toHaveBeenCalledTimes(1);
+                    const [query, options] = vi.mocked(exportOrders).mock.calls[0] ?? [];
+                    expect(query).toMatchObject({
+                        status: 'paid',
+                        email: 'a@b.c',
+                        id: ['o1']
+                    });
+                    // The calendar day became an instant (its zone is the browser's, so only the shape is fixed).
+                    expect(query?.createdFrom).toEqual(expect.stringContaining('T'));
+                    expect(query).not.toHaveProperty('page');
+                    // The body is text, never JSON-parsed on its way in.
+                    expect(options).toEqual({ responseType: 'text' });
+                    expect(file.type).toContain('text/csv');
+                    return file.text();
+                })
+                .then((text) => {
+                    expect(text).toBe('createdAt,orderNumber\n');
+                }));
+
+        it('lets a refusal through untouched', () => {
+            const refusal = { status: 422, errors: [{ code: 'ORDER_EXPORT_TOO_LARGE' }] };
+            vi.mocked(exportOrders).mockRejectedValueOnce(refusal);
+
+            return expect(useOrdersStore().exportOrdersCsv({})).rejects.toBe(refusal);
+        });
     });
 
     describe('fetchOrder', () => {

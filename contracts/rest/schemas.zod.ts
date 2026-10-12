@@ -7768,7 +7768,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     })
 });
 /**
- * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's override history. Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatusPathIdMax = 64;
@@ -12182,6 +12182,18 @@ export const downloadAccountExportResponseOrdersItemBillingAddressCountryMax = 2
 export const downloadAccountExportResponseOrdersItemBillingAddressCountryRegExp = new RegExp(
     '^[A-Z]{2}$'
 );
+export const downloadAccountExportResponseOrderTimelineItemOneIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemOneIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseOrderTimelineItemOneActorOneMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemOneActorOneRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseOrderTimelineItemTwoOrderIdMax = 64;
+export const downloadAccountExportResponseOrderTimelineItemTwoOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const downloadAccountExportResponsePaymentsItemIdMax = 64;
 export const downloadAccountExportResponsePaymentsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponsePaymentsItemOrderIdMax = 64;
@@ -12629,6 +12641,54 @@ export const DownloadAccountExportResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
             deletedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+    ),
+    orderTimeline: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseOrderTimelineItemOneIdMax)
+                .regex(downloadAccountExportResponseOrderTimelineItemOneIdRegExp),
+            at: zod.iso.datetime({ offset: true }),
+            type: zod.enum([
+                'created',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled',
+                'status_overridden',
+                'payment_declined',
+                'refund_issued',
+                'refund_settled',
+                'refund_failed',
+                'shipment_shipped',
+                'shipment_delivered',
+                'fulfillment_held',
+                'fulfillment_released',
+                'remainder_cancelled',
+                'return_requested',
+                'return_approved',
+                'return_declined',
+                'return_received',
+                'return_closed',
+                'invoice_issued',
+                'credit_note_issued'
+            ]),
+            actor: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseOrderTimelineItemOneActorOneMax)
+                .regex(downloadAccountExportResponseOrderTimelineItemOneActorOneRegExp)
+                .optional(),
+            text: zod.string().optional(),
+            data: zod.record(zod.string(), zod.unknown()),
+            orderId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseOrderTimelineItemTwoOrderIdMax)
+                .regex(downloadAccountExportResponseOrderTimelineItemTwoOrderIdRegExp)
         })
     ),
     payments: zod.array(
@@ -13148,6 +13208,158 @@ export const MergeCartResponse = zod.strictObject({
             })
         )
     })
+});
+/**
+ * The list's filters, answered as one `text/csv` file: every matching order in the list's own
+ * order, one line each, streamed. Columns: `createdAt`, `orderNumber`, `status`,
+ * `paymentStatus`, `fulfillmentStatus`, `returnStatus`, `email`, `lines`, `units`, `total`,
+ * `currency`, `paymentMethod`, `paidAt`. No address: both are encrypted at rest and an export is
+ * no reason to read them.
+ *
+ * Requires `orders.any.export` (manager and admin), which is step-up gated (`sensitive`): the file
+ * carries every customer's email, so the caller must have proved themselves recently. An API key
+ * holds no session and cannot export. Over `NODE_ORDER_EXPORT_MAX_ROWS` rows the answer is `422`
+ * `ORDER_EXPORT_TOO_LARGE`, before any byte of the file; narrow the filters. A cell that would
+ * start a formula in a spreadsheet (`=`, `+`, `-`, `@`, tab, carriage return) is prefixed with
+ * `'`. Every export is audited (`admin.orders.exported`: the filter and the row count, never a
+ * row) and has its own per-account rate budget.
+ *
+ * The response is never cached: `Cache-Control: private, no-store`.
+ * @summary Export orders as CSV
+ */
+export const exportOrdersQuerySortMax = 5;
+export const exportOrdersQueryIdItemMax = 64;
+export const exportOrdersQueryIdItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const exportOrdersQueryIdMax = 100;
+export const exportOrdersQueryUserIdMax = 64;
+export const exportOrdersQueryUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const exportOrdersQueryProductIdMax = 64;
+export const exportOrdersQueryProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const exportOrdersQueryEmailMax = 254;
+export const ExportOrdersQueryParams = zod.strictObject({
+    sort: zod
+        .array(
+            zod.enum([
+                'createdAt',
+                '-createdAt',
+                'status',
+                '-status',
+                'email',
+                '-email',
+                'payBy',
+                '-payBy',
+                'paidAt',
+                '-paidAt'
+            ])
+        )
+        .min(1)
+        .max(exportOrdersQuerySortMax)
+        .optional(),
+    id: zod
+        .array(
+            zod.string().min(1).max(exportOrdersQueryIdItemMax).regex(exportOrdersQueryIdItemRegExp)
+        )
+        .min(1)
+        .max(exportOrdersQueryIdMax)
+        .optional(),
+    userId: zod
+        .string()
+        .min(1)
+        .max(exportOrdersQueryUserIdMax)
+        .regex(exportOrdersQueryUserIdRegExp)
+        .optional(),
+    productId: zod
+        .string()
+        .min(1)
+        .max(exportOrdersQueryProductIdMax)
+        .regex(exportOrdersQueryProductIdRegExp)
+        .optional(),
+    email: zod.email().max(exportOrdersQueryEmailMax).optional(),
+    status: zod
+        .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+        .optional(),
+    fulfillmentStatus: zod
+        .enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ])
+        .optional(),
+    paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
+    deleted: zod.boolean().optional(),
+    createdFrom: zod.iso.datetime({ offset: true }).optional(),
+    createdTo: zod.iso.datetime({ offset: true }).optional(),
+    paidFrom: zod.iso.datetime({ offset: true }).optional(),
+    paidTo: zod.iso.datetime({ offset: true }).optional(),
+    paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']).optional(),
+    returnStatus: zod
+        .enum(['none', 'requested', 'in_progress', 'partially_returned', 'returned'])
+        .optional()
+});
+export const ExportOrdersResponse = zod.unknown();
+/**
+ * What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `orders.any.read` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
+ * @summary The order's timeline
+ */
+export const getOrderTimelinePathIdMax = 64;
+export const getOrderTimelinePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetOrderTimelineParams = zod.strictObject({
+    id: zod.string().min(1).max(getOrderTimelinePathIdMax).regex(getOrderTimelinePathIdRegExp)
+});
+export const getOrderTimelineResponseDataItemIdMax = 64;
+export const getOrderTimelineResponseDataItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getOrderTimelineResponseDataItemActorOneMax = 64;
+export const getOrderTimelineResponseDataItemActorOneRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetOrderTimelineResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getOrderTimelineResponseDataItemIdMax)
+                .regex(getOrderTimelineResponseDataItemIdRegExp),
+            at: zod.iso.datetime({ offset: true }),
+            type: zod.enum([
+                'created',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled',
+                'status_overridden',
+                'payment_declined',
+                'refund_issued',
+                'refund_settled',
+                'refund_failed',
+                'shipment_shipped',
+                'shipment_delivered',
+                'fulfillment_held',
+                'fulfillment_released',
+                'remainder_cancelled',
+                'return_requested',
+                'return_approved',
+                'return_declined',
+                'return_received',
+                'return_closed',
+                'invoice_issued',
+                'credit_note_issued'
+            ]),
+            actor: zod
+                .string()
+                .min(1)
+                .max(getOrderTimelineResponseDataItemActorOneMax)
+                .regex(getOrderTimelineResponseDataItemActorOneRegExp)
+                .optional(),
+            text: zod.string().optional(),
+            data: zod.record(zod.string(), zod.unknown())
+        })
+    )
 });
 /**
  * Every payment in the shop, newest first, for the staff Payments page. Needs `payments.any.read`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
