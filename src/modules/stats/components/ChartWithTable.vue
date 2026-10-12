@@ -19,6 +19,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Download, Table2, ChartColumn } from 'lucide-vue-next';
 import { downloadBlob } from '@guebbit/js-toolkit';
+import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import { chartTable, pieChartSource, toCsv, xyChartSource } from '../domain';
 import type { ChartModel } from '../domain';
 import MermaidChart from './MermaidChart.vue';
@@ -111,7 +112,12 @@ const downloadCsv = () => {
             {{ t('stats-page.no-data') }}
         </p>
 
-        <v-table v-else-if="asTable" density="compact" data-test="chart-table">
+        <v-table
+            v-else-if="asTable"
+            v-focusable-scroll="chart.title"
+            density="compact"
+            data-test="chart-table"
+        >
             <caption class="sr-only">
                 {{
                     chart.title
