@@ -67,13 +67,14 @@ link, so a visible link can never bounce you.
 
 The requirement has two halves, and they are ANDed:
 
-| Field                         | Effect                                                                                                                              |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `meta.access` absent          | No standing required.                                                                                                               |
-| `meta.access: 'auth'`         | Must be logged in. Redirects to `/login?continue=<current-path>` on failure.                                                        |
-| `meta.access: 'guest'`        | Must NOT be logged in. Redirects to Home if already authenticated.                                                                  |
-| `meta.access: 'open'`         | Anyone: a guest passes, and a signed-in visitor still has to hold `meta.can`. The cart's own (a guest has one, staff do not).       |
-| `meta.can: [action, subject]` | Must hold that rule. Redirects to Home on failure — logging in again cannot grant a permission, so no `continue` target is offered. |
+| Field                         | Effect                                                                                                                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `meta.access` absent          | No standing required.                                                                                                                                                                                                    |
+| `meta.access: 'auth'`         | Must be logged in. Redirects to `/login?continue=<current-path>` on failure.                                                                                                                                             |
+| `meta.access: 'guest'`        | Must NOT be logged in. Redirects to Home if already authenticated.                                                                                                                                                       |
+| `meta.access: 'open'`         | Anyone: a guest passes, and a signed-in visitor still has to hold `meta.can`. The cart's own (a guest has one, staff do not).                                                                                            |
+| `meta.can: [action, subject]` | Must hold that rule. Redirects to Home on failure — logging in again cannot grant a permission, so no `continue` target is offered.                                                                                      |
+| `meta.others: true`           | With `meta.can`: the rule must be held on OTHER people's rows (`session.canOnOthers`). A customer holds `orders.self.read`, which answers `can` yes; only `orders.any.read` answers this. The staff orders page uses it. |
 
 **There is no `admin` level, and that is the point.** A screen names the permission it needs —
 `['update', 'Product']`, `['read', 'User']` — and the answer comes from the rules the API

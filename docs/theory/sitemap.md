@@ -72,7 +72,8 @@ Every screen the enabled modules contribute, generated from their route records 
 
 Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
 `meta.can`, the `[action, subject]` rule evaluated against the caller's own rules from
-`GET /account/abilities`. Together they are the only place a screen's requirement is declared; a
+`GET /account/abilities` — suffixed `(others)` when the route also sets `meta.others`, which asks for
+the rule on other people's rows, not just the visitor's own. Together they are the only place a screen's requirement is declared; a
 menu entry inherits both rather than restating them. There is no `admin` level: a screen names the
 permission it needs, because "administrator" could never say _of what_.
 
@@ -85,6 +86,8 @@ A navigation entry also says **where** it sits, with `section` — placement, ne
 | `main`    | Inline in the app bar, each entry its glyph and its label in full       | Under "Browse"         |
 | `account` | The account menu (the signed-in visitor's icon), with logout at the end | Under "Your account"   |
 | `admin`   | The staff menu, rendered only when at least one entry is reachable      | Under "Administration" |
+
+An entry can also carry a **`group`**, the i18n key of a sub-heading inside its menu or drawer section. The heading is drawn once above the first entry of a run that shares it, so entries of one group should be adjacent by `order`. The admin menu's "Sales" group (orders, payments, statistics) is the case. Like `section`, it is presentation: it grants and hides nothing.
 
 Every entry carries a lucide `icon`. Whether a section's chrome renders at all follows from the same `meta.access` rule as the entries: an anonymous visitor sees neither menu, and a drawer heading appears only above something visible.
 

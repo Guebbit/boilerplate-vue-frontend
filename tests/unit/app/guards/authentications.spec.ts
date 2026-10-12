@@ -15,12 +15,16 @@ const addMessageMock = vi.fn();
  */
 const held = new Set<string>();
 
+/** The rules the mocked session holds on OTHER people's rows (an `any` key). */
+const heldOnOthers = new Set<string>();
+
 /** The sign-in flag the mocked store answers with. */
 const visitorStanding = { isAuth: ref(false) };
 
 vi.mock('@/infrastructure/session', () => ({
     useSessionStore: () => ({
-        can: (action: string, subject: string) => held.has(`${action} ${subject}`)
+        can: (action: string, subject: string) => held.has(`${action} ${subject}`),
+        canOnOthers: (action: string, subject: string) => heldOnOthers.has(`${action} ${subject}`)
     })
 }));
 
@@ -41,17 +45,24 @@ vi.mock('@/i18n', () => ({
 }));
 
 /** A route carrying just what `enforceRouteAccess` reads off it. */
-const route = (access?: RouteAccess, can?: RoutePermission) =>
+const route = (access?: RouteAccess, can?: RoutePermission, others?: boolean) =>
     asStub<RouteLocationNormalized>({
         fullPath: '/en/target',
         params: { locale: 'en' },
-        meta: { ...(access ? { access } : {}), ...(can ? { can } : {}) }
+        meta: {
+            ...(access ? { access } : {}),
+            ...(can ? { can } : {}),
+            ...(others ? { others } : {})
+        }
     });
 
 /** A visitor of the given standing, answering rules from the given `"action subject"` list. */
 const visitor = (isAuth: boolean, ...rules: string[]) => ({
     isAuth,
-    can: (action: PermissionAction, subject: string) => rules.includes(`${action} ${subject}`)
+    can: (action: PermissionAction, subject: string) => rules.includes(`${action} ${subject}`),
+    // Rules prefixed `any:` are held on others' rows; plain ones are the visitor's own.
+    canOnOthers: (action: PermissionAction, subject: string) =>
+        rules.includes(`any:${action} ${subject}`)
 });
 
 /** A minimal router stub — only `hasRoute`, which is all `enforceRouteAccess` reads off it. */
@@ -68,6 +79,12 @@ const customer = visitor(true);
 
 /** A signed-in visitor who may update products and read translations. */
 const editor = visitor(true, 'update Product', 'read Translation');
+
+/** A customer: reads orders, but only their own. */
+const shopper = visitor(true, 'read Order');
+
+/** Staff: reads every order, so holds the rule on others' rows as well. */
+const orderStaff = visitor(true, 'read Order', 'any:read Order');
 
 /** A signed-in visitor who may also read users. */
 const owner = visitor(true, 'update Product', 'read Translation', 'read User');
@@ -109,7 +126,19 @@ describe('canAccess', () => {
         ['open', { access: 'open' }, customer, true],
         ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, guest, true],
         ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, customer, false],
-        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, editor, true]
+        ['open-with-rule', { access: 'open', can: ['update', 'Product'] }, editor, true],
+        // `others`: the same rule, but on other people's rows. A customer's own-rows key opens the
+        // plain route and not this one; staff, who hold both, open either.
+        ['own-orders', { access: 'auth', can: ['read', 'Order'] }, shopper, true],
+        ['others-orders', { access: 'auth', can: ['read', 'Order'], others: true }, shopper, false],
+        [
+            'others-orders',
+            { access: 'auth', can: ['read', 'Order'], others: true },
+            orderStaff,
+            true
+        ],
+        ['others-orders', { access: 'auth', can: ['read', 'Order'], others: true }, guest, false],
+        ['others-orders', { access: 'auth', can: ['read', 'Order'], others: true }, customer, false]
     ] as const)('%s route -> %s', (_label, meta, who, expected) => {
         expect(canAccess(meta, who)).toBe(expected);
     });
@@ -120,6 +149,7 @@ describe('enforceRouteAccess', () => {
         vi.clearAllMocks();
         visitorStanding.isAuth.value = false;
         held.clear();
+        heldOnOthers.clear();
     });
 
     it('lets a permitted navigation through without notifying anything', () => {
@@ -194,6 +224,21 @@ describe('enforceRouteAccess', () => {
             enforceRouteAccess(route('auth', ['read', 'User']), routerWithLogin)
         ).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();
+    });
+
+    it('turns a customer away from a route that needs the rule on others, staff through', () => {
+        visitorStanding.isAuth.value = true;
+        held.add('read Order');
+
+        expect(enforceRouteAccess(route('auth', ['read', 'Order'], true), routerWithLogin)).toEqual(
+            { name: 'Home', params: { locale: 'en' } }
+        );
+        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
+
+        heldOnOthers.add('read Order');
+        expect(
+            enforceRouteAccess(route('auth', ['read', 'Order'], true), routerWithLogin)
+        ).toBeUndefined();
     });
 
     it('refuses a visitor who holds a different rule on the same subject', () => {

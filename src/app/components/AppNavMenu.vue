@@ -122,27 +122,35 @@ const focusFirstItemOnOpen = () => {
                 {{ description }}
             </v-list-subheader>
 
-            <v-list-item
-                v-for="item in items"
-                :key="item.name"
-                role="menuitem"
-                :to="item.to"
-                color="primary"
-            >
-                <template v-if="item.icon" #prepend>
-                    <component :is="item.icon" :size="20" class="mr-3" aria-hidden="true" />
-                </template>
-                <v-list-item-title>
-                    {{ item.title }}
-                    <v-badge
-                        v-if="item.badge"
-                        :content="item.badge"
-                        :label="t('navigation.badge-items', item.badge)"
-                        color="primary"
-                        inline
-                    />
-                </v-list-item-title>
-            </v-list-item>
+            <template v-for="(item, index) in items" :key="item.name">
+                <!--
+                    A group heading, once, above the first entry of a run that shares it. Hidden
+                    from the reader like the description above: a heading is not a permitted child
+                    of a `menu`, and each entry's own title already says what it is.
+                -->
+                <v-list-subheader
+                    v-if="item.group && item.group !== items[index - 1]?.group"
+                    aria-hidden="true"
+                    data-test="menu-group"
+                >
+                    {{ item.group }}
+                </v-list-subheader>
+                <v-list-item role="menuitem" :to="item.to" color="primary">
+                    <template v-if="item.icon" #prepend>
+                        <component :is="item.icon" :size="20" class="mr-3" aria-hidden="true" />
+                    </template>
+                    <v-list-item-title>
+                        {{ item.title }}
+                        <v-badge
+                            v-if="item.badge"
+                            :content="item.badge"
+                            :label="t('navigation.badge-items', item.badge)"
+                            color="primary"
+                            inline
+                        />
+                    </v-list-item-title>
+                </v-list-item>
+            </template>
 
             <slot name="after" />
         </v-list>

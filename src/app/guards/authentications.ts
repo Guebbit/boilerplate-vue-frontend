@@ -64,6 +64,13 @@ declare module 'vue-router' {
          */
         can?: RoutePermission;
         /**
+         * Makes {@link can} mean the permission on OTHER people's rows (an `any` key), not on the
+         * visitor's own (`self`). `['read', 'Order']` alone admits a customer, who holds
+         * `orders.self.read`; a staff screen sets this so only `orders.any.read` opens it.
+         * Meaningless without `can`.
+         */
+        others?: boolean;
+        /**
          * Dictionary key of the page's title, resolved into `document.title` after every
          * navigation (WCAG 2.4.2), read out by the route announcer, and translated by
          * `LayoutDefault` (the route's own layout) as the default page hero. Absent on the
@@ -99,21 +106,26 @@ declare module 'vue-router' {
  * abilities are consulted at all. The one exception is `access: 'open'`, which lets the anonymous
  * through and asks `meta.can` only of a signed-in visitor.
  *
- * @param meta - the route's requirement: `access` (standing) and `can` (permission). Both absent
- *  means public.
- * @param visitor - `isAuth`, plus the `can` the session store answers rules with.
+ * @param meta - the route's requirement: `access` (standing), `can` (permission) and `others`
+ *  (that permission held on other people's rows). All absent means public.
+ * @param visitor - `isAuth`, plus the `can` and `canOnOthers` the session store answers rules with.
  * @returns `true` when the route may be entered and its link shown.
  */
 export const canAccess = (
-    meta: Pick<RouteMeta, 'access' | 'can'>,
-    visitor: { isAuth: boolean; can: (action: PermissionAction, subject: string) => boolean }
+    meta: Pick<RouteMeta, 'access' | 'can' | 'others'>,
+    visitor: {
+        isAuth: boolean;
+        can: (action: PermissionAction, subject: string) => boolean;
+        canOnOthers: (action: PermissionAction, subject: string) => boolean;
+    }
 ): boolean => {
     if (meta.access === 'guest') return !visitor.isAuth;
     if (meta.access === 'auth' && !visitor.isAuth) return false;
     if (meta.access === 'open' && !visitor.isAuth) return true;
     if (!meta.can) return true;
 
-    return visitor.isAuth && visitor.can(meta.can[0], meta.can[1]);
+    const holds = meta.others ? visitor.canOnOthers : visitor.can;
+    return visitor.isAuth && holds(meta.can[0], meta.can[1]);
 };
 
 /**
@@ -184,7 +196,7 @@ export const enforceRouteAccess = (
     const { isAuth } = storeToRefs(session);
     // `can` is a plain function on the store, not a ref — `storeToRefs` drops actions, so it is
     // read off the store itself and stays bound to the live abilities.
-    const visitor = { isAuth: isAuth.value, can: session.can };
+    const visitor = { isAuth: isAuth.value, can: session.can, canOnOthers: session.canOnOthers };
     if (canAccess(to.meta, visitor)) return;
 
     const locale = to.params.locale as string;

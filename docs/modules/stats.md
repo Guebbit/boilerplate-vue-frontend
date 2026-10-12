@@ -133,7 +133,7 @@ The permission is `stats.any.read`, which the backend grants to `manager` and `a
 
 | Route            | Label key                | Section | Order | Icon | Badge |
 | ---------------- | ------------------------ | ------- | ----- | ---- | ----- |
-| `StatsDashboard` | `navigation.label-stats` | `admin` | 63    | yes  | —     |
+| `StatsDashboard` | `navigation.label-stats` | `admin` | 57    | yes  | —     |
 
 ## Libraries
 

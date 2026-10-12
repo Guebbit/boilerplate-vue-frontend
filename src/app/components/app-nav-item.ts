@@ -22,6 +22,11 @@ export interface AppNavItem {
      */
     title: string;
     /**
+     * Translated heading of the group this entry belongs to inside its menu; entries that share one
+     * (and sit next to each other, by `order`) get the heading once above the first.
+     */
+    group?: string;
+    /**
      * Locale-prefixed destination.
      */
     to: RouteLocationRaw;

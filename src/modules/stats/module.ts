@@ -27,7 +27,8 @@ export default {
             name: 'StatsDashboard',
             label: 'navigation.label-stats',
             plural: 1,
-            order: 63,
+            order: 57,
+            group: 'navigation.group-sales',
             section: 'admin',
             icon: ChartNoAxesCombined
         }

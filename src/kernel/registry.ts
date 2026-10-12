@@ -96,6 +96,16 @@ export interface AppNavigationEntry {
     section?: AppNavigationSection;
 
     /**
+     * i18n key of a sub-heading this entry sits under inside its section's menu or drawer, for
+     * pages that belong together ("Sales": orders, payments, statistics). Entries with the same
+     * `group` should be adjacent by `order`: the heading is drawn above the first of a run, so a
+     * stranger between two of them would split the group in two.
+     *
+     * Presentation only, like `section`: it grants and hides nothing.
+     */
+    group?: string;
+
+    /**
      * Also shown as its own button beside the account menu, on every width — the cart is the
      * canonical case: a shop's cart is never behind a dropdown.
      *

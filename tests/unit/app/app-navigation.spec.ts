@@ -40,11 +40,16 @@ import type { RouteAccess, RoutePermission } from '@/app/guards/authentications'
  */
 const held = ref<string[]>([]);
 
+/** The rules held on OTHER people's rows, answered by the mocked `canOnOthers`. */
+const heldOnOthers = ref<string[]>([]);
+
 /** The mocked session store: sign-in state, viewer and a `can` that reads {@link held}. */
 const session = {
     isAuth: ref(false),
     viewer: ref<{ email: string } | undefined>(undefined),
-    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`)
+    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`),
+    canOnOthers: (action: string, subject: string) =>
+        heldOnOthers.value.includes(`${action} ${subject}`)
 };
 
 /**
@@ -66,13 +71,22 @@ const routeAccess: Record<string, RouteAccess | undefined> = {
     LateThing: undefined,
     MemberThing: 'auth',
     PinnedThing: 'auth',
-    StaffThing: 'auth'
+    StaffThing: 'auth',
+    GroupedFirst: 'auth',
+    GroupedSecond: 'auth',
+    OthersThing: 'auth'
 };
 
 /** The permission each route declares, where it declares one. */
 const routePermission: Record<string, RoutePermission | undefined> = {
-    StaffThing: ['read', 'User']
+    StaffThing: ['read', 'User'],
+    GroupedFirst: ['read', 'Group'],
+    GroupedSecond: ['read', 'Group'],
+    OthersThing: ['read', 'Order']
 };
+
+/** Routes whose permission must be held on other people's rows. */
+const routeOthers = new Set(['OthersThing']);
 
 /** The live count behind the member entry's badge; `0` renders no badge at all. */
 const memberCount = ref(0);
@@ -105,6 +119,30 @@ vi.mock('@/modules', () => ({
                     name: 'StaffThing',
                     label: 'navigation.label-staff',
                     order: 90,
+                    section: 'admin',
+                    icon: Glyph
+                },
+                // Two neighbours sharing a group heading, with a stranger after them.
+                {
+                    name: 'GroupedFirst',
+                    label: 'navigation.label-grouped-first',
+                    order: 91,
+                    section: 'admin',
+                    group: 'navigation.group-grouped',
+                    icon: Glyph
+                },
+                {
+                    name: 'GroupedSecond',
+                    label: 'navigation.label-grouped-second',
+                    order: 92,
+                    section: 'admin',
+                    group: 'navigation.group-grouped',
+                    icon: Glyph
+                },
+                {
+                    name: 'OthersThing',
+                    label: 'navigation.label-others',
+                    order: 93,
                     section: 'admin',
                     icon: Glyph
                 },
@@ -178,7 +216,11 @@ vi.mock('vue-router', () => ({
         push: pushSpy,
         replace: vi.fn(),
         resolve: ({ name }: { name: string }) => ({
-            meta: { access: routeAccess[name], can: routePermission[name] }
+            meta: {
+                access: routeAccess[name],
+                can: routePermission[name],
+                others: routeOthers.has(name) || undefined
+            }
         }),
         hasRoute: (name: string) => registeredRoutes.value.includes(name)
     })
@@ -240,6 +282,7 @@ describe('Navigation', () => {
     beforeEach(() => {
         session.isAuth.value = false;
         held.value = [];
+        heldOnOthers.value = [];
         session.viewer.value = undefined;
         registeredRoutes.value = ['Login', 'Signup'];
         currentRoute.value = { fullPath: '/' };
@@ -303,6 +346,50 @@ describe('Navigation', () => {
         expect(text.indexOf('navigation.label-member')).toBeLessThan(
             text.indexOf('navigation.label-staff')
         );
+    });
+
+    describe('a menu group', () => {
+        beforeEach(() => {
+            session.isAuth.value = true;
+            held.value = ['read Group'];
+        });
+
+        it('draws its heading once above the first of a run of neighbours, in the menu', () => {
+            const headings = mountNav().wrapper.findAll('header [data-test=menu-group]');
+            expect(headings.map((heading) => heading.text())).toEqual(['navigation.group-grouped']);
+        });
+
+        it('draws it once in the drawer too, above the first grouped entry', () => {
+            const drawer = mountNav().wrapper.find('#app-drawer');
+            expect(drawer.findAll('[data-test=drawer-group]')).toHaveLength(1);
+            const text = drawer.text();
+            expect(text.indexOf('navigation.group-grouped')).toBeLessThan(
+                text.indexOf('navigation.label-grouped-first')
+            );
+            expect(text.indexOf('navigation.label-grouped-first')).toBeLessThan(
+                text.indexOf('navigation.label-grouped-second')
+            );
+        });
+
+        it('draws no heading for an entry with no group', () => {
+            const { text } = mountNav();
+            expect(text.match(/navigation\.group-grouped/g)).toHaveLength(2);
+        });
+    });
+
+    describe('an entry whose permission must be held on others', () => {
+        it('is hidden from someone who holds it only on their own rows', () => {
+            session.isAuth.value = true;
+            held.value = ['read Order'];
+            expect(mountNav().text).not.toContain('navigation.label-others');
+        });
+
+        it("is shown to someone who holds it on other people's rows", () => {
+            session.isAuth.value = true;
+            held.value = ['read Order'];
+            heldOnOthers.value = ['read Order'];
+            expect(mountNav().text).toContain('navigation.label-others');
+        });
     });
 
     it('offers sign-in and sign-up when the account routes are registered', () => {

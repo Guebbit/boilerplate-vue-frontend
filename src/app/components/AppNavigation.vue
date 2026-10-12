@@ -195,12 +195,13 @@ const badgeDetails = new Map(
  * @returns The localized, locale-prefixed visible entries, keyed by section.
  */
 const visibleSections = computed((): Record<AppNavigationSection, AppNavItem[]> => {
-    const visitor = { isAuth: isAuth.value, can: session.can };
+    const visitor = { isAuth: isAuth.value, can: session.can, canOnOthers: session.canOnOthers };
     const resolve = (entries: AppNavigationEntry[]): AppNavItem[] =>
         entries
             .filter(({ name }) => canAccess(router.resolve({ name }).meta, visitor))
-            .map(({ name, label, plural, icon, pinned }) => ({
+            .map(({ name, label, plural, icon, pinned, group }) => ({
                 name,
+                group: group ? t(group) : undefined,
                 // `plural` is optional on the manifest: a module that has not thought about it
                 // gets the singular, which is what every entry wanted before the field existed.
                 title: t(label, plural ?? 1),
@@ -443,27 +444,43 @@ const toggleTheme = () => {
                     <v-list-subheader :data-test="`drawer-section-${section}`">
                         {{ t(`navigation.section-${section}`) }}
                     </v-list-subheader>
-                    <v-list-item
-                        v-for="item in visibleSections[section]"
+                    <template
+                        v-for="(item, index) in visibleSections[section]"
                         :key="'drawer-' + item.name"
-                        :to="item.to"
-                        color="primary"
                     >
-                        <template v-if="item.icon" #prepend>
-                            <component :is="item.icon" :size="20" class="mr-3" aria-hidden="true" />
-                        </template>
-                        <!-- `capitalize` on the title itself: on the item it never reached the text. -->
-                        <v-list-item-title class="capitalize">
-                            {{ item.title }}
-                            <v-badge
-                                v-if="item.badge"
-                                :content="item.badge"
-                                :label="t('navigation.badge-items', item.badge)"
-                                color="primary"
-                                inline
-                            />
-                        </v-list-item-title>
-                    </v-list-item>
+                        <!-- A group heading, once, above the first entry of a run that shares it. -->
+                        <v-list-subheader
+                            v-if="
+                                item.group &&
+                                item.group !== visibleSections[section][index - 1]?.group
+                            "
+                            class="pl-6"
+                            data-test="drawer-group"
+                        >
+                            {{ item.group }}
+                        </v-list-subheader>
+                        <v-list-item :to="item.to" color="primary">
+                            <template v-if="item.icon" #prepend>
+                                <component
+                                    :is="item.icon"
+                                    :size="20"
+                                    class="mr-3"
+                                    aria-hidden="true"
+                                />
+                            </template>
+                            <!-- `capitalize` on the title itself: on the item it never reached the text. -->
+                            <v-list-item-title class="capitalize">
+                                {{ item.title }}
+                                <v-badge
+                                    v-if="item.badge"
+                                    :content="item.badge"
+                                    :label="t('navigation.badge-items', item.badge)"
+                                    color="primary"
+                                    inline
+                                />
+                            </v-list-item-title>
+                        </v-list-item>
+                    </template>
                 </template>
             </template>
 
