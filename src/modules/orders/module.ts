@@ -3,6 +3,7 @@
  * Module manifest: wires the orders routes, nav entry, response schemas and
  * locale loaders into the app's module registry.
  */
+import { defineAsyncComponent } from 'vue';
 import { ClipboardList, ReceiptText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
@@ -23,8 +24,8 @@ import routes from './routes';
  * button is the same shape again: `Order.vue` mounts `returns`' `WithdrawalPanel`, which owns the
  * confirmation and the order's returns list, so `orders` never calls a returns operation itself.
  *
- * The customer’s history, the staff's own page over the same list (`SalesOrders`) and the admin
- * status screens. Where the shop’s outcome becomes visible — but the invariants that decide a
+ * The customer’s history, the staff's own page over the same list (`SalesOrders`), the payments
+ * page's "Awaiting transfer" tab (a slot `payments` owns) and the admin status screens. Where the shop’s outcome becomes visible — but the invariants that decide a
  * status live behind the API, not here.
  */
 export default {
@@ -50,6 +51,12 @@ export default {
             icon: ClipboardList
         }
     ],
+    // The payments page's "Awaiting transfer" tab reads orders, so it is filled from here.
+    slots: {
+        'payments-awaiting-transfer': [
+            defineAsyncComponent(() => import('./components/AwaitingTransferTable.vue'))
+        ]
+    },
     responseSchemas: () => import('./response-schemas').then((m) => m.ordersResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),

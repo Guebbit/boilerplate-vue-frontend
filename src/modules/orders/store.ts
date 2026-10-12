@@ -5,12 +5,13 @@
  * `fetchCreditNote`)
  * for endpoints that don't fit the toolkit's record-shaped primitives.
  */
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
-import { endOfDayInstant, startOfDayInstant } from './domain';
+import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import {
     listOrders,
     searchOrders,
@@ -264,6 +265,41 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
+     * The bank transfers still owed, nearest deadline first — the payments page's "Awaiting
+     * transfer" tab. Held apart from `filters`/`ordersList`: it is another list on another page,
+     * and must not borrow the staff orders page's filters.
+     */
+    const awaitingTransfers = ref<Order[]>([]);
+
+    /**
+     * How many transfers are owed, across every page.
+     */
+    const awaitingTransfersTotal = ref(0);
+
+    /**
+     * Loads a page of orders waiting for a bank transfer (`pending`, method `bank_transfer`), by
+     * nearest `payBy`. No payment exists for them yet — the money is recorded by hand.
+     *
+     * @param page - 1-based page.
+     * @param pageSize - Rows per page.
+     * @returns A promise resolving with the page's orders.
+     */
+    const fetchAwaitingTransfers = (page: number, pageSize: number) =>
+        fetchAny(() =>
+            searchOrders({
+                page,
+                pageSize,
+                paymentMethod: 'bank_transfer',
+                status: 'pending',
+                sort: ['payBy']
+            }).then((response) => {
+                awaitingTransfers.value = response.data.items;
+                awaitingTransfersTotal.value = response.data.meta.totalItems;
+                return awaitingTransfers.value;
+            })
+        );
+
+    /**
      * Fetches an order's invoice, rendered by the server on every request — there is no pending
      * state to wait out any more.
      *
@@ -309,6 +345,9 @@ export const useOrdersStore = defineStore('orders', () => {
         overrideStatus,
         hardDeleteOrder,
         restoreOrder,
+        awaitingTransfers,
+        awaitingTransfersTotal,
+        fetchAwaitingTransfers,
         fetchInvoice,
         fetchCreditNotes: listCreditNotes,
         fetchCreditNote

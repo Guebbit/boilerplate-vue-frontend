@@ -85,7 +85,15 @@ page drops an owner left behind by it. `SalesOrders` sets `meta.others`, because
 
 Both pages narrow by status, fulfilment, payment state, return state and two date ranges (placed,
 paid), and show when each order was paid. The four dates are calendar days in the store and are sent
-as inclusive instants (`domain/day-range.ts`), in the browser's zone.
+as inclusive instants (`src/infrastructure/utils/day-range.ts`), in the browser's zone.
+
+## The payments page's "Awaiting transfer" tab
+
+`AwaitingTransferTable.vue` lists the orders owed a bank transfer (pending, `bank_transfer`, nearest
+`payBy` first) and opens `payments`' `RecordOfflinePaymentForm` in a dialog per row. It is not a
+route of this module: `payments` owns the page and a slot, `payments-awaiting-transfer`, and this
+module fills it from its manifest. That direction avoids a `payments → orders` import, which would
+close a cycle with the panel `orders` already mounts. See [the payments page](./payments.md#the-staff-payments-page).
 
 ## Permanent delete: cancel first
 
@@ -177,13 +185,11 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `routes.ts`                               | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                                           | [read](../theory/sitemap.md)          |
 | `schemas.ts`                              | Form schemas for this domain. Hand-written: only the contract's numeric constraints (minimums) are read from `@api/schemas`, so the rest of a rule can drift from the request body — `VITE_VALIDATE_REQUESTS` checks the real body at send time. | [read](../api/openapi-workflow.md)    |
 | `store.ts`                                | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                                                                           | [read](../tools/state-and-routing.md) |
-| `domain/day-range.ts`                     | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                                                                                       | [read](../theory/domain-layer.md)     |
 | `tests/cancel.spec.ts`                    | Vitest suite — `cancel`, in isolation.                                                                                                                                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/e2e/__snapshots__/orders-list.png` | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
 | `tests/e2e/a11y.cy.ts`                    | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                                | [read](../tools/component-testing.md) |
 | `tests/e2e/orders.cy.ts`                  | Cypress suite — the `orders` screens, in a browser.                                                                                                                                                                                              | [read](../tools/component-testing.md) |
 | `tests/e2e/orders.visual.cy.ts`           | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                                              | [read](../tools/component-testing.md) |
-| `tests/day-range-domain.spec.ts`          | Vitest suite — the `day-range-domain` rules in isolation.                                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
 | `tests/routes.spec.ts`                    | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
 | `tests/schemas-i18n.spec.ts`              | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                     | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |

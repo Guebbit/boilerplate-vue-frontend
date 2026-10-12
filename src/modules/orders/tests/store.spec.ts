@@ -32,6 +32,7 @@ import {
     contractResponse
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { asStub } from '../../../../tests/support/stub.ts';
 
 /**
  * Fixture order returned by the mocked `@api` client.
@@ -278,6 +279,42 @@ describe('useOrdersStore', () => {
         });
     });
 
+    describe('fetchAwaitingTransfers', () => {
+        it('asks for the pending bank transfers, nearest deadline first', () => {
+            const store = useOrdersStore();
+            vi.mocked(searchOrders).mockResolvedValueOnce(
+                asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                    contractResponse(schemas.SearchOrdersResponse, {
+                        items: [{ ...ORDER, payBy: '2026-10-20T10:00:00Z' }],
+                        meta: { page: 2, pageSize: 5, totalItems: 11, totalPages: 3 }
+                    })
+                )
+            );
+
+            return store.fetchAwaitingTransfers(2, 5).then(() => {
+                expect(searchOrders).toHaveBeenCalledWith({
+                    page: 2,
+                    pageSize: 5,
+                    paymentMethod: 'bank_transfer',
+                    status: 'pending',
+                    sort: ['payBy']
+                });
+                expect(store.awaitingTransfers).toHaveLength(1);
+                expect(store.awaitingTransfersTotal).toBe(11);
+            });
+        });
+
+        it('keeps the queue apart from the staff list’s own filters and rows', () => {
+            const store = useOrdersStore();
+            store.filters = { email: 'ada@example.com' };
+
+            return store.fetchAwaitingTransfers(1, 10).then(() => {
+                expect(store.filters).toEqual({ email: 'ada@example.com' });
+                expect(vi.mocked(searchOrders).mock.calls.at(-1)?.[0]).not.toHaveProperty('email');
+            });
+        });
+    });
+
     describe('watchSearchOrders', () => {
         it('posts every supported filter to /orders/search', () => {
             const store = useOrdersStore();
@@ -307,6 +344,36 @@ describe('useOrdersStore', () => {
                             paymentMethod: 'bank_transfer'
                         })
                     );
+                });
+        });
+
+        it('sends the date filters as inclusive instants and the two states as they are', () => {
+            const store = useOrdersStore();
+            store.filters = {
+                createdFrom: '2026-03-01',
+                createdTo: '2026-03-31',
+                paidFrom: '2026-03-05',
+                paidTo: 'not-a-day',
+                paymentStatus: 'paid',
+                returnStatus: 'requested'
+            };
+
+            return store
+                .watchSearchOrders()
+                .search()
+                .then(() => {
+                    const request = vi.mocked(searchOrders).mock.calls.at(-1)?.[0];
+                    expect(request?.createdFrom).toBe(new Date(2026, 2, 1).toISOString());
+                    expect(request?.createdTo).toBe(
+                        new Date(2026, 2, 31, 23, 59, 59, 999).toISOString()
+                    );
+                    expect(request?.paidFrom).toBe(new Date(2026, 2, 5).toISOString());
+                    // A day that does not exist is no bound, not a request the API refuses.
+                    expect(request?.paidTo).toBeUndefined();
+                    expect(request).toMatchObject({
+                        paymentStatus: 'paid',
+                        returnStatus: 'requested'
+                    });
                 });
         });
 

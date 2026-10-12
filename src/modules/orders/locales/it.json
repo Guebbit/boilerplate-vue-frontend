@@ -143,5 +143,19 @@
     "navigation": {
         "label-orders": "Ordini",
         "label-sales-orders": "Ordini vendite"
+    },
+    "awaiting-transfer": {
+        "hint": "Ordini in attesa di bonifico, dalla scadenza più vicina. Non esiste ancora un pagamento: registra il denaro quando arriva.",
+        "empty": "Nessun bonifico in attesa",
+        "table-caption": "Ordini in attesa di bonifico",
+        "column-order": "Ordine",
+        "column-email": "Cliente",
+        "column-total": "Totale",
+        "column-pay-by": "Pagare entro",
+        "column-actions": "Azioni",
+        "button-record": "Registra pagamento",
+        "button-record-named": "Registra il pagamento dell'ordine {order}",
+        "dialog-title": "Registra il pagamento dell'ordine {order}",
+        "button-close": "Chiudi"
     }
 }

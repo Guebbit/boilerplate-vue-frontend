@@ -382,3 +382,96 @@ describe('refundForOrder', () => {
         });
     });
 });
+
+/** The body of the request whose key is `key`. */
+const bodyOf = (key: string): unknown => {
+    const [method, url] = key.split(' ');
+    return vi
+        .mocked(orvalMutator)
+        .mock.calls.find(
+            (call) =>
+                (call[0] as { url: string; method: string }).url === url &&
+                (call[0] as { method: string }).method === method
+        )?.[0] as { data?: unknown; params?: unknown } | undefined;
+};
+
+describe('the staff lists', () => {
+    /** One refund as the list answers it. */
+    const REFUND = {
+        id: 'refund-1',
+        paymentId: 'payment-1',
+        orderId: 'order-1',
+        amount: 10,
+        currency: 'EUR',
+        status: 'failed',
+        reason: 'goodwill',
+        providerRefundRef: 're_1',
+        failureReason: 'insufficient_funds',
+        createdAt: '2026-03-04T10:00:00Z'
+    };
+
+    const META = { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 };
+
+    it('posts the filters to the search and keeps the page with its total', () => {
+        responses['POST /payments/search'] = orvalEnvelope({
+            items: [{ ...PAYMENT, displayStatus: 'succeeded', status: 'succeeded' }],
+            meta: META
+        });
+        const store = usePaymentsStore();
+        return store
+            .fetchPaymentsPage({ page: 2, pageSize: 10, displayStatus: 'refunded' })
+            .then(() => {
+                expect(store.paymentsPage).toHaveLength(1);
+                expect(store.paymentsTotal).toBe(31);
+                expect(bodyOf('POST /payments/search')).toMatchObject({
+                    data: { page: 2, pageSize: 10, displayStatus: 'refunded' }
+                });
+            });
+    });
+
+    it('keeps the list apart from the one payment an order page holds', () => {
+        responses['POST /payments/search'] = orvalEnvelope({ items: [], meta: META });
+        const store = usePaymentsStore();
+        return store.fetchPaymentForOrder('order-1').then(() =>
+            store.fetchPaymentsPage({}).then(() => {
+                expect(store.payment?.id).toBe('payment-1');
+                expect(store.paymentsPage).toEqual([]);
+            })
+        );
+    });
+
+    it('reads refunds with their filters in the query', () => {
+        responses['GET /payments/refunds'] = orvalEnvelope({ items: [REFUND], meta: META });
+        const store = usePaymentsStore();
+        return store.fetchRefundsPage({ page: 1, pageSize: 10, status: 'failed' }).then(() => {
+            expect(store.refundsPage[0]?.failureReason).toBe('insufficient_funds');
+            expect(store.refundsTotal).toBe(31);
+            expect(bodyOf('GET /payments/refunds')).toMatchObject({
+                params: { page: 1, pageSize: 10, status: 'failed' }
+            });
+        });
+    });
+
+    it('reads what needs attention, unpaged', () => {
+        responses['GET /payments/attention'] = orvalEnvelope({
+            items: [
+                {
+                    kind: 'manual_refund_owed',
+                    orderId: 'order-1',
+                    amount: 5,
+                    currency: 'EUR',
+                    since: '2026-03-04T10:00:00Z'
+                }
+            ]
+        });
+        const store = usePaymentsStore();
+        return store.fetchAttention().then(() => {
+            expect(store.attention.map(({ kind }) => kind)).toEqual(['manual_refund_owed']);
+        });
+    });
+
+    it('lets a failed read reach the caller', () => {
+        const store = usePaymentsStore();
+        return expect(store.fetchAttention()).rejects.toMatchObject({ status: 404 });
+    });
+});

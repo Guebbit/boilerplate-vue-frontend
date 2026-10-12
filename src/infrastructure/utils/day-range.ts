@@ -1,10 +1,9 @@
 /**
  * @module
  * A calendar day (`YYYY-MM-DD`, what a date input holds and the URL carries) read as the first or
- * last instant of that day, for the list's `…From` / `…To` filters, which take instants inclusive
- * at both ends. Pure. Days are the browser's own: the stats pages say which zone the shop's days
- * follow, and the two differ only for a viewer far from the shop.
- * See `docs/theory/domain-layer.md`.
+ * last instant of that day, for the staff lists' `…From` / `…To` filters (orders, payments), which
+ * take instants inclusive at both ends. Pure. Days are the browser's own: the stats pages say
+ * which zone the shop's days follow, and the two differ only for a viewer far from the shop.
  */
 
 /**

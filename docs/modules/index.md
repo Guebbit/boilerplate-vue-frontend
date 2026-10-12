@@ -124,9 +124,9 @@ Every diagram under `/modules/` uses this and only this.
 The shape of the client in one row, then one row per domain. Both are maintained by hand, so a module
 that gains a screen or a store gains it here when someone adds it.
 
-Two rows are worth noticing before you read any page: [`delivery`](./delivery.md) and
-[`payments`](./payments.md) have **no screens at all** — their published surface is a component
-another module mounts.
+One row is worth noticing before you read any page: [`delivery`](./delivery.md) has **no screens
+at all** — its published surface is a component another module mounts. [`payments`](./payments.md)
+has one, the staff page; paying itself is a component too.
 
 **Group** is a second, independent axis from Subdomain: `foundation` ships with every deployment,
 `shop` is the removable pet-supply demo domain (`npm run demo:remove`), and `example` is the one
@@ -137,7 +137,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 18      | 3    | 8          | 7       | 47      | 18     | 10            |
+| 18      | 3    | 8          | 7       | 48      | 18     | 10            |
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -152,7 +152,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
 | [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
 | [`orders`](./orders.md)                                        | `core`       | `shop`       | 4       | `orders`                 | 11        | 4          | 0              |
-| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 0       | `payments`               | 4         | 0          | 1              |
+| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 1              |
 | [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
 | [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
 | [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |

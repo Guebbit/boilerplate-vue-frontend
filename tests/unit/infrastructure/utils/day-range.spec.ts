@@ -1,10 +1,10 @@
 /**
  * @module
- * Vitest spec for the day-to-instant rule behind the list's date filters: a calendar day is read as
+ * Vitest spec for the day-to-instant rule behind the staff lists' date filters: a calendar day is read as
  * its first and last instant, and a text that is no real day is no filter at all.
  */
 import { describe, expect, it } from 'vitest';
-import { endOfDayInstant, startOfDayInstant } from '../domain';
+import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 
 describe('startOfDayInstant', () => {
     it('is local midnight of the day', () => {

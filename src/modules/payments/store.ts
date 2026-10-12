@@ -17,9 +17,21 @@ import {
     getOrderByReference,
     refundPaymentByOrder,
     recordOfflinePayment as recordOfflinePaymentRequest,
-    listPaymentMethods
+    listPaymentMethods,
+    searchPayments,
+    listRefunds,
+    listPaymentAttention
 } from '@api';
-import type { Order, Payment, PaymentMethodOption, RecordOfflinePaymentRequest } from '@types';
+import type {
+    ListRefundsParams,
+    Order,
+    Payment,
+    PaymentAttentionItem,
+    PaymentMethodOption,
+    RecordOfflinePaymentRequest,
+    RefundListItem,
+    SearchPaymentsRequest
+} from '@types';
 import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 
@@ -249,9 +261,88 @@ export const usePaymentsStore = defineStore('payments', () => {
                 })
         );
 
+    /**
+     * The staff list's current page of payments, as last fetched — separate from {@link payment},
+     * which is the one payment behind the order being looked at.
+     */
+    const paymentsPage = ref<Payment[]>([]);
+
+    /**
+     * How many payments match the last query, across every page.
+     */
+    const paymentsTotal = ref(0);
+
+    /**
+     * The refunds list's current page, one row per refund across every payment.
+     */
+    const refundsPage = ref<RefundListItem[]>([]);
+
+    /**
+     * How many refunds match the last query, across every page.
+     */
+    const refundsTotal = ref(0);
+
+    /**
+     * Problems still recorded on a document, oldest first — what "Needs attention" lists.
+     */
+    const attention = ref<PaymentAttentionItem[]>([]);
+
+    /**
+     * Loads a page of the staff payments list (`POST /payments/search`). Needs `payments.any.read`.
+     *
+     * @param query - Page, size, sort and the filters; the body form keeps a long filter set out
+     *  of the URL.
+     * @returns A promise resolving with the page's payments.
+     */
+    const fetchPaymentsPage = (query: SearchPaymentsRequest) =>
+        fetchAny(() =>
+            searchPayments(query).then((response) => {
+                paymentsPage.value = response.data.items;
+                paymentsTotal.value = response.data.meta.totalItems;
+                return paymentsPage.value;
+            })
+        );
+
+    /**
+     * Loads a page of refunds (`GET /payments/refunds`), newest first. Needs `payments.any.read`.
+     *
+     * @param query - Page, size and the filters.
+     * @returns A promise resolving with the page's refunds.
+     */
+    const fetchRefundsPage = (query: ListRefundsParams) =>
+        fetchAny(() =>
+            listRefunds(query).then((response) => {
+                refundsPage.value = response.data.items;
+                refundsTotal.value = response.data.meta.totalItems;
+                return refundsPage.value;
+            })
+        );
+
+    /**
+     * Loads what needs a person (`GET /payments/attention`). Unpaged: each source is capped
+     * server-side, and a fixed problem disappears on the next read.
+     *
+     * @returns A promise resolving with the items.
+     */
+    const fetchAttention = () =>
+        fetchAny(() =>
+            listPaymentAttention().then((response) => {
+                attention.value = response.data.items;
+                return attention.value;
+            })
+        );
+
     return {
         loading,
         payment,
+        paymentsPage,
+        paymentsTotal,
+        refundsPage,
+        refundsTotal,
+        attention,
+        fetchPaymentsPage,
+        fetchRefundsPage,
+        fetchAttention,
         methods,
         fetchMethods,
         fetchPaymentForOrder,
