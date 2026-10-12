@@ -12,7 +12,7 @@
 | **Screens**             | 1 — `InventoryLedger`                                                          |
 | **Store**               | `inventory`                                                                    |
 | **Menu entries**        | `InventoryLedger`                                                              |
-| **API calls**           | 5                                                                              |
+| **API calls**           | 7                                                                              |
 | **Depends on**          | [`products`](./products.md)                                                    |
 | **Depended on by**      | _nothing_                                                                      |
 | **Languages**           | `en` · `it`                                                                    |
@@ -63,15 +63,37 @@ The ledger stores product ids, so its titles are joined the way the cart's are: 
 names and the products dictionary does not hold yet go out in one batched `POST /products/search`
 (`useProductLines`). A product the search will not return keeps showing its id.
 
+## Preorder allowance
+
+A preorder claims units that do not exist yet, so it is counted against its own allowance, not the
+shelf. Two numbers per product, both on the board: the **preorder limit** (how many may be
+preordered at once; `0` closes preordering) and **preordered** (outstanding units, unpaid or paid,
+until stock arrives and is allocated to them, oldest payment first).
+
+```mermaid
+flowchart LR
+    A[admin sets the limit] --> B[orders claim units: preordered up]
+    B --> C[a receipt arrives]
+    C --> D[allocate: preordered down, reserved up]
+    B -->|cancel or expiry| E[allowance given back: preordered down]
+```
+
+- The limit is set from a dialog on the board row (`PUT /inventory/levels/{id}/preorder-limit`),
+  offered only to a holder of the stock write (`inventory.any.create`). It is absolute and
+  idempotent, may sit below what is outstanding (only new orders are refused), and is **not** a
+  movement: it leaves no ledger row.
+- The ledger has a "Preordered" column for the third counter, and two reasons: `preorder` (units
+  claimed) and `allocate` (stock arrived for a paid preorder).
+
 ## State
 
 Store `inventory`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                           | What it is                                                       |
-| ----------- | ----------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `movements` · `movementsTotal` · `levels` · `levelsTotal`         | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading`                                                         | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchMovements` · `fetchLevels` · `receive` · `adjust` · `sweep` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **State**   | `movements` · `movementsTotal` · `levels` · `levelsTotal` · `preorderLevels` · `preorderLevelsTotal`   | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading`                                                                                              | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchMovements` · `fetchLevels` · `fetchPreorderLevels` · `setLimit` · `receive` · `adjust` · `sweep` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -85,13 +107,15 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                 | Response envelope             |
-| ------------------------------------ | ----------------------------- |
-| `POST /inventory/adjustments`        | `AdjustStockResponse`         |
-| `GET /inventory/levels(\?.*)?`       | `ListInventoryLevelsResponse` |
-| `GET /inventory/movements(\?.*)?`    | `ListStockMovementsResponse`  |
-| `POST /inventory/receipts`           | `ReceiveStockResponse`        |
-| `POST /inventory/reservations/sweep` | `SweepReservationsResponse`   |
+| Call                                        | Response envelope             |
+| ------------------------------------------- | ----------------------------- |
+| `POST /inventory/adjustments`               | `AdjustStockResponse`         |
+| `GET /inventory/levels(\?.*)?`              | `ListInventoryLevelsResponse` |
+| `GET /inventory/movements(\?.*)?`           | `ListStockMovementsResponse`  |
+| `GET /inventory/preorders(\?.*)?`           | `ListPreorderLevelsResponse`  |
+| `PUT /inventory/levels/{id}/preorder-limit` | `SetPreorderLimitResponse`    |
+| `POST /inventory/receipts`                  | `ReceiveStockResponse`        |
+| `POST /inventory/reservations/sweep`        | `SweepReservationsResponse`   |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

@@ -16,12 +16,15 @@ export default {
  * parent view owns jumping the ledger below to that product.
  */
 import { computed, onMounted, ref, watch } from 'vue';
+import { Settings2 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useInventoryStore } from '../store.ts';
+import PreorderLimitDialog from './PreorderLimitDialog.vue';
 import type { InventoryLevel } from '@types';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
@@ -41,6 +44,32 @@ const inventoryStore = useInventoryStore();
  * The current page of levels, their total count across pages, and the shared loading flag.
  */
 const { levels, levelsTotal, loading } = storeToRefs(inventoryStore);
+
+/**
+ * The session, asked whether the preorder limit is this account's to set: it is a stock write
+ * (`inventory.any.create`), so the manager, who only reads stock, sees the numbers without the button.
+ */
+const session = useSessionStore();
+
+/**
+ * The row whose preorder limit is being edited, and whether its dialog is open.
+ */
+const limitRow = ref<InventoryLevel>();
+
+/**
+ * Whether the preorder-limit dialog is open.
+ */
+const limitOpen = ref(false);
+
+/**
+ * Opens the limit dialog on a row.
+ *
+ * @param level - The row the button sat on.
+ */
+const editLimit = (level: InventoryLevel) => {
+    limitRow.value = level;
+    limitOpen.value = true;
+};
 
 /**
  * Emitted when a row's history button is pressed, naming the product the ledger below should
@@ -74,6 +103,8 @@ const levelHeaders = computed<CoreDataTableHeader<InventoryLevel>[]>(() => [
     { title: t('inventory-page.column-on-hand'), key: 'onHand' },
     { title: t('inventory-page.column-reserved'), key: 'reserved' },
     { title: t('inventory-page.column-available'), key: 'available' },
+    { title: t('inventory-page.column-preorder-limit'), key: 'preorderLimit' },
+    { title: t('inventory-page.column-preordered'), key: 'preordered' },
     // Reads no field: the cell is a button, and the column has no heading.
     { title: '', key: 'history', synthetic: true }
 ]);
@@ -167,6 +198,25 @@ onMounted(() => {
             <span class="font-medium">{{ item.available }}</span>
         </template>
 
+        <template v-slot:[`item.preorderLimit`]="{ item }">
+            <span class="inline-flex items-center gap-1">
+                {{ item.preorderLimit }}
+                <v-btn
+                    v-if="session.can('create', 'StockMovement')"
+                    :size="rowActionSize"
+                    variant="text"
+                    icon
+                    data-test="level-preorder-limit"
+                    :aria-label="
+                        t('inventory-page.button-preorder-limit-named', { name: item.title })
+                    "
+                    @click="editLimit(item)"
+                >
+                    <Settings2 :size="16" aria-hidden="true" />
+                </v-btn>
+            </span>
+        </template>
+
         <template v-slot:[`item.history`]="{ item }">
             <v-btn
                 :size="rowActionSize"
@@ -179,6 +229,7 @@ onMounted(() => {
             </v-btn>
         </template>
     </DataTable>
+    <PreorderLimitDialog v-if="limitRow" v-model="limitOpen" :level="limitRow" />
     <ListPagination
         v-model="levelsPage"
         :length="levelsPageTotal"

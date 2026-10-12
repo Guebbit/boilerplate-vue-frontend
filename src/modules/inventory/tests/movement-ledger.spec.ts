@@ -38,6 +38,7 @@ const movement = (id: string, productId: string): StockMovement =>
         productId,
         onHandDelta: 1,
         reservedDelta: 0,
+        preorderedDelta: 0,
         reason: 'receipt',
         reference: null,
         note: null,
@@ -98,6 +99,27 @@ beforeEach(() => {
         )
     );
     return loadLocale('en');
+});
+
+describe('MovementLedger preorder movements', () => {
+    it('shows the preordered counter’s own signed delta, and words an allocation', () => {
+        const wrapper = mountLedger([
+            {
+                ...movement('m1', 'p1'),
+                reason: 'allocate',
+                onHandDelta: 0,
+                reservedDelta: 2,
+                preorderedDelta: -2
+            }
+        ]);
+
+        return flushPromises().then(() => {
+            const row = wrapper.get('[data-test=movement-row]');
+
+            expect(row.text()).toContain('-2');
+            expect(row.get('[data-test=movement-reason]').text()).toBe('Allocated');
+        });
+    });
 });
 
 describe('MovementLedger product titles', () => {

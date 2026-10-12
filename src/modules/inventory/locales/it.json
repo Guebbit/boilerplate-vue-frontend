@@ -47,9 +47,19 @@
         "pagination-board": "Pagine della giacenza",
         "pagination-ledger": "Pagine del registro",
         "reason-preorder": "Preordinato",
-        "reason-allocate": "Assegnato"
+        "reason-allocate": "Assegnato",
+        "column-preorder-limit": "Limite preordini",
+        "column-preordered": "Preordinati",
+        "button-preorder-limit-named": "Imposta il limite di preordini di {name}"
     },
     "navigation": {
         "label-inventory": "Magazzino"
+    },
+    "preorder-limit-dialog": {
+        "title": "Limite di preordini di {name}",
+        "label-limit": "Unità preordinabili in una volta",
+        "hint-limit": "0 chiude i preordini. Ora ne risultano {outstanding}; un limite più basso lascia quegli ordini e rifiuta solo i nuovi.",
+        "button-save": "Salva limite",
+        "success": "Limite di preordini salvato."
     }
 }

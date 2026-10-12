@@ -36,7 +36,15 @@ const MOVEMENT = {
 /**
  * A stock level row, as the board renders it.
  */
-const LEVEL = { productId: 'p1', title: 'Product one', onHand: 24, reserved: 2, available: 22 };
+const LEVEL = {
+    productId: 'p1',
+    title: 'Product one',
+    onHand: 24,
+    reserved: 2,
+    available: 22,
+    preorderLimit: 0,
+    preordered: 0
+};
 
 /**
  * The mocked transport's canned response, keyed by `METHOD /path`; reset in `beforeEach`.
@@ -70,6 +78,22 @@ beforeEach(() => {
             items: [LEVEL],
             meta: { totalItems: 1, totalPages: 1 }
         }),
+        'GET /inventory/preorders': orvalEnvelope({
+            items: [
+                {
+                    productId: 'p1',
+                    title: 'Product one',
+                    preorderLimit: 10,
+                    preordered: 4,
+                    held: 1,
+                    paid: 3,
+                    left: 6,
+                    ordered: 7
+                }
+            ],
+            meta: { totalItems: 1, totalPages: 1 }
+        }),
+        'PUT /inventory/levels/p1/preorder-limit': orvalEnvelope({ ...LEVEL, preorderLimit: 10 }),
         'POST /inventory/receipts': orvalEnvelope(LEVEL),
         'POST /inventory/adjustments': orvalEnvelope(LEVEL)
     };
@@ -123,6 +147,33 @@ describe('fetchLevels', () => {
         const store = useInventoryStore();
         return store.fetchLevels().then(() => {
             expect(store.levels).toEqual([LEVEL]);
+        });
+    });
+});
+
+describe('fetchPreorderLevels', () => {
+    it('replaces the allowances with what the API answered, keeping the total', () => {
+        const store = useInventoryStore();
+        return store.fetchPreorderLevels({ page: 1, pageSize: 20 }).then(() => {
+            expect(store.preorderLevels.map(({ productId }) => productId)).toEqual(['p1']);
+            expect(store.preorderLevelsTotal).toBe(1);
+        });
+    });
+});
+
+describe('setLimit', () => {
+    it('puts the absolute limit, then reloads the board, and answers the level', () => {
+        const store = useInventoryStore();
+        return store.setLimit('p1', 10).then((level) => {
+            expect(level).toMatchObject({ productId: 'p1', preorderLimit: 10 });
+            expect(requestedUrls()).toEqual([
+                '/inventory/levels/p1/preorder-limit',
+                '/inventory/levels'
+            ]);
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
+            expect(contractRequest(schemas.SetPreorderLimitBody, call.data)).toEqual({
+                preorderLimit: 10
+            });
         });
     });
 });

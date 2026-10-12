@@ -47,9 +47,19 @@
         "pagination-board": "Stock board pages",
         "pagination-ledger": "Ledger pages",
         "reason-preorder": "Preordered",
-        "reason-allocate": "Allocated"
+        "reason-allocate": "Allocated",
+        "column-preorder-limit": "Preorder limit",
+        "column-preordered": "Preordered",
+        "button-preorder-limit-named": "Set the preorder limit of {name}"
     },
     "navigation": {
         "label-inventory": "Inventory"
+    },
+    "preorder-limit-dialog": {
+        "title": "Preorder limit of {name}",
+        "label-limit": "Units that may be preordered at once",
+        "hint-limit": "0 closes preordering. {outstanding} are outstanding now; a lower limit leaves those orders alone and only refuses new ones.",
+        "button-save": "Save limit",
+        "success": "Preorder limit saved."
     }
 }

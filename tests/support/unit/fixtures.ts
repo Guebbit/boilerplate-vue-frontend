@@ -5,7 +5,19 @@
  * compile error in every spec at once — rather than a hand-typed `{ id, totalPrice }` that only
  * fails when something finally parses it.
  */
-import type { FulfillmentOrder, Order, Payment, Product, Return, Shipment, User } from '@types';
+import type {
+    FulfillmentOrder,
+    InventoryLevel,
+    Order,
+    Payment,
+    PreorderFulfillmentOrder,
+    PreorderLevel,
+    PreorderProductSummary,
+    Product,
+    Return,
+    Shipment,
+    User
+} from '@types';
 
 /**
  * A valid, empty order — every required field the contract declares, all totals zero.
@@ -108,6 +120,100 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => ({
     inStock: true,
     lowStock: false,
     active: true,
+    ...overrides
+});
+
+/**
+ * A valid stock-board row — some on the shelf, nothing preordered, preordering closed.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns an `InventoryLevel` that parses against the generated schema
+ */
+export const aLevel = (overrides: Partial<InventoryLevel> = {}): InventoryLevel => ({
+    productId: 'p1',
+    title: 'Walnut desk',
+    onHand: 10,
+    reserved: 2,
+    available: 8,
+    preorderLimit: 0,
+    preordered: 0,
+    ...overrides
+});
+
+/**
+ * A valid preorder allowance row — a limit of ten, four outstanding (one unpaid, three paid).
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `PreorderLevel` that parses against the generated schema
+ */
+export const aPreorderLevel = (overrides: Partial<PreorderLevel> = {}): PreorderLevel => ({
+    productId: 'p1',
+    title: 'Walnut desk',
+    releaseDate: '2027-03-15T12:00:00.000Z',
+    preorderLimit: 10,
+    preordered: 4,
+    held: 1,
+    paid: 3,
+    left: 6,
+    ordered: 7,
+    ...overrides
+});
+
+/**
+ * A valid per-product preorder summary — three paid units, all waiting for stock.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `PreorderProductSummary` that parses against the generated schema
+ */
+export const aPreorderSummary = (
+    overrides: Partial<PreorderProductSummary> = {}
+): PreorderProductSummary => ({
+    productId: 'p1',
+    title: 'Walnut desk',
+    firstAgreedAt: '2027-03-15T12:00:00.000Z',
+    paid: 3,
+    waiting: 3,
+    awaitingYes: 0,
+    allocated: 0,
+    shipped: 0,
+    cancelled: 0,
+    late: 0,
+    ...overrides
+});
+
+/**
+ * A valid row of the preorder board's second tab — one waiting fulfillment order of a paid order.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `PreorderFulfillmentOrder` that parses against the generated schema
+ */
+export const aPreorderFulfillmentOrder = (
+    overrides: Partial<PreorderFulfillmentOrder> = {}
+): PreorderFulfillmentOrder => ({
+    id: 'fo1',
+    orderId: 'o1',
+    orderNumber: '2027-000001',
+    number: 1,
+    status: 'on_hold',
+    state: 'waiting',
+    lines: [
+        {
+            productId: 'p1',
+            title: 'Walnut desk',
+            quantity: 1,
+            shippedQuantity: 0,
+            cancelledQuantity: 0,
+            remaining: 1
+        }
+    ],
+    buyer: { userId: 'u1', email: 'buyer@example.com' },
+    paidAt: '2026-10-01T10:00:00.000Z',
+    agreedAt: '2027-03-15T12:00:00.000Z',
+    slippedDays: 0,
+    late: false,
+    delivered: false,
+    holdReason: 'awaiting_stock',
+    createdAt: '2026-10-01T10:00:00.000Z',
     ...overrides
 });
 

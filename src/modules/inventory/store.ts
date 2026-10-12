@@ -12,15 +12,19 @@ import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import {
     adjustStock,
     listInventoryLevels,
+    listPreorderLevels,
     listStockMovements,
     receiveStock,
+    setPreorderLimit,
     sweepReservations
 } from '@api';
 import type {
     InventoryLevel,
-    StockMovement,
     ListInventoryLevelsParams,
-    ListStockMovementsParams
+    ListPreorderLevelsParams,
+    ListStockMovementsParams,
+    PreorderLevel,
+    StockMovement
 } from '@types';
 
 /**
@@ -35,6 +39,10 @@ import type {
  * - the SWEEP releases every hold whose window has closed. A job behind an admin endpoint — the
  *   API ships no scheduler, so the tick is driven from outside, and this store is one of the
  *   outsides. Idempotent; running it twice releases nothing the first run already released.
+ *
+ * A fourth write, the PREORDER LIMIT, is not a movement: it sets how many units may be claimed
+ * before they exist, moves nothing on the shelf and leaves no ledger row. Absolute and idempotent,
+ * so it needs no key; it reloads the board, whose rows carry the limit.
  *
  * All three answer with (or change) the counters, and all three reload the views they touched:
  * the row worth rendering is the API's, never a local guess. That is also why nothing here does
@@ -97,6 +105,16 @@ export const useInventoryStore = defineStore('inventory', () => {
     let levelsQuery: ListInventoryLevelsParams = {};
 
     /**
+     * The preorder allowances, one row per product that has a limit or something outstanding.
+     */
+    const preorderLevels = ref<PreorderLevel[]>([]);
+
+    /**
+     * How many products the preorder board holds, across every page.
+     */
+    const preorderLevelsTotal = ref(0);
+
+    /**
      * Loads a page of the ledger.
      *
      * @param query - Page, size, and the two narrowings: one product's story, one kind of
@@ -130,6 +148,36 @@ export const useInventoryStore = defineStore('inventory', () => {
                 return levels.value;
             });
         });
+
+    /**
+     * Loads a page of the preorder allowances, the most outstanding first.
+     *
+     * @param query - Page and size.
+     * @returns A promise resolving with the rows.
+     */
+    const fetchPreorderLevels = (query?: ListPreorderLevelsParams) =>
+        fetchAny(() =>
+            listPreorderLevels(query).then((response) => {
+                preorderLevels.value = response.data.items;
+                preorderLevelsTotal.value = response.data.meta.totalItems;
+                return preorderLevels.value;
+            })
+        );
+
+    /**
+     * Sets how many units of a product may be preordered at once, then reloads the board.
+     *
+     * @param productId - The product.
+     * @param preorderLimit - The new allowance; `0` closes preordering. Lowering it below what is
+     *  outstanding is allowed: only new preorders are refused.
+     * @returns A promise resolving with the level after the write.
+     */
+    const setLimit = (productId: string, preorderLimit: number) =>
+        fetchAny(() =>
+            setPreorderLimit(productId, { preorderLimit }).then((response) =>
+                fetchLevels().then(() => response.data)
+            )
+        );
 
     /**
      * Receives a delivery, then reloads what it changed.
@@ -207,8 +255,12 @@ export const useInventoryStore = defineStore('inventory', () => {
         movementsTotal,
         levels,
         levelsTotal,
+        preorderLevels,
+        preorderLevelsTotal,
         fetchMovements,
         fetchLevels,
+        fetchPreorderLevels,
+        setLimit,
         receive,
         adjust,
         sweep
