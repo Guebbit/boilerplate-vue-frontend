@@ -11264,7 +11264,6 @@ export const ListStockMovementsQueryParams = zod.strictObject({
     reason: zod
         .enum([
             'reserve',
-            'commit',
             'ship',
             'release',
             'expire',
@@ -11307,7 +11306,6 @@ export const ListStockMovementsResponse = zod.strictObject({
                     .regex(listStockMovementsResponseDataItemsItemProductIdRegExp),
                 reason: zod.enum([
                     'reserve',
-                    'commit',
                     'ship',
                     'release',
                     'expire',
@@ -12249,6 +12247,7 @@ export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemProductI
 export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemShippedQuantityMin = 0;
 export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemCancelledQuantityMin = 0;
 export const downloadAccountExportResponseFulfillmentOrdersItemLinesItemRemainingMin = 0;
+export const downloadAccountExportResponseFulfillmentOrdersItemHoldNoteMax = 1000;
 export const downloadAccountExportResponseReturnsItemIdMax = 64;
 export const downloadAccountExportResponseReturnsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseReturnsItemOrderIdMax = 64;
@@ -12870,6 +12869,10 @@ export const DownloadAccountExportResponse = zod.strictObject({
             ),
             holdReason: zod
                 .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+                .optional(),
+            holdNote: zod
+                .string()
+                .max(downloadAccountExportResponseFulfillmentOrdersItemHoldNoteMax)
                 .optional(),
             agreedAt: zod.iso.datetime({ offset: true }).optional(),
             expectedAt: zod.iso.datetime({ offset: true }).optional(),

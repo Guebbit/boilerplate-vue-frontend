@@ -15,7 +15,6 @@
         "column-reason": "Reason",
         "column-reference": "Reference",
         "reason-reserve": "Reserved",
-        "reason-commit": "Paid",
         "reason-ship": "Shipped",
         "reason-release": "Released",
         "reason-expire": "Expired",

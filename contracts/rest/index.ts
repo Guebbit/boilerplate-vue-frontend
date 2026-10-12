@@ -4291,7 +4291,6 @@ export interface PreorderLevelsResponseEnvelope {
 
 /**
  * * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
- * * `commit` — the order was paid for. The claim is settled and nothing moves: the units stay on the shelf, still spoken for.
  * * `ship` — the parcel left (or a digital order was fulfilled). Both down: the units are off the shelf.
  * * `release` — the hold was given up (the order was cancelled, paid or not). `reserved` down.
  * * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
@@ -4307,7 +4306,6 @@ export type StockMovementReason = (typeof StockMovementReason)[keyof typeof Stoc
 
 export const StockMovementReason = {
     reserve: 'reserve',
-    commit: 'commit',
     ship: 'ship',
     release: 'release',
     expire: 'expire',
@@ -4794,7 +4792,7 @@ export interface ExportShipment {
 }
 
 /**
- * A fulfillment order as an account export carries it. Staff's hold note is not the buyer's data and is left out.
+ * A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
  */
 export interface ExportFulfillmentOrder {
     id: Id;
@@ -4805,6 +4803,11 @@ export interface ExportFulfillmentOrder {
     status: FulfillmentOrderStatus;
     lines: FulfillmentOrderLine[];
     holdReason?: FulfillmentHoldReason;
+    /**
+     * Staff's free text about the hold. Present until the retention sweep unsets it.
+     * @maxLength 1000
+     */
+    holdNote?: string;
     agreedAt?: string;
     expectedAt?: string;
     consent?: FulfillmentConsent;

@@ -15664,7 +15664,6 @@ components:
       type: string
       enum:
         - reserve
-        - commit
         - ship
         - release
         - expire
@@ -15675,7 +15674,6 @@ components:
         - allocate
       description: |
         * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
-        * `commit` — the order was paid for. The claim is settled and nothing moves: the units stay on the shelf, still spoken for.
         * `ship` — the parcel left (or a digital order was fulfilled). Both down: the units are off the shelf.
         * `release` — the hold was given up (the order was cancelled, paid or not). `reserved` down.
         * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
@@ -16586,7 +16584,7 @@ components:
         - kind
         - status
         - lines
-      description: A fulfillment order as an account export carries it. Staff's hold note is not the buyer's data and is left out.
+      description: A fulfillment order as an account export carries it, with staff's hold note (their assessment of the buyer is the buyer's data) and without who wrote it.
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -16605,6 +16603,10 @@ components:
             $ref: "#/components/schemas/FulfillmentOrderLine"
         holdReason:
           $ref: "#/components/schemas/FulfillmentHoldReason"
+        holdNote:
+          type: string
+          maxLength: 1000
+          description: Staff's free text about the hold. Present until the retention sweep unsets it.
         agreedAt:
           type: string
           format: date-time
