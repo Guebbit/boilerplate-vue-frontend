@@ -67,6 +67,23 @@ write screens. That scoping is enforced server-side — this client renders what
 answers, which is what [Domain layer](../theory/domain-layer.md) means by the domain living behind
 the API.
 
+## Permanent delete: cancel first
+
+The list offers **Hard delete** on a row only when the order is `cancelled` and its
+`paymentStatus` is `unpaid` (`src/modules/orders/domain/hard-delete.ts`). That mirrors the API: an open order answers
+`409 ORDER_NOT_CANCELLED`, a paid one `409 ORDER_INVOICED`. Cancelling is what releases the stock
+and cancels the open payment intent, so the delete is pure cleanup. A refusal that slips through
+(the order changed under the viewer) shows the API's own sentence in the row-action alert; the
+copy is the API's, in the viewer's language, so this app holds none for it.
+
+```mermaid
+flowchart LR
+    open[pending order] -- Cancel --> cancelled[cancelled, unpaid]
+    cancelled -- Hard delete --> gone[removed]
+    open -. no action offered .-> gone
+    paid[paid or refunded] -. no action offered .-> gone
+```
+
 ## The statuses beside `status`, and the withdrawal button
 
 The detail page shows three read-only words next to the order's own status, each straight from the

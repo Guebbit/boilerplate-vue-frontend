@@ -2,9 +2,10 @@
 /**
  * @module
  * OP15 · Order housekeeping. A shop manager soft-deletes an order: it stays on the staff list,
- * marked deleted, and vanishes from its customer. Restoring brings it back. Hard-deleting an
- * unpaid order destroys it and returns its held units to the shelf; a PAID order refuses a hard
- * delete, because an invoice was frozen from its payment (BE `orders/services/crud.ts`, `remove`).
+ * marked deleted, and vanishes from its customer. Restoring brings it back. A hard delete is
+ * offered only on a cancelled, never-paid order: an open order must be cancelled first (which
+ * returns its held units to the shelf), and a PAID order never shows the action, because an
+ * invoice was frozen from its payment (BE `orders/services/remove.ts`).
  *
  * The manager holds `orders.any.delete`; the moderator does not, since removing a customer's
  * order is a shop-running act and not a conduct one. Rows are found by their
@@ -49,7 +50,7 @@ describe('OP15 · Order housekeeping', () => {
         cy.visit('/en');
     });
 
-    it('soft delete hides an order from its owner, restore returns it, hard delete destroys an unpaid one only', () => {
+    it('soft delete hides an order from its owner, restore returns it, hard delete destroys a cancelled unpaid one only', () => {
         cy.subjectId('order.paid').then((paidId) => {
             cy.subjectId('order.awaitingTransfer').then((unpaidId) => {
                 cy.subjectId('product.rich').then((productId) => {
@@ -89,15 +90,22 @@ describe('OP15 · Order housekeeping', () => {
                     });
                     customerListing(paidId).should('deep.equal', [paidId]);
 
-                    cy.step('a paid order refuses a hard delete: its invoice must survive it');
+                    cy.step(
+                        'a paid order is never offered a hard delete: its invoice must survive'
+                    );
                     rowOf(paidId).within(() => {
-                        cy.get('[data-test=row-hard-delete]').click();
+                        cy.get('[data-test=row-hard-delete]').should('not.exist');
                     });
-                    cy.get('[data-test=app-dialog-confirm]').click();
-                    cy.get('[data-test=orders-list-row-action-error]').should('exist');
-                    customerListing(paidId).should('deep.equal', [paidId]);
 
-                    cy.step('hard delete of an unpaid order is permanent and frees its units');
+                    cy.step('an open order is not offered one either, until it is cancelled');
+                    rowOf(unpaidId).within(() => {
+                        cy.get('[data-test=row-hard-delete]').should('not.exist');
+                    });
+                    cy.apiAs('admin', 'POST', `/orders/${unpaidId}/cancel`, {});
+
+                    cy.step(
+                        'hard delete of the cancelled unpaid order is permanent; the cancel freed its units'
+                    );
                     rowOf(unpaidId).within(() => {
                         cy.get('[data-test=row-hard-delete]').click();
                     });

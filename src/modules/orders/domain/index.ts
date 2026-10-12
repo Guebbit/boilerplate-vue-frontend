@@ -6,3 +6,5 @@
 
 export { leftOutByReorder } from './reorder';
 export type { ReorderedOrderLine } from './reorder';
+export { canHardDelete } from './hard-delete';
+export type { HardDeletableOrder } from './hard-delete';

@@ -1,0 +1,25 @@
+/**
+ * @module
+ * The rule behind the row's permanent-delete action, mirrored from the API so the button is never
+ * offered for a refusal the server would answer with 409 (`ORDER_NOT_CANCELLED`, `ORDER_INVOICED`).
+ * Pure: reads two fields of the order, no Vue, no I/O.
+ */
+
+/**
+ * The slice of an order the rule reads.
+ */
+export interface HardDeletableOrder {
+    /** Lifecycle status; only `cancelled` has finished every side effect a cancel owns. */
+    status: string;
+    /** Money state; `unpaid` is the only value that means the order was never paid. */
+    paymentStatus: string;
+}
+
+/**
+ * Whether an order may be permanently deleted: cancelled first, and never paid.
+ *
+ * @param order - The order, as the list reads it.
+ * @returns `true` when the API will accept a hard delete of it.
+ */
+export const canHardDelete = (order: HardDeletableOrder): boolean =>
+    order.status === 'cancelled' && order.paymentStatus === 'unpaid';

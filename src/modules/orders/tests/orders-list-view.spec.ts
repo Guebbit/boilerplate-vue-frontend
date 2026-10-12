@@ -180,6 +180,41 @@ describe('OrdersList — a soft-deleted row', () => {
 });
 
 /**
+ * The permanent delete is offered only where the API will accept it: a cancelled order that was
+ * never paid. Every other row keeps the soft Delete alone.
+ */
+describe('OrdersList — the permanent-delete action', () => {
+    it('shows it on a cancelled unpaid row and on no other', async () => {
+        signInAsOrderDeleter();
+        vi.mocked(searchOrders).mockResolvedValue(
+            asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    items: [
+                        { ...order('open'), status: 'pending', paymentStatus: 'unpaid' },
+                        { ...order('void'), status: 'cancelled', paymentStatus: 'unpaid' },
+                        { ...order('billed'), status: 'cancelled', paymentStatus: 'refunded' }
+                    ],
+                    meta: { page: 1, pageSize: 10, totalItems: 3, totalPages: 1 }
+                })
+            )
+        );
+
+        const wrapper = mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+
+        const rows = wrapper.findAll('[data-test="list-row"]');
+        const withHardDelete = rows.filter((row) =>
+            row.find('[data-test="row-hard-delete"]').exists()
+        );
+        expect(rows).toHaveLength(3);
+        expect(withHardDelete).toHaveLength(1);
+        expect(withHardDelete[0]?.find('[data-test="row-view"]').attributes('href')).toMatch(
+            /\/void$/
+        );
+    });
+});
+
+/**
  * Signs in with one read rule on orders: the wide one (`orders.any.read`, no owner pinned) makes a
  * viewer staff, the narrow one (`orders.self.read`, pinned to their own id) does not.
  *

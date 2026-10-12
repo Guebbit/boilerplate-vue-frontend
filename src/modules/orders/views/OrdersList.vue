@@ -31,6 +31,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
+import { canHardDelete } from '../domain';
 import { OrderFulfillmentStatus, OrderStatus } from '@/types/enums.ts';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
@@ -542,7 +543,7 @@ const handleHardDelete = (orderId: string) =>
                         {{ t('orders-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Order')"
+                        v-if="session.can('delete', 'Order') && canHardDelete(item)"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
