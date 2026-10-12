@@ -534,6 +534,41 @@ describe('goods with no right of withdrawal', () => {
     });
 });
 
+describe('a preorder line', () => {
+    it('says it ships from the date it was sold against', () => {
+        const wrapper = mountOrder({
+            ...BASE_ORDER,
+            items: [
+                {
+                    ...lineWith(null),
+                    product: {
+                        id: 'p1',
+                        title: 'Limited vinyl',
+                        price: 29,
+                        taxRate: 0,
+                        preorder: true,
+                        releaseDate: '2027-03-15T12:00:00.000Z'
+                    }
+                }
+            ]
+        });
+
+        expect(wrapper.get('[data-test=order-item-preorder]').text()).toMatch(
+            /^Preorder: ships from .*2027/
+        );
+
+        wrapper.unmount();
+    });
+
+    it('carries no note on a line sold from the shelf', () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+
+        expect(wrapper.find('[data-test=order-item-preorder]').exists()).toBe(false);
+
+        wrapper.unmount();
+    });
+});
+
 /** Signs the viewer in holding exactly these abilities. */
 const signInWith = (tenant: [string, string][]) => {
     const session = useSessionStore();

@@ -4,7 +4,8 @@
         "out-of-stock": "Out of stock",
         "off-sale": "Not available right now",
         "success": "Product added to cart.",
-        "guest-full": "Your cart already holds as many different products as it can. Remove one, or sign in, to add another."
+        "guest-full": "Your cart already holds as many different products as it can. Remove one, or sign in, to add another.",
+        "preorder": "Preorder"
     },
     "cart-page": {
         "page-title": "My Cart",

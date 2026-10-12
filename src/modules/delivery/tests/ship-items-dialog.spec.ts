@@ -23,7 +23,7 @@ wireModulesIntoCore();
  * An open group with one line, 2 units remaining, and the ordinary ship door on.
  */
 const SHIPPABLE = aFulfillmentOrder({
-    actions: { ship: true, fulfill: false, hold: true, release: false }
+    actions: { ship: true, fulfill: false, hold: true, release: false, confirmWait: false }
 });
 
 /**

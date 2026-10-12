@@ -3,13 +3,16 @@
         "unavailable": "Not available right now",
         "removed": "No longer available",
         "out-of-stock": "Sold out",
-        "insufficient-stock": "Not enough in stock"
+        "insufficient-stock": "Not enough in stock",
+        "preorder": "Preorder · ships {date}",
+        "preorder-undated": "Preorder"
     },
     "product-card": {
         "in-stock": "In stock",
         "out-of-stock": "Out of stock",
         "off-sale": "Not available right now",
-        "login-to-buy": "Sign in to check out or save this product."
+        "login-to-buy": "Sign in to check out or save this product.",
+        "preorder": "Preorder · ships {date}"
     },
     "products-list-page": {
         "sort-label": "Sort by",
@@ -83,7 +86,9 @@
         "out-of-stock": "Out of stock",
         "off-sale": "Not available right now",
         "login-to-buy": "Sign in to check out or save this product.",
-        "image-alt": "Photo of {name}"
+        "image-alt": "Photo of {name}",
+        "preorder": "Preorder: ships {date}",
+        "label-release-date": "Ships from"
     },
     "product-create-page": {
         "page-title": "Create product",
@@ -107,7 +112,9 @@
         "hint-no-withdrawal": "Made to the customer's specifications or clearly personalised, or liable to deteriorate or expire rapidly (Directive 2011/83/EU Art. 16(c)–(d)): the customer cannot withdraw. Not for sealed hygiene goods (excluded only once unsealed after delivery) or digital content (needs the customer's express consent).",
         "button-submit": "Create product",
         "button-go-to-list": "Back to products list",
-        "success-create": "Product created successfully"
+        "success-create": "Product created successfully",
+        "label-release-date": "Release date",
+        "hint-release-date": "Ships from this date. While it is ahead, the product is sold as a preorder, up to one year out. Leave empty for a product on sale now."
     },
     "product-edit-page": {
         "page-title": "Edit product",
@@ -133,7 +140,10 @@
         "button-go-to-details": "Back to product details",
         "button-go-to-list": "Back to products list",
         "success-update": "Product updated successfully",
-        "button-translations": "Translations"
+        "button-translations": "Translations",
+        "label-release-date": "Release date",
+        "hint-release-date": "Ships from this date. While it is ahead, the product is sold as a preorder, up to one year out. Moving it later notifies the buyers who already paid. Leave empty for a product on sale now.",
+        "hint-release-date-preorder": "This product is a preorder now. Moving the date later notifies the buyers who already paid; clearing it ends the preorder."
     },
     "navigation": {
         "label-products-list": "product | products"

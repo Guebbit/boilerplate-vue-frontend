@@ -224,17 +224,20 @@ stateDiagram-v2
 Every cart answer (`GET /cart` and every write) carries an `availability` on each line, and the
 page prints one marker beside the quantity of any line that is not `in_stock`:
 
-| `availability`       | Marker                    |
-| -------------------- | ------------------------- |
-| `insufficient_stock` | "Not enough in stock"     |
-| `out_of_stock`       | "Sold out"                |
-| `unavailable`        | "Not available right now" |
-| `removed`            | "No longer available"     |
+| `availability`       | Marker                                          |
+| -------------------- | ----------------------------------------------- |
+| `preorder`           | "Preorder · ships {date}" (blue, not a warning) |
+| `insufficient_stock` | "Not enough in stock"                           |
+| `out_of_stock`       | "Sold out"                                      |
+| `unavailable`        | "Not available right now"                       |
+| `removed`            | "No longer available"                           |
 
 The marker is text, and it sits inside the quantity's own live region, so a line turning short is
 announced without a live region per row. The quantity on screen is never changed for it: lowering
 the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is
-not `in_stock`, matching checkout, which refuses all four. It is a name, never the number left.
+neither `in_stock` nor `preorder`, matching checkout, which refuses those four: a preorder is
+bought now and ships from its release date. The date comes from the product record; until it
+loads the marker just says "Preorder". It is a name, never the number left.
 
 ### The stock poll
 

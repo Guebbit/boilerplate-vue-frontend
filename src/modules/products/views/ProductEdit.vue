@@ -52,6 +52,7 @@ import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { shopCurrency } from '@/infrastructure/shop-currency.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
+import { fromDateTimeLocal, toDateTimeLocal } from '../domain';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -158,6 +159,8 @@ interface ProductEditForm {
     price?: number;
     active?: boolean;
     purchasable?: boolean;
+    // The `datetime-local` input's own string (`''` = no date), converted on submit.
+    releaseDate?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
@@ -253,6 +256,7 @@ activateAutoHydrate(
                   price: adminProduct.value.price,
                   active: adminProduct.value.active ?? false,
                   purchasable: adminProduct.value.purchasable ?? true,
+                  releaseDate: toDateTimeLocal(adminProduct.value.releaseDate),
                   requiresShipping: adminProduct.value.requiresShipping ?? true,
                   noWithdrawal: adminProduct.value.noWithdrawal ?? false,
                   weight: adminProduct.value.weight,
@@ -298,6 +302,21 @@ const heroTitle = computed(
 const heroDescription = computed(() => formatText(adminProduct.value?.description));
 
 /**
+ * The release date as the PATCH should carry it: only when the field differs from what was
+ * loaded. Every other field is resent whole, but a moved release date notifies the buyers who
+ * already paid, so an untouched one must not travel — a round trip through the input's
+ * minute-wide spelling could otherwise nudge a date set through the API.
+ *
+ * @param current - The input's value.
+ * @returns The wire value (`''` clears it), or `undefined` to leave it out.
+ */
+const releaseDateChange = (current?: string | null): string | undefined =>
+    // `clearable` empties the input to `null`, which is the same "no date" as `''`.
+    toDateTimeLocal(adminProduct.value?.releaseDate) === (current ?? '')
+        ? undefined
+        : fromDateTimeLocal(current);
+
+/**
  * Validates the form and persists the product changes.
  *
  * @returns A promise resolving once the flow settles: a success toast and a fresh admin-record
@@ -314,6 +333,7 @@ const submitForm = () => {
             price,
             active,
             purchasable,
+            releaseDate,
             requiresShipping,
             noWithdrawal,
             weight,
@@ -330,6 +350,7 @@ const submitForm = () => {
             price,
             active,
             purchasable,
+            releaseDate: releaseDateChange(releaseDate),
             requiresShipping,
             noWithdrawal,
             weight,
@@ -487,6 +508,19 @@ const submitForm = () => {
                         "
                         persistent-hint
                         data-test="product-weight-field"
+                    />
+                    <v-text-field
+                        v-model="form.releaseDate"
+                        type="datetime-local"
+                        :label="t('product-edit-page.label-release-date')"
+                        :hint="
+                            adminProduct?.preorder
+                                ? t('product-edit-page.hint-release-date-preorder')
+                                : t('product-edit-page.hint-release-date')
+                        "
+                        persistent-hint
+                        clearable
+                        data-test="product-release-date-field"
                     />
                     <v-select
                         v-model="form.taxClass"

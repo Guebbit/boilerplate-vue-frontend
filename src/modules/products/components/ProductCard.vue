@@ -12,7 +12,7 @@ import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useSlot } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { Product } from '@types';
 import { shelfStateOf, type ShelfState } from '../domain';
@@ -45,12 +45,23 @@ const productActions = useSlot('product-actions');
  */
 const SHELF_LABELS: Record<ShelfState, string> = {
     'in-stock': 'product-card.in-stock',
+    preorder: 'product-card.preorder',
     'out-of-stock': 'product-card.out-of-stock',
     'off-sale': 'product-card.off-sale'
 };
 
 /**
- * The shelf as the shopper reads it: off sale outranks the stock badge.
+ * The badge colour of each shelf state; `satisfies` makes a new state fail the type check.
+ */
+const SHELF_COLORS = {
+    'in-stock': 'success',
+    preorder: 'info',
+    'out-of-stock': 'error',
+    'off-sale': 'error'
+} satisfies Record<ShelfState, string>;
+
+/**
+ * The shelf as the shopper reads it: off sale outranks a preorder, which outranks the stock badge.
  */
 const shelf = computed(() => shelfStateOf(product));
 </script>
@@ -86,11 +97,11 @@ const shelf = computed(() => shelfStateOf(product));
                 size="small"
                 variant="tonal"
                 class="self-start"
-                :color="shelf === 'in-stock' ? 'success' : 'error'"
+                :color="SHELF_COLORS[shelf]"
                 :data-shelf="shelf"
                 data-test="product-card-availability"
             >
-                {{ t(SHELF_LABELS[shelf]) }}
+                {{ t(SHELF_LABELS[shelf], { date: formatDate(product.releaseDate) }) }}
             </v-chip>
             <div class="mt-auto flex flex-wrap items-start gap-2 pt-2">
                 <component

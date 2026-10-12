@@ -110,7 +110,8 @@
         "return-status-partially_returned": "Reso in parte",
         "return-status-returned": "Reso",
         "no-withdrawal": "Nessun diritto di recesso per questo articolo.",
-        "button-history": "Cronologia"
+        "button-history": "Cronologia",
+        "preorder-line": "Preordine: spedizione dal {date}."
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",

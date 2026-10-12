@@ -4,7 +4,8 @@
         "out-of-stock": "Esaurito",
         "off-sale": "Non disponibile al momento",
         "success": "Prodotto aggiunto al carrello.",
-        "guest-full": "Il tuo carrello contiene già il massimo di prodotti diversi. Rimuovine uno, o accedi, per aggiungerne un altro."
+        "guest-full": "Il tuo carrello contiene già il massimo di prodotti diversi. Rimuovine uno, o accedi, per aggiungerne un altro.",
+        "preorder": "Preordina"
     },
     "cart-page": {
         "page-title": "Il mio carrello",

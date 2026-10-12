@@ -65,7 +65,13 @@ describe('what a card shows', () => {
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'awaiting_stock',
-                actions: { ship: false, fulfill: false, hold: false, release: false }
+                actions: {
+                    ship: false,
+                    fulfill: false,
+                    hold: false,
+                    release: false,
+                    confirmWait: false
+                }
             })
         );
 
@@ -145,7 +151,13 @@ describe('the buttons come from `actions`', () => {
     it('offers ship and hold on an open one', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({
-                actions: { ship: true, fulfill: false, hold: true, release: false }
+                actions: {
+                    ship: true,
+                    fulfill: false,
+                    hold: true,
+                    release: false,
+                    confirmWait: false
+                }
             })
         );
 
@@ -176,7 +188,13 @@ describe('the buttons come from `actions`', () => {
         const { wrapper, store } = mountCard(
             aFulfillmentOrder({
                 kind: 'digital',
-                actions: { ship: false, fulfill: true, hold: false, release: false }
+                actions: {
+                    ship: false,
+                    fulfill: true,
+                    hold: false,
+                    release: false,
+                    confirmWait: false
+                }
             })
         );
         const fulfill = vi.spyOn(store, 'fulfill').mockResolvedValue(aShipment());
@@ -196,7 +214,13 @@ describe('the buttons come from `actions`', () => {
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'other',
-                actions: { ship: false, fulfill: false, hold: false, release: true }
+                actions: {
+                    ship: false,
+                    fulfill: false,
+                    hold: false,
+                    release: true,
+                    confirmWait: false
+                }
             })
         );
         const release = vi.spyOn(store, 'release').mockResolvedValue(aFulfillmentOrder());
@@ -215,7 +239,13 @@ describe('the buttons come from `actions`', () => {
         const { wrapper, store } = mountCard(
             aFulfillmentOrder({
                 kind: 'digital',
-                actions: { ship: false, fulfill: true, hold: false, release: false }
+                actions: {
+                    ship: false,
+                    fulfill: true,
+                    hold: false,
+                    release: false,
+                    confirmWait: false
+                }
             })
         );
         vi.spyOn(store, 'fulfill').mockRejectedValue(new Error('not digital'));

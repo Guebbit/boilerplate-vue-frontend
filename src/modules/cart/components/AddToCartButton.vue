@@ -62,7 +62,8 @@ const { loading } = storeToRefs(cartStore);
 
 /**
  * The shelf as the shopper reads it, from the flags every reader gets (`purchasable`, `inStock`;
- * the exact counters are for stock readers only). Off sale and sold out both hold the button back.
+ * the exact counters are for stock readers only). Off sale and sold out both hold the button back;
+ * a preorder does not, it is bought now and ships from its release date.
  */
 const shelf = computed(() => shelfStateOf(product));
 
@@ -71,6 +72,7 @@ const shelf = computed(() => shelfStateOf(product));
  */
 const label = computed(() => {
     if (shelf.value === 'off-sale') return t('add-to-cart-button.off-sale');
+    if (shelf.value === 'preorder') return t('add-to-cart-button.preorder');
     return shelf.value === 'out-of-stock'
         ? t('add-to-cart-button.out-of-stock')
         : t('add-to-cart-button.label');
@@ -115,7 +117,7 @@ const handleAddToCart = () => {
         <v-btn
             color="primary"
             data-test="add-to-cart"
-            :disabled="shelf !== 'in-stock' || loading"
+            :disabled="(shelf !== 'in-stock' && shelf !== 'preorder') || loading"
             @click="handleAddToCart"
         >
             <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />

@@ -3,13 +3,16 @@
         "unavailable": "Non disponibile al momento",
         "removed": "Non più disponibile",
         "out-of-stock": "Esaurito",
-        "insufficient-stock": "Disponibilità insufficiente"
+        "insufficient-stock": "Disponibilità insufficiente",
+        "preorder": "Preordine · spedizione dal {date}",
+        "preorder-undated": "Preordine"
     },
     "product-card": {
         "in-stock": "Disponibile",
         "out-of-stock": "Esaurito",
         "off-sale": "Non disponibile al momento",
-        "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto."
+        "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto.",
+        "preorder": "Preordine · spedizione dal {date}"
     },
     "products-list-page": {
         "sort-label": "Ordina per",
@@ -83,7 +86,9 @@
         "out-of-stock": "Esaurito",
         "off-sale": "Non disponibile al momento",
         "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto.",
-        "image-alt": "Foto di {name}"
+        "image-alt": "Foto di {name}",
+        "preorder": "Preordine: spedizione dal {date}",
+        "label-release-date": "Spedizione dal"
     },
     "product-create-page": {
         "page-title": "Crea prodotto",
@@ -107,7 +112,9 @@
         "hint-no-withdrawal": "Beni confezionati su misura o chiaramente personalizzati, o che rischiano di deteriorarsi o scadere rapidamente (dir. 2011/83/UE art. 16, lett. c–d): il cliente non può recedere. Non per i beni sigillati per igiene (esclusi solo se aperti dopo la consegna) né per i contenuti digitali (serve il consenso espresso del cliente).",
         "button-submit": "Crea prodotto",
         "button-go-to-list": "Torna alla lista prodotti",
-        "success-create": "Prodotto creato con successo"
+        "success-create": "Prodotto creato con successo",
+        "label-release-date": "Data di uscita",
+        "hint-release-date": "Spedizione da questa data. Finché è nel futuro il prodotto si vende in preordine, fino a un anno avanti. Lascia vuoto per un prodotto in vendita ora."
     },
     "product-edit-page": {
         "page-title": "Modifica prodotto",
@@ -133,7 +140,10 @@
         "button-go-to-details": "Torna ai dettagli prodotto",
         "button-go-to-list": "Torna alla lista prodotti",
         "success-update": "Prodotto aggiornato con successo",
-        "button-translations": "Traduzioni"
+        "button-translations": "Traduzioni",
+        "label-release-date": "Data di uscita",
+        "hint-release-date": "Spedizione da questa data. Finché è nel futuro il prodotto si vende in preordine, fino a un anno avanti. Spostarla più avanti avvisa chi ha già pagato. Lascia vuoto per un prodotto in vendita ora.",
+        "hint-release-date-preorder": "Questo prodotto è ora in preordine. Spostare la data più avanti avvisa chi ha già pagato; cancellarla chiude il preordine."
     },
     "navigation": {
         "label-products-list": "prodotto | prodotti"

@@ -1040,7 +1040,8 @@ describe('every availability on a line', () => {
     it.each([
         ['out_of_stock', 'Sold out'],
         ['unavailable', 'Not available right now'],
-        ['removed', 'No longer available']
+        ['removed', 'No longer available'],
+        ['preorder', 'Preorder']
     ] as const)('words a %s line as "%s"', (availability, words) =>
         mountCart({
             held: { ...A_CART, items: [{ productId: 'p1', quantity: 2, availability }] }
@@ -1064,6 +1065,17 @@ describe('every availability on a line', () => {
                 expect(wrapper.find('[data-test=cart-lines-need-attention]').exists()).toBe(true);
             })
     );
+
+    it('leaves "Place order" live for a preorder line: it is bought now and ships later', () =>
+        mountCart({
+            held: {
+                ...A_CART,
+                items: [{ productId: 'p1', quantity: 2, availability: 'preorder' }]
+            }
+        }).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
+            expect(wrapper.find('[data-test=cart-lines-need-attention]').exists()).toBe(false);
+        }));
 
     it('leaves "Place order" live, and says nothing, when every line can be bought', () =>
         mountCart().then(({ wrapper }) => {

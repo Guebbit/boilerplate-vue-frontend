@@ -665,6 +665,17 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             </v-chip>
                                         </div>
                                         <p
+                                            v-if="item.product.preorder"
+                                            class="m-0 mb-2 text-sm opacity-75"
+                                            data-test="order-item-preorder"
+                                        >
+                                            {{
+                                                t('order-target-page.preorder-line', {
+                                                    date: formatDate(item.product.releaseDate)
+                                                })
+                                            }}
+                                        </p>
+                                        <p
                                             v-if="item.product.noWithdrawal"
                                             class="m-0 mb-2 text-sm opacity-75"
                                             data-test="order-item-no-withdrawal"

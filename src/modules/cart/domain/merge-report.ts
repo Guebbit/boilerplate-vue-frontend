@@ -49,13 +49,14 @@ export type MergeReportKind = 'gone' | 'off-sale' | 'short' | 'changed';
  * @returns `true` when the quantity is not what was asked, or the line is short, or it is gone.
  */
 const isNews = ({ reason, availability }: MergeLineResult): boolean =>
-    reason !== undefined || availability !== 'in_stock';
+    reason !== undefined || (availability !== 'in_stock' && availability !== 'preorder');
 
 /**
  * Keeps the lines of a merge answer worth telling about, in the order the server gave them.
  *
  * @param lines - The answer's `lines`: one result per submitted line.
- * @returns The lines that carry a `reason` or whose `availability` is not `in_stock`.
+ * @returns The lines that carry a `reason` or whose `availability` is neither `in_stock` nor
+ *  `preorder` (a preorder is buyable, so a clean merge of one needs no news).
  */
 export const changedMergeLines = (lines: readonly MergeLineResult[]): MergeReportLine[] =>
     lines

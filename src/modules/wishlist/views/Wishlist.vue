@@ -84,7 +84,7 @@ const { items, loading } = storeToRefs(useWishlistStore());
  * The saved products' titles — the wishlist answers ids only, and the products store holds the
  * records.
  */
-const { titleOf, loadProducts, availabilityLabel } = useProductLines();
+const { titleOf, productOf, loadProducts, availabilityLabel } = useProductLines();
 
 /**
  * The saved lines' own blocked state — moving a line to the cart or removing it has no per-line
@@ -167,14 +167,16 @@ onMounted(() =>
                 <v-chip
                     v-if="availabilityLabel(item.availability)"
                     size="small"
-                    color="warning"
+                    :color="item.availability === 'preorder' ? 'info' : 'warning'"
                     variant="tonal"
                     label
                     class="mt-1"
                     :data-availability="item.availability"
                     data-test="wishlist-line-availability"
                 >
-                    {{ availabilityLabel(item.availability) }}
+                    {{
+                        availabilityLabel(item.availability, productOf(item.productId)?.releaseDate)
+                    }}
                 </v-chip>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn

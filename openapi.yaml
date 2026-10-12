@@ -3959,8 +3959,8 @@ paths:
       description: |
         Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
         writable scalar field is required, since none of them but `taxClass`/`rateType`/
-        `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
-        cleared, not left alone. The image is outside the representation: it is set by an
+        `sku`/`weight`/`releaseDate` has a legal "cleared" state, and an omitted one of
+        those five is cleared, not left alone. The image is outside the representation: it is set by an
         upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
         it — a client cannot send the current path back. `translations` is the whole set as well: it must
         name the fallback locale, and every stored locale it leaves out is deleted. To
@@ -5987,6 +5987,122 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+  /delivery/fulfillment-orders:
+    get:
+      tags:
+        - Delivery
+      summary: List fulfillment orders (the preorder board)
+      description: |
+        One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
+        board: the fulfillment orders of preorders, where they stand with their buyer, and which are late.
+        `preorder=true` keeps those made from a preorder line (the ones that carry an agreed date).
+
+        `late=true` is the Late view: the expected date has passed and units remain, whether still waiting
+        for stock, allocated and not yet shipped, or part shipped. `dueWithin=N` is its warning: still
+        waiting for stock, and expected within the next N days — see it coming, since a slip moved before
+        the date passes is a notice, and one moved after is a question.
+
+        Same audience as the orders it belongs to: staff holding `orders.any.read` see every row, anyone
+        else only their own orders'. `delivered` is true once nothing remains and every shipment arrived.
+      operationId: listPreorderFulfillmentOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: preorder
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: "`true` keeps fulfillment orders made from a preorder line, `false` the others; absent keeps both."
+        - name: state
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PreorderFulfillmentState"
+        - name: productId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: Only fulfillment orders carrying this product.
+        - name: late
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: "`true` keeps those whose expected date has passed with units remaining."
+        - name: dueWithin
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+          description: Only those still waiting for stock whose expected date falls within this many days.
+      responses:
+        "200":
+          description: A page of fulfillment orders, the earliest expected first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreorderFulfillmentOrdersResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
+  /delivery/fulfillment-orders/summary:
+    get:
+      tags:
+        - Delivery
+      summary: Preorder units by product and state
+      description: |
+        For each product sold as a preorder, how its units stand across every fulfillment order made from it:
+        paid, waiting for stock, waiting for the buyer's answer, allocated, shipped, cancelled, and late. Units,
+        not fulfillment orders. `firstAgreedAt` is the earliest date any buyer was promised. For the Products
+        tab of the preorder board; same audience and scope as the list.
+      operationId: summarizePreorderFulfillmentOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: productId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: Only this product.
+      responses:
+        "200":
+          description: A page of product summaries, the earliest promise first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreorderProductSummariesResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /delivery/fulfillment-orders/{id}/shipments:
     post:
       tags:
@@ -6143,6 +6259,38 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
+  /delivery/fulfillment-orders/{id}/confirm-wait:
+    post:
+      tags:
+        - Delivery
+      summary: Keep waiting for a late preorder
+      description: "The buyer's answer to a notice that their preorder will be later than promised (or that its date passed): yes, keep waiting. Clears the deadline after which silence would cancel the fulfillment order and refund it. Only the order's own buyer may answer, and only while `consent` is `awaiting` (`DELIVERY_NOT_AWAITING_ANSWER` otherwise). The buyer's other answer, cancel, is the existing cancel or remainder cancel."
+      operationId: confirmFulfillmentOrderWait
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The fulfillment order the buyer will keep waiting for
+      responses:
+        "200":
+          description: The fulfillment order, with `consent` now `confirmed`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentOrderEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -6569,6 +6717,95 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InventoryLevelsResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
+  /inventory/levels/{productId}/preorder-limit:
+    put:
+      tags:
+        - Inventory
+      summary: Set a product's preorder limit
+      description: |
+        Sets how many units of the product may be preordered at once: the allowance an order claims when it is placed. `0` closes preordering. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
+
+        Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited).
+      operationId: setPreorderLimit
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreorderLimitRequest"
+      responses:
+        "200":
+          description: The counters after the change
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryLevelEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: inventory
+  /inventory/preorders:
+    get:
+      tags:
+        - Inventory
+      summary: Preorder allowances
+      description: |
+        Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `preordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
+
+        The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
+      operationId: listPreorderLevels
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: A page of preorder allowances, the most outstanding first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreorderLevelsResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -12018,6 +12255,10 @@ components:
       maxLength: 64
       minLength: 1
       description: "An optional, deployment-chosen stock-keeping unit — unique across the catalogue when set. `''` is invalid, same reasoning as `ImageUrl`'s own `minLength: 1`: never a second spelling of \"absent\". Frozen onto an order line at checkout (`OrderLineProduct.sku`), same as every other field a purchase must remember regardless of what the catalogue does with the product afterwards."
+    ReleaseDate:
+      type: string
+      format: date-time
+      description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
     Product:
       type: object
       additionalProperties: false
@@ -12078,6 +12319,12 @@ components:
         purchasable:
           type: boolean
           default: true
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
+        preorder:
+          type: boolean
+          readOnly: true
+          description: "The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`."
         requiresShipping:
           type: boolean
           default: true
@@ -12195,6 +12442,8 @@ components:
         purchasable:
           type: boolean
           default: true
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
         requiresShipping:
           type: boolean
           default: true
@@ -12251,6 +12500,10 @@ components:
         purchasable:
           type: boolean
           default: true
+        releaseDate:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/ReleaseDate"
         requiresShipping:
           type: boolean
           default: true
@@ -12410,6 +12663,10 @@ components:
           type: boolean
         purchasable:
           type: boolean
+        releaseDate:
+          oneOf:
+            - $ref: "#/components/schemas/ReleaseDate"
+            - type: "null"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -12471,6 +12728,10 @@ components:
           type: boolean
         purchasable:
           type: boolean
+        releaseDate:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/ReleaseDate"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -12547,6 +12808,10 @@ components:
           type: boolean
         purchasable:
           type: boolean
+        releaseDate:
+          oneOf:
+            - $ref: "#/components/schemas/ReleaseDate"
+            - type: "null"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -12600,6 +12865,10 @@ components:
           type: boolean
         purchasable:
           type: boolean
+        releaseDate:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/ReleaseDate"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -12692,6 +12961,12 @@ components:
           type: boolean
         purchasable:
           type: boolean
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
+        preorder:
+          type: boolean
+          readOnly: true
+          description: "The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`."
         requiresShipping:
           type: boolean
           default: true
@@ -12789,12 +13064,16 @@ components:
       type: string
       description: |-
         Whether a saved line can be bought right now.
-        - `in_stock`: buyable, enough stock. - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
+        - `in_stock`: buyable, enough stock. - `preorder`: buyable before its release date; it ships from `releaseDate`. Judged
+          against the preorder allowance, so `out_of_stock` and `insufficient_stock` mean
+          the allowance is full or short, not that the shelf is empty.
+        - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
           and returns to a stock value if the product is shown again.
 
         Never a number: exact stock stays behind `inventory.any.read`.
       enum:
         - in_stock
+        - preorder
         - insufficient_stock
         - out_of_stock
         - unavailable
@@ -13072,6 +13351,11 @@ components:
         weight:
           type: integer
           minimum: 0
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
+        preorder:
+          type: boolean
+          description: "The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed."
         categories:
           type: array
           items:
@@ -14203,6 +14487,21 @@ components:
         - high_risk
         - other
       description: Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
+    FulfillmentConsent:
+      type: string
+      enum:
+        - awaiting
+        - confirmed
+        - expired
+      description: "Where a waiting preorder stands with its buyer after a late date. Absent: the buyer was never asked. `awaiting`: asked to say whether to keep waiting, and silence until `consentDeadline` cancels and refunds (FTC 16 CFR 435.2, CRD Art. 18). `confirmed`: the buyer said keep waiting, so a later slip asks again. `expired`: the window closed in silence and the cancel and refund are on their way; too late to answer."
+    FulfillmentCancelReason:
+      type: string
+      enum:
+        - buyer
+        - staff
+        - no_answer
+        - order
+      description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `no_answer`: the buyer was asked to keep waiting and never answered. `order`: the whole order was cancelled."
     FulfillmentOrderActions:
       type: object
       additionalProperties: false
@@ -14211,7 +14510,8 @@ components:
         - fulfill
         - hold
         - release
-      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. All are false when the buyer of the order ranks at or above the caller, and for anyone without `delivery.any.update`.
+        - confirmWait
+      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false when the buyer of the order ranks at or above the caller, and for anyone without `delivery.any.update`; `confirmWait` is the order's own buyer's.
       properties:
         ship:
           type: boolean
@@ -14225,6 +14525,9 @@ components:
         release:
           type: boolean
           description: Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`.
+        confirmWait:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/confirm-wait` would be accepted — the caller is the buyer and `consent` is `awaiting`.
     FulfillmentOrder:
       type: object
       additionalProperties: false
@@ -14269,6 +14572,18 @@ components:
           type: string
           format: date-time
           description: When it is now expected to ship, when that differs from what was agreed.
+        consent:
+          $ref: "#/components/schemas/FulfillmentConsent"
+        consentDeadline:
+          type: string
+          format: date-time
+          description: When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`.
+        lastNoticeAt:
+          type: string
+          format: date-time
+          description: When the buyer was last told the date had moved or passed.
+        cancelReason:
+          $ref: "#/components/schemas/FulfillmentCancelReason"
         actions:
           $ref: "#/components/schemas/FulfillmentOrderActions"
         createdAt:
@@ -14395,6 +14710,204 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/OrderFulfillment"
+    PreorderFulfillmentState:
+      type: string
+      enum:
+        - waiting
+        - awaiting_yes
+        - allocated
+        - shipped
+        - cancelled
+      description: "Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `awaiting_yes`: held for stock, and the buyer was asked to keep waiting (or let the window close and the cancel is on its way). `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who."
+    PreorderBuyer:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+      description: Who the order belongs to, as the order itself carries it.
+      properties:
+        userId:
+          $ref: "#/components/schemas/Id"
+        email:
+          type: string
+    PreorderFulfillmentOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - orderNumber
+        - number
+        - status
+        - state
+        - lines
+        - buyer
+        - delivered
+        - late
+        - slippedDays
+        - createdAt
+      description: One fulfillment order of a preorder, with its buyer and what the board needs to judge it.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        orderNumber:
+          type: string
+        number:
+          type: integer
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/FulfillmentOrderStatus"
+        state:
+          $ref: "#/components/schemas/PreorderFulfillmentState"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentOrderLine"
+        buyer:
+          $ref: "#/components/schemas/PreorderBuyer"
+        paidAt:
+          type: string
+          format: date-time
+          description: When the order was paid. The payment's instant, which is also the queue key stock is allocated by (`inventory` stamps the hold in the same transaction).
+        agreedAt:
+          type: string
+          format: date-time
+        expectedAt:
+          type: string
+          format: date-time
+        slippedDays:
+          type: integer
+          minimum: 0
+          description: Whole days between the date promised and the date expected; `0` when it has not slipped.
+        late:
+          type: boolean
+          description: The expected date has passed and units remain.
+        delivered:
+          type: boolean
+          description: Nothing remains, something shipped, and every shipment arrived.
+        holdReason:
+          $ref: "#/components/schemas/FulfillmentHoldReason"
+        consent:
+          $ref: "#/components/schemas/FulfillmentConsent"
+        consentDeadline:
+          type: string
+          format: date-time
+        lastNoticeAt:
+          type: string
+          format: date-time
+        cancelReason:
+          $ref: "#/components/schemas/FulfillmentCancelReason"
+        createdAt:
+          type: string
+          format: date-time
+    PreorderFulfillmentOrdersResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreorderFulfillmentOrder"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    PreorderFulfillmentOrdersResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/PreorderFulfillmentOrdersResponse"
+    PreorderProductSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - firstAgreedAt
+        - paid
+        - waiting
+        - awaitingYes
+        - allocated
+        - shipped
+        - cancelled
+        - late
+      description: "One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + awaitingYes + allocated + shipped + cancelled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed."
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+          description: As the earliest order froze it.
+        firstAgreedAt:
+          type: string
+          format: date-time
+          description: The earliest date any buyer was promised.
+        paid:
+          type: integer
+          minimum: 0
+        waiting:
+          type: integer
+          minimum: 0
+        awaitingYes:
+          type: integer
+          minimum: 0
+        allocated:
+          type: integer
+          minimum: 0
+        shipped:
+          type: integer
+          minimum: 0
+        cancelled:
+          type: integer
+          minimum: 0
+        late:
+          type: integer
+          minimum: 0
+    PreorderProductSummariesResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreorderProductSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    PreorderProductSummariesResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/PreorderProductSummariesResponse"
     ShipFulfillmentOrderRequest:
       type: object
       additionalProperties: false
@@ -14517,7 +15030,8 @@ components:
         - defective
         - wrong_item
         - other
-      description: Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+        - no_answer
+      description: "Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached. `no_answer` is the shop's own: a preorder's buyer was asked to keep waiting for a late date and never answered, so what had not shipped was cancelled and refunded. Written only by that cancellation, so a request cannot name it (`ReturnRequestReason`)."
     ReturnKind:
       type: string
       enum:
@@ -14676,6 +15190,14 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ReturnsResponse"
+    ReturnRequestReason:
+      type: string
+      enum:
+        - withdrawal
+        - defective
+        - wrong_item
+        - other
+      description: What a request may name as the reason — every `ReturnReason` but the shop's own `no_answer`.
     CreateReturnRequest:
       type: object
       additionalProperties: false
@@ -14686,7 +15208,7 @@ components:
         orderId:
           $ref: "#/components/schemas/Id"
         reason:
-          $ref: "#/components/schemas/ReturnReason"
+          $ref: "#/components/schemas/ReturnRequestReason"
         note:
           type: string
           minLength: 1
@@ -14843,6 +15365,8 @@ components:
         - onHand
         - reserved
         - available
+        - preorderLimit
+        - preordered
       properties:
         productId:
           $ref: "#/components/schemas/Id"
@@ -14858,6 +15382,14 @@ components:
         available:
           type: integer
           minimum: 0
+        preorderLimit:
+          type: integer
+          minimum: 0
+          description: How many units may be preordered at once. `0` means preordering is closed.
+        preordered:
+          type: integer
+          minimum: 0
+          description: Preorder units outstanding against the limit, paid or not, until stock arrives and is allocated to them.
     InventoryLevelsResponse:
       type: object
       additionalProperties: false
@@ -14888,6 +15420,105 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/InventoryLevelsResponse"
+    PreorderLimitRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - preorderLimit
+      properties:
+        preorderLimit:
+          type: integer
+          minimum: 0
+          description: The new allowance. `0` closes preordering.
+    InventoryLevelEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/InventoryLevel"
+    PreorderLevel:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - preorderLimit
+        - preordered
+        - held
+        - paid
+        - left
+        - ordered
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        releaseDate:
+          $ref: "#/components/schemas/ReleaseDate"
+        preorderLimit:
+          type: integer
+          minimum: 0
+        preordered:
+          type: integer
+          minimum: 0
+          description: Outstanding units, `held + paid`. Drops when stock is allocated, so it is not "units sold".
+        held:
+          type: integer
+          minimum: 0
+          description: Outstanding units on orders still unpaid. They free themselves when the hold expires.
+        paid:
+          type: integer
+          minimum: 0
+          description: Outstanding units on paid orders, waiting for stock oldest payment first.
+        left:
+          type: integer
+          minimum: 0
+          description: "`preorderLimit - preordered`, never below zero: how many more may be ordered."
+        ordered:
+          type: integer
+          minimum: 0
+          description: Lifetime units claimed through `preorder` movements in the ledger, given back or not.
+    PreorderLevelsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreorderLevel"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    PreorderLevelsResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/PreorderLevelsResponse"
     StockMovementReason:
       type: string
       enum:
@@ -14899,6 +15530,8 @@ components:
         - receive
         - adjust
         - restock
+        - preorder
+        - allocate
       description: |
         * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
         * `commit` — the order was paid for. The claim is settled and nothing moves: the units stay on the shelf, still spoken for.
@@ -14908,6 +15541,10 @@ components:
         * `receive` — a supplier delivery. `onHand` up.
         * `adjust` — a stocktake correction, signed. `onHand` moves either way.
         * `restock` — returned goods were received back on the shelf. `onHand` up.
+        * `preorder` — an order claimed units that do not exist yet. `preordered` up; the shelf is untouched.
+        * `allocate` — stock arrived for a paid preorder. `preordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
+
+        `release` and `expire` of a preorder claim give back the allowance (`preordered` down) instead of `reserved`.
     StockMovement:
       type: object
       additionalProperties: false
@@ -14917,6 +15554,7 @@ components:
         - reason
         - onHandDelta
         - reservedDelta
+        - preorderedDelta
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -14927,6 +15565,8 @@ components:
         onHandDelta:
           type: integer
         reservedDelta:
+          type: integer
+        preorderedDelta:
           type: integer
         reference:
           type: string
@@ -14988,23 +15628,6 @@ components:
           maxLength: 1000
           minLength: 1
           description: Optional — the supplier, the delivery note number, whatever the operator wants on the row.
-    InventoryLevelEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/InventoryLevel"
     AdjustmentRequest:
       type: object
       additionalProperties: false
@@ -15784,6 +16407,18 @@ components:
         expectedAt:
           type: string
           format: date-time
+        consent:
+          $ref: "#/components/schemas/FulfillmentConsent"
+        consentDeadline:
+          type: string
+          format: date-time
+          description: When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`.
+        lastNoticeAt:
+          type: string
+          format: date-time
+          description: When the buyer was last told the date had moved or passed.
+        cancelReason:
+          $ref: "#/components/schemas/FulfillmentCancelReason"
     ExportReturn:
       type: object
       additionalProperties: false
@@ -16003,17 +16638,105 @@ components:
         createdAt:
           type: string
           format: date-time
+    PreorderDelayedParams:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+        - fulfillmentOrderId
+        - titles
+        - agreedAt
+      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised, the date now expected (absent when there is none) and, for `notifications.preorder-confirm-wait`, by when silence cancels."
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        titles:
+          type: array
+          description: The waiting products' titles, as the order froze them.
+          items:
+            type: string
+        agreedAt:
+          type: string
+          format: date-time
+        expectedAt:
+          type: string
+          format: date-time
+        answerBy:
+          type: string
+          format: date-time
+    NotificationPreorderDelayed:
+      type: object
+      additionalProperties: false
+      description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.preorder-delayed
+        params:
+          $ref: "#/components/schemas/PreorderDelayedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
+    NotificationPreorderConfirmWait:
+      type: object
+      additionalProperties: false
+      description: A preorder the caller paid for is late and the shop needs an answer — keep waiting, or cancel; silence until `answerBy` cancels and refunds.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.preorder-confirm-wait
+        params:
+          $ref: "#/components/schemas/PreorderDelayedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     Notification:
       oneOf:
         - $ref: "#/components/schemas/NotificationCartLineRemoved"
         - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
         - $ref: "#/components/schemas/NotificationCartMergeRefused"
+        - $ref: "#/components/schemas/NotificationPreorderDelayed"
+        - $ref: "#/components/schemas/NotificationPreorderConfirmWait"
       discriminator:
         propertyName: code
         mapping:
           notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
           notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
           notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
+          notifications.preorder-delayed: "#/components/schemas/NotificationPreorderDelayed"
+          notifications.preorder-confirm-wait: "#/components/schemas/NotificationPreorderConfirmWait"
     AccountExportResponse:
       type: object
       additionalProperties: false
@@ -17207,6 +17930,9 @@ x-error-codes:
   DELIVERY_LINES_INVALID:
     status: 422
     description: A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice.
+  DELIVERY_NOT_AWAITING_ANSWER:
+    status: 409
+    description: The fulfillment order is not waiting for the buyer to say whether to keep waiting, so there is nothing to confirm.
   DELIVERY_NOT_DELIVERABLE:
     status: 409
     description: The shipment has already been delivered, or its order is no longer in a state this can run from.

@@ -84,6 +84,16 @@ describe('ProductCard — what a shopper reads', () => {
         );
     });
 
+    it('tells a preorder from sold out, with the date it ships from', () => {
+        const wrapper = mountCard(
+            aProduct({ preorder: true, inStock: false, releaseDate: '2027-03-15T12:00:00.000Z' })
+        );
+        const badge = wrapper.get('[data-test=product-card-availability]');
+
+        expect(badge.text()).toMatch(/^Preorder · ships .*2027/);
+        expect(badge.attributes('data-shelf')).toBe('preorder');
+    });
+
     it.each([[3], [undefined]])(
         'marks an in-stock product with %j available as in stock — the flag decides, not the count',
         (available) => {

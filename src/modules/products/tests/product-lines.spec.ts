@@ -153,6 +153,15 @@ describe('useProductLines', () => {
         expect(mountLines().availabilityLabel(availability)).toBe(label);
     });
 
+    it('words a preorder line with the date it ships from, and without one when the date is unknown', () => {
+        const lines = mountLines();
+
+        expect(lines.availabilityLabel('preorder', '2027-03-15T12:00:00.000Z')).toMatch(
+            /^Preorder · ships .*2027/
+        );
+        expect(lines.availabilityLabel('preorder')).toBe('Preorder');
+    });
+
     it('tells a product the shopper cannot see from one that is loaded, once the read has settled', () => {
         const lines = mountLines();
 

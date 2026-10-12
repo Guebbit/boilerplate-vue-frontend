@@ -63,7 +63,8 @@ this module.
 ## Line availability
 
 Each saved line arrives as `{ productId, availability }`, and the page words it with the products
-module's labels: "Sold out", "Not available right now", "No longer available". "Move to cart" is
+module's labels: "Sold out", "Not available right now", "No longer available", and "Preorder ·
+ships {date}" (blue) for a product sold before its release date. "Move to cart" is
 disabled only for `removed`: an off-sale product moves like a sold-out one, since the cart accepts
 both and checkout is the gate. A wishlist line holds no quantity, so it is never "Not enough in
 stock".

@@ -32,6 +32,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
+import { fromDateTimeLocal } from '../domain';
 import { toCreateTranslations } from '../composables/translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
@@ -74,6 +75,8 @@ interface ProductCreateForm {
     price?: number;
     active?: boolean;
     purchasable?: boolean;
+    // The `datetime-local` input's own string (`''` = no date), converted on submit.
+    releaseDate?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
@@ -182,13 +185,14 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() => {
-        const { imageUpload, translations, price } = form.value;
+        const { imageUpload, translations, price, releaseDate } = form.value;
         if (price === undefined) return;
         // No baseline: a create sends everything the form holds. What the helper adds is the
         // spelling — a cleared weight or category list is omitted rather than sent empty — and a
         // blank description is dropped from each locale (`toCreateTranslations`).
         return toRequestBody('CreateProductBody', {
             ...form.value,
+            releaseDate: fromDateTimeLocal(releaseDate),
             translations: toCreateTranslations(translations),
             imageUpload: undefined
         })
@@ -301,6 +305,16 @@ const submitForm = () => {
                 "
                 persistent-hint
                 data-test="product-weight-field"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.releaseDate"
+                type="datetime-local"
+                :label="t('product-create-page.label-release-date')"
+                :hint="t('product-create-page.hint-release-date')"
+                persistent-hint
+                clearable
+                data-test="product-release-date-field"
                 class="mb-2"
             />
             <v-select

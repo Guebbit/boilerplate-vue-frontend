@@ -33,6 +33,7 @@ import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
     formatText,
+    formatDate,
     formatDateTime,
     formatCurrency,
     formatFlag
@@ -144,7 +145,11 @@ const stockLabel = computed(() => {
     const shown = currentProduct.value;
     if (!shown) return formatText(undefined);
     // Off sale outranks the stock badge: the product is listed, but cannot be bought.
-    if (shelfStateOf(shown) === 'off-sale') return t('product-target-page.off-sale');
+    const shelf = shelfStateOf(shown);
+    if (shelf === 'off-sale') return t('product-target-page.off-sale');
+    // A preorder is bought before it exists: the shelf may be empty, the date is what matters.
+    if (shelf === 'preorder')
+        return t('product-target-page.preorder', { date: formatDate(shown.releaseDate) });
     if (!shown.inStock) return t('product-target-page.out-of-stock');
     if (shown.lowStock) return t('product-target-page.low-stock');
     return shown.available === undefined
@@ -244,6 +249,13 @@ const stockLabel = computed(() => {
                         "
                         :icon="Circle"
                         data-test="product-purchasable"
+                    />
+                    <ItemDetailField
+                        v-if="currentProduct.releaseDate"
+                        :label="t('product-target-page.label-release-date')"
+                        :value="formatDateTime(currentProduct.releaseDate)"
+                        :icon="Calendar"
+                        data-test="product-release-date"
                     />
                     <ItemDetailField
                         :label="t('product-target-page.label-description')"

@@ -45,7 +45,9 @@
         "error-delta-nonzero": "A correction is a whole number other than zero",
         "button-history-named": "History of {name}",
         "pagination-board": "Stock board pages",
-        "pagination-ledger": "Ledger pages"
+        "pagination-ledger": "Ledger pages",
+        "reason-preorder": "Preordered",
+        "reason-allocate": "Allocated"
     },
     "navigation": {
         "label-inventory": "Inventory"

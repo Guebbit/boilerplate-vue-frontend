@@ -204,10 +204,13 @@ watch([notes, paymentMethodId, addressId], () => {
 
 /**
  * Whether any line cannot be bought as it stands (short, sold out, off sale, removed). Checkout
- * refuses every one of those, so "Place order" waits until the shopper has fixed them.
+ * refuses every one of those, so "Place order" waits until the shopper has fixed them. A
+ * `preorder` line is buyable: it ships from its release date.
  */
 const linesNeedAttention = computed(() =>
-    cartItems.value.some(({ availability }) => availability !== 'in_stock')
+    cartItems.value.some(
+        ({ availability }) => availability !== 'in_stock' && availability !== 'preorder'
+    )
 );
 
 /**
@@ -690,14 +693,19 @@ onMounted(() =>
                         <v-chip
                             v-if="availabilityLabel(item.availability)"
                             size="small"
-                            color="warning"
+                            :color="item.availability === 'preorder' ? 'info' : 'warning'"
                             variant="tonal"
                             label
                             class="ml-2"
                             :data-availability="item.availability"
                             data-test="cart-line-availability"
                         >
-                            {{ availabilityLabel(item.availability) }}
+                            {{
+                                availabilityLabel(
+                                    item.availability,
+                                    productOf(item.productId)?.releaseDate
+                                )
+                            }}
                         </v-chip>
                     </p>
                     <!-- Absent until the product read has answered for this line — no price

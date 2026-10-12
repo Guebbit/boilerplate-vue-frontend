@@ -2205,6 +2205,11 @@ export const RateType = {
  */
 export type Sku = string;
 
+/**
+ * When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
+ */
+export type ReleaseDate = string;
+
 export interface Product {
     id: Id;
     title: string;
@@ -2240,6 +2245,9 @@ export interface Product {
     description?: string;
     active?: boolean;
     purchasable?: boolean;
+    releaseDate?: ReleaseDate;
+    /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
+    readonly preorder?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /** @minimum 0 */
@@ -2296,6 +2304,7 @@ export interface CreateProductRequest {
     onHand?: number;
     active?: boolean;
     purchasable?: boolean;
+    releaseDate?: ReleaseDate;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2334,6 +2343,7 @@ export interface CreateProductRequestMultipart {
     onHand?: number;
     active?: boolean;
     purchasable?: boolean;
+    releaseDate?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2409,6 +2419,7 @@ export interface ReplaceProductRequest {
     sku?: Sku | null;
     active: boolean;
     purchasable: boolean;
+    releaseDate?: ReleaseDate | null;
     requiresShipping: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2446,6 +2457,7 @@ export interface ReplaceProductRequestMultipart {
     sku?: string;
     active: boolean;
     purchasable: boolean;
+    releaseDate?: string;
     requiresShipping: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2501,6 +2513,7 @@ export interface UpdateProductRequest {
     sku?: Sku | null;
     active?: boolean;
     purchasable?: boolean;
+    releaseDate?: ReleaseDate | null;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2538,6 +2551,7 @@ export interface UpdateProductRequestMultipart {
     sku?: string;
     active?: boolean;
     purchasable?: boolean;
+    releaseDate?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2595,6 +2609,9 @@ export interface ProductAdmin {
     description?: string;
     active?: boolean;
     purchasable?: boolean;
+    releaseDate?: ReleaseDate;
+    /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
+    readonly preorder?: boolean;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     /**
@@ -2646,7 +2663,10 @@ export interface SearchProductsRequest {
 
 /**
  * Whether a saved line can be bought right now.
- * - `in_stock`: buyable, enough stock. - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
+ * - `in_stock`: buyable, enough stock. - `preorder`: buyable before its release date; it ships from `releaseDate`. Judged
+ *   against the preorder allowance, so `out_of_stock` and `insufficient_stock` mean
+ *   the allowance is full or short, not that the shelf is empty.
+ * - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
  *   and returns to a stock value if the product is shown again.
  *
  * Never a number: exact stock stays behind `inventory.any.read`.
@@ -2655,6 +2675,7 @@ export type LineAvailability = (typeof LineAvailability)[keyof typeof LineAvaila
 
 export const LineAvailability = {
     in_stock: 'in_stock',
+    preorder: 'preorder',
     insufficient_stock: 'insufficient_stock',
     out_of_stock: 'out_of_stock',
     unavailable: 'unavailable',
@@ -2840,6 +2861,9 @@ export interface OrderLineProduct {
     sku?: Sku;
     /** @minimum 0 */
     weight?: number;
+    releaseDate?: ReleaseDate;
+    /** The line was sold before its release date, frozen at checkout. `delivery` reads it, never the catalogue, to decide which fulfillment order the line belongs to: a bank transfer may be paid a week after the order was placed. */
+    preorder?: boolean;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -3604,7 +3628,31 @@ export const FulfillmentHoldReason = {
 } as const;
 
 /**
- * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. All are false when the buyer of the order ranks at or above the caller, and for anyone without `delivery.any.update`.
+ * Where a waiting preorder stands with its buyer after a late date. Absent: the buyer was never asked. `awaiting`: asked to say whether to keep waiting, and silence until `consentDeadline` cancels and refunds (FTC 16 CFR 435.2, CRD Art. 18). `confirmed`: the buyer said keep waiting, so a later slip asks again. `expired`: the window closed in silence and the cancel and refund are on their way; too late to answer.
+ */
+export type FulfillmentConsent = (typeof FulfillmentConsent)[keyof typeof FulfillmentConsent];
+
+export const FulfillmentConsent = {
+    awaiting: 'awaiting',
+    confirmed: 'confirmed',
+    expired: 'expired'
+} as const;
+
+/**
+ * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `no_answer`: the buyer was asked to keep waiting and never answered. `order`: the whole order was cancelled.
+ */
+export type FulfillmentCancelReason =
+    (typeof FulfillmentCancelReason)[keyof typeof FulfillmentCancelReason];
+
+export const FulfillmentCancelReason = {
+    buyer: 'buyer',
+    staff: 'staff',
+    no_answer: 'no_answer',
+    order: 'order'
+} as const;
+
+/**
+ * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false when the buyer of the order ranks at or above the caller, and for anyone without `delivery.any.update`; `confirmWait` is the order's own buyer's.
  */
 export interface FulfillmentOrderActions {
     /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
@@ -3615,6 +3663,8 @@ export interface FulfillmentOrderActions {
     hold: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
     release: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/confirm-wait` would be accepted — the caller is the buyer and `consent` is `awaiting`. */
+    confirmWait: boolean;
 }
 
 /**
@@ -3641,6 +3691,12 @@ export interface FulfillmentOrder {
     agreedAt?: string;
     /** When it is now expected to ship, when that differs from what was agreed. */
     expectedAt?: string;
+    consent?: FulfillmentConsent;
+    /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
+    consentDeadline?: string;
+    /** When the buyer was last told the date had moved or passed. */
+    lastNoticeAt?: string;
+    cancelReason?: FulfillmentCancelReason;
     actions: FulfillmentOrderActions;
     createdAt: string;
     updatedAt?: string;
@@ -3715,6 +3771,111 @@ export interface OrderFulfillmentEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: OrderFulfillment;
+}
+
+/**
+ * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `awaiting_yes`: held for stock, and the buyer was asked to keep waiting (or let the window close and the cancel is on its way). `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who.
+ */
+export type PreorderFulfillmentState =
+    (typeof PreorderFulfillmentState)[keyof typeof PreorderFulfillmentState];
+
+export const PreorderFulfillmentState = {
+    waiting: 'waiting',
+    awaiting_yes: 'awaiting_yes',
+    allocated: 'allocated',
+    shipped: 'shipped',
+    cancelled: 'cancelled'
+} as const;
+
+/**
+ * Who the order belongs to, as the order itself carries it.
+ */
+export interface PreorderBuyer {
+    userId?: Id;
+    email: string;
+}
+
+/**
+ * One fulfillment order of a preorder, with its buyer and what the board needs to judge it.
+ */
+export interface PreorderFulfillmentOrder {
+    id: Id;
+    orderId: Id;
+    orderNumber: string;
+    /** @minimum 1 */
+    number: number;
+    status: FulfillmentOrderStatus;
+    state: PreorderFulfillmentState;
+    lines: FulfillmentOrderLine[];
+    buyer: PreorderBuyer;
+    /** When the order was paid. The payment's instant, which is also the queue key stock is allocated by (`inventory` stamps the hold in the same transaction). */
+    paidAt?: string;
+    agreedAt?: string;
+    expectedAt?: string;
+    /**
+     * Whole days between the date promised and the date expected; `0` when it has not slipped.
+     * @minimum 0
+     */
+    slippedDays: number;
+    /** The expected date has passed and units remain. */
+    late: boolean;
+    /** Nothing remains, something shipped, and every shipment arrived. */
+    delivered: boolean;
+    holdReason?: FulfillmentHoldReason;
+    consent?: FulfillmentConsent;
+    consentDeadline?: string;
+    lastNoticeAt?: string;
+    cancelReason?: FulfillmentCancelReason;
+    createdAt: string;
+}
+
+export interface PreorderFulfillmentOrdersResponse {
+    items: PreorderFulfillmentOrder[];
+    meta: PaginationMeta;
+}
+
+export interface PreorderFulfillmentOrdersResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PreorderFulfillmentOrdersResponse;
+}
+
+/**
+ * One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + awaitingYes + allocated + shipped + cancelled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed.
+ */
+export interface PreorderProductSummary {
+    productId: Id;
+    /** As the earliest order froze it. */
+    title: string;
+    /** The earliest date any buyer was promised. */
+    firstAgreedAt: string;
+    /** @minimum 0 */
+    paid: number;
+    /** @minimum 0 */
+    waiting: number;
+    /** @minimum 0 */
+    awaitingYes: number;
+    /** @minimum 0 */
+    allocated: number;
+    /** @minimum 0 */
+    shipped: number;
+    /** @minimum 0 */
+    cancelled: number;
+    /** @minimum 0 */
+    late: number;
+}
+
+export interface PreorderProductSummariesResponse {
+    items: PreorderProductSummary[];
+    meta: PaginationMeta;
+}
+
+export interface PreorderProductSummariesResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PreorderProductSummariesResponse;
 }
 
 export type ShipFulfillmentOrderRequestLinesItem = {
@@ -3816,7 +3977,7 @@ export const ReturnStatus = {
 } as const;
 
 /**
- * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
+ * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached. `no_answer` is the shop's own: a preorder's buyer was asked to keep waiting for a late date and never answered, so what had not shipped was cancelled and refunded. Written only by that cancellation, so a request cannot name it (`ReturnRequestReason`).
  */
 export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
 
@@ -3824,7 +3985,8 @@ export const ReturnReason = {
     withdrawal: 'withdrawal',
     defective: 'defective',
     wrong_item: 'wrong_item',
-    other: 'other'
+    other: 'other',
+    no_answer: 'no_answer'
 } as const;
 
 /**
@@ -3930,6 +4092,18 @@ export interface ReturnsResponseEnvelope {
     data: ReturnsResponse;
 }
 
+/**
+ * What a request may name as the reason — every `ReturnReason` but the shop's own `no_answer`.
+ */
+export type ReturnRequestReason = (typeof ReturnRequestReason)[keyof typeof ReturnRequestReason];
+
+export const ReturnRequestReason = {
+    withdrawal: 'withdrawal',
+    defective: 'defective',
+    wrong_item: 'wrong_item',
+    other: 'other'
+} as const;
+
 export type CreateReturnRequestLinesItem = {
     productId: Id;
     /** @minimum 1 */
@@ -3938,7 +4112,7 @@ export type CreateReturnRequestLinesItem = {
 
 export interface CreateReturnRequest {
     orderId: Id;
-    reason: ReturnReason;
+    reason: ReturnRequestReason;
     /**
      * @minLength 1
      * @maxLength 1000
@@ -4031,6 +4205,16 @@ export interface InventoryLevel {
     reserved: number;
     /** @minimum 0 */
     available: number;
+    /**
+     * How many units may be preordered at once. `0` means preordering is closed.
+     * @minimum 0
+     */
+    preorderLimit: number;
+    /**
+     * Preorder units outstanding against the limit, paid or not, until stock arrives and is allocated to them.
+     * @minimum 0
+     */
+    preordered: number;
 }
 
 export interface InventoryLevelsResponse {
@@ -4045,6 +4229,66 @@ export interface InventoryLevelsResponseEnvelope {
     data: InventoryLevelsResponse;
 }
 
+export interface PreorderLimitRequest {
+    /**
+     * The new allowance. `0` closes preordering.
+     * @minimum 0
+     */
+    preorderLimit: number;
+}
+
+export interface InventoryLevelEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevel;
+}
+
+export interface PreorderLevel {
+    productId: Id;
+    title: string;
+    releaseDate?: ReleaseDate;
+    /** @minimum 0 */
+    preorderLimit: number;
+    /**
+     * Outstanding units, `held + paid`. Drops when stock is allocated, so it is not "units sold".
+     * @minimum 0
+     */
+    preordered: number;
+    /**
+     * Outstanding units on orders still unpaid. They free themselves when the hold expires.
+     * @minimum 0
+     */
+    held: number;
+    /**
+     * Outstanding units on paid orders, waiting for stock oldest payment first.
+     * @minimum 0
+     */
+    paid: number;
+    /**
+     * `preorderLimit - preordered`, never below zero: how many more may be ordered.
+     * @minimum 0
+     */
+    left: number;
+    /**
+     * Lifetime units claimed through `preorder` movements in the ledger, given back or not.
+     * @minimum 0
+     */
+    ordered: number;
+}
+
+export interface PreorderLevelsResponse {
+    items: PreorderLevel[];
+    meta: PaginationMeta;
+}
+
+export interface PreorderLevelsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PreorderLevelsResponse;
+}
+
 /**
  * * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
  * * `commit` — the order was paid for. The claim is settled and nothing moves: the units stay on the shelf, still spoken for.
@@ -4054,6 +4298,10 @@ export interface InventoryLevelsResponseEnvelope {
  * * `receive` — a supplier delivery. `onHand` up.
  * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
  * * `restock` — returned goods were received back on the shelf. `onHand` up.
+ * * `preorder` — an order claimed units that do not exist yet. `preordered` up; the shelf is untouched.
+ * * `allocate` — stock arrived for a paid preorder. `preordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
+ *
+ * `release` and `expire` of a preorder claim give back the allowance (`preordered` down) instead of `reserved`.
  */
 export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
 
@@ -4065,7 +4313,9 @@ export const StockMovementReason = {
     expire: 'expire',
     receive: 'receive',
     adjust: 'adjust',
-    restock: 'restock'
+    restock: 'restock',
+    preorder: 'preorder',
+    allocate: 'allocate'
 } as const;
 
 export interface StockMovement {
@@ -4074,6 +4324,7 @@ export interface StockMovement {
     reason: StockMovementReason;
     onHandDelta: number;
     reservedDelta: number;
+    preorderedDelta: number;
     /** The order the movement belongs to, when one does. */
     reference?: string;
     /** Why an adjustment was made — the operator's own words. */
@@ -4107,13 +4358,6 @@ export interface ReceiptRequest {
      * @maxLength 1000
      */
     note?: string;
-}
-
-export interface InventoryLevelEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: InventoryLevel;
 }
 
 export interface AdjustmentRequest {
@@ -4511,6 +4755,12 @@ export interface ExportFulfillmentOrder {
     holdReason?: FulfillmentHoldReason;
     agreedAt?: string;
     expectedAt?: string;
+    consent?: FulfillmentConsent;
+    /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
+    consentDeadline?: string;
+    /** When the buyer was last told the date had moved or passed. */
+    lastNoticeAt?: string;
+    cancelReason?: FulfillmentCancelReason;
 }
 
 export type ExportReturnLinesItem = {
@@ -4649,8 +4899,65 @@ export interface NotificationCartMergeRefused {
     createdAt: string;
 }
 
+/**
+ * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised, the date now expected (absent when there is none) and, for `notifications.preorder-confirm-wait`, by when silence cancels.
+ */
+export interface PreorderDelayedParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /** The waiting products' titles, as the order froze them. */
+    titles: string[];
+    agreedAt: string;
+    expectedAt?: string;
+    answerBy?: string;
+}
+
+export type NotificationPreorderDelayedCode =
+    (typeof NotificationPreorderDelayedCode)[keyof typeof NotificationPreorderDelayedCode];
+
+export const NotificationPreorderDelayedCode = {
+    'notificationspreorder-delayed': 'notifications.preorder-delayed'
+} as const;
+
+/**
+ * A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
+ */
+export interface NotificationPreorderDelayed {
+    id: Id;
+    code: NotificationPreorderDelayedCode;
+    params: PreorderDelayedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
+export type NotificationPreorderConfirmWaitCode =
+    (typeof NotificationPreorderConfirmWaitCode)[keyof typeof NotificationPreorderConfirmWaitCode];
+
+export const NotificationPreorderConfirmWaitCode = {
+    'notificationspreorder-confirm-wait': 'notifications.preorder-confirm-wait'
+} as const;
+
+/**
+ * A preorder the caller paid for is late and the shop needs an answer — keep waiting, or cancel; silence until `answerBy` cancels and refunds.
+ */
+export interface NotificationPreorderConfirmWait {
+    id: Id;
+    code: NotificationPreorderConfirmWaitCode;
+    params: PreorderDelayedParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type Notification =
-    NotificationCartLineRemoved | NotificationWishlistItemRemoved | NotificationCartMergeRefused;
+    | NotificationCartLineRemoved
+    | NotificationWishlistItemRemoved
+    | NotificationCartMergeRefused
+    | NotificationPreorderDelayed
+    | NotificationPreorderConfirmWait;
 
 export type AccountExportResponseInvoicing = {
     invoices: ExportInvoiceDocument[];
@@ -5735,6 +6042,59 @@ export type GetOrderByReferenceParams = {
     ref: string;
 };
 
+export type ListPreorderFulfillmentOrdersParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * `true` keeps fulfillment orders made from a preorder line, `false` the others; absent keeps both.
+     */
+    preorder?: boolean;
+    state?: PreorderFulfillmentState;
+    /**
+     * Only fulfillment orders carrying this product.
+     */
+    productId?: Id;
+    /**
+     * `true` keeps those whose expected date has passed with units remaining.
+     */
+    late?: boolean;
+    /**
+     * Only those still waiting for stock whose expected date falls within this many days.
+     * @minimum 1
+     * @maximum 365
+     */
+    dueWithin?: number;
+};
+
+export type SummarizePreorderFulfillmentOrdersParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Only this product.
+     */
+    productId?: Id;
+};
+
 export type ListReturnsParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
@@ -5774,6 +6134,21 @@ export type ListInventoryLevelsParams = {
      * Only products at or under the deployment's low-availability threshold.
      */
     lowOnly?: boolean;
+};
+
+export type ListPreorderLevelsParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
 };
 
 export type ListStockMovementsParams = {
@@ -8106,6 +8481,9 @@ export const createProductWithMultipart = (
     if (createProductRequestMultipart.purchasable !== undefined) {
         formData.append(`purchasable`, createProductRequestMultipart.purchasable.toString());
     }
+    if (createProductRequestMultipart.releaseDate !== undefined) {
+        formData.append(`releaseDate`, createProductRequestMultipart.releaseDate);
+    }
     if (createProductRequestMultipart.requiresShipping !== undefined) {
         formData.append(
             `requiresShipping`,
@@ -8202,8 +8580,8 @@ export const getProductById = (
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
- * cleared, not left alone. The image is outside the representation: it is set by an
+ * `sku`/`weight`/`releaseDate` has a legal "cleared" state, and an omitted one of
+ * those five is cleared, not left alone. The image is outside the representation: it is set by an
  * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
  * it — a client cannot send the current path back. `translations` is the whole set as well: it must
  * name the fallback locale, and every stored locale it leaves out is deleted. To
@@ -8229,8 +8607,8 @@ export const replaceProductById = (
 /**
  * Replaces the product identified by `{id}` in the path (RFC 9110 §9.3.4) — every
  * writable scalar field is required, since none of them but `taxClass`/`rateType`/
- * `sku`/`weight` has a legal "cleared" state, and an omitted one of those four is
- * cleared, not left alone. The image is outside the representation: it is set by an
+ * `sku`/`weight`/`releaseDate` has a legal "cleared" state, and an omitted one of
+ * those five is cleared, not left alone. The image is outside the representation: it is set by an
  * upload, cleared by an explicit `imageUrl: null`, and kept when a PUT never mentions
  * it — a client cannot send the current path back. `translations` is the whole set as well: it must
  * name the fallback locale, and every stored locale it leaves out is deleted. To
@@ -8256,6 +8634,9 @@ export const replaceProductByIdWithMultipart = (
     }
     formData.append(`active`, replaceProductRequestMultipart.active.toString());
     formData.append(`purchasable`, replaceProductRequestMultipart.purchasable.toString());
+    if (replaceProductRequestMultipart.releaseDate !== undefined) {
+        formData.append(`releaseDate`, replaceProductRequestMultipart.releaseDate);
+    }
     formData.append(`requiresShipping`, replaceProductRequestMultipart.requiresShipping.toString());
     if (replaceProductRequestMultipart.noWithdrawal !== undefined) {
         formData.append(`noWithdrawal`, replaceProductRequestMultipart.noWithdrawal.toString());
@@ -8400,6 +8781,9 @@ export const updateProductByIdWithMultipart = (
     }
     if (updateProductRequestMultipart.purchasable !== undefined) {
         formData.append(`purchasable`, updateProductRequestMultipart.purchasable.toString());
+    }
+    if (updateProductRequestMultipart.releaseDate !== undefined) {
+        formData.append(`releaseDate`, updateProductRequestMultipart.releaseDate);
     }
     if (updateProductRequestMultipart.requiresShipping !== undefined) {
         formData.append(
@@ -9188,6 +9572,47 @@ export const startFulfilment = (
 };
 
 /**
+ * One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
+ * board: the fulfillment orders of preorders, where they stand with their buyer, and which are late.
+ * `preorder=true` keeps those made from a preorder line (the ones that carry an agreed date).
+ *
+ * `late=true` is the Late view: the expected date has passed and units remain, whether still waiting
+ * for stock, allocated and not yet shipped, or part shipped. `dueWithin=N` is its warning: still
+ * waiting for stock, and expected within the next N days — see it coming, since a slip moved before
+ * the date passes is a notice, and one moved after is a question.
+ *
+ * Same audience as the orders it belongs to: staff holding `orders.any.read` see every row, anyone
+ * else only their own orders'. `delivered` is true once nothing remains and every shipment arrived.
+ * @summary List fulfillment orders (the preorder board)
+ */
+export const listPreorderFulfillmentOrders = (
+    params?: ListPreorderFulfillmentOrdersParams,
+    options?: SecondParameter<typeof orvalMutator<PreorderFulfillmentOrdersResponseEnvelope>>
+) => {
+    return orvalMutator<PreorderFulfillmentOrdersResponseEnvelope>(
+        { url: `/delivery/fulfillment-orders`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * For each product sold as a preorder, how its units stand across every fulfillment order made from it:
+ * paid, waiting for stock, waiting for the buyer's answer, allocated, shipped, cancelled, and late. Units,
+ * not fulfillment orders. `firstAgreedAt` is the earliest date any buyer was promised. For the Products
+ * tab of the preorder board; same audience and scope as the list.
+ * @summary Preorder units by product and state
+ */
+export const summarizePreorderFulfillmentOrders = (
+    params?: SummarizePreorderFulfillmentOrdersParams,
+    options?: SecondParameter<typeof orvalMutator<PreorderProductSummariesResponseEnvelope>>
+) => {
+    return orvalMutator<PreorderProductSummariesResponseEnvelope>(
+        { url: `/delivery/fulfillment-orders/summary`, method: 'GET', params },
+        options
+    );
+};
+
+/**
  * Cuts a shipment from the fulfillment order's remaining lines and sends the shipped email. `lines` omitted ships everything that remains; named lines ship those quantities (never more than remains). The order moves `processing → shipped` only when this shipment leaves nothing remaining anywhere — until then it stays `processing` and its `fulfillmentStatus` reads `partially_fulfilled`. The shipment, the order's summary, any status move and the events are written in ONE transaction. `trackingCode` is required exactly when the order's shipping method is `tracked`. Refuses a fulfillment order that is on hold, closed or cancelled (`DELIVERY_NOT_SHIPPABLE`), a digital one (`DELIVERY_NOT_PHYSICAL`), and an order that is not `processing` (`ORDER_NOT_PROCESSING`) — unless `forced`, which lets a shipment skip the `start` step from `paid`. Never ships from `on_hold`, forced or not.
  * @summary Ship some or all of a fulfillment order
  */
@@ -9251,6 +9676,20 @@ export const releaseFulfillmentOrder = (
 ) => {
     return orvalMutator<FulfillmentOrderEnvelope>(
         { url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * The buyer's answer to a notice that their preorder will be later than promised (or that its date passed): yes, keep waiting. Clears the deadline after which silence would cancel the fulfillment order and refund it. Only the order's own buyer may answer, and only while `consent` is `awaiting` (`DELIVERY_NOT_AWAITING_ANSWER` otherwise). The buyer's other answer, cancel, is the existing cancel or remainder cancel.
+ * @summary Keep waiting for a late preorder
+ */
+export const confirmFulfillmentOrderWait = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+) => {
+    return orvalMutator<FulfillmentOrderEnvelope>(
+        { url: `/delivery/fulfillment-orders/${id}/confirm-wait`, method: 'POST' },
         options
     );
 };
@@ -9438,6 +9877,44 @@ export const listInventoryLevels = (
 ) => {
     return orvalMutator<InventoryLevelsResponseEnvelope>(
         { url: `/inventory/levels`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Sets how many units of the product may be preordered at once: the allowance an order claims when it is placed. `0` closes preordering. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
+ *
+ * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited).
+ * @summary Set a product's preorder limit
+ */
+export const setPreorderLimit = (
+    productId: Id,
+    preorderLimitRequest: PreorderLimitRequest,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelEnvelope>(
+        {
+            url: `/inventory/levels/${productId}/preorder-limit`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: preorderLimitRequest
+        },
+        options
+    );
+};
+
+/**
+ * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `preordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
+ *
+ * The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
+ * @summary Preorder allowances
+ */
+export const listPreorderLevels = (
+    params?: ListPreorderLevelsParams,
+    options?: SecondParameter<typeof orvalMutator<PreorderLevelsResponseEnvelope>>
+) => {
+    return orvalMutator<PreorderLevelsResponseEnvelope>(
+        { url: `/inventory/preorders`, method: 'GET', params },
         options
     );
 };
@@ -10514,6 +10991,12 @@ export type GetFulfillmentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof getFulfillmentByOrder>>
 >;
 export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
+export type ListPreorderFulfillmentOrdersResult = NonNullable<
+    Awaited<ReturnType<typeof listPreorderFulfillmentOrders>>
+>;
+export type SummarizePreorderFulfillmentOrdersResult = NonNullable<
+    Awaited<ReturnType<typeof summarizePreorderFulfillmentOrders>>
+>;
 export type ShipFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof shipFulfillmentOrder>>
 >;
@@ -10525,6 +11008,9 @@ export type HoldFulfillmentOrderResult = NonNullable<
 >;
 export type ReleaseFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof releaseFulfillmentOrder>>
+>;
+export type ConfirmFulfillmentOrderWaitResult = NonNullable<
+    Awaited<ReturnType<typeof confirmFulfillmentOrderWait>>
 >;
 export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>;
 export type UpdateShipmentWithMergePatchJsonResult = NonNullable<
@@ -10541,6 +11027,8 @@ export type ReceiveReturnResult = NonNullable<Awaited<ReturnType<typeof receiveR
 export type ListInventoryLevelsResult = NonNullable<
     Awaited<ReturnType<typeof listInventoryLevels>>
 >;
+export type SetPreorderLimitResult = NonNullable<Awaited<ReturnType<typeof setPreorderLimit>>>;
+export type ListPreorderLevelsResult = NonNullable<Awaited<ReturnType<typeof listPreorderLevels>>>;
 export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
 export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>;
 export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>;

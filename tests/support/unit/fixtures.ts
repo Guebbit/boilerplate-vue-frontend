@@ -134,7 +134,7 @@ export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): Fu
             remaining: 2
         }
     ],
-    actions: { ship: false, fulfill: false, hold: false, release: false },
+    actions: { ship: false, fulfill: false, hold: false, release: false, confirmWait: false },
     createdAt: '2026-09-01T10:00:00.000Z',
     ...overrides
 });

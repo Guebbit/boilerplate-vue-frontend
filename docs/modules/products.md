@@ -116,14 +116,37 @@ operation.
 ## Product states on screen
 
 The backend keeps two independent flags, `active` (can a shopper see it) and `purchasable` (can it
-be bought, stock aside). The screens rank them in one place, `src/modules/products/domain/shelf-state.ts`, so the card, the
-product page and the add-to-cart button never disagree: **off sale outranks the stock badge**.
+be bought, stock aside), and derives a third, read-only one, `preorder` (on sale, with a
+`releaseDate` still ahead). The screens rank them in one place, `src/modules/products/domain/shelf-state.ts`, so the card, the
+product page and the add-to-cart button never disagree: **off sale outranks a preorder, which outranks the stock badge**.
 
-| `purchasable` | `inStock` | Shelf state    | Card badge                | Add to cart                         |
-| ------------- | --------- | -------------- | ------------------------- | ----------------------------------- |
-| `false`       | any       | `off-sale`     | "Not available right now" | disabled, "Not available right now" |
-| `true`        | `false`   | `out-of-stock` | "Out of stock"            | disabled, "Out of stock"            |
-| `true`        | `true`    | `in-stock`     | "In stock"                | enabled                             |
+| `purchasable` | `preorder` | `inStock` | Shelf state    | Card badge                | Add to cart                         |
+| ------------- | ---------- | --------- | -------------- | ------------------------- | ----------------------------------- |
+| `false`       | any        | any       | `off-sale`     | "Not available right now" | disabled, "Not available right now" |
+| `true`        | `true`     | any       | `preorder`     | "Preorder · ships {date}" | enabled, "Preorder"                 |
+| `true`        | `false`    | `false`   | `out-of-stock` | "Out of stock"            | disabled, "Out of stock"            |
+| `true`        | `false`    | `true`    | `in-stock`     | "In stock"                | enabled                             |
+
+```mermaid
+flowchart TD
+    A[product] --> B{purchasable false?}
+    B -- yes --> C[off-sale]
+    B -- no --> D{preorder true?}
+    D -- yes --> E[preorder: buyable now, ships from releaseDate]
+    D -- no --> F{inStock?}
+    F -- yes --> G[in-stock]
+    F -- no --> H[out-of-stock]
+```
+
+A preorder's shelf may be empty: its units are claimed against the preorder allowance
+(`preorderLimit`, set on the [stock board](./inventory.md)), not the shelf, so `inStock` is not
+asked. The shopper never sees the allowance; a full one shows up as "Sold out" on the cart line.
+
+Staff set the date with the "Release date" field on the create and edit forms
+(`datetime-local`, the browser's zone, sent as an ISO instant; at most one year ahead, which the
+server enforces). An edit sends it only when it changed: moving it later notifies the buyers who
+already paid, so an untouched date must not travel. Clearing the field sends `null` and ends the
+preorder.
 
 A hidden product is a 404 for a shopper, so there is nothing to rank: a cart or wishlist line that
 points at one reads "No longer available" (see [cart](./cart.md#a-product-that-is-gone)). Staff

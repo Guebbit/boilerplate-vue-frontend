@@ -52,6 +52,8 @@ export const ERROR_CODES = {
     CONFLICT: 'CONFLICT',
     /** 422 — A shipment line names a product that is not on the fulfillment order, asks for more than remains of it, or names the same product twice. */
     DELIVERY_LINES_INVALID: 'DELIVERY_LINES_INVALID',
+    /** 409 — The fulfillment order is not waiting for the buyer to say whether to keep waiting, so there is nothing to confirm. */
+    DELIVERY_NOT_AWAITING_ANSWER: 'DELIVERY_NOT_AWAITING_ANSWER',
     /** 409 — The shipment has already been delivered, or its order is no longer in a state this can run from. */
     DELIVERY_NOT_DELIVERABLE: 'DELIVERY_NOT_DELIVERABLE',
     /** 409 — A physical fulfillment order cannot be fulfilled without a shipment; ship it instead. */

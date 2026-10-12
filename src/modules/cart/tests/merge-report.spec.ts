@@ -32,7 +32,8 @@ describe('changedMergeLines', () => {
                 }),
                 aLine({ productId: 'p5', resulting: 0, reason: 'removed' }),
                 aLine({ productId: 'p6', availability: 'unavailable' }),
-                aLine({ productId: 'p7', availability: 'out_of_stock' })
+                aLine({ productId: 'p7', availability: 'out_of_stock' }),
+                aLine({ productId: 'p8', availability: 'preorder' })
             ]).map(({ productId }) => productId)
         ).toEqual(['p1', 'p3', 'p4', 'p5', 'p6', 'p7']);
     });
