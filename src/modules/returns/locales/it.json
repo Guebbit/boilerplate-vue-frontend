@@ -72,6 +72,18 @@
         "until-delivery": "Puoi recedere da questo contratto. Il periodo di recesso inizia alla consegna della merce.",
         "button": "Recedi dal contratto qui",
         "confirm": "Recedere dall'ordine {id}? Riceverai una conferma scritta con data e ora.",
-        "success": "Recesso ricevuto. Una conferma sta arrivando alla tua email."
+        "success": "Recesso ricevuto. Una conferma sta arrivando alla tua email.",
+        "cancel-line": "Non ancora spedito: gruppo n. {number}",
+        "button-cancel-rest": "Annulla ciò che non è stato spedito",
+        "cancel-hint": "Il periodo di recesso inizia quando arriva l'ultima spedizione."
+    },
+    "cancel-remainder-dialog": {
+        "title": "Annulla ciò che non è stato spedito: gruppo n. {number}",
+        "lead": "Questi articoli non sono ancora partiti e non verranno spediti:",
+        "refund": "Rimborso: {amount}",
+        "includes-shipping": "Comprende {amount} di spedizione.",
+        "label-note": "Motivo (facoltativo)",
+        "button-confirm": "Annulla e rimborsa",
+        "success": "Annullato. Il rimborso è in arrivo."
     }
 }

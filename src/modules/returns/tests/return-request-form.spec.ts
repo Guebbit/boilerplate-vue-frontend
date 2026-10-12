@@ -22,8 +22,8 @@ wireModulesIntoCore();
  * The lines the order page would offer.
  */
 const LINES = [
-    { productId: 'p1', title: 'Shirt', ordered: 3, remaining: 2 },
-    { productId: 'p2', title: 'Mug', ordered: 1, remaining: 1 }
+    { productId: 'p1', title: 'Shirt', quantity: 2 },
+    { productId: 'p2', title: 'Mug', quantity: 1 }
 ];
 
 /**

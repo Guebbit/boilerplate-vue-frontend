@@ -586,8 +586,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :can-withdraw="currentOrder.actions?.withdraw ?? false"
                         :withdraw-until="currentOrder.actions?.withdrawUntil"
-                        :order-status="currentOrder.status"
-                        :items="currentOrder.items"
                         @opened="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <ItemDetailField

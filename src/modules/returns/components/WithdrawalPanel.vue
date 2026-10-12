@@ -12,11 +12,13 @@ export default {
 /**
  * @module
  * The order page's returns corner: the EU "withdraw from contract here" button (Consumer Rights
- * Directive Art. 11a), the returns form for faulty or wrong goods and part-orders, and what has
- * become of any withdrawal or return already opened on the order. The withdrawal button shows
- * only when the server says so (`Order.actions.withdraw`) — this component never counts the
- * withdrawal period — and asks once more before it acts: the directive wants a confirmation step, not
- * a single click, and no reason. The returns form is offered once goods have shipped.
+ * Directive Art. 11a), the two things the server says can still be done about goods, and what has
+ * become of any withdrawal or return already opened. Both doors are fed by `GET /returns/options`
+ * — cancel what has not shipped (one fulfillment order at a time, with the server's refund) and
+ * return what arrived (the server's returnable quantities) — so this component counts nothing and
+ * never reads the withdrawal period. The withdrawal button shows only when the server says so
+ * (`Order.actions.withdraw`) and asks once more before it acts: the directive wants a confirmation
+ * step, not a single click, and no reason.
  */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -24,27 +26,24 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import { isReturnableOrderStatus, returnableLines } from '../domain/returnable-lines.ts';
+import CancelRemainderDialog from './CancelRemainderDialog.vue';
 import ReturnRequestForm from './ReturnRequestForm.vue';
-import type { Order, Return } from '@types';
+import type { CancellableFulfillmentOrder, Return, ReturnOptions } from '@types';
 
 /**
  * The order this panel belongs to, and what the server said about the button.
  */
 const props = defineProps<{
     orderId: string;
-    /** `Order.actions.withdraw` — whether the button is offered at all. */
+    /** `Order.actions.withdraw` — whether the button is offered at all; true only for the buyer. */
     canWithdraw?: boolean;
     /** `Order.actions.withdrawUntil` — the last instant a withdrawal is valid, once the clock runs. */
     withdrawUntil?: string;
-    /** The order's status: goods must have shipped before anything can come back. */
-    orderStatus?: string;
-    /** The order's lines, which the returns form offers for selection. */
-    items?: Order['items'];
 }>();
 
 /**
@@ -69,9 +68,9 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The store's opening call and the per-order read.
+ * The store's opening call and the per-order reads.
  */
-const { openReturn, fetchOrderReturns } = useReturnsStore();
+const { openReturn, fetchOrderReturns, fetchReturnOptions } = useReturnsStore();
 
 /**
  * True while a call is in flight; disables the button so a double click cannot open two.
@@ -84,14 +83,49 @@ const { loading } = storeToRefs(useReturnsStore());
 const opened = ref<Return[]>([]);
 
 /**
- * The lines the returns form offers: none until the goods have shipped, and none once every
- * returnable unit is already in a return.
+ * What the server says can still be returned and cancelled; `undefined` until read, or when the
+ * caller may not read it.
  */
-const returnLines = computed(() =>
-    isReturnableOrderStatus(props.orderStatus)
-        ? returnableLines(props.items ?? [], opened.value)
-        : []
-);
+const options = ref<ReturnOptions>();
+
+/**
+ * Signed-in caller, to tell staff holding the refund key from a caller with no door at all.
+ */
+const session = useSessionStore();
+
+/**
+ * Who may cancel what has not shipped: the buyer (their withdrawal), or staff holding the refund
+ * key (`payments.any.update`). The server makes the final call, rank included.
+ */
+const cancelMode = computed<'buyer' | 'staff' | undefined>(() => {
+    if (props.canWithdraw) return 'buyer';
+    return session.can('update', 'Payment') ? 'staff' : undefined;
+});
+
+/**
+ * The remainders on offer: none for a caller with no door.
+ */
+const cancellable = computed(() => (cancelMode.value ? (options.value?.cancellable ?? []) : []));
+
+/**
+ * The lines the returns form offers, as the server counted them.
+ */
+const returnLines = computed(() => options.value?.returnable ?? []);
+
+/**
+ * The remainder whose cancel dialog is open, if any.
+ */
+const cancelling = ref<CancellableFulfillmentOrder>();
+
+/**
+ * Two-way flag for the cancel dialog, derived from {@link cancelling}.
+ */
+const cancelOpen = computed({
+    get: () => cancelling.value !== undefined,
+    set: (open: boolean) => {
+        if (!open) cancelling.value = undefined;
+    }
+});
 
 /**
  * The withdrawal button's own blocked state — a closed window or an order that moved on arrives as
@@ -104,18 +138,19 @@ const {
 } = useBlockingError();
 
 /**
- * Loads this order's returns; a failed read leaves the list empty rather than blocking the button.
+ * Loads this order's returns and what is still on offer; a failed read leaves them empty rather
+ * than blocking the button (the options read is refused to callers without the right).
  *
- * @returns A promise settling once the list is loaded.
+ * @returns A promise settling once both are loaded.
  */
 const loadOpened = () =>
-    fetchOrderReturns(props.orderId)
-        .then((items) => {
-            opened.value = items;
-        })
-        .catch(() => {
-            opened.value = [];
-        });
+    Promise.all([
+        fetchOrderReturns(props.orderId).catch(() => []),
+        fetchReturnOptions(props.orderId).catch(() => undefined)
+    ]).then(([items, loadedOptions]) => {
+        opened.value = items;
+        options.value = loadedOptions;
+    });
 
 /**
  * Asks for confirmation, then withdraws from the whole order.
@@ -151,12 +186,23 @@ const handleReturnOpened = () => {
     return loadOpened();
 };
 
+/**
+ * A remainder was cancelled: re-read the lists (its refund shrank what is on offer) and tell the
+ * page, whose order status may have moved.
+ *
+ * @returns A promise settling once the lists are reloaded.
+ */
+const handleCancelled = () => {
+    emit('opened');
+    return loadOpened();
+};
+
 onMounted(loadOpened);
 </script>
 
 <template>
     <section
-        v-if="canWithdraw || opened.length > 0 || returnLines.length > 0"
+        v-if="canWithdraw || opened.length > 0 || returnLines.length > 0 || cancellable.length > 0"
         class="flex flex-col gap-3"
         data-test="withdrawal-panel"
     >
@@ -182,6 +228,42 @@ onMounted(loadOpened);
             <InlineErrorAlert :message="withdrawError" data-test="withdraw-error" />
         </template>
 
+        <ul
+            v-if="cancellable.length > 0"
+            class="m-0 flex list-none flex-col gap-2 p-0"
+            data-test="cancellable-list"
+        >
+            <li
+                v-for="option in cancellable"
+                :key="'cancellable-' + option.fulfillmentOrderId"
+                class="flex flex-wrap items-center justify-between gap-3"
+                data-test="cancellable-item"
+            >
+                <span class="text-sm">
+                    {{ t('withdrawal-panel.cancel-line', { number: option.number }) }}
+                    ·
+                    {{ formatCurrency(option.refundAmount, options?.currency ?? '') }}
+                </span>
+                <v-btn
+                    variant="tonal"
+                    size="small"
+                    color="error"
+                    :disabled="loading"
+                    data-test="cancel-remainder-open"
+                    @click="cancelling = option"
+                >
+                    {{ t('withdrawal-panel.button-cancel-rest') }}
+                </v-btn>
+            </li>
+        </ul>
+        <p
+            v-if="cancellable.length > 0 && cancelMode === 'buyer'"
+            class="m-0 text-sm opacity-75"
+            data-test="cancel-hint"
+        >
+            {{ t('withdrawal-panel.cancel-hint') }}
+        </p>
+
         <ReturnRequestForm
             v-if="returnLines.length > 0"
             :order-id="orderId"
@@ -206,5 +288,15 @@ onMounted(loadOpened);
                 </v-chip>
             </li>
         </ul>
+
+        <CancelRemainderDialog
+            v-if="cancelling && cancelMode"
+            v-model="cancelOpen"
+            :order-id="orderId"
+            :currency="options?.currency ?? ''"
+            :option="cancelling"
+            :mode="cancelMode"
+            @cancelled="handleCancelled"
+        />
     </section>
 </template>

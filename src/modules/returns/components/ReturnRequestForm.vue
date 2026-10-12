@@ -26,15 +26,15 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import type { ReturnableLine } from '../domain/returnable-lines.ts';
+import type { ReturnOptionLine } from '@types';
 
 /**
  * The order and what can still come back from it.
  */
 const props = defineProps<{
     orderId: string;
-    /** The lines the form offers, each with how many are still returnable. */
-    lines: ReturnableLine[];
+    /** The lines the form offers, each with how many are still returnable (`quantity`). */
+    lines: ReturnOptionLine[];
 }>();
 
 /**
@@ -104,10 +104,10 @@ const { message: openError, report: reportOpenError, clear: clearOpenError } = u
  * How many of a product the customer may still send back, or 0 for one that is not on offer.
  *
  * @param productId - The line's product.
- * @returns The line's `remaining`.
+ * @returns The line's `quantity`.
  */
 const remainingOf = (productId: string): number =>
-    props.lines.find((line) => line.productId === productId)?.remaining ?? 0;
+    props.lines.find((line) => line.productId === productId)?.quantity ?? 0;
 
 /**
  * Whether a typed quantity is a whole number from 1 up to what is left of that product.
@@ -274,9 +274,9 @@ const submit = () =>
                         :model-value="form.lines[line.productId]"
                         type="number"
                         min="1"
-                        :max="line.remaining"
+                        :max="line.quantity"
                         step="1"
-                        :label="t('returns-request.label-quantity', { max: line.remaining })"
+                        :label="t('returns-request.label-quantity', { max: line.quantity })"
                         density="compact"
                         hide-details
                         class="max-w-48"

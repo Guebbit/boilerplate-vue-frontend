@@ -172,3 +172,32 @@ describe('fetchOrderReturns', () => {
         });
     });
 });
+
+describe('fetchReturnOptions', () => {
+    it('asks for one order and answers the server’s own counts', () => {
+        const options = {
+            orderId: 'o1',
+            currency: 'EUR',
+            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
+            cancellable: []
+        };
+        responses['GET /returns/options'] = orvalEnvelope(options);
+
+        return useReturnsStore()
+            .fetchReturnOptions('o1')
+            .then((answer) => {
+                expect(answer).toEqual(options);
+                expect(sent[0]).toMatchObject({ params: { orderId: 'o1' } });
+            });
+    });
+
+    it('answers nothing when the read wrapper hands back no response', () => {
+        vi.mocked(orvalMutator).mockResolvedValueOnce(undefined);
+
+        return useReturnsStore()
+            .fetchReturnOptions('o1')
+            .then((answer) => {
+                expect(answer).toBeUndefined();
+            });
+    });
+});

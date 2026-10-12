@@ -2,7 +2,8 @@
 
 ::: tip At a glance
 **Owns** — the customer's own returns (a returns form for faulty or wrong goods and part-orders),
-the staff queue that approves and receives them, and the EU "withdraw from contract here" button.
+the staff queue that approves and receives them, cancelling what has not shipped, and the EU
+"withdraw from contract here" button.
 **Depends on** — nothing. [`orders`](./orders.md) mounts its `WithdrawalPanel`.
 **Breaks if you change** — the order page's withdrawal control and returns form.
 :::
@@ -13,7 +14,7 @@ the staff queue that approves and receives them, and the EU "withdraw from contr
 | **Screens**             | 2 — `ReturnsList` · `ReturnTarget`      |
 | **Store**               | `returns`                               |
 | **Menu entries**        | `ReturnsList`                           |
-| **API calls**           | 6                                       |
+| **API calls**           | 7                                       |
 | **Depends on**          | _nothing_                               |
 | **Depended on by**      | [`orders`](./orders.md)                 |
 | **Languages**           | `en` · `it`                             |
@@ -58,17 +59,43 @@ where its lines would be.
 **The button is server-driven.** `WithdrawalPanel` shows it when `Order.actions.withdraw` is true and
 prints `Order.actions.withdrawUntil`; it never counts the withdrawal period. Clicking asks once more —
 the directive wants a confirmation step — and the backend mails the acknowledgement with the date and
-time. A withdrawal takes no reason and always the whole order. The panel also lists the returns
+time. A withdrawal takes no reason and covers the whole order. The panel also lists the returns
 already opened on that order, so a customer sees what became of a withdrawal.
 
-**The returns form is for everything else.** Once an order has shipped, `ReturnRequestForm` lets the
-customer tick the lines that come back, set a quantity for each, pick a reason (defective, wrong item
-or other — `withdrawal` is the button, not a choice here) and add a note. It sends only the ticked
-lines, so part of an order can go back; the same product can be returned again until nothing is left.
-What is left is arithmetic in `domain/returnable-lines.ts`: ordered less what every not-declined return on
-the order holds, leaving out goods with no right of withdrawal. The server re-checks all of it (too
-many, an excluded line, a closed window) and its message shows in the form. Staff then approve or
-decline the return like any other.
+**What can still be done comes from `GET /returns/options`.** The panel reads it once per order and
+counts nothing itself: `returnable` is what has shipped and not yet come back, `cancellable` is each
+fulfillment order that still has a remainder, with the refund cancelling it would owe (the delivery
+included when it takes the last unit). Both doors below are fed by it, and it is re-read after
+each move.
+
+```mermaid
+flowchart TD
+    options["GET /returns/options"] --> returnable["returnable: what arrived"]
+    options --> cancellable["cancellable: a remainder per fulfillment order"]
+    returnable --> form["ReturnRequestForm"]
+    cancellable --> buyer["buyer: their withdrawal"]
+    cancellable --> staff["staff: the refund key"]
+    buyer --> dialog["CancelRemainderDialog<br/>server's refund · confirm"]
+    staff --> dialog
+    dialog -->|"POST /returns kind: cancellation"| api[("backend returns")]
+```
+
+**Cancelling what has not shipped** is its own door once part of an order has left. Each remainder
+shows the server's refund and opens `CancelRemainderDialog`, which sends `POST /returns` with
+`kind: cancellation` and the fulfillment order's id. The buyer's cancellation is part of their
+withdrawal (`reason: withdrawal`, no note); a staff member holding the refund key
+(`payments.any.update`) cancels with reason `other` and an optional note, and the http layer prompts
+for the password first — the key is step-up gated. The record is born `closed`, its lines are the
+remainder, and the panel lists it like any other return. Rank, window and who may refuse are the
+server's.
+
+**The returns form is for everything else.** Once something has shipped, `ReturnRequestForm` lets the
+customer tick the lines that come back, set a quantity for each (up to the server's `returnable`
+quantity), pick a reason (defective, wrong item or other — `withdrawal` is the button, not a choice
+here) and add a note. It sends only the ticked lines, so part of an order can go back; the same
+product can be returned again until nothing is left. The server re-checks all of it (too many, an
+excluded line, a closed window) and its message shows in the form. Staff then approve or decline the
+return like any other.
 
 **Staff moves come from `Return.actions`.** `ReturnStaffActions` renders approve, decline (with the
 reason the customer is told) and receive (with an optional handling deduction) from the three

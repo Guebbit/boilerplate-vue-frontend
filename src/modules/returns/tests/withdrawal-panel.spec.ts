@@ -12,12 +12,13 @@ import WithdrawalPanel from '../components/WithdrawalPanel.vue';
 import ReturnRequestForm from '../components/ReturnRequestForm.vue';
 import { useReturnsStore } from '../store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
-import type { Order } from '@types';
+import type { ReturnOptions } from '@types';
 
 wireModulesIntoCore();
 
@@ -32,32 +33,58 @@ const router = createRouter({
 });
 
 /**
+ * What `GET /returns/options` answers for an order with nothing to return or cancel.
+ */
+const NO_OPTIONS: ReturnOptions = {
+    orderId: 'o1',
+    currency: 'EUR',
+    returnable: [],
+    cancellable: []
+};
+
+/**
  * Mounts the panel with the store's calls spied BEFORE mount — the component destructures its
  * actions at setup time.
  *
  * @param props - what the order page would pass
  * @param existing - the returns already opened on the order
+ * @param options - what the server says can still be returned and cancelled
  * @returns the wrapper and the store
  */
 const mountPanel = (
     props: {
         canWithdraw?: boolean;
         withdrawUntil?: string;
-        orderStatus?: string;
-        items?: Order['items'];
     },
-    existing = []
+    existing = [],
+    options: ReturnOptions = NO_OPTIONS
 ) => {
     const store = useReturnsStore();
     vi.spyOn(store, 'fetchOrderReturns').mockResolvedValue(existing);
+    vi.spyOn(store, 'fetchReturnOptions').mockResolvedValue(options);
     vi.spyOn(store, 'openReturn').mockResolvedValue(
         aReturn({ status: 'closed', reason: 'withdrawal', lines: [] })
     );
     const wrapper = mount(WithdrawalPanel, {
         props: { orderId: 'o1', ...props },
-        global: { plugins: [vuetify, i18n, router] }
+        global: {
+            plugins: [vuetify, i18n, router],
+            stubs: { VDialog: { template: '<div><slot /></div>' } }
+        }
     });
     return { wrapper, store };
+};
+
+/**
+ * Signs in a caller holding the given abilities, as `OrdersList.spec` does.
+ *
+ * @param tenant - the `[action, subject]` pairs the caller holds
+ */
+const signInWith = (tenant: [string, string][]) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u2', email: 'staff@example.com', role: 'owner' };
+    session.setAbilities({ tenant, platform: [] });
 };
 
 beforeEach(() => {
@@ -142,53 +169,110 @@ describe('WithdrawalPanel', () => {
 
     describe('returns form', () => {
         /**
-         * One order line of a single product.
+         * What the server says has shipped and can still come back.
          */
-        const SHIRT: Order['items'] = [
-            {
-                product: { id: 'p1', title: 'Shirt', price: 30, taxRate: 0.22 },
-                quantity: 1,
-                locale: 'en',
-                current: null,
-                taxAmount: 0,
-                netAmount: 0
-            }
-        ];
+        const RETURNABLE: ReturnOptions = {
+            ...NO_OPTIONS,
+            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1 }]
+        };
 
-        it('is offered once the goods have shipped, with no withdrawal button needed', async () => {
-            const { wrapper } = mountPanel({ orderStatus: 'delivered', items: SHIRT });
+        it('is offered when the server lists something returnable, with no withdrawal button needed', async () => {
+            const { wrapper } = mountPanel({}, [], RETURNABLE);
             await flushPromises();
 
             expect(wrapper.find('[data-test=return-request]').exists()).toBe(true);
             expect(wrapper.find('[data-test=withdraw-button]').exists()).toBe(false);
         });
 
-        it('is not offered before the goods have shipped', async () => {
-            const { wrapper } = mountPanel({ orderStatus: 'paid', items: SHIRT });
+        it('is not offered while nothing is returnable', async () => {
+            const { wrapper } = mountPanel({}, [], NO_OPTIONS);
             await flushPromises();
 
             expect(wrapper.find('[data-test=withdrawal-panel]').exists()).toBe(false);
         });
 
-        it('is not offered once every unit is already in a return', async () => {
-            const { wrapper } = mountPanel({ orderStatus: 'delivered', items: SHIRT }, [
-                aReturn({ status: 'requested' })
-            ] as never);
+        it('hands the form the server’s quantities, uncounted', async () => {
+            const { wrapper } = mountPanel({}, [], RETURNABLE);
             await flushPromises();
 
-            expect(wrapper.find('[data-test=return-request]').exists()).toBe(false);
+            expect(wrapper.getComponent(ReturnRequestForm).props('lines')).toEqual(
+                RETURNABLE.returnable
+            );
         });
 
-        it('tells the page and re-reads the list when a return was opened', async () => {
-            const { wrapper, store } = mountPanel({ orderStatus: 'shipped', items: SHIRT });
+        it('tells the page and re-reads the lists when a return was opened', async () => {
+            const { wrapper, store } = mountPanel({}, [], RETURNABLE);
             await flushPromises();
-            const calls = vi.mocked(store.fetchOrderReturns).mock.calls.length;
+            const calls = vi.mocked(store.fetchReturnOptions).mock.calls.length;
 
             emitOn(wrapper.getComponent(ReturnRequestForm), 'opened');
             await flushPromises();
 
             expect(wrapper.emitted('opened')).toHaveLength(1);
-            expect(vi.mocked(store.fetchOrderReturns).mock.calls.length).toBe(calls + 1);
+            expect(vi.mocked(store.fetchReturnOptions).mock.calls.length).toBe(calls + 1);
+        });
+
+        it('stays out of the way when the options read is refused', async () => {
+            const { wrapper, store } = mountPanel({}, []);
+            vi.mocked(store.fetchReturnOptions).mockRejectedValue(new Error('forbidden'));
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=withdrawal-panel]').exists()).toBe(false);
+        });
+    });
+
+    describe('cancelling what has not shipped', () => {
+        /**
+         * One fulfillment order with a remainder, and what cancelling it would refund.
+         */
+        const CANCELLABLE: ReturnOptions = {
+            ...NO_OPTIONS,
+            cancellable: [
+                {
+                    fulfillmentOrderId: 'fo2',
+                    number: 2,
+                    lines: [{ productId: 'p2', title: 'Mug', quantity: 1 }],
+                    refundAmount: 12.5,
+                    shippingRefund: 0
+                }
+            ]
+        };
+
+        it('lets the buyer cancel a remainder as part of their withdrawal', async () => {
+            const { wrapper, store } = mountPanel({ canWithdraw: true }, [], CANCELLABLE);
+            await flushPromises();
+            expect(wrapper.get('[data-test=cancellable-item]').text()).toContain('12.50');
+            expect(wrapper.find('[data-test=cancel-hint]').exists()).toBe(true);
+
+            await wrapper.get('[data-test=cancel-remainder-open]').trigger('click');
+            await wrapper.get('[data-test=cancel-remainder-confirm]').trigger('click');
+            await flushPromises();
+
+            expect(store.openReturn).toHaveBeenCalledWith({
+                orderId: 'o1',
+                kind: 'cancellation',
+                fulfillmentOrderId: 'fo2',
+                reason: 'withdrawal'
+            });
+            expect(wrapper.emitted('opened')).toHaveLength(1);
+        });
+
+        it('lets staff holding the refund key do it too, without the withdrawal button', async () => {
+            signInWith([['update', 'Payment']]);
+            const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELLABLE);
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=cancel-remainder-open]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=withdraw-button]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=cancel-hint]').exists()).toBe(false);
+        });
+
+        it('offers nothing to a caller who is neither the buyer nor holds the refund key', async () => {
+            signInWith([['read', 'Order']]);
+            const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELLABLE);
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=cancel-remainder-open]').exists()).toBe(false);
         });
     });
 });

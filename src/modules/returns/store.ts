@@ -13,10 +13,17 @@ import {
     createReturn,
     declineReturn,
     getReturnById,
+    getReturnOptions,
     listReturns,
     receiveReturn
 } from '@api';
-import type { CreateReturnRequest, ListReturnsParams, Return, ReceiveReturnRequest } from '@types';
+import type {
+    CreateReturnRequest,
+    ListReturnsParams,
+    Return,
+    ReturnOptions,
+    ReceiveReturnRequest
+} from '@types';
 
 /**
  * Search criteria for the list, i.e. everything but pagination (owned by the toolkit's search
@@ -127,6 +134,17 @@ export const useReturnsStore = defineStore('returns', () => {
         });
 
     /**
+     * Reads what one order can still send back and cancel — the server's own counts and refund
+     * amounts, so no client works them out. Not cached: the answer changes with every shipment.
+     *
+     * @param orderId - The order in question.
+     * @returns A promise resolving with the options; `undefined` only when the toolkit's read
+     *   wrapper handed back no response.
+     */
+    const fetchReturnOptions = (orderId: string): Promise<ReturnOptions | undefined> =>
+        fetchAny(() => getReturnOptions({ orderId })).then((response) => response?.data);
+
+    /**
      * Staff accept a requested return. The returned record replaces the cached one.
      *
      * @param returnId - Which return.
@@ -191,6 +209,7 @@ export const useReturnsStore = defineStore('returns', () => {
         watchReturn,
         openReturn,
         fetchOrderReturns,
+        fetchReturnOptions,
         approve,
         decline,
         receive
