@@ -123,6 +123,7 @@ export const useOrdersStore = defineStore('orders', () => {
                     productId: filters.productId,
                     email: filters.email,
                     status: filters.status,
+                    fulfillmentStatus: filters.fulfillmentStatus,
                     paymentMethod: filters.paymentMethod,
                     deleted: filters.deleted
                 }).then((response) => ({

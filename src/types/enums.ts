@@ -14,6 +14,9 @@
 // Order lifecycle: a status badge's color, a filter select's options.
 export { OrderStatus } from '@api';
 
+// Where an order's goods stand beside its status: the orders list's fulfilment filter.
+export { OrderFulfillmentStatus } from '@api';
+
 // Inventory movement reasons: a movement ledger's filter select.
 export { StockMovementReason } from '@api';
 

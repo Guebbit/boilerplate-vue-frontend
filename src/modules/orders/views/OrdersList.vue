@@ -31,7 +31,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
-import { OrderStatus } from '@/types/enums.ts';
+import { OrderFulfillmentStatus, OrderStatus } from '@/types/enums.ts';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
@@ -142,6 +142,7 @@ const { sync: syncUrl } = useListUrlState({
         productId: 'string',
         email: 'string',
         status: Object.values(OrderStatus),
+        fulfillmentStatus: Object.values(OrderFulfillmentStatus),
         paymentMethod: 'string',
         deleted: 'boolean',
         sort: 'string'
@@ -198,6 +199,29 @@ const statusChoice = useAnyFilterChoice(
     () => filters.value.status,
     (value) => {
         filters.value.status = value;
+    }
+);
+
+/**
+ * The fulfilment select's options: every `OrderFulfillmentStatus`, plus "any" (value `null`, for
+ * the same reason as {@link statusOptions}).
+ */
+const fulfillmentOptions = computed(() => [
+    { value: null, label: t('orders-list-page.filter-status-any') },
+    ...Object.values(OrderFulfillmentStatus).map((status) => ({
+        value: status,
+        label: t(`order-target-page.fulfillment-status-${status}`)
+    }))
+]);
+
+/**
+ * The fulfilment select's model: `null` (the "any" row) on screen, no `fulfillmentStatus` filter in
+ * {@link filters}.
+ */
+const fulfillmentChoice = useAnyFilterChoice(
+    () => filters.value.fulfillmentStatus,
+    (value) => {
+        filters.value.fulfillmentStatus = value;
     }
 );
 
@@ -368,6 +392,15 @@ const handleHardDelete = (orderId: string) =>
                         hide-details
                     />
                     <v-select
+                        v-model="fulfillmentChoice"
+                        :label="t('orders-list-page.filter-fulfillment-status')"
+                        :items="fulfillmentOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-fulfillment-status"
+                        hide-details
+                    />
+                    <v-select
                         v-if="session.can('delete', 'Order')"
                         v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
@@ -433,6 +466,14 @@ const handleHardDelete = (orderId: string) =>
             <template v-slot:[`item.status`]="{ item }">
                 <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
                     {{ t(`orders-form.status-${item.status}`) }}
+                </v-chip>
+                <v-chip
+                    size="small"
+                    variant="outlined"
+                    class="ml-1"
+                    data-test="row-fulfillment-status"
+                >
+                    {{ t(`order-target-page.fulfillment-status-${item.fulfillmentStatus}`) }}
                 </v-chip>
                 <v-chip
                     v-if="item.deletedAt"

@@ -71,7 +71,9 @@ the API.
 
 The detail page shows three read-only words next to the order's own status, each straight from the
 server: `paymentStatus` (`unpaid` · `paid` · `partially_refunded` · `refunded`), `fulfillmentStatus`
-and `returnStatus`. None is derived here. The withdrawal control is [`returns`](./returns.md)'
+(`unfulfilled` · `in_progress` · `on_hold` · `partially_fulfilled` · `shipped` · `fulfilled`) and
+`returnStatus`. None is derived here. The list shows `fulfillmentStatus` as a chip beside the
+status and filters by it (`GET /orders` search), so a held or part-shipped order can be found. The withdrawal control is [`returns`](./returns.md)'
 `WithdrawalPanel`, handed `actions.withdraw` and `actions.withdrawUntil` untouched; a line whose
 product carries `noWithdrawal` says so on the page. The operator's "Refund payment" button takes an
 optional amount for a partial refund — empty still means everything still refundable.

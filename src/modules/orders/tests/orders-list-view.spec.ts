@@ -300,3 +300,45 @@ describe('OrdersList — the order column', () => {
         expect(shown).toEqual(['2026-0042', '2026-0043']);
     });
 });
+
+/**
+ * The list says where the goods stand beside the status, and narrows by it — including the two
+ * values a single-parcel shop never had, `on_hold` and `partially_fulfilled`.
+ */
+describe('OrdersList — the fulfilment chip and filter', () => {
+    it('shows each row’s fulfilment in words, next to its status', async () => {
+        vi.mocked(searchOrders).mockResolvedValue(
+            asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    items: [{ ...order('o-1'), fulfillmentStatus: 'partially_fulfilled' }],
+                    meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+                })
+            )
+        );
+        const wrapper = mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="row-fulfillment-status"]').text()).toBe('Partly shipped');
+    });
+
+    it('sends the chosen fulfilment to the API as a filter', async () => {
+        vi.mocked(searchOrders).mockResolvedValue(
+            asStub<Awaited<ReturnType<typeof searchOrders>>>(
+                contractResponse(schemas.SearchOrdersResponse, {
+                    items: [],
+                    meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1 }
+                })
+            )
+        );
+        const wrapper = mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+        useOrdersStore().filters.fulfillmentStatus = 'on_hold';
+
+        await wrapper.get('[data-test="search-submit"]').trigger('submit');
+        await flushPromises();
+
+        expect(searchOrders).toHaveBeenLastCalledWith(
+            expect.objectContaining({ fulfillmentStatus: 'on_hold' })
+        );
+    });
+});
