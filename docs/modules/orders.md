@@ -123,6 +123,11 @@ status and filters by it (`GET /orders` search), so a held or part-shipped order
 product carries `noWithdrawal` says so on the page. The operator's "Refund payment" button takes an
 optional amount for a partial refund — empty still means everything still refundable.
 
+A line sold before its release date (`product.preorder`, frozen at checkout) reads "Preorder: ships
+from {date}". When that preorder runs late, the buyer answers on this same page: the
+`ShipmentPanel`'s card shows the new date and a "Keep waiting" button (see
+[delivery](./delivery.md#a-late-preorder)), and the order's own cancel is the other answer.
+
 ## State
 
 Store `orders`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.

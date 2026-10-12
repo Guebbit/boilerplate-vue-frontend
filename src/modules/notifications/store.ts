@@ -32,7 +32,8 @@ import type {
 import { i18n, translate } from '@/i18n';
 import { notifyErrorMessages, rethrowUnlessAbsent } from '@/infrastructure/utils/errors.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
-import { describeNotification } from './domain';
+import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { describeNotification, notificationOrderId } from './domain';
 import type { InboxItem } from './types';
 
 /**
@@ -186,7 +187,8 @@ export const useInboxStore = defineStore('inbox', () => {
             text: message.message,
             type: message.type,
             createdAt: notification.createdAt,
-            unread: notification.readAt === undefined
+            unread: notification.readAt === undefined,
+            orderId: notificationOrderId(notification)
         }))
     );
 
@@ -209,7 +211,7 @@ export const useInboxStore = defineStore('inbox', () => {
         const known = messages.findMessage(notification.id) !== undefined;
         const meta: InboxMeta = { source: INBOX_SOURCE, notification };
         messages.addMessage(
-            describeNotification(notification, preferredLocales(), translate),
+            describeNotification(notification, preferredLocales(), translate, formatDate),
             TOAST_TYPE[notification.severity],
             announce ? TOAST_MS : NO_AUTO_HIDE,
             {

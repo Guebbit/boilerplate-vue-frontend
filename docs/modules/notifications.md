@@ -88,15 +88,23 @@ after 1, 2, 4 ... seconds (capped at 30), and every open is followed by a fresh 
 `Notification` is a union on `code`, and each variant carries its own typed `params`
 (`@types`), so the sentence builder narrows them with a plain `switch` and parses nothing:
 
-| Code                                  | `params`                                        |
-| ------------------------------------- | ----------------------------------------------- |
-| `notifications.cart-line-removed`     | `{ productId, titles }`                         |
-| `notifications.wishlist-item-removed` | `{ productId, titles }`                         |
-| `notifications.cart-merge-refused`    | `{ lines: [{ productId, requested, titles }] }` |
+| Code                                  | `params`                                                                      |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| `notifications.cart-line-removed`     | `{ productId, titles }`                                                       |
+| `notifications.wishlist-item-removed` | `{ productId, titles }`                                                       |
+| `notifications.cart-merge-refused`    | `{ lines: [{ productId, requested, titles }] }`                               |
+| `notifications.preorder-delayed`      | `{ orderId, fulfillmentOrderId, titles[], agreedAt, expectedAt?, answerBy? }` |
+| `notifications.preorder-confirm-wait` | the same                                                                      |
 
 The refused-merge sentence lists each line as "name × quantity the guest held": every line in it
 is a product that is no longer available, so the sentence says that once and the lines carry no
 reason of their own.
+
+The two preorder codes carry names already resolved (`titles` is a list, not a map) and dates, which
+the store spells in the reader's locale (`formatDate`); each has a variant for a missing date
+(`preorder-delayed-undated`, `preorder-confirm-wait-bare`). They also name their order, so the bell
+links to it by route name (`OrderTarget`, resolved with `linkIfRouted`, since `orders` is not a
+sibling this module imports): that is where the reader presses "Keep waiting" or cancels.
 
 The code is its own dictionary key: the code `notifications.cart-line-removed` is the entry
 `cart-line-removed` inside the `notifications` group of `locales/*.json`. A product's name comes from
@@ -130,7 +138,7 @@ session without `notifications.self.read`.
 | Badge           | The unread count: notifications with no `readAt`.                                                                                                                                                   |
 | Accessible name | "Notifications", or "Notifications: 3 unread" — the badge alone is a bare number.                                                                                                                   |
 | Opening         | `POST /notifications/read-all`, so the badge clears everywhere (the stream tells other tabs). Nothing is sent when nothing is unread. Rows that were new stay marked "New" while the panel is open. |
-| Panel           | A `dialog`, newest first: text, date, a delete button named after its message, and "Clear all".                                                                                                     |
+| Panel           | A `dialog`, newest first: text, date, an "Open the order" link on a notice about an order, a delete button named after its message, and "Clear all".                                                |
 | Focus           | Moves into the panel on open; Escape closes it and returns focus to the bell.                                                                                                                       |
 
 ## Screens

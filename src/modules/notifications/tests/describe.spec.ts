@@ -7,7 +7,7 @@
  * dictionary entry was reached and with what, not the English wording (the store spec covers that).
  */
 import { describe, expect, it } from 'vitest';
-import { describeNotification, productName } from '../domain';
+import { describeNotification, notificationOrderId, productName } from '../domain';
 import type { Translate } from '../domain';
 
 /**
@@ -19,6 +19,37 @@ const translate: Translate = (key, named) =>
               .map(([name, value]) => `${name}=${String(value)}`)
               .join('|')}`
         : key;
+
+/**
+ * Spells a date as `<ISO>!` so a case can see the formatter ran on it.
+ */
+const format = (iso: string) => `${iso}!`;
+
+/**
+ * The facts a late-preorder notice carries, before its optional dates.
+ */
+const base = {
+    orderId: 'o1',
+    fulfillmentOrderId: 'fo1',
+    titles: ['Vinyl', 'Poster'],
+    agreedAt: 'A'
+};
+
+/**
+ * A confirm-wait notice's sentence, with or without a deadline.
+ *
+ * @param answerBy - The deadline, when the notice has one.
+ */
+const confirmNotice = (answerBy?: string) =>
+    describeNotification(
+        {
+            code: 'notifications.preorder-confirm-wait',
+            params: { ...base, ...(answerBy ? { answerBy } : {}) }
+        },
+        ['en'],
+        translate,
+        format
+    );
 
 describe('productName', () => {
     it("takes the reader's language first", () => {
@@ -127,6 +158,53 @@ describe('describeNotification', () => {
                 translate
             )
         ).toBe('notifications.cart-merge-refused-bare');
+    });
+
+    describe('a late preorder', () => {
+        it('says the new date when the delay has one', () => {
+            expect(
+                describeNotification(
+                    {
+                        code: 'notifications.preorder-delayed',
+                        params: { ...base, expectedAt: 'E' }
+                    },
+                    ['en'],
+                    translate,
+                    format
+                )
+            ).toBe(
+                'notifications.preorder-delayed|titles=Vinyl, Poster|agreed=A!|expected=E!|answerBy='
+            );
+        });
+
+        it('says there is no new date yet when the delay has none', () => {
+            expect(
+                describeNotification(
+                    { code: 'notifications.preorder-delayed', params: base },
+                    ['en'],
+                    translate,
+                    format
+                )
+            ).toMatch(/^notifications\.preorder-delayed-undated\|/);
+        });
+
+        it('asks for an answer by the deadline, or without one when there is none', () => {
+            expect(confirmNotice('D')).toContain('answerBy=D!');
+            expect(confirmNotice('D')).toMatch(/^notifications\.preorder-confirm-wait\|/);
+            expect(confirmNotice()).toMatch(/^notifications\.preorder-confirm-wait-bare\|/);
+        });
+
+        it('names the order it is about, and no order for any other code', () => {
+            expect(
+                notificationOrderId({ code: 'notifications.preorder-delayed', params: base })
+            ).toBe('o1');
+            expect(
+                notificationOrderId({
+                    code: 'notifications.cart-line-removed',
+                    params: { productId: 'p1', titles: {} }
+                })
+            ).toBeUndefined();
+        });
     });
 
     it('reads an unknown code as a generic notification, never as its key', () => {

@@ -13,6 +13,11 @@
         "empty": "Non hai notifiche.",
         "button-clear-all": "Elimina tutte",
         "button-delete-named": "Elimina la notifica: {text}",
-        "unread": "Nuova"
+        "unread": "Nuova",
+        "preorder-delayed": "Il tuo preordine ({titles}) è in ritardo: era promesso per il {agreed} e ora è atteso il {expected}. Puoi continuare ad aspettare o annullarlo dal tuo ordine.",
+        "preorder-delayed-undated": "Il tuo preordine ({titles}) è in ritardo: era promesso per il {agreed} e non ha ancora una nuova data. Puoi continuare ad aspettare o annullarlo dal tuo ordine.",
+        "preorder-confirm-wait": "Il tuo preordine ({titles}) è in ritardo. Dicci entro il {answerBy} se vuoi ancora aspettare, altrimenti verrà annullato e rimborsato.",
+        "preorder-confirm-wait-bare": "Il tuo preordine ({titles}) è in ritardo. Dicci se vuoi ancora aspettare, oppure annullalo dal tuo ordine.",
+        "link-order": "Apri l'ordine"
     }
 }

@@ -35,7 +35,20 @@
         "button-hold": "Sospendi",
         "button-release": "Rimuovi sospensione",
         "fulfilled": "Segnato come evaso.",
-        "released": "Sospensione rimossa."
+        "released": "Sospensione rimossa.",
+        "promised": "Promesso per il {date}",
+        "consent-awaiting-buyer": "È in ritardo. Vuoi ancora aspettarlo?",
+        "consent-awaiting-staff": "In attesa che l'acquirente dica se continuare ad aspettare",
+        "consent-confirmed": "Attesa confermata",
+        "consent-expired": "Nessuna risposta in tempo: annullamento e rimborso in corso",
+        "answer-by": "Rispondi entro il {date}, altrimenti ciò che resta viene annullato e rimborsato.",
+        "last-notice": "Ultimo avviso inviato il {date}",
+        "cancel-reason-buyer": "Annullato dall'acquirente",
+        "cancel-reason-staff": "Annullato dallo staff",
+        "cancel-reason-no_answer": "Annullato: nessuna risposta",
+        "cancel-reason-order": "Annullato con l'ordine",
+        "button-confirm-wait": "Continua ad aspettare",
+        "wait-confirmed": "Grazie, lo teniamo per te."
     },
     "shipment-row": {
         "title": "Spedizione n. {number}",

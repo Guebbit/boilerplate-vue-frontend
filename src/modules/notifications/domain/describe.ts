@@ -26,6 +26,12 @@ export type DescribableNotification = Notification extends infer Variant
     : never;
 
 /**
+ * How a date is spelled in a sentence. Handed in by the caller, since the format is the reader's
+ * locale and this layer knows no locale machinery.
+ */
+export type FormatDate = (iso: string) => string;
+
+/**
  * Dictionary key for a code this client has no wording for (a newer backend).
  */
 const UNKNOWN_CODE_KEY = 'notifications.unknown';
@@ -44,6 +50,77 @@ const MERGE_REFUSED_BARE_KEY = 'notifications.cart-merge-refused-bare';
  * Separator between the refused lines of one merge sentence.
  */
 const LINE_SEPARATOR = '; ';
+
+/**
+ * Separator between the product names of one preorder sentence.
+ */
+const NAME_SEPARATOR = ', ';
+
+/**
+ * A notification's `params` for the preorder codes: what is late, and when.
+ */
+type PreorderParameters = Extract<
+    DescribableNotification,
+    { code: 'notifications.preorder-delayed' | 'notifications.preorder-confirm-wait' }
+>['params'];
+
+/**
+ * Each preorder code's two dictionary entries, as literals so the unused-key check can see them:
+ * the full sentence, and the one for a notice whose optional date is missing (`expectedAt` for the
+ * delayed notice, `answerBy` for the confirm-wait one).
+ */
+const PREORDER_KEYS = {
+    'notifications.preorder-delayed': {
+        full: 'notifications.preorder-delayed',
+        withoutDate: 'notifications.preorder-delayed-undated'
+    },
+    'notifications.preorder-confirm-wait': {
+        full: 'notifications.preorder-confirm-wait',
+        withoutDate: 'notifications.preorder-confirm-wait-bare'
+    }
+};
+
+/**
+ * The sentence of a preorder's late notice: the delayed notice says the new date (or that there is
+ * none yet), the confirm-wait notice asks for an answer by its deadline (or without one).
+ *
+ * @param code - Which of the two preorder codes.
+ * @param parameters - The notice's facts.
+ * @param format - Date spelling.
+ * @param translate - The translate function.
+ * @returns The finished text.
+ */
+const describePreorder = (
+    code: 'notifications.preorder-delayed' | 'notifications.preorder-confirm-wait',
+    parameters: PreorderParameters,
+    format: FormatDate,
+    translate: Translate
+): string => {
+    const named = {
+        titles: parameters.titles.join(NAME_SEPARATOR),
+        agreed: format(parameters.agreedAt),
+        expected: parameters.expectedAt === undefined ? '' : format(parameters.expectedAt),
+        answerBy: parameters.answerBy === undefined ? '' : format(parameters.answerBy)
+    };
+    const keys = PREORDER_KEYS[code];
+    const dateMissing =
+        code === 'notifications.preorder-delayed'
+            ? parameters.expectedAt === undefined
+            : parameters.answerBy === undefined;
+    return translate(dateMissing ? keys.withoutDate : keys.full, named);
+};
+
+/**
+ * The order a notification is about, when it is about one — where the reader answers or cancels.
+ *
+ * @param notification - The stored row's `code` and `params`.
+ * @returns The order id, or `undefined` for a notification that concerns no order.
+ */
+export const notificationOrderId = (notification: DescribableNotification): string | undefined =>
+    notification.code === 'notifications.preorder-delayed' ||
+    notification.code === 'notifications.preorder-confirm-wait'
+        ? notification.params.orderId
+        : undefined;
 
 /**
  * A product's name in the reader's language.
@@ -94,13 +171,15 @@ const refusedLine = (
  * @param preferred - Languages to try for a product name, best first: the reader's, then the
  *  shop's main one.
  * @param translate - The translate function; the code is its own dictionary key.
+ * @param formatDate - How a date reads in the sentence; the ISO string itself by default.
  * @returns The finished text. A code this client does not know (a newer backend) reads as a
  *  generic notification, never as its key.
  */
 export const describeNotification = (
     notification: DescribableNotification,
     preferred: readonly string[],
-    translate: Translate
+    translate: Translate,
+    formatDate: FormatDate = (iso) => iso
 ): string => {
     switch (notification.code) {
         case 'notifications.cart-line-removed':
@@ -116,6 +195,10 @@ export const describeNotification = (
             return lines.length === 0
                 ? translate(MERGE_REFUSED_BARE_KEY)
                 : translate(notification.code, { lines: lines.join(LINE_SEPARATOR) });
+        }
+        case 'notifications.preorder-delayed':
+        case 'notifications.preorder-confirm-wait': {
+            return describePreorder(notification.code, notification.params, formatDate, translate);
         }
         default: {
             return translate(UNKNOWN_CODE_KEY);

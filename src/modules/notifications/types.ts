@@ -26,6 +26,10 @@ export interface InboxItem {
      */
     createdAt: string;
     /**
+     * The order the notification is about, when it is about one: the bell links to it.
+     */
+    orderId?: string | undefined;
+    /**
      * Whether the owner has not opened the bell since it arrived.
      */
     unread: boolean;

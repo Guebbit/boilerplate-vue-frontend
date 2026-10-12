@@ -10,6 +10,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMongoAbility } from '@casl/ability';
+import { createMemoryHistory, createRouter } from 'vue-router';
 import axe from 'axe-core';
 import { VMenu } from 'vuetify/components';
 import NotificationsBell from '../components/NotificationsBell.vue';
@@ -88,6 +89,17 @@ const signIn = () => {
 };
 
 /**
+ * A router holding the one sibling route the bell may link to, as the real app's `orders` module
+ * would register it.
+ */
+const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+        { path: '/:locale/orders/:id', name: 'OrderTarget', component: { template: '<div />' } }
+    ]
+});
+
+/**
  * The mounted bell, unmounted after each case.
  */
 let wrapper: VueWrapper | undefined;
@@ -99,7 +111,7 @@ let wrapper: VueWrapper | undefined;
  */
 const mountBell = async () => {
     wrapper = mount(NotificationsBell, {
-        global: { plugins: [vuetify, i18n] },
+        global: { plugins: [vuetify, i18n, router] },
         attachTo: document.body
     });
     await flushPromises();
@@ -317,5 +329,35 @@ describe('the open panel, audited', () => {
         });
 
         expect(results.violations.map(({ id, nodes }) => `${id}: ${nodes[0]?.html}`)).toEqual([]);
+    });
+});
+
+describe('a notice about an order', () => {
+    it('links to the order, where the reader answers or cancels', async () => {
+        signIn();
+        inboxOnServer = [
+            {
+                id: 'n1',
+                code: 'notifications.preorder-confirm-wait',
+                params: {
+                    orderId: 'o7',
+                    fulfillmentOrderId: 'fo1',
+                    titles: ['Limited vinyl'],
+                    agreedAt: '2027-03-01T00:00:00.000Z',
+                    answerBy: '2027-04-19T00:00:00.000Z'
+                },
+                severity: 'warning',
+                createdAt: '2026-10-04T10:00:00.000Z'
+            },
+            row('n2')
+        ];
+        await mountBell();
+        await openPanel();
+
+        const links = document.body.querySelectorAll('[data-test=notification-order-link]');
+
+        expect(links).toHaveLength(1);
+        expect(links[0]?.getAttribute('href')).toBe('/en/orders/o7');
+        expect(links[0]?.closest('[data-test=notification-n1]')).not.toBeNull();
     });
 });

@@ -35,7 +35,20 @@
         "button-hold": "Hold",
         "button-release": "Release hold",
         "fulfilled": "Marked fulfilled.",
-        "released": "Hold released."
+        "released": "Hold released.",
+        "promised": "Promised for {date}",
+        "consent-awaiting-buyer": "This is late. Do you still want to wait for it?",
+        "consent-awaiting-staff": "Waiting for the buyer to say whether to keep waiting",
+        "consent-confirmed": "Keep waiting confirmed",
+        "consent-expired": "No answer in time: being cancelled and refunded",
+        "answer-by": "Answer by {date}, or what remains of it is cancelled and refunded.",
+        "last-notice": "Last notice sent {date}",
+        "cancel-reason-buyer": "Cancelled by the buyer",
+        "cancel-reason-staff": "Cancelled by staff",
+        "cancel-reason-no_answer": "Cancelled: no answer",
+        "cancel-reason-order": "Cancelled with the order",
+        "button-confirm-wait": "Keep waiting",
+        "wait-confirmed": "Thank you, we will keep it for you."
     },
     "shipment-row": {
         "title": "Shipment #{number}",

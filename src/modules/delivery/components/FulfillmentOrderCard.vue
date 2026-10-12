@@ -3,9 +3,11 @@
  * @module
  * One card per fulfillment order — the group of lines that leave together — in Shopify's admin
  * layout: status, hold reason, what is promised and when, each line with how much shipped,
- * was cancelled and remains, then the shipments cut from it. Every staff button comes from the
- * record's own `actions`; the one exception is the forced ship, offered to an override holder
- * while the ordinary door is closed (the server refuses what does not apply).
+ * was cancelled and remains, then the shipments cut from it. Every button comes from the
+ * record's own `actions` (the buyer's "Keep waiting" included); the one exception is the forced
+ * ship, offered to an override holder while the ordinary door is closed (the server refuses what
+ * does not apply). A late preorder also shows where it stands with its buyer: the promised date,
+ * the answer owed and by when, the last notice, and who cancelled it.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -111,6 +113,33 @@ const expectedDate = computed(
 );
 
 /**
+ * The promised date, shown only once the expected one has moved away from it.
+ */
+const promisedDate = computed(() =>
+    props.fulfillmentOrder.agreedAt &&
+    props.fulfillmentOrder.expectedAt &&
+    props.fulfillmentOrder.expectedAt !== props.fulfillmentOrder.agreedAt
+        ? props.fulfillmentOrder.agreedAt
+        : undefined
+);
+
+/**
+ * The consent sentence's dictionary key. While an answer is owed, the buyer (whose record carries
+ * `actions.confirmWait`) is asked; anyone else reads that it is awaited.
+ */
+const consentKey = computed(() => {
+    const { consent, actions } = props.fulfillmentOrder;
+    if (!consent) return undefined;
+    if (consent === 'awaiting')
+        return actions.confirmWait
+            ? 'fulfillment-order-card.consent-awaiting-buyer'
+            : 'fulfillment-order-card.consent-awaiting-staff';
+    return consent === 'confirmed'
+        ? 'fulfillment-order-card.consent-confirmed'
+        : 'fulfillment-order-card.consent-expired';
+});
+
+/**
  * Runs one dialog-less write: clears the blocked state, toasts, tells the page, or blocks in place.
  *
  * @param move - The store call.
@@ -134,6 +163,17 @@ const run = (move: () => Promise<unknown>, success: string) => {
  */
 const markFulfilled = () =>
     run(() => deliveryStore.fulfill(props.fulfillmentOrder.id), 'fulfillment-order-card.fulfilled');
+
+/**
+ * The buyer's answer: keep waiting.
+ *
+ * @returns A promise settling once the call finished.
+ */
+const confirmWait = () =>
+    run(
+        () => deliveryStore.confirmWait(props.fulfillmentOrder.id),
+        'fulfillment-order-card.wait-confirmed'
+    );
 
 /**
  * Lifts a staff hold.
@@ -190,6 +230,57 @@ const release = () =>
             {{ t('fulfillment-order-card.expected', { date: formatDateTime(expectedDate) }) }}
         </p>
 
+        <p
+            v-if="promisedDate"
+            class="m-0 text-sm opacity-75"
+            data-test="fulfillment-order-promised"
+        >
+            {{ t('fulfillment-order-card.promised', { date: formatDateTime(promisedDate) }) }}
+        </p>
+        <div v-if="consentKey" class="flex flex-col gap-1" data-test="fulfillment-order-consent">
+            <v-chip
+                size="small"
+                :color="fulfillmentOrder.consent === 'confirmed' ? 'success' : 'warning'"
+                variant="tonal"
+                class="self-start"
+                :data-consent="fulfillmentOrder.consent"
+            >
+                {{ t(consentKey) }}
+            </v-chip>
+            <p
+                v-if="fulfillmentOrder.consent === 'awaiting' && fulfillmentOrder.consentDeadline"
+                class="m-0 text-sm"
+                data-test="fulfillment-order-answer-by"
+            >
+                {{
+                    t('fulfillment-order-card.answer-by', {
+                        date: formatDateTime(fulfillmentOrder.consentDeadline)
+                    })
+                }}
+            </p>
+        </div>
+        <p
+            v-if="fulfillmentOrder.lastNoticeAt"
+            class="m-0 text-sm opacity-75"
+            data-test="fulfillment-order-last-notice"
+        >
+            {{
+                t('fulfillment-order-card.last-notice', {
+                    date: formatDateTime(fulfillmentOrder.lastNoticeAt)
+                })
+            }}
+        </p>
+        <v-chip
+            v-if="fulfillmentOrder.cancelReason"
+            size="small"
+            variant="outlined"
+            class="self-start"
+            :data-cancel-reason="fulfillmentOrder.cancelReason"
+            data-test="fulfillment-order-cancel-reason"
+        >
+            {{ t(`fulfillment-order-card.cancel-reason-${fulfillmentOrder.cancelReason}`) }}
+        </v-chip>
+
         <ul class="m-0 list-none p-0 text-sm" data-test="fulfillment-order-lines">
             <li v-for="line in fulfillmentOrder.lines" :key="'fo-line-' + line.productId">
                 {{ line.title }} —
@@ -242,6 +333,16 @@ const release = () =>
                 @click="holdOpen = true"
             >
                 {{ t('fulfillment-order-card.button-hold') }}
+            </v-btn>
+            <v-btn
+                v-if="fulfillmentOrder.actions.confirmWait"
+                color="primary"
+                size="small"
+                :disabled="loading"
+                data-test="confirm-wait"
+                @click="confirmWait"
+            >
+                {{ t('fulfillment-order-card.button-confirm-wait') }}
             </v-btn>
             <v-btn
                 v-if="fulfillmentOrder.actions.release"

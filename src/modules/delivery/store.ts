@@ -16,6 +16,7 @@ import {
     shipFulfillmentOrder,
     fulfillFulfillmentOrder,
     holdFulfillmentOrder,
+    confirmFulfillmentOrderWait,
     releaseFulfillmentOrder,
     updateShipment,
     deliverShipment
@@ -173,6 +174,22 @@ export const useDeliveryStore = defineStore('delivery', () => {
         );
 
     /**
+     * The buyer's answer to a late preorder: yes, keep waiting. It clears the deadline after
+     * which silence would cancel and refund, so only the order's own buyer may send it, and only
+     * while `actions.confirmWait` says the server would accept it.
+     *
+     * @param fulfillmentOrderId - The fulfillment order the buyer is still waiting for.
+     * @returns A promise resolving with the fulfillment order (`consent` now `confirmed`), after
+     *  the lists are re-read.
+     */
+    const confirmWait = (fulfillmentOrderId: string) =>
+        fetchAny(() =>
+            confirmFulfillmentOrderWait(fulfillmentOrderId).then((response) =>
+                readFulfillment(response.data.orderId).then(() => response.data)
+            )
+        );
+
+    /**
      * Records one shipment's arrival (admin). The order moves to `delivered` only once every
      * shipment has arrived and nothing remains.
      *
@@ -216,6 +233,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
         fulfill,
         hold,
         release,
+        confirmWait,
         deliver,
         editTracking
     };

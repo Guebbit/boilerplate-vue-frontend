@@ -10,10 +10,13 @@
  * notifications is signed in.
  */
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import type { ComponentPublicInstance } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { Bell, Trash2 } from 'lucide-vue-next';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { linkIfRouted } from '@/kernel/route-link.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useInboxStore } from '../store';
@@ -53,6 +56,23 @@ const open = ref(false);
  * this the reader would never see which ones were new.
  */
 const freshIds = ref<ReadonlySet<string>>(new Set());
+
+/**
+ * Router, asked whether this build has an order page to link a notice to: `orders` is not a
+ * sibling this module imports, so the link is resolved by route name or left out.
+ */
+const router = useRouter();
+
+/**
+ * The order page a notice points at, or `undefined` when it concerns no order or this build ships
+ * no `orders` module.
+ *
+ * @param orderId - The notice's order, when it has one.
+ */
+const orderLink = (orderId: string | undefined) => {
+    const target = orderId ? linkIfRouted(router, 'OrderTarget', { id: orderId }) : undefined;
+    return target ? routerLinkI18n(target) : undefined;
+};
 
 /**
  * The panel card, so focus can move into it when it opens.
@@ -188,6 +208,14 @@ const focusPanel = () => {
                             {{ t('notifications.unread') }}
                         </v-chip>
                     </v-list-item-subtitle>
+                    <router-link
+                        v-if="orderLink(item.orderId)"
+                        :to="orderLink(item.orderId)!"
+                        class="text-sm underline"
+                        data-test="notification-order-link"
+                    >
+                        {{ t('notifications.link-order') }}
+                    </router-link>
 
                     <template #append>
                         <v-btn
