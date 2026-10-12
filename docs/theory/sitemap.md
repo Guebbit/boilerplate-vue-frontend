@@ -53,6 +53,8 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`products`](../modules/products.md)                   | `products/:id/edit`                    | `ProductEdit`           | `auth`   | `update Product`             | `views/ProductEdit.vue`           |
 | [`returns`](../modules/returns.md)                     | `returns`                              | `ReturnsList`           | `auth`   | —                            | `views/ReturnsList.vue`           |
 | [`returns`](../modules/returns.md)                     | `returns/:id`                          | `ReturnTarget`          | `auth`   | —                            | `views/Return.vue`                |
+| [`stats`](../modules/stats.md)                         | `sales/stats`                          | `StatsDashboard`        | `auth`   | `read Stats`                 | `views/StatsDashboard.vue`        |
+| [`stats`](../modules/stats.md)                         | `sales/stats/products/:productId`      | `StatsProductSales`     | `auth`   | `read Stats`                 | `views/ProductSales.vue`          |
 | [`users`](../modules/users.md)                         | `users`                                | `UsersList`             | `auth`   | `read User`                  | `views/UsersList.vue`             |
 | [`users`](../modules/users.md)                         | `users/create`                         | `UserCreate`            | `auth`   | `create User`                | `views/UserCreate.vue`            |
 | [`users`](../modules/users.md)                         | `users/:id`                            | `UserTarget`            | `auth`   | `read User`                  | `views/User.vue`                  |
@@ -64,7 +66,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`     | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`     |
 | [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`              | `auth`   | —                            | `views/Wishlist.vue`              |
 
-50 screens across 14 modules.
+52 screens across 15 modules.
 
 <!-- sitemap:end -->
 

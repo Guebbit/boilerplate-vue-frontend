@@ -32,6 +32,7 @@ export const DEMO_MODULE_NAMES = [
     'payments',
     'products',
     'returns',
+    'stats',
     'wishlist'
 ] as const;
 

@@ -25,6 +25,7 @@ import orders from '@/modules/orders/module';
 import payments from '@/modules/payments/module';
 import products from '@/modules/products/module';
 import returns from '@/modules/returns/module';
+import stats from '@/modules/stats/module';
 import users from '@/modules/users/module';
 import webhooks from '@/modules/webhooks/module';
 import wishlist from '@/modules/wishlist/module';
@@ -47,6 +48,7 @@ export const enabledModules: AppModule[] = [
     payments,
     products,
     returns,
+    stats,
     users,
     webhooks,
     wishlist

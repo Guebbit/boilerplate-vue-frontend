@@ -3055,6 +3055,7 @@ export interface Order {
     fulfillmentStatus: OrderFulfillmentStatus;
     returnStatus: OrderReturnStatus;
     actions?: OrderActions;
+    paidAt?: string;
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
@@ -3091,12 +3092,16 @@ export const OrderSortItem = {
     status: 'status',
     '-status': '-status',
     email: 'email',
-    '-email': '-email'
+    '-email': '-email',
+    payBy: 'payBy',
+    '-payBy': '-payBy',
+    paidAt: 'paidAt',
+    '-paidAt': '-paidAt'
 } as const;
 
 /**
  * @minItems 1
- * @maxItems 3
+ * @maxItems 5
  */
 export type OrderSort = OrderSortItem[];
 
@@ -3162,6 +3167,12 @@ export interface SearchOrdersRequest {
     fulfillmentStatus?: OrderFulfillmentStatus;
     paymentMethod?: PaymentMethodId;
     deleted?: boolean;
+    createdFrom?: string;
+    createdTo?: string;
+    paidFrom?: string;
+    paidTo?: string;
+    paymentStatus?: OrderPaymentStatus;
+    returnStatus?: OrderReturnStatus;
 }
 
 export interface ReplaceOrderByIdRequest {
@@ -3237,6 +3248,14 @@ export interface CreatePaymentIntentRequest {
     orderId: Id;
 }
 
+export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
+
+export const RefundStatus = {
+    pending: 'pending',
+    succeeded: 'succeeded',
+    failed: 'failed'
+} as const;
+
 /**
  * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to.
  */
@@ -3249,18 +3268,21 @@ export const RefundReason = {
 } as const;
 
 /**
- * `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator).
+ * Why the provider last refused a refund, as a closed code. Staff only (`payments.any.read`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  */
-export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
+export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
 
-export const RefundStatus = {
-    pending: 'pending',
-    succeeded: 'succeeded',
-    failed: 'failed'
+export const RefundFailureReason = {
+    declined: 'declined',
+    insufficient_funds: 'insufficient_funds',
+    expired_or_canceled_card: 'expired_or_canceled_card',
+    lost_or_stolen_card: 'lost_or_stolen_card',
+    provider_unavailable: 'provider_unavailable',
+    unknown: 'unknown'
 } as const;
 
 /**
- * One attempt to give money back — a record per attempt, not a field on the payment. The provider's own refund id, the idempotency key and the provider's error wording are stored but never published.
+ * One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`payments.any.read`); the provider's own error wording stays in the logs.
  */
 export interface Refund {
     id: Id;
@@ -3277,8 +3299,26 @@ export interface Refund {
     returnId?: Id;
     /** When the refund succeeded. Absent while it has not. */
     settledAt?: string;
+    /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
+    providerRefundRef?: string;
+    failureReason?: RefundFailureReason;
     createdAt: string;
 }
+
+/**
+ * The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned; `failed` — declined.
+ */
+export type PaymentDisplayStatus = (typeof PaymentDisplayStatus)[keyof typeof PaymentDisplayStatus];
+
+export const PaymentDisplayStatus = {
+    incomplete: 'incomplete',
+    pending: 'pending',
+    succeeded: 'succeeded',
+    refund_pending: 'refund_pending',
+    partially_refunded: 'partially_refunded',
+    refunded: 'refunded',
+    failed: 'failed'
+} as const;
 
 /**
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
@@ -3336,6 +3376,13 @@ export interface Payment {
     refunds: Refund[];
     /** The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
+    displayStatus: PaymentDisplayStatus;
+    /** The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `payments.any.read`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment. */
+    providerRef?: string;
+    /** The order's number. Present on `GET /payments` rows only. */
+    orderNumber?: string;
+    /** The order's customer email. Present on `GET /payments` rows only. */
+    email?: string;
     /** Which provider implementation handled it — the name the deployment registered (`NODE_PAYMENT_PROVIDER`), or `manual` for a payment recorded by hand (`POST /payments/order/{orderId}/offline`). */
     provider: string;
     /** How the money moved. `card` for anything that went through the provider port; the other three are set only by `POST /payments/order/{orderId}/offline`, from what the admin chose there. */
@@ -4698,6 +4745,380 @@ export interface MergeCartResponseEnvelope {
     data: MergeCartResponse;
 }
 
+export type PaymentSortItem = (typeof PaymentSortItem)[keyof typeof PaymentSortItem];
+
+export const PaymentSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    amount: 'amount',
+    '-amount': '-amount'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type PaymentSort = PaymentSortItem[];
+
+export type PaymentMethodKind = (typeof PaymentMethodKind)[keyof typeof PaymentMethodKind];
+
+export const PaymentMethodKind = {
+    card: 'card',
+    bank_transfer: 'bank_transfer',
+    cash: 'cash',
+    other: 'other'
+} as const;
+
+export interface PaymentsResponse {
+    items: Payment[];
+    meta: PaginationMeta;
+}
+
+export interface PaymentsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PaymentsResponse;
+}
+
+export interface SearchPaymentsRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    sort?: PaymentSort;
+    displayStatus?: PaymentDisplayStatus;
+    method?: PaymentMethodKind;
+    /** @maxLength 64 */
+    provider?: string;
+    createdFrom?: string;
+    createdTo?: string;
+    receivedFrom?: string;
+    receivedTo?: string;
+    /** @minimum 0 */
+    amountMin?: number;
+    /** @minimum 0 */
+    amountMax?: number;
+    orderId?: Id;
+    /** @maxLength 120 */
+    reference?: string;
+}
+
+export interface RefundListItem {
+    id: Id;
+    paymentId: Id;
+    orderId: Id;
+    /** @minimum 0 */
+    amount: number;
+    currency: string;
+    status: RefundStatus;
+    reason: RefundReason;
+    returnId?: Id;
+    providerRefundRef?: string;
+    failureReason?: RefundFailureReason;
+    settledAt?: string;
+    createdAt: string;
+}
+
+export interface RefundsResponse {
+    items: RefundListItem[];
+    meta: PaginationMeta;
+}
+
+export interface RefundsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: RefundsResponse;
+}
+
+/**
+ * `stale_refund` — a provider refund open past the threshold; `manual_refund_owed` — money to hand back outside the system on a `manual` payment; `payment_effect_pending` — the stock commit of a succeeded payment is still owed; `order_refund_owed` — an order cancelled after payment whose refund has not happened.
+ */
+export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
+
+export const PaymentAttentionKind = {
+    stale_refund: 'stale_refund',
+    manual_refund_owed: 'manual_refund_owed',
+    payment_effect_pending: 'payment_effect_pending',
+    order_refund_owed: 'order_refund_owed'
+} as const;
+
+export interface PaymentAttentionItem {
+    kind: PaymentAttentionKind;
+    orderId: Id;
+    paymentId?: Id;
+    refundId?: Id;
+    /** @minimum 0 */
+    amount?: number;
+    currency?: string;
+    failureReason?: RefundFailureReason;
+    /** When the problem was recorded, so the page can sort by age. */
+    since: string;
+}
+
+export interface PaymentAttentionResponse {
+    items: PaymentAttentionItem[];
+}
+
+export interface PaymentAttentionResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PaymentAttentionResponse;
+}
+
+/**
+ * The bucket size. A week starts on Monday.
+ */
+export type StatsInterval = (typeof StatsInterval)[keyof typeof StatsInterval];
+
+export const StatsInterval = {
+    day: 'day',
+    week: 'week',
+    month: 'month'
+} as const;
+
+export interface StatsPeriod {
+    from: string;
+    to: string;
+    interval?: StatsInterval;
+    /** The shop's IANA time zone every day and bucket edge follows. */
+    timeZone: string;
+}
+
+export interface SalesFigures {
+    /** Orders paid in the period, by `paidAt`. */
+    orders: number;
+    /** Units on those orders. */
+    unitsOrdered: number;
+    /** Units of returns received in the period. A cancellation is not counted, since it has no date. */
+    unitsReversed: number;
+    /** `unitsOrdered` minus `unitsReversed`. */
+    netUnits: number;
+    /** Goods net of VAT on invoices issued in the period, before shipping, discounts and reversals. */
+    grossSales: number;
+    /** Always 0 until a discount exists. */
+    discounts: number;
+    /** The goods part (net of VAT) of credit notes issued in the period. */
+    reversals: number;
+    /** `grossSales` minus `discounts` minus `reversals`. */
+    netSales: number;
+    /** Shipping net of VAT charged minus refunded. Exact for full refunds only, since a partial credit note folds its shipping into goods. */
+    shipping: number;
+    /** VAT charged minus VAT refunded. */
+    taxes: number;
+    /** `netSales` plus `shipping` plus `taxes`. */
+    totalSales: number;
+    /** Credit notes issued in the period, VAT included. */
+    refunds: number;
+    /** (`grossSales` minus `discounts`) divided by `orders`; 0 with no orders. */
+    averageOrderValue: number;
+}
+
+export interface SalesBucket {
+    /** The bucket's first instant, shop-local midnight. */
+    start: string;
+    figures: SalesFigures;
+}
+
+export interface SalesCurrency {
+    currency: string;
+    totals: SalesFigures;
+    /** The same totals over the equal-length period just before, for the "vs previous" figure. */
+    previous: SalesFigures;
+    /** Every bucket of the range, empty ones included. */
+    buckets: SalesBucket[];
+}
+
+export interface SalesStats {
+    period: StatsPeriod;
+    currencies: SalesCurrency[];
+}
+
+export interface SalesStatsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: SalesStats;
+}
+
+export interface ProductSalesRow {
+    productId: Id;
+    title: string;
+    currency: string;
+    unitsOrdered: number;
+    unitsReversed: number;
+    netUnits: number;
+    /** Net of VAT, from the frozen line price and rate. */
+    netSales: number;
+}
+
+export interface ProductStats {
+    period: StatsPeriod;
+    products: ProductSalesRow[];
+}
+
+export interface ProductStatsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ProductStats;
+}
+
+export interface ProductSeriesBucket {
+    start: string;
+    unitsOrdered: number;
+    unitsReversed: number;
+}
+
+export interface ProductSeries {
+    period: StatsPeriod;
+    productId: Id;
+    /** As the orders froze it; absent when the product sold nothing in the period. */
+    title?: string;
+    buckets: ProductSeriesBucket[];
+}
+
+export interface ProductSeriesEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ProductSeries;
+}
+
+export interface CategorySalesRow {
+    category: string;
+    currency: string;
+    unitsOrdered: number;
+    netSales: number;
+}
+
+export interface CategoryStats {
+    period: StatsPeriod;
+    categories: CategorySalesRow[];
+}
+
+export interface CategoryStatsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CategoryStats;
+}
+
+export type PaymentMixRowMethod = (typeof PaymentMixRowMethod)[keyof typeof PaymentMixRowMethod];
+
+export const PaymentMixRowMethod = {
+    card: 'card',
+    bank_transfer: 'bank_transfer',
+    cash: 'cash',
+    other: 'other'
+} as const;
+
+export interface PaymentMixRow {
+    method: PaymentMixRowMethod;
+    provider: string;
+    currency: string;
+    payments: number;
+    amount: number;
+}
+
+export interface PaymentMix {
+    period: StatsPeriod;
+    rows: PaymentMixRow[];
+}
+
+export interface PaymentMixEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PaymentMix;
+}
+
+/**
+ * A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened.
+ */
+export type OperationsStatsCancellation = {
+    placed: number;
+    cancelled: number;
+    /**
+     * @minimum 0
+     * @maximum 1
+     */
+    rate: number;
+};
+
+export type OperationsStatsReturns = {
+    unitsOrdered: number;
+    unitsReturned: number;
+    /** @minimum 0 */
+    rate: number;
+};
+
+export type OperationsStatsRefundsItem = {
+    currency: string;
+    /** Invoices issued in the period, VAT included. */
+    invoiced: number;
+    /** Credit notes issued in the period, VAT included. */
+    credited: number;
+    /** @minimum 0 */
+    rate: number;
+};
+
+export interface OperationsStats {
+    period: StatsPeriod;
+    /** A cohort, meaning orders placed in the period that ended cancelled, not cancellations dated by when they happened. */
+    cancellation: OperationsStatsCancellation;
+    returns: OperationsStatsReturns;
+    refunds: OperationsStatsRefundsItem[];
+}
+
+export interface OperationsStatsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OperationsStats;
+}
+
+export interface CustomerStats {
+    period: StatsPeriod;
+    /** Accounts with at least one paid order in the period. */
+    customers: number;
+    /** Of those, accounts whose first paid order is in the period. */
+    newCustomers: number;
+    returningCustomers: number;
+    /**
+     * @minimum 0
+     * @maximum 1
+     */
+    returningRate: number;
+}
+
+export interface CustomerStatsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CustomerStats;
+}
+
+export type PipelineStatsAwaitingTransfersItem = {
+    currency: string;
+    count: number;
+    amount: number;
+    nearestPayBy?: string;
+};
+
+export interface PipelineStats {
+    awaitingTransfers: PipelineStatsAwaitingTransfersItem[];
+    /** Orders `paid` or `processing`, so not yet handed to a carrier. */
+    paidNotShipped: number;
+}
+
+export interface PipelineStatsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: PipelineStats;
+}
+
 export interface ExampleEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -4897,6 +5318,18 @@ export type MessagesAppQueryParamParameter = LocaleApp;
 export type UserIdParamParameter = Id;
 
 export type ProductIdParamParameter = Id;
+
+/**
+ * First shop-local calendar day of the period, inclusive.
+ */
+export type StatsFromParamParameter = string;
+
+/**
+ * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+ */
+export type StatsToParamParameter = string;
+
+export type StatsIntervalParamParameter = StatsInterval;
 
 export type GetLocaleMessagesParams = {
     /**
@@ -5268,6 +5701,15 @@ export type ListOrdersParams = {
      * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
      */
     deleted?: boolean;
+    createdFrom?: string;
+    createdTo?: string;
+    /**
+     * Orders paid at or after this instant. Unpaid orders never match.
+     */
+    paidFrom?: string;
+    paidTo?: string;
+    paymentStatus?: OrderPaymentStatus;
+    returnStatus?: OrderReturnStatus;
 };
 
 export type DeleteOrderParams = {
@@ -5406,6 +5848,159 @@ export type ListApiKeysParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+};
+
+export type ListPaymentsParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    sort?: PaymentSort;
+    displayStatus?: PaymentDisplayStatus;
+    method?: PaymentMethodKind;
+    /**
+     * @maxLength 64
+     */
+    provider?: string;
+    createdFrom?: string;
+    createdTo?: string;
+    /**
+     * Offline payments only — when the money arrived.
+     */
+    receivedFrom?: string;
+    receivedTo?: string;
+    /**
+     * @minimum 0
+     */
+    amountMin?: number;
+    /**
+     * @minimum 0
+     */
+    amountMax?: number;
+    orderId?: Id;
+    /**
+     * @maxLength 120
+     */
+    reference?: string;
+};
+
+export type ListRefundsParams = {
+    /**
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
+     * @minimum 1
+     * @maximum 10000
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    status?: RefundStatus;
+    reason?: RefundReason;
+    orderId?: Id;
+    createdFrom?: string;
+    createdTo?: string;
+};
+
+export type GetSalesStatsParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
+    /**
+     * The bucket size. A week starts on Monday.
+     */
+    interval?: StatsIntervalParamParameter;
+};
+
+export type GetProductStatsParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
+    /**
+     * How many products to return.
+     * @minimum 1
+     * @maximum 100
+     */
+    limit?: number;
+};
+
+export type GetProductSalesSeriesParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
+    /**
+     * The bucket size. A week starts on Monday.
+     */
+    interval?: StatsIntervalParamParameter;
+};
+
+export type GetCategoryStatsParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
+};
+
+export type GetPaymentMixStatsParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
+};
+
+export type GetOperationsStatsParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
+};
+
+export type GetCustomerStatsParams = {
+    /**
+     * First shop-local calendar day of the period, inclusive.
+     */
+    from: StatsFromParamParameter;
+    /**
+     * Last shop-local calendar day of the period, inclusive. At most two years after `from`.
+     */
+    to: StatsToParamParameter;
 };
 
 export type ListExamplesParams = {
@@ -8131,7 +8726,7 @@ export const moveWishlistItemToCart = (
 
 /**
  * Returns a paginated list of orders.
- * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
+ * A caller holding `orders.self.read` alone sees their own orders, and the `userId` filter is ignored for them; `orders.any.read` reads every order and may narrow by `userId`.
  * @summary List orders (paginated)
  */
 export const listOrders = (
@@ -8184,7 +8779,7 @@ export const deleteOrder = (
 
 /**
  * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
- * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
+ * A caller holding `orders.self.read` alone sees their own orders, and the `userId` filter is ignored for them; `orders.any.read` reads every order and may narrow by `userId`.
  * @summary Search orders (DTO-friendly)
  */
 export const searchOrders = (
@@ -9225,6 +9820,175 @@ export const mergeCart = (
 };
 
 /**
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `payments.any.read`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * @summary List payments (staff)
+ */
+export const listPayments = (
+    params?: ListPaymentsParams,
+    options?: SecondParameter<typeof orvalMutator<PaymentsResponseEnvelope>>
+) => {
+    return orvalMutator<PaymentsResponseEnvelope>(
+        { url: `/payments`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Same as `GET /payments`, with the filters in a JSON body.
+ * @summary Search payments (staff, DTO-friendly)
+ */
+export const searchPayments = (
+    searchPaymentsRequest: SearchPaymentsRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentsResponseEnvelope>>
+) => {
+    return orvalMutator<PaymentsResponseEnvelope>(
+        {
+            url: `/payments/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchPaymentsRequest
+        },
+        options
+    );
+};
+
+/**
+ * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/order/{orderId}/refund` and the cancel path. Needs `payments.any.read`.
+ * @summary List refunds (staff)
+ */
+export const listRefunds = (
+    params?: ListRefundsParams,
+    options?: SecondParameter<typeof orvalMutator<RefundsResponseEnvelope>>
+) => {
+    return orvalMutator<RefundsResponseEnvelope>(
+        { url: `/payments/refunds`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES`, refunds owed by hand on a `manual` payment (the sweep never finishes those, so they show at any age), payments whose stock commit is still owed, and orders whose refund is still owed after a cancel. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `payments.any.read`.
+ * @summary Payments that need a person (staff)
+ */
+export const listPaymentAttention = (
+    options?: SecondParameter<typeof orvalMutator<PaymentAttentionResponseEnvelope>>
+) => {
+    return orvalMutator<PaymentAttentionResponseEnvelope>(
+        { url: `/payments/attention`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `stats.any.read`. Never cached: it is the shop's money.
+ * @summary Sales over time (staff)
+ */
+export const getSalesStats = (
+    params: GetSalesStatsParams,
+    options?: SecondParameter<typeof orvalMutator<SalesStatsEnvelope>>
+) => {
+    return orvalMutator<SalesStatsEnvelope>(
+        { url: `/stats/sales`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * The products that sold most in the period, by net sales: units ordered, units reversed by returns received in the period, net units and net sales (VAT out). Reads the order lines as they were frozen, so a deleted order drops out. Needs `stats.any.read`.
+ * @summary Top products (staff)
+ */
+export const getProductStats = (
+    params: GetProductStatsParams,
+    options?: SecondParameter<typeof orvalMutator<ProductStatsEnvelope>>
+) => {
+    return orvalMutator<ProductStatsEnvelope>(
+        { url: `/stats/products`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Units ordered and units reversed for one product, per bucket, plus its title as the orders froze it. The orders behind it are `GET /orders?productId=…&paidFrom=…`. Needs `stats.any.read`.
+ * @summary One product's sales over time (staff)
+ */
+export const getProductSalesSeries = (
+    productId: Id,
+    params: GetProductSalesSeriesParams,
+    options?: SecondParameter<typeof orvalMutator<ProductSeriesEnvelope>>
+) => {
+    return orvalMutator<ProductSeriesEnvelope>(
+        { url: `/stats/products/${productId}`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Net sales and units per category, from the categories each order line froze. A product in two categories counts in both, so the rows do not add up to the total. Needs `stats.any.read`.
+ * @summary Sales by category (staff)
+ */
+export const getCategoryStats = (
+    params: GetCategoryStatsParams,
+    options?: SecondParameter<typeof orvalMutator<CategoryStatsEnvelope>>
+) => {
+    return orvalMutator<CategoryStatsEnvelope>(
+        { url: `/stats/categories`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Payments that took money in the period (`succeeded` or since `refunded`), by method and provider, with their count and amount. Needs `stats.any.read`.
+ * @summary Payments mix (staff)
+ */
+export const getPaymentMixStats = (
+    params: GetPaymentMixStatsParams,
+    options?: SecondParameter<typeof orvalMutator<PaymentMixEnvelope>>
+) => {
+    return orvalMutator<PaymentMixEnvelope>(
+        { url: `/stats/payments`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Cancellation rate as a cohort (orders placed in the period that ended cancelled), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `stats.any.read`.
+ * @summary Operations rates (staff)
+ */
+export const getOperationsStats = (
+    params: GetOperationsStatsParams,
+    options?: SecondParameter<typeof orvalMutator<OperationsStatsEnvelope>>
+) => {
+    return orvalMutator<OperationsStatsEnvelope>(
+        { url: `/stats/operations`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Customers who paid in the period, split into new (their first paid order falls in the period) and returning. Matched by account only, never by email: every erased account shares one placeholder address. Needs `stats.any.read`.
+ * @summary New and returning customers (staff)
+ */
+export const getCustomerStats = (
+    params: GetCustomerStatsParams,
+    options?: SecondParameter<typeof orvalMutator<CustomerStatsEnvelope>>
+) => {
+    return orvalMutator<CustomerStatsEnvelope>(
+        { url: `/stats/customers`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `stats.any.read`.
+ * @summary What is waiting right now (staff)
+ */
+export const getPipelineStats = (
+    options?: SecondParameter<typeof orvalMutator<PipelineStatsEnvelope>>
+) => {
+    return orvalMutator<PipelineStatsEnvelope>({ url: `/stats/pipeline`, method: 'GET' }, options);
+};
+
+/**
  * Returns one example, to anyone, but only while its status is `published`. A draft or an archived example answers `404`, the same as an id that does not exist.
  * @summary Read a published example
  */
@@ -9820,6 +10584,22 @@ export type DownloadAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof downloadAccountExport>>
 >;
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
+export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
+export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
+export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;
+export type ListPaymentAttentionResult = NonNullable<
+    Awaited<ReturnType<typeof listPaymentAttention>>
+>;
+export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
+export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
+export type GetProductSalesSeriesResult = NonNullable<
+    Awaited<ReturnType<typeof getProductSalesSeries>>
+>;
+export type GetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof getCategoryStats>>>;
+export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof getPaymentMixStats>>>;
+export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
+export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
+export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>
 >;

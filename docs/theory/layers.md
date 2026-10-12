@@ -46,7 +46,7 @@ now reach it as contributions to a slot (`src/kernel/slots.ts`) instead of impor
 points one way.
 
 The modules in this build are `account`, `api-keys`, `cart`, `delivery`, `example`, `feedback`,
-`inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `users`,
+`inventory`, `locales`, `observability`, `orders`, `payments`, `products`, `returns`, `stats`, `users`,
 `webhooks` and `wishlist`.
 
 `example` is the odd one: it serves no business at all. It is a small note domain with its own

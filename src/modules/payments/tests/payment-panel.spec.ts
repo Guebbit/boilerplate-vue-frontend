@@ -46,6 +46,7 @@ const handPaidSucceededPayment: Payment = {
     amount: 100,
     currency: 'EUR',
     status: 'succeeded',
+    displayStatus: 'succeeded',
     provider: 'manual',
     method: 'bank_transfer',
     amountRefunded: 0,

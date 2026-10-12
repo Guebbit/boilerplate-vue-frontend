@@ -138,6 +138,15 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Bell**         | The app bar's button and panel: the badge counts the unread, opening it marks them read, each row has its own delete button.       |
 | **Unread**       | A notification with no `readAt`. The badge counts these.                                                                           |
 
+## `stats`
+
+| Term          | What it means here                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Net sales** | Goods sold, net of VAT, minus reversals. Computed by the backend from invoices and credit notes, never here. |
+| **Reversal**  | The goods part of a credit note, dated when it was issued.                                                   |
+| **Bucket**    | One day, week (Monday) or month of a series, edged at the shop's local midnight.                             |
+| **Period**    | Two calendar days and a bucket size: the one question every stats page asks.                                 |
+
 ## `users`
 
 | Term            | What it means here                                                                                                            |

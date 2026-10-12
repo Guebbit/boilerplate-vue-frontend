@@ -47,6 +47,7 @@ flowchart LR
         notifications["notifications"]
         payments["payments"]
         returns["returns"]
+        stats["stats"]
         webhooks["webhooks"]
         wishlist["wishlist"]
     end
@@ -75,7 +76,7 @@ flowchart LR
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,notifications,payments,returns,webhooks,wishlist supporting;
+    class delivery,inventory,notifications,payments,returns,stats,webhooks,wishlist supporting;
     class account,apiKeys,demo,feedback,locales,observability,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
@@ -136,7 +137,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 17      | 3    | 7          | 7       | 44      | 17     | 10            |
+| 18      | 3    | 8          | 7       | 46      | 18     | 10            |
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -154,6 +155,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`payments`](./payments.md)                                    | `supporting` | `shop`       | 0       | `payments`               | 4         | 0          | 1              |
 | [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
 | [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
+| [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |
 | [`users`](./users.md)                                          | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
 | [`webhooks`](./webhooks.md)                                    | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
 | [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 1          | 1              |
@@ -186,6 +188,7 @@ job, not a checked one.
 | [`payments`](./payments.md)                                    | `payments`                        | —                                                                                                                                                                            |
 | [`products`](./products.md)                                    | `products`                        | —                                                                                                                                                                            |
 | [`returns`](./returns.md)                                      | `returns`                         | —                                                                                                                                                                            |
+| [`stats`](./stats.md)                                          | `stats`                           | —                                                                                                                                                                            |
 | [`users`](./users.md)                                          | `users`                           | —                                                                                                                                                                            |
 | [`webhooks`](./webhooks.md)                                    | `webhooks`                        | —                                                                                                                                                                            |
 | [`wishlist`](./wishlist.md)                                    | `wishlist`                        | —                                                                                                                                                                            |
