@@ -17,6 +17,7 @@ export default {
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import type { CategoryStats, ProductStats } from '@types';
@@ -89,7 +90,13 @@ const categoryCharts = computed(() => {
         >
             {{ t('stats-page.no-data') }}
         </p>
-        <v-table v-else class="mb-2" density="compact" data-test="products-table">
+        <v-table
+            v-else
+            v-focusable-scroll="t('stats-page.products-title')"
+            class="mb-2"
+            density="compact"
+            data-test="products-table"
+        >
             <caption class="sr-only">
                 {{
                     t('stats-page.products-title')

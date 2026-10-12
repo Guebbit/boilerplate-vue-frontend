@@ -210,7 +210,8 @@ describe('Authentication', () => {
         it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', () => {
             cy.skipUnlessLive();
             cy.loginAs('admin');
-            cy.visit('/en/orders');
+            // `/en/orders` is My orders (own orders only); the staff list is under sales.
+            cy.visit('/en/sales/orders');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 
             let forced401 = false;

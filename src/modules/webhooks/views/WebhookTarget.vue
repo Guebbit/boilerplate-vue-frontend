@@ -34,6 +34,7 @@ import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import {
     formatText,
     formatDateTime,
@@ -321,7 +322,7 @@ const handleDelete = () => {
                         data-test="webhook-target-remove-secret-error"
                     />
 
-                    <v-table density="comfortable">
+                    <v-table v-focusable-scroll density="comfortable">
                         <thead>
                             <tr>
                                 <th>{{ t('webhook-target-page.column-secret-id') }}</th>

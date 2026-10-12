@@ -18,6 +18,7 @@ export default {
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Download } from 'lucide-vue-next';
+import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { formatCurrency, formatPercent } from '@/infrastructure/utils/formatters.ts';
@@ -215,7 +216,11 @@ const downloadRevenue = (currencyGroup: SalesCurrency, labels: string[]) => {
                     {{ t('stats-page.download-csv') }}
                 </v-btn>
             </div>
-            <v-table density="compact" data-test="revenue-table">
+            <v-table
+                v-focusable-scroll="t('stats-page.revenue-title')"
+                density="compact"
+                data-test="revenue-table"
+            >
                 <caption class="sr-only">
                     {{
                         t('stats-page.revenue-title')
