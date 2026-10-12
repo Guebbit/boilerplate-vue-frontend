@@ -28,6 +28,9 @@ const getMyAbilitiesMock = vi.fn();
 /** Stub for the token refresh call. */
 const refreshTokenMock = vi.fn();
 
+/** Stub for `GET /account/session-config`. */
+const getSessionConfigMock = vi.fn();
+
 /** Stub for logout. */
 const logoutMock = vi.fn();
 
@@ -54,6 +57,8 @@ vi.mock('@api', () => ({
     getAccount: () => getAccountMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getMyAbilities: () => getMyAbilitiesMock(),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
+    getSessionConfig: () => getSessionConfigMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     refreshToken: () => refreshTokenMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
@@ -711,5 +716,148 @@ describe('requestEmailVerification', () => {
             .then((resendAfter) => {
                 expect(resendAfter).toBe(60);
             });
+    });
+});
+
+/**
+ * The two session modes. In `jwt` the access token is the session; in `cookie` the credential is
+ * an HttpOnly cookie no script reads, so the store keeps only the fact that one was granted. Every
+ * door that adopts a login-shaped response must work in both without its caller asking which.
+ */
+/** Answers `GET /account/session-config` with the given mode. */
+const answerMode = (mode: 'jwt' | 'cookie') =>
+    getSessionConfigMock.mockResolvedValue({ data: { mode } });
+
+describe('session modes', () => {
+    beforeEach(() => {
+        useSessionStore().clearSession();
+    });
+
+    describe('loadSessionMode', () => {
+        it('reads the deployment mode once, however many callers ask', () => {
+            answerMode('cookie');
+            const store = useSessionStore();
+
+            return Promise.all([store.loadSessionMode(), store.loadSessionMode()]).then(() => {
+                expect(store.mode).toBe('cookie');
+                expect(getSessionConfigMock).toHaveBeenCalledOnce();
+            });
+        });
+
+        it('stays undefined, behaving as jwt, when the read fails, and retries next time', () => {
+            getSessionConfigMock.mockRejectedValueOnce(new Error('offline'));
+            const store = useSessionStore();
+
+            return store
+                .loadSessionMode()
+                .then(() => {
+                    expect(store.mode).toBeUndefined();
+                    answerMode('cookie');
+                    return store.loadSessionMode();
+                })
+                .then(() => {
+                    expect(store.mode).toBe('cookie');
+                });
+        });
+    });
+
+    describe('in cookie mode', () => {
+        beforeEach(() => {
+            answerMode('cookie');
+            return useSessionStore().loadSessionMode();
+        });
+
+        it('adopts a login that carries no token as a held session', () => {
+            const store = useSessionStore();
+
+            store.adoptSession({ data: {} }, true);
+
+            expect(store.hasSession).toBe(true);
+            expect(store.accessToken).toBeUndefined();
+            expect(cookieJar().isAuth).toBe('true');
+            expect(cookieJar().rememberMe).toBe('true');
+        });
+
+        it('is signed in only once the viewer is known too', () => {
+            const store = useSessionStore();
+            store.adoptSession({ data: {} });
+            expect(store.isAuth).toBe(false);
+
+            return store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' }).then(() => {
+                expect(store.isAuth).toBe(true);
+            });
+        });
+
+        it('never asks the server to refresh: there is nothing to renew', () => {
+            return useSessionStore()
+                .refreshToken()
+                .then((token) => {
+                    expect(token).toBeUndefined();
+                    expect(refreshTokenMock).not.toHaveBeenCalled();
+                });
+        });
+
+        it('restores from the cookies without a request, leaving the next call to prove them', () => {
+            const store = useSessionStore();
+
+            return store.restoreFromCookies().then(() => {
+                expect(store.hasSession).toBe(true);
+                expect(refreshTokenMock).not.toHaveBeenCalled();
+            });
+        });
+
+        it('clearSession drops the held session and its hint cookie', () => {
+            const store = useSessionStore();
+            store.adoptSession({ data: {} }, false);
+
+            store.clearSession();
+
+            expect(store.hasSession).toBe(false);
+            expect(cookieJar().isAuth).toBeUndefined();
+        });
+
+        it('adopts a re-proof the same way, keeping the remember-me marker login left', () => {
+            const store = useSessionStore();
+            store.adoptSession({ data: {} }, true);
+
+            store.adoptSession({ data: {} });
+
+            expect(cookieJar().rememberMe).toBe('true');
+            expect(store.hasSession).toBe(true);
+        });
+    });
+
+    describe('in jwt mode', () => {
+        beforeEach(() => {
+            answerMode('jwt');
+            return useSessionStore().loadSessionMode();
+        });
+
+        it('adopts the access token the login returned', () => {
+            const store = useSessionStore();
+
+            store.adoptSession({ data: { token: 'jwt-1' } });
+
+            expect(store.accessToken).toBe('jwt-1');
+            expect(store.hasSession).toBe(true);
+        });
+
+        it('holds no session when the response carries no token', () => {
+            const store = useSessionStore();
+
+            store.adoptSession({ data: {} });
+
+            expect(store.hasSession).toBe(false);
+        });
+
+        it('restores through a refresh', () => {
+            refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+            const store = useSessionStore();
+
+            return store.restoreFromCookies().then(() => {
+                expect(refreshTokenMock).toHaveBeenCalledOnce();
+                expect(store.accessToken).toBe('fresh');
+            });
+        });
     });
 });

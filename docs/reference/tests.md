@@ -116,7 +116,7 @@ reconciled against a manifest field here. See
 | `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`      | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant.                                | [Package Scripts](../tools/package-scripts.md)    |
 | `tests/unit/scripts/demo/demo-remove-registry.spec.ts`   | `demo:remove` and `measure:demo-strip` drop a removed module's folder, registry lines and coupling-graph entry, and keep every other line.                                                 | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/demo/demo-remove-tests.spec.ts`      | `demo:remove` deletes a spec by its `requires-module` header or an import of a removed module, keeps the rest, and the header check can fail.                                              | [Journeys](#journeys--stories-that-cross-modules) |
-| `tests/unit/scripts/e2e/device-session.spec.ts`          | A second device keeps its own refresh cookie, rotates its token on a refresh, and answers a refused call as data.                                                                          | [Journeys](#journeys--stories-that-cross-modules) |
+| `tests/unit/scripts/e2e/device-session.spec.ts`          | A second device keeps its own session cookie in either session mode, rotates its token on a `jwt` refresh, asks `GET /account` in `cookie` mode, and answers a refused call as data.       | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/e2e/payment-webhook.spec.ts`         | A payment event is signed as `t=…,v1=<HMAC of "<t>.<body>">` over the exact bytes sent, with the demo secret unless the environment names one.                                             | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/e2e/webhook-sink.spec.ts`            | The sink serves TLS the test CA vouches for (a handshake trusting only that CA completes), records what arrives, checks the Standard Webhooks signature, and refuses a port that is taken. | [Journeys](#journeys--stories-that-cross-modules) |
 | `tests/unit/scripts/e2e/webhook-tester.spec.ts`          | The live receiver's captured requests read back over TLS in the sink's shape: oldest first, header names lower-cased, a session not yet created as nothing.                                | [Journeys](#journeys--stories-that-cross-modules) |
@@ -201,7 +201,12 @@ flowchart LR
 - **`loginDevice(role)`** signs in as a second device, server-side, so the page's own session is
   untouched. Keep the returned device and hand it to `refreshDevice(device)` and
   `requestAsDevice(device, method, path)`. A refused refresh (401) is an answer, not a failure: it is
-  what a journey asserts after a logout-everywhere or a password reset.
+  what a journey asserts after a logout-everywhere or a password reset. In `cookie` mode there is no
+  refresh endpoint, so `refreshDevice` asks `GET /account`: 200 while the session lives, 401 once revoked.
+- **`skipUnlessSessionMode(this, 'jwt')`** skips a journey that is about one session mode's own
+  machinery (refresh rotation, access-token expiry). The mode is `E2E_SESSION_MODE`
+  (`jwt` default, or `cookie`): the demo shards boot their backends with it as `NODE_SESSION_MODE`,
+  and `ci.yml`'s `test-e2e` runs the whole suite once per mode.
 - **`postPaymentWebhook(event, timestamp?)`** signs a provider event with the backend's
   `NODE_PAYMENT_WEBHOOK_SECRET` (`E2E_PAYMENT_WEBHOOK_SECRET` on live) and posts it. An old
   `timestamp` proves a stale delivery is refused.

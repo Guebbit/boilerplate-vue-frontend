@@ -62,7 +62,7 @@ const getTransportErrorCode = (error: AxiosError): 'TIMEOUT' | 'CANCELED' | 'NET
 };
 
 /**
- * Request interceptor: injects the bearer token (when authenticated), the active language, and —
+ * Request interceptor: injects the bearer token (when the session has one), the active language, and —
  * for an anonymous request only — the guest's own analytics-consent choice.
  *
  * Guest-only on purpose: a signed-in caller's consent is the backend's own stored `analyticsConsent`
@@ -74,12 +74,13 @@ const getTransportErrorCode = (error: AxiosError): 'TIMEOUT' | 'CANCELED' | 'NET
  *  `X-Analytics-Consent` set.
  */
 export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) => {
-    const { accessToken } = storeToRefs(useSessionStore());
+    const { accessToken, hasSession } = storeToRefs(useSessionStore());
+    // `cookie` mode has no token: the HttpOnly cookie rides along on its own (`withCredentials`).
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
     config.headers['Accept-Language'] = getCurrentLocale();
 
     if (
-        !accessToken.value &&
+        !hasSession.value &&
         isAnalyticsConsentEnabled() &&
         useAnalyticsConsentStore().choice === 'granted'
     ) {

@@ -34,7 +34,6 @@ import {
     useAnalyticsConsentStore,
     isAnalyticsConsentEnabled
 } from '@/infrastructure/analytics-consent.ts';
-import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 
 /**
@@ -367,7 +366,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const changePassword = (currentPassword: string, password: string, passwordConfirm: string) =>
         fetchAny(() =>
             apiChangePassword({ currentPassword, password, passwordConfirm }).then((data) => {
-                session.setAccessToken(getTokenFromResponse(data));
+                session.adoptSession(data);
             })
         );
 

@@ -9,7 +9,7 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import {
     login as apiLogin,
     RememberTier,
@@ -67,7 +67,8 @@ export const useAuthStore = defineStore('accountAuth', () => {
     });
 
     /**
-     * Authenticates the user. A plain account stores the access token, flags the `isAuth` cookie
+     * Authenticates the user. A plain account adopts the session (the access token in `jwt` mode,
+     * the granted cookie in `cookie` mode), flags the `isAuth` cookie
      * and loads the profile; an account with two-factor armed resolves with the step-up challenge
      * instead — nothing here touches the session store on that branch, since an `MfaChallenge`
      * response carries no token to store.
@@ -113,7 +114,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
                         defaultMethod: payload.defaultMethod
                     } as const;
 
-                session.setAccessToken(getTokenFromResponse(data), remember);
+                session.adoptSession(data, remember);
                 return useProfileStore()
                     .fetchProfile(true)
                     .then(() => ({ kind: 'session' }) as const);
@@ -192,7 +193,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * The second half of a signup that picked an avatar: `PATCH /account` with the file, as the
      * session `signup` just opened.
      *
-     * Mints the access token first — signup sets cookies only — then loads the profile so the
+     * Adopts the session first — signup sets cookies only — then loads the profile so the
      * store knows whose record it is patching. A failure here leaves a signed-in account with no
      * avatar, which the profile page fixes in one click.
      *
@@ -203,7 +204,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const setAvatarAfterSignup = (imageUpload: File, options?: AxiosRequestConfig) => {
         const profile = useProfileStore();
         return session
-            .refreshToken()
+            .restoreFromCookies()
             .then(() => profile.fetchProfile(true))
             .then(() => profile.updateProfile({ imageUpload }, options));
     };

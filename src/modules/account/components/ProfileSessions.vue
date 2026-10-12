@@ -11,7 +11,7 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Device-sessions panel: lists live refresh tokens as sessions and revokes them one at a time,
+ * Device-sessions panel: lists live sign-ins as sessions and revokes them one at a time,
  * plus the logout-everywhere button. Revoking the CURRENT session navigates home afterwards,
  * since the API treats that revoke as a logout.
  *
@@ -35,7 +35,7 @@ import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
- * The devices panel: every live refresh token as a session, the current one flagged, each
+ * The devices panel: every live sign-in as a session, the current one flagged, each
  * individually revocable — plus the everything-at-once button for the day a credential leaks.
  *
  * Revoking the CURRENT session from here is allowed (the API treats it as a logout), so the
@@ -153,6 +153,9 @@ onMounted(fetchSessions);
                 data-test="session-item"
             >
                 <v-list-item-title class="flex flex-wrap items-center gap-2">
+                    <span v-if="session.device" data-test="session-device">{{
+                        session.device
+                    }}</span>
                     <code class="text-xs opacity-70">{{ session.id }}</code>
                     <v-chip
                         v-if="session.current"
@@ -163,11 +166,15 @@ onMounted(fetchSessions);
                         {{ t('profile-page.sessions-current') }}
                     </v-chip>
                 </v-list-item-title>
+                <v-list-item-subtitle class="session-started" data-test="session-started">
+                    {{ t('profile-page.sessions-started') }}:
+                    {{ formatDateTime(session.createdAt) }}
+                </v-list-item-subtitle>
                 <v-list-item-subtitle v-if="session.lastUsedAt" class="session-last-used">
                     {{ t('profile-page.sessions-last-used') }}:
                     {{ formatDateTime(session.lastUsedAt) }}
                 </v-list-item-subtitle>
-                <v-list-item-subtitle v-if="session.expiration" class="session-expiry">
+                <v-list-item-subtitle class="session-expiry">
                     {{ t('profile-page.sessions-expires') }}:
                     {{ formatDateTime(session.expiration) }}
                 </v-list-item-subtitle>
@@ -208,13 +215,14 @@ onMounted(fetchSessions);
 /*
  * Vuetify renders a list subtitle at `--v-medium-emphasis-opacity` (0.6). On this card's surface
  * that lands under the 4.5:1 WCAG AA threshold, and `account/tests/e2e/a11y.cy.ts` fails on it —
- * both strings it dims below legibility saying something the visitor is here to check: when a
- * device last used the session, and when they will be signed out.
+ * all three strings it dims below legibility saying something the visitor is here to check: when a
+ * device signed in, when it last used the session, and when they will be signed out.
  *
  * The TOKEN is raised rather than `opacity` overridden, because Vuetify owns what emphasis means
  * here and a hard-coded value would be a second answer to the same question. Scoped, so no other
  * subtitle in the app inherits a decision made for this list.
  */
+.session-started,
 .session-last-used,
 .session-expiry {
     --v-medium-emphasis-opacity: 1;

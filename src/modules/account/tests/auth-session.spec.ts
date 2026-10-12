@@ -97,6 +97,28 @@ describe('login', () => {
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
 
+    /*
+     * `cookie` mode: the login body carries no credential at all, so the session is the cookie the
+     * browser now holds. Signed in means the viewer loaded, never a token.
+     */
+    it('in cookie mode, signs in from a login that carries no token', () => {
+        useSessionStore().mode = 'cookie';
+        responses['POST /account/login'] = orvalEnvelope({});
+
+        return useAuthStore()
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => {
+                const session = useSessionStore();
+                expect(session.accessToken).toBeUndefined();
+                expect(session.isAuth).toBe(true);
+                expect(requestedUrls()).toEqual([
+                    '/account/login',
+                    '/account',
+                    '/account/abilities'
+                ]);
+            });
+    });
+
     it('maps the remember checkbox to the medium tier, and sends no tier otherwise', () =>
         useAuthStore()
             .login('ada@example.com', 'hunter2hunter2', true)

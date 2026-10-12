@@ -430,3 +430,43 @@ describe('401 refresh flow', () => {
             }));
     });
 });
+
+/**
+ * `cookie` mode has no token to renew — `POST /account/refresh` is a 404 there — so a 401 means
+ * the session cookie is gone. The interceptor must end the session at once and never call refresh.
+ */
+describe('401 in cookie mode', () => {
+    it('ends a held session without calling refresh, and tells the shell it expired', () => {
+        const session = useSessionStore();
+        session.mode = 'cookie';
+        session.startCookieSession();
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
+                    status: 401
+                })
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders']);
+                expect(session.hasSession).toBe(false);
+                expect(session.expiredSignal).toBe(1);
+            });
+    });
+
+    it('treats a guest 401 as a plain refusal: no refresh, no expiry toast', () => {
+        const session = useSessionStore();
+        session.mode = 'cookie';
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
+                    status: 401
+                })
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders']);
+                expect(session.expiredSignal).toBe(0);
+            });
+    });
+});

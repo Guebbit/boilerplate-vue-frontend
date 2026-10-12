@@ -4,7 +4,39 @@ This page describes security from the **frontend perspective**: how the SPA stor
 
 For the backend auth architecture (JWT signing, bcrypt, refresh token DB storage), see the [backend docs](https://github.com/Guebbit/boilerplate-node-backend).
 
-## Auth token model (what the FE sees)
+## Two session modes
+
+The backend keeps people signed in one of two ways, chosen per deployment by `NODE_SESSION_MODE`. The SPA has no switch of its own: `useSessionStore().loadSessionMode()` reads `GET /account/session-config` once per tab and every code path adapts.
+
+| Mode            | What the SPA holds                                     | On a `401`                                       | After a reload                                                       |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------- |
+| `jwt` (default) | an access token in memory, a rotating refresh cookie   | `POST /account/refresh`, then replay the request | `isAuth` hint cookie, then a refresh, then `GET /account`            |
+| `cookie`        | nothing readable: one `__Host-session` HttpOnly cookie | the session is over; no refresh (it is a 404)    | `isAuth` hint cookie, then `GET /account` (a `401` ends the session) |
+
+Both modes write the same `isAuth` and `rememberMe` hint cookies, and both use `__Host-session` as the credential cookie. `session.hasSession` answers "is a session held" in either mode; `session.isAuth` adds "and the viewer is known". Login-shaped responses (login, 2FA, step-up, password change) all go through `session.adoptSession()`, so no caller asks which mode is on. The sessions list shows when each sign-in began and, in `cookie` mode, a device label such as "Firefox on Linux".
+
+```mermaid
+flowchart TD
+    Boot[App boot] --> Cfg["GET /account/session-config"]
+    Cfg --> Mode{mode}
+    Mode -- jwt --> J["token in memory\nrefresh cookie rotates"]
+    Mode -- cookie --> C["HttpOnly cookie only\nno token, no refresh"]
+    J --> J401{"401?"}
+    J401 -- yes --> Refresh["POST /account/refresh\nthen replay once"]
+    C --> C401{"401?"}
+    C401 -- yes --> End["end the session\nexpired toast, login"]
+
+    classDef step fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef decision fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef error fill:#fee2e2,stroke:#dc2626,color:#111827;
+    class Boot,Cfg,J,C,Refresh step;
+    class Mode,J401,C401 decision;
+    class End error;
+```
+
+The rest of this page describes the `jwt` flow in detail; `cookie` mode drops the token and the refresh step. The backend's sessions theory page explains when to pick which.
+
+## Auth token model in `jwt` mode (what the FE sees)
 
 The backend uses a **split-token model**. The FE receives:
 
@@ -13,7 +45,7 @@ The backend uses a **split-token model**. The FE receives:
 
 This keeps the refresh token out of JavaScript access (no `localStorage`, no `document.cookie`).
 
-## Login → auth → refresh flow
+## Login → auth → refresh flow (`jwt` mode)
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 60, 'rankSpacing': 80}}}%%
@@ -49,14 +81,14 @@ flowchart TD
 
 ## Where token logic lives
 
-| Concern                            | File                                                                                                           |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Token storage + session state      | `src/infrastructure/session.ts` — the token, a `{ id, email, role, … }` projection, and the caller's own rules |
-| The visitor's own account record   | `src/modules/account/stores/profile.ts`                                                                        |
-| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                       |
-| Handling `401` responses           | `src/infrastructure/http/index.ts` (response interceptor)                                                      |
-| Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                         |
-| Route guards                       | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess`                                        |
+| Concern                            | File                                                                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Token storage + session state      | `src/infrastructure/session.ts` — the mode, the token or cookie session, a `{ id, email, role, … }` projection, and the caller's own rules |
+| The visitor's own account record   | `src/modules/account/stores/profile.ts`                                                                                                    |
+| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                                                   |
+| Handling `401` responses           | `src/infrastructure/http/refresh.ts` (refresh and replay in `jwt` mode, end the session in `cookie` mode)                                  |
+| Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                                                     |
+| Route guards                       | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess`                                                                    |
 
 ## Route guards
 

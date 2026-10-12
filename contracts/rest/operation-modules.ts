@@ -96,6 +96,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     getReturnById: 'returns',
     getReturnOptions: 'returns',
     getSalesStats: 'stats',
+    getSessionConfig: 'account',
     getTwoFactorStatus: 'account',
     getUserById: 'users',
     getWishlist: 'wishlist',

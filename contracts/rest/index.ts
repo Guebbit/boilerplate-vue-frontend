@@ -1262,12 +1262,10 @@ export interface ChangePasswordRequest {
 }
 
 export interface AuthTokens {
-    /** Access JWT */
-    token: string;
-    /** Refresh token if returned by backend */
-    refreshToken?: string;
-    /** Access token expiry in seconds */
-    expiresIn?: number;
+    /** The access JWT — `jwt` mode only. Absent in `cookie` mode, where a browser holds no credential it can read. */
+    token?: string;
+    /** The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie. */
+    sessionToken?: string;
 }
 
 export interface ChangePasswordResponseEnvelope {
@@ -1377,11 +1375,15 @@ export interface AuthTokensEnvelope {
 
 export interface Session {
     id: Id;
-    /** Absent on a token issued without an expiry tier. */
-    expiration?: string;
+    /** When this sign-in happened. It is the session's, not the current token's: refreshing or re-proving the password does not move it. */
+    createdAt: string;
+    /** When the session ends, whatever its "remember me" tier. */
+    expiration: string;
     /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
     lastUsedAt?: string;
-    /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
+    /** A coarse label for the browser and system that signed in, such as "Firefox on Linux", read from the User-Agent at the sign-in. Present in `cookie` mode only, and absent for a client that names neither (a script, `curl`). */
+    device?: string;
+    /** Whether this session is the one making the request, matched through its own cookie or `ses_…` bearer. Always `false` for a caller authenticating by an access token alone — a `jwt`-mode access token does not identify a session. */
     current: boolean;
 }
 
@@ -1563,10 +1565,21 @@ export const RememberTier = {
     long: 'long'
 } as const;
 
+/**
+ * How a `cookie`-mode login hands its credential back. `cookie` (the default): the HttpOnly `__Host-session` cookie, nothing in the body — what a browser wants. `bearer`: no cookie is set and the body returns the `ses_…` id as `sessionToken`, for a client with no cookie jar (a script, a mobile app). Ignored in `jwt` mode, which always sets its refresh cookie and returns an access token.
+ */
+export type SessionTransport = (typeof SessionTransport)[keyof typeof SessionTransport];
+
+export const SessionTransport = {
+    cookie: 'cookie',
+    bearer: 'bearer'
+} as const;
+
 export interface LoginRequest {
     email: Email;
     password: Password;
     remember?: RememberTier;
+    transport?: SessionTransport;
 }
 
 export interface TwoFactorMethodSummary {
@@ -1642,10 +1655,6 @@ export interface PasswordResetConfirmRequest {
 export interface RefreshTokenResponse {
     /** New access JWT */
     token: string;
-    /** New refresh token if returned by backend */
-    refreshToken?: string;
-    /** New access token expiry in seconds */
-    expiresIn?: number;
 }
 
 export interface RefreshTokenEnvelope {
@@ -1694,6 +1703,7 @@ export interface LoginTwoFactorRequest {
      */
     code: string;
     remember?: RememberTier;
+    transport?: SessionTransport;
 }
 
 export interface TwoFactorSendRequest {
@@ -4646,17 +4656,35 @@ export interface ApiKeyCreatedEnvelope {
     data: ApiKeyCreated;
 }
 
-export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
+/**
+ * The deployment's `NODE_SESSION_MODE`.
+ */
+export type SessionConfigMode = (typeof SessionConfigMode)[keyof typeof SessionConfigMode];
 
-export const ExportSessionType = {
-    refresh: 'refresh'
+export const SessionConfigMode = {
+    jwt: 'jwt',
+    cookie: 'cookie'
 } as const;
+
+export interface SessionConfig {
+    /** The deployment's `NODE_SESSION_MODE`. */
+    mode: SessionConfigMode;
+}
+
+export interface SessionConfigEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: SessionConfig;
+}
 
 export interface ExportSession {
     id: Id;
-    type: ExportSessionType;
-    expiration?: string;
+    createdAt: string;
+    expiration: string;
     lastUsedAt?: string;
+    /** The coarse device label stored at sign-in (`cookie` mode only). */
+    device?: string;
 }
 
 export interface ExportFeedbackTicket {
@@ -5036,8 +5064,8 @@ export interface AccountExportResponse {
     exportedAt: string;
     profile: User;
     auditLog: AuditEntryItem[];
-    addresses: Address[];
     sessions: ExportSession[];
+    addresses: Address[];
     /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
     feedback?: ExportFeedbackTicket[];
     cart: CartItem[];
@@ -7517,7 +7545,7 @@ export const reauth = (
 };
 
 /**
- * Logs out the CURRENT session only — revokes the refresh token carried by the `__Host-jwt` cookie and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
@@ -7525,7 +7553,7 @@ export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResp
 };
 
 /**
- * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
+ * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in.
  * @summary List active sessions
  */
 export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
@@ -7533,7 +7561,7 @@ export const listSessions = (options?: SecondParameter<typeof orvalMutator<Sessi
 };
 
 /**
- * Revokes a single refresh token by its session id — "log out that device". Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next refresh simply fails.
+ * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails.
  * @summary Revoke one session
  */
 export const revokeSession = (
@@ -7753,7 +7781,7 @@ export const confirmAccountDelete = (
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead.
  * @summary Login
  */
 export const login = (
@@ -7829,7 +7857,7 @@ export const confirmPasswordReset = (
 };
 
 /**
- * Creates a new short-lived access token from the refresh token in the `__Host-jwt` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
+ * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
  * @summary Refresh access token
  */
 export const refreshToken = (
@@ -7839,7 +7867,7 @@ export const refreshToken = (
 };
 
 /**
- * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+ * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies.
  * @summary Logout from all devices
  */
 export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
@@ -7864,7 +7892,7 @@ export const requestAccountExport = (
 };
 
 /**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
  * @summary Complete a two-factor login
  */
 export const loginTwoFactor = (
@@ -10361,6 +10389,19 @@ export const sendReauthCode = (
 };
 
 /**
+ * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
+ * @summary How this deployment keeps people signed in
+ */
+export const getSessionConfig = (
+    options?: SecondParameter<typeof orvalMutator<SessionConfigEnvelope>>
+) => {
+    return orvalMutator<SessionConfigEnvelope>(
+        { url: `/account/session-config`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. Owner only, and a FRESH session (`requireFreshAuth`), same as the request. `404` for an export that is not the caller's, is still `building`, `failed`, or is already gone (past its retention, or replaced by a newer request): the caller cannot tell these apart, by design.
  * @summary Download an export of the caller's own data
  */
@@ -11204,6 +11245,7 @@ export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKey
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
+export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;
 export type DownloadAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof downloadAccountExport>>
 >;

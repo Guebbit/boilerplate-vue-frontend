@@ -40,6 +40,10 @@ on:
                 description: '@cypress/grep tag expression (space = OR, + = AND, - = NOT). Empty runs every test, as the nightly tier.'
                 type: string
                 default: ''
+            session-mode:
+                description: 'How the backend keeps people signed in: jwt or cookie (NODE_SESSION_MODE).'
+                type: string
+                default: 'jwt'
     schedule:
         # 03:15 UTC — before mutation.yml (03:30), so the two nightlies do not compete for
         # runners. Kept alongside the PR gate: this answers "does main still agree with the
@@ -51,6 +55,11 @@ on:
                 description: '@cypress/grep tag expression, e.g. @smoke. Empty runs every test, split like the nightly.'
                 type: string
                 default: ''
+            session-mode:
+                description: 'How the backend keeps people signed in: jwt or cookie (NODE_SESSION_MODE).'
+                type: choice
+                options: [jwt, cookie]
+                default: 'jwt'
 
 permissions:
     contents: read
@@ -63,6 +72,10 @@ concurrency:
 env:
     # Where the backend checkout lands, and what the frontend's scripts/pairing/paired-backend-path.ts resolves.
     BACKEND_PATH: .backend
+    # How the backend keeps people signed in. The backend reads the first name, the journeys the
+    # second (`cypress.config.ts`'s `sessionMode`); one input feeds both, so they cannot disagree.
+    NODE_SESSION_MODE: ${{ inputs.session-mode || 'jwt' }}
+    E2E_SESSION_MODE: ${{ inputs.session-mode || 'jwt' }}
     # What `cy.restore()` shells out to between specs. There is no default in the code — unset
     # means "do not reset" — so the pairing has to be spelled out here as it is in `.env-example`;
     # this is the Node twin's, the PHP one goes through composer. `{describeTo}` is where the

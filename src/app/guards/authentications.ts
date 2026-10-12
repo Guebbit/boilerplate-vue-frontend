@@ -129,20 +129,25 @@ export const canAccess = (
 };
 
 /**
- * Silently restores the in-memory access token via the refresh endpoint.
+ * Silently restores the session after a reload, in whichever mode the deployment runs.
  *
  * Only attempted when the `isAuth` cookie is present — avoids a pointless
- * network round-trip for every guest page view. The cookie is written by
- * `setAccessToken`, which is the only thing that stores a token, so its presence
- * means a session existed on this browser at some point.
+ * network round-trip for every guest page view. The cookie is written by the session store when
+ * it adopts a session, so its presence means one existed on this browser at some point.
+ * The mode is read first (`GET /account/session-config`, once per tab): `jwt` mints an access
+ * token from the refresh cookie, `cookie` has nothing to mint and goes straight to asking who
+ * the cookie belongs to.
  *
  * @returns A promise that always resolves: already-authenticated and guest
- *  cases resolve immediately, and a failed refresh is swallowed.
+ *  cases resolve immediately, and a failed restore is swallowed.
  */
-const restoreTokenIfNeeded = () => {
+const restoreSessionIfNeeded = () => {
     const store = useSessionStore();
-    if (store.accessToken || !getCookie('isAuth')) return Promise.resolve();
-    return store.refreshToken().catch(() => undefined);
+    if (store.hasSession || !getCookie('isAuth')) return Promise.resolve();
+    return store
+        .loadSessionMode()
+        .then(() => store.restoreFromCookies())
+        .catch(() => undefined);
 };
 
 /**
@@ -157,14 +162,14 @@ const restoreTokenIfNeeded = () => {
 export const tryRestoreAuth = (): Promise<void> => {
     const store = useSessionStore();
     return (
-        restoreTokenIfNeeded()
+        restoreSessionIfNeeded()
             .then(() => {
-                // The token alone is not a session: `isAuth` stays false and the abilities stay
+                // The credential alone is not a session: `isAuth` stays false and the abilities stay
                 // empty until the viewer is known, so a guard can never admit someone whose rules
                 // it has not read. `!store.viewer` is what makes this a FIRST-navigation cost: once
                 // known, the viewer is refreshed on login, on a token refresh and on a 403 (see
                 // `interceptors.ts`), never on every route change.
-                if (store.accessToken && !store.viewer) return store.loadViewer();
+                if (store.hasSession && !store.viewer) return store.loadViewer();
             })
             // Discard the payload so the guard resolves to void (NavigationGuardReturn)
             .then(() => undefined)

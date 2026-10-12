@@ -1968,9 +1968,8 @@ export const ChangePasswordResponse = zod.strictObject({
     message: zod.string(),
     data: zod
         .strictObject({
-            token: zod.string(),
-            refreshToken: zod.string().optional(),
-            expiresIn: zod.number().optional()
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
         })
         .optional()
 });
@@ -2030,13 +2029,12 @@ export const ReauthResponse = zod.strictObject({
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        token: zod.string(),
-        refreshToken: zod.string().optional(),
-        expiresIn: zod.number().optional()
+        token: zod.string().optional(),
+        sessionToken: zod.string().optional()
     })
 });
 /**
- * Logs out the CURRENT session only — revokes the refresh token carried by the `__Host-jwt` cookie and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const LogoutResponse = zod.strictObject({
@@ -2045,7 +2043,7 @@ export const LogoutResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
+ * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in.
  * @summary List active sessions
  */
 export const listSessionsResponseDataSessionsItemIdMax = 64;
@@ -2062,15 +2060,17 @@ export const ListSessionsResponse = zod.strictObject({
                     .min(1)
                     .max(listSessionsResponseDataSessionsItemIdMax)
                     .regex(listSessionsResponseDataSessionsItemIdRegExp),
-                expiration: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                expiration: zod.iso.datetime({ offset: true }),
                 lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+                device: zod.string().optional(),
                 current: zod.boolean()
             })
         )
     })
 });
 /**
- * Revokes a single refresh token by its session id — "log out that device". Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next refresh simply fails.
+ * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails.
  * @summary Revoke one session
  */
 export const revokeSessionPathSessionIdMax = 64;
@@ -2438,7 +2438,7 @@ export const ConfirmAccountDeleteResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead.
  * @summary Login
  */
 export const loginBodyEmailMax = 254;
@@ -2447,7 +2447,8 @@ export const loginBodyPasswordMax = 128;
 export const LoginBody = zod.strictObject({
     email: zod.email().max(loginBodyEmailMax),
     password: zod.string().min(loginBodyPasswordMin).max(loginBodyPasswordMax),
-    remember: zod.enum(['short', 'medium', 'long']).optional()
+    remember: zod.enum(['short', 'medium', 'long']).optional(),
+    transport: zod.enum(['cookie', 'bearer']).optional()
 });
 export const LoginResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2455,9 +2456,8 @@ export const LoginResponse = zod.strictObject({
     message: zod.string(),
     data: zod.union([
         zod.strictObject({
-            token: zod.string(),
-            refreshToken: zod.string().optional(),
-            expiresIn: zod.number().optional()
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
         }),
         zod.strictObject({
             mfaRequired: zod.literal(true),
@@ -2599,7 +2599,7 @@ export const ConfirmPasswordResetResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Creates a new short-lived access token from the refresh token in the `__Host-jwt` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
+ * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
  * @summary Refresh access token
  */
 export const RefreshTokenResponse = zod.strictObject({
@@ -2607,13 +2607,11 @@ export const RefreshTokenResponse = zod.strictObject({
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        token: zod.string(),
-        refreshToken: zod.string().optional(),
-        expiresIn: zod.number().optional()
+        token: zod.string()
     })
 });
 /**
- * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+ * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies.
  * @summary Logout from all devices
  */
 export const LogoutAllResponse = zod.strictObject({
@@ -2645,7 +2643,7 @@ export const RequestAccountExportResponse = zod.strictObject({
     })
 });
 /**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
  * @summary Complete a two-factor login
  */
 export const loginTwoFactorBodyChallengeMax = 128;
@@ -2653,16 +2651,16 @@ export const loginTwoFactorBodyCodeMax = 64;
 export const LoginTwoFactorBody = zod.strictObject({
     challenge: zod.string().min(1).max(loginTwoFactorBodyChallengeMax).optional(),
     code: zod.string().min(1).max(loginTwoFactorBodyCodeMax),
-    remember: zod.enum(['short', 'medium', 'long']).optional()
+    remember: zod.enum(['short', 'medium', 'long']).optional(),
+    transport: zod.enum(['cookie', 'bearer']).optional()
 });
 export const LoginTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        token: zod.string(),
-        refreshToken: zod.string().optional(),
-        expiresIn: zod.number().optional()
+        token: zod.string().optional(),
+        sessionToken: zod.string().optional()
     })
 });
 /**
@@ -12105,6 +12103,18 @@ export const SendReauthCodeResponse = zod.strictObject({
     })
 });
 /**
+ * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
+ * @summary How this deployment keeps people signed in
+ */
+export const GetSessionConfigResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        mode: zod.enum(['jwt', 'cookie'])
+    })
+});
+/**
  * Streams the finished export — the JSON document `AccountExportResponse` describes — as an attachment. This is the page the mailed link opens. Owner only, and a FRESH session (`requireFreshAuth`), same as the request. `404` for an export that is not the caller's, is still `building`, `failed`, or is already gone (past its retention, or replaced by a newer request): the caller cannot tell these apart, by design.
  * @summary Download an export of the caller's own data
  */
@@ -12124,12 +12134,12 @@ export const downloadAccountExportResponseProfileLocaleMax = 35;
 export const downloadAccountExportResponseProfileLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const downloadAccountExportResponseSessionsItemIdMax = 64;
+export const downloadAccountExportResponseSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseAddressesItemIdMax = 64;
 export const downloadAccountExportResponseAddressesItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseAddressesItemCountryMax = 2;
 export const downloadAccountExportResponseAddressesItemCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const downloadAccountExportResponseSessionsItemIdMax = 64;
-export const downloadAccountExportResponseSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseFeedbackItemIdMax = 64;
 export const downloadAccountExportResponseFeedbackItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseFeedbackItemEmailMax = 254;
@@ -12364,6 +12374,19 @@ export const DownloadAccountExportResponse = zod.strictObject({
             level: zod.enum(['info', 'warn'])
         })
     ),
+    sessions: zod.array(
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseSessionsItemIdMax)
+                .regex(downloadAccountExportResponseSessionsItemIdRegExp),
+            createdAt: zod.iso.datetime({ offset: true }),
+            expiration: zod.iso.datetime({ offset: true }),
+            lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+            device: zod.string().optional()
+        })
+    ),
     addresses: zod.array(
         zod.strictObject({
             id: zod
@@ -12382,18 +12405,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .regex(downloadAccountExportResponseAddressesItemCountryRegExp),
             phone: zod.string().optional(),
             default: zod.boolean()
-        })
-    ),
-    sessions: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(downloadAccountExportResponseSessionsItemIdMax)
-                .regex(downloadAccountExportResponseSessionsItemIdRegExp),
-            type: zod.enum(['refresh']),
-            expiration: zod.iso.datetime({ offset: true }).optional(),
-            lastUsedAt: zod.iso.datetime({ offset: true }).optional()
         })
     ),
     feedback: zod

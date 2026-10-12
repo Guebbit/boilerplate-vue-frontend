@@ -5,6 +5,7 @@
  * origin boundary.
  */
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
+import { skipUnlessSessionMode } from '../../../../../tests/support/e2e/harness';
 
 describe('Authentication', () => {
     beforeEach(() => {
@@ -50,9 +51,11 @@ describe('Authentication', () => {
         });
 
         /*
-         * The refresh cookie's expiry is the one observable effect of "remember me": unchecked,
-         * it is a browser-session cookie (no `expiry` at all); checked, it lasts days. `jwt` rather
-         * than the readable `isAuth` twin — Cypress reads httpOnly cookies, a page script could not.
+         * The session cookie's expiry is the one observable effect of "remember me": unchecked,
+         * it is a browser-session cookie (no `expiry` at all); checked, it lasts days. It is
+         * `__Host-session` in both session modes — the refresh token in one, the session id in
+         * the other — rather than the readable `isAuth` twin: Cypress reads httpOnly cookies, a
+         * page script could not.
          */
         it('keeps the session only until the browser closes unless asked to remember', () => {
             cy.get('[type=email]').should('not.be.disabled').type(seedAccount('admin').email);
@@ -60,7 +63,7 @@ describe('Authentication', () => {
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
-            cy.getCookie('__Host-jwt').should('exist').and('not.have.property', 'expiry');
+            cy.getCookie('__Host-session').should('exist').and('not.have.property', 'expiry');
         });
 
         it('remember me keeps the session for days', () => {
@@ -70,7 +73,7 @@ describe('Authentication', () => {
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
-            cy.getCookie('__Host-jwt')
+            cy.getCookie('__Host-session')
                 .should('exist')
                 .its('expiry')
                 .should('be.greaterThan', Date.now() / 1000 + 24 * 60 * 60);
@@ -207,8 +210,11 @@ describe('Authentication', () => {
     // (onResponseRejectWithRefresh -> POST /account/refresh -> retry) through a real network
     // round-trip, without needing a test-only hook into application state.
     describe('Live session refresh (live profile only)', () => {
-        it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', () => {
+        // A regular `function`: Mocha's `this.skip()` needs the test context. `jwt` mode only —
+        // `cookie` mode has no refresh to cross the boundary with.
+        it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', function () {
             cy.skipUnlessLive();
+            skipUnlessSessionMode(this, 'jwt');
             cy.loginAs('admin');
             // `/en/orders` is My orders (own orders only); the staff list is under sales.
             cy.visit('/en/sales/orders');
