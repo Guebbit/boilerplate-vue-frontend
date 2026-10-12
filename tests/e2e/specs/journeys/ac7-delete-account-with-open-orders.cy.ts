@@ -10,6 +10,7 @@
  * which a live deployment does not mount. Needs the demo outbox for the two mails.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
+import { shipTheOpenGroup } from '../../../support/e2e/steps';
 
 /** The tracking code staff type to ship the express order. Chosen here so it is searchable. */
 const TRACKING_CODE = 'TRK-E2E-AC7';
@@ -127,8 +128,7 @@ describe('AC7 · Delete my account while an order is still open', () => {
         cy.get<string>('@paid').then((orderId) => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=mark-started]').click();
-            cy.get('[data-test=tracking-code-input] input').type(TRACKING_CODE);
-            cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
+            shipTheOpenGroup(TRACKING_CODE);
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
             readAsStaff(orderId).its('status').should('equal', 'shipped');
         });

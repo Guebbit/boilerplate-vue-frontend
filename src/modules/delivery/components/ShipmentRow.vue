@@ -76,11 +76,9 @@ const forceReason = ref('');
 const { message: rowError, report: reportRowError, clear: clearRowError } = useBlockingError();
 
 /**
- * Whether the forced arrival is offered: the ordinary door is closed and the caller may force.
+ * Whether the forced arrival is offered: the shipment is still in transit and the caller may force.
  */
-const offerForce = computed(
-    () => props.shipment.status === 'shipped' && !props.shipment.actions.deliver && props.canForce
-);
+const offerForce = computed(() => props.shipment.status === 'shipped' && props.canForce);
 
 /**
  * Whether the arrival button shows at all.

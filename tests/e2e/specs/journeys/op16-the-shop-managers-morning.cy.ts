@@ -88,7 +88,7 @@ describe('OP16 · The shop manager’s morning', () => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=mark-started]').click();
             cy.get('[data-test=mark-started]').should('not.exist');
-            cy.get('[data-test=mark-shipped]').should('not.exist');
+            cy.get('[data-test=open-ship]').should('not.exist');
             cy.apiAs<{ status: string }>('manager', 'GET', `/orders/${orderId}`)
                 .its('status')
                 .should('equal', 'processing');

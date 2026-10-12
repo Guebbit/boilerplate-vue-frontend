@@ -10,7 +10,7 @@
  * Time passes by moving the demo backend's clock, so this is a demo-only journey. The window is
  * `NODE_REAUTH_TIME_CRITICAL` (300 s); each jump is past it and inside the access token's life.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, shipTheOpenGroup } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** Past the critical window (300 s), inside the access token's own life (600 s). */
@@ -148,8 +148,7 @@ describe('OP20 · Staff prove it’s still them', () => {
             // Started above; an override can never leave `pending`, so it is shipped the ordinary
             // way (which never asks) and only the forced delivery is the step under test.
             cy.visit(`/en/orders/${orderId}`);
-            cy.get('[data-test=tracking-code-input] input').type('TRK-E2E-OP20');
-            cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
+            shipTheOpenGroup('TRK-E2E-OP20');
             cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP20');
             cy.get('[data-test=reauth-dialog]').should('not.exist');
             cy.get('[data-test=force-deliver-toggle] input').check();

@@ -47,23 +47,24 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=shipment-panel]').should('exist');
             cy.get('[data-test=mark-started]').should('exist');
-            cy.get('[data-test=mark-shipped]').should('not.exist');
+            cy.get('[data-test=open-ship]').should('not.exist');
             cy.get('[data-test=mark-delivered]').should('not.exist');
             customerSees(orderId, 'paid');
 
             cy.step('marks it started: "start" gives way to "ship"');
             cy.get('[data-test=mark-started]').click();
             cy.get('[data-test=mark-started]').should('not.exist');
-            cy.get('[data-test=tracking-code-input]').should('exist');
+            cy.get('[data-test=open-ship]').should('exist');
             cy.get('[data-test=mark-delivered]').should('not.exist');
             customerSees(orderId, 'processing');
 
             cy.step('express is tracked, so "ship" stays shut without a code');
-            cy.get('[data-test=mark-shipped]').should('be.disabled');
-            cy.get('[data-test=tracking-code-input] input').type(TRACKING_CODE);
-            cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
+            cy.get('[data-test=open-ship]').click();
+            cy.get('[data-test=ship-submit]').should('be.disabled');
+            cy.get('[data-test=ship-tracking-code] input').type(TRACKING_CODE);
+            cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
-            cy.get('[data-test=mark-shipped]').should('not.exist');
+            cy.get('[data-test=open-ship]').should('not.exist');
             customerSees(orderId, 'shipped');
 
             cy.step('the customer is mailed the tracking code');
@@ -75,7 +76,7 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
             cy.get('[data-test=mark-delivered]').click();
             cy.get('[data-test=mark-delivered]').should('not.exist');
             cy.get('[data-test=mark-started]').should('not.exist');
-            cy.get('[data-test=mark-shipped]').should('not.exist');
+            cy.get('[data-test=open-ship]').should('not.exist');
             customerSees(orderId, 'delivered');
 
             cy.step('the customer sees the parcel and its code, and has nothing to press');
@@ -85,7 +86,7 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
             cy.get('[data-test=shipment-status]').should('exist');
             cy.get('[data-test=mark-delivered]').should('not.exist');
-            cy.get('[data-test=mark-shipped]').should('not.exist');
+            cy.get('[data-test=open-ship]').should('not.exist');
         });
     });
 });

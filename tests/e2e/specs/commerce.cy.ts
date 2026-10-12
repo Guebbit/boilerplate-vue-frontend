@@ -11,6 +11,7 @@
  * it wrote depends on a store surviving a page load — the same discipline as journey.cy.ts.
  */
 import { seedAccount } from '../../support/e2e/scenario';
+import { shipTheOpenGroup } from '../../support/e2e/steps';
 
 /**
  * Corrects the order on the edit page to `label` via the `orders.any.override` door. It is one
@@ -131,9 +132,8 @@ describe('Commerce', () => {
         // ── Ship it: the shipment panel is the one door for the move ────────────────
         cy.contains('a', 'Back to order details').click();
         cy.get('[data-test=shipment-panel]').should('exist');
-        cy.get('[data-test=tracking-code-input] input').type('TRK-E2E-0001');
-        cy.get('[data-test=mark-shipped]').click();
-        cy.contains('Marked shipped.').should('exist');
+        shipTheOpenGroup('TRK-E2E-0001');
+        cy.contains('Shipment recorded.').should('exist');
 
         // ── The parcel exists: tracking on the order page, the email in the outbox ──
         cy.get('[data-test=shipment-tracking]').invoke('text').should('match', /TRK-/);

@@ -62,6 +62,22 @@ export const searchAndOpenProduct = (name: string): Cypress.Chainable<JQuery> =>
     });
 
 /**
+ * On an order page whose fulfilment card offers "Ship items", ships everything that remains in
+ * one shipment: opens the dialog, types the tracking code when there is one, and submits.
+ *
+ * The dialog starts at every line's remaining quantity, so this is the single-shipment door the
+ * old one-click button was. A tracked method keeps the submit shut until a code is typed.
+ *
+ * @param trackingCode - the carrier's handle; omit for an untracked method
+ */
+export const shipTheOpenGroup = (trackingCode?: string): void => {
+    cy.get('[data-test=open-ship]').first().click();
+    if (trackingCode) cy.get('[data-test=ship-tracking-code] input').type(trackingCode);
+    cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
+    cy.get('[data-test=ship-items-dialog]').should('not.exist');
+};
+
+/**
  * How many times {@link addOpenProductToCart} has run, so each call names its own alias.
  */
 let addToCartCalls = 0;

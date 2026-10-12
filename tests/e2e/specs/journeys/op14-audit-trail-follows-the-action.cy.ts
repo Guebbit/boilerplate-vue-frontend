@@ -108,9 +108,10 @@ describe('OP14 · The audit trail follows the action', () => {
                     cy.step('a paid order is started and shipped the ordinary way, with no force');
                     cy.visit(`/en/orders/${forcedId}`);
                     cy.get('[data-test=mark-started]').click();
-                    cy.get('[data-test=tracking-code-input] input').type('TRK-E2E-OP14');
-                    cy.get('[data-test=force-ship-toggle]').should('not.exist');
-                    cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
+                    cy.get('[data-test=open-ship]').first().click();
+                    cy.get('[data-test=ship-force-toggle]').should('not.exist');
+                    cy.get('[data-test=ship-tracking-code] input').type('TRK-E2E-OP14');
+                    cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
                     cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP14');
 
                     cy.step('a forced delivery needs a reason, and writes an override row');

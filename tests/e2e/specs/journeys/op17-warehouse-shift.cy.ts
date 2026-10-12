@@ -151,9 +151,10 @@ describe('OP17 · A warehouse shift', () => {
                     .should('be.oneOf', [403, 404]);
             });
             cy.get('[data-test=mark-started]').click();
-            cy.get('[data-test=mark-shipped]').should('be.disabled');
-            cy.get('[data-test=tracking-code-input] input').type(TRACKING_CODE);
-            cy.get('[data-test=mark-shipped]').should('not.be.disabled').click();
+            cy.get('[data-test=open-ship]').first().click();
+            cy.get('[data-test=ship-submit]').should('be.disabled');
+            cy.get('[data-test=ship-tracking-code] input').type(TRACKING_CODE);
+            cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
             cy.get('[data-test=mark-delivered]').click();
             cy.get('[data-test=mark-delivered]').should('not.exist');
@@ -172,7 +173,7 @@ describe('OP17 · A warehouse shift', () => {
         cy.get<string>('@digitalId').then((orderId) => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=mark-started]').click();
-            cy.get('[data-test=mark-shipped]').should('not.exist');
+            cy.get('[data-test=open-ship]').should('not.exist');
             cy.get('[data-test=mark-fulfilled]').click();
             cy.get('[data-test=mark-fulfilled]').should('not.exist');
             cy.apiAs<OrderLike>('warehouse', 'GET', `/orders/${orderId}`)
