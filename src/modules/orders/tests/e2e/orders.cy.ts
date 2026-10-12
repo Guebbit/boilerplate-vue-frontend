@@ -12,13 +12,13 @@ describe('Orders', () => {
     describe('Orders list', () => {
         beforeEach(() => {
             cy.loginAs('admin');
-            cy.visit('/en/orders');
+            cy.visit('/en/sales/orders');
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
 
         it('shows the page title and one row per order returned by the API', () => {
             cy.get('#orders-list-page').should('exist');
-            cy.get('h1').should('contain.text', 'My Orders');
+            cy.get('h1').should('contain.text', 'Orders');
             cy.get('[data-test=list-row]').should('have.length.at.least', 1);
         });
 
@@ -45,7 +45,7 @@ describe('Orders', () => {
 
         it('offers Hard delete on a cancelled unpaid order only', () => {
             cy.subjectId('order.cancelled').then((cancelledId) => {
-                cy.visit(`/en/orders?id=${cancelledId}`);
+                cy.visit(`/en/sales/orders?id=${cancelledId}`);
                 cy.get('[data-test=list-row]')
                     .should('have.length', 1)
                     .within(() => {
@@ -53,7 +53,7 @@ describe('Orders', () => {
                     });
             });
             cy.subjectId('order.paid').then((paidId) => {
-                cy.visit(`/en/orders?id=${paidId}`);
+                cy.visit(`/en/sales/orders?id=${paidId}`);
                 cy.get('[data-test=list-row]')
                     .should('have.length', 1)
                     .within(() => {

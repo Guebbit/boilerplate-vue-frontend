@@ -11,12 +11,15 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Orders list/search page. Wires the store's paginated search to a filter
- * form and a `DataTable`, with per-row view/edit/delete/hard-delete actions
- * gated on the signed-in role. The RF-reference lookup beside it is `payments`' own
- * `OrderReferenceSearch`, mounted here rather than reimplemented: the page stays a list.
+ * Orders list/search page, in two scopes over the same components and the same endpoint. `mine`
+ * is the account page: the viewer's own orders, always, the staff controls absent. `all` is the
+ * staff page (`/sales/orders`): every order, with the search boxes, the date ranges and the
+ * transfer queue. Wires the store's paginated search to a filter form and a `DataTable`, with
+ * per-row view/edit/delete/hard-delete actions gated on the signed-in role. The RF-reference
+ * lookup is `payments`' own `OrderReferenceSearch`, mounted here rather than reimplemented.
  */
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -32,7 +35,12 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
 import { canHardDelete } from '../domain';
-import { OrderFulfillmentStatus, OrderStatus } from '@/types/enums.ts';
+import {
+    OrderFulfillmentStatus,
+    OrderPaymentStatus,
+    OrderReturnStatus,
+    OrderStatus
+} from '@/types/enums.ts';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
@@ -47,6 +55,20 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
+
+/**
+ * Which orders the page lists.
+ */
+const props = withDefaults(
+    defineProps<{
+        /**
+         * `mine` pins the list to the signed-in account; `all` is the staff view of every order.
+         * The route says which: `OrdersList` is `mine`, `SalesOrders` is `all`.
+         */
+        scope?: 'mine' | 'all';
+    }>(),
+    { scope: 'mine' }
+);
 
 /**
  * Generic translation and notification accessors.
@@ -102,12 +124,18 @@ const {
 const session = useSessionStore();
 
 /**
- * Whether the viewer works the orders of OTHER people: the search-by-id/user/product/email boxes
- * and the transfer queue mean nothing to a customer, whose list is already only their own. The
- * wide read (`orders.any.read`) is what makes the list theirs to search, so the warehouse and
- * support, who read every order and edit none, get the filters too.
+ * Whether this is the staff page: the search-by-id/user/product/email boxes and the transfer queue
+ * mean nothing on the account page, whose list is only the viewer's own. The route guard
+ * (`meta.others`) is what keeps a customer off the staff page; the wide read (`orders.any.read`)
+ * is what lets the warehouse and support, who read every order and edit none, in.
  */
-const isStaff = computed(() => session.canOnOthers('read', 'Order'));
+const isStaff = computed(() => props.scope === 'all');
+
+/**
+ * Current route, for the staff page to tell a `userId` the URL asked for from one left behind by
+ * the account page.
+ */
+const route = useRoute();
 
 /**
  * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
@@ -124,8 +152,11 @@ const tableHeaders = computed<CoreDataTableHeader<Order>[]>(() => [
     // Sorts by the id (creation order, which the number follows); the cell shows the number.
     { title: t('orders-list-page.column-order'), key: 'id' },
     { title: t('orders-list-page.column-status'), key: 'status' },
+    // Reads no field of its own: the cell is the payment and return chips, in `item.payment`.
+    { title: t('orders-list-page.column-payment'), key: 'payment', synthetic: true },
     { title: t('orders-list-page.column-total'), key: 'totalPrice' },
     { title: t('orders-list-page.column-date'), key: 'createdAt' },
+    { title: t('orders-list-page.column-paid'), key: 'paidAt' },
     // Reads no field on the row: the cell is the `item.actions` slot below.
     { title: t('orders-list-page.column-actions'), key: 'actions', synthetic: true }
 ]);
@@ -139,16 +170,38 @@ const { sync: syncUrl } = useListUrlState({
     pageSize: pageSize,
     params: {
         id: 'string',
-        userId: 'string',
         productId: 'string',
         email: 'string',
         status: Object.values(OrderStatus),
         fulfillmentStatus: Object.values(OrderFulfillmentStatus),
         paymentMethod: 'string',
+        paymentStatus: Object.values(OrderPaymentStatus),
+        returnStatus: Object.values(OrderReturnStatus),
+        createdFrom: 'string',
+        createdTo: 'string',
+        paidFrom: 'string',
+        paidTo: 'string',
+        // The account page never carries the owner in its URL: it is pinned, not chosen.
+        ...(isStaff.value ? { userId: 'string' as const } : {}),
         deleted: 'boolean',
         sort: 'string'
     }
 });
+
+/**
+ * Keeps the owner right for the scope, before the search below first reads the filters.
+ *
+ * - `mine`: the viewer's own id, always (the API already scopes a customer; this is what keeps a
+ *   staff account's "my orders" from listing the whole shop).
+ * - `all`: an owner left behind by the account page is dropped, unless the URL asked for one.
+ */
+const pinOwner = () => {
+    if (!isStaff.value) filters.value.userId = session.viewer?.id;
+    else if (filters.value.userId === session.viewer?.id && !('userId' in route.query))
+        filters.value.userId = undefined;
+};
+
+pinOwner();
 
 /**
  * Search function bound to the store's reactive `filters`/pagination, reporting
@@ -227,6 +280,54 @@ const fulfillmentChoice = useAnyFilterChoice(
 );
 
 /**
+ * The payment-status select's options: every `OrderPaymentStatus`, plus "any" (value `null`, for
+ * the same reason as {@link statusOptions}).
+ */
+const paymentStatusOptions = computed(() => [
+    { value: null, label: t('orders-list-page.filter-status-any') },
+    ...Object.values(OrderPaymentStatus).map((status) => ({
+        value: status,
+        label: t(`order-target-page.payment-status-${status}`)
+    }))
+]);
+
+/**
+ * The payment-status select's model: `null` (the "any" row) on screen, no `paymentStatus` filter in
+ * {@link filters}.
+ */
+const paymentStatusChoice = useAnyFilterChoice(
+    () => filters.value.paymentStatus,
+    (value) => {
+        filters.value.paymentStatus = value;
+    }
+);
+
+/**
+ * The return-status select's options: every `OrderReturnStatus`, plus "any".
+ */
+const returnStatusOptions = computed(() => [
+    { value: null, label: t('orders-list-page.filter-status-any') },
+    ...Object.values(OrderReturnStatus).map((status) => ({
+        value: status,
+        label:
+            status === 'none'
+                ? t('orders-list-page.return-status-none')
+                : t(`order-target-page.return-status-${status}`)
+    }))
+]);
+
+/**
+ * The return-status select's model: `null` (the "any" row) on screen, no `returnStatus` filter in
+ * {@link filters}.
+ */
+const returnStatusChoice = useAnyFilterChoice(
+    () => filters.value.returnStatus,
+    (value) => {
+        filters.value.returnStatus = value;
+    }
+);
+
+/**
  * The "Deleted" select's model: `null` (the "any" row) on screen, no `deleted` filter in
  * {@link filters}.
  */
@@ -258,7 +359,10 @@ const { handleSearch, handleReset } = useListSearch({
     filters,
     page: pageCurrent,
     search,
-    onApplied: syncUrl
+    onApplied: () => {
+        pinOwner();
+        syncUrl();
+    }
 });
 
 /**
@@ -348,7 +452,7 @@ const handleHardDelete = (orderId: string) =>
 <template>
     <div id="orders-list-page">
         <OrderReferenceSearch
-            v-if="session.can('create', 'Payment')"
+            v-if="isStaff && session.can('create', 'Payment')"
             @found="handleReferenceFound"
         />
 
@@ -402,6 +506,52 @@ const handleHardDelete = (orderId: string) =>
                         hide-details
                     />
                     <v-select
+                        v-model="paymentStatusChoice"
+                        :label="t('orders-list-page.filter-payment-status')"
+                        :items="paymentStatusOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-payment-status"
+                        hide-details
+                    />
+                    <v-select
+                        v-model="returnStatusChoice"
+                        :label="t('orders-list-page.filter-return-status')"
+                        :items="returnStatusOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-return-status"
+                        hide-details
+                    />
+                    <v-text-field
+                        v-model="filters.createdFrom"
+                        type="date"
+                        :label="t('orders-list-page.filter-created-from')"
+                        data-test="filter-created-from"
+                        hide-details
+                    />
+                    <v-text-field
+                        v-model="filters.createdTo"
+                        type="date"
+                        :label="t('orders-list-page.filter-created-to')"
+                        data-test="filter-created-to"
+                        hide-details
+                    />
+                    <v-text-field
+                        v-model="filters.paidFrom"
+                        type="date"
+                        :label="t('orders-list-page.filter-paid-from')"
+                        data-test="filter-paid-from"
+                        hide-details
+                    />
+                    <v-text-field
+                        v-model="filters.paidTo"
+                        type="date"
+                        :label="t('orders-list-page.filter-paid-to')"
+                        data-test="filter-paid-to"
+                        hide-details
+                    />
+                    <v-select
                         v-if="session.can('delete', 'Order')"
                         v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
@@ -439,8 +589,15 @@ const handleHardDelete = (orderId: string) =>
             data-test="orders-list-row-action-error"
         />
 
-        <v-empty-state v-if="ordersList.length === 0" :title="t('orders-list-page.empty-orders')">
-            <template #actions>
+        <v-empty-state
+            v-if="ordersList.length === 0"
+            :title="
+                isStaff
+                    ? t('orders-list-page.empty-orders-staff')
+                    : t('orders-list-page.empty-orders')
+            "
+        >
+            <template v-if="!isStaff" #actions>
                 <v-btn color="primary" :to="routerLinkI18n({ name: 'Cart' })">
                     {{ t('orders-list-page.button-go-to-cart') }}
                 </v-btn>
@@ -488,12 +645,31 @@ const handleHardDelete = (orderId: string) =>
                 </v-chip>
             </template>
 
+            <template v-slot:[`item.payment`]="{ item }">
+                <v-chip size="small" variant="tonal" data-test="row-payment-status">
+                    {{ t(`order-target-page.payment-status-${item.paymentStatus}`) }}
+                </v-chip>
+                <v-chip
+                    v-if="item.returnStatus !== 'none'"
+                    size="small"
+                    variant="outlined"
+                    class="ml-1"
+                    data-test="row-return-status"
+                >
+                    {{ t(`order-target-page.return-status-${item.returnStatus}`) }}
+                </v-chip>
+            </template>
+
             <template v-slot:[`item.totalPrice`]="{ item }">
                 {{ formatCurrency(item.totalPrice, item.currency) }}
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
                 {{ formatDate(item.createdAt) }}
+            </template>
+
+            <template v-slot:[`item.paidAt`]="{ item }">
+                <span data-test="row-paid-at">{{ formatDate(item.paidAt) }}</span>
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">

@@ -6,5 +6,6 @@
 
 export { leftOutByReorder } from './reorder';
 export type { ReorderedOrderLine } from './reorder';
+export { endOfDayInstant, startOfDayInstant } from './day-range';
 export { canHardDelete } from './hard-delete';
 export type { HardDeletableOrder } from './hard-delete';

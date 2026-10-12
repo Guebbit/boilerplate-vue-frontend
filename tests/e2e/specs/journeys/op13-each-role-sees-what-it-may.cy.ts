@@ -40,13 +40,14 @@ const isTurnedBack = (path: string): void => {
 };
 
 /**
- * Waits for the orders list to have answered, then says how many rows the role was shown.
+ * Waits for an orders list to have answered, then says how many rows the role was shown.
  *
+ * @param path - which list: the account's own (`/en/orders`, the default) or the staff page
  * @returns a chain yielding the row count
  */
-const ordersShown = (): Cypress.Chainable<number> => {
+const ordersShown = (path = '/en/orders'): Cypress.Chainable<number> => {
     cy.intercept('POST', '**/orders/search').as('ordersSearch');
-    cy.visit('/en/orders');
+    cy.visit(path);
     cy.wait('@ordersSearch');
     return cy.get('body').then(($body) => $body.find('[data-test=list-row]').length);
 };
@@ -91,6 +92,7 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
             cy.get('[data-test=go-to-edit]').should('exist');
         });
         ordersShown().should('equal', 0);
+        isTurnedBack('/en/sales/orders');
         isTurnedBack('/en/users');
         isTurnedBack('/en/inventory');
 
@@ -105,7 +107,7 @@ describe('OP13 · Each role sees what it may, and nothing more', { tags: '@smoke
         });
         cy.visit('/en/users');
         cy.get('#users-list-page').should('exist');
-        ordersShown().should('be.greaterThan', 1);
+        ordersShown('/en/sales/orders').should('be.greaterThan', 1);
         cy.get('[data-test=row-edit]').should('exist');
         cy.visit('/en/products');
         cy.get('[data-test=product-card]').should('exist');

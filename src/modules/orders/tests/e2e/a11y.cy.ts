@@ -38,10 +38,12 @@ sweepA11y(
     'user'
 );
 
-// As the admin: the detail page is reachable by its owner only, and the edit page is admin-only.
+// As the admin: the staff list over every order, then the detail page is reachable by its owner only, and the edit page is admin-only.
 sweepA11y(
     'orders — admin',
     [
+        ['sales orders', '/en/sales/orders'],
+        { name: 'sales orders, phone viewport', route: '/en/sales/orders', viewport: PHONE },
         ['order detail', orderDetail],
         ['order edit', orderEdit]
     ],

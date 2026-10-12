@@ -13,7 +13,7 @@ describe('AT5 · Orders list filters', () => {
         cy.restore();
         cy.loginAs('admin');
         cy.trackNetwork();
-        cy.visit('/en/orders');
+        cy.visit('/en/sales/orders');
         cy.settleNetwork();
     });
 

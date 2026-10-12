@@ -47,7 +47,7 @@ describe('Order reference search', () => {
                 cy.logout();
                 cy.contains(seedAccount('user').email).should('not.exist');
                 cy.loginAs('admin');
-                cy.visit('/en/orders');
+                cy.visit('/en/sales/orders');
                 cy.get('[data-test=order-reference-search-input] input').type(rf);
                 cy.get('[data-test=order-reference-search-submit]').click();
 
@@ -59,7 +59,7 @@ describe('Order reference search', () => {
 
     it('blocks the search in place, not with a toast, for a reference nothing matches', () => {
         cy.loginAs('admin');
-        cy.visit('/en/orders');
+        cy.visit('/en/sales/orders');
 
         cy.get('[data-test=order-reference-search-input] input').type(
             'RF00 0000 0000 0000 0000 0000 0'

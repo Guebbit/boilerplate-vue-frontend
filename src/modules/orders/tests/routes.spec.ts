@@ -27,6 +27,7 @@ const byName = (name: string): RouteRecordRaw | undefined =>
 describe('orders route access', () => {
     it.each([
         ['OrdersList', 'auth', undefined, undefined],
+        ['SalesOrders', 'auth', 'read', 'Order'],
         ['OrderTarget', 'auth', undefined, undefined],
         ['OrderEdit', 'auth', 'update', 'Order']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
@@ -35,10 +36,25 @@ describe('orders route access', () => {
         expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
     });
 
+    it('lets only a reader of OTHER people’s orders onto the staff page', () => {
+        // `can` alone would admit a customer, who holds `orders.self.read`.
+        expect(byName('SalesOrders')?.meta).toMatchObject({
+            access: 'auth',
+            can: ['read', 'Order'],
+            others: true
+        });
+        expect(byName('OrdersList')?.meta?.others).toBeUndefined();
+    });
+
+    it('gives each of the two list routes its scope', () => {
+        expect(byName('OrdersList')?.props).toEqual({ scope: 'mine' });
+        expect(byName('SalesOrders')?.props).toEqual({ scope: 'all' });
+    });
+
     it('declares no route this file does not know about', () => {
         // Catches a new route added without an access decision being made for it.
         expect(routes.map(({ name }) => name).toSorted()).toEqual(
-            ['OrdersList', 'OrderTarget', 'OrderEdit'].toSorted()
+            ['OrdersList', 'SalesOrders', 'OrderTarget', 'OrderEdit'].toSorted()
         );
     });
 });

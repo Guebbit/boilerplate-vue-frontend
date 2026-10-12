@@ -1,7 +1,7 @@
 # orders
 
 ::: tip At a glance
-**Owns** — a customer's order history, the detail screen, and the admin status edit.
+**Owns** — a customer's order history, the staff's page over every order, the detail screen, and the admin status edit.
 **Depends on** — four modules, and three of those are components it mounts rather than state it reads.
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
@@ -9,9 +9,9 @@
 | Fact                    | This module                                                                                                 |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
 | **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                    |
-| **Screens**             | 3 — `OrdersList` · `OrderTarget` · `OrderEdit`                                                              |
+| **Screens**             | 4 — `OrdersList` · `SalesOrders` · `OrderTarget` · `OrderEdit`                                              |
 | **Store**               | `orders`                                                                                                    |
-| **Menu entries**        | `OrdersList`                                                                                                |
+| **Menu entries**        | `OrdersList` · `SalesOrders`                                                                                |
 | **API calls**           | 11                                                                                                          |
 | **Depends on**          | [`cart`](./cart.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) · [`returns`](./returns.md) |
 | **Depended on by**      | _nothing_                                                                                                   |
@@ -67,6 +67,26 @@ write screens. That scoping is enforced server-side — this client renders what
 answers, which is what [Domain layer](../theory/domain-layer.md) means by the domain living behind
 the API.
 
+## Two lists, one component
+
+`OrdersList.vue` serves two routes, and the route says which through its `scope` prop:
+
+| Route         | Scope  | Who it is for                   | What it lists                                                            |
+| ------------- | ------ | ------------------------------- | ------------------------------------------------------------------------ |
+| `OrdersList`  | `mine` | everyone signed in              | the viewer's own orders — the owner is **pinned** in the search, always  |
+| `SalesOrders` | `all`  | whoever holds `orders.any.read` | every order, with the id/user/product/email boxes and the transfer queue |
+
+The split is the A2 decision of the sales plan, and it fixes a real bug: the account page used to send
+`userId` only when set, so a staff account saw the whole shop under "My orders". Now the account
+page pins the viewer's id (`pinOwner`, re-applied after Reset, kept out of the URL), and the staff
+page drops an owner left behind by it. `SalesOrders` sets `meta.others`, because `can: ['read',
+'Order']` alone would admit a customer holding `orders.self.read`; it sits in the admin menu's
+"Sales" group.
+
+Both pages narrow by status, fulfilment, payment state, return state and two date ranges (placed,
+paid), and show when each order was paid. The four dates are calendar days in the store and are sent
+as inclusive instants (`domain/day-range.ts`), in the browser's zone.
+
 ## Permanent delete: cancel first
 
 The list offers **Hard delete** on a row only when the order is `cancelled` and its
@@ -107,11 +127,12 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 
 ## Screens
 
-| Path              | Route name    | Access | Permission     | View                   |
-| ----------------- | ------------- | ------ | -------------- | ---------------------- |
-| `orders`          | `OrdersList`  | `auth` | —              | `views/OrdersList.vue` |
-| `orders/:id`      | `OrderTarget` | `auth` | —              | `views/Order.vue`      |
-| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order` | `views/OrderEdit.vue`  |
+| Path              | Route name    | Access | Permission            | View                   |
+| ----------------- | ------------- | ------ | --------------------- | ---------------------- |
+| `orders`          | `OrdersList`  | `auth` | —                     | `views/OrdersList.vue` |
+| `sales/orders`    | `SalesOrders` | `auth` | `read Order (others)` | `views/OrdersList.vue` |
+| `orders/:id`      | `OrderTarget` | `auth` | —                     | `views/Order.vue`      |
+| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`        | `views/OrderEdit.vue`  |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
@@ -143,6 +164,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | Route | Label key | Section | Order | Icon | Badge |
 | ------------ | ------------------------- | --- | --- | --- | --- | --- |
 | `OrdersList` | `navigation.label-orders` | `account` | 90 | yes | — |
+| `SalesOrders` | `navigation.label-sales-orders` | `admin` | 55 | yes | — |
 
 ## Files
 
@@ -155,11 +177,13 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `routes.ts`                               | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                                           | [read](../theory/sitemap.md)          |
 | `schemas.ts`                              | Form schemas for this domain. Hand-written: only the contract's numeric constraints (minimums) are read from `@api/schemas`, so the rest of a rule can drift from the request body — `VITE_VALIDATE_REQUESTS` checks the real body at send time. | [read](../api/openapi-workflow.md)    |
 | `store.ts`                                | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                                                                                           | [read](../tools/state-and-routing.md) |
+| `domain/day-range.ts`                     | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                                                                                       | [read](../theory/domain-layer.md)     |
 | `tests/cancel.spec.ts`                    | Vitest suite — `cancel`, in isolation.                                                                                                                                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/e2e/__snapshots__/orders-list.png` | A committed visual-regression baseline.                                                                                                                                                                                                          | [read](../tools/visual-regression.md) |
 | `tests/e2e/a11y.cy.ts`                    | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                                                                                | [read](../tools/component-testing.md) |
 | `tests/e2e/orders.cy.ts`                  | Cypress suite — the `orders` screens, in a browser.                                                                                                                                                                                              | [read](../tools/component-testing.md) |
 | `tests/e2e/orders.visual.cy.ts`           | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                                                                              | [read](../tools/component-testing.md) |
+| `tests/day-range-domain.spec.ts`          | Vitest suite — the `day-range-domain` rules in isolation.                                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
 | `tests/routes.spec.ts`                    | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                                        | [read](../tools/unit-testing.md)      |
 | `tests/schemas-i18n.spec.ts`              | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                                                                              | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                     | Vitest suite — this domain's store, with the transport mocked.                                                                                                                                                                                   | [read](../tools/unit-testing.md)      |

@@ -3,7 +3,7 @@
  * Module manifest: wires the orders routes, nav entry, response schemas and
  * locale loaders into the app's module registry.
  */
-import { ReceiptText } from 'lucide-vue-next';
+import { ClipboardList, ReceiptText } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
@@ -23,8 +23,9 @@ import routes from './routes';
  * button is the same shape again: `Order.vue` mounts `returns`' `WithdrawalPanel`, which owns the
  * confirmation and the order's returns list, so `orders` never calls a returns operation itself.
  *
- * The customer’s history and the admin status screens. Where the shop’s outcome becomes
- * visible — but the invariants that decide a status live behind the API, not here.
+ * The customer’s history, the staff's own page over the same list (`SalesOrders`) and the admin
+ * status screens. Where the shop’s outcome becomes visible — but the invariants that decide a
+ * status live behind the API, not here.
  */
 export default {
     name: 'orders',
@@ -38,6 +39,15 @@ export default {
             order: 90,
             section: 'account',
             icon: ReceiptText
+        },
+        {
+            name: 'SalesOrders',
+            label: 'navigation.label-sales-orders',
+            plural: 1,
+            order: 55,
+            section: 'admin',
+            group: 'navigation.group-sales',
+            icon: ClipboardList
         }
     ],
     responseSchemas: () => import('./response-schemas').then((m) => m.ordersResponseSchemas),

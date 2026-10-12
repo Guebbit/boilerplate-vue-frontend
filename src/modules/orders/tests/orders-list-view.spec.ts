@@ -64,9 +64,10 @@ const signInAsPaymentRecorder = () => {
 /**
  * Mounts the page with the table's own paginated fetch stubbed — this suite is not about it.
  *
+ * @param scope - Which page to mount: the account's own list, or the staff page over every order.
  * @returns The mounted wrapper.
  */
-const mountList = () => {
+const mountList = (scope: 'mine' | 'all' = 'mine') => {
     const orders = useOrdersStore();
     vi.spyOn(orders, 'watchSearchOrders').mockReturnValue(
         asStub<ReturnType<typeof orders.watchSearchOrders>>({
@@ -75,6 +76,7 @@ const mountList = () => {
     );
 
     return mount(OrdersList, {
+        props: { scope },
         global: {
             plugins: [router, vuetify, i18n],
             stubs: {
@@ -92,15 +94,21 @@ beforeEach(() => {
 
 describe('OrdersList — the RF-reference lookup it mounts', () => {
     it('hides the lookup from a visitor who cannot record a payment', () => {
-        const wrapper = mountList();
+        const wrapper = mountList('all');
 
         expect(wrapper.findComponent({ name: 'OrderReferenceSearch' }).exists()).toBe(false);
     });
 
-    it('shows it to an operator who can', () => {
+    it('keeps it off the account page, even for an operator', () => {
         signInAsPaymentRecorder();
 
-        const wrapper = mountList();
+        expect(mountList().findComponent({ name: 'OrderReferenceSearch' }).exists()).toBe(false);
+    });
+
+    it('shows it to an operator who can, on the staff page', () => {
+        signInAsPaymentRecorder();
+
+        const wrapper = mountList('all');
 
         expect(wrapper.findComponent({ name: 'OrderReferenceSearch' }).exists()).toBe(true);
     });
@@ -110,7 +118,7 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
         // emits rather than navigating; this page owns `OrderEdit` directly and is the one that
         // turns a found order into a push.
         signInAsPaymentRecorder();
-        const wrapper = mountList();
+        const wrapper = mountList('all');
 
         emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', anOrder());
 
@@ -252,10 +260,19 @@ describe('OrdersList — which filters a viewer sees', () => {
         expect(wrapper.find('[data-test="filter-awaiting-transfer"]').exists()).toBe(false);
     });
 
-    it('shows whoever reads every order the lookups and the transfer queue, edit rights or not', () => {
+    it('keeps them off the account page of someone who reads every order', () => {
         signInReadingOrders(false);
 
         const wrapper = mountList();
+
+        expect(wrapper.text()).not.toContain('User ID');
+        expect(wrapper.find('[data-test="filter-awaiting-transfer"]').exists()).toBe(false);
+    });
+
+    it('shows whoever reads every order the lookups and the transfer queue, edit rights or not', () => {
+        signInReadingOrders(false);
+
+        const wrapper = mountList('all');
 
         expect(wrapper.text()).toContain('User ID');
         expect(wrapper.find('[data-test="filter-awaiting-transfer"]').exists()).toBe(true);
@@ -374,6 +391,163 @@ describe('OrdersList — the fulfilment chip and filter', () => {
 
         expect(searchOrders).toHaveBeenLastCalledWith(
             expect.objectContaining({ fulfillmentStatus: 'on_hold' })
+        );
+    });
+});
+
+/** Answers the search with one page of the given orders. */
+const answerSearchWith = (items: ReturnType<typeof order>[]) =>
+    vi.mocked(searchOrders).mockResolvedValue(
+        asStub<Awaited<ReturnType<typeof searchOrders>>>(
+            contractResponse(schemas.SearchOrdersResponse, {
+                items,
+                meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+            })
+        )
+    );
+
+/**
+ * "My orders" is the viewer's own list whatever the viewer may read: the account page pins the
+ * owner, so a staff member opening it no longer sees the whole shop.
+ */
+describe('OrdersList — the account page pins the owner', () => {
+    it('searches with the viewer’s own id, though the account may read every order', async () => {
+        signInReadingOrders(false);
+        answerSearchWith([order('o-1')]);
+
+        mount(OrdersList, {
+            props: { scope: 'mine' },
+            global: { plugins: [router, vuetify, i18n] }
+        });
+        await flushPromises();
+
+        expect(searchOrders).toHaveBeenLastCalledWith(expect.objectContaining({ userId: 'u1' }));
+    });
+
+    it('re-pins it after Reset clears the filters', async () => {
+        signInReadingOrders(false);
+        answerSearchWith([order('o-1')]);
+        const wrapper = mount(OrdersList, {
+            props: { scope: 'mine' },
+            global: { plugins: [router, vuetify, i18n] }
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-test="search-reset"]').trigger('click');
+        await flushPromises();
+
+        expect(searchOrders).toHaveBeenLastCalledWith(expect.objectContaining({ userId: 'u1' }));
+    });
+
+    it('keeps the owner out of the URL it writes', async () => {
+        signInReadingOrders(false);
+        answerSearchWith([order('o-1')]);
+        const wrapper = mount(OrdersList, {
+            props: { scope: 'mine' },
+            global: { plugins: [router, vuetify, i18n] }
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-test="search-submit"]').trigger('submit');
+        await flushPromises();
+
+        expect(router.currentRoute.value.query.userId).toBeUndefined();
+    });
+
+    it('is dropped on the staff page, unless the URL asked for a user', async () => {
+        signInReadingOrders(false);
+        answerSearchWith([order('o-1')]);
+        useOrdersStore().filters.userId = 'u1';
+
+        mount(OrdersList, {
+            props: { scope: 'all' },
+            global: { plugins: [router, vuetify, i18n] }
+        });
+        await flushPromises();
+
+        expect(vi.mocked(searchOrders).mock.calls.at(-1)?.[0].userId).toBeUndefined();
+    });
+
+    it('keeps a user the staff page was explicitly asked for', async () => {
+        signInReadingOrders(false);
+        answerSearchWith([order('o-1')]);
+        await router.push('/en/sales/orders?userId=u1');
+
+        mount(OrdersList, {
+            props: { scope: 'all' },
+            global: { plugins: [router, vuetify, i18n] }
+        });
+        await flushPromises();
+
+        expect(searchOrders).toHaveBeenLastCalledWith(expect.objectContaining({ userId: 'u1' }));
+    });
+});
+
+/** What the list says about money and returns, and the dates and states it narrows by. */
+describe('OrdersList — payment, return and date columns and filters', () => {
+    it('shows the payment state, the return state when there is one, and when it was paid', async () => {
+        answerSearchWith([
+            {
+                ...order('o-1'),
+                status: 'paid',
+                paymentStatus: 'partially_refunded',
+                returnStatus: 'partially_returned',
+                paidAt: '2026-03-04T10:00:00Z'
+            },
+            order('o-2')
+        ]);
+        const wrapper = mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+
+        const rows = wrapper.findAll('[data-test="list-row"]');
+        expect(rows[0]?.get('[data-test="row-payment-status"]').text()).toBe('Partially refunded');
+        expect(rows[0]?.get('[data-test="row-return-status"]').text()).toBe('Partly returned');
+        expect(rows[0]?.get('[data-test="row-paid-at"]').text()).not.toBe('—');
+        // An unpaid order with no return: one chip, and a dash where the paid date would be.
+        expect(rows[1]?.find('[data-test="row-return-status"]').exists()).toBe(false);
+        expect(rows[1]?.get('[data-test="row-paid-at"]').text()).toBe('—');
+    });
+
+    it('sends the days as inclusive instants, and the two states as they are', async () => {
+        answerSearchWith([]);
+        const wrapper = mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+        const { filters } = useOrdersStore();
+        filters.createdFrom = '2026-03-01';
+        filters.createdTo = '2026-03-31';
+        filters.paidFrom = '2026-03-05';
+        filters.paidTo = '2026-03-06';
+        filters.paymentStatus = 'refunded';
+        filters.returnStatus = 'returned';
+
+        await wrapper.get('[data-test="search-submit"]').trigger('submit');
+        await flushPromises();
+
+        const request = vi.mocked(searchOrders).mock.calls.at(-1)?.[0];
+        expect(new Date(request?.createdFrom ?? '').getTime()).toBe(
+            new Date(2026, 2, 1, 0, 0, 0, 0).getTime()
+        );
+        expect(new Date(request?.createdTo ?? '').getTime()).toBe(
+            new Date(2026, 2, 31, 23, 59, 59, 999).getTime()
+        );
+        expect(new Date(request?.paidFrom ?? '').getDate()).toBe(5);
+        expect(new Date(request?.paidTo ?? '').getDate()).toBe(6);
+        expect(request).toMatchObject({ paymentStatus: 'refunded', returnStatus: 'returned' });
+    });
+
+    it('sorts by the paid date from its header', async () => {
+        answerSearchWith([order('o-1')]);
+        const wrapper = mount(OrdersList, { global: { plugins: [router, vuetify, i18n] } });
+        await flushPromises();
+
+        await wrapper
+            .findAll('th')
+            .find((head) => head.text().includes('Paid'))
+            ?.trigger('click');
+        await flushPromises();
+
+        expect(searchOrders).toHaveBeenLastCalledWith(
+            expect.objectContaining({ sort: ['paidAt'] })
         );
     });
 });

@@ -31,7 +31,18 @@
         "button-hard-delete-named": "Elimina definitivamente ordine {id}",
         "button-restore": "Ripristina",
         "button-restore-named": "Ripristina {id}",
-        "success-restore": "Ordine ripristinato"
+        "success-restore": "Ordine ripristinato",
+        "page-title-sales": "Ordini",
+        "empty-orders-staff": "Nessun ordine corrisponde a questi filtri",
+        "column-payment": "Pagamento",
+        "column-paid": "Pagato",
+        "filter-payment-status": "Pagamento",
+        "filter-return-status": "Reso",
+        "return-status-none": "Nessun reso",
+        "filter-created-from": "Effettuato dal",
+        "filter-created-to": "Effettuato fino al",
+        "filter-paid-from": "Pagato dal",
+        "filter-paid-to": "Pagato fino al"
     },
     "orders-form": {
         "status-invalid": "Stato ordine non valido",
@@ -130,6 +141,7 @@
         "override-done": "Stato dell'ordine corretto."
     },
     "navigation": {
-        "label-orders": "Ordini"
+        "label-orders": "Ordini",
+        "label-sales-orders": "Ordini vendite"
     }
 }

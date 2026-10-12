@@ -113,8 +113,8 @@ describe('OP17 · A warehouse shift', () => {
         isTurnedBack('/en/users');
         isTurnedBack('/en/api-keys');
 
-        cy.step('it reads every order, so the staff filters are there');
-        cy.visit('/en/orders');
+        cy.step('it reads every order, so the staff page and its filters are there');
+        cy.visit('/en/sales/orders');
         cy.get('[data-test=filter-user-id]').should('exist');
         cy.get('[data-test=filter-email]').should('exist');
 

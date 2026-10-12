@@ -70,7 +70,7 @@ describe('CU19 · Changed my mind: a transfer order paid by card', () => {
                         'the admin searches the reference the customer was given, and finds a paid order'
                     );
                     cy.switchUser('admin');
-                    cy.visit('/en/orders');
+                    cy.visit('/en/sales/orders');
                     cy.get('[data-test=order-reference-search-input] input').type(reference);
                     cy.get('[data-test=order-reference-search-submit]').click();
                     cy.url().should('match', new RegExp(`/orders/${orderId}/edit$`));

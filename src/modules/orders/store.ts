@@ -10,6 +10,7 @@ import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getCurrentLocale } from '@/i18n';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
+import { endOfDayInstant, startOfDayInstant } from './domain';
 import {
     listOrders,
     searchOrders,
@@ -42,8 +43,22 @@ import type {
  * `id` stays a single string here — the filter box searches for one id — and is wrapped into the
  * one-element array `SearchOrdersRequest.id` now requires, in `search:` below. `userId`/
  * `productId` are untouched — they stay scalar in the contract.
+ *
+ * The four date filters hold calendar days (`YYYY-MM-DD`: what a date input and a URL carry), and
+ * `search:` turns each into the instant the API takes, inclusive at both ends.
  */
-type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize' | 'id' | 'sort'> & {
+type OrdersFilters = Omit<
+    SearchOrdersRequest,
+    'page' | 'pageSize' | 'id' | 'sort' | 'createdFrom' | 'createdTo' | 'paidFrom' | 'paidTo'
+> & {
+    /** Created on or after this day. */
+    createdFrom?: string;
+    /** Created on or before this day. */
+    createdTo?: string;
+    /** Paid on or after this day; an unpaid order never matches. */
+    paidFrom?: string;
+    /** Paid on or before this day. */
+    paidTo?: string;
     id?: string;
     /** The API's `sort` as one CSV (`-createdAt`): the form a URL holds. */
     sort?: string;
@@ -125,7 +140,13 @@ export const useOrdersStore = defineStore('orders', () => {
                     status: filters.status,
                     fulfillmentStatus: filters.fulfillmentStatus,
                     paymentMethod: filters.paymentMethod,
-                    deleted: filters.deleted
+                    deleted: filters.deleted,
+                    createdFrom: startOfDayInstant(filters.createdFrom),
+                    createdTo: endOfDayInstant(filters.createdTo),
+                    paidFrom: startOfDayInstant(filters.paidFrom),
+                    paidTo: endOfDayInstant(filters.paidTo),
+                    paymentStatus: filters.paymentStatus,
+                    returnStatus: filters.returnStatus
                 }).then((response) => ({
                     items: response.data.items,
                     totalItems: response.data.meta.totalItems

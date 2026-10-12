@@ -18,7 +18,8 @@ sweepVisual(
             // The demo's orders are produced at boot: fresh ids, and dates relative to today.
             redact: [
                 '#orders-list-page tbody td:nth-child(1)',
-                '#orders-list-page tbody td:nth-child(4)'
+                '#orders-list-page tbody td:nth-child(5)',
+                '#orders-list-page tbody td:nth-child(6)'
             ]
         }
     ],

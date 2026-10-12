@@ -137,7 +137,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 18      | 3    | 8          | 7       | 46      | 18     | 10            |
+| 18      | 3    | 8          | 7       | 47      | 18     | 10            |
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -151,7 +151,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`locales`](./locales.md)                                      | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
 | [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
 | [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
-| [`orders`](./orders.md)                                        | `core`       | `shop`       | 3       | `orders`                 | 11        | 4          | 0              |
+| [`orders`](./orders.md)                                        | `core`       | `shop`       | 4       | `orders`                 | 11        | 4          | 0              |
 | [`payments`](./payments.md)                                    | `supporting` | `shop`       | 0       | `payments`               | 4         | 0          | 1              |
 | [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
 | [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |

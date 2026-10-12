@@ -31,7 +31,18 @@
         "button-hard-delete-named": "Permanently delete order {id}",
         "button-restore": "Restore",
         "button-restore-named": "Restore {id}",
-        "success-restore": "Order restored"
+        "success-restore": "Order restored",
+        "page-title-sales": "Orders",
+        "empty-orders-staff": "No order matches these filters",
+        "column-payment": "Payment",
+        "column-paid": "Paid",
+        "filter-payment-status": "Payment",
+        "filter-return-status": "Return",
+        "return-status-none": "No return",
+        "filter-created-from": "Placed from",
+        "filter-created-to": "Placed to",
+        "filter-paid-from": "Paid from",
+        "filter-paid-to": "Paid to"
     },
     "orders-form": {
         "status-invalid": "Invalid order status",
@@ -130,6 +141,7 @@
         "override-done": "Order status corrected."
     },
     "navigation": {
-        "label-orders": "Orders"
+        "label-orders": "Orders",
+        "label-sales-orders": "Sales orders"
     }
 }

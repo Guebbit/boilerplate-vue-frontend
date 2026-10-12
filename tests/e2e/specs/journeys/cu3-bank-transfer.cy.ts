@@ -75,7 +75,7 @@ describe('CU3 · Bank transfer, both sides', { tags: '@smoke' }, () => {
             cy.step('the admin finds the order by the reference and records the money');
             idFromLocation().then((orderId) => {
                 cy.switchUser('admin');
-                cy.visit('/en/orders');
+                cy.visit('/en/sales/orders');
                 cy.get('[data-test=filter-awaiting-transfer] input').check();
                 cy.get('form button[type=submit]').click();
                 cy.get(`[data-test=row-view][href$="/orders/${orderId}"]`).should('exist');
@@ -89,7 +89,7 @@ describe('CU3 · Bank transfer, both sides', { tags: '@smoke' }, () => {
                 cy.get('[data-test=record-offline-payment-error]').should('not.exist');
 
                 cy.step('the order has left the awaiting-transfer list');
-                cy.visit('/en/orders');
+                cy.visit('/en/sales/orders');
                 cy.get('[data-test=filter-awaiting-transfer] input').check();
                 cy.get('form button[type=submit]').click();
                 // The seeded transfer still waiting proves the list loaded and the filter held.

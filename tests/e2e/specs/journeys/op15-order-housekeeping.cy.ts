@@ -39,7 +39,7 @@ const customerListing = (orderId: string): Cypress.Chainable<string[]> =>
  * @param orderId - the order
  */
 const rowOf = (orderId: string): Cypress.Chainable<JQuery> => {
-    cy.visit(`/en/orders?id=${orderId}`);
+    cy.visit(`/en/sales/orders?id=${orderId}`);
     return cy.get(`[data-test=row-view][href$="/${orderId}"]`).closest('[data-test=list-row]');
 };
 
@@ -111,7 +111,7 @@ describe('OP15 · Order housekeeping', () => {
                     });
                     cy.get('[data-test=app-dialog-confirm]').click();
                     cy.get('[data-test=orders-list-row-action-error]').should('not.exist');
-                    cy.visit(`/en/orders?id=${unpaidId}`);
+                    cy.visit(`/en/sales/orders?id=${unpaidId}`);
                     cy.get('[data-test=row-view]').should('not.exist');
                     customerListing(unpaidId).should('deep.equal', []);
                     eventually(
