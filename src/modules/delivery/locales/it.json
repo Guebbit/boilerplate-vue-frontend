@@ -87,5 +87,31 @@
         "hint-note": "Solo per il personale. Non inserire numeri di telefono o indirizzi.",
         "button-hold": "Sospendi",
         "success": "Gruppo sospeso."
+    },
+    "preorder-board": {
+        "caption-orders": "Gruppi di spedizione dei preordini",
+        "empty-orders": "Nessun gruppo di spedizione corrisponde.",
+        "filter-any": "Qualsiasi",
+        "filter-state": "Stato",
+        "filter-late": "In ritardo",
+        "filter-due-soon": "In scadenza entro {days} giorni",
+        "filter-product": "Prodotto: {name}",
+        "filter-product-clear": "Rimuovi il filtro prodotto",
+        "column-order": "Ordine",
+        "column-buyer": "Acquirente",
+        "column-products": "Prodotti",
+        "column-paid-at": "Pagato",
+        "column-agreed": "Promesso",
+        "column-expected": "Atteso",
+        "column-state": "Stato",
+        "column-last-notice": "Ultimo avviso",
+        "slipped": "+{days} g",
+        "late": "In ritardo",
+        "answer-by": "Risposta entro il {date}",
+        "state-waiting": "In attesa di merce",
+        "state-awaiting_yes": "In attesa della risposta",
+        "state-allocated": "Assegnato",
+        "state-shipped": "Spedito",
+        "state-cancelled": "Annullato"
     }
 }

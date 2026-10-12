@@ -23,18 +23,25 @@ const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 
 describe('inventory route access', () => {
-    it.each([['InventoryLedger', 'auth', 'read', 'StockLevel']])(
-        '%s declares access %s, permission %s %s',
-        (name, access, action, subject) => {
-            expect(byName(name)).toBeDefined();
-            expect(byName(name)?.meta?.access).toBe(access);
-            expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
-        }
-    );
+    it.each([
+        ['InventoryLedger', 'auth', 'read', 'StockLevel'],
+        ['PreordersBoard', 'auth', 'read', 'Order']
+    ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
+        expect(byName(name)).toBeDefined();
+        expect(byName(name)?.meta?.access).toBe(access);
+        expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
+    });
+
+    it('opens the preorder board only on the key for other people’s orders', () => {
+        // `orders.self.read` would admit a customer; the board lists other people's orders.
+        expect(byName('PreordersBoard')?.meta?.others).toBe(true);
+    });
 
     it('declares no route this file does not know about', () => {
         // Catches a new route added without an access decision being made for it — the stock
         // board and its write forms are otherwise unguarded by any spec.
-        expect(routes.map(({ name }) => name).toSorted()).toEqual(['InventoryLedger'].toSorted());
+        expect(routes.map(({ name }) => name).toSorted()).toEqual(
+            ['InventoryLedger', 'PreordersBoard'].toSorted()
+        );
     });
 });

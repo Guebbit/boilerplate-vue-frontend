@@ -22,7 +22,7 @@
 export const MODULE_EDGES: Record<string, string[]> = {
     account: ['users', 'addresses'],
     cart: ['delivery', 'payments', 'account', 'products'],
-    inventory: ['products'],
+    inventory: ['products', 'delivery'],
     observability: ['account', 'audit-logs'],
     orders: ['cart', 'delivery', 'payments', 'invoicing', 'returns'],
     products: ['locales'],

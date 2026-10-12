@@ -64,6 +64,7 @@ flowchart LR
     account -.-> users
     cart -.-> delivery
     inventory --> products
+    inventory -.-> delivery
     orders ==> cart
     orders -.-> delivery
     orders -.-> payments
@@ -137,17 +138,17 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 18      | 3    | 8          | 7       | 48      | 18     | 10            |
+| 18      | 3    | 8          | 7       | 49      | 18     | 11            |
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
 | [`account`](./account.md)                                      | `generic`    | `foundation` | 8       | `account`                | 18        | 1          | 0              |
 | [`api-keys`](./api-keys.md)                                    | `generic`    | `foundation` | 2       | `api-keys`               | 3         | 0          | 0              |
 | [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 1          | 3              |
-| [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 3         | 0          | 2              |
+| [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 13        | 0          | 3              |
 | [`example`](../theory/modules.md#adding-and-deleting-a-domain) | `generic`    | `example`    | 5       | `example`                | 6         | 0          | 0              |
 | [`feedback`](./feedback.md)                                    | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
-| [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 1       | `inventory`              | 5         | 1          | 0              |
+| [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
 | [`locales`](./locales.md)                                      | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
 | [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
 | [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |

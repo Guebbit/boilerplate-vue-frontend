@@ -53,7 +53,8 @@
         "button-preorder-limit-named": "Set the preorder limit of {name}"
     },
     "navigation": {
-        "label-inventory": "Inventory"
+        "label-inventory": "Inventory",
+        "label-preorders": "Preorders"
     },
     "preorder-limit-dialog": {
         "title": "Preorder limit of {name}",
@@ -61,5 +62,31 @@
         "hint-limit": "0 closes preordering. {outstanding} are outstanding now; a lower limit leaves those orders alone and only refuses new ones.",
         "button-save": "Save limit",
         "success": "Preorder limit saved."
+    },
+    "preorders-page": {
+        "page-title": "Preorders",
+        "tab-products": "Products",
+        "tab-orders": "Fulfillment orders",
+        "caption-products": "Preorder products",
+        "empty-products": "Nothing has been sold as a preorder yet.",
+        "column-product": "Product",
+        "column-release-date": "Ships from",
+        "column-first-promised": "First promised",
+        "column-limit": "Limit",
+        "column-outstanding": "Outstanding",
+        "column-left": "Left to order",
+        "column-ordered": "Ever ordered",
+        "column-states": "Units by state",
+        "outstanding-split": "{held} unpaid, {paid} paid",
+        "count-waiting": "{count} waiting",
+        "count-awaiting-yes": "{count} awaiting an answer",
+        "count-allocated": "{count} allocated",
+        "count-shipped": "{count} shipped",
+        "count-cancelled": "{count} cancelled",
+        "count-late": "{count} late",
+        "button-show-orders": "Fulfillment orders",
+        "button-show-orders-named": "Fulfillment orders of {name}",
+        "button-move-date": "Move release date",
+        "button-move-date-named": "Move the release date of {name}"
     }
 }

@@ -1,23 +1,23 @@
 # delivery
 
 ::: tip At a glance
-**Owns** — `ShippingSelector`, `ShipmentPanel` and `ShippingMethodName`: shipping as components, not pages. `ShipmentPanel` lists an order's fulfillment orders and shipments.
-**Depends on** — nothing. Two modules mount it; it mounts nothing.
-**Breaks if you change** — either component's props. [`cart`](./cart.md) and [`orders`](./orders.md) mount them.
+**Owns** — `ShippingSelector`, `ShipmentPanel`, `ShippingMethodName` and `PreorderFulfillmentTable`: shipping as components, not pages. `ShipmentPanel` lists an order's fulfillment orders and shipments; the table is the second tab of the preorder board.
+**Depends on** — nothing. Three modules mount it; it mounts nothing.
+**Breaks if you change** — a component's props, or `usePreorderSummaries`. [`cart`](./cart.md), [`orders`](./orders.md) and [`inventory`](./inventory.md) use them.
 :::
 
-| Fact                    | This module                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | _none_ — this module routes to nothing                                         |
-| **Store**               | `delivery`                                                                     |
-| **Menu entries**        | _none_                                                                         |
-| **API calls**           | 9                                                                              |
-| **Depends on**          | _nothing_                                                                      |
-| **Depended on by**      | [`cart`](./cart.md) · [`orders`](./orders.md)                                  |
-| **Languages**           | `en` · `it`                                                                    |
-| **Publishes**           | `ShipmentPanel` · `ShippingMethodName` · `ShippingSelector`                    |
-| **Backend counterpart** | `delivery` in `boilerplate-node-backend`                                       |
+| Fact                    | This module                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain.                                    |
+| **Screens**             | _none_ — this module routes to nothing                                                                            |
+| **Store**               | `delivery`                                                                                                        |
+| **Menu entries**        | _none_                                                                                                            |
+| **API calls**           | 12                                                                                                                |
+| **Depends on**          | _nothing_                                                                                                         |
+| **Depended on by**      | [`cart`](./cart.md) · [`inventory`](./inventory.md) · [`orders`](./orders.md)                                     |
+| **Languages**           | `en` · `it`                                                                                                       |
+| **Publishes**           | `PreorderFulfillmentTable` · `ShipmentPanel` · `ShippingMethodName` · `ShippingSelector` · `usePreorderSummaries` |
+| **Backend counterpart** | `delivery` in `boilerplate-node-backend`                                                                          |
 
 ## The map
 
@@ -26,30 +26,35 @@
 flowchart LR
     cart["cart"] -.->|"published-language"| delivery["<b>delivery</b>"]
     orders["orders"] -.->|"published-language"| delivery["<b>delivery</b>"]
+    inventory["inventory"] -.->|"published-language"| delivery["<b>delivery</b>"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class cart,orders core;
+    class inventory supporting;
     class delivery self;
 ```
 
 - `cart` → **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
 - `orders` → **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
+- `inventory` → **published-language** — Mounts `PreorderFulfillmentTable` and reads `usePreorderSummaries` for the preorder board; the fulfillment orders stay this module's, and `inventory` learns nothing of a shipment.
 
 ## The story
 
-**No routes and no navigation entries**, and two modules pointing at it — the only module here with
+**No routes and no navigation entries**, and three modules pointing at it — the only module here with
 that shape.
 
-| Component          | Mounted by              | On               |
-| ------------------ | ----------------------- | ---------------- |
-| `ShippingSelector` | [`cart`](./cart.md)     | the checkout     |
-| `ShipmentPanel`    | [`orders`](./orders.md) | the order detail |
+| Surface                    | Used by                       | On                        |
+| -------------------------- | ----------------------------- | ------------------------- |
+| `ShippingSelector`         | [`cart`](./cart.md)           | the checkout              |
+| `ShipmentPanel`            | [`orders`](./orders.md)       | the order detail          |
+| `PreorderFulfillmentTable` | [`inventory`](./inventory.md) | the preorder board, tab 2 |
+| `usePreorderSummaries`     | [`inventory`](./inventory.md) | the preorder board, tab 1 |
 
-Both edges are `published-language`, and both are declared by the mounting module rather than here.
-Neither learns what a shipping rate or a tracking code is: the components render their own concern
+All three edges are `published-language`, and each is declared by the using module rather than here.
+None learns what a shipping rate or a tracking code is: the components render their own concern
 and fetch their own data.
 
 ::: tip What deleting this module costs, precisely

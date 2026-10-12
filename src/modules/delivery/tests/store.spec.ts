@@ -15,7 +15,12 @@ import {
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
-import { aFulfillmentOrder, aShipment } from '../../../../tests/support/unit/fixtures.ts';
+import {
+    aFulfillmentOrder,
+    aPreorderFulfillmentOrder,
+    aPreorderSummary,
+    aShipment
+} from '../../../../tests/support/unit/fixtures.ts';
 
 import * as schemas from '@api/schemas';
 
@@ -271,6 +276,54 @@ describe('hold and release', () => {
             expect(released?.status).toBe('open');
             expect(store.fulfillmentOrders).toHaveLength(1);
         });
+    });
+});
+
+/**
+ * One page of preorder summaries, claiming a second page exists.
+ *
+ * @param productId - The product on the page.
+ * @param pageNumber - Which page it is.
+ */
+const summaryPage = (productId: string, pageNumber: number) =>
+    orvalEnvelope({
+        items: [aPreorderSummary({ productId })],
+        meta: { page: pageNumber, pageSize: 100, totalItems: 2, totalPages: 2 }
+    });
+
+describe('the preorder board reads', () => {
+    it('lists the board with preorder=true added, and keeps the total', async () => {
+        responses['GET /delivery/fulfillment-orders'] = orvalEnvelope({
+            items: [aPreorderFulfillmentOrder()],
+            meta: { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
+        });
+        const { orvalMutator } = await import('@/infrastructure/http');
+        const store = useDeliveryStore();
+
+        await store.fetchPreorderBoard({ page: 1, pageSize: 10, late: true });
+
+        expect(store.preorderBoard.map(({ id }) => id)).toEqual(['fo1']);
+        expect(store.preorderBoardTotal).toBe(31);
+        const call = vi
+            .mocked(orvalMutator)
+            .mock.calls.find(([config]) => config.url === '/delivery/fulfillment-orders');
+        expect(call?.[0].params).toEqual({ page: 1, pageSize: 10, late: true, preorder: true });
+    });
+
+    it('reads the summaries page after page until the last', async () => {
+        const { orvalMutator } = await import('@/infrastructure/http');
+        vi.mocked(orvalMutator)
+            .mockImplementationOnce((config) =>
+                Promise.resolve(parseOrvalFixture('GET', config.url ?? '', summaryPage('p1', 1)))
+            )
+            .mockImplementationOnce((config) =>
+                Promise.resolve(parseOrvalFixture('GET', config.url ?? '', summaryPage('p2', 2)))
+            );
+        const store = useDeliveryStore();
+
+        await store.fetchPreorderSummaries();
+
+        expect(store.preorderSummaries.map(({ productId }) => productId)).toEqual(['p1', 'p2']);
     });
 });
 

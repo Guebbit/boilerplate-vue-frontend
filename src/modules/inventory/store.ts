@@ -21,11 +21,15 @@ import {
 import type {
     InventoryLevel,
     ListInventoryLevelsParams,
-    ListPreorderLevelsParams,
     ListStockMovementsParams,
     PreorderLevel,
     StockMovement
 } from '@types';
+
+/**
+ * The largest page the contract allows, for the read that wants every row of a short list.
+ */
+const MAX_PAGE_SIZE = 100;
 
 /**
  * The stock board and the ledger behind it.
@@ -110,11 +114,6 @@ export const useInventoryStore = defineStore('inventory', () => {
     const preorderLevels = ref<PreorderLevel[]>([]);
 
     /**
-     * How many products the preorder board holds, across every page.
-     */
-    const preorderLevelsTotal = ref(0);
-
-    /**
      * Loads a page of the ledger.
      *
      * @param query - Page, size, and the two narrowings: one product's story, one kind of
@@ -150,19 +149,24 @@ export const useInventoryStore = defineStore('inventory', () => {
         });
 
     /**
-     * Loads a page of the preorder allowances, the most outstanding first.
+     * Loads every preorder allowance, the most outstanding first, page after page until the last.
+     * Whole-list on purpose: the board joins it to the delivery counts by product, and a short list
+     * (one row per product ever sold as a preorder) is cheaper to hold than to join page by page.
      *
-     * @param query - Page and size.
-     * @returns A promise resolving with the rows.
+     * @returns A promise resolving with every row.
      */
-    const fetchPreorderLevels = (query?: ListPreorderLevelsParams) =>
-        fetchAny(() =>
-            listPreorderLevels(query).then((response) => {
-                preorderLevels.value = response.data.items;
-                preorderLevelsTotal.value = response.data.meta.totalItems;
-                return preorderLevels.value;
-            })
-        );
+    const fetchPreorderLevels = () =>
+        fetchAny(() => {
+            const collect = (page: number, soFar: PreorderLevel[]): Promise<PreorderLevel[]> =>
+                listPreorderLevels({ page, pageSize: MAX_PAGE_SIZE }).then((response) => {
+                    const items = [...soFar, ...response.data.items];
+                    return page < response.data.meta.totalPages ? collect(page + 1, items) : items;
+                });
+            return collect(1, []).then((items) => {
+                preorderLevels.value = items;
+                return items;
+            });
+        });
 
     /**
      * Sets how many units of a product may be preordered at once, then reloads the board.
@@ -256,7 +260,6 @@ export const useInventoryStore = defineStore('inventory', () => {
         levels,
         levelsTotal,
         preorderLevels,
-        preorderLevelsTotal,
         fetchMovements,
         fetchLevels,
         fetchPreorderLevels,

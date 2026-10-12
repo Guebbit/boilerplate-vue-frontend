@@ -1,19 +1,19 @@
 # inventory
 
 ::: tip At a glance
-**Owns** — the admin stock board and the ledger behind it.
-**Depends on** — [`products`](./products.md), read as-is, to put names on rows.
+**Owns** — the admin stock board and the ledger behind it, the preorder limit, and the staff preorder board.
+**Depends on** — [`products`](./products.md), read as-is, to put names on rows; [`delivery`](./delivery.md), for the board's fulfillment-order tab and per-product counts.
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
 | Fact                    | This module                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------ |
 | **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
-| **Screens**             | 1 — `InventoryLedger`                                                          |
+| **Screens**             | 2 — `InventoryLedger` · `PreordersBoard`                                       |
 | **Store**               | `inventory`                                                                    |
-| **Menu entries**        | `InventoryLedger`                                                              |
+| **Menu entries**        | `InventoryLedger` · `PreordersBoard`                                           |
 | **API calls**           | 7                                                                              |
-| **Depends on**          | [`products`](./products.md)                                                    |
+| **Depends on**          | [`delivery`](./delivery.md) · [`products`](./products.md)                      |
 | **Depended on by**      | _nothing_                                                                      |
 | **Languages**           | `en` · `it`                                                                    |
 | **Publishes**           | _nothing_ — no barrel, so no sibling may import it                             |
@@ -25,16 +25,19 @@
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
     inventory["<b>inventory</b>"] -->|"conformist"| products["products"]
+    inventory["<b>inventory</b>"] -.->|"published-language"| delivery["delivery"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class products core;
+    class delivery supporting;
     class inventory self;
 ```
 
 - → `products` **conformist** — Reads `useProductsStore` as it is, to name products in the receipt select and the ledger titles.
+- → `delivery` **published-language** — Mounts `PreorderFulfillmentTable` and reads `usePreorderSummaries` on the preorder board; the fulfillment orders stay `delivery`'s.
 
 ## The story
 
@@ -85,21 +88,52 @@ flowchart LR
 - The ledger has a "Preordered" column for the third counter, and two reasons: `preorder` (units
   claimed) and `allocate` (stock arrived for a paid preorder).
 
+## The preorder board
+
+`/sales/preorders`, in the Sales menu group, for anyone holding `orders.any.read` (the same audience
+as the orders it lists). Two tabs, kept in `?tab=`; the product the second tab is narrowed to in
+`?productId=`.
+
+```mermaid
+flowchart LR
+    page["PreordersBoard"] --> t1["Products<br/>PreorderProductsTable"]
+    page --> t2["Fulfillment orders<br/>PreorderFulfillmentTable (delivery)"]
+    t1 -->|"GET /inventory/preorders"| inv[("inventory")]
+    t1 -->|"GET /delivery/fulfillment-orders/summary"| del[("delivery")]
+    t2 -->|"GET /delivery/fulfillment-orders?preorder=true"| del
+    t1 -. "show its orders" .-> t2
+```
+
+- **Products** (needs `inventory.any.read`, so a viewer without it has only the second tab): one
+  row per product from the union of the two reads, the worst first (most late, then most
+  outstanding). Limit, outstanding (with its unpaid/paid split), left to order, lifetime ordered;
+  the units by state (waiting, awaiting an answer, allocated, shipped, cancelled, late), only the
+  non-zero ones. A product with sales and no allowance row (or the reverse) still shows, with dashes
+  for the missing half. "Move release date" links to the product's edit form, for a holder of the
+  product write: there is no preview of what a later date does to buyers who already paid.
+- **Fulfillment orders**: server-paged. Filters are the server's own rules, passed through: **Late**
+  (the expected date has passed and units remain, including allocated-but-unshipped ones the daily
+  sweep leaves alone) and **Due soon** (still waiting for stock, expected within 7 days, so a slip can
+  be moved before the date passes), plus state and product. Each row shows the order (linked), buyer,
+  lines, paid date, promised and expected dates (and the slip), the state, the answer deadline when an
+  answer is owed, who cancelled, and the last notice.
+
 ## State
 
 Store `inventory`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                                                                | What it is                                                       |
 | ----------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `movements` · `movementsTotal` · `levels` · `levelsTotal` · `preorderLevels` · `preorderLevelsTotal`   | The refs the setup function returns — the only writable surface. |
+| **State**   | `movements` · `movementsTotal` · `levels` · `levelsTotal` · `preorderLevels`                           | The refs the setup function returns — the only writable surface. |
 | **Getters** | `loading`                                                                                              | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `fetchMovements` · `fetchLevels` · `fetchPreorderLevels` · `setLimit` · `receive` · `adjust` · `sweep` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
-| Path        | Route name        | Access | Permission        | View                        |
-| ----------- | ----------------- | ------ | ----------------- | --------------------------- |
-| `inventory` | `InventoryLedger` | `auth` | `read StockLevel` | `views/InventoryLedger.vue` |
+| Path              | Route name        | Access | Permission            | View                        |
+| ----------------- | ----------------- | ------ | --------------------- | --------------------------- |
+| `inventory`       | `InventoryLedger` | `auth` | `read StockLevel`     | `views/InventoryLedger.vue` |
+| `sales/preorders` | `PreordersBoard`  | `auth` | `read Order` (others) | `views/PreordersBoard.vue`  |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
@@ -124,6 +158,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | Route | Label key | Section | Order | Icon | Badge |
 | ----------------- | ---------------------------- | --- | --- | --- | --- | --- |
 | `InventoryLedger` | `navigation.label-inventory` | `admin` | 47 | yes | — |
+| `PreordersBoard` | `navigation.label-preorders` | `admin` (group Sales) | 58 | yes | — |
 
 ## Files
 
@@ -140,6 +175,10 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `tests/e2e/inventory.visual.cy.ts`             | Cypress visual suite — pixel diffs against the committed baselines.                                                                                                                 | [read](../tools/component-testing.md) |
 | `tests/store.spec.ts`                          | Vitest suite — this domain's store, with the transport mocked.                                                                                                                      | [read](../tools/unit-testing.md)      |
 | `views/InventoryLedger.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
+| `views/PreordersBoard.vue`                     | A routed screen: the preorder board's two tabs, the tab and product filter kept in the URL.                                                                                         | [read](../theory/layers.md)           |
+| `components/PreorderProductsTable.vue`         | The board's first tab: the allowance joined to the units by state, one row per product.                                                                                             | [read](../theory/layers.md)           |
+| `components/PreorderLimitDialog.vue`           | Staff set a product's preorder limit from the stock board.                                                                                                                          | [read](../theory/layers.md)           |
+| `domain/preorder-rows.ts`                      | Pure: joins the two reads by product and orders the rows, the worst first.                                                                                                          | [read](../theory/domain-layer.md)     |
 
 ## Working on it
 

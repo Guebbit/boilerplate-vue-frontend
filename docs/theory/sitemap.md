@@ -37,6 +37,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`feedback`](../modules/feedback.md)                   | `contact`                              | `Contact`               | `public` | —                            | `views/Contact.vue`               |
 | [`feedback`](../modules/feedback.md)                   | `feedback`                             | `FeedbackInbox`         | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`         |
 | [`inventory`](../modules/inventory.md)                 | `inventory`                            | `InventoryLedger`       | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`       |
+| [`inventory`](../modules/inventory.md)                 | `sales/preorders`                      | `PreordersBoard`        | `auth`   | `read Order (others)`        | `views/PreordersBoard.vue`        |
 | [`locales`](../modules/locales.md)                     | `locales`                              | `LocalesList`           | `auth`   | `update Locale`              | `views/LocalesList.vue`           |
 | [`locales`](../modules/locales.md)                     | `locales/dictionary`                   | `LocalesDictionary`     | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`     |
 | [`locales`](../modules/locales.md)                     | `locales/:tag`                         | `LocaleEntries`         | `auth`   | `update Locale`              | `views/LocaleEntries.vue`         |
@@ -68,7 +69,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`webhooks`](../modules/webhooks.md)                   | `webhooks/deliveries`                  | `WebhookDeliveries`     | `auth`   | `read WebhookSubscription`   | `views/WebhookDeliveries.vue`     |
 | [`wishlist`](../modules/wishlist.md)                   | `wishlist`                             | `Wishlist`              | `auth`   | —                            | `views/Wishlist.vue`              |
 
-54 screens across 16 modules.
+55 screens across 16 modules.
 
 <!-- sitemap:end -->
 

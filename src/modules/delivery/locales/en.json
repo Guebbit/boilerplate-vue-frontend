@@ -87,5 +87,31 @@
         "hint-note": "Staff only. Don't include phone numbers or addresses.",
         "button-hold": "Put on hold",
         "success": "Put on hold."
+    },
+    "preorder-board": {
+        "caption-orders": "Preorder fulfillment orders",
+        "empty-orders": "No fulfillment orders match.",
+        "filter-any": "Any",
+        "filter-state": "State",
+        "filter-late": "Late",
+        "filter-due-soon": "Due within {days} days",
+        "filter-product": "Product: {name}",
+        "filter-product-clear": "Remove the product filter",
+        "column-order": "Order",
+        "column-buyer": "Buyer",
+        "column-products": "Products",
+        "column-paid-at": "Paid",
+        "column-agreed": "Promised",
+        "column-expected": "Expected",
+        "column-state": "State",
+        "column-last-notice": "Last notice",
+        "slipped": "+{days} d",
+        "late": "Late",
+        "answer-by": "Answer by {date}",
+        "state-waiting": "Waiting for stock",
+        "state-awaiting_yes": "Awaiting the buyer's answer",
+        "state-allocated": "Allocated",
+        "state-shipped": "Shipped",
+        "state-cancelled": "Cancelled"
     }
 }

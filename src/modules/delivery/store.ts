@@ -19,15 +19,25 @@ import {
     confirmFulfillmentOrderWait,
     releaseFulfillmentOrder,
     updateShipment,
-    deliverShipment
+    deliverShipment,
+    listPreorderFulfillmentOrders,
+    summarizePreorderFulfillmentOrders
 } from '@api';
 import type {
     FulfillmentOrder,
     HoldFulfillmentOrderRequest,
+    ListPreorderFulfillmentOrdersParams,
+    PreorderFulfillmentOrder,
+    PreorderProductSummary,
     ShippingMethod,
     Shipment,
     ShipFulfillmentOrderRequest
 } from '@types';
+
+/**
+ * The largest page the contract allows, for the read that wants every row of a short list.
+ */
+const MAX_PAGE_SIZE = 100;
 
 /**
  * Shipping — the methods a checkout can choose, and the fulfillment orders and shipments an order
@@ -67,6 +77,65 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * The shipments of the order last read — what actually left, each with its own tracking code.
      */
     const shipments = ref<Shipment[]>([]);
+
+    /**
+     * One page of the preorder board's second tab: fulfillment orders made from preorder lines,
+     * each with its buyer. Staff holding `orders.any.read` see every row, anyone else their own.
+     */
+    const preorderBoard = ref<PreorderFulfillmentOrder[]>([]);
+
+    /**
+     * How many rows match the board's last filters, across every page.
+     */
+    const preorderBoardTotal = ref(0);
+
+    /**
+     * Every product's preorder units by state, for the board's first tab. Whole-list: it is one row
+     * per product that was ever sold as a preorder, which is short.
+     */
+    const preorderSummaries = ref<PreorderProductSummary[]>([]);
+
+    /**
+     * Loads a page of the preorder board's fulfillment orders.
+     *
+     * @param query - Page, size and the filters: `state`, `productId`, `late` (the Late view) and
+     *  `dueWithin` (the Due-soon warning). `preorder=true` is always added: the board is about
+     *  preorders, whatever the endpoint could also list.
+     * @returns A promise resolving with the page's rows.
+     */
+    const fetchPreorderBoard = (query: ListPreorderFulfillmentOrdersParams = {}) =>
+        fetchAny(() =>
+            listPreorderFulfillmentOrders({ ...query, preorder: true }).then((response) => {
+                preorderBoard.value = response.data.items;
+                preorderBoardTotal.value = response.data.meta.totalItems;
+                return preorderBoard.value;
+            })
+        );
+
+    /**
+     * Loads every product's preorder summary, page after page until the last.
+     *
+     * @returns A promise resolving with every summary.
+     */
+    const fetchPreorderSummaries = () =>
+        fetchAny(() => {
+            const collect = (
+                page: number,
+                soFar: PreorderProductSummary[]
+            ): Promise<PreorderProductSummary[]> =>
+                summarizePreorderFulfillmentOrders({ page, pageSize: MAX_PAGE_SIZE }).then(
+                    (response) => {
+                        const items = [...soFar, ...response.data.items];
+                        return page < response.data.meta.totalPages
+                            ? collect(page + 1, items)
+                            : items;
+                    }
+                );
+            return collect(1, []).then((items) => {
+                preorderSummaries.value = items;
+                return items;
+            });
+        });
 
     /**
      * Loads the methods, unfiltered — `PUT /cart/shipping-method` and checkout are what check a
@@ -226,6 +295,11 @@ export const useDeliveryStore = defineStore('delivery', () => {
         shipToCountries,
         fulfillmentOrders,
         shipments,
+        preorderBoard,
+        preorderBoardTotal,
+        preorderSummaries,
+        fetchPreorderBoard,
+        fetchPreorderSummaries,
         fetchMethods,
         fetchFulfillmentForOrder,
         start,

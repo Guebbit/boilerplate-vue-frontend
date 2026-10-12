@@ -151,12 +151,58 @@ describe('fetchLevels', () => {
     });
 });
 
+/**
+ * One page of preorder allowances, claiming a second page exists.
+ *
+ * @param productId - The product on the page.
+ * @param pageNumber - Which page it is.
+ */
+const allowancePage = (productId: string, pageNumber: number) =>
+    orvalEnvelope({
+        items: [
+            {
+                productId,
+                title: productId,
+                preorderLimit: 1,
+                preordered: 0,
+                held: 0,
+                paid: 0,
+                left: 1,
+                ordered: 0
+            }
+        ],
+        meta: { page: pageNumber, pageSize: 100, totalItems: 2, totalPages: 2 }
+    });
+
 describe('fetchPreorderLevels', () => {
-    it('replaces the allowances with what the API answered, keeping the total', () => {
+    it('replaces the allowances with what the API answered', () => {
         const store = useInventoryStore();
-        return store.fetchPreorderLevels({ page: 1, pageSize: 20 }).then(() => {
+        return store.fetchPreorderLevels().then(() => {
             expect(store.preorderLevels.map(({ productId }) => productId)).toEqual(['p1']);
-            expect(store.preorderLevelsTotal).toBe(1);
+        });
+    });
+
+    it('reads page after page until the last, and keeps them in order', () => {
+        // Two answers in a row: page 1 says there is a page 2. `Once`, so the file's own transport
+        // mock is back in place for every test after this one.
+        vi.mocked(orvalMutator)
+            .mockImplementationOnce((config) =>
+                Promise.resolve(parseOrvalFixture('GET', config.url ?? '', allowancePage('p1', 1)))
+            )
+            .mockImplementationOnce((config) =>
+                Promise.resolve(parseOrvalFixture('GET', config.url ?? '', allowancePage('p2', 2)))
+            );
+        const store = useInventoryStore();
+        return store.fetchPreorderLevels().then(() => {
+            expect(store.preorderLevels.map(({ productId }) => productId)).toEqual(['p1', 'p2']);
+            expect(
+                vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(([config]) => (config as { params?: unknown }).params)
+            ).toEqual([
+                { page: 1, pageSize: 100 },
+                { page: 2, pageSize: 100 }
+            ]);
         });
     });
 });

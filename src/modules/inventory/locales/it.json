@@ -53,7 +53,8 @@
         "button-preorder-limit-named": "Imposta il limite di preordini di {name}"
     },
     "navigation": {
-        "label-inventory": "Magazzino"
+        "label-inventory": "Magazzino",
+        "label-preorders": "Preordini"
     },
     "preorder-limit-dialog": {
         "title": "Limite di preordini di {name}",
@@ -61,5 +62,31 @@
         "hint-limit": "0 chiude i preordini. Ora ne risultano {outstanding}; un limite più basso lascia quegli ordini e rifiuta solo i nuovi.",
         "button-save": "Salva limite",
         "success": "Limite di preordini salvato."
+    },
+    "preorders-page": {
+        "page-title": "Preordini",
+        "tab-products": "Prodotti",
+        "tab-orders": "Gruppi di spedizione",
+        "caption-products": "Prodotti in preordine",
+        "empty-products": "Non è ancora stato venduto nulla in preordine.",
+        "column-product": "Prodotto",
+        "column-release-date": "Spedizione dal",
+        "column-first-promised": "Prima data promessa",
+        "column-limit": "Limite",
+        "column-outstanding": "In sospeso",
+        "column-left": "Ancora ordinabili",
+        "column-ordered": "Ordinati in tutto",
+        "column-states": "Unità per stato",
+        "outstanding-split": "{held} non pagati, {paid} pagati",
+        "count-waiting": "{count} in attesa",
+        "count-awaiting-yes": "{count} in attesa di risposta",
+        "count-allocated": "{count} assegnati",
+        "count-shipped": "{count} spediti",
+        "count-cancelled": "{count} annullati",
+        "count-late": "{count} in ritardo",
+        "button-show-orders": "Gruppi di spedizione",
+        "button-show-orders-named": "Gruppi di spedizione di {name}",
+        "button-move-date": "Sposta la data di uscita",
+        "button-move-date-named": "Sposta la data di uscita di {name}"
     }
 }
