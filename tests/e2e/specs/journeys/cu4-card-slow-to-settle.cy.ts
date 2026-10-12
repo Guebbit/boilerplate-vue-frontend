@@ -8,9 +8,9 @@
  *
  * Two stories, since the ending can go two ways:
  * - The money lands while the order waits: Finish reads the provider, and the order is paid.
- * - The customer cancels while it is still processing and the money lands anyway: the shop never
- *   keeps it. The payment ends `refunded`, the order stays cancelled, and Finish says so
- *   (`payments/services/settlement.ts`, the "order lost" branch).
+ * - The customer cancels while it is still processing: the shop never keeps the money. The cancel
+ *   itself settles the payment and refunds it, so the payment ends `refunded`, the order stays
+ *   cancelled, and there is nothing left to Finish.
  *
  * Each spends one card confirm, as `user`.
  */
@@ -81,7 +81,7 @@ describe('CU4 · A card that is slow to settle', () => {
         });
     });
 
-    it('refunds money that lands after the customer cancelled, and never keeps it', () => {
+    it('refunds the payment the moment the customer cancels, and never keeps it', () => {
         cy.step('the customer pays with a slow method, then cancels while it is processing');
         payWithSlowCard().then((orderId) => {
             cy.get('[data-test=payment-finish]').should('exist');
@@ -92,8 +92,7 @@ describe('CU4 · A card that is slow to settle', () => {
                 expect(order?.status).to.equal('cancelled');
             });
 
-            cy.step('the money lands anyway: Finish is refused, and the payment is refunded');
-            cy.get('[data-test=payment-finish]').click();
+            cy.step('the cancel itself refunds the payment, and the order stays cancelled');
             eventually(
                 () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
                 (payment) => payment?.status === 'refunded'
@@ -101,13 +100,11 @@ describe('CU4 · A card that is slow to settle', () => {
                 expect(payment?.status).to.equal('refunded');
                 expect(payment?.amountRefunded).to.equal(payment?.amount);
             });
-            cy.get('[data-test=payment-panel-error]').should('exist');
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
-                expect(order?.status, 'the late money did not revive the order').to.equal(
-                    'cancelled'
-                );
+                expect(order?.status, 'the refund did not revive the order').to.equal('cancelled');
             });
             cy.reload();
+            cy.get('[data-test=payment-finish]').should('not.exist');
             cy.get('[data-test=payment-status]').should('contain.text', 'Refunded');
             cy.get('[data-test=order-download-invoice]').should('not.exist');
         });

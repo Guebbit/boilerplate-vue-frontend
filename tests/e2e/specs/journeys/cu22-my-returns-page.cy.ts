@@ -1,8 +1,9 @@
 // requires-module: account, orders, returns
 /**
  * @module
- * CU22 · My returns page tells me where each one stands. A customer has three returns in three
- * different places: a defective item that support declined with a reason, a defective item nobody has
+ * CU22 · My returns page tells me where each one stands. A customer has four returns in four
+ * different places, one of them (a closed cancellation of an order's unshipped remainder) seeded and
+ * left alone: a defective item that support declined with a reason, a defective item nobody has
  * answered yet, and a withdrawal that came back and was refunded less a handling deduction. The
  * returns page lists all three; its two filters narrow it, each to exactly the returns they should and
  * to the empty state when nothing fits; each return opens to its own story (the reason it was declined,
@@ -23,6 +24,9 @@ const DEDUCTION = 3;
 
 /** The handling deduction in cents, the unit the page's money cells read in. */
 const DEDUCTION_CENTS = DEDUCTION * 100;
+
+/** Returns the seed already holds for this customer: one closed withdrawal cancellation. */
+const SEEDED_CANCELLATIONS = 1;
 
 /** The slice of a return this story reads. */
 interface ReturnLike {
@@ -56,10 +60,11 @@ const filterReturnsBy = (filter: 'status' | 'reason', label: string): void => {
 /**
  * Asserts which returns the list shows, by the address each row opens — never by position.
  *
- * @param ids - the returns expected, and only those
+ * @param ids - the returns expected by id
+ * @param others - how many more the seed holds that this story does not name
  */
-const listShows = (ids: string[]): void => {
-    cy.get('[data-test=return-open]').should('have.length', ids.length);
+const listShows = (ids: string[], others = 0): void => {
+    cy.get('[data-test=return-open]').should('have.length', ids.length + others);
     for (const id of ids) cy.get(`[data-test=return-open][href$="/returns/${id}"]`).should('exist');
 };
 
@@ -130,12 +135,15 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                         })
                     );
 
-                    cy.step('the list holds all three, each with its own status');
+                    cy.step('the list holds all four, each with its own status');
                     cy.visit('/en/returns');
                     cy.then(() => {
-                        listShows([declinedId, waitingId, opened.id]);
+                        listShows([declinedId, waitingId, opened.id], SEEDED_CANCELLATIONS);
                     });
-                    cy.get('[data-test=return-item]').should('have.length', 3);
+                    cy.get('[data-test=return-item]').should(
+                        'have.length',
+                        3 + SEEDED_CANCELLATIONS
+                    );
 
                     cy.step('the status filter narrows to exactly the returns in that state');
                     filterReturnsBy('status', 'Declined');
@@ -150,7 +158,7 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                     filterReturnsBy('status', 'Any status');
                     filterReturnsBy('reason', 'Withdrawal');
                     cy.then(() => {
-                        listShows([opened.id]);
+                        listShows([opened.id], SEEDED_CANCELLATIONS);
                     });
                     filterReturnsBy('reason', 'Defective');
                     listShows([declinedId, waitingId]);
@@ -158,7 +166,10 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                     filterReturnsBy('reason', 'Withdrawal');
                     cy.get('[data-test=return-item]').should('not.exist');
                     cy.get('[data-test=search-reset]').click();
-                    cy.get('[data-test=return-item]').should('have.length', 3);
+                    cy.get('[data-test=return-item]').should(
+                        'have.length',
+                        3 + SEEDED_CANCELLATIONS
+                    );
 
                     cy.step('the declined return says why, and is not the customer to act on');
                     cy.get(`[data-test=return-open][href$="/returns/${declinedId}"]`).click();

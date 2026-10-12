@@ -7,8 +7,10 @@
  * The same button on a user's page narrows it to that user.
  *
  * What the page shows is the ACTION, the actor's role and the outcome — `AdminAuditTab` has no
- * column for the reason. The reason lives in the row's `metadata`, so it is read off
- * `GET /audit?target=` beside the page (the page itself does not show it).
+ * column for the reason. A status-only override keeps its reason in the audit row's `metadata`,
+ * read off `GET /audit?target=` beside the page. A forced delivery writes only
+ * `admin.order.delivered {forced}` to the audit trail; its reason goes to the order's timeline
+ * (`GET /orders/{id}/timeline`).
  *
  * An override can never leave `pending` (only the offline-payment door does), so the parcel's
  * subject is the paid `order.paidExpress`: a paid order is started and shipped the ordinary way
@@ -24,7 +26,14 @@ interface AuditRowLike {
     outcome: string;
     actorRole: string;
     targetId?: string;
-    metadata?: { reason?: string; mode?: string; from?: string; to?: string };
+    metadata?: { reason?: string; mode?: string; from?: string; to?: string; forced?: boolean };
+}
+
+/** One row of an order's timeline, as far as this story reads it. */
+interface TimelineRowLike {
+    type: string;
+    text?: string;
+    data: { mode?: string; from?: string; to?: string };
 }
 
 /** A page of the shop's audit trail. */
@@ -114,7 +123,7 @@ describe('OP14 · The audit trail follows the action', () => {
                     cy.get('[data-test=ship-submit]').should('not.be.disabled').click();
                     cy.get('[data-test=shipment-tracking]').should('contain.text', 'TRK-E2E-OP14');
 
-                    cy.step('a forced delivery needs a reason, and writes an override row');
+                    cy.step('a forced delivery needs a reason, which the order timeline keeps');
                     cy.get('[data-test=force-deliver-toggle] input').check();
                     cy.get('[data-test=mark-delivered]').should('be.disabled');
                     cy.get('[data-test=force-deliver-reason] textarea').type(REASONS.deliver);
@@ -122,22 +131,30 @@ describe('OP14 · The audit trail follows the action', () => {
                     cy.get('[data-test=mark-delivered]').should('not.exist');
                     eventually(
                         () => auditRowsFor(forcedId),
-                        (rows) =>
-                            rows.filter((row) => row.action === 'order.status_overridden')
-                                .length === 1
+                        (rows) => rows.some((row) => row.action === 'admin.order.delivered')
                     ).should((rows) => {
-                        const overrides = rows.filter(
-                            (row) => row.action === 'order.status_overridden'
-                        );
-                        const movedTo = (state: string) =>
-                            overrides.find((row) => row.metadata?.to === state)?.metadata;
-                        expect(movedTo('shipped')).to.equal(undefined);
-                        expect(movedTo('delivered')?.reason).to.equal(REASONS.deliver);
-                        expect(movedTo('delivered')?.mode).to.equal('forced');
                         expect(rows.map((row) => row.action)).to.include.members([
                             'admin.order.shipped',
                             'admin.order.delivered'
                         ]);
+                        const delivered = rows.find(
+                            (row) => row.action === 'admin.order.delivered'
+                        );
+                        expect(delivered?.metadata?.forced).to.equal(true);
+                        expect(delivered?.actorRole).to.equal('admin');
+                    });
+                    cy.apiAs<TimelineRowLike[]>(
+                        'admin',
+                        'GET',
+                        `/orders/${forcedId}/timeline`
+                    ).should((rows) => {
+                        const forced = (rows ?? []).find(
+                            (row) =>
+                                row.type === 'status_overridden' &&
+                                row.data.mode === 'forced' &&
+                                row.data.to === 'delivered'
+                        );
+                        expect(forced?.text).to.equal(REASONS.deliver);
                     });
 
                     cy.step('the status-only override offers only later states and needs a reason');

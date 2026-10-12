@@ -21,7 +21,10 @@ interface ReturnLike {
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
+    /** The stored status: stays `succeeded` while money goes back in part. */
     status: string;
+    /** The derived status the shop shows, which names a partial refund. */
+    displayStatus: string;
 }
 
 describe('CU30 · Cancel what has not shipped', () => {
@@ -76,9 +79,9 @@ describe('CU30 · Cancel what has not shipped', () => {
             cy.step('the refund for those units goes back to the card, in part');
             eventually(
                 () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
-                (payment) => payment?.status === 'partially_refunded'
+                (payment) => payment?.displayStatus === 'partially_refunded'
             ).should((payment) => {
-                expect(payment?.status).to.equal('partially_refunded');
+                expect(payment?.displayStatus).to.equal('partially_refunded');
             });
         });
     });

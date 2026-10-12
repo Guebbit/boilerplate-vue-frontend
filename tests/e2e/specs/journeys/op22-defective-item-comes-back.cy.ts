@@ -18,6 +18,9 @@ const DEDUCTION_CENTS = 200;
 /** The reason support gives for declining, which the customer must be able to read. */
 const DECLINE_REASON = 'The photos show ordinary wear, not a fault.';
 
+/** Returns the seed already holds besides the two requests: one closed withdrawal cancellation. */
+const SEEDED_CANCELLATIONS = 1;
+
 /** The slice of a return this story reads. */
 interface ReturnLike {
     status: string;
@@ -49,10 +52,11 @@ const filterReturnsBy = (filter: 'status' | 'reason', label: string): void => {
 /**
  * Asserts which returns the list shows, by the address each row opens — never by position.
  *
- * @param ids - the returns expected, and only those
+ * @param ids - the returns expected by id
+ * @param others - how many more the seed holds that this story does not name
  */
-const listShows = (ids: string[]): void => {
-    cy.get('[data-test=return-open]').should('have.length', ids.length);
+const listShows = (ids: string[], others = 0): void => {
+    cy.get('[data-test=return-open]').should('have.length', ids.length + others);
     for (const id of ids) cy.get(`[data-test=return-open][href$="/returns/${id}"]`).should('exist');
 };
 
@@ -66,10 +70,12 @@ describe('OP22 · A defective item comes back', () => {
     it('support approves one and declines the other, the warehouse receives the approved one, the customer reads both', () => {
         cy.subjectId('return.requested').then((approvedId) => {
             cy.subjectId('return.requestedSecond').then((declinedId) => {
-                cy.step('support opens the queue: both requests wait, and the filters narrow it');
+                cy.step(
+                    'support opens the queue: both requests wait beside the seeded cancellation, and the filters narrow it'
+                );
                 cy.loginAs('support');
                 cy.visit('/en/returns');
-                listShows([approvedId, declinedId]);
+                listShows([approvedId, declinedId], SEEDED_CANCELLATIONS);
                 filterReturnsBy('status', 'Approved');
                 cy.get('[data-test=return-item]').should('not.exist');
                 filterReturnsBy('status', 'Requested');
@@ -175,7 +181,7 @@ describe('OP22 · A defective item comes back', () => {
                 );
                 cy.switchUser('user');
                 cy.visit('/en/returns');
-                listShows([approvedId, declinedId]);
+                listShows([approvedId, declinedId], SEEDED_CANCELLATIONS);
                 cy.get(`[data-test=return-open][href$="/returns/${declinedId}"]`).click();
                 cy.get('[data-test=return-decline-reason-text]').should(
                     'contain.text',
