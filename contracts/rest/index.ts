@@ -4742,7 +4742,7 @@ export interface WishlistExportItem {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`, `wait_confirmed`, `wait_expired`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -4769,7 +4769,11 @@ export const OrderTimelineType = {
     return_received: 'return_received',
     return_closed: 'return_closed',
     invoice_issued: 'invoice_issued',
-    credit_note_issued: 'credit_note_issued'
+    credit_note_issued: 'credit_note_issued',
+    release_date_moved: 'release_date_moved',
+    delay_notice_sent: 'delay_notice_sent',
+    wait_confirmed: 'wait_confirmed',
+    wait_expired: 'wait_expired'
 } as const;
 
 /**

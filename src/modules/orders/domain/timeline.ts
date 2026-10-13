@@ -41,7 +41,11 @@ export const TIMELINE_AUDIENCE: Readonly<Record<OrderTimelineType, TimelineAudie
     return_received: 'buyer',
     return_closed: 'buyer',
     invoice_issued: 'buyer',
-    credit_note_issued: 'buyer'
+    credit_note_issued: 'buyer',
+    release_date_moved: 'buyer',
+    delay_notice_sent: 'buyer',
+    wait_confirmed: 'buyer',
+    wait_expired: 'buyer'
 };
 
 /**
@@ -219,6 +223,39 @@ const documentNumber: DetailBuilder = (tools, data) => [
 ];
 
 /**
+ * A moved release date, as `from → to`; a date that is absent (first date, or cleared) reads as
+ * "no date".
+ *
+ * @param tools - The injected helpers.
+ * @param data - The row's `data`.
+ * @returns The one fragment.
+ */
+const dateMove: DetailBuilder = (tools, data) => {
+    const dateOf = (field: string): string => {
+        const iso = textOf(data, field);
+        return iso ? tools.date(iso) : tools.t('order-timeline.date-none');
+    };
+    return [tools.t('order-timeline.detail-move', { from: dateOf('from'), to: dateOf('to') })];
+};
+
+/**
+ * What a delay notice told the buyer: the date now expected, and whether silence cancels.
+ *
+ * @param tools - The injected helpers.
+ * @param data - The row's `data`.
+ * @returns The expected-date and answer-needed fragments.
+ */
+const delayNotice: DetailBuilder = (tools, data) => {
+    const expected = textOf(data, 'expectedAt');
+    return [
+        expected
+            ? tools.t('order-timeline.detail-expected', { value: tools.date(expected) })
+            : undefined,
+        data.needsAnswer === true ? tools.t('order-timeline.detail-needs-answer') : undefined
+    ];
+};
+
+/**
  * The detail of every type that has one. Types absent here say everything in their title.
  */
 const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
@@ -268,7 +305,9 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
     return_requested: returnReason,
     return_approved: returnReason,
     invoice_issued: documentNumber,
-    credit_note_issued: documentNumber
+    credit_note_issued: documentNumber,
+    release_date_moved: dateMove,
+    delay_notice_sent: delayNotice
 };
 
 /**

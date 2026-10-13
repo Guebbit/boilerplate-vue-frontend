@@ -12715,7 +12715,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'return_received',
                 'return_closed',
                 'invoice_issued',
-                'credit_note_issued'
+                'credit_note_issued',
+                'release_date_moved',
+                'delay_notice_sent',
+                'wait_confirmed',
+                'wait_expired'
             ]),
             actor: zod
                 .string()
@@ -13393,7 +13397,11 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'return_received',
                 'return_closed',
                 'invoice_issued',
-                'credit_note_issued'
+                'credit_note_issued',
+                'release_date_moved',
+                'delay_notice_sent',
+                'wait_confirmed',
+                'wait_expired'
             ]),
             actor: zod
                 .string()

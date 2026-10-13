@@ -112,6 +112,42 @@ describe('describeTimelineEntry', () => {
     });
 });
 
+describe('the preorder rows', () => {
+    it('shows a moved date as from and to, and a missing end as no date', () => {
+        const moved = describeTimelineEntry(
+            { type: 'release_date_moved', data: { from: '2026-11-01T00:00:00.000Z', to: null } },
+            tools
+        );
+
+        expect(moved.detail).toBe(
+            'order-timeline.detail-move(date:2026-11-01T00:00:00.000Z,order-timeline.date-none)'
+        );
+    });
+
+    it('shows the date a notice promised, and that an answer is owed', () => {
+        const notice = describeTimelineEntry(
+            {
+                type: 'delay_notice_sent',
+                data: { expectedAt: '2026-12-01T00:00:00.000Z', needsAnswer: true }
+            },
+            tools
+        );
+
+        expect(notice.detail).toBe(
+            'order-timeline.detail-expected(date:2026-12-01T00:00:00.000Z) · order-timeline.detail-needs-answer'
+        );
+    });
+
+    it('gives the two answers a title and no detail', () => {
+        expect(
+            describeTimelineEntry({ type: 'wait_confirmed', data: {} }, tools).detail
+        ).toBeUndefined();
+        expect(
+            describeTimelineEntry({ type: 'wait_expired', data: {} }, tools).detail
+        ).toBeUndefined();
+    });
+});
+
 describe('isStaffOnly', () => {
     it('flags exactly the four types the buyer never sees', () => {
         const staffOnly = Object.values(OrderTimelineType).filter((type) => isStaffOnly(type));
