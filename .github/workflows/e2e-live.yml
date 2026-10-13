@@ -108,8 +108,8 @@ env:
     NODE_PSEUDONYM_KEY: c8e0d50d06a8d4990987b30b0ff4b4416d6655ed483352063abe5f43706c28de
     # Webhook deliveries go to the tester service through its TLS proxy (a webhook URL must be
     # https); the literal IP is deliberate, as the SSRF guard's DNS lookup skips /etc/hosts. The
-    # backend trusts the proxy's certificate through the NODE_EXTRA_CA_CERTS its `e2e:serve`
-    # script sets.
+    # backend trusts the proxy's certificate itself: its dev preload adds the test CA
+    # while this variable is set.
     NODE_WEBHOOK_DEMO_SINK_URL: https://127.0.0.1:3070
     # src/kernel/required-config.ts refuses to boot without these — throwaway
     # values, same reasoning as scenarios/run-server.ts's own REQUIRED_DEFAULTS:
@@ -359,8 +359,8 @@ jobs:
                   until docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; do sleep 2; done
 
             # The TLS door in front of `webhook-tester`: Caddy serving the backend's committed demo
-            # certificate (its `scenarios/support/tls/`, a test CA the backend trusts through
-            # `NODE_EXTRA_CA_CERTS`) on 3070 and forwarding to the tester on 3071. A step rather than
+            # certificate (its `scenarios/support/tls/`, a test CA the backend's dev preload
+            # trusts) on 3070 and forwarding to the tester on 3071. A step rather than
             # a service container: services start before checkout, and this mounts files from the
             # backend checkout. Host networking, so the upstream is the host's own 3071; the two
             # variables are the Caddyfile's own knobs.

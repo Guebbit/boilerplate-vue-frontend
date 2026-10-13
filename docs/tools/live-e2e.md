@@ -113,8 +113,8 @@ docker run -d --name e2e-webhooks -p 3071:8080 \
   -e AUTO_CREATE_SESSIONS=true -e STORAGE_DRIVER=memory \
   ghcr.io/tarampampam/webhook-tester:2.3.0
 
-# The TLS door: Caddy serving the backend's committed demo leaf (a test CA the backend trusts through
-# NODE_EXTRA_CA_CERTS, which its `e2e:serve` script sets) on 3070, forwarding to the tester. Run it
+# The TLS door: Caddy serving the backend's committed demo leaf (a test CA the backend's dev preload
+# trusts while NODE_WEBHOOK_DEMO_SINK_URL is set) on 3070, forwarding to the tester. Run it
 # from the frontend repo, with the backend checked out at $BACKEND (its Caddyfile and certificates).
 docker run -d --name e2e-webhooks-tls --network host \
   -e WEBHOOK_TLS_PORT=3070 -e WEBHOOK_UPSTREAM=127.0.0.1:3071 \

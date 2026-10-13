@@ -27,8 +27,8 @@ interface TesterRequest {
 /**
  * GET one tester API address over TLS, trusting only the demo test CA.
  *
- * `node:https` rather than `fetch`: Cypress's Node process cannot be given an extra CA at start
- * (`NODE_EXTRA_CA_CERTS` is read at process start), and `fetch` takes no per-call `ca`.
+ * `node:https` rather than `fetch`: Cypress's Node process has no trusted extra CA, and `fetch`
+ * takes no per-call `ca`.
  * https://nodejs.org/api/https.html#httpsgeturl-options-callback
  *
  * @param url - the API address
