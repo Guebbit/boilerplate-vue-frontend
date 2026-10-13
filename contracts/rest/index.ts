@@ -2070,9 +2070,15 @@ export interface CreateFeedbackRequest {
      */
     name?: string;
     email: Email;
-    /** @maxLength 200 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     subject: string;
-    /** @maxLength 5000 */
+    /**
+     * @minLength 1
+     * @maxLength 5000
+     */
     message: string;
     /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
@@ -2284,7 +2290,10 @@ export interface ProductsResponseEnvelope {
 }
 
 export interface ProductTranslationFieldsWrite {
-    /** @maxLength 200 */
+    /**
+     * @minLength 5
+     * @maxLength 200
+     */
     title: string;
     /**
      * @minLength 1
@@ -2492,6 +2501,7 @@ export interface ReplaceProductRequestMultipart {
 export interface ProductTranslationFieldsPatch {
     /**
      * A title is never cleared — an empty locale is deleted with the locale's own `null`.
+     * @minLength 5
      * @maxLength 200
      */
     title?: string;

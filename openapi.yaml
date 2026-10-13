@@ -12245,9 +12245,11 @@ components:
           $ref: "#/components/schemas/Email"
         subject:
           type: string
+          minLength: 1
           maxLength: 200
         message:
           type: string
+          minLength: 1
           maxLength: 5000
         website:
           type: string
@@ -12566,6 +12568,7 @@ components:
       properties:
         title:
           type: string
+          minLength: 5
           maxLength: 200
         description:
           type: string
@@ -12935,6 +12938,7 @@ components:
       properties:
         title:
           type: string
+          minLength: 5
           maxLength: 200
           description: A title is never cleared — an empty locale is deleted with the locale's own `null`.
         description:
