@@ -8,7 +8,7 @@ notice that the docs promise a rule the contract never encodes.
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
 approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
 
-`tests/audit/` holds four prompts that live in exactly that gap. They are plain markdown, run by
+`scripts/audit/` holds four prompts that live in exactly that gap. They are plain markdown, run by
 hand against an LLM, and they write reports — never code.
 
 ## The one rule
@@ -42,27 +42,27 @@ Two consequences, both non-negotiable:
 
 ## The four prompts
 
-| File                                  | Asks                                                                                                                                                          | Writes to                             |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `tests/audit/spec-drift.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                 | `reports/audit/spec-drift/`           |
-| `tests/audit/spec-gaps.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                          | `reports/audit/spec-gaps/`            |
-| `tests/audit/suite-bloat.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
-| `tests/audit/accessibility-manual.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
+| File                                          | Asks                                                                                                                                                          | Writes to                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                 | `reports/audit/spec-drift/`           |
+| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                          | `reports/audit/spec-gaps/`            |
+| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
+| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
 
 The first three take one argument — a module (`orders`), a path, or `--diff` for whatever the
-working tree touched. `accessibility-manual.md` takes the same shape but defaults an empty scope to
+working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
 the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
 still a gap.
 
 ### Each repo keeps the prompts its own stack needs
 
-The two repos do **not** hold one set, and no longer try to. `accessibility-manual.md` audits UI/UX
+The two repos do **not** hold one set, and no longer try to. `accessibility-manual` audits UI/UX
 judgement calls with no backend equivalent; the backend's own
-`boilerplate-node-backend/tests/audit/reachability.md` and
-`boilerplate-node-backend/tests/audit/rate-limit-keys.md` reason about a mounted Express request
+`boilerplate-node-backend/scripts/audit/reachability/SKILL.md` and
+`boilerplate-node-backend/scripts/audit/rate-limit-keys/SKILL.md` reason about a mounted Express request
 path and have no counterpart here.
 
-Only `spec-drift.md`, `spec-gaps.md` and `suite-bloat.md` exist on both sides, because what they
+Only `spec-drift`, `spec-gaps` and `suite-bloat` exist on both sides, because what they
 ask — does the test agree with the spec, is anything uncovered, is anything redundant — is about
 specs and suites rather than about a runtime.
 
@@ -73,12 +73,12 @@ an audit prompt as a spec for its sibling is the mistake to avoid — it is a pr
 the other repo has its own history.
 
 **There is deliberately no compliance prompt here.** The registry
-(`boilerplate-node-backend/tests/audit/compliance-rules.yaml`) and both prompts that read it live
-in the backend, once — `boilerplate-node-backend/tests/audit/compliance-backend.md` audits that
-repo, and `boilerplate-node-backend/tests/audit/compliance-frontend.md` runs from there against
+(`boilerplate-node-backend/scripts/audit/compliance-rules.yaml`) and both prompts that read it live
+in the backend, once — `boilerplate-node-backend/scripts/audit/compliance-backend/SKILL.md` audits that
+repo, and `boilerplate-node-backend/scripts/audit/compliance-frontend/SKILL.md` runs from there against
 **this** checkout. So a rule spanning both repos, like the mandatory signup-consent checkbox, has
 exactly one home and no second copy to drift from. To audit this repo's compliance half, run
-`/audit:compliance-frontend` from the backend.
+`/audit-compliance-frontend` from the backend.
 
 This page is per-repo in the same way. It names this repo's own tools, its own `docs/` count and
 its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
@@ -105,7 +105,7 @@ reader — the prompts are the durable asset here, not their output.
 
 ## The two-pass method
 
-`spec-drift.md` is the one worth understanding, because its **ordering is the method**. Spec drift is
+`spec-drift` is the one worth understanding, because its **ordering is the method**. Spec drift is
 a test and an implementation sharing one wrong reading of the spec — CI is green, and the test proves
 only that the test agrees with the code.
 
@@ -143,29 +143,23 @@ rewrite the control to match what you just learned.
 
 ## How to run one
 
-The prompts are written in Claude Code's slash-command format, so the cheapest way to use them is to
-let it find them:
+Each prompt is an [Agent Skill](https://agentskills.io): a folder holding a `SKILL.md` an AI reads
+and follows, plus any `scripts/` it runs. The format is open, so the prompts are not tied to one
+tool:
 
-```bash
-mkdir -p .claude/commands
-ln -s ../../tests/audit .claude/commands/audit
-```
+| Layer                          | What it holds                                                 |
+| ------------------------------ | ------------------------------------------------------------- |
+| `scripts/audit/<name>/`        | the prompt and its scripts — the only copy                    |
+| `.claude/skills/audit-<name>/` | a three-line pointer that registers it as a Claude Code skill |
 
-That gives `/audit:spec-drift orders`, `/audit:spec-gaps inventory`, `/audit:suite-bloat --diff`,
-`/audit:accessibility-manual`.
-The symlink is local, gitignored and regenerable — the files under `tests/audit/` remain the only
-copy.
+- **Claude Code** — `/audit-spec-drift orders`, `/audit-accessibility-manual`, and so on. The
+  pointer passes the argument through as the scope.
+- **Any other AI tool** — _"Read `scripts/audit/spec-drift/SKILL.md` and follow it, scope
+  `orders`."_ It needs to be able to read the repo; an audit that cannot open `openapi.yaml` has
+  nothing to compare against.
 
-Without the symlink, either works:
-
-- **Claude Code** — _"Follow `tests/audit/spec-drift.md`, scope `orders`."_
-- **Any other LLM** — strip the YAML frontmatter, replace `$1` with the scope, paste the body. It
-  needs to be able to read the repo; an audit that cannot open `openapi.yaml` has nothing to
-  compare against.
-
-The frontmatter is not decoration. `allowed-tools` is the read-only boundary — `Read`, `Glob`,
-`Grep`, `Write` and a few `Bash` verbs, with no `Edit`. These commands report; they never touch
-source.
+The pointer's `allowed-tools` is Claude Code's permission list: `Read`, `Glob`, `Grep`, `Write` and
+a few `Bash` verbs, with no `Edit`. These prompts report; they never touch source.
 
 ::: tip Which model
 Claude for `spec-drift` and `spec-gaps` — long-context reasoning over prose vs. code is exactly
