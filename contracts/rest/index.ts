@@ -2070,9 +2070,15 @@ export interface CreateFeedbackRequest {
      */
     name?: string;
     email: Email;
-    /** @maxLength 200 */
+    /**
+     * @minLength 1
+     * @maxLength 200
+     */
     subject: string;
-    /** @maxLength 5000 */
+    /**
+     * @minLength 1
+     * @maxLength 5000
+     */
     message: string;
     /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
@@ -2284,7 +2290,10 @@ export interface ProductsResponseEnvelope {
 }
 
 export interface ProductTranslationFieldsWrite {
-    /** @maxLength 200 */
+    /**
+     * @minLength 5
+     * @maxLength 200
+     */
     title: string;
     /**
      * @minLength 1
@@ -2492,6 +2501,7 @@ export interface ReplaceProductRequestMultipart {
 export interface ProductTranslationFieldsPatch {
     /**
      * A title is never cleared — an empty locale is deleted with the locale's own `null`.
+     * @minLength 5
      * @maxLength 200
      */
     title?: string;
@@ -9659,7 +9669,7 @@ export const syncPayment = (
 };
 
 /**
- * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
+ * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. A provider retrying for days settles once: the delivery is a pointer, the provider is re-read, and every write of the settlement is conditional.
  * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */

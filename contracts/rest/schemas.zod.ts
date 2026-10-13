@@ -3552,8 +3552,8 @@ export const createFeedbackRequestBodyWebsiteMax = 200;
 export const CreateFeedbackRequestBody = zod.strictObject({
     name: zod.string().min(1).max(createFeedbackRequestBodyNameMax).optional(),
     email: zod.email().max(createFeedbackRequestBodyEmailMax),
-    subject: zod.string().max(createFeedbackRequestBodySubjectMax),
-    message: zod.string().max(createFeedbackRequestBodyMessageMax),
+    subject: zod.string().min(1).max(createFeedbackRequestBodySubjectMax),
+    message: zod.string().min(1).max(createFeedbackRequestBodyMessageMax),
     website: zod.string().max(createFeedbackRequestBodyWebsiteMax).optional()
 });
 export const createFeedbackRequestResponseDataIdMax = 64;
@@ -3973,6 +3973,7 @@ export const ListProductsResponse = zod.strictObject({
  * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows.
  * @summary Create product
  */
+export const createProductBodyTranslationsOneTitleMin = 5;
 export const createProductBodyTranslationsOneTitleMax = 200;
 export const createProductBodyTranslationsOneDescriptionMax = 10000;
 export const createProductBodyPriceMin = 0;
@@ -3991,7 +3992,10 @@ export const CreateProductBody = zod.strictObject({
         zod.string(),
         zod.union([
             zod.strictObject({
-                title: zod.string().max(createProductBodyTranslationsOneTitleMax),
+                title: zod
+                    .string()
+                    .min(createProductBodyTranslationsOneTitleMin)
+                    .max(createProductBodyTranslationsOneTitleMax),
                 description: zod
                     .string()
                     .min(1)
@@ -4197,6 +4201,7 @@ export const replaceProductByIdHeaderIfMatchMax = 200;
 export const ReplaceProductByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(replaceProductByIdHeaderIfMatchMax).optional()
 });
+export const replaceProductByIdBodyTranslationsOneTitleMin = 5;
 export const replaceProductByIdBodyTranslationsOneTitleMax = 200;
 export const replaceProductByIdBodyTranslationsOneDescriptionMax = 10000;
 export const replaceProductByIdBodyPriceMin = 0;
@@ -4209,7 +4214,10 @@ export const ReplaceProductByIdBody = zod.strictObject({
         zod.string(),
         zod.union([
             zod.strictObject({
-                title: zod.string().max(replaceProductByIdBodyTranslationsOneTitleMax),
+                title: zod
+                    .string()
+                    .min(replaceProductByIdBodyTranslationsOneTitleMin)
+                    .max(replaceProductByIdBodyTranslationsOneTitleMax),
                 description: zod
                     .string()
                     .min(1)
@@ -4315,6 +4323,7 @@ export const updateProductByIdHeaderIfMatchMax = 200;
 export const UpdateProductByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(updateProductByIdHeaderIfMatchMax).optional()
 });
+export const updateProductByIdBodyTranslationsOneTitleMin = 5;
 export const updateProductByIdBodyTranslationsOneTitleMax = 200;
 export const updateProductByIdBodyTranslationsOneDescriptionMax = 10000;
 export const updateProductByIdBodyPriceMin = 0;
@@ -4330,6 +4339,7 @@ export const UpdateProductByIdBody = zod.strictObject({
                 zod.strictObject({
                     title: zod
                         .string()
+                        .min(updateProductByIdBodyTranslationsOneTitleMin)
                         .max(updateProductByIdBodyTranslationsOneTitleMax)
                         .optional(),
                     description: zod
@@ -9074,7 +9084,7 @@ export const SyncPaymentResponse = zod.strictObject({
     })
 });
 /**
- * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. Deliveries are deduplicated by event id, so a provider retrying for days settles once.
+ * Where the provider says a payment changed — a thin event naming the intent. The server then asks the provider for the payment's state and settles that answer, so the authority is the provider's own, never the browser's and never this body's. **Not session-authenticated**: the caller is a machine with no account, and it authenticates by signing the raw body instead, which is stronger than any cookie this API could ask it for. A provider retrying for days settles once: the delivery is a pointer, the provider is re-read, and every write of the settlement is conditional.
  * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */
