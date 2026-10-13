@@ -35,6 +35,7 @@ interface ExportData {
     exportedAt: string;
     profile: { id: string; email: string };
     addresses: unknown[];
+    signInMethods: { providers: unknown[]; twoFactor: unknown[] };
     orders: { id: string; userId: string; email: string }[];
 }
 
@@ -102,6 +103,14 @@ describe('AC6 · Give me my data', () => {
                 cy.subjectId('order.paid').then((paid) => {
                     expect(data.orders.map(({ id }) => id)).to.include(paid);
                 });
+
+                cy.step(
+                    'it names the ways in the account holds, as facts: linked providers, armed factors'
+                );
+                expect(data.signInMethods, 'the sign-in methods').to.have.all.keys(
+                    'providers',
+                    'twoFactor'
+                );
 
                 cy.step('it carries no password, token or secret, under any key');
                 expect(keysOf(data).filter((key) => SECRET_KEY.test(key))).to.deep.equal([]);

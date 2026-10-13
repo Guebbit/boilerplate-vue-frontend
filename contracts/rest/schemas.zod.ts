@@ -12407,6 +12407,21 @@ export const DownloadAccountExportResponse = zod.strictObject({
             default: zod.boolean()
         })
     ),
+    signInMethods: zod.strictObject({
+        providers: zod.array(
+            zod.strictObject({
+                provider: zod.string(),
+                providerId: zod.string(),
+                connectedAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        twoFactor: zod.array(
+            zod.strictObject({
+                method: zod.string(),
+                enrolledAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    }),
     feedback: zod
         .array(
             zod.strictObject({
