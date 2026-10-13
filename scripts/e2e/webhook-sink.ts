@@ -8,7 +8,7 @@
  * the listener behind the URL, so a spec can read what arrived and check its signature.
  *
  * It speaks TLS, like every webhook URL must: it serves the test leaf from `./webhook-tls.ts`,
- * which the demo backend trusts through `NODE_EXTRA_CA_CERTS`.
+ * which the demo backend's dev preload trusts.
  *
  * Why not a real `webhook-tester`: the live profile has one (`e2e-live.yml`), but the demo profile
  * runs with no Docker. One listener per Cypress process, on a port its backend was told about.

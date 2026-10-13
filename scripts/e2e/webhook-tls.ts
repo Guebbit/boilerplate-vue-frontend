@@ -2,8 +2,7 @@
  * The demo webhook sink's TLS material: a test CA, and a leaf for `127.0.0.1` signed by it.
  *
  * Every webhook URL is `https://`, so a receiver on loopback needs a certificate the backend
- * trusts. The backend trusts the CA through `NODE_EXTRA_CA_CERTS` (its `demo` and `e2e:serve`
- * scripts set it); the sink here serves the leaf; the live profile's `webhook-tester` is reached
+ * trusts. The backend trusts the CA through its dev preload (while the sink URL is set); the sink here serves the leaf; the live profile's `webhook-tester` is reached
  * through a proxy that serves the same leaf.
  *
  * The three files are the backend's, copied by its `sync:frontend` and compared by
