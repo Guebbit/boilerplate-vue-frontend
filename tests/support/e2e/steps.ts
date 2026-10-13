@@ -361,3 +361,37 @@ export const solveHumanCheck = (): void => {
     cy.get('[data-test=human-check-altcha] input[type=checkbox]').check({ force: true });
     cy.get('[data-test=human-check-altcha] [data-state=verified]').should('exist');
 };
+
+/**
+ * A `datetime-local` value `days` from now, the format the product form's release-date field takes.
+ *
+ * @param days - how far ahead; the shop sells a preorder up to one year out
+ */
+export const releaseDateIn = (days: number): string =>
+    new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 16);
+
+/**
+ * The editor makes a product through the create form, with a release date when one is given, and
+ * lands on its page. The caller is signed in as someone who may create products.
+ *
+ * @param title - the English title
+ * @param releaseDate - a {@link releaseDateIn} value; absent for a product on sale now
+ * @returns a chain yielding the new product's id
+ */
+export const createProductThroughTheForm = (
+    title: string,
+    releaseDate?: string
+): Cypress.Chainable<string> => {
+    cy.visit('/en/products/create');
+    cy.get('#translation-panel-en [data-test=translation-title-field] input').type(title);
+    cy.get('[data-test=product-price-field] input').clear();
+    cy.get('[data-test=product-price-field] input').type('19.90');
+    if (releaseDate) cy.get('[data-test=product-release-date-field] input').type(releaseDate);
+    // A product image: the same fixture the uploads specs use.
+    cy.get('input[type=file]').selectFile('tests/e2e/fixtures/sample-image.png', { force: true });
+    cy.get('form').first().submit();
+    cy.url().should('include', '/products/').and('not.include', '/create');
+    return cy
+        .location('pathname')
+        .then((path) => (path.split('/products/')[1] ?? '').replace(/\/$/, ''));
+};
