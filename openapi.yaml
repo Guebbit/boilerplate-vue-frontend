@@ -12566,6 +12566,7 @@ components:
       properties:
         title:
           type: string
+          minLength: 5
           maxLength: 200
         description:
           type: string
@@ -12935,6 +12936,7 @@ components:
       properties:
         title:
           type: string
+          minLength: 5
           maxLength: 200
           description: A title is never cleared — an empty locale is deleted with the locale's own `null`.
         description:

@@ -2284,7 +2284,10 @@ export interface ProductsResponseEnvelope {
 }
 
 export interface ProductTranslationFieldsWrite {
-    /** @maxLength 200 */
+    /**
+     * @minLength 5
+     * @maxLength 200
+     */
     title: string;
     /**
      * @minLength 1
@@ -2492,6 +2495,7 @@ export interface ReplaceProductRequestMultipart {
 export interface ProductTranslationFieldsPatch {
     /**
      * A title is never cleared — an empty locale is deleted with the locale's own `null`.
+     * @minLength 5
      * @maxLength 200
      */
     title?: string;
