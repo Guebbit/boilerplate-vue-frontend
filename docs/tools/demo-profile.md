@@ -32,6 +32,8 @@ What each concern maps to now:
 
 `npm run test:e2e` builds the bundle once, then boots **one demo backend per shard** (ports `3101+`) so the four Cypress processes cannot see each other's writes — the isolation MSW's in-page state used to provide, now with the real application behind it. Each shard's Cypress carries `CYPRESS_apiUrl`, and the overwritten `cy.visit` injects it into the page as the `__E2E_API_URL` runtime override the axios client reads before falling back to the baked `VITE_API_URL` (`src/infrastructure/http/client.ts`).
 
+`E2E_SESSION_MODE=cookie npm run test:e2e` boots every shard's backend with `NODE_SESSION_MODE=cookie` (the default is `jwt`) and tells the journeys the same, so the whole suite also runs against the cookie session; CI runs both.
+
 `cy.restore()` POSTs the shard's own `/__test/restore` before every spec — a replay of a copy the backend process built at boot, so it costs milliseconds — and then re-reads `GET /__test/scenario`, which is where `cy.subjectId('order.paid')` and `seedAccount('admin')` get their answers. `cy.emailTo(address)` reads the outbox — or, against the live profile, Mailpit (see [Live E2E](./live-e2e.md)). Specs that need the full stack open with `cy.skipUnlessLive()`; specs that read mail open with `cy.skipUnlessMailbox()`, which skips only a live run with no Mailpit to read; `cy.skipUnlessDemo()` is left for what only the demo has, like the fake OAuth provider.
 
 ### What a journey can do beyond restoring

@@ -99,6 +99,7 @@ beforeEach(() => {
             cart: [],
             wishlist: [],
             sessions: [],
+            signInMethods: { providers: [], twoFactor: [] },
             auditLog: [],
             apiKeys: [],
             invoicing: { invoices: [], creditNotes: [] }

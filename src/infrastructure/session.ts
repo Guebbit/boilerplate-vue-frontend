@@ -1,9 +1,13 @@
 /**
  * @module
- * Pinia store for the token/viewer pair that gates the app: an in-memory access token plus a
- * minimal projection of who holds it, and the two CASL abilities every screen is gated on.
- * `isAuth` derives from token AND viewer together, never either alone, so a
+ * Pinia store for the session/viewer pair that gates the app: what proves a session (an in-memory
+ * access token in `jwt` mode, a flag over the HttpOnly cookie in `cookie` mode) plus a minimal
+ * projection of who holds it, and the two CASL abilities every screen is gated on.
+ * `isAuth` derives from session AND viewer together, never either alone, so a
  * restored-but-not-yet-identified session cannot be read as authenticated.
+ *
+ * Which of the two modes the deployment runs is read once from `GET /account/session-config`;
+ * see `docs/tools/security.md`.
  */
 
 import { ref, shallowRef, computed, onScopeDispose } from 'vue';
@@ -12,6 +16,7 @@ import { getCookie } from '@guebbit/js-toolkit';
 import {
     getAccount as apiGetAccount,
     getMyAbilities as apiGetMyAbilities,
+    getSessionConfig as apiGetSessionConfig,
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
@@ -34,6 +39,7 @@ import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/abi
 import { unpackRules, type PackRule } from '@casl/ability/extra';
 import type {
     Abilities,
+    SessionConfigMode,
     EmailVerificationRequested,
     PackedRules,
     ReauthMethod,
@@ -229,11 +235,29 @@ export const useSessionStore = defineStore('session', () => {
     const viewer = ref<SessionViewer>();
 
     /**
-     * Both derive from token AND viewer, not either alone: a token with no viewer is a session
-     * that has been restored but not yet identified, and treating it as authenticated lets a
-     * guard admit someone whose role is still unknown.
+     * How this deployment keeps people signed in, once {@link loadSessionMode} has answered.
+     * `undefined` until then, read as `jwt` (the default) by everything that branches on it.
      */
-    const isAuth = computed(() => Boolean(accessToken.value && viewer.value));
+    const mode = ref<SessionConfigMode>();
+
+    /**
+     * Whether a `cookie`-mode session is believed to be open. The credential is an HttpOnly cookie
+     * no script can read, so this flag is the client's own record that one was granted — set at
+     * login, cleared with the session. Never set in `jwt` mode, where the token is the record.
+     */
+    const cookieSession = ref(false);
+
+    /**
+     * Whether a session is held, in whichever mode the deployment runs.
+     */
+    const hasSession = computed(() => Boolean(accessToken.value) || cookieSession.value);
+
+    /**
+     * Derives from session AND viewer, not either alone: a session with no viewer is one that has
+     * been restored but not yet identified, and treating it as authenticated lets a guard admit
+     * someone whose role is still unknown.
+     */
+    const isAuth = computed(() => hasSession.value && Boolean(viewer.value));
 
     /**
      * Bumped by {@link clearSession}. A refresh started before a clear must not act on its result
@@ -347,7 +371,7 @@ export const useSessionStore = defineStore('session', () => {
         }
 
         return (
-            Boolean(accessToken.value && viewer.value) &&
+            isAuth.value &&
             (tenantAbility.value.can(action, subject) || platformAbility.value.can(action, subject))
         );
     };
@@ -407,6 +431,60 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
+     * Records that a `cookie`-mode session was granted, and flags the `isAuth` hint cookie.
+     *
+     * The counterpart of {@link setAccessToken} for a deployment whose credential never reaches
+     * script: nothing to store but the fact. The hint cookie is what lets the restore guard ask
+     * `GET /account` after a reload, instead of guessing.
+     *
+     * @param remember - As for {@link setAccessToken}: the login's "remember me" choice, omitted
+     *  where the caller does not know it (a re-proof), which keeps whatever marker login left.
+     */
+    const startCookieSession = (remember?: boolean) => {
+        cookieSession.value = true;
+        if (remember === true) writeCookie('rememberMe', 'true', REMEMBER_ME_MAX_AGE_SECONDS);
+        else if (remember === false) clearCookie('rememberMe');
+        const remembered = remember ?? Boolean(getCookie('rememberMe'));
+        writeCookie('isAuth', 'true', remembered ? REMEMBER_ME_MAX_AGE_SECONDS : undefined);
+    };
+
+    /**
+     * Adopts the session a login-shaped response (login, 2FA, re-proof, password change) opened,
+     * in whichever mode the deployment runs: the access token in `jwt` mode, the granted cookie in
+     * `cookie` mode. The one door every such response goes through, so no caller asks which mode.
+     *
+     * @param response - The raw API response.
+     * @param remember - The login's "remember me" choice; omitted on a re-proof.
+     */
+    const adoptSession = (response: unknown, remember?: boolean) => {
+        if (mode.value === 'cookie') startCookieSession(remember);
+        else setAccessToken(getTokenFromResponse(response), remember);
+    };
+
+    /**
+     * In flight or settled: the one `GET /account/session-config` this tab makes.
+     */
+    let modeRequest: Promise<void> | undefined;
+
+    /**
+     * Reads how this deployment keeps people signed in, once per tab (public, so it needs no
+     * session). A failed read is dropped and retried on the next call; until it lands the store
+     * behaves as `jwt`, the default, so an unreachable backend never invents a cookie session.
+     *
+     * @returns A promise that always resolves, once {@link mode} is known or the read failed.
+     */
+    const loadSessionMode = (): Promise<void> => {
+        modeRequest ??= apiGetSessionConfig()
+            .then((answer) => {
+                mode.value = getPayloadFromResponse<{ mode: SessionConfigMode }>(answer)?.mode;
+            })
+            .catch(() => {
+                modeRequest = undefined;
+            });
+        return modeRequest;
+    };
+
+    /**
      * Records who the token belongs to, and asks the server what they may do.
      *
      * The two travel together on purpose: a viewer without rules is a shell that hides every
@@ -448,7 +526,8 @@ export const useSessionStore = defineStore('session', () => {
     let refreshInFlight: Promise<string | undefined> | undefined;
 
     /**
-     * Renews the in-memory access token using the httpOnly refresh cookie. Single-flight: a
+     * Renews the in-memory access token using the httpOnly refresh cookie (`jwt` mode only; in
+     * `cookie` mode it answers `undefined` without a request). Single-flight: a
      * caller arriving while a refresh is already running gets that SAME promise. Also the one
      * place a definitively dead refresh cookie (401/403) ends the session — a network error or a
      * 5xx stays non-fatal, since neither says the cookie itself is bad.
@@ -461,6 +540,8 @@ export const useSessionStore = defineStore('session', () => {
      *  answered with none, or landed after a {@link clearSession} that makes it moot.
      */
     const refreshToken = (): Promise<string | undefined> => {
+        // `POST /account/refresh` is a 404 in `cookie` mode: there is no token to renew.
+        if (mode.value === 'cookie') return Promise.resolve(undefined);
         if (!refreshInFlight) {
             // Captured before the request goes out, not read again after: this attempt answers
             // for the session as it was when it started, not as it is when the response lands.
@@ -483,6 +564,20 @@ export const useSessionStore = defineStore('session', () => {
                 });
         }
         return refreshInFlight;
+    };
+
+    /**
+     * Turns the session cookies the server already set (signup, an OAuth redirect, a reload) into
+     * a session this tab holds: a refresh in `jwt` mode, nothing to ask in `cookie` mode, where the
+     * cookie is the credential and the next request proves it. A dead cookie shows up as a 401
+     * on that request, which ends the session there.
+     *
+     * @returns A promise resolving once the tab holds a session, or the attempt failed quietly.
+     */
+    const restoreFromCookies = (): Promise<void> => {
+        if (mode.value !== 'cookie') return refreshToken().then(() => undefined);
+        startCookieSession();
+        return Promise.resolve();
     };
 
     /**
@@ -553,6 +648,7 @@ export const useSessionStore = defineStore('session', () => {
      */
     const clearSessionLocally = () => {
         accessToken.value = undefined;
+        cookieSession.value = false;
         viewer.value = undefined;
         // Back to the empty abilities: a stranger's rules arrive with the next viewer, and until
         // they do the least-privileged answer is the right one.
@@ -613,7 +709,7 @@ export const useSessionStore = defineStore('session', () => {
     const reauthing = ref(false);
 
     /**
-     * Proves who the visitor is again and adopts the rotated access token — the step-up prompt's
+     * Proves who the visitor is again and adopts the re-minted session — the step-up prompt's
      * one write. Lives here, not in `account`, because the shell renders the prompt on every page
      * and a session is what it renews.
      *
@@ -625,7 +721,7 @@ export const useSessionStore = defineStore('session', () => {
         reauthing.value = true;
         return apiReauth(proof)
             .then((data) => {
-                setAccessToken(getTokenFromResponse(data));
+                adoptSession(data);
             })
             .finally(() => {
                 reauthing.value = false;
@@ -704,12 +800,18 @@ export const useSessionStore = defineStore('session', () => {
         can,
         canOnOthers,
         accessToken,
+        mode,
+        hasSession,
         viewer,
         isAuth,
         expiredSignal,
         setAccessToken,
+        startCookieSession,
+        adoptSession,
+        loadSessionMode,
         setViewer,
         refreshToken,
+        restoreFromCookies,
         loadViewer,
         persistLocalePreference,
         reauthing,
@@ -718,6 +820,7 @@ export const useSessionStore = defineStore('session', () => {
         sendReauthCode,
         requestEmailVerification,
         clearSession,
+        signalExpired,
         logout,
         logoutAll
     };

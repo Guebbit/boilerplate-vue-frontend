@@ -348,6 +348,10 @@ export default defineConfig({
             // which is more predictable here than relying on loadEnv to have picked up a
             // process-level override.
             liveProfile: false,
+            // How the backend keeps people signed in (`NODE_SESSION_MODE`): `jwt`, the default, or
+            // `cookie`. The demo shards boot their backends with the same value
+            // (`scripts/e2e/run-shards.ts`); a live run exports both names itself.
+            sessionMode: process.env.E2E_SESSION_MODE === 'cookie' ? 'cookie' : 'jwt',
             // Only used by the live profile: `cy.restore()` shells out to this checkout, through
             // `LIVE_RESET_COMMAND` below, to restore the seed scenario between tests. `BACKEND_PATH`
             // env override, or a sibling-checkout default, always resolved to an absolute path — see

@@ -203,6 +203,9 @@ const DEMO_PORT_BASE = 3101;
  */
 const backendEnvironmentFor = (index: number, antibot: boolean): Record<string, string> => ({
     NODE_WEBHOOK_DEMO_SINK_URL: sinkUrlForPort(SHARD_SINK_PORT_BASE + index),
+    // The specs read the same name (`cypress.config.ts`'s `sessionMode`), so backend and journeys
+    // always agree on how people stay signed in. Unset runs the backend's default, `jwt`.
+    ...(process.env.E2E_SESSION_MODE ? { NODE_SESSION_MODE: process.env.E2E_SESSION_MODE } : {}),
     ...(antibot ? ANTIBOT_BACKEND_ENV : {})
 });
 

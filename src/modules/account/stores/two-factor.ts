@@ -22,11 +22,7 @@ import {
     loginTwoFactor as apiLoginTwoFactor,
     RememberTier
 } from '@api';
-import {
-    getPayloadFromResponse,
-    getRetryAfter,
-    getTokenFromResponse
-} from '@/infrastructure/http/envelope.ts';
+import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
 import { useProfileStore } from './profile.ts';
@@ -408,7 +404,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                 // backend sizes the session cookie from THIS request. Absent for OAuth logins.
                 remember: remember ? RememberTier.medium : undefined
             }).then((data) => {
-                useSessionStore().setAccessToken(getTokenFromResponse(data), remember);
+                useSessionStore().adoptSession(data, remember);
                 return useProfileStore()
                     .fetchProfile(true)
                     .then(() => {

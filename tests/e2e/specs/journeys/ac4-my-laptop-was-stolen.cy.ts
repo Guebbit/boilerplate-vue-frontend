@@ -3,7 +3,7 @@
  * @module
  * AC4 · My laptop was stolen. "Log out everywhere" from one device ends the others: the
  * other device's refresh is refused, and the stolen tab's access token is cut at once (the
- * session epoch), so its next request is 401, its refresh is refused and it lands on login.
+ * session epoch), so its next request is 401, its refresh (`jwt` mode) is refused and it lands on login.
  * Revoking the current session logs this tab out cleanly.
  *
  * Two devices, because a second browser is not available: the page is one, and `loginDevice` is
@@ -54,10 +54,14 @@ describe('AC4 · My laptop was stolen', () => {
                 .its('status')
                 .should('equal', 200);
 
-            cy.step('the tab’s access token is already dead: its next click is refused');
+            cy.step('the tab’s session is already dead: its next click is refused');
             cy.intercept('POST', '**/account/refresh').as('refresh');
             cy.navigateViaMenu('account', '/en/orders');
-            cy.wait('@refresh').its('response.statusCode').should('equal', 401);
+            // Only `jwt` mode tries to renew first; a `cookie` session has nothing to renew.
+            cy.env(['sessionMode']).then(({ sessionMode }) => {
+                if (sessionMode === 'jwt')
+                    cy.wait('@refresh').its('response.statusCode').should('equal', 401);
+            });
 
             cy.step('the tab says so and sends me to login, remembering where I was going');
             cy.contains('Your session has expired').should('exist');
@@ -77,7 +81,7 @@ describe('AC4 · My laptop was stolen', () => {
 
         cy.step('the tab is signed out, not left showing a dead session');
         cy.get('[data-test=nav-login-link]').should('exist');
-        cy.getCookie('__Host-jwt').should('not.exist');
+        cy.getCookie('__Host-session').should('not.exist');
 
         cy.step('a protected page sends me to login');
         cy.visit('/en/profile');

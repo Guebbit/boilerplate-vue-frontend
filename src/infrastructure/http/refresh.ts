@@ -3,6 +3,9 @@
  * Response interceptor for the refresh-and-retry flow: on a 401 (outside the excluded auth
  * endpoints), renews the token once and replays the original request exactly once.
  *
+ * In `cookie` mode there is nothing to renew (`POST /account/refresh` is a 404 there): a 401 means
+ * the session cookie is gone, so the session ends at once and the request is not replayed.
+ *
  * The refresh attempt itself belongs to `infrastructure/session.ts`'s `refreshToken` — single
  * flight, epoch-guarded against a stale result landing after a `clearSession`, and the one place
  * that ends the session outright on a definitive 401/403 from the refresh endpoint. This module
@@ -48,6 +51,19 @@ const shouldSkipRefresh = (url?: string) => {
 };
 
 /**
+ * A 401 in `cookie` mode: the cookie no longer names a live session. A visitor who held one is
+ * told it expired; a guest's 401 is just a refusal.
+ *
+ * @param error - The 401 that triggered the interceptor.
+ * @returns The normalized rejection from {@link onResponseReject}.
+ */
+const endCookieSession = (error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>) => {
+    const session = useSessionStore();
+    if (session.hasSession) session.signalExpired();
+    return onResponseReject(error);
+};
+
+/**
  * Response error interceptor with refresh support: on a 401, renew the token and replay the
  * request once.
  *
@@ -58,7 +74,7 @@ const shouldSkipRefresh = (url?: string) => {
 export const onResponseRejectWithRefresh = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) => {
-    const { refreshToken } = useSessionStore();
+    const session = useSessionStore();
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
     // `_refreshed` is the loop guard: a 401 on the refresh call itself, or on a request already
     // replayed once, must not trigger another refresh. It does NOT also block a step-up —
@@ -68,8 +84,9 @@ export const onResponseRejectWithRefresh = (
         error.response?.status === 401 &&
         !originalRequest?._refreshed &&
         !shouldSkipRefresh(originalRequest?.url)
-    )
-        return refreshToken().then((token) => {
+    ) {
+        if (session.mode === 'cookie') return endCookieSession(error);
+        return session.refreshToken().then((token) => {
             // A failed or tokenless refresh is a failed refresh. `refreshToken` already stored it
             // (or didn't, on a stale/failed attempt) — this interceptor only decides the replay.
             if (!token || !originalRequest) return onResponseReject(error);
@@ -78,5 +95,6 @@ export const onResponseRejectWithRefresh = (
                 _refreshed: true
             } as AxiosRequestConfigWithRetry);
         });
+    }
     return onResponseReject(error);
 };

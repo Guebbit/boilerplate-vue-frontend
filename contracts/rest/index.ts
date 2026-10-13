@@ -4697,6 +4697,28 @@ export interface ExportSession {
     device?: string;
 }
 
+export interface ExportLinkedProvider {
+    /** Registry name of the provider, e.g. `google`. */
+    provider: string;
+    /** The provider's own stable identifier for the account (its `sub`), an online identifier under GDPR Art. 4(1). */
+    providerId: string;
+    connectedAt: string;
+}
+
+export interface ExportTwoFactorMethod {
+    /** Wire name of the factor, e.g. `totp` or `email`. */
+    method: string;
+    /** When the factor was armed. */
+    enrolledAt: string;
+}
+
+export interface ExportSignInMethods {
+    /** The identity providers linked to the account. */
+    providers: ExportLinkedProvider[];
+    /** The second factors armed on the account. A setup never confirmed is left out. */
+    twoFactor: ExportTwoFactorMethod[];
+}
+
 export interface ExportFeedbackTicket {
     id: Id;
     name?: string;
@@ -5076,6 +5098,7 @@ export interface AccountExportResponse {
     auditLog: AuditEntryItem[];
     sessions: ExportSession[];
     addresses: Address[];
+    signInMethods: ExportSignInMethods;
     /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
     feedback?: ExportFeedbackTicket[];
     cart: CartItem[];

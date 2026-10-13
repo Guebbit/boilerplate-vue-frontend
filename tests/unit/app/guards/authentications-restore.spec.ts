@@ -1,5 +1,5 @@
 /**
- * `tryRestoreAuth` — the guard that turns a refresh cookie back into a session.
+ * `tryRestoreAuth` — the guard that turns the session cookies back into a session, in either mode.
  *
  * It runs on EVERY navigation, before `enforceRouteAccess` reads `isAuth`, which makes it the one
  * place a returning visitor's identity comes from. Its whole contract is "always resolve, never
@@ -14,11 +14,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { getCookie } from '@guebbit/js-toolkit';
 
-/** The mocked session store: token, viewer and the two actions the guard calls. */
+/**
+ * The mocked session store: whether a session is held, the viewer, and the three actions the
+ * guard calls. Which mode the deployment runs is the store's business, not the guard's, so the
+ * double has no mode at all.
+ */
 const sessionStore = {
-    accessToken: undefined as string | undefined,
+    hasSession: false,
     viewer: undefined as { id: string } | undefined,
-    refreshToken: vi.fn(),
+    loadSessionMode: vi.fn(),
+    restoreFromCookies: vi.fn(),
     loadViewer: vi.fn()
 };
 
@@ -38,12 +43,13 @@ import { tryRestoreAuth } from '@/app/guards/authentications';
 
 beforeEach(() => {
     vi.clearAllMocks();
-    sessionStore.accessToken = undefined;
+    sessionStore.hasSession = false;
     sessionStore.viewer = undefined;
-    // The realistic default: a successful refresh is what puts the token in place, so the second
+    sessionStore.loadSessionMode.mockResolvedValue(undefined);
+    // The realistic default: a successful restore is what puts the session in place, so the second
     // half of the function sees a state the first half created.
-    sessionStore.refreshToken.mockImplementation(() => {
-        sessionStore.accessToken = 'restored-token';
+    sessionStore.restoreFromCookies.mockImplementation(() => {
+        sessionStore.hasSession = true;
         return Promise.resolve();
     });
     sessionStore.loadViewer.mockResolvedValue({ id: 'u1' });
@@ -56,7 +62,7 @@ describe('a guest with no isAuth cookie', () => {
         tryRestoreAuth().then(() => {
             // The reason the cookie is checked at all: every anonymous page view would otherwise
             // pay for a refresh round-trip that cannot succeed.
-            expect(sessionStore.refreshToken).not.toHaveBeenCalled();
+            expect(sessionStore.restoreFromCookies).not.toHaveBeenCalled();
             expect(sessionStore.loadViewer).not.toHaveBeenCalled();
         }));
 });
@@ -64,9 +70,13 @@ describe('a guest with no isAuth cookie', () => {
 describe('a returning visitor holding the isAuth cookie', () => {
     beforeEach(() => getCookieMock.mockReturnValue('true'));
 
-    it('refreshes the token, then loads who it belongs to', () =>
+    it('reads the session mode first, then restores, then loads who it belongs to', () =>
         tryRestoreAuth().then(() => {
-            expect(sessionStore.refreshToken).toHaveBeenCalledTimes(1);
+            // Restoring differs by mode (a refresh vs nothing to ask), so the mode must be known.
+            expect(sessionStore.loadSessionMode.mock.invocationCallOrder[0]).toBeLessThan(
+                sessionStore.restoreFromCookies.mock.invocationCallOrder[0]
+            );
+            expect(sessionStore.restoreFromCookies).toHaveBeenCalledTimes(1);
             expect(sessionStore.loadViewer).toHaveBeenCalledTimes(1);
         }));
 
@@ -75,18 +85,24 @@ describe('a returning visitor holding the isAuth cookie', () => {
             expect(getCookieMock).toHaveBeenCalledWith('isAuth');
         }));
 
-    it('does not load a viewer when the refresh left no token', () => {
+    it('does not load a viewer when the restore left no session', () => {
         // An expired refresh cookie: the endpoint answers, but with nothing to store. Asking for
         // the viewer anyway is an anonymous request that 401s on every navigation.
-        sessionStore.refreshToken.mockResolvedValue(undefined);
+        sessionStore.restoreFromCookies.mockResolvedValue(undefined);
 
         return tryRestoreAuth().then(() => {
             expect(sessionStore.loadViewer).not.toHaveBeenCalled();
         });
     });
 
-    it('resolves rather than rejecting when the refresh fails', () => {
-        sessionStore.refreshToken.mockRejectedValue(new Error('401'));
+    it('resolves rather than rejecting when the mode cannot be read', () => {
+        sessionStore.loadSessionMode.mockRejectedValue(new Error('500'));
+
+        return expect(tryRestoreAuth()).resolves.toBeUndefined();
+    });
+
+    it('resolves rather than rejecting when the restore fails', () => {
+        sessionStore.restoreFromCookies.mockRejectedValue(new Error('401'));
 
         // Resolving is the assertion. A rejection aborts the navigation, so a failed refresh would
         // strand the visitor instead of showing them the page as a guest.
@@ -100,16 +116,16 @@ describe('a returning visitor holding the isAuth cookie', () => {
     });
 });
 
-describe('a visitor whose token is already in memory', () => {
+describe('a visitor whose session is already held', () => {
     beforeEach(() => getCookieMock.mockReturnValue('true'));
 
     it('skips the refresh but still loads the viewer, when it is not known yet', () => {
-        sessionStore.accessToken = 'already-here';
+        sessionStore.hasSession = true;
 
         return tryRestoreAuth().then(() => {
-            // Two separate facts: holding a token is not the same as knowing whose it is, so the
+            // Two separate facts: holding a session is not the same as knowing whose it is, so the
             // second call must happen even though the first is skipped.
-            expect(sessionStore.refreshToken).not.toHaveBeenCalled();
+            expect(sessionStore.restoreFromCookies).not.toHaveBeenCalled();
             expect(sessionStore.loadViewer).toHaveBeenCalledTimes(1);
         });
     });
@@ -119,7 +135,7 @@ describe('a visitor whose token is already in memory', () => {
      * two round trips `loadViewer` chains into) on every single one of them, not just the first.
      */
     it('does not reload an already-known viewer on a later navigation', () => {
-        sessionStore.accessToken = 'already-here';
+        sessionStore.hasSession = true;
         sessionStore.viewer = { id: 'u1' };
 
         return tryRestoreAuth().then(() => {

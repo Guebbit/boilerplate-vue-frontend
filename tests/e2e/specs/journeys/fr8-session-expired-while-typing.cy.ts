@@ -1,4 +1,6 @@
 // requires-module: account
+import { skipUnlessSessionMode } from '../../../support/e2e/harness';
+
 /**
  * @module
  * FR8 · My session expired while I was typing. A customer fills in the address form, the access
@@ -7,7 +9,8 @@
  *
  * The token lapses by moving the demo backend's clock past its 600 s life (the refresh token
  * lasts days), so this is a demo-only journey. The save is asserted as the sequence it is: a 401,
- * one refresh, then the same request again answered 201.
+ * one refresh, then the same request again answered 201. `jwt` mode only: a `cookie` session has
+ * no access token to lapse.
  */
 
 /** Past the access token's 600 s life, inside the refresh token's 7 days. */
@@ -22,8 +25,10 @@ describe('FR8 · My session expired while I was typing', () => {
         cy.restore();
     });
 
-    it('a form left open past the access token’s life still saves, through a silent refresh', () => {
+    // A regular `function`, so Mocha's `this.skip()` works.
+    it('a form left open past the access token’s life still saves, through a silent refresh', function () {
         cy.skipUnlessDemo();
+        skipUnlessSessionMode(this, 'jwt');
 
         cy.step('the customer opens the address form and fills every field');
         cy.loginAs('user');

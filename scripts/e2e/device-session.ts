@@ -1,9 +1,14 @@
 /**
- * A second device, made server-side: a login that keeps its own refresh cookie and access token.
+ * A second device, made server-side: a login that keeps its own session cookie (and, in `jwt`
+ * mode, access token).
  *
  * A plain Node `fetch` has no cookie jar, so the page's own session is left exactly as the spec
  * found it — and the cookie this file keeps is what makes the device real: a refresh needs it, and
  * a logout-everywhere or a password reset is proved by that refresh failing afterwards.
+ *
+ * Both session modes (`GET /account/session-config`) answer to the same calls. `cookie` mode has
+ * no refresh endpoint, so {@link deviceRefresh} asks `GET /account` instead: still 200 while the
+ * session lives, 401 once it was revoked, which is what every journey asserts.
  *
  * Stateless on purpose. The spec holds the {@link Device} and hands it back with every call, so
  * two devices in one test are two plain values and nothing lives in the Cypress node process.
@@ -12,13 +17,18 @@
  * browser. The `cy.task` wiring is in `cypress.config.ts`.
  */
 
-/** What a device holds: where it talks to, its bearer token, and its refresh cookie. */
+/** How the deployment keeps people signed in: `NODE_SESSION_MODE`. */
+export type SessionMode = 'jwt' | 'cookie';
+
+/** What a device holds: where it talks to, how its session works, its token and its cookie. */
 export interface Device {
     /** The API base URL, no trailing slash. */
     apiUrl: string;
-    /** The access token, sent as `Authorization: Bearer`. */
+    /** The deployment's session mode, read from `GET /account/session-config` at login. */
+    mode: SessionMode;
+    /** The access token, sent as `Authorization: Bearer`. Empty in `cookie` mode: no token exists. */
     token: string;
-    /** The refresh cookie as a `Cookie` header value, `__Host-jwt=<token>`. */
+    /** The session cookie as a `Cookie` header value, `__Host-session=<credential>`. */
     cookie: string;
 }
 
@@ -49,22 +59,22 @@ export interface DeviceRequest {
     body?: Record<string, unknown>;
 }
 
-/** The refresh cookie's name — the backend's `REFRESH_COOKIE`. */
-const REFRESH_COOKIE = '__Host-jwt';
+/** The session cookie's name — the backend's `SESSION_COOKIE`; the refresh token in `jwt` mode. */
+const SESSION_COOKIE = '__Host-session';
 
 /** The JSON request header both paired backends expect on a body. */
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 /**
- * The refresh cookie a response set, as a `Cookie` header value.
+ * The session cookie a response set, as a `Cookie` header value.
  *
  * `null` when the response did not set one, or set it empty — which is how a logout clears it.
  *
  * @param headers - the response's headers
- * @returns `__Host-jwt=<value>`, or `null`
+ * @returns `__Host-session=<value>`, or `null`
  */
-export const refreshCookieFrom = (headers: Headers): string | null => {
-    const prefix = `${REFRESH_COOKIE}=`;
+export const sessionCookieFrom = (headers: Headers): string | null => {
+    const prefix = `${SESSION_COOKIE}=`;
     // `getSetCookie()` returns each Set-Cookie header on its own; `get('set-cookie')` would fold them into one string.
     const set = headers.getSetCookie().find((line) => line.startsWith(prefix));
     const value = set?.slice(prefix.length).split(';')[0] ?? '';
@@ -104,27 +114,47 @@ const parseJson = (text: string): unknown => {
 const jsonOf = (response: Response): Promise<unknown> => response.text().then(parseJson);
 
 /**
+ * The deployment's session mode.
+ *
+ * @param apiUrl - the API base URL
+ * @returns `GET /account/session-config`'s `mode`
+ * @throws {Error} when the answer carries no known mode
+ */
+const readSessionMode = (apiUrl: string): Promise<SessionMode> =>
+    fetch(`${apiUrl}/account/session-config`)
+        .then(jsonOf)
+        .then((body) => {
+            const mode = (body as { data?: { mode?: unknown } } | null)?.data?.mode;
+            if (mode !== 'jwt' && mode !== 'cookie')
+                throw new Error('deviceLogin: GET /account/session-config named no known mode');
+            return mode;
+        });
+
+/**
  * Sign in as a new device.
  *
  * @param credentials - the API and the account
- * @returns the device, with the access token and refresh cookie the login issued
- * @throws {Error} when the login is refused, or issues no token (a two-factor account answers a challenge instead)
+ * @returns the device, with the session cookie (and in `jwt` mode the access token) the login issued
+ * @throws {Error} when the login is refused, or issues no session (a two-factor account answers a challenge instead)
  */
 export const deviceLogin = ({ apiUrl, email, password }: DeviceCredentials): Promise<Device> =>
-    fetch(`${apiUrl}/account/login`, {
-        method: 'POST',
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ email, password })
-    }).then((response) =>
-        jsonOf(response).then((body) => {
-            const token = tokenIn(body);
-            const cookie = refreshCookieFrom(response.headers);
-            if (!response.ok || token === undefined || cookie === null)
-                throw new Error(
-                    `deviceLogin: ${email} got ${String(response.status)} and ${token === undefined ? 'no token' : 'no refresh cookie'}`
-                );
-            return { apiUrl, token, cookie };
-        })
+    readSessionMode(apiUrl).then((mode) =>
+        fetch(`${apiUrl}/account/login`, {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ email, password })
+        }).then((response) =>
+            jsonOf(response).then((body) => {
+                // `cookie` mode hands no token back: the cookie IS the session.
+                const token = mode === 'jwt' ? tokenIn(body) : '';
+                const cookie = sessionCookieFrom(response.headers);
+                if (!response.ok || token === undefined || cookie === null)
+                    throw new Error(
+                        `deviceLogin: ${email} got ${String(response.status)} and ${token === undefined ? 'no token' : 'no session cookie'}`
+                    );
+                return { apiUrl, mode, token, cookie };
+            })
+        )
     );
 
 /**
@@ -136,21 +166,23 @@ export const deviceLogin = ({ apiUrl, email, password }: DeviceCredentials): Pro
  */
 const afterAnswer = (device: Device, response: Response, body: unknown): Device => ({
     ...device,
-    token: response.ok ? (tokenIn(body) ?? device.token) : device.token,
-    cookie: refreshCookieFrom(response.headers) ?? device.cookie
+    token: response.ok && device.mode === 'jwt' ? (tokenIn(body) ?? device.token) : device.token,
+    cookie: sessionCookieFrom(response.headers) ?? device.cookie
 });
 
 /**
- * Ask for a new access token with the device's refresh cookie — `GET /account/refresh`.
+ * Renew the device's session — `POST /account/refresh` in `jwt` mode. `cookie` mode has nothing to
+ * renew (the endpoint is a 404), so it asks `GET /account`, which answers the same question the
+ * journeys put: is this device's session still alive.
  *
- * A refused refresh (401) is returned, not thrown: "device 2's refresh is 401" is what a journey
+ * A refused answer (401) is returned, not thrown: "device 2's refresh is 401" is what a journey
  * asserts after a reset or a logout-everywhere.
  *
  * @param device - the device to refresh
  */
 export const deviceRefresh = (device: Device): Promise<DeviceResponse> =>
-    fetch(`${device.apiUrl}/account/refresh`, {
-        method: 'POST',
+    fetch(device.mode === 'jwt' ? `${device.apiUrl}/account/refresh` : `${device.apiUrl}/account`, {
+        method: device.mode === 'jwt' ? 'POST' : 'GET',
         headers: { Cookie: device.cookie }
     }).then((response) =>
         jsonOf(response).then((body) => ({
@@ -161,9 +193,9 @@ export const deviceRefresh = (device: Device): Promise<DeviceResponse> =>
     );
 
 /**
- * One authenticated call from the device, with its bearer token.
+ * One authenticated call from the device, with its bearer token (`jwt` mode) and its cookie.
  *
- * The refresh cookie travels too, so a route that reads "which session is current" sees this
+ * The session cookie travels too, so a route that reads "which session is current" sees this
  * device's own. A non-2xx is returned, not thrown.
  *
  * @param request - the device and the call
@@ -178,7 +210,8 @@ export const deviceRequest = ({
         method,
         headers: {
             ...JSON_HEADERS,
-            Authorization: `Bearer ${device.token}`,
+            // No token in `cookie` mode: the cookie below is the whole credential.
+            ...(device.token !== '' && { Authorization: `Bearer ${device.token}` }),
             Cookie: device.cookie
         },
         body: body === undefined ? undefined : JSON.stringify(body)

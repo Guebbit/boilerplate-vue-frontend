@@ -1,6 +1,6 @@
 /**
- * the sessions panel never rendered `lastUsedAt`, even though the API sends it — a visitor
- * deciding which device to revoke had only "expires", never "last seen".
+ * The sessions panel shows what a visitor needs to pick the device to revoke: when it signed in,
+ * when it was last seen, and (in `cookie` mode) which browser and system it is.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -23,9 +23,16 @@ const SESSION: Session = {
     lastUsedAt: '2026-09-20T10:00:00.000Z'
 };
 
+/** A `cookie`-mode session, which carries the coarse device label. */
+const SESSION_WITH_DEVICE: Session = {
+    ...SESSION,
+    id: 's2',
+    device: 'Firefox on Linux'
+};
+
 vi.mock('../stores/sessions.ts', () => ({
     useAccountSessionsStore: () => ({
-        sessions: [SESSION],
+        sessions: [SESSION, SESSION_WITH_DEVICE],
         fetchSessions: vi.fn(),
         revokeSession: vi.fn()
     })
@@ -53,5 +60,24 @@ describe('the sessions list', () => {
         });
 
         expect(wrapper.find('.session-last-used').text()).toContain('Last used');
+    });
+
+    it('renders when each sign-in began', async () => {
+        await loadLocale('en');
+        const wrapper = mount(ProfileSessions, {
+            global: { plugins: [createPinia(), router, vuetify, i18n] }
+        });
+
+        expect(wrapper.find('[data-test="session-started"]').text()).toContain('Signed in');
+    });
+
+    it('shows the device label when the session carries one, and nothing when it does not', async () => {
+        await loadLocale('en');
+        const wrapper = mount(ProfileSessions, {
+            global: { plugins: [createPinia(), router, vuetify, i18n] }
+        });
+
+        const devices = wrapper.findAll('[data-test="session-device"]');
+        expect(devices.map((device) => device.text())).toEqual(['Firefox on Linux']);
     });
 });

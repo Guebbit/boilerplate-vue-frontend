@@ -46,7 +46,7 @@ flowchart LR
 Twelve screens, six stores, and the widest API surface of any module here — which makes it a
 misleadingly ordinary-looking domain. Five things about it are worth knowing before you edit it.
 
-**The session is not in here.** The token lives in `infrastructure/session`, because
+**The session is not in here.** The credential (an access token in `jwt` mode, a held-cookie flag in `cookie` mode: the backend's `NODE_SESSION_MODE`, read from `GET /account/session-config`) lives in `infrastructure/session`, because
 `infrastructure/http` has to read it on every request and the router guards read `isAuth` and the
 caller's own rules before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
 _editable record_, not the credential.
@@ -315,7 +315,8 @@ change here.
 The backend gates its most dangerous routes behind **freshness**, not just authentication: a valid
 token that was issued too long ago answers `401 REAUTH_REQUIRED`. That is a 401 the refresh flow
 must not touch — the refresh cookie is perfectly valid, so refreshing succeeds, the request
-replays, and answers `REAUTH_REQUIRED` again with nothing left to try.
+replays, and answers `REAUTH_REQUIRED` again with nothing left to try. (In `cookie` mode there is no
+refresh at all: a plain 401 ends the session. See [Security](../tools/security.md#two-session-modes).)
 
 So the step-up interceptor is layered _outside_ the refresh one and reads the error **code** before
 the refresh branch can ever run.
@@ -327,7 +328,7 @@ flowchart TD
     S -->|yes| P["park the request"]
     P --> SF["requestFreshSession()<br/>single-flight"]
     SF --> D["ReauthDialog.vue<br/>one prompt, N parked requests"]
-    D -->|password or mailed code proven| RA["session store reauth()<br/>adopts the rotated token"]
+    D -->|password or mailed code proven| RA["session store reauth()<br/>adopts the re-minted session"]
     RA --> RP["replay the request once<br/>(_dontRetry)"]
     D -->|cancelled| REJ["normalized rejection"]
 
