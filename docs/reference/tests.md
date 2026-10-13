@@ -380,22 +380,6 @@ No assertions live here.
 | `tests/support/e2e/integrator.ts`                   | Steps the key and webhook journeys share: the seeded receiver subscription, an order placed through the API, the delivery log read as data, and what the receiver captured.                                                                                                                                                                                                                                                              | [Journeys](#journeys--stories-that-cross-modules)          |
 | `tests/support/e2e/umami.ts`                        | Umami's own API read from a spec: log in, count the events and pageviews since a moment, wait for a write to become readable; `withUmami` runs only on live.                                                                                                                                                                                                                                                                             |
 
-## `tests/audit/` — the prompts Vitest never runs
-
-The one directory here no runner touches. These are markdown prompts driven by hand against an LLM,
-covering the question no deterministic tool can reach: does the code do what the **docs** promise?
-They write reports to `reports/audit/` — gitignored, disposable — and never touch source.
-
-| File                                  | What it is                                                                                          | Read next                              |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `tests/audit/spec-drift.md`           | The two-pass audit: freeze spec-derived expectations, then hunt tests that assert the code instead. | [AI Auditing](../tools/ai-auditing.md) |
-| `tests/audit/spec-gaps.md`            | Business rules and security boundaries with zero coverage.                                          | [AI Auditing](../tools/ai-auditing.md) |
-| `tests/audit/suite-bloat.md`          | Near-duplicate tests that cost CI time and discriminate nothing.                                    | [AI Auditing](../tools/ai-auditing.md) |
-| `tests/audit/accessibility-manual.md` | Accessibility defects in the residual tier axe/eslint/keyboard.cy.ts structurally cannot reach.     | [AI Auditing](../tools/ai-auditing.md) |
-
-The first three files live in `boilerplate-node-backend` too and are kept identical by hand.
-`accessibility-manual.md` is frontend-only — there's no backend equivalent to keep it in sync with.
-
 ## Co-located module tests
 
 | Pattern                                       | What it is                                                                                                                                                                                                                                                 | Read next                                          |
