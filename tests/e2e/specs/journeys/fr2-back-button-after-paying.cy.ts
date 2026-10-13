@@ -40,7 +40,7 @@ describe('FR2 · The Back button after paying', () => {
 
         cy.step('pays by card');
         cy.payWith('Card that pays');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
         cy.get('[data-test=payment-submit]').should('not.exist');
 
         idFromLocation().then((orderId) => {
@@ -54,13 +54,13 @@ describe('FR2 · The Back button after paying', () => {
             cy.step('Forward returns to the order, still paid, with no second payment on offer');
             cy.go('forward');
             cy.location('pathname').should('equal', `/en/orders/${orderId}`);
-            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             cy.get('[data-test=payment-submit]').should('not.exist');
             cy.get('[data-test=payment-method-select]').should('not.exist');
 
             cy.step('a reload changes nothing, and the API holds one settled payment');
             cy.reload();
-            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             cy.get('[data-test=payment-submit]').should('not.exist');
             cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).should((payment) => {
                 expect(payment?.status).to.equal('succeeded');

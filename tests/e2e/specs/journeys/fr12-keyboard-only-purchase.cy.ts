@@ -203,7 +203,7 @@ describe('FR12 · A keyboard-only purchase', () => {
         });
         cy.focused().realPress('Enter');
         enterOn('[data-test=payment-submit]');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
         cy.step('the cancel dialog keeps focus inside, returns it on Escape, then confirms');
         enterOn('[data-test=order-cancel]');
@@ -220,7 +220,7 @@ describe('FR12 · A keyboard-only purchase', () => {
         enterOn('[data-test=app-dialog-confirm]');
         cy.get('[data-test=order-cancel]').should('not.exist');
         // The refund is the payments module answering the cancel, a beat later; a reload reads it.
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
         cy.reload();
         cy.get('[data-test=payment-status]', { timeout: 20_000 }).should(
             'contain.text',

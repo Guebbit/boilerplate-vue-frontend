@@ -76,7 +76,7 @@ describe('CU24 · Prove you are human', () => {
             cy.step('the visitor solves it and presses pay again: the order is paid');
             solveHumanCheck();
             cy.get('[data-test=payment-submit]').click();
-            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             cy.get('[data-test=human-check-altcha]').should('not.exist');
             cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('paid');

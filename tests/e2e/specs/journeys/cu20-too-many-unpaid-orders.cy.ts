@@ -110,7 +110,7 @@ describe('CU20 · Too many unpaid orders', () => {
 
             cy.step('the customer pays it, which leaves the open count where it was');
             cy.payWith('Card that pays');
-            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             openOrders().should('equal', 1);
 
             cy.step('and a new transfer is taken again');

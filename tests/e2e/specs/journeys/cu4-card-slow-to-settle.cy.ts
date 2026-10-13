@@ -70,7 +70,7 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.step('Finish asks the provider again, and the order is paid');
             cy.get('[data-test=payment-finish]').click();
             cy.get('[data-test=payment-finish]').should('not.exist');
-            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             cy.get('[data-test=order-download-invoice]').should('exist');
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('paid');

@@ -52,7 +52,7 @@ describe('CU19 · Changed my mind: a transfer order paid by card', () => {
                     cy.step(
                         'the order is paid: no transfer panel, an invoice, and the method is card'
                     );
-                    cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+                    cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
                     cy.get('[data-test=transfer-instructions-panel]').should('not.exist');
                     cy.get('[data-test=payment-method-select]').should('not.exist');
                     cy.get('[data-test=order-download-invoice]').should('exist');
@@ -80,7 +80,7 @@ describe('CU19 · Changed my mind: a transfer order paid by card', () => {
                     cy.get('[data-test=button-refund-only]').should('not.be.disabled');
                     cy.get('[data-test=record-offline-payment-form]').should('not.exist');
                     cy.visit(`/en/orders/${orderId}`);
-                    cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+                    cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
                     cy.get('[data-test=order-payment-method]').should('contain.text', 'Card');
                 });
         });

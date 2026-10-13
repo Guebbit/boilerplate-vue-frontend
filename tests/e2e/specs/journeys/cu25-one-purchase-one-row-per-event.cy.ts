@@ -56,7 +56,7 @@ describe('CU25 · One purchase, one analytics row per event', () => {
                 cy.payWith('Card the issuer declines');
                 cy.get('[data-test=payment-panel-error]').should('exist');
                 cy.payWith('Card that pays');
-                cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+                cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
                 cy.step('the customer cancels the paid order');
                 cy.get('[data-test=order-cancel]').click();

@@ -119,7 +119,7 @@ describe('FR5 · Shopping on a phone', () => {
         cy.step('pays by card on the order page');
         cy.get('#order-target').should('exist');
         cy.payWith('Card that pays');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
         cy.get('[data-test=order-shipping-address]').should('contain.text', 'Via Mobile 5');
         fitsTheScreen();
 

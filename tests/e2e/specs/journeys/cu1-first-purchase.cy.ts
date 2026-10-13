@@ -97,7 +97,7 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         cy.step('pays by card');
         cy.get('#order-target').should('exist');
         cy.payWith('Card that pays');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
         cy.step('reads the order page against the cart');
         cy.get('[data-test=order-number]').invoke('text').should('match', /\d/);

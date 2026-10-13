@@ -76,7 +76,7 @@ describe('Commerce', () => {
         cy.get('[data-test=payment-submit]').should('not.exist');
         cy.get('[data-test=payment-finish]').click();
         cy.contains('Payment received').should('exist');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
         // ── Paid is still cancellable — the refund path exists now ──────────────────
         cy.get('[data-test=order-cancel]').should('exist');
@@ -107,7 +107,7 @@ describe('Commerce', () => {
         // Checkout lands straight on the new order's own page.
         cy.get('#order-target').should('exist');
         cy.payWith('Card that pays');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
         // The paid order's own edit page, reached by its id so the admin ships exactly it.
         // Log out first — an authenticated visit to /login redirects away, so `loginAs`

@@ -60,7 +60,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
         cy.get('#order-target').should('exist');
         cy.payWith('Card that pays');
-        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
         cy.step('the withdrawal button asks for a second step before it does anything');
         cy.get('[data-test=withdrawal-panel]').should('exist');
