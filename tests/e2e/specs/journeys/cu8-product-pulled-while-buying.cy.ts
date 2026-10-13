@@ -95,7 +95,7 @@ describe('CU8 · The product is pulled while I am buying it', () => {
                 );
             });
             cy.payWith('Card that pays');
-            cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+            cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
 
             // Leave the shop as found.
             cy.apiAs('editor', 'PATCH', `/products/${productId}`, { active: true });

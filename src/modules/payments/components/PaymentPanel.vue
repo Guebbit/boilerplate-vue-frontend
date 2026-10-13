@@ -24,6 +24,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
 import { usePaymentsStore } from '../store.ts';
+import PaymentStatusChip from './PaymentStatusChip.vue';
 import { OrderStatus } from '@/types/enums.ts';
 
 /**
@@ -49,8 +50,8 @@ const { orderId, orderPayable, orderStatus, payBy } = defineProps<{
     orderPayable?: boolean;
     /**
      * The order's current status — decides whether a hand-paid `succeeded` payment shows as
-     * "refund pending" (B1b): cancelling never moves it to `refunded` on its own any more, only an
-     * operator's own confirmation does.
+     * "refund pending" (B1b): cancelling never settles the refund on its own, only an operator's
+     * own confirmation does.
      */
     orderStatus?: string;
     /**
@@ -161,8 +162,7 @@ const inFlight = computed(
 /**
  * A hand-paid order was cancelled, but nobody has confirmed the money actually went back (B1b):
  * cancelling a `manual` payment now only leaves it `succeeded` and waits for an operator's own
- * refund — it no longer moves to `refunded` by itself, so the panel must say why a "paid" order is
- * also a cancelled one.
+ * refund, so the panel must say why a "paid" order is also a cancelled one.
  */
 const refundPending = computed(
     () =>
@@ -322,13 +322,8 @@ watch(
         </template>
 
         <template v-else-if="payment">
-            <div class="flex items-center gap-3" data-test="payment-status">
-                <v-chip
-                    :color="payment.status === 'refunded' || refundPending ? 'warning' : 'success'"
-                    size="small"
-                >
-                    {{ t(`payments-panel.status-${payment.status}`) }}
-                </v-chip>
+            <div class="flex items-center gap-3" data-test="payment-summary">
+                <PaymentStatusChip :status="payment.displayStatus" />
                 <span v-if="payment.cardLast4" class="text-sm opacity-75">
                     {{ t('payments-panel.label-card-ending', { last4: payment.cardLast4 }) }}
                 </span>
@@ -351,7 +346,7 @@ watch(
                 </template>
             </p>
             <p
-                v-if="payment.amountRefunded > 0 && payment.status !== 'refunded'"
+                v-if="payment.amountRefunded > 0 && payment.displayStatus !== 'refunded'"
                 class="mt-2 mb-0 text-sm"
                 data-test="payment-partially-refunded"
             >

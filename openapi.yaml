@@ -5674,7 +5674,7 @@ paths:
               $ref: "#/components/schemas/RefundPaymentRequest"
       responses:
         "200":
-          description: The payment — `refunded` once fully returned, still `succeeded` after a partial refund
+          description: The payment — still `succeeded` after a refund; `displayStatus` says how much of it went back
           content:
             application/json:
               schema:
@@ -8170,7 +8170,7 @@ paths:
       tags:
         - Stats
       summary: Payments mix (staff)
-      description: Payments that took money in the period (`succeeded` or since `refunded`), by method and provider, with their count and amount. Needs `stats.any.read`.
+      description: Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `stats.any.read`.
       operationId: getPaymentMixStats
       security:
         - bearerAuth: []
@@ -14305,7 +14305,8 @@ components:
         - partially_refunded
         - refunded
         - failed
-      description: The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned; `failed` — declined.
+        - cancelled
+      description: The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned (every unit of `amount`, no refund still open); `failed` — declined; `cancelled` — the order was cancelled before the payment settled.
     PaymentActions:
       type: object
       additionalProperties: false
@@ -14319,7 +14320,7 @@ components:
           description: Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `cart.self.checkout` (staff reading the payment are never offered it).
         refund:
           type: boolean
-          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order).
+          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order).
     Payment:
       type: object
       additionalProperties: false
@@ -14367,8 +14368,8 @@ components:
             - processing
             - succeeded
             - declined
-            - refunded
-          description: "The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
+            - cancelled
+          description: "The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
         displayStatus:
           $ref: "#/components/schemas/PaymentDisplayStatus"
         providerRef:
@@ -16569,7 +16570,7 @@ components:
             - processing
             - succeeded
             - declined
-            - refunded
+            - cancelled
         provider:
           type: string
         cardLast4:

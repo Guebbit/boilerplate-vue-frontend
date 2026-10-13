@@ -42,7 +42,8 @@ const COLORS = {
     refund_pending: 'warning',
     partially_refunded: 'secondary',
     refunded: 'secondary',
-    failed: 'error'
+    failed: 'error',
+    cancelled: 'default'
 } satisfies Record<PaymentDisplayStatus, string>;
 </script>
 

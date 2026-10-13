@@ -154,7 +154,8 @@ describe('PaymentPanel', () => {
             const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
             store.payment = {
                 ...handPaidSucceededPayment,
-                status: 'refunded',
+                displayStatus: 'refunded',
+                amountRefunded: 100,
                 refundedByHand: true
             };
 
@@ -238,7 +239,7 @@ describe('a partially refunded payment', () => {
                 expect(wrapper.find('[data-test=payment-partially-refunded]').exists()).toBe(false);
                 store.payment = {
                     ...handPaidSucceededPayment,
-                    status: 'refunded',
+                    displayStatus: 'refunded',
                     amountRefunded: 100
                 };
                 return nextRenderTick(wrapper);
@@ -246,5 +247,20 @@ describe('a partially refunded payment', () => {
             .then(() => {
                 expect(wrapper.find('[data-test=payment-partially-refunded]').exists()).toBe(false);
             });
+    });
+});
+
+describe('the status chip', () => {
+    it.each([
+        ['succeeded', 'Succeeded'],
+        ['refunded', 'Refunded'],
+        ['cancelled', 'Cancelled']
+    ] as const)('reads displayStatus %s as %s, never the stored status', (displayStatus, text) => {
+        const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
+        store.payment = { ...handPaidSucceededPayment, displayStatus };
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.get('[data-test=payment-status]').text()).toBe(text);
+        });
     });
 });

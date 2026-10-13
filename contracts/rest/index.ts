@@ -3350,7 +3350,7 @@ export interface Refund {
 }
 
 /**
- * The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned; `failed` — declined.
+ * The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned (every unit of `amount`, no refund still open); `failed` — declined; `cancelled` — the order was cancelled before the payment settled.
  */
 export type PaymentDisplayStatus = (typeof PaymentDisplayStatus)[keyof typeof PaymentDisplayStatus];
 
@@ -3361,7 +3361,8 @@ export const PaymentDisplayStatus = {
     refund_pending: 'refund_pending',
     partially_refunded: 'partially_refunded',
     refunded: 'refunded',
-    failed: 'failed'
+    failed: 'failed',
+    cancelled: 'cancelled'
 } as const;
 
 /**
@@ -3370,12 +3371,12 @@ export const PaymentDisplayStatus = {
 export interface PaymentActions {
     /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `cart.self.checkout` (staff reading the payment are never offered it). */
     pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once fully refunded, which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order). */
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order). */
     refund: boolean;
 }
 
 /**
- * The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions
+ * The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions
  */
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
@@ -3385,7 +3386,7 @@ export const PaymentStatus = {
     processing: 'processing',
     succeeded: 'succeeded',
     declined: 'declined',
-    refunded: 'refunded'
+    cancelled: 'cancelled'
 } as const;
 
 /**
@@ -3418,7 +3419,7 @@ export interface Payment {
     amountRefunded: number;
     /** One record per refund attempt, oldest first. */
     refunds: Refund[];
-    /** The provider-facing lifecycle. `refunded` means every unit of `amount` has gone back; a partly refunded payment stays `succeeded` and says so in `amountRefunded`. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
+    /** The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
     displayStatus: PaymentDisplayStatus;
     /** The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `payments.any.read`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment. */
@@ -4778,7 +4779,7 @@ export const ExportPaymentStatus = {
     processing: 'processing',
     succeeded: 'succeeded',
     declined: 'declined',
-    refunded: 'refunded'
+    cancelled: 'cancelled'
 } as const;
 
 export interface ExportPayment {
@@ -10601,7 +10602,7 @@ export const getCategoryStats = (
 };
 
 /**
- * Payments that took money in the period (`succeeded` or since `refunded`), by method and provider, with their count and amount. Needs `stats.any.read`.
+ * Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `stats.any.read`.
  * @summary Payments mix (staff)
  */
 export const getPaymentMixStats = (

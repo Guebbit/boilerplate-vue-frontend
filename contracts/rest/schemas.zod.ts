@@ -8182,7 +8182,7 @@ export const CreatePaymentIntentResponse = zod.strictObject({
             'processing',
             'succeeded',
             'declined',
-            'refunded'
+            'cancelled'
         ]),
         displayStatus: zod.enum([
             'incomplete',
@@ -8191,7 +8191,8 @@ export const CreatePaymentIntentResponse = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ]),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
@@ -8304,7 +8305,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
             'processing',
             'succeeded',
             'declined',
-            'refunded'
+            'cancelled'
         ]),
         displayStatus: zod.enum([
             'incomplete',
@@ -8313,7 +8314,8 @@ export const GetPaymentByOrderResponse = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ]),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
@@ -8662,7 +8664,7 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
             'processing',
             'succeeded',
             'declined',
-            'refunded'
+            'cancelled'
         ]),
         displayStatus: zod.enum([
             'incomplete',
@@ -8671,7 +8673,8 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ]),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
@@ -8800,7 +8803,7 @@ export const RecordOfflinePaymentResponse = zod.strictObject({
             'processing',
             'succeeded',
             'declined',
-            'refunded'
+            'cancelled'
         ]),
         displayStatus: zod.enum([
             'incomplete',
@@ -8809,7 +8812,8 @@ export const RecordOfflinePaymentResponse = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ]),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
@@ -8936,7 +8940,7 @@ export const ConfirmPaymentResponse = zod.strictObject({
             'processing',
             'succeeded',
             'declined',
-            'refunded'
+            'cancelled'
         ]),
         displayStatus: zod.enum([
             'incomplete',
@@ -8945,7 +8949,8 @@ export const ConfirmPaymentResponse = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ]),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
@@ -9052,7 +9057,7 @@ export const SyncPaymentResponse = zod.strictObject({
             'processing',
             'succeeded',
             'declined',
-            'refunded'
+            'cancelled'
         ]),
         displayStatus: zod.enum([
             'incomplete',
@@ -9061,7 +9066,8 @@ export const SyncPaymentResponse = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ]),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
@@ -12768,7 +12774,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'processing',
                 'succeeded',
                 'declined',
-                'refunded'
+                'cancelled'
             ]),
             provider: zod.string(),
             cardLast4: zod.string().optional(),
@@ -13420,7 +13426,8 @@ export const ListPaymentsQueryParams = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ])
         .optional(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']).optional(),
@@ -13529,7 +13536,7 @@ export const ListPaymentsResponse = zod.strictObject({
                     'processing',
                     'succeeded',
                     'declined',
-                    'refunded'
+                    'cancelled'
                 ]),
                 displayStatus: zod.enum([
                     'incomplete',
@@ -13538,7 +13545,8 @@ export const ListPaymentsResponse = zod.strictObject({
                     'refund_pending',
                     'partially_refunded',
                     'refunded',
-                    'failed'
+                    'failed',
+                    'cancelled'
                 ]),
                 providerRef: zod.string().optional(),
                 orderNumber: zod.string().optional(),
@@ -13614,7 +13622,8 @@ export const SearchPaymentsBody = zod.strictObject({
             'refund_pending',
             'partially_refunded',
             'refunded',
-            'failed'
+            'failed',
+            'cancelled'
         ])
         .optional(),
     method: zod.enum(['card', 'bank_transfer', 'cash', 'other']).optional(),
@@ -13725,7 +13734,7 @@ export const SearchPaymentsResponse = zod.strictObject({
                     'processing',
                     'succeeded',
                     'declined',
-                    'refunded'
+                    'cancelled'
                 ]),
                 displayStatus: zod.enum([
                     'incomplete',
@@ -13734,7 +13743,8 @@ export const SearchPaymentsResponse = zod.strictObject({
                     'refund_pending',
                     'partially_refunded',
                     'refunded',
-                    'failed'
+                    'failed',
+                    'cancelled'
                 ]),
                 providerRef: zod.string().optional(),
                 orderNumber: zod.string().optional(),
@@ -14162,7 +14172,7 @@ export const GetCategoryStatsResponse = zod.strictObject({
     })
 });
 /**
- * Payments that took money in the period (`succeeded` or since `refunded`), by method and provider, with their count and amount. Needs `stats.any.read`.
+ * Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `stats.any.read`.
  * @summary Payments mix (staff)
  */
 export const GetPaymentMixStatsQueryParams = zod.strictObject({
