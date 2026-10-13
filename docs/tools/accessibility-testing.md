@@ -223,5 +223,5 @@ If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command �
 - [The demo profile](./demo-profile.md) — the backend these run against
 - [Component Testing](./component-testing.md) — the layer below, where markup is asserted directly
 - [Testing & Docs](./testing-and-docs.md) — the map
-- [AI Auditing](./ai-auditing.md) — `tests/audit/accessibility-manual.md`, the judgement layer for
+- [AI Auditing](./ai-auditing.md) — `scripts/audit/accessibility-manual/SKILL.md`, the judgement layer for
   the ~60–70% this suite's own honesty above says axe/eslint cannot reach

@@ -25,7 +25,8 @@ scripts/
 ├── demo/        booting the paired backend's demo profile from here
 ├── e2e/         the Cypress shard runner, its balancer and the spec globs
 ├── mutation/    the Stryker run and the per-file ratchet
-└── testing/     everything else that reads a test suite
+├── testing/     everything else that reads a test suite
+└── audit/       AI audit prompts, each with the scripts it runs
 ```
 
 The folder's word is not repeated in the filename: `scripts/mutation/run-tests.ts`, not
@@ -95,6 +96,15 @@ second, deeper scope that this repo has no equivalent for.
 | File                                | What it is                                                                                       | Read next                                          |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
 | `scripts/testing/report-results.ts` | Turns a runner's JSON report into which **module** a failure belongs to and where the time went. | [Testing (overview)](../tools/testing-and-docs.md) |
+
+## AI audits — `scripts/audit/`
+
+One folder per audit, in the [Agent Skills](https://agentskills.io) layout: a `SKILL.md` an AI reads
+and follows, and a `scripts/` folder for anything it runs.
+
+| File                       | What it is                                                                                        | Read next                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `scripts/audit/*/SKILL.md` | The four audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
 
 ## Git hooks
 

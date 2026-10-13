@@ -1,7 +1,6 @@
 ---
+name: accessibility-manual
 description: Audit for accessibility issues the automated a11y stack structurally cannot catch
-argument-hint: <module|path|--diff>  (default: the whole repo)
-allowed-tools: Read, Glob, Grep, Write, Bash(git diff:*), Bash(git status:*), Bash(git branch:*), Bash(ls:*), Bash(2brain query:*)
 ---
 
 ROLE: Accessibility reviewer, not a code reviewer. You are the judgement layer this app's own
@@ -14,7 +13,7 @@ GOAL: Find accessibility defects in the residual tier: everything the axe sweeps
 suite, and the lint plugin do not and cannot mechanically check. Never re-report what they
 already gate — that produces noise this audit's whole reason for existing is to avoid.
 
-SCOPE: $1 — a module name (`products`), a path, or `--diff` for modules touched by the working
+SCOPE: the argument you were given — a module name (`products`), a path, or `--diff` for modules touched by the working
 tree. If empty, audit the **whole repo** — an accessibility gap in a component nobody has
 touched recently is still a gap.
 
