@@ -4,14 +4,15 @@
  * AC17 · Someone copied my session cookie. The refresh cookie rotates on every renewal, so an
  * old copy is a stolen one: replayed after the grace window it is refused and every session of
  * the account is revoked, this tab's included. And logging out kills the session on the server,
- * not only in the tab, so a cookie copied before logout refreshes nothing.
+ * not only in the tab, so a cookie copied before logout refreshes nothing. The first holds in
+ * `jwt` mode only (a `cookie` session id never rotates); the second in both.
  *
- * The thief is `refreshDevice`: a Node request carrying only the copied `__Host-jwt` value. The grace
- * window (`NODE_TOKEN_ROTATION_GRACE_MS`, 10 s) passes by moving the demo backend's clock, or by
+ * The thief is `refreshDevice`: a Node request carrying only the copied `__Host-session` value.
+ * The grace window (`NODE_TOKEN_ROTATION_GRACE_MS`, 10 s) passes by moving the demo backend's clock, or by
  * really waiting on the live profile — the cross-origin `:8085` to `:3000` cookie is what that
  * profile adds.
  */
-import { refreshDevice, type Device } from '../../../support/e2e/harness';
+import { refreshDevice, skipUnlessSessionMode, type Device } from '../../../support/e2e/harness';
 import { letTimePass } from '../../../support/e2e/security-steps';
 
 /** Longer than the backend's 10 s rotation grace window. */
@@ -20,14 +21,15 @@ const PAST_GRACE_MS = 11_000;
 /**
  * A thief's device: the copied refresh cookie and nothing else.
  *
- * @param cookieValue - the `__Host-jwt` cookie's value as the browser held it
+ * @param cookieValue - the `__Host-session` cookie's value as the browser held it
  * @returns a chain yielding the device to hand to `refreshDevice`
  */
 const thiefWith = (cookieValue: string): Cypress.Chainable<Device> =>
-    cy.env(['apiUrl']).then(({ apiUrl }) => ({
+    cy.env(['apiUrl', 'sessionMode']).then(({ apiUrl, sessionMode }): Device => ({
         apiUrl: String(apiUrl),
+        mode: sessionMode === 'cookie' ? 'cookie' : 'jwt',
         token: '',
-        cookie: `__Host-jwt=${cookieValue}`
+        cookie: `__Host-session=${cookieValue}`
     }));
 
 /**
@@ -37,7 +39,7 @@ const thiefWith = (cookieValue: string): Cypress.Chainable<Device> =>
  */
 const refreshCookieValue = (): Cypress.Chainable<string> =>
     cy
-        .getCookie('__Host-jwt')
+        .getCookie('__Host-session')
         .should('exist')
         .then((cookie) => String(cookie?.value));
 
@@ -61,7 +63,11 @@ describe('AC17 · Someone copied my session cookie', () => {
         cy.restore();
     });
 
-    it('an old cookie replayed after the grace window is refused and revokes every session', () => {
+    // `jwt` mode only: rotation and reuse detection are the refresh token's machinery. A `cookie`
+    // session id never rotates, so there is no "old copy" to replay. A regular `function` so
+    // Mocha's `this.skip()` works.
+    it('an old cookie replayed after the grace window is refused and revokes every session', function () {
+        skipUnlessSessionMode(this, 'jwt');
         cy.step('the customer signs in with remember me and the cookie is copied');
         loginRememberingMe();
         refreshCookieValue().then((copied) => {

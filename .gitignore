@@ -50,12 +50,10 @@ dist-ssr
 *.sw?
 
 *.tsbuildinfo
-.claude
-
-# The optional symlink that exposes tests/audit/*.md as Claude Code slash commands — see
-# docs/tools/ai-auditing.md. The prompts themselves are versioned; this is one developer's
-# convenience, regenerable with a single ln -s.
-/.claude/commands/audit
+# Claude Code's local state, except `skills/`: it registers the `scripts/audit/` prompts with
+# Claude Code — see docs/tools/ai-auditing.md.
+/.claude/*
+!/.claude/skills/
 
 # Root-level Markdown is WORKING NOTES: a plan, an audit, a handover, written for one change and
 # deleted when it lands.
@@ -63,6 +61,7 @@ dist-ssr
 !/README.md
 !/CLAUDE.md
 !/SECURITY.md
+!/INSTALL.md
 
 # 2brain:start — regenerate with: 2brain <repo-path>
 .2brain/graphify-out/cache/

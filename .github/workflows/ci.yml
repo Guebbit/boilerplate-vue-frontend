@@ -484,11 +484,20 @@ jobs:
         # Three shards, not the default four: each is a Chrome plus a demo backend plus a mongod,
         # and four on this 4-vCPU runner starved each other (the paired backend's own e2e job saw
         # eight specs miss a 15-second wait). 75 minutes covers the longer wall-clock.
+        #
+        # Twice, once per session mode (`GET /account/session-config`): the backend boots with
+        # `NODE_SESSION_MODE` set to the matrix value and the journeys read the same name, so
+        # both ways of staying signed in are driven through the real UI.
         runs-on: ubuntu-latest
         timeout-minutes: 75
+        strategy:
+            fail-fast: false
+            matrix:
+                session-mode: [jwt, cookie]
         permissions:
             contents: read
         env:
+            E2E_SESSION_MODE: ${{ matrix.session-mode }}
             E2E_SHARDS: 3
             # Where the backend checkout lands, and what scripts/pairing/paired-backend-path.ts resolves. Same
             # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
@@ -548,7 +557,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: e2e-shard-logs
+                  name: e2e-shard-logs-${{ matrix.session-mode }}
                   path: reports/e2e/
                   retention-days: 14
                   if-no-files-found: ignore
@@ -560,7 +569,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: a11y-reports
+                  name: a11y-reports-${{ matrix.session-mode }}
                   path: reports/a11y/
                   retention-days: 14
                   if-no-files-found: ignore
@@ -569,7 +578,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-screenshots
+                  name: cypress-screenshots-${{ matrix.session-mode }}
                   path: tests/e2e/screenshots
                   retention-days: 14
                   if-no-files-found: ignore
@@ -578,7 +587,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-videos
+                  name: cypress-videos-${{ matrix.session-mode }}
                   path: tests/e2e/videos
                   retention-days: 14
                   if-no-files-found: ignore

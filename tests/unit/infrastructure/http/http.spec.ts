@@ -2,7 +2,10 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import enMessages from '@/locales/en.json';
 
 vi.mock('@/infrastructure/session', () => ({
-    useSessionStore: vi.fn(() => ({ accessToken: { value: undefined } }))
+    useSessionStore: vi.fn(() => ({
+        accessToken: { value: undefined },
+        hasSession: { value: false }
+    }))
 }));
 
 vi.mock('pinia', () => ({

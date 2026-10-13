@@ -12,11 +12,17 @@
 
 import { asStub } from '../../../support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 /** The access token the mocked session store holds. */
 const accessToken = ref<string | undefined>(undefined);
+
+/** Whether the mocked session store holds a `cookie`-mode session (a session with no token). */
+const cookieSession = ref(false);
+
+/** What the real store derives: a token OR a cookie session. */
+const hasSession = computed(() => Boolean(accessToken.value) || cookieSession.value);
 
 vi.mock('@/infrastructure/session', () => ({
     useSessionStore: () => ({})
@@ -24,7 +30,7 @@ vi.mock('@/infrastructure/session', () => ({
 
 vi.mock('pinia', async (importOriginal) => ({
     ...(await importOriginal<typeof import('pinia')>()),
-    storeToRefs: () => ({ accessToken })
+    storeToRefs: () => ({ accessToken, hasSession })
 }));
 
 /** Mutable per test — `useAnalyticsConsentStore().choice`'s current value. */
@@ -58,6 +64,7 @@ const makeConfig = () => asStub<InternalAxiosRequestConfig<unknown>>({ headers: 
 
 beforeEach(() => {
     accessToken.value = undefined;
+    cookieSession.value = false;
     analyticsConsentChoice.value = 'unknown';
     analyticsGuestConsentEnabled = false;
     vi.clearAllMocks();
@@ -140,6 +147,22 @@ describe('onRequest', () => {
         // The account's own stored preference is authoritative once signed in — see `onRequest`'s
         // own docblock for why a leftover guest-cookie choice must not override it.
         accessToken.value = 'abc.def.ghi';
+        analyticsGuestConsentEnabled = true;
+        analyticsConsentChoice.value = 'granted';
+
+        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+    });
+});
+
+describe('onRequest in cookie mode', () => {
+    it('sends no Authorization header: the HttpOnly cookie is the credential', () => {
+        cookieSession.value = true;
+
+        expect(onRequest(makeConfig()).headers.Authorization).toBeUndefined();
+    });
+
+    it('never adds X-Analytics-Consent for a signed-in caller, though it holds no token', () => {
+        cookieSession.value = true;
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'granted';
 

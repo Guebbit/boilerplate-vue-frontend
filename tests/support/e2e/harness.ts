@@ -10,16 +10,29 @@
  * `scripts/e2e/` (device-session, payment-webhook, webhook-sink, webhook-tester); the tasks are registered in
  * `cypress.config.ts`.
  */
-import type { Device, DeviceResponse } from '../../../scripts/e2e/device-session';
+import type { Device, DeviceResponse, SessionMode } from '../../../scripts/e2e/device-session';
 import type { PaymentWebhookEvent } from '../../../scripts/e2e/payment-webhook';
 import type { SinkRequest } from '../../../scripts/e2e/webhook-sink';
 import type { ReceivedWebhook } from '../../../scripts/e2e/webhook-tester';
 import type { E2ERole } from './scenario';
 
-export type { Device, DeviceResponse } from '../../../scripts/e2e/device-session';
+export type { Device, DeviceResponse, SessionMode } from '../../../scripts/e2e/device-session';
 export type { PaymentWebhookEvent } from '../../../scripts/e2e/payment-webhook';
 export type { SinkRequest } from '../../../scripts/e2e/webhook-sink';
 export type { ReceivedWebhook } from '../../../scripts/e2e/webhook-tester';
+
+/**
+ * Skips the running test unless the backend keeps people signed in the given way
+ * (`E2E_SESSION_MODE`, which the demo shards pass on as the backend's `NODE_SESSION_MODE`).
+ * For the few journeys about one mode's own machinery: refresh-token rotation, an origin check.
+ *
+ * @param context - Mocha's test context, so the spec must be a regular `function`
+ * @param mode - the only mode the test applies to
+ */
+export const skipUnlessSessionMode = (context: Mocha.Context, mode: SessionMode) =>
+    cy.env(['sessionMode']).then(({ sessionMode }) => {
+        if (sessionMode !== mode) context.skip();
+    });
 
 /**
  * Sign in as a second device with credentials the seed does not know — an account a journey made
@@ -46,8 +59,10 @@ export const loginDevice = (role: E2ERole = 'user'): Cypress.Chainable<Device> =
     cy.accountOf(role).then(({ email, password }) => loginDeviceWith(email, password));
 
 /**
- * `POST /account/refresh` with the device's own refresh cookie. A refused refresh (401) is an
- * answer, not a failure: it is what a journey asserts after a logout-everywhere or a reset.
+ * Renews the device's own session: `POST /account/refresh` in `jwt` mode, and in `cookie` mode
+ * (no refresh endpoint) `GET /account`, which says the same thing — alive (200) or revoked (401).
+ * A refused answer is an answer, not a failure: it is what a journey asserts after a
+ * logout-everywhere or a reset.
  *
  * @param device - the device to refresh
  */
@@ -133,7 +148,7 @@ export const requestWithKey = (
         .env(['apiUrl'])
         .then(({ apiUrl }) =>
             requestAsDevice(
-                { apiUrl: String(apiUrl), token: credential, cookie: '' },
+                { apiUrl: String(apiUrl), mode: 'jwt', token: credential, cookie: '' },
                 method,
                 path,
                 body
