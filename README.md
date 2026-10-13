@@ -29,6 +29,7 @@ it answered by the real API.
 Or start the full stack (`compose`) for real Redis/queue behaviour.
 
 → Full setup, both modes, port map and the pre-commit gate: **[Getting Started](./docs/getting-started.md)**
+→ What to set up by hand before it is yours (domain, TLS, brand, legal): **[INSTALL.md](./INSTALL.md)**
 
 ---
 

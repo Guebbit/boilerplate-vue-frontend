@@ -101,13 +101,22 @@ them from the container at start, but it writes a file for nginx, not `config.js
 | `VITE_APP_PORT`        | Dev-server port. Read in `vite.config.ts` via `loadEnv`, so the server and the compose publish always agree                                                                                                                                                                                                           |
 | `VITE_APP_EMPTY_VALUE` | Placeholder for empty/unavailable display values (default `—`)                                                                                                                                                                                                                                                        |
 
+### Branding {#branding}
+
+`VITE_APP_NAME` and `VITE_APP_LOGO` cover the tab title and the app bar. The rest is files, and
+still says "Guebbit" until you change it:
+
+- `public/favicon/site.webmanifest`: `name` and `short_name`.
+- `public/favicon/` and `public/images/guebbit-logo*`: the icon set and logos (`index.html` links them).
+- `public/favicon/browserconfig.xml` and the `mask-icon` colour in `index.html`.
+
 ## Locales
 
-| Variable                   | Purpose                                                                                                                                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `VITE_APP_DEFAULT_LOCALE`  | Initial locale (e.g. `en`)                                                                                                                                                                                                           |
-| `VITE_LOCALE_APP`          | This frontend's translation app — whose dictionary `GET /locales/{locale}/messages` builds for it. Must be one of the ids `GET /locales/tenants` lists; unset means the demo pair's `demo-fe`. See [Internationalisation](./i18n.md) |
-| `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`). Must name a locale this build BUNDLES, or the fallback cannot answer offline                                                     |
+| Variable                   | Purpose                                                                                                                                                                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_DEFAULT_LOCALE`  | Initial locale (e.g. `en`)                                                                                                                                                                                                        |
+| `VITE_LOCALE_APP`          | This frontend's translation app — whose dictionary `GET /locales/{locale}/messages` builds for it. Must be one of the ids `GET /locales/apps` lists; unset means the demo pair's `demo-fe`. See [Internationalisation](./i18n.md) |
+| `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`). Must name a locale this build BUNDLES, or the fallback cannot answer offline                                                  |
 
 Which languages the app offers is not configured here. `src/locales/*.json` is the offline floor, discovered by a glob at build time, and `GET /locales` adds whatever the API offers at boot — including languages translated in its database that this build ships no file for. See [Layers → files are defaults, the database overrides them](../theory/layers.md#files-are-defaults-the-database-overrides-them).
 
@@ -124,6 +133,9 @@ Which languages the app offers is not configured here. `src/locales/*.json` is t
 | `VITE_VALIDATE_REQUESTS`       | Validate every outgoing JSON body against its generated request schema, before it is sent. Same three states as the response flag. Dev, unit and e2e **throw**, naming the field and the rule; production **reports to Faro and sends anyway** — the backend answers a real 422. A multipart body is not checked                                                              |
 | `VITE_VALIDATE_RESPONSES`      | Validate every REST response and SSE frame against its generated contract schema. Unset means ON everywhere but the unit tests, which default to off. In production the validation is always **report-only**: unknown keys are stripped, and a mismatch reports to Faro without rejecting the call — the flag never re-enables a blocking outage there, whatever it is set to |
 
+The backend must also list this frontend's origin in its `NODE_CORS_ORIGIN`, or the browser refuses
+every call before the API sees it.
+
 Deploy order for a contract change: the backend adds a field additively (never removes or
 retypes one without a version bump this pair doesn't have yet), ships first, and the frontend
 redeploys whenever it likes after that — production's report-only validation above is exactly
@@ -132,10 +144,10 @@ together.
 
 ## Logging
 
-| Variable              | Purpose                                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `VITE_APP_LOG_LEVEL`  | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production  |
-| `VITE_APP_LOG_SCOPES` | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `example` |
+| Variable              | Purpose                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_LOG_LEVEL`  | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production |
+| `VITE_APP_LOG_SCOPES` | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `demo`   |
 
 ## Telemetry
 

@@ -129,6 +129,18 @@ a self-hosted proxy) only needs that one path-stripping rule. Nothing in `docker
 re-anchored for a sub-path, and nothing should be — that would only need undoing the moment the
 proxy in front already does it.
 
+## TLS, HSTS and the CSP {#tls-hsts-and-the-csp}
+
+The container speaks plain HTTP on a private network, so three things belong to whatever
+terminates TLS in front of it:
+
+- **TLS itself**: a certificate for your domain.
+- **`Strict-Transport-Security`**: only the proxy knows the public scheme.
+- **A `Content-Security-Policy`**: it depends on which of Faro and Umami are on and which API host
+  the bundle was built against. Start with `Content-Security-Policy-Report-Only`.
+
+`docker/nginx.conf` sets the other security headers and explains why these three are left out.
+
 ## Related pages
 
 - [Package Scripts](./package-scripts.md) — the `compose:*` helpers

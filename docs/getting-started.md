@@ -161,6 +161,16 @@ flowchart LR
 | Require actions to be pinned to a full-length commit SHA | A workflow naming an action by tag fails. Every `uses:` here is already pinned to a SHA                         |
 | A branch rule on `main` requiring the `ci` check         | The single `ci` job in `.github/workflows/ci.yml` becomes a real merge gate                                     |
 
+### Settings the workflows lean on {#workflow-settings}
+
+- **Actions may open pull requests** (Settings, Actions, General): `release.yml` runs release-please,
+  which opens the release PR.
+- **Packages**: the release's `publish-image` job pushes the image to GHCR (`packages: write`), so
+  the registry must be open to the repository.
+- **The paired backend**: `ci.yml` and `visual.yml` check out `Guebbit/boilerplate-node-backend`
+  unless the repository variable `SPEC_SIBLING_REPO` names another. A private backend also needs a
+  `SPEC_SIBLING_TOKEN` secret that can read it.
+
 Nothing here calls GitHub for you. The backend repository has the same checklist, with the reasoning
 for each row, in its "Start a New Project" page.
 
