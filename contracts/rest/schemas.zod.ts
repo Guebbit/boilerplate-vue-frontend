@@ -3552,8 +3552,8 @@ export const createFeedbackRequestBodyWebsiteMax = 200;
 export const CreateFeedbackRequestBody = zod.strictObject({
     name: zod.string().min(1).max(createFeedbackRequestBodyNameMax).optional(),
     email: zod.email().max(createFeedbackRequestBodyEmailMax),
-    subject: zod.string().max(createFeedbackRequestBodySubjectMax),
-    message: zod.string().max(createFeedbackRequestBodyMessageMax),
+    subject: zod.string().min(1).max(createFeedbackRequestBodySubjectMax),
+    message: zod.string().min(1).max(createFeedbackRequestBodyMessageMax),
     website: zod.string().max(createFeedbackRequestBodyWebsiteMax).optional()
 });
 export const createFeedbackRequestResponseDataIdMax = 64;
