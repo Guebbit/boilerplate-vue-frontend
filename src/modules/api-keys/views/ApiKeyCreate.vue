@@ -84,10 +84,10 @@ const revealedSecret = ref<string>();
 useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
- * Reads the offending permission keys off a mint refusal — `details.permissions`, named exactly,
- * per the backend's own contract. Not shaped like an ordinary validation error (no top-level
- * `field`), so `applyServerErrors`'s generic field-detection cannot map it; this reads it by hand
- * instead, and `applyServerErrors` stays the fallback for anything else the endpoint might refuse.
+ * Reads the offending permission keys off a mint refusal — `details.permissions`, beside
+ * `details.field: 'permissions'`. The generic field mapping would put one sentence on the
+ * combobox; this names each refused key instead. `applyServerErrors` stays the fallback for
+ * anything else the endpoint might refuse.
  *
  * @param error - the rejected value from `mintCredential`
  * @returns the refused permission keys, or an empty array when the shape does not match

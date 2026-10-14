@@ -106,7 +106,7 @@ export interface MessageResponse {
 }
 
 /**
- * Optional structured metadata for programmatic handling
+ * Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input.
  */
 export type ErrorItemDetails = { [key: string]: unknown };
 
@@ -115,7 +115,7 @@ export interface ErrorItem {
     code: string;
     /** Human-readable error detail */
     message: string;
-    /** Optional structured metadata for programmatic handling */
+    /** Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input. */
     details?: ErrorItemDetails;
 }
 
