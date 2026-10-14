@@ -13,6 +13,7 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /** Origin of the stub API. */
 const API = 'http://api.test';
@@ -203,4 +204,37 @@ describe('the REAUTH_REQUIRED step-up flow', () => {
                     expect(timesRequested('POST /checkout')).toBe(2);
                 });
         }));
+});
+
+/**
+ * `cookie` mode answers every other 401 by ending the session (there is nothing to refresh), so a
+ * `REAUTH_REQUIRED` must be caught first: the session is still good, it is only not fresh.
+ */
+describe('the step-up flow in cookie mode', () => {
+    it('prompts and replays rather than ending the held session, with no token on either try', () => {
+        const session = useSessionStore();
+        session.mode = 'cookie';
+        session.startCookieSession();
+
+        return loadHttp().then(({ orvalMutator }) => {
+            const pending = orvalMutator({ url: '/checkout', method: 'POST', data: {} });
+
+            return waitForPrompt()
+                .then(() => {
+                    expect(session.hasSession).toBe(true);
+                    scenario.requiresReauth = false;
+                    useReauthPromptStore().resolveStepUp();
+                    return pending;
+                })
+                .then(() => {
+                    expect(routes()).toEqual(['POST /checkout', 'POST /checkout']);
+                    expect(requestLog.map(({ authorization }) => authorization)).toEqual([
+                        undefined,
+                        undefined
+                    ]);
+                    expect(session.hasSession).toBe(true);
+                    expect(session.expiredSignal).toBe(0);
+                });
+        });
+    });
 });
