@@ -1,10 +1,11 @@
 // requires-module: none
 /**
  * @module
- * The journey harness itself: `cy.travel`, the persona and staff accounts, a second device, a signed
- * payment webhook, the webhook sink, the job lever, and the browser helpers. A journey spec leans
- * on them, so they are proven once here rather than by whichever journey lands first. `cy.step`'s
- * failure prefix is a pure function, tested in `tests/unit/scripts/e2e/step-prefix.spec.ts`.
+ * The journey harness itself: `cy.travel`, the session mode, the persona and staff accounts, a
+ * second device, a signed payment webhook, the webhook sink, the job lever, and the browser
+ * helpers. A journey spec leans on them, so they are proven once here rather than by whichever
+ * journey lands first. `cy.step`'s failure prefix is a pure function, tested in
+ * `tests/unit/scripts/e2e/step-prefix.spec.ts`.
  *
  * The clock, the sink and the job lever are demo-only (the backend's `/__test/*` and a listener
  * this process hosts), so those cases open with `cy.skipUnlessDemo()`; the rest run on both profiles.
@@ -58,6 +59,17 @@ describe('The journey harness', () => {
             cy.step('restores');
             cy.restore();
             clockOffset().should('be.lessThan', DRIFT_MS);
+        });
+    });
+
+    describe('the session mode', () => {
+        it('is the one the journeys were told, so a mode-specific skip skips the right mode', () => {
+            cy.env(['apiUrl', 'sessionMode']).then(({ apiUrl, sessionMode }) =>
+                cy
+                    .request<{ data: { mode: string } }>(`${String(apiUrl)}/account/session-config`)
+                    .its('body.data.mode')
+                    .should('equal', sessionMode)
+            );
         });
     });
 
