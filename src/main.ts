@@ -31,6 +31,7 @@ import '@/styles/main.css';
 import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { loadShopCurrency } from '@/infrastructure/shop-currency.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { registerLocaleContributors } from '@/i18n';
@@ -144,6 +145,11 @@ const bootstrapApplication = () =>
             // The shop's currency, for every price label and input; fire-and-forget, and never
             // rejects (a failure is logged and the next reader retries).
             void loadShopCurrency();
+
+            // How this deployment keeps people signed in, read once at boot: a sign-in on a fresh
+            // tab adopts its session by this mode, and no `isAuth` cookie exists yet to trigger
+            // the read in the restore guard. Shared with that guard's call; never rejects.
+            void useSessionStore().loadSessionMode();
 
             // Obtain the observability store (Grafana Faro + Umami).
             const observability = useObservabilityStore();

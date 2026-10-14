@@ -100,7 +100,7 @@ const {
 const handleRevoke = (sessionId: string, current: boolean) => {
     revokingId.value = sessionId;
     clearSessionsActionError();
-    return revokeSession(sessionId)
+    return revokeSession(sessionId, { current })
         .then(() => {
             addMessage(t('profile-page.sessions-revoked'));
             if (current) return router.push(routerLinkI18n({ name: 'Logout' }));

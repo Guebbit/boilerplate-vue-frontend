@@ -50,13 +50,18 @@ export const useAccountSessionsStore = defineStore('accountSessions', () => {
 
     /**
      * Ends one session — "log out that device" — and reloads the list, because the answer worth
-     * rendering after a revocation is the list without it.
+     * rendering after a revocation is the list without it. Revoking the caller's OWN session skips
+     * the reload: the server has already cleared its cookies, so the list read would be a 401 that
+     * hides the sign-out the caller is about to see.
      *
      * @param sessionId - Handle from {@link fetchSessions}; never a token value.
-     * @returns A promise resolving with the refreshed sessions.
+     * @param options - `current`: the session being ended is the one this tab is using.
+     * @returns A promise resolving with the refreshed sessions, or with nothing for the own session.
      */
-    const revokeSession = (sessionId: string) =>
-        fetchAny(() => apiRevokeSession(sessionId).then(() => fetchSessions()));
+    const revokeSession = (sessionId: string, { current = false }: { current?: boolean } = {}) =>
+        fetchAny(() =>
+            apiRevokeSession(sessionId).then(() => (current ? undefined : fetchSessions()))
+        );
 
     return {
         sessions,

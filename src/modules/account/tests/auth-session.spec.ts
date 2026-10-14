@@ -119,6 +119,21 @@ describe('login', () => {
             });
     });
 
+    // The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
+    // anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
+    it('signs in on a fresh tab whose deployment answered cookie mode at boot', () => {
+        responses['GET /account/session-config'] = orvalEnvelope({ mode: 'cookie' });
+        responses['POST /account/login'] = orvalEnvelope({});
+
+        return useSessionStore()
+            .loadSessionMode()
+            .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => {
+                expect(useSessionStore().isAuth).toBe(true);
+                expect(document.cookie).toContain('isAuth=true');
+            });
+    });
+
     it('maps the remember checkbox to the medium tier, and sends no tier otherwise', () =>
         useAuthStore()
             .login('ada@example.com', 'hunter2hunter2', true)

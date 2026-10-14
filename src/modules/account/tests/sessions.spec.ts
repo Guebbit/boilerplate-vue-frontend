@@ -59,6 +59,19 @@ describe('useAccountSessionsStore', () => {
             });
     });
 
+    it('revokeSession of the caller’s own session does not reload: its cookies are already gone', () => {
+        const store = useAccountSessionsStore();
+        return store
+            .fetchSessions()
+            .then(() => store.revokeSession('s1', { current: true }))
+            .then(() => {
+                expect(requestedUrls().slice(-2)).toEqual([
+                    '/account/sessions',
+                    '/account/sessions/s1'
+                ]);
+            });
+    });
+
     it('a sessions payload without the list reads as no sessions', () => {
         // `sessions` is required by the real contract, so this exact payload is impossible
         // against it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence
