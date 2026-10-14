@@ -42,15 +42,20 @@ const unwrap = <T>(response: Response, context: string): Promise<T> =>
             return payload.data as T;
         });
 
-/** Logs in as the given account and resolves its bearer token. */
+/**
+ * Logs in as the given account and resolves its bearer credential. Asks for `transport: bearer`
+ * so cookie mode answers with a `sessionToken` instead of a cookie nobody here can hold.
+ */
 const login = (apiUrl: string, email: string, password: string): Promise<string> =>
     fetch(`${apiUrl}/account/login`, {
         method: 'POST',
         headers: jsonHeaders,
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, transport: 'bearer' })
     })
-        .then((response) => unwrap<{ token: string }>(response, 'POST /account/login'))
-        .then(({ token }) => token);
+        .then((response) =>
+            unwrap<{ token?: string; sessionToken?: string }>(response, 'POST /account/login')
+        )
+        .then(({ token, sessionToken }) => token ?? sessionToken ?? '');
 
 /**
  * Cypress task: one authenticated call to the backend API as the given account, resolving the
@@ -76,3 +81,24 @@ export const adminApi = <T>({
         // command — so a body-less answer (DELETE) becomes null rather than nothing.
         .then((response) => unwrap<T>(response, `${method} ${path}`))
         .then((data) => data ?? null);
+
+/**
+ * Cypress task: one call with no credential, made from Node. `cy.request` would carry the
+ * browser's session cookie in cookie mode, so a "guest" check through it is not a guest.
+ * Resolves the status and the parsed body (`null` when the answer is not JSON).
+ */
+export const guestApi = ({
+    apiUrl,
+    path,
+    method = 'GET'
+}: {
+    apiUrl: string;
+    path: string;
+    method?: string;
+}): Promise<{ status: number; body: unknown }> =>
+    fetch(`${apiUrl}${path}`, { method }).then((response) =>
+        response
+            .json()
+            .catch(() => null)
+            .then((body: unknown) => ({ status: response.status, body }))
+    );

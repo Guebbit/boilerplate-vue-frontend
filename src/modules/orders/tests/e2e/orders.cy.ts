@@ -66,7 +66,10 @@ describe('Orders', () => {
             cy.intercept('GET', '**/orders/export*').as('exportOrders');
             cy.get('[data-test=orders-export]').click();
             cy.wait('@exportOrders').then(({ request, response }) => {
-                expect(request.headers).to.have.property('authorization');
+                // jwt mode sends a bearer header; cookie mode sends the session cookie
+                expect(Object.keys(request.headers)).to.satisfy((names: string[]) =>
+                    names.some((name) => name === 'authorization' || name === 'cookie')
+                );
                 expect(response?.statusCode).to.eq(200);
                 expect(response?.headers['content-type']).to.contain('text/csv');
             });

@@ -32,7 +32,7 @@ import {
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
-import { adminApi } from './tests/support/e2e/admin-api-task';
+import { adminApi, guestApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
@@ -170,6 +170,7 @@ export default defineConfig({
                  * session and refresh cookie are left exactly as the spec found them.
                  */
                 adminApi: (request: Parameters<typeof adminApi>[0]) => adminApi(request),
+                guestApi: (request: Parameters<typeof guestApi>[0]) => guestApi(request),
                 /*
                  * A second device, server-side: a plain Node fetch carries no browser cookie jar,
                  * so the page's own refresh cookie — and which session counts as "current" — is

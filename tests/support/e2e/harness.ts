@@ -165,7 +165,7 @@ export const requestAsGuest = (method: string, path: string): Cypress.Chainable<
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) =>
-            cy.request({ method, url: `${String(apiUrl)}${path}`, failOnStatusCode: false })
+            cy.task<{ status: number }>('guestApi', { apiUrl: String(apiUrl), path, method })
         )
         .its('status');
 
