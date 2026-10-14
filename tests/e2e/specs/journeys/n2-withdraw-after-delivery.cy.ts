@@ -21,6 +21,7 @@ const DEDUCTION_CENTS = 300;
 
 /** The slice of a payment this story reads: what was taken and what came back. */
 interface PaymentLike {
+    displayStatus?: string;
     status: string;
     amount: number;
     amountRefunded: number;
@@ -111,7 +112,7 @@ describe('N2 · Withdraw after delivery', () => {
                 expect(Math.round(Number(payment?.amountRefunded) * 100)).to.equal(
                     paid.cents - DEDUCTION_CENTS
                 );
-                expect(payment?.status, 'part of the money stayed').to.not.equal('refunded');
+                expect(payment?.displayStatus, 'part of the money stayed').to.not.equal('refunded');
             });
             eventually(
                 () => cy.apiAs<CreditNoteLike[]>('user', 'GET', `/orders/${orderId}/credit-notes`),

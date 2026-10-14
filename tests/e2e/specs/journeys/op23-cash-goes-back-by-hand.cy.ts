@@ -13,6 +13,7 @@ import { eventually } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: the method, and where the money stands. */
 interface PaymentLike {
+    displayStatus?: string;
     method: string;
     status: string;
     amountRefunded: number;
@@ -62,7 +63,7 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`).should(
                 (payment) => {
                     expect(payment?.method).to.not.equal('card');
-                    expect(payment?.status).to.equal('refunded');
+                    expect(payment?.displayStatus).to.equal('refunded');
                     expect(payment?.refundedByHand).to.equal(true);
                 }
             );

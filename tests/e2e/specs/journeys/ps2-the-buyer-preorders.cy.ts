@@ -53,6 +53,7 @@ describe('PS2 · The buyer preorders', () => {
             cy.get('[data-test=cart-line-availability]').should('contain.text', 'Preorder');
 
             cy.step('the order is placed and names the date it ships from');
+            cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('user').then((order) => {
                 expect(order?.items[0]?.product.preorder).to.equal(true);
                 cy.visit(`/en/orders/${String(order?.id)}`);

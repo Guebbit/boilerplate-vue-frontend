@@ -23,6 +23,7 @@ interface OrderLike {
 
 /** The slice of a payment this story reads. */
 interface PaymentLike {
+    displayStatus?: string;
     status: string;
     amount: number;
     amountRefunded: number;
@@ -95,9 +96,9 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.step('the cancel itself refunds the payment, and the order stays cancelled');
             eventually(
                 () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
-                (payment) => payment?.status === 'refunded'
+                (payment) => payment?.displayStatus === 'refunded'
             ).should((payment) => {
-                expect(payment?.status).to.equal('refunded');
+                expect(payment?.displayStatus).to.equal('refunded');
                 expect(payment?.amountRefunded).to.equal(payment?.amount);
             });
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {

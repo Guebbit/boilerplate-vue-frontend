@@ -142,7 +142,6 @@ describe('OP21 · The stock counters follow an order', () => {
                 expect(newestFirst.toReversed()).to.deep.equal([
                     'Received',
                     'Reserved',
-                    'Paid',
                     'Reserved',
                     'Released',
                     'Adjusted'

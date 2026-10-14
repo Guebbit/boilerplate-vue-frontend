@@ -13,6 +13,7 @@ import { eventually } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
+    displayStatus?: string;
     status: string;
     amount: number;
     amountRefunded: number;
@@ -56,7 +57,7 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.get('[data-test=button-refund-only]').should('be.disabled');
             cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`).should(
                 (payment) => {
-                    expect(payment?.status).to.equal('refunded');
+                    expect(payment?.displayStatus).to.equal('refunded');
                     expect(payment?.amountRefunded).to.equal(payment?.amount);
                 }
             );

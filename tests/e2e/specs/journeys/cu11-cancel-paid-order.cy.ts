@@ -13,6 +13,7 @@ import { eventually } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
+    displayStatus?: string;
     status: string;
     amount: number;
     amountRefunded: number;
@@ -88,9 +89,9 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 // The refund is the payments module answering the cancel, so it may land a beat later.
                 eventually(
                     () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
-                    (payment) => payment?.status === 'refunded'
+                    (payment) => payment?.displayStatus === 'refunded'
                 ).should((payment) => {
-                    expect(payment?.status).to.equal('refunded');
+                    expect(payment?.displayStatus).to.equal('refunded');
                     expect(payment?.amountRefunded).to.equal(payment?.amount);
                 });
                 cy.reload();

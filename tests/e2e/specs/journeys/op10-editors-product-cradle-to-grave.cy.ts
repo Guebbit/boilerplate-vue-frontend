@@ -31,7 +31,10 @@ const guestStatusOf = (id: string): Cypress.Chainable<number> =>
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) =>
-            cy.request({ url: `${String(apiUrl)}/products/${id}`, failOnStatusCode: false })
+            cy.task<{ status: number }>('guestApi', {
+                apiUrl: String(apiUrl),
+                path: `/products/${id}`
+            })
         )
         .then((response) => response.status);
 

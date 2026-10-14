@@ -23,6 +23,7 @@ import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /** The slice of a payment this story reads: what was paid and what came back. */
 interface PaymentLike {
+    displayStatus?: string;
     status: string;
     amount: number;
     amountRefunded: number;
@@ -81,9 +82,9 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             // The refund is the payments module answering the cancel, so it may land a beat later.
             eventually(
                 () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
-                (payment) => payment?.status === 'refunded'
+                (payment) => payment?.displayStatus === 'refunded'
             ).should((payment) => {
-                expect(payment?.status).to.equal('refunded');
+                expect(payment?.displayStatus).to.equal('refunded');
                 expect(
                     cents(String(payment?.amountRefunded.toFixed(2))),
                     'the refund is the whole charge, delivery included'
