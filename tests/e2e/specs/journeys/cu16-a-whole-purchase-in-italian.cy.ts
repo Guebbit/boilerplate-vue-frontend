@@ -96,7 +96,7 @@ describe('CU16 · A whole purchase in Italian', () => {
         cy.step('pays by card, reading the statuses in Italian');
         cy.payWith('Carta che paga');
         cy.get('[data-test=payment-status]').should('contain.text', 'Riuscito');
-        cy.get('[data-test=order-payment-status]').should('contain.text', 'Riuscito');
+        cy.get('[data-test=order-payment-status]').should('contain.text', 'Pagato');
 
         cy.step('the VAT summary speaks Italian and adds up to the charge');
         cy.get('[data-test=order-tax-summary]')

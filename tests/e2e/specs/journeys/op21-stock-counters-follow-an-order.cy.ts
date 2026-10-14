@@ -147,12 +147,16 @@ describe('OP21 · The stock counters follow an order', () => {
                     'Adjusted'
                 ]);
             });
-            for (const alias of ['first', 'second']) {
+            // Paying a hold writes no row of its own: the paid order keeps its one hold row,
+            // the released one has its hold and its release.
+            for (const [alias, rows] of [
+                ['first', 1],
+                ['second', 2]
+            ] as const) {
                 cy.get<string>(`@${alias}`).then((orderId) => {
-                    // Each order is held, then paid or released: two rows.
                     cy.get(`[data-test=movement-row]:has(a[href$="/orders/${orderId}"])`).should(
                         'have.length',
-                        2
+                        rows
                     );
                 });
             }
