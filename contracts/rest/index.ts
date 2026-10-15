@@ -170,7 +170,9 @@ export interface User {
     phone?: string;
     website?: string;
     analyticsConsent?: boolean;
-    termsAccepted?: boolean;
+    analyticsConsentAt?: string;
+    termsAcceptedAt?: string;
+    termsVersion?: string;
     twoFactorEnabledAt?: string;
     createdAt?: string;
     updatedAt?: string;

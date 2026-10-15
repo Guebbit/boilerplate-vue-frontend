@@ -9572,8 +9572,14 @@ components:
           type: string
         analyticsConsent:
           type: boolean
-        termsAccepted:
-          type: boolean
+        analyticsConsentAt:
+          type: string
+          format: date-time
+        termsAcceptedAt:
+          type: string
+          format: date-time
+        termsVersion:
+          type: string
         twoFactorEnabledAt:
           type: string
           format: date-time
