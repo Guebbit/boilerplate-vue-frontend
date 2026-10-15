@@ -161,7 +161,7 @@ const showSideLoading = computed(
 );
 
 /**
- * Whether the footer offers "Privacy choices" — only when Umami is configured, same as the banner.
+ * Whether the footer offers "Privacy choices" — only when Umami or Faro is configured, same as the banner.
  */
 const analyticsConsentEnabled = isAnalyticsConsentEnabled();
 

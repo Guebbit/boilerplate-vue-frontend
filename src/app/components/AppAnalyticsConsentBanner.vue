@@ -2,8 +2,8 @@
 /**
  * @module
  * The guest analytics-consent banner, pinned to the bottom edge: shown while the choice is
- * `unknown`, or after the footer's "privacy choices" link reopens it, and only when Umami is
- * configured. Accept/Decline both persist
+ * `unknown`, or after the footer's "privacy choices" link reopens it, and only when Umami or Faro
+ * is configured. Accept/Decline both persist
  * through `useAnalyticsConsentStore`, which the http layer's `onRequest` interceptor reads to
  * decide whether an anonymous request carries `X-Analytics-Consent`.
  */
@@ -50,8 +50,10 @@ const consent = useAnalyticsConsentStore();
             {{ t('analytics-consent.message') }}
             <template #append>
                 <div class="flex gap-2">
+                    <!-- Both choices share one look: a refusal that is visibly weaker than the
+                         agreement is not a freely given consent (CNIL, EDPB cookie-banner taskforce). -->
                     <v-btn
-                        variant="text"
+                        variant="tonal"
                         size="small"
                         data-test="analytics-consent-decline"
                         @click="consent.deny()"
@@ -59,8 +61,7 @@ const consent = useAnalyticsConsentStore();
                         {{ t('analytics-consent.button-decline') }}
                     </v-btn>
                     <v-btn
-                        variant="flat"
-                        color="primary"
+                        variant="tonal"
                         size="small"
                         data-test="analytics-consent-accept"
                         @click="consent.grant()"

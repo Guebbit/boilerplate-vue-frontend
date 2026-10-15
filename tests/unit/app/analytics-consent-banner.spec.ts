@@ -103,4 +103,19 @@ describe('AppAnalyticsConsentBanner', () => {
                 expect(deny).toHaveBeenCalledOnce();
                 expect(grant).not.toHaveBeenCalled();
             }));
+
+    it('gives Decline the same weight as Accept: one variant, no colour on either', () => {
+        const wrapper = mountBanner();
+        const decline = wrapper.get('[data-test="analytics-consent-decline"]');
+        const accept = wrapper.get('[data-test="analytics-consent-accept"]');
+
+        const looks = (button: typeof decline) =>
+            button
+                .classes()
+                .filter((name) => name.startsWith('v-btn--variant') || name.startsWith('bg-'))
+                .toSorted();
+        expect(looks(decline)).toEqual(looks(accept));
+        expect(looks(accept)).toContain('v-btn--variant-tonal');
+        expect(accept.classes()).not.toContain('bg-primary');
+    });
 });
