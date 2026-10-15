@@ -4005,7 +4005,7 @@ export const ListProductsResponse = zod.strictObject({
     })
 });
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A body naming an opening count (`onHand` above zero) books a stock movement, so it also needs `inventory.any.create`: a caller who edits the catalogue without it is refused `403` and nothing is written.
  * @summary Create product
  */
 export const createProductBodyTranslationsOneTitleMin = 5;

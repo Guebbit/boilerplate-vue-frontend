@@ -22,6 +22,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '../store';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { productsSchema, productsOnHandMin, productsOnHandDefault } from '../schemas.ts';
 import { useActiveLocales } from '../composables/use-active-locales.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
@@ -59,6 +60,9 @@ const router = useRouter();
  * Products store's create action.
  */
 const { createProduct } = useProductsStore();
+
+/** The session, asked which of the form's fields the signed-in caller may use. */
+const session = useSessionStore();
 
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers.
@@ -330,9 +334,11 @@ const submitForm = () => {
             />
             <!--
                 Create-only: opening stock. An edit never shows this field, since every later
-                stock change goes through /inventory's signed transitions instead.
+                stock change goes through /inventory's signed transitions instead. Offered only to
+                a caller who may book stock: the server refuses an opening count without it.
             -->
             <v-number-input
+                v-if="session.can('create', 'StockMovement')"
                 v-model="form.onHand"
                 :label="t('product-create-page.label-on-hand')"
                 :min="productsOnHandMin"
