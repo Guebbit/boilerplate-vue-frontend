@@ -208,6 +208,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     summarizePreorderFulfillmentOrders: 'delivery',
     sweepReservations: 'inventory',
     syncPayment: 'payments',
+    touchSession: 'account',
     undoEmailChange: 'account',
     unlinkOAuthProvider: 'account',
     updateAccount: 'account',

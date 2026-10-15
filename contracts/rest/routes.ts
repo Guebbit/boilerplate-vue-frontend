@@ -49,6 +49,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/account\/reset-confirm$/, schemaName: "ConfirmPasswordResetResponse", bodySchemaName: "ConfirmPasswordResetBody", module: "account" },
     { method: "POST", pattern: /^\/account\/reset$/, schemaName: "RequestPasswordResetResponse", bodySchemaName: "RequestPasswordResetBody", module: "account" },
     { method: "GET", pattern: /^\/account\/session-config$/, schemaName: "GetSessionConfigResponse", bodySchemaName: undefined, module: "account" },
+    { method: "POST", pattern: /^\/account\/session\/touch$/, schemaName: "TouchSessionResponse", bodySchemaName: undefined, module: "account" },
     { method: "GET", pattern: /^\/account\/sessions$/, schemaName: "ListSessionsResponse", bodySchemaName: undefined, module: "account" },
     { method: "POST", pattern: /^\/account\/signup$/, schemaName: "SignupResponse", bodySchemaName: "SignupBody", module: "account" },
     { method: "POST", pattern: /^\/account\/verify-confirm$/, schemaName: "ConfirmEmailVerificationResponse", bodySchemaName: "ConfirmEmailVerificationBody", module: "account" },

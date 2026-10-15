@@ -4669,6 +4669,23 @@ export interface ApiKeyCreatedEnvelope {
     data: ApiKeyCreated;
 }
 
+export interface SessionActivity {
+    /** When the session last saw a real request — now, for a touch. */
+    lastActiveAt: string;
+    /**
+     * How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
+     * @minimum 1
+     */
+    idleTimeoutSeconds?: number;
+}
+
+export interface SessionActivityEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: SessionActivity;
+}
+
 /**
  * The deployment's `NODE_SESSION_MODE`.
  */
@@ -7593,7 +7610,7 @@ export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResp
 };
 
 /**
- * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in.
+ * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
  * @summary List active sessions
  */
 export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
@@ -10429,6 +10446,19 @@ export const sendReauthCode = (
 };
 
 /**
+ * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `X-Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
+ * @summary Count the caller's own session as active, and read its idle clock
+ */
+export const touchSession = (
+    options?: SecondParameter<typeof orvalMutator<SessionActivityEnvelope>>
+) => {
+    return orvalMutator<SessionActivityEnvelope>(
+        { url: `/account/session/touch`, method: 'POST' },
+        options
+    );
+};
+
+/**
  * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
  * @summary How this deployment keeps people signed in
  */
@@ -11285,6 +11315,7 @@ export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKey
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
+export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
 export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;
 export type DownloadAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof downloadAccountExport>>

@@ -178,6 +178,8 @@ export const ERROR_CODES = {
     RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
     /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+    /** 401 — A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this. */
+    SESSION_IDLE: 'SESSION_IDLE',
     /** 429 — A two-factor code was already sent recently — carries `details.retryAfter`. */
     TWO_FACTOR_RESEND_TOO_SOON: 'TWO_FACTOR_RESEND_TOO_SOON',
     /** 401 — No valid session — log in and retry. */

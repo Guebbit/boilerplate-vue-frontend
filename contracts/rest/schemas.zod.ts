@@ -2043,7 +2043,7 @@ export const LogoutResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in.
+ * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
  * @summary List active sessions
  */
 export const listSessionsResponseDataSessionsItemIdMax = 64;
@@ -12129,6 +12129,19 @@ export const SendReauthCodeResponse = zod.strictObject({
         sentTo: zod.string(),
         resendAfter: zod.number(),
         expiresAt: zod.iso.datetime({ offset: true })
+    })
+});
+/**
+ * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `X-Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
+ * @summary Count the caller's own session as active, and read its idle clock
+ */
+export const TouchSessionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        lastActiveAt: zod.iso.datetime({ offset: true }),
+        idleTimeoutSeconds: zod.number().min(1).optional()
     })
 });
 /**
