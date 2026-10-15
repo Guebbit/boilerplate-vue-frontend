@@ -7,15 +7,13 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '../views/Cart.vue';
+import { router } from '../../../../tests/support/unit/mount-cart-page.ts';
 import { useCartStore } from '../store.ts';
 import { searchProducts } from '@api';
 import * as schemas from '@api/schemas';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import { collectModuleRoutes } from '@/kernel/registry';
-import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { CartResponse } from '@types';
@@ -42,14 +40,6 @@ vi.mock('@api', async (importOriginal) => ({
         )
     )
 }));
-
-/** Memory-history router carrying the real module routes. */
-const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-        { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
-    ]
-});
 
 /** One line of three units — enough to tell the unit price and the line total apart. */
 const CART: CartResponse = {

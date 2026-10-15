@@ -174,6 +174,20 @@ beforeEach(() => {
     return loadLocale('en').then(() => router.push('/en/cart').then(() => router.isReady()));
 });
 
+describe('the order button', () => {
+    it('has the terms and the privacy notice linked right above it', () =>
+        mountCart().then(({ wrapper }) => {
+            const notice = wrapper.get('[data-test=cart-order-terms]');
+
+            expect(notice.findAll('a')).toHaveLength(2);
+            // Above the button, not elsewhere on the page: the buyer reads it at the moment of ordering.
+            const html = wrapper.html();
+            expect(html.indexOf('data-test="cart-order-terms"')).toBeLessThan(
+                html.indexOf('data-test="cart-checkout"')
+            );
+        }));
+});
+
 describe('the checkout refusals', () => {
     it('refetches the cart and names it as changed on CART_CHANGED', () =>
         mountCart().then(({ wrapper, checkoutSpy, cart }) => {

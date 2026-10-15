@@ -16,7 +16,7 @@ export default {
  * clicks collapse into one request per line.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
@@ -864,11 +864,36 @@ onMounted(() =>
                             {{ formatCurrency(cartSummary.totalPrice, cartSummary.currency) }}
                         </span>
                     </div>
+                    <!-- The key terms (withdrawal, delivery) in front of the buyer right before the order
+                         (Consumer Rights Directive Art. 6, 8). -->
+                    <i18n-t
+                        keypath="cart-page.text-order-terms"
+                        tag="p"
+                        class="mt-4 text-xs opacity-70"
+                        data-test="cart-order-terms"
+                    >
+                        <template #terms>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'StaticTerms' })"
+                                class="underline"
+                            >
+                                {{ t('static-pages.terms.title') }}
+                            </RouterLink>
+                        </template>
+                        <template #privacy>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'StaticPrivacy' })"
+                                class="underline"
+                            >
+                                {{ t('static-pages.privacy.title') }}
+                            </RouterLink>
+                        </template>
+                    </i18n-t>
                     <v-btn
                         color="primary"
                         size="large"
                         block
-                        class="mt-4"
+                        class="mt-2"
                         data-test="cart-checkout"
                         :disabled="!canCheckout || loading || placing"
                         @click="checkout"

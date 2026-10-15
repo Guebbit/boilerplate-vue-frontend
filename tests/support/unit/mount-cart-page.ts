@@ -22,6 +22,7 @@ import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
+import { staticPageRouteName } from '@/app/utils/static-pages.ts';
 import { emitOn, nextRenderTick } from './mounted-vm';
 import type { CartResponse } from '@types';
 
@@ -32,7 +33,19 @@ import type { CartResponse } from '@types';
 export const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-        { path: '/:locale', component: RouterView, children: collectModuleRoutes(enabledModules) }
+        {
+            path: '/:locale',
+            component: RouterView,
+            children: [
+                ...collectModuleRoutes(enabledModules),
+                // The shell's two legal pages, which the order button links to.
+                ...(['terms', 'privacy'] as const).map((page) => ({
+                    path: page,
+                    name: staticPageRouteName(page),
+                    component: { template: '<div />' }
+                }))
+            ]
+        }
     ]
 });
 

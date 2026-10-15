@@ -24,6 +24,7 @@
         "button-clear": "Clear cart",
         "confirm-clear": "Remove the item from your cart? | Remove all {count} items from your cart?",
         "button-checkout": "Order with obligation to pay",
+        "text-order-terms": "By placing the order you accept the {terms}. See the {privacy}.",
         "success-checkout": "Order placed successfully!",
         "error-cart-changed": "Your cart changed on the server since this page loaded — it has been refreshed, please review it and try again.",
         "error-total-changed": "The total changed from {from} to {to}. Check it and place the order again.",
