@@ -50,7 +50,7 @@ import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { shopCurrency } from '@/infrastructure/shop-currency.ts';
+import { shopCurrency } from '@/infrastructure/shop.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
 import { fromDateTimeLocal, toDateTimeLocal } from '../domain';
 import type { ProductTranslationsWrite } from '@types';

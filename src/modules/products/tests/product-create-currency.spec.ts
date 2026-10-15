@@ -1,7 +1,7 @@
 /**
  * @module
  * D11: a create form has no product to read `currency` from, so its price input is sized from the
- * shop's own (`GET /products/settings`) — a JPY shop has no cents to type, a KWD shop has three.
+ * shop's own (`GET /shop`) — a JPY shop has no cents to type, a KWD shop has three.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
@@ -11,11 +11,12 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductCreate from '../views/ProductCreate.vue';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
-import { resetShopCurrency } from '@/infrastructure/shop-currency.ts';
+import { resetShop } from '@/infrastructure/shop.ts';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aShop } from '../../../../tests/support/unit/fixtures.ts';
 import {
     orvalEnvelope,
     parseOrvalFixture
@@ -53,13 +54,13 @@ const LOCALES_RESPONSE = {
 };
 
 /**
- * What `GET /products/settings` answers in the current case.
+ * What `GET /shop` answers in the current case.
  */
 let shopCurrencyCode = 'EUR';
 
 beforeEach(() => {
     shopCurrencyCode = 'EUR';
-    resetShopCurrency();
+    resetShop();
     setActivePinia(createPinia());
     vi.mocked(orvalMutator).mockReset();
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
@@ -67,12 +68,12 @@ beforeEach(() => {
             return Promise.resolve(
                 parseOrvalFixture('GET', '/locales', orvalEnvelope(LOCALES_RESPONSE))
             );
-        if (config.url === '/products/settings')
+        if (config.url === '/shop')
             return Promise.resolve(
                 parseOrvalFixture(
                     'GET',
-                    '/products/settings',
-                    orvalEnvelope({ currency: shopCurrencyCode })
+                    '/shop',
+                    orvalEnvelope(aShop({ currency: shopCurrencyCode }))
                 )
             );
         if (config.method === 'POST')

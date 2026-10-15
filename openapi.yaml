@@ -77,6 +77,8 @@ tags:
     description: The example module - the small, complete domain to copy when starting a new one. Safe to delete.
   - name: Notifications
     description: The signed-in user's in-app notifications and their delivery preferences.
+  - name: Shop
+    description: The shop itself — who it is, where it ships, and what it trades in.
 paths:
   /:
     get:
@@ -4007,28 +4009,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogueFacetsEnvelope"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: products
-  /products/settings:
-    get:
-      tags:
-        - Products
-      summary: The shop's catalogue settings
-      description: "What the catalogue as a whole is configured with, as opposed to any one product: today the currency every price is quoted in (`NODE_DEFAULT_CURRENCY`). A create form reads it to size its price input before a product exists to ask. Public and cheap to read; it never changes without a redeploy."
-      operationId: getProductSettings
-      security: []
-      responses:
-        "200":
-          description: The catalogue settings
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductSettingsEnvelope"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -9053,6 +9033,28 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: notifications
+  /shop:
+    get:
+      tags:
+        - Shop
+      summary: The shop's identity, currency, ship-to countries and return address
+      description: "Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order."
+      operationId: getShop
+      security: []
+      responses:
+        "200":
+          description: The shop
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopEnvelope"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: shop
 components:
   securitySchemes:
     bearerAuth:
@@ -13055,32 +13057,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/CatalogueFacetsResponse"
-    ProductSettingsResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - currency
-      properties:
-        currency:
-          type: string
-          description: ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports.
-    ProductSettingsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ProductSettingsResponse"
     ReplaceProductRequest:
       type: object
       additionalProperties: false
@@ -14830,46 +14806,16 @@ components:
           type: integer
           minimum: 0
           description: Grams. Absent means no ceiling. Enforced the same way as minWeight.
-    ReturnAddress:
-      type: object
-      additionalProperties: false
-      required:
-        - street
-        - city
-        - zip
-        - country
-      description: "Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set."
-      properties:
-        name:
-          type: string
-          description: Who the parcel is addressed to.
-        street:
-          type: string
-        city:
-          type: string
-        zip:
-          type: string
-        country:
-          $ref: "#/components/schemas/CountryCode"
     ShippingMethodsResponse:
       type: object
       additionalProperties: false
       required:
         - methods
-        - shipToCountries
-        - returnAddress
       properties:
         methods:
           type: array
           items:
             $ref: "#/components/schemas/ShippingMethod"
-        shipToCountries:
-          type: array
-          items:
-            $ref: "#/components/schemas/CountryCode"
-          description: Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it.
-        returnAddress:
-          $ref: "#/components/schemas/ReturnAddress"
     ShippingMethodsResponseEnvelope:
       type: object
       additionalProperties: false
@@ -18522,6 +18468,94 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/NotificationsResponse"
+    ShopAddress:
+      type: object
+      additionalProperties: false
+      required:
+        - street
+        - city
+        - zip
+        - country
+      description: "Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set."
+      properties:
+        name:
+          type: string
+          description: Who the parcel is addressed to.
+        street:
+          type: string
+        city:
+          type: string
+        zip:
+          type: string
+        country:
+          $ref: "#/components/schemas/CountryCode"
+    Shop:
+      type: object
+      additionalProperties: false
+      required:
+        - legalName
+        - street
+        - city
+        - zip
+        - country
+        - email
+        - phone
+        - currency
+        - shipToCountries
+        - returnAddress
+        - returnPostagePayer
+      properties:
+        legalName:
+          type: string
+          description: The seller's name, as registered.
+        vatNumber:
+          type: string
+          description: VAT identification number; absent for a shop below the registration threshold.
+        street:
+          type: string
+        city:
+          type: string
+        zip:
+          type: string
+        country:
+          $ref: "#/components/schemas/CountryCode"
+        email:
+          $ref: "#/components/schemas/Email"
+        phone:
+          type: string
+        currency:
+          type: string
+          description: ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports.
+        shipToCountries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountryCode"
+          description: Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it.
+        returnAddress:
+          $ref: "#/components/schemas/ShopAddress"
+        returnPostagePayer:
+          type: string
+          enum:
+            - consumer
+            - shop
+          description: Who pays to send returned goods back (`NODE_RETURN_POSTAGE_PAYER`).
+    ShopEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Shop"
 x-error-codes:
   ADDRESS_BOOK_FULL:
     status: 409

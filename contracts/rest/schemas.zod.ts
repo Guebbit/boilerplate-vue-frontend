@@ -4147,18 +4147,6 @@ export const GetCatalogueFacetsResponse = zod.strictObject({
     })
 });
 /**
- * What the catalogue as a whole is configured with, as opposed to any one product: today the currency every price is quoted in (`NODE_DEFAULT_CURRENCY`). A create form reads it to size its price input before a product exists to ask. Public and cheap to read; it never changes without a redeploy.
- * @summary The shop's catalogue settings
- */
-export const GetProductSettingsResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        currency: zod.string()
-    })
-});
-/**
  * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
  * @summary Product details
  */
@@ -9152,10 +9140,6 @@ export const listShippingMethodsResponseDataMethodsItemPriceMin = 0;
 export const listShippingMethodsResponseDataMethodsItemFreeAboveMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMinWeightMin = 0;
 export const listShippingMethodsResponseDataMethodsItemMaxWeightMin = 0;
-export const listShippingMethodsResponseDataShipToCountriesItemMax = 2;
-export const listShippingMethodsResponseDataShipToCountriesItemRegExp = new RegExp('^[A-Z]{2}$');
-export const listShippingMethodsResponseDataReturnAddressCountryMax = 2;
-export const listShippingMethodsResponseDataReturnAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
 export const ListShippingMethodsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9181,23 +9165,7 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .min(listShippingMethodsResponseDataMethodsItemMaxWeightMin)
                     .optional()
             })
-        ),
-        shipToCountries: zod.array(
-            zod
-                .string()
-                .max(listShippingMethodsResponseDataShipToCountriesItemMax)
-                .regex(listShippingMethodsResponseDataShipToCountriesItemRegExp)
-        ),
-        returnAddress: zod.strictObject({
-            name: zod.string().optional(),
-            street: zod.string(),
-            city: zod.string(),
-            zip: zod.string(),
-            country: zod
-                .string()
-                .max(listShippingMethodsResponseDataReturnAddressCountryMax)
-                .regex(listShippingMethodsResponseDataReturnAddressCountryRegExp)
-        })
+        )
     })
 });
 /**
@@ -15036,4 +15004,51 @@ export const DeleteNotificationByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+/**
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * @summary The shop's identity, currency, ship-to countries and return address
+ */
+export const getShopResponseDataCountryMax = 2;
+export const getShopResponseDataCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const getShopResponseDataEmailMax = 254;
+export const getShopResponseDataShipToCountriesItemMax = 2;
+export const getShopResponseDataShipToCountriesItemRegExp = new RegExp('^[A-Z]{2}$');
+export const getShopResponseDataReturnAddressCountryMax = 2;
+export const getShopResponseDataReturnAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const GetShopResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        legalName: zod.string(),
+        vatNumber: zod.string().optional(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod
+            .string()
+            .max(getShopResponseDataCountryMax)
+            .regex(getShopResponseDataCountryRegExp),
+        email: zod.email().max(getShopResponseDataEmailMax),
+        phone: zod.string(),
+        currency: zod.string(),
+        shipToCountries: zod.array(
+            zod
+                .string()
+                .max(getShopResponseDataShipToCountriesItemMax)
+                .regex(getShopResponseDataShipToCountriesItemRegExp)
+        ),
+        returnAddress: zod.strictObject({
+            name: zod.string().optional(),
+            street: zod.string(),
+            city: zod.string(),
+            zip: zod.string(),
+            country: zod
+                .string()
+                .max(getShopResponseDataReturnAddressCountryMax)
+                .regex(getShopResponseDataReturnAddressCountryRegExp)
+        }),
+        returnPostagePayer: zod.enum(['consumer', 'shop'])
+    })
 });

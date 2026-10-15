@@ -36,7 +36,7 @@ import { fromDateTimeLocal } from '../domain';
 import { toCreateTranslations } from '../composables/translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
-import { loadShopCurrency, shopCurrency } from '@/infrastructure/shop-currency.ts';
+import { loadShop, shopCurrency } from '@/infrastructure/shop.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -157,7 +157,7 @@ const {
  * The shop's currency decides how many decimals the price input takes: a JPY shop has no cents to
  * type, a KWD shop has three. Asked here as well as at boot, so a failed boot read is retried.
  */
-void loadShopCurrency();
+void loadShop();
 
 /**
  * Decimal places the price field accepts — the shop currency's own minor unit.

@@ -19,7 +19,8 @@ import {
     aFulfillmentOrder,
     aPreorderFulfillmentOrder,
     aPreorderSummary,
-    aShipment
+    aShipment,
+    aShop
 } from '../../../../tests/support/unit/fixtures.ts';
 
 import * as schemas from '@api/schemas';
@@ -67,7 +68,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /delivery/methods': orvalEnvelope({ methods: METHODS, shipToCountries: ['IT'] }),
+        'GET /delivery/methods': orvalEnvelope({ methods: METHODS }),
+        'GET /shop': orvalEnvelope(aShop({ shipToCountries: ['IT'] })),
         'GET /delivery/order/o1': orvalEnvelope({
             fulfillmentOrders: [aFulfillmentOrder()],
             shipments: [aShipment({ trackingCode: 'TRK-1' })]

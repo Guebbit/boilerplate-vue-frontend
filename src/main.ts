@@ -30,7 +30,7 @@ import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
 import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
-import { loadShopCurrency } from '@/infrastructure/shop-currency.ts';
+import { loadShop } from '@/infrastructure/shop.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { loadResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { shouldValidateResponses } from '@/infrastructure/http/validate.ts';
@@ -144,7 +144,7 @@ const bootstrapApplication = () =>
 
             // The shop's currency, for every price label and input; fire-and-forget, and never
             // rejects (a failure is logged and the next reader retries).
-            void loadShopCurrency();
+            void loadShop();
 
             // How this deployment keeps people signed in, read once at boot: a sign-in on a fresh
             // tab adopts its session by this mode, and no `isAuth` cookie exists yet to trigger

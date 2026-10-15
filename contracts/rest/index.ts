@@ -2418,18 +2418,6 @@ export interface CatalogueFacetsEnvelope {
     data: CatalogueFacetsResponse;
 }
 
-export interface ProductSettingsResponse {
-    /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
-    currency: string;
-}
-
-export interface ProductSettingsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ProductSettingsResponse;
-}
-
 export interface ReplaceProductRequest {
     translations: ProductTranslationsWrite;
     /**
@@ -3563,23 +3551,8 @@ export interface ShippingMethod {
     maxWeight?: number;
 }
 
-/**
- * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
- */
-export interface ReturnAddress {
-    /** Who the parcel is addressed to. */
-    name?: string;
-    street: string;
-    city: string;
-    zip: string;
-    country: CountryCode;
-}
-
 export interface ShippingMethodsResponse {
     methods: ShippingMethod[];
-    /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
-    shipToCountries: CountryCode[];
-    returnAddress: ReturnAddress;
 }
 
 export interface ShippingMethodsResponseEnvelope {
@@ -5675,6 +5648,56 @@ export interface NotificationsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: NotificationsResponse;
+}
+
+/**
+ * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
+ */
+export interface ShopAddress {
+    /** Who the parcel is addressed to. */
+    name?: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: CountryCode;
+}
+
+/**
+ * Who pays to send returned goods back (`NODE_RETURN_POSTAGE_PAYER`).
+ */
+export type ShopReturnPostagePayer =
+    (typeof ShopReturnPostagePayer)[keyof typeof ShopReturnPostagePayer];
+
+export const ShopReturnPostagePayer = {
+    consumer: 'consumer',
+    shop: 'shop'
+} as const;
+
+export interface Shop {
+    /** The seller's name, as registered. */
+    legalName: string;
+    /** VAT identification number; absent for a shop below the registration threshold. */
+    vatNumber?: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: CountryCode;
+    email: Email;
+    phone: string;
+    /** ISO-4217 currency code (e.g. EUR) — the shop's one currency, the same one `Product.currency` reports. */
+    currency: string;
+    /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
+    shipToCountries: CountryCode[];
+    returnAddress: ShopAddress;
+    /** Who pays to send returned goods back (`NODE_RETURN_POSTAGE_PAYER`). */
+    returnPostagePayer: ShopReturnPostagePayer;
+}
+
+export interface ShopEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Shop;
 }
 
 /**
@@ -8738,19 +8761,6 @@ export const getCatalogueFacets = (
 };
 
 /**
- * What the catalogue as a whole is configured with, as opposed to any one product: today the currency every price is quoted in (`NODE_DEFAULT_CURRENCY`). A create form reads it to size its price input before a product exists to ask. Public and cheap to read; it never changes without a redeploy.
- * @summary The shop's catalogue settings
- */
-export const getProductSettings = (
-    options?: SecondParameter<typeof orvalMutator<ProductSettingsEnvelope>>
-) => {
-    return orvalMutator<ProductSettingsEnvelope>(
-        { url: `/products/settings`, method: 'GET' },
-        options
-    );
-};
-
-/**
  * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
  * @summary Product details
  */
@@ -10946,6 +10956,14 @@ export const deleteNotificationById = (
     );
 };
 
+/**
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * @summary The shop's identity, currency, ship-to countries and return address
+ */
+export const getShop = (options?: SecondParameter<typeof orvalMutator<ShopEnvelope>>) => {
+    return orvalMutator<ShopEnvelope>({ url: `/shop`, method: 'GET' }, options);
+};
+
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetLivezResult = NonNullable<Awaited<ReturnType<typeof getLivez>>>;
 export type GetReadyzResult = NonNullable<Awaited<ReturnType<typeof getReadyz>>>;
@@ -11150,7 +11168,6 @@ export type CreateProductWithMultipartResult = NonNullable<
 >;
 export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
 export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>;
-export type GetProductSettingsResult = NonNullable<Awaited<ReturnType<typeof getProductSettings>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 export type ReplaceProductByIdResult = NonNullable<Awaited<ReturnType<typeof replaceProductById>>>;
 export type ReplaceProductByIdWithMultipartResult = NonNullable<
@@ -11370,3 +11387,4 @@ export type DismissAllNotificationsResult = NonNullable<
 export type DeleteNotificationByIdResult = NonNullable<
     Awaited<ReturnType<typeof deleteNotificationById>>
 >;
+export type GetShopResult = NonNullable<Awaited<ReturnType<typeof getShop>>>;

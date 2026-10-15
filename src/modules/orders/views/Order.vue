@@ -17,7 +17,7 @@ export default {
  * self-contained published-language components.
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
-import { shopCurrency } from '@/infrastructure/shop-currency.ts';
+import { shopCurrency } from '@/infrastructure/shop.ts';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';

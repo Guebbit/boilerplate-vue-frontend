@@ -8,7 +8,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { EToastType, useNotificationsStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { shopCurrency } from '@/infrastructure/shop-currency.ts';
+import { shopCurrency } from '@/infrastructure/shop.ts';
 import { translate } from '@/i18n';
 import {
     getCart,

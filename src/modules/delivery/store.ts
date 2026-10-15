@@ -9,6 +9,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/infrastructure/shop.ts';
 import {
     listShippingMethods,
     getFulfillmentByOrder,
@@ -145,9 +146,9 @@ export const useDeliveryStore = defineStore('delivery', () => {
      */
     const fetchMethods = () =>
         fetchAny(() =>
-            listShippingMethods().then((response) => {
+            Promise.all([listShippingMethods(), loadShop()]).then(([response]) => {
                 methods.value = response.data.methods;
-                shipToCountries.value = response.data.shipToCountries;
+                shipToCountries.value = shipToCountriesOfShop.value;
                 return methods.value;
             })
         );

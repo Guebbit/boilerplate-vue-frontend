@@ -16,6 +16,7 @@ import type {
     Product,
     Return,
     Shipment,
+    Shop,
     User
 } from '@types';
 
@@ -261,5 +262,26 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
     forced: false,
     shippedAt: '2026-09-02T10:00:00.000Z',
     actions: { deliver: false, editTracking: false },
+    ...overrides
+});
+
+/**
+ * A valid shop as `GET /shop` answers it — an Italian seller trading in euros, shipping to Italy.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns a `Shop` that parses against the generated schema
+ */
+export const aShop = (overrides: Partial<Shop> = {}): Shop => ({
+    legalName: 'Guebbit Demo Shop Srl',
+    street: 'Via Roma 1',
+    city: 'Milano',
+    zip: '20100',
+    country: 'IT',
+    email: 'shop@example.com',
+    phone: '+39 02 1234567',
+    currency: 'EUR',
+    shipToCountries: ['IT'],
+    returnAddress: { street: 'Via Roma 1', city: 'Milano', zip: '20100', country: 'IT' },
+    returnPostagePayer: 'consumer',
     ...overrides
 });
