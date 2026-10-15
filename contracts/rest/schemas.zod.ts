@@ -8036,7 +8036,7 @@ export const GetOrderInvoiceParams = zod.strictObject({
 });
 export const GetOrderInvoiceResponse = zod.unknown();
 /**
- * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, or with no invoice to reverse. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
+ * One entry per refund that has settled on this order's payment, oldest first — a full refund and each part of a partial one each have their own credit note. Empty for an order never refunded, with no invoice to reverse, or whose money the caller may not read: the buyer sees their own, and staff need the payments staff read (`display:Payment`), so the warehouse that packs the order sees none. `id` is what `GET /orders/{id}/credit-notes/{creditNoteId}` downloads.
  * @summary List the order's credit notes
  */
 export const listOrderCreditNotesPathIdMax = 64;
@@ -8077,7 +8077,7 @@ export const ListOrderCreditNotesResponse = zod.strictObject({
     )
 });
 /**
- * The frozen credit note `{creditNoteId}` of the order `{id}`, as a binary PDF. Refuses with `404` for a credit note that does not exist or belongs to another order — the two are indistinguishable on purpose.
+ * The frozen credit note `{creditNoteId}` of the order `{id}`, as a binary PDF. Refuses with `404` for a credit note that does not exist, belongs to another order, or sits on an order whose money the caller may not read (staff without `display:Payment`) — all indistinguishable on purpose.
  * @summary Download one credit note (PDF)
  */
 export const getOrderCreditNotePathIdMax = 64;
