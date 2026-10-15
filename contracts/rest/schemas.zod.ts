@@ -2479,7 +2479,7 @@ export const LoginResponse = zod.strictObject({
     ])
 });
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signupHeaderXAntibotChallengeTokenMax = 4096;
@@ -2730,7 +2730,13 @@ export const DisableTwoFactorBody = zod.strictObject({
 export const DisableTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
-    message: zod.string()
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
+        })
+        .optional()
 });
 /**
  * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
@@ -2747,7 +2753,13 @@ export const RemoveTwoFactorMethodBody = zod.strictObject({
 export const RemoveTwoFactorMethodResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
-    message: zod.string()
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
+        })
+        .optional()
 });
 /**
  * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
@@ -2813,7 +2825,8 @@ export const ConfirmTwoFactorMethodResponse = zod.strictObject({
     data: zod.strictObject({
         method: zod.string(),
         backupCodes: zod.array(zod.string()).optional(),
-        backupCodesRemaining: zod.number()
+        backupCodesRemaining: zod.number(),
+        sessionToken: zod.string().optional()
     })
 });
 /**

@@ -1650,11 +1650,11 @@ paths:
             Password changed. `data` normally carries a fresh access token for this
             session, but is ABSENT on the rare degraded success where the re-mint
             itself fails after the password write already committed — see B23 on
-            `ChangePasswordResponseEnvelope`.
+            `SessionRenewedEnvelope`.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ChangePasswordResponseEnvelope"
+                $ref: "#/components/schemas/SessionRenewedEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2281,7 +2281,7 @@ paths:
       tags:
         - Auth
       summary: Signup
-      description: Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+      description: "Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards."
       operationId: signup
       security: []
       parameters:
@@ -2588,7 +2588,11 @@ paths:
               $ref: "#/components/schemas/TwoFactorCodeRequest"
       responses:
         "200":
-          $ref: "#/components/responses/Success"
+          description: "Two-factor authentication is off. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment has no cookie to refresh, so `data.sessionToken` carries its replacement `ses_…` id: the old one no longer works."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRenewedEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2625,7 +2629,11 @@ paths:
               $ref: "#/components/schemas/TwoFactorCodeRequest"
       responses:
         "200":
-          $ref: "#/components/responses/Success"
+          description: "The method is removed. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment gets its replacement `ses_…` id in `data.sessionToken`: the old one no longer works."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRenewedEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10998,7 +11006,7 @@ components:
         sessionToken:
           type: string
           description: "The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie."
-    ChangePasswordResponseEnvelope:
+    SessionRenewedEnvelope:
       type: object
       additionalProperties: false
       required:
@@ -11848,6 +11856,9 @@ components:
         backupCodesRemaining:
           type: integer
           description: How many unused backup codes the account now holds.
+        sessionToken:
+          type: string
+          description: "The replacement `ses_…` id, for a bearer client of a `cookie`-mode deployment: arming a factor revoked every session, this one included, and the old id no longer works. Absent otherwise (a browser's cookie was refreshed in place)."
     TwoFactorConfirmEnvelope:
       type: object
       additionalProperties: false

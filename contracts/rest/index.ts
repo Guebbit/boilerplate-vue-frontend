@@ -1268,7 +1268,7 @@ export interface AuthTokens {
     sessionToken?: string;
 }
 
-export interface ChangePasswordResponseEnvelope {
+export interface SessionRenewedEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
@@ -1814,6 +1814,8 @@ export interface TwoFactorConfirmed {
     backupCodes?: string[];
     /** How many unused backup codes the account now holds. */
     backupCodesRemaining: number;
+    /** The replacement `ses_…` id, for a bearer client of a `cookie`-mode deployment: arming a factor revoked every session, this one included, and the old id no longer works. Absent otherwise (a browser's cookie was refreshed in place). */
+    sessionToken?: string;
 }
 
 export interface TwoFactorConfirmEnvelope {
@@ -7521,9 +7523,9 @@ export const getMyAbilities = (
  */
 export const changePassword = (
     changePasswordRequest: ChangePasswordRequest,
-    options?: SecondParameter<typeof orvalMutator<ChangePasswordResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
 ) => {
-    return orvalMutator<ChangePasswordResponseEnvelope>(
+    return orvalMutator<SessionRenewedEnvelope>(
         {
             url: `/account/password`,
             method: 'POST',
@@ -7838,7 +7840,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signup = (
@@ -7983,9 +7985,9 @@ export const getTwoFactorStatus = (
  */
 export const disableTwoFactor = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<SessionRenewedEnvelope>(
         {
             url: `/account/2fa`,
             method: 'DELETE',
@@ -8003,9 +8005,9 @@ export const disableTwoFactor = (
 export const removeTwoFactorMethod = (
     method: string,
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<SessionRenewedEnvelope>(
         {
             url: `/account/2fa/methods/${method}`,
             method: 'DELETE',
