@@ -193,6 +193,7 @@ paths:
       security:
         - {}
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Locale capabilities
@@ -221,6 +222,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -346,6 +348,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       requestBody:
@@ -400,6 +403,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       requestBody:
@@ -455,6 +459,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       responses:
@@ -542,6 +547,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/PageParam"
@@ -586,6 +592,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -626,6 +633,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -689,6 +697,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -742,6 +751,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -797,6 +807,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -844,6 +855,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
         - $ref: "#/components/parameters/AppPathParam"
@@ -879,6 +891,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
@@ -928,6 +941,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
@@ -999,6 +1013,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TranslatableEntityTypePathParam"
         - $ref: "#/components/parameters/TranslationEntityIdPathParam"
@@ -1085,6 +1100,7 @@ paths:
       operationId: getObservabilityHealth
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Health summary
@@ -1148,6 +1164,7 @@ paths:
       operationId: getObservabilityMetricsOverview
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Metrics overview
@@ -1185,6 +1202,7 @@ paths:
       operationId: listObservabilityAuditEntries
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: actor
           in: query
@@ -1250,6 +1268,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: actor
           in: query
@@ -1399,6 +1418,7 @@ paths:
       operationId: getAccount
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Current user info
@@ -1424,6 +1444,7 @@ paths:
       operationId: replaceAccount
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -1447,6 +1468,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "412":
@@ -1474,6 +1497,7 @@ paths:
       operationId: updateAccount
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -1500,6 +1524,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "412":
@@ -1527,11 +1553,14 @@ paths:
       operationId: requestAccountDelete
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           $ref: "#/components/responses/Success"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1548,11 +1577,14 @@ paths:
       operationId: cancelPendingEmailChange
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           $ref: "#/components/responses/Success"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1569,6 +1601,7 @@ paths:
       operationId: resendPendingEmail
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The confirmation link is on its way to the pending address, or nothing was pending (then `resendAfter` is 0)
@@ -1578,6 +1611,8 @@ paths:
                 $ref: "#/components/schemas/EmailVerificationRequestedEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1617,6 +1652,7 @@ paths:
       security:
         - {}
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The caller's packed rules.
@@ -1638,6 +1674,7 @@ paths:
       operationId: changePassword
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -1659,6 +1696,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1717,6 +1756,7 @@ paths:
       operationId: getReauthMethods
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The applicable methods
@@ -1741,6 +1781,7 @@ paths:
       operationId: reauth
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -1758,6 +1799,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -1800,6 +1843,7 @@ paths:
       operationId: listSessions
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Active sessions
@@ -1825,6 +1869,7 @@ paths:
       operationId: revokeSession
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: sessionId
           in: path
@@ -1837,6 +1882,8 @@ paths:
           $ref: "#/components/responses/Success"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -1855,6 +1902,7 @@ paths:
       operationId: listAddresses
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The address book
@@ -1879,6 +1927,7 @@ paths:
       operationId: addAddress
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -1899,6 +1948,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "413":
@@ -1923,6 +1974,7 @@ paths:
       operationId: replaceAddress
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: addressId
           in: path
@@ -1947,6 +1999,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -1970,6 +2024,7 @@ paths:
       operationId: updateAddress
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: addressId
           in: path
@@ -1997,6 +2052,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -2020,6 +2077,7 @@ paths:
       operationId: removeAddress
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: addressId
           in: path
@@ -2036,6 +2094,8 @@ paths:
                 $ref: "#/components/schemas/AddressesEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -2054,6 +2114,7 @@ paths:
       operationId: setDefaultAddress
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: addressId
           in: path
@@ -2070,6 +2131,8 @@ paths:
                 $ref: "#/components/schemas/AddressEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -2088,6 +2151,7 @@ paths:
       operationId: requestEmailVerification
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: A verification email is on its way
@@ -2097,6 +2161,8 @@ paths:
                 $ref: "#/components/schemas/EmailVerificationRequestedEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
         "429":
@@ -2427,11 +2493,14 @@ paths:
       operationId: logoutAll
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           $ref: "#/components/responses/Success"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -2453,6 +2522,7 @@ paths:
       operationId: requestAccountExport
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "202":
           description: The export is queued (or is the one already building)
@@ -2462,6 +2532,8 @@ paths:
                 $ref: "#/components/schemas/AccountExportRequestEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -2556,6 +2628,7 @@ paths:
       operationId: getTwoFactorStatus
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The account's second factors, armed and available
@@ -2580,6 +2653,7 @@ paths:
       operationId: disableTwoFactor
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -2597,6 +2671,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2619,6 +2695,7 @@ paths:
       operationId: removeTwoFactorMethod
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       requestBody:
@@ -2638,6 +2715,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -2662,6 +2741,7 @@ paths:
       operationId: setupTwoFactorMethod
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       requestBody:
@@ -2681,6 +2761,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -2705,6 +2787,7 @@ paths:
       operationId: sendTwoFactorMethodCode
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       responses:
@@ -2716,6 +2799,8 @@ paths:
                 $ref: "#/components/schemas/TwoFactorDeliveryEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -2736,6 +2821,7 @@ paths:
       operationId: confirmTwoFactorMethod
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/TwoFactorMethodPathParam"
       requestBody:
@@ -2755,6 +2841,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "413":
@@ -2779,6 +2867,7 @@ paths:
       operationId: regenerateBackupCodes
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -2796,6 +2885,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2840,6 +2931,7 @@ paths:
       operationId: listOAuthLinks
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The linked providers
@@ -2865,6 +2957,7 @@ paths:
       operationId: unlinkOAuthProvider
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: provider
           in: path
@@ -2878,6 +2971,8 @@ paths:
           $ref: "#/components/responses/Success"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -2995,6 +3090,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3054,6 +3150,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -3103,6 +3200,7 @@ paths:
       x-alias-of: deleteUserById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/HardDeleteParam"
       requestBody:
@@ -3150,6 +3248,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3184,6 +3283,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -3240,6 +3340,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -3298,6 +3399,7 @@ paths:
       operationId: deleteUserById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
@@ -3343,6 +3445,7 @@ paths:
       operationId: restoreUserById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3379,6 +3482,7 @@ paths:
       x-alias-of: deleteUserById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -3413,6 +3517,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -3501,6 +3606,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3553,6 +3659,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -3595,6 +3702,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -3640,6 +3748,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -3688,6 +3797,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3717,6 +3827,7 @@ paths:
         - {}
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -3799,6 +3910,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -3849,6 +3961,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/HardDeleteParam"
       requestBody:
@@ -3941,6 +4054,7 @@ paths:
         - {}
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -3979,6 +4093,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -4052,6 +4167,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -4111,6 +4227,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
@@ -4159,6 +4276,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -4194,6 +4312,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -4231,6 +4350,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -4265,6 +4385,7 @@ paths:
         - {}
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       x-alias-of: listProducts
       requestBody:
         required: true
@@ -4281,6 +4402,8 @@ paths:
                 $ref: "#/components/schemas/ProductsResponseEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -4303,6 +4426,7 @@ paths:
       operationId: getCart
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Cart items
@@ -4329,6 +4453,7 @@ paths:
       operationId: addCartItem
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -4381,6 +4506,7 @@ paths:
       x-alias-of: removeCartItem
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -4424,6 +4550,7 @@ paths:
       operationId: clearCart
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Cart cleared
@@ -4451,6 +4578,7 @@ paths:
       operationId: updateCartItemById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/ProductIdPathParam"
       requestBody:
@@ -4504,6 +4632,7 @@ paths:
       operationId: removeCartItem
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/ProductIdPathParam"
       responses:
@@ -4535,6 +4664,7 @@ paths:
       operationId: setCartShippingMethod
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -4580,6 +4710,7 @@ paths:
       operationId: getCartSummary
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Cart summary
@@ -4607,6 +4738,7 @@ paths:
       operationId: checkout
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -4668,6 +4800,7 @@ paths:
       operationId: reorder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OrderIdPathParam"
           description: One of the caller's own orders
@@ -4702,6 +4835,7 @@ paths:
       operationId: getWishlist
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Saved products
@@ -4727,6 +4861,7 @@ paths:
       operationId: addWishlistItem
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/ProductIdPathParam"
       responses:
@@ -4738,6 +4873,8 @@ paths:
                 $ref: "#/components/schemas/WishlistResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -4755,6 +4892,7 @@ paths:
       operationId: removeWishlistItem
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/ProductIdPathParam"
       responses:
@@ -4766,6 +4904,8 @@ paths:
                 $ref: "#/components/schemas/WishlistResponseEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -4784,6 +4924,7 @@ paths:
       operationId: moveWishlistItemToCart
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/ProductIdPathParam"
       responses:
@@ -4819,6 +4960,7 @@ paths:
       operationId: listOrders
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -4912,6 +5054,7 @@ paths:
       operationId: createOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -4973,6 +5116,7 @@ paths:
       x-alias-of: deleteOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/HardDeleteParam"
       requestBody:
@@ -5019,6 +5163,7 @@ paths:
       x-alias-of: listOrders
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -5065,6 +5210,7 @@ paths:
       operationId: getOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -5098,6 +5244,7 @@ paths:
       operationId: replaceOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -5148,6 +5295,7 @@ paths:
       operationId: updateOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -5201,6 +5349,7 @@ paths:
       operationId: deleteOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/HardDeleteParam"
@@ -5248,6 +5397,7 @@ paths:
       operationId: restoreOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -5284,6 +5434,7 @@ paths:
       x-alias-of: deleteOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -5318,6 +5469,7 @@ paths:
       operationId: cancelOrderById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -5365,6 +5517,7 @@ paths:
       operationId: overrideOrderStatus
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -5412,6 +5565,7 @@ paths:
       operationId: getOrderInvoice
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -5442,6 +5596,7 @@ paths:
       operationId: listOrderCreditNotes
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -5471,6 +5626,7 @@ paths:
       operationId: getOrderCreditNote
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - name: creditNoteId
@@ -5529,6 +5685,7 @@ paths:
       operationId: createPaymentIntent
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -5594,6 +5751,7 @@ paths:
       operationId: getPaymentByOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OrderIdPathParam"
           description: One of the caller's own orders
@@ -5624,6 +5782,7 @@ paths:
       operationId: getOrderByReference
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: ref
           in: query
@@ -5670,6 +5829,7 @@ paths:
       operationId: refundPaymentByOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OrderIdPathParam"
           description: The order whose payment is being returned
@@ -5719,6 +5879,7 @@ paths:
       operationId: recordOfflinePayment
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OrderIdPathParam"
           description: The order the money arrived for. Must still be `pending`
@@ -5777,6 +5938,7 @@ paths:
       operationId: confirmPayment
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
@@ -5841,6 +6003,7 @@ paths:
       operationId: syncPayment
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -5942,6 +6105,7 @@ paths:
       operationId: getFulfillmentByOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OrderIdPathParam"
           description: One of the caller's own orders
@@ -5972,6 +6136,7 @@ paths:
       operationId: startFulfilment
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/OrderIdPathParam"
           description: The order to start fulfilling
@@ -6017,6 +6182,7 @@ paths:
       operationId: listPreorderFulfillmentOrders
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6084,6 +6250,7 @@ paths:
       operationId: summarizePreorderFulfillmentOrders
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6122,6 +6289,7 @@ paths:
       operationId: shipFulfillmentOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The fulfillment order to ship from
@@ -6173,6 +6341,7 @@ paths:
       operationId: fulfillFulfillmentOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The digital fulfillment order to fulfil
@@ -6207,6 +6376,7 @@ paths:
       operationId: holdFulfillmentOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The fulfillment order to hold
@@ -6255,6 +6425,7 @@ paths:
       operationId: releaseFulfillmentOrder
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The fulfillment order to release
@@ -6289,6 +6460,7 @@ paths:
       operationId: confirmFulfillmentOrderWait
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The fulfillment order the buyer will keep waiting for
@@ -6301,6 +6473,8 @@ paths:
                 $ref: "#/components/schemas/FulfillmentOrderEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -6321,6 +6495,7 @@ paths:
       operationId: updateShipment
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The shipment to correct
@@ -6372,6 +6547,7 @@ paths:
       operationId: deliverShipment
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
           description: The shipment that arrived
@@ -6420,6 +6596,7 @@ paths:
       operationId: listReturns
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6465,6 +6642,7 @@ paths:
       operationId: createReturn
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -6515,6 +6693,7 @@ paths:
       operationId: getReturnOptions
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: orderId
           in: query
@@ -6550,6 +6729,7 @@ paths:
       operationId: getReturnById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -6579,6 +6759,7 @@ paths:
       operationId: approveReturn
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -6612,6 +6793,7 @@ paths:
       operationId: declineReturn
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -6661,6 +6843,7 @@ paths:
       operationId: receiveReturn
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
@@ -6710,6 +6893,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6753,6 +6937,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - name: productId
           in: path
@@ -6806,6 +6991,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6839,6 +7025,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -6884,6 +7071,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -6932,6 +7120,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -6987,6 +7176,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: How many holds were expired
@@ -7017,6 +7207,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -7063,6 +7254,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -7111,6 +7303,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -7158,6 +7351,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -7206,6 +7400,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -7243,6 +7438,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -7278,6 +7474,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - name: secretId
@@ -7319,6 +7516,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -7368,6 +7566,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -7406,6 +7605,7 @@ paths:
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: Every event a subscription may filter on
@@ -7433,6 +7633,7 @@ paths:
       operationId: listApiKeys
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -7475,6 +7676,7 @@ paths:
       operationId: mintApiKey
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -7522,6 +7724,7 @@ paths:
       operationId: revokeApiKey
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -7549,6 +7752,7 @@ paths:
       operationId: sendReauthCode
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/ReauthMethodPathParam"
       responses:
@@ -7560,6 +7764,8 @@ paths:
                 $ref: "#/components/schemas/TwoFactorDeliveryEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -7600,6 +7806,7 @@ paths:
       operationId: downloadAccountExport
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -7634,6 +7841,7 @@ paths:
       operationId: mergeCart
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
@@ -7694,6 +7902,7 @@ paths:
       operationId: exportOrders
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: sort
           in: query
@@ -7791,6 +8000,7 @@ paths:
       operationId: getOrderTimeline
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -7820,6 +8030,7 @@ paths:
       operationId: listPayments
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -7915,6 +8126,7 @@ paths:
       x-alias-of: listPayments
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -7956,6 +8168,7 @@ paths:
       operationId: listRefunds
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -8010,6 +8223,7 @@ paths:
       operationId: listPaymentAttention
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The rows
@@ -8037,6 +8251,7 @@ paths:
       operationId: getSalesStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
         - $ref: "#/components/parameters/StatsToParam"
@@ -8070,6 +8285,7 @@ paths:
       operationId: getProductStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
         - $ref: "#/components/parameters/StatsToParam"
@@ -8110,6 +8326,7 @@ paths:
       operationId: getProductSalesSeries
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: productId
           in: path
@@ -8150,6 +8367,7 @@ paths:
       operationId: getCategoryStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
         - $ref: "#/components/parameters/StatsToParam"
@@ -8182,6 +8400,7 @@ paths:
       operationId: getPaymentMixStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
         - $ref: "#/components/parameters/StatsToParam"
@@ -8214,6 +8433,7 @@ paths:
       operationId: getOperationsStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
         - $ref: "#/components/parameters/StatsToParam"
@@ -8246,6 +8466,7 @@ paths:
       operationId: getCustomerStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/StatsFromParam"
         - $ref: "#/components/parameters/StatsToParam"
@@ -8278,6 +8499,7 @@ paths:
       operationId: getPipelineStats
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The snapshot
@@ -8331,6 +8553,7 @@ paths:
       operationId: listExamples
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
@@ -8375,6 +8598,7 @@ paths:
       operationId: createExample
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -8420,6 +8644,7 @@ paths:
       x-alias-of: listExamples
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -8466,6 +8691,7 @@ paths:
       operationId: getExampleById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
@@ -8499,6 +8725,7 @@ paths:
       operationId: replaceExampleById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -8549,6 +8776,7 @@ paths:
       operationId: updateExampleById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -8602,6 +8830,7 @@ paths:
       operationId: deleteExampleById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
@@ -8632,6 +8861,7 @@ paths:
       operationId: replaceExampleCover
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       requestBody:
@@ -8677,6 +8907,7 @@ paths:
       operationId: listNotifications
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           description: The caller's notifications
@@ -8729,6 +8960,7 @@ paths:
       operationId: readAllNotifications
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           $ref: "#/components/responses/Success"
@@ -8752,6 +8984,7 @@ paths:
       operationId: dismissAllNotifications
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         "200":
           $ref: "#/components/responses/Success"
@@ -8775,6 +9008,7 @@ paths:
       operationId: deleteNotificationById
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
