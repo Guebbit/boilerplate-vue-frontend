@@ -20,12 +20,11 @@ export default [
     {
         path: 'sales/orders',
         name: 'SalesOrders',
-        // `others`: `orders.self.read` would admit a customer; only the key on other people's
-        // orders opens the staff page.
+        // `display`, not `read`: every signed-in account holds `read:Order` (its own orders),
+        // and only the staff action opens the staff page.
         meta: {
             access: 'auth',
-            can: ['read', 'Order'],
-            others: true,
+            can: ['display', 'Order'],
             title: 'orders-list-page.page-title-sales'
         },
         component: () => import('./views/OrdersList.vue'),

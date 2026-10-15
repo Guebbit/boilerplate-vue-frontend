@@ -47,7 +47,7 @@ const { levels, levelsTotal, loading } = storeToRefs(inventoryStore);
 
 /**
  * The session, asked whether the preorder limit is this account's to set: it is a stock write
- * (`inventory.any.create`), so the manager, who only reads stock, sees the numbers without the button.
+ * (`create:StockMovement`), so the manager, who only reads stock, sees the numbers without the button.
  */
 const session = useSessionStore();
 

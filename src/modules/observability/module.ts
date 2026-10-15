@@ -13,7 +13,7 @@ import routes from './routes';
  * The admin observability console (service health, KPIs, the platform's own audit log), the
  * shop's own audit trail, and the realtime SSE playground over the same metrics stream — three
  * nav entries because they are three different screens over one backend pairing: the console and
- * the playground are platform-`operator`-only, the trail is `audit.any.read`
+ * the playground are platform-`operator`-only, the trail is `read:AuditLog`
  * (`manager`/`support`/`moderator`/`admin`), so `canAccess` shows each to a different audience.
  *
  * An ops console (plus a live feed) over endpoints the server already exposes, interchangeable

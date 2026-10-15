@@ -11,7 +11,7 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The shop's own audit trail — reachable by any tenant role `audit.any.read` holds
+ * The shop's own audit trail — reachable by any tenant role `read:AuditLog` holds
  * (`manager`/`support`/`moderator`/`admin`), unlike `Admin.vue`'s installation-wide tab, which is
  * platform-`operator`-only. Doubles as a single record's history: `?target=<id>` (set by the
  * "History" link on `User.vue`/`Order.vue`) narrows it to one row's actions without this page

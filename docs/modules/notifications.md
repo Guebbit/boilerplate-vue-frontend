@@ -131,7 +131,7 @@ notification message, so the next person never sees them.
 
 The bell is contributed to the `app-bar` slot the shell owns (`src/kernel/slots.ts`); the shell
 renders whatever arrives and never imports this module. It renders nothing for a guest or for a
-session without `notifications.self.read`.
+session without `read:Notification`.
 
 | Behaviour       | Detail                                                                                                                                                                                              |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

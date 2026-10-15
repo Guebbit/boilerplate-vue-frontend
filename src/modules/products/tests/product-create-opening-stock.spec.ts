@@ -1,7 +1,7 @@
 /**
  * @module
  * The opening-stock field on the create form is a stock movement: the server refuses a count from
- * a caller without `inventory.any.create`, so the form offers it only to one who holds it.
+ * a caller without `create:StockMovement`, so the form offers it only to one who holds it.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';

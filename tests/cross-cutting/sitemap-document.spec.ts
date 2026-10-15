@@ -61,7 +61,7 @@ const cellsOf = (moduleName: string, route: RouteRecordRaw): string[] => {
         `\`${route.path}\``,
         `\`${String(route.name)}\``,
         `\`${route.meta?.access ?? 'public'}\``,
-        can ? `\`${can.join(' ')}${route.meta?.others ? ' (others)' : ''}\`` : '—',
+        can ? `\`${can.join(' ')}\`` : '—',
         viewOf(route) === '—' ? '`—`' : `\`${viewOf(route)}\``
     ];
 };

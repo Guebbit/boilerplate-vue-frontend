@@ -16,7 +16,7 @@ export default {
  * order with its buyer and dates, and carries the Late and Due-soon filters. The tab lives in
  * `?tab=` and the product the second tab is narrowed to in `?productId=`, so a link or a reload
  * lands on the same view. The first tab reads stock, so it is offered only to a holder of
- * `inventory.any.read`; the page itself needs only `orders.any.read`.
+ * `read:StockLevel`; the page itself needs only `display:Order`.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

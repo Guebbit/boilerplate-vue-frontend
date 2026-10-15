@@ -5,9 +5,9 @@
  * an expiry; the secret is shown once and never again. The integrator's script reads with it, is
  * refused a write, and is refused everything once the admin revokes it.
  *
- * The key holds `webhooks.any.read`: a read a guest cannot make, so "it works" proves the key was
- * recognised, and the write is refused for want of `webhooks.any.create`, not for want of a login.
- * (`products.any.read` would prove nothing: a key's product reads are a guest's, since
+ * The key holds `read:WebhookSubscription`: a read a guest cannot make, so "it works" proves the key was
+ * recognised, and the write is refused for want of `create:WebhookSubscription`, not for want of a login.
+ * (`display:Product` would prove nothing: a key's product reads are a guest's, since
  * `GET /products/:id` scopes by the session and a key has none.)
  */
 import { requestAsGuest, requestWithKey } from '../../../support/e2e/harness';
@@ -15,7 +15,7 @@ import { datetimeLocalIn } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
 /** The one read the key is given. */
-const GIVEN = 'webhooks.any.read';
+const GIVEN = 'read:WebhookSubscription';
 
 /** One day, in milliseconds: how long the key lives. */
 const DAY_MS = 24 * 60 * 60 * 1000;

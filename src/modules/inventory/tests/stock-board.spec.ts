@@ -1,7 +1,7 @@
 /**
  * @module
  * `StockBoard.vue` — the preorder columns and the limit control. The control is a stock write
- * (`inventory.any.create`), so a reader without it sees the numbers and no button; the button opens
+ * (`create:StockMovement`), so a reader without it sees the numbers and no button; the button opens
  * the dialog on its own row.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';

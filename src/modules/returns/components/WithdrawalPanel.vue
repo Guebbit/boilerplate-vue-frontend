@@ -95,11 +95,11 @@ const session = useSessionStore();
 
 /**
  * Who may cancel what has not shipped: the buyer (their withdrawal), or staff holding the refund
- * key (`payments.any.update`). The server makes the final call, rank included.
+ * key (`create:Refund`). The server makes the final call, rank included.
  */
 const cancelMode = computed<'buyer' | 'staff' | undefined>(() => {
     if (props.canWithdraw) return 'buyer';
-    return session.can('update', 'Payment') ? 'staff' : undefined;
+    return session.can('create', 'Refund') ? 'staff' : undefined;
 });
 
 /**

@@ -71,16 +71,16 @@ the API.
 
 `OrdersList.vue` serves two routes, and the route says which through its `scope` prop:
 
-| Route         | Scope  | Who it is for                   | What it lists                                                            |
-| ------------- | ------ | ------------------------------- | ------------------------------------------------------------------------ |
-| `OrdersList`  | `mine` | everyone signed in              | the viewer's own orders — the owner is **pinned** in the search, always  |
-| `SalesOrders` | `all`  | whoever holds `orders.any.read` | every order, with the id/user/product/email boxes and the transfer queue |
+| Route         | Scope  | Who it is for                 | What it lists                                                            |
+| ------------- | ------ | ----------------------------- | ------------------------------------------------------------------------ |
+| `OrdersList`  | `mine` | everyone signed in            | the viewer's own orders — the owner is **pinned** in the search, always  |
+| `SalesOrders` | `all`  | whoever holds `display:Order` | every order, with the id/user/product/email boxes and the transfer queue |
 
 The split is the A2 decision of the sales plan, and it fixes a real bug: the account page used to send
 `userId` only when set, so a staff account saw the whole shop under "My orders". Now the account
 page pins the viewer's id (`pinOwner`, re-applied after Reset, kept out of the URL), and the staff
-page drops an owner left behind by it. `SalesOrders` sets `meta.others`, because `can: ['read',
-'Order']` alone would admit a customer holding `orders.self.read`; it sits in the admin menu's
+page drops an owner left behind by it. `SalesOrders` asks `can: ['display', 'Order']`, because `['read',
+'Order']` would admit a customer holding `read:Order`; it sits in the admin menu's
 "Sales" group.
 
 Both pages narrow by status, fulfilment, payment state, return state and two date ranges (placed,
@@ -115,7 +115,7 @@ flowchart LR
 ## The timeline
 
 `src/modules/orders/components/OrderTimeline.vue` sits under the order's details and lists what happened to it, oldest first
-(`GET /orders/{id}/timeline`). **The server decides who sees what**: staff (`orders.any.read`) get
+(`GET /orders/{id}/timeline`). **The server decides who sees what**: staff (`display:Order`) get
 every row with the acting account and any note, the buyer only the buyer-visible rows and never an
 actor. The component filters nothing; it only flags, for staff, the rows the buyer cannot see
 (`TIMELINE_AUDIENCE` in `src/modules/orders/domain/timeline.ts` mirrors the API's table, and is checked against the
@@ -137,7 +137,7 @@ flowchart LR
 
 ## The CSV export
 
-The staff list (`/sales/orders`) offers **Export CSV** to whoever holds `orders.any.export`
+The staff list (`/sales/orders`) offers **Export CSV** to whoever holds `export:Order`
 (manager, admin). It sends the filters on screen through the same mapping as the search
 (`criteriaOf` in `store.ts`), so the file is the list the viewer was looking at, minus paging. The
 key is step-up gated: the HTTP layer's prompt asks for the password and replays the request. Two
@@ -172,12 +172,12 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 
 ## Screens
 
-| Path              | Route name    | Access | Permission            | View                   |
-| ----------------- | ------------- | ------ | --------------------- | ---------------------- |
-| `orders`          | `OrdersList`  | `auth` | —                     | `views/OrdersList.vue` |
-| `sales/orders`    | `SalesOrders` | `auth` | `read Order (others)` | `views/OrdersList.vue` |
-| `orders/:id`      | `OrderTarget` | `auth` | —                     | `views/Order.vue`      |
-| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`        | `views/OrderEdit.vue`  |
+| Path              | Route name    | Access | Permission      | View                   |
+| ----------------- | ------------- | ------ | --------------- | ---------------------- |
+| `orders`          | `OrdersList`  | `auth` | —               | `views/OrdersList.vue` |
+| `sales/orders`    | `SalesOrders` | `auth` | `display Order` | `views/OrdersList.vue` |
+| `orders/:id`      | `OrderTarget` | `auth` | —               | `views/Order.vue`      |
+| `orders/:id/edit` | `OrderEdit`   | `auth` | `update Order`  | `views/OrderEdit.vue`  |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 

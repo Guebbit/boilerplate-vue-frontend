@@ -258,7 +258,7 @@ describe('WithdrawalPanel', () => {
         });
 
         it('lets staff holding the refund key do it too, without the withdrawal button', async () => {
-            signInWith([['update', 'Payment']]);
+            signInWith([['create', 'Refund']]);
             const { wrapper } = mountPanel({ canWithdraw: false }, [], CANCELLABLE);
             await flushPromises();
 

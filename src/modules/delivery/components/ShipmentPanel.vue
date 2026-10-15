@@ -44,13 +44,13 @@ const { orderId, shippingMethodId, canStart, override } = defineProps<{
     shippingMethodId?: string;
     /**
      * The order's own `actions.start` — whether `POST /delivery/order/{id}/start` would be
-     * accepted right now. Who may start fulfilment (`delivery.any.start`) is a different key
+     * accepted right now. Who may start fulfilment (`start:Shipment`) is a different key
      * than who may write a shipment, so it stays the order's flag.
      */
     canStart?: boolean;
     /**
      * The order's own `actions.override` — every status this caller's forced ship or arrival may
-     * land on. Empty for anyone without `orders.any.override`.
+     * land on. Empty for anyone without `override:Order`.
      */
     override?: OrderStatus[];
 }>();

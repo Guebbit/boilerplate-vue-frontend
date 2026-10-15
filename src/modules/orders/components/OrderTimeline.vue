@@ -14,7 +14,7 @@ export default {
  * The order page's history: one line per thing that happened, oldest first. The server decides
  * which rows the caller may read — staff get every one with the actor and any text they wrote, the
  * buyer only the buyer-visible ones and never an actor — so this component filters nothing. Staff
- * (`orders.any.read`) additionally get a badge on the rows the buyer cannot see. The text of each
+ * (`display:Order`) additionally get a badge on the rows the buyer cannot see. The text of each
  * line is `describeTimelineEntry`'s, built from the row's ids and codes.
  */
 import { computed, ref, watch } from 'vue';
@@ -149,7 +149,7 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
                 <div class="flex flex-wrap items-center gap-2">
                     <strong data-test="order-timeline-title">{{ line.title }}</strong>
                     <v-chip
-                        v-if="session.canOnOthers('read', 'Order') && isStaffOnly(entry.type)"
+                        v-if="session.can('display', 'Order') && isStaffOnly(entry.type)"
                         size="x-small"
                         variant="tonal"
                         color="warning"

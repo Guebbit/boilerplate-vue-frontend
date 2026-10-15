@@ -1,8 +1,8 @@
 /**
  * @module
- * Pins the access every payments route declares. The staff page needs the permission on OTHER
- * people's payments: `payments.self.read` answers `can` for a customer, so `can` alone would admit
- * one — `others` is what the spec holds in place.
+ * Pins the access every payments route declares. The staff page needs the staff action on
+ * payments: `read:Payment` answers `can` for a customer, so it would admit one — `display` is what
+ * the spec holds in place.
  */
 import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
@@ -18,11 +18,10 @@ const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 
 describe('payments route access', () => {
-    it('opens the staff page only to a reader of other people’s payments', () => {
+    it('opens the staff page only on the staff action on payments', () => {
         expect(byName('PaymentsList')?.meta).toMatchObject({
             access: 'auth',
-            can: ['read', 'Payment'],
-            others: true
+            can: ['display', 'Payment']
         });
     });
 

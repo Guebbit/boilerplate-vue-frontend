@@ -7,7 +7,7 @@
  * returns its held units to the shelf), and a PAID order never shows the action, because an
  * invoice was frozen from its payment (BE `orders/services/remove.ts`).
  *
- * The manager holds `orders.any.delete`; the moderator does not, since removing a customer's
+ * The manager holds `delete:Order`; the moderator does not, since removing a customer's
  * order is a shop-running act and not a conduct one. Rows are found by their
  * own link — `?id=` on the list is a deep link — so no id is typed into a search box.
  */

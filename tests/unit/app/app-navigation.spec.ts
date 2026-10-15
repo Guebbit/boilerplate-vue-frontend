@@ -40,16 +40,11 @@ import type { RouteAccess, RoutePermission } from '@/app/guards/authentications'
  */
 const held = ref<string[]>([]);
 
-/** The rules held on OTHER people's rows, answered by the mocked `canOnOthers`. */
-const heldOnOthers = ref<string[]>([]);
-
 /** The mocked session store: sign-in state, viewer and a `can` that reads {@link held}. */
 const session = {
     isAuth: ref(false),
     viewer: ref<{ email: string } | undefined>(undefined),
-    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`),
-    canOnOthers: (action: string, subject: string) =>
-        heldOnOthers.value.includes(`${action} ${subject}`)
+    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`)
 };
 
 /**
@@ -82,11 +77,8 @@ const routePermission: Record<string, RoutePermission | undefined> = {
     StaffThing: ['read', 'User'],
     GroupedFirst: ['read', 'Group'],
     GroupedSecond: ['read', 'Group'],
-    OthersThing: ['read', 'Order']
+    OthersThing: ['display', 'Order']
 };
-
-/** Routes whose permission must be held on other people's rows. */
-const routeOthers = new Set(['OthersThing']);
 
 /** The live count behind the member entry's badge; `0` renders no badge at all. */
 const memberCount = ref(0);
@@ -218,8 +210,7 @@ vi.mock('vue-router', () => ({
         resolve: ({ name }: { name: string }) => ({
             meta: {
                 access: routeAccess[name],
-                can: routePermission[name],
-                others: routeOthers.has(name) || undefined
+                can: routePermission[name]
             }
         }),
         hasRoute: (name: string) => registeredRoutes.value.includes(name)
@@ -282,7 +273,6 @@ describe('Navigation', () => {
     beforeEach(() => {
         session.isAuth.value = false;
         held.value = [];
-        heldOnOthers.value = [];
         session.viewer.value = undefined;
         registeredRoutes.value = ['Login', 'Signup'];
         currentRoute.value = { fullPath: '/' };
@@ -377,17 +367,16 @@ describe('Navigation', () => {
         });
     });
 
-    describe('an entry whose permission must be held on others', () => {
-        it('is hidden from someone who holds it only on their own rows', () => {
+    describe('an entry that asks the staff action', () => {
+        it('is hidden from someone who holds only the plain read of their own rows', () => {
             session.isAuth.value = true;
             held.value = ['read Order'];
             expect(mountNav().text).not.toContain('navigation.label-others');
         });
 
-        it("is shown to someone who holds it on other people's rows", () => {
+        it('is shown to someone who holds the staff action', () => {
             session.isAuth.value = true;
-            held.value = ['read Order'];
-            heldOnOthers.value = ['read Order'];
+            held.value = ['read Order', 'display Order'];
             expect(mountNav().text).toContain('navigation.label-others');
         });
     });

@@ -13,7 +13,7 @@ export default {
  * @module
  * A payment's side drawer: what the list row has no room for — its refunds, the provider
  * references and the card's last digits — and the actions the server allows. The provider ids and
- * a refund's failure reason arrive only for a caller holding `payments.any.read`, so this renders
+ * a refund's failure reason arrive only for a caller holding `display:Payment`, so this renders
  * them whenever they are present and never asks who is looking. Refunding is the existing
  * `POST /payments/order/{orderId}/refund`, offered only when `actions.refund` says it would work.
  */

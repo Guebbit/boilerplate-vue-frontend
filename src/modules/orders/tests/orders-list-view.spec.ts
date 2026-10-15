@@ -57,7 +57,7 @@ const router = createRouter({
 });
 
 /**
- * Grants the one ability the lookup is gated on — `payments.any.create`, the same key that gates
+ * Grants the one ability the lookup is gated on — `create:Payment`, the same key that gates
  * recording the payment the lookup leads to.
  */
 const signInAsPaymentRecorder = () => {
@@ -229,8 +229,8 @@ describe('OrdersList — the permanent-delete action', () => {
 });
 
 /**
- * Signs in with one read rule on orders: the wide one (`orders.any.read`, no owner pinned) makes a
- * viewer staff, the narrow one (`orders.self.read`, pinned to their own id) does not.
+ * Signs in with one read rule on orders: the wide one (`display:Order`, no owner pinned) makes a
+ * viewer staff, the narrow one (`read:Order`, pinned to their own id) does not.
  *
  * @param pinnedToOwner - whether the rule is the customer's own-orders read
  */
@@ -559,7 +559,7 @@ describe('OrdersList — payment, return and date columns and filters', () => {
 });
 
 /**
- * Signs in holding the export key (`orders.any.export`) and the wide read the staff page needs.
+ * Signs in holding the export key (`export:Order`) and the staff display the staff page needs.
  */
 const signInAsExporter = () => {
     const session = useSessionStore();

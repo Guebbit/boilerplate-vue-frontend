@@ -25,16 +25,16 @@ const byName = (name: string): RouteRecordRaw | undefined =>
 describe('inventory route access', () => {
     it.each([
         ['InventoryLedger', 'auth', 'read', 'StockLevel'],
-        ['PreordersBoard', 'auth', 'read', 'Order']
+        ['PreordersBoard', 'auth', 'display', 'Order']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
         expect(byName(name)).toBeDefined();
         expect(byName(name)?.meta?.access).toBe(access);
         expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
     });
 
-    it('opens the preorder board only on the key for other people’s orders', () => {
-        // `orders.self.read` would admit a customer; the board lists other people's orders.
-        expect(byName('PreordersBoard')?.meta?.others).toBe(true);
+    it('opens the preorder board only on the staff action on orders', () => {
+        // `read:Order` would admit a customer; the board lists other people's orders.
+        expect(byName('PreordersBoard')?.meta?.can).toEqual(['display', 'Order']);
     });
 
     it('declares no route this file does not know about', () => {

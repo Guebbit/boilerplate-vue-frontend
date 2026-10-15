@@ -382,22 +382,33 @@ describe('loadViewer', () => {
     });
 
     /**
-     * `can` answers yes for a `self` key and an `any` key alike; `canOnOthers` is the question that
-     * tells them apart, by whether the rule pins the row's owner.
+     * The staff action is its own rule: an own-rows `read` answers `can('read')` and not
+     * `can('display')`, and the staff `display` arrives with the `read` it implies, which the
+     * server emits beside it.
      */
     it.each([
         [
-            'a self key (pins the owner)',
+            'an own-rows read answers read, not display',
             [['read', 'Order', { userId: 'u1', tenantId: 't1' }]],
-            false
+            { read: true, display: false }
         ],
-        ['an any key (leaves the owner open)', [['read', 'Order', { tenantId: 't1' }]], true],
-        ['no key at all', [], false]
-    ] as const)('canOnOthers: %s', (_name, rules, expected) => {
+        [
+            'a staff display (with its implied read) answers both',
+            [
+                ['display', 'Order', { tenantId: 't1' }],
+                ['read', 'Order', { tenantId: 't1' }]
+            ],
+            { read: true, display: true }
+        ],
+        ['no rule at all', [], { read: false, display: false }]
+    ] as const)('staff action: %s', (_name, rules, expected) => {
         const store = signedIn();
         store.setAbilities({ tenant: rules.map((rule) => [...rule]), platform: [] });
 
-        expect(store.canOnOthers('read', 'Order')).toBe(expected);
+        expect({
+            read: store.can('read', 'Order'),
+            display: store.can('display', 'Order')
+        }).toEqual(expected);
     });
 
     /**

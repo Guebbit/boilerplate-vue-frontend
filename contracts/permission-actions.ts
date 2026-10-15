@@ -17,7 +17,9 @@ export const PERMISSION_ACTIONS = [
     "receive",
     "ban",
     "export",
-    "assign"
+    "assign",
+    "display",
+    "admin"
 ] as const;
 
 /** One of {@link PERMISSION_ACTIONS}. */

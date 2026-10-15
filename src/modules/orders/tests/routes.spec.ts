@@ -27,7 +27,7 @@ const byName = (name: string): RouteRecordRaw | undefined =>
 describe('orders route access', () => {
     it.each([
         ['OrdersList', 'auth', undefined, undefined],
-        ['SalesOrders', 'auth', 'read', 'Order'],
+        ['SalesOrders', 'auth', 'display', 'Order'],
         ['OrderTarget', 'auth', undefined, undefined],
         ['OrderEdit', 'auth', 'update', 'Order']
     ])('%s declares access %s, permission %s %s', (name, access, action, subject) => {
@@ -36,14 +36,13 @@ describe('orders route access', () => {
         expect(byName(name)?.meta?.can).toEqual(action ? [action, subject] : undefined);
     });
 
-    it('lets only a reader of OTHER people’s orders onto the staff page', () => {
-        // `can` alone would admit a customer, who holds `orders.self.read`.
+    it('lets only the staff action on orders onto the staff page', () => {
+        // `read:Order` would admit a customer, who holds it for their own orders.
         expect(byName('SalesOrders')?.meta).toMatchObject({
             access: 'auth',
-            can: ['read', 'Order'],
-            others: true
+            can: ['display', 'Order']
         });
-        expect(byName('OrdersList')?.meta?.others).toBeUndefined();
+        expect(byName('OrdersList')?.meta?.can).toBeUndefined();
     });
 
     it('gives each of the two list routes its scope', () => {

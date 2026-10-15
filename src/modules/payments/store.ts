@@ -288,7 +288,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const attention = ref<PaymentAttentionItem[]>([]);
 
     /**
-     * Loads a page of the staff payments list (`POST /payments/search`). Needs `payments.any.read`.
+     * Loads a page of the staff payments list (`POST /payments/search`). Needs `display:Payment`.
      *
      * @param query - Page, size, sort and the filters; the body form keeps a long filter set out
      *  of the URL.
@@ -304,7 +304,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
-     * Loads a page of refunds (`GET /payments/refunds`), newest first. Needs `payments.any.read`.
+     * Loads a page of refunds (`GET /payments/refunds`), newest first. Needs `display:Payment`.
      *
      * @param query - Page, size and the filters.
      * @returns A promise resolving with the page's refunds.

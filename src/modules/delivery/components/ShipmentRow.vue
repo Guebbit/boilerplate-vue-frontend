@@ -3,7 +3,7 @@
  * @module
  * One shipment inside its fulfillment order's card: its lines, status, tracking code and dates,
  * and the two staff controls the shipment's own `actions` offer — correct the tracking code inline,
- * mark it delivered (with the forced door for an `orders.any.override` holder). Controls come from
+ * mark it delivered (with the forced door for an `override:Order` holder). Controls come from
  * `actions`, never from a rule re-derived here.
  */
 import { computed, ref } from 'vue';

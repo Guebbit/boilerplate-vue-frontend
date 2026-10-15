@@ -15,8 +15,8 @@ import { translate } from '@/i18n';
 
 /**
  * Which trail to read: `platform` is the installation-wide log (`GET /observability/audit`,
- * held by `platform.observability.any.read`); `shop` is the tenant-scoped one (`GET /audit`,
- * held by `audit.any.read` — `manager`/`support`/`moderator`/`admin`).
+ * held by `read:ObservabilitySnapshot`); `shop` is the tenant-scoped one (`GET /audit`,
+ * held by `read:AuditLog` — `manager`/`support`/`moderator`/`admin`).
  */
 export type AuditEndpoint = 'platform' | 'shop';
 

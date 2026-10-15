@@ -85,8 +85,8 @@ that can finish. The server's webhook settles all of these eventually whatever t
 
 ## The staff payments page
 
-`/sales/payments`, in the admin menu's "Sales" group, for whoever holds `payments.any.read`. The
-route sets `meta.others`, because `payments.self.read` answers a plain `can` for a customer.
+`/sales/payments`, in the admin menu's "Sales" group, for whoever holds `display:Payment`. The
+route asks `['display', 'Payment']`, because `read:Payment` answers a plain `can` for a customer.
 
 Four tabs, saved views over what the backend already holds (the active one is `?tab=`):
 
@@ -111,7 +111,7 @@ contributes the table, and a build with no `orders` module simply has three tabs
 
 **The drawer** shows what a row has no room for: refunds, the card's last digits, and the provider
 references. `Payment.providerRef`, a refund's `providerRefundRef` and its `failureReason` are sent
-only to a caller holding `payments.any.read`; the page renders them when present and never asks who
+only to a caller holding `display:Payment`; the page renders them when present and never asks who
 is looking. `failureReason` is a closed set (declined, insufficient funds, expired or cancelled
 card, lost or stolen card, provider unavailable, unknown), each worded in the locale files — the
 raw provider text stays in the server's logs. The drawer's refund button is the existing
@@ -133,11 +133,11 @@ Store `payments`, from `store.ts`. Only what the setup function returns is liste
 
 ## Screens
 
-| Path             | Route name     | Access | Permission              | View                     |
-| ---------------- | -------------- | ------ | ----------------------- | ------------------------ |
-| `sales/payments` | `PaymentsList` | `auth` | `read Payment (others)` | `views/PaymentsList.vue` |
+| Path             | Route name     | Access | Permission        | View                     |
+| ---------------- | -------------- | ------ | ----------------- | ------------------------ |
+| `sales/payments` | `PaymentsList` | `auth` | `display Payment` | `views/PaymentsList.vue` |
 
-Paths are relative to the localised root. **Access** is the route's own `meta.access` and **Permission** its `meta.can`, with `(others)` when `meta.others` asks for the rule on other people's rows. See [Security](../tools/security.md#route-guards).
+Paths are relative to the localised root. **Access** is the route's own `meta.access` and **Permission** its `meta.can`, staff screens naming the staff action `display`. See [Security](../tools/security.md#route-guards).
 
 The rest of the module is components, schemas and a store contributed to the modules that depend on it.
 

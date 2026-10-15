@@ -26,7 +26,7 @@ export const ERROR_CODES = {
     CART_CHANGED: 'CART_CHANGED',
     /** 409 — Checkout was attempted on a cart with no lines. */
     CART_EMPTY: 'CART_EMPTY',
-    /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`inventory.any.read`). */
+    /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
     CART_OPEN_ORDER_LIMIT: 'CART_OPEN_ORDER_LIMIT',
@@ -112,7 +112,7 @@ export const ERROR_CODES = {
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
     ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
-    /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`inventory.any.read`). */
+    /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`). */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
     /** 409 — This action is not allowed once an order has been invoiced. */
     ORDER_INVOICED: 'ORDER_INVOICED',
@@ -174,7 +174,7 @@ export const ERROR_CODES = {
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
     /** 409 — The withdrawal period for this order has ended. */
     RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
-    /** 403 — The caller holds the permission this route requires, but the account it would change holds a staff role, and only a holder of `roles.any.assign` may change such an account. Staff without it change customers only. The caller's own account is never refused. */
+    /** 403 — The caller holds the permission this route requires, but the account it would change holds a staff role, and only a holder of `assign:Role` may change such an account. Staff without it change customers only. The caller's own account is never refused. */
     ROLE_MANAGEMENT_REQUIRED: 'ROLE_MANAGEMENT_REQUIRED',
     /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',

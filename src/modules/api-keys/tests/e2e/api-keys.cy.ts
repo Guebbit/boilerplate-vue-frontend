@@ -39,7 +39,7 @@ describe('API keys', () => {
 
             cy.visit('/en/api-keys/create');
             cy.get('[data-test=api-key-name] input').type(name);
-            cy.get('[data-test=api-key-permissions] input').type('products.any.read{enter}');
+            cy.get('[data-test=api-key-permissions] input').type('display:Product{enter}');
             cy.get('[data-test=api-key-expires-at] input').type(weekAhead());
             cy.get('form').submit();
 

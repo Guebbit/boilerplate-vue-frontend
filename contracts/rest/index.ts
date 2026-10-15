@@ -144,14 +144,14 @@ export interface ValidationErrorResponse {
 }
 
 /**
- * What the requesting caller may do to this account. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all three unless the caller holds `roles.any.assign`; the caller's own account is judged by the keys alone.
+ * What the requesting caller may do to this account. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all three unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone.
  */
 export interface UserActions {
-    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `users.any.update`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
+    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
     update: boolean;
-    /** Whether the account may be deactivated or reactivated — `users.any.ban`, and the account is not a staff account the caller may not manage. */
+    /** Whether the account may be deactivated or reactivated — `ban:User`, and the account is not a staff account the caller may not manage. */
     ban: boolean;
-    /** Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `users.any.delete`, and the account is not a staff account the caller may not manage. */
+    /** Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `delete:User`, and the account is not a staff account the caller may not manage. */
     delete: boolean;
 }
 
@@ -1228,7 +1228,7 @@ export interface Abilities {
      */
     platform: PackedRules;
     /**
-     * The permission model's own version, bumped when the KEYS change rather than
+     * The permission model's own version, bumped when the RULES change rather than
      * when a role does. A client caches these; this is what tells it the cache is
      * about a different model, not merely a different person. One number for both
      * lists — the keys file they are declared in is one file.
@@ -2250,17 +2250,17 @@ export interface Product {
     /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
     readonly lowStock: boolean;
     /**
-     * Units physically present, whether or not they are spoken for. Only for a caller holding `inventory.any.read`.
+     * Units physically present, whether or not they are spoken for. Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
     readonly onHand?: number;
     /**
-     * Units held by an open order — present, but not for sale. Only for a caller holding `inventory.any.read`.
+     * Units held by an open order — present, but not for sale. Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
     readonly reserved?: number;
     /**
-     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `inventory.any.read`.
+     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
     readonly available?: number;
@@ -2683,7 +2683,7 @@ export interface SearchProductsRequest {
  * - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
  *   and returns to a stock value if the product is shown again.
  *
- * Never a number: exact stock stays behind `inventory.any.read`.
+ * Never a number: exact stock stays behind `read:StockLevel`.
  */
 export type LineAvailability = (typeof LineAvailability)[keyof typeof LineAvailability];
 
@@ -3019,7 +3019,7 @@ export interface OrderActions {
     recordPayment: boolean;
     /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
     start: boolean;
-    /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `orders.any.override`, or once the order has left every overridable status. */
+    /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
     /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
     withdraw: boolean;
@@ -3306,7 +3306,7 @@ export const RefundReason = {
 } as const;
 
 /**
- * Why the provider last refused a refund, as a closed code. Staff only (`payments.any.read`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
+ * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
  */
 export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
 
@@ -3320,7 +3320,7 @@ export const RefundFailureReason = {
 } as const;
 
 /**
- * One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`payments.any.read`); the provider's own error wording stays in the logs.
+ * One attempt to give money back — a record per attempt, not a field on the payment. The idempotency key is stored but never published. The provider's refund id and a failed refund's `failureReason` go to staff only (`display:Payment`); the provider's own error wording stays in the logs.
  */
 export interface Refund {
     id: Id;
@@ -3363,7 +3363,7 @@ export const PaymentDisplayStatus = {
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
  */
 export interface PaymentActions {
-    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `cart.self.checkout` (staff reading the payment are never offered it). */
+    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). */
     pay: boolean;
     /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking. */
     refund: boolean;
@@ -3416,7 +3416,7 @@ export interface Payment {
     /** The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions */
     status: PaymentStatus;
     displayStatus: PaymentDisplayStatus;
-    /** The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `payments.any.read`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment. */
+    /** The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `display:Payment`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment. */
     providerRef?: string;
     /** The order's number. Present on `GET /payments` rows only. */
     orderNumber?: string;
@@ -3652,7 +3652,7 @@ export const FulfillmentCancelReason = {
 } as const;
 
 /**
- * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `delivery.any.update`; `confirmWait` is the order's own buyer's.
+ * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`; `confirmWait` is the order's own buyer's.
  */
 export interface FulfillmentOrderActions {
     /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
@@ -3896,7 +3896,7 @@ export interface ShipFulfillmentOrderRequest {
      * @maxLength 100
      */
     trackingCode?: string;
-    /** Skip the `start` step — ship from `paid`. The caller must hold `orders.any.override`, and `reason` is then required. Never ships from `on_hold`. */
+    /** Skip the `start` step — ship from `paid`. The caller must hold `override:Order`, and `reason` is then required. Never ships from `on_hold`. */
     forced?: boolean;
     /**
      * Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
@@ -3953,7 +3953,7 @@ export interface UpdateShipmentRequest {
 }
 
 export interface DeliverShipmentRequest {
-    /** Record the arrival without a carrier confirmation — the caller must hold `orders.any.override`, and `reason` is then required. */
+    /** Record the arrival without a carrier confirmation — the caller must hold `override:Order`, and `reason` is then required. */
     forced?: boolean;
     /**
      * Required exactly when `forced` is `true`.
@@ -4584,7 +4584,7 @@ export interface ApiKey {
     /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
     publicPrefix: string;
     /**
-     * The permission keys this credential was minted with. Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
+     * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
      * @minItems 1
      */
     permissions: string[];
@@ -4615,7 +4615,7 @@ export interface MintApiKeyRequest {
      */
     name: string;
     /**
-     * The permission keys to mint this credential with. Must be a subset of the caller's own current permissions, or the request is refused with 422.
+     * The permission rules to mint this credential with, each spelled `<action>:<Subject>` (`display:Order`). Must be a subset of the caller's own current permissions, or the request is refused with 422.
      * @minItems 1
      * @items.maxLength 100
      */
@@ -7293,7 +7293,7 @@ export const listObservabilityAuditEntries = (
  * Newest first. `meta.totalItems` counts every entry matching the filters, not just
  * the page.
  *
- * Requires `audit.any.read` — held by `manager`, `support` and `moderator` in the demo.
+ * Requires `read:AuditLog` — held by `manager`, `support` and `moderator` in the demo.
  * @summary The shop's own action history
  */
 export const listAuditEntries = (
@@ -7884,7 +7884,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.self.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signup = (
@@ -8643,7 +8643,7 @@ export const listProducts = (
 };
 
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A body naming an opening count (`onHand` above zero) books a stock movement, so it also needs `inventory.any.create`: a caller who edits the catalogue without it is refused `403` and nothing is written.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A body naming an opening count (`onHand` above zero) books a stock movement, so it also needs `create:StockMovement`: a caller who edits the catalogue without it is refused `403` and nothing is written.
  * @summary Create product
  */
 export const createProduct = (
@@ -8662,7 +8662,7 @@ export const createProduct = (
 };
 
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A body naming an opening count (`onHand` above zero) books a stock movement, so it also needs `inventory.any.create`: a caller who edits the catalogue without it is refused `403` and nothing is written.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A body naming an opening count (`onHand` above zero) books a stock movement, so it also needs `create:StockMovement`: a caller who edits the catalogue without it is refused `403` and nothing is written.
  * @summary Create product
  */
 export const createProductWithMultipart = (
@@ -9306,7 +9306,7 @@ export const moveWishlistItemToCart = (
 
 /**
  * Returns a paginated list of orders.
- * A caller holding `orders.self.read` alone sees their own orders, and the `userId` filter is ignored for them; `orders.any.read` reads every order and may narrow by `userId`.
+ * A caller holding `read:Order` alone sees their own orders, and the `userId` filter is ignored for them; `display:Order` reads every order and may narrow by `userId`.
  * @summary List orders (paginated)
  */
 export const listOrders = (
@@ -9359,7 +9359,7 @@ export const deleteOrder = (
 
 /**
  * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
- * A caller holding `orders.self.read` alone sees their own orders, and the `userId` filter is ignored for them; `orders.any.read` reads every order and may narrow by `userId`.
+ * A caller holding `read:Order` alone sees their own orders, and the `userId` filter is ignored for them; `display:Order` reads every order and may narrow by `userId`.
  * @summary Search orders (DTO-friendly)
  */
 export const searchOrders = (
@@ -9493,7 +9493,7 @@ export const hardDeleteOrderById = (
 };
 
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator (a caller holding `orders.any.update`) can cancel anyone's, and must have proved themselves recently: a stale session answers `401 REAUTH_REQUIRED`, while the buyer's own cancel is never prompted. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator (a caller holding `update:Order`) can cancel anyone's, and must have proved themselves recently: a stale session answers `401 REAUTH_REQUIRED`, while the buyer's own cancel is never prompted. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const cancelOrderById = (
@@ -9513,7 +9513,7 @@ export const cancelOrderById = (
 };
 
 /**
- * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `orders.any.override`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
+ * Moves the order identified by `{id}` forward to `to` with no shipped email — for a manual correction, never for the ordinary shipping flow (`POST /delivery/fulfillment-orders/{id}/shipments` and `POST /delivery/shipments/{id}/deliver` are that door, with their own `forced` option). Delivery then keeps its own records in step: forward to `shipped` ships every remainder, forward to `delivered` delivers them, all stamped with the same instant. Refused while any unit still awaits stock (`ORDER_OVERRIDE_AWAITING_STOCK`). Only `processing`, `shipped` and `delivered` are legal destinations, and only moving forward from wherever the order currently stands, which is `paid` or later: an order still `pending` is refused, since leaving `pending` goes only through the offline-payment door, which records the money and issues the invoice. Never into `paid` (that stays system-only in absolute terms) and never `cancelled` (`POST /orders/{id}/cancel` is that door). Requires `override:Order`, itself step-up gated, and a non-empty `reason` recorded on the order's timeline (`status_overridden`). Webhooks still fire for this move; no shipped email does.
  * @summary Force-correct an order's status by hand
  */
 export const overrideOrderStatus = (
@@ -9608,7 +9608,7 @@ export const createPaymentIntent = (
 };
 
 /**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `payments.any.read` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
  * @summary Get the payment behind an order
  */
 export const getPaymentByOrder = (
@@ -9636,7 +9636,7 @@ export const getOrderByReference = (
 };
 
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `payments.any.update`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrder = (
@@ -9754,7 +9754,7 @@ export const getFulfillmentByOrder = (
 };
 
 /**
- * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `orders.any.update` on purpose — `delivery.any.start` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
  * @summary Begin fulfilling a paid order
  */
 export const startFulfilment = (
@@ -9777,7 +9777,7 @@ export const startFulfilment = (
  * waiting for stock, and expected within the next N days — see it coming, since a slip moved before
  * the date passes is a notice, and one moved after is a question.
  *
- * Same audience as the orders it belongs to: staff holding `orders.any.read` see every row, anyone
+ * Same audience as the orders it belongs to: staff holding `display:Order` see every row, anyone
  * else only their own orders'. `delivered` is true once nothing remains and every shipment arrived.
  * @summary List fulfillment orders (the preorder board)
  */
@@ -9951,7 +9951,7 @@ export const deliverShipment = (
 };
 
 /**
- * Staff (`returns.any.read`) see every return; anyone else sees the returns on their own orders. Filter by `orderId` to see one order's, which is how an order page shows what has happened to a withdrawal.
+ * Staff (`read:Return`) see every return; anyone else sees the returns on their own orders. Filter by `orderId` to see one order's, which is how an order page shows what has happened to a withdrawal.
  * @summary List returns (paginated)
  */
 export const listReturns = (
@@ -9967,7 +9967,7 @@ export const listReturns = (
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
- * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical`. `GET /returns/options` says what each door would take and refund.
+ * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `create:Refund` — the refund key, `stepUp: critical`. `GET /returns/options` says what each door would take and refund.
  * A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
@@ -9987,7 +9987,7 @@ export const createReturn = (
 };
 
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `returns.any.read`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptions = (
@@ -10525,7 +10525,7 @@ export const mergeCart = (
  * `currency`, `paymentMethod`, `paidAt`. No address: both are encrypted at rest and an export is
  * no reason to read them.
  *
- * Requires `orders.any.export` (manager and admin), which is step-up gated (`sensitive`): the file
+ * Requires `export:Order` (manager and admin), which is step-up gated (`sensitive`): the file
  * carries every customer's email, so the caller must have proved themselves recently. An API key
  * holds no session and cannot export. Over `NODE_ORDER_EXPORT_MAX_ROWS` rows the answer is `422`
  * `ORDER_EXPORT_TOO_LARGE`, before any byte of the file; narrow the filters. A cell that would
@@ -10544,7 +10544,7 @@ export const exportOrders = (
 };
 
 /**
- * What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `orders.any.read` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
+ * What happened to the order, oldest first: status moves, payments and refunds, shipments, returns, documents. Every caller who may read the order may read this, but not the same rows. A caller holding `display:Order` sees every row, with the `actor` who made it and any `text` staff wrote. The buyer sees only the buyer-visible types and never an `actor`: a manual correction, a hold and a failed refund stay with staff.
  * @summary The order's timeline
  */
 export const getOrderTimeline = (
@@ -10558,7 +10558,7 @@ export const getOrderTimeline = (
 };
 
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `payments.any.read`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPayments = (
@@ -10591,7 +10591,7 @@ export const searchPayments = (
 };
 
 /**
- * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/order/{orderId}/refund` and the cancel path. Needs `payments.any.read`.
+ * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/order/{orderId}/refund` and the cancel path. Needs `display:Payment`.
  * @summary List refunds (staff)
  */
 export const listRefunds = (
@@ -10605,7 +10605,7 @@ export const listRefunds = (
 };
 
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES`, refunds owed by hand on a `manual` payment (the sweep never finishes those, so they show at any age), payments whose stock commit is still owed, and orders whose refund is still owed after a cancel. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `payments.any.read`.
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES`, refunds owed by hand on a `manual` payment (the sweep never finishes those, so they show at any age), payments whose stock commit is still owed, and orders whose refund is still owed after a cancel. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttention = (
@@ -10618,7 +10618,7 @@ export const listPaymentAttention = (
 };
 
 /**
- * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `stats.any.read`. Never cached: it is the shop's money.
+ * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
  * @summary Sales over time (staff)
  */
 export const getSalesStats = (
@@ -10632,7 +10632,7 @@ export const getSalesStats = (
 };
 
 /**
- * The products that sold most in the period, by net sales: units ordered, units reversed by returns received in the period, net units and net sales (VAT out). Reads the order lines as they were frozen, so a deleted order drops out. Needs `stats.any.read`.
+ * The products that sold most in the period, by net sales: units ordered, units reversed by returns received in the period, net units and net sales (VAT out). Reads the order lines as they were frozen, so a deleted order drops out. Needs `read:Stats`.
  * @summary Top products (staff)
  */
 export const getProductStats = (
@@ -10646,7 +10646,7 @@ export const getProductStats = (
 };
 
 /**
- * Units ordered and units reversed for one product, per bucket, plus its title as the orders froze it. The orders behind it are `GET /orders?productId=…&paidFrom=…`. Needs `stats.any.read`.
+ * Units ordered and units reversed for one product, per bucket, plus its title as the orders froze it. The orders behind it are `GET /orders?productId=…&paidFrom=…`. Needs `read:Stats`.
  * @summary One product's sales over time (staff)
  */
 export const getProductSalesSeries = (
@@ -10661,7 +10661,7 @@ export const getProductSalesSeries = (
 };
 
 /**
- * Net sales and units per category, from the categories each order line froze. A product in two categories counts in both, so the rows do not add up to the total. Needs `stats.any.read`.
+ * Net sales and units per category, from the categories each order line froze. A product in two categories counts in both, so the rows do not add up to the total. Needs `read:Stats`.
  * @summary Sales by category (staff)
  */
 export const getCategoryStats = (
@@ -10675,7 +10675,7 @@ export const getCategoryStats = (
 };
 
 /**
- * Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `stats.any.read`.
+ * Payments that took money in the period (`succeeded`, refunded or not), by method and provider, with their count and amount. Needs `read:Stats`.
  * @summary Payments mix (staff)
  */
 export const getPaymentMixStats = (
@@ -10689,7 +10689,7 @@ export const getPaymentMixStats = (
 };
 
 /**
- * Cancellation rate as a cohort (orders placed in the period that ended cancelled), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `stats.any.read`.
+ * Cancellation rate as a cohort (orders placed in the period that ended cancelled), return rate (units returned ÷ units ordered, Shopify's `returned_quantity_rate`) and refund rate (credit notes ÷ invoices, VAT included). Needs `read:Stats`.
  * @summary Operations rates (staff)
  */
 export const getOperationsStats = (
@@ -10703,7 +10703,7 @@ export const getOperationsStats = (
 };
 
 /**
- * Customers who paid in the period, split into new (their first paid order falls in the period) and returning. Matched by account only, never by email: every erased account shares one placeholder address. Needs `stats.any.read`.
+ * Customers who paid in the period, split into new (their first paid order falls in the period) and returning. Matched by account only, never by email: every erased account shares one placeholder address. Needs `read:Stats`.
  * @summary New and returning customers (staff)
  */
 export const getCustomerStats = (
@@ -10717,7 +10717,7 @@ export const getCustomerStats = (
 };
 
 /**
- * A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `stats.any.read`.
+ * A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `read:Stats`.
  * @summary What is waiting right now (staff)
  */
 export const getPipelineStats = (
@@ -10741,7 +10741,7 @@ export const getPublishedExample = (
 };
 
 /**
- * Returns the caller's own examples, newest first by default. A caller holding `examples.any.read` sees everyone's.
+ * Returns the caller's own examples, newest first by default. A caller holding `display:Example` sees everyone's.
  * @summary List examples
  */
 export const listExamples = (
@@ -10793,7 +10793,7 @@ export const searchExamples = (
 };
 
 /**
- * Returns one example the caller may read — their own, or any when they hold `examples.any.read`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
+ * Returns one example the caller may read — their own, or any when they hold `display:Example`. Another person's example answers `404`, never `403`, so an id reveals nothing about who owns it.
  * @summary Read an example
  */
 export const getExampleById = (

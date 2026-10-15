@@ -37,7 +37,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`feedback`](../modules/feedback.md)                   | `contact`                              | `Contact`               | `public` | —                            | `views/Contact.vue`               |
 | [`feedback`](../modules/feedback.md)                   | `feedback`                             | `FeedbackInbox`         | `auth`   | `read Feedback`              | `views/FeedbackInbox.vue`         |
 | [`inventory`](../modules/inventory.md)                 | `inventory`                            | `InventoryLedger`       | `auth`   | `read StockLevel`            | `views/InventoryLedger.vue`       |
-| [`inventory`](../modules/inventory.md)                 | `sales/preorders`                      | `PreordersBoard`        | `auth`   | `read Order (others)`        | `views/PreordersBoard.vue`        |
+| [`inventory`](../modules/inventory.md)                 | `sales/preorders`                      | `PreordersBoard`        | `auth`   | `display Order`              | `views/PreordersBoard.vue`        |
 | [`locales`](../modules/locales.md)                     | `locales`                              | `LocalesList`           | `auth`   | `update Locale`              | `views/LocalesList.vue`           |
 | [`locales`](../modules/locales.md)                     | `locales/dictionary`                   | `LocalesDictionary`     | `auth`   | `update Locale`              | `views/LocalesDictionary.vue`     |
 | [`locales`](../modules/locales.md)                     | `locales/:tag`                         | `LocaleEntries`         | `auth`   | `update Locale`              | `views/LocaleEntries.vue`         |
@@ -46,10 +46,10 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`observability`](../modules/observability.md)         | `audit`                                | `AuditLog`              | `auth`   | `read AuditLog`              | `views/AuditLog.vue`              |
 | [`observability`](../modules/observability.md)         | `playground/realtime`                  | `RealtimePlayground`    | `auth`   | `read ObservabilitySnapshot` | `views/RealtimePlayground.vue`    |
 | [`orders`](../modules/orders.md)                       | `orders`                               | `OrdersList`            | `auth`   | —                            | `views/OrdersList.vue`            |
-| [`orders`](../modules/orders.md)                       | `sales/orders`                         | `SalesOrders`           | `auth`   | `read Order (others)`        | `views/OrdersList.vue`            |
+| [`orders`](../modules/orders.md)                       | `sales/orders`                         | `SalesOrders`           | `auth`   | `display Order`              | `views/OrdersList.vue`            |
 | [`orders`](../modules/orders.md)                       | `orders/:id`                           | `OrderTarget`           | `auth`   | —                            | `views/Order.vue`                 |
 | [`orders`](../modules/orders.md)                       | `orders/:id/edit`                      | `OrderEdit`             | `auth`   | `update Order`               | `views/OrderEdit.vue`             |
-| [`payments`](../modules/payments.md)                   | `sales/payments`                       | `PaymentsList`          | `auth`   | `read Payment (others)`      | `views/PaymentsList.vue`          |
+| [`payments`](../modules/payments.md)                   | `sales/payments`                       | `PaymentsList`          | `auth`   | `display Payment`            | `views/PaymentsList.vue`          |
 | [`products`](../modules/products.md)                   | `products`                             | `ProductsList`          | `public` | —                            | `views/ProductsList.vue`          |
 | [`products`](../modules/products.md)                   | `products/create`                      | `ProductCreate`         | `auth`   | `create Product`             | `views/ProductCreate.vue`         |
 | [`products`](../modules/products.md)                   | `products/:id`                         | `ProductTarget`         | `public` | —                            | `views/Product.vue`               |
@@ -75,8 +75,8 @@ Every screen the enabled modules contribute, generated from their route records 
 
 Paths are relative to the localised root. **Access** is the route’s own `meta.access` — the STANDING it requires — and **Permission** is its
 `meta.can`, the `[action, subject]` rule evaluated against the caller's own rules from
-`GET /account/abilities` — suffixed `(others)` when the route also sets `meta.others`, which asks for
-the rule on other people's rows, not just the visitor's own. Together they are the only place a screen's requirement is declared; a
+`GET /account/abilities` — a staff screen asks the staff action (`display Order`), which a customer holding only
+`read:Order` does not hold. Together they are the only place a screen's requirement is declared; a
 menu entry inherits both rather than restating them. There is no `admin` level: a screen names the
 permission it needs, because "administrator" could never say _of what_.
 

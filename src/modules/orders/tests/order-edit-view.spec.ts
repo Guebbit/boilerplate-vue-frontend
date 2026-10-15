@@ -463,7 +463,7 @@ describe('recording a payment by hand', () => {
     });
 
     it('withholds the form from a viewer who may not record payments, even while the order can reach paid', () => {
-        // The manager edits orders and holds no `payments.any.create`: the form would only 403.
+        // The manager edits orders and holds no `create:Payment`: the form would only 403.
         signInAsAdmin([]);
         const detail = anOrder({
             status: OrderStatus.pending,

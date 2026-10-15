@@ -6,8 +6,8 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
- * Stats routes: the dashboard and one product's sales. Both need `stats.any.read`, which the
- * server grants to manager and admin; the subject has no `self` twin, so `can` alone is enough.
+ * Stats routes: the dashboard and one product's sales. Both need `read:Stats`, which the
+ * server grants to manager and admin; the subject has no own-rows rule, so the plain action is the staff door.
  */
 export default [
     {

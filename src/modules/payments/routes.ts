@@ -6,8 +6,8 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
- * Payments routes: the staff list. `others` because `payments.self.read` answers `can` for a
- * customer; only `payments.any.read` opens the page.
+ * Payments routes: the staff list. `display`, not `read`, because `read:Payment` answers `can` for a
+ * customer; only `display:Payment` opens the page.
  */
 export default [
     {
@@ -16,8 +16,7 @@ export default [
         component: () => import('./views/PaymentsList.vue'),
         meta: {
             access: 'auth',
-            can: ['read', 'Payment'],
-            others: true,
+            can: ['display', 'Payment'],
             title: 'payments-list-page.page-title'
         }
     }

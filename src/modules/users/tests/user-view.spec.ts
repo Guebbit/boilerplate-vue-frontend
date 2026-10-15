@@ -2,7 +2,7 @@
  * @module
  * Mounts the real user detail page against a real, memory-history router — same template as
  * `orders/tests/order-view.spec.ts`. Scoped to one thing: the "History" link only renders for a
- * visitor who actually holds `audit.any.read` (CASL subject `AuditLog`).
+ * visitor who actually holds `read:AuditLog` (CASL subject `AuditLog`).
  * `watchUser` is stubbed so the store's own fetch never runs; the user is seeded directly into
  * the dictionary instead.
  */
@@ -46,7 +46,7 @@ const A_USER: UserType = {
 };
 
 /**
- * Grants (or withholds) `audit.any.read`, the ability the "History" link is gated on.
+ * Grants (or withholds) `read:AuditLog`, the ability the "History" link is gated on.
  *
  * @param canReadAuditLog - Whether to hold the ability.
  */
@@ -86,7 +86,7 @@ beforeEach(() => {
 });
 
 describe('the "History" link', () => {
-    it('is absent for a visitor with no audit.any.read', () => {
+    it('is absent for a visitor with no read:AuditLog', () => {
         signIn(false);
         const wrapper = mountUser(A_USER);
 

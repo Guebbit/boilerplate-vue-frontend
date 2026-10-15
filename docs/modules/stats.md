@@ -111,7 +111,7 @@ Store `stats`, from `store.ts`. Only what the setup function returns is listed.
 | `sales/stats`                     | `StatsDashboard`    | `auth` | `read Stats` | `views/StatsDashboard.vue` |
 | `sales/stats/products/:productId` | `StatsProductSales` | `auth` | `read Stats` | `views/ProductSales.vue`   |
 
-The permission is `stats.any.read`, which the backend grants to `manager` and `admin`. See
+The permission is `read:Stats`, which the backend grants to `manager` and `admin`. See
 [Security](../tools/security.md#route-guards).
 
 ## Wiring

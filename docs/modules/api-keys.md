@@ -43,7 +43,7 @@ and both routes simply disappear for anyone else; nothing here hardcodes a role 
 
 **The permissions field is free text, not a picker.** `GET /account/abilities` publishes CASL
 packed rules (`[action, subject]`, wildcards expanded) plus, as of this build, the full declared
-`subjects` set — but not the permission KEY strings themselves (`products.any.read`), which are
+`subjects` set — but not the permission KEY strings themselves (`display:Product`), which are
 `<family>.<breadth>.<action>` triples this repo has no source for. A `v-combobox` (multiple,
 chips, no fixed `:items`) is the honest V1; a `422` naming the refused keys (`details.permissions`) lands on the
 field directly rather than as a toast.

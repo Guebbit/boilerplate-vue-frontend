@@ -14,7 +14,7 @@ import { seedAccount } from '../../support/e2e/scenario';
 import { shipTheOpenGroup } from '../../support/e2e/steps';
 
 /**
- * Corrects the order on the edit page to `label` via the `orders.any.override` door. It is one
+ * Corrects the order on the edit page to `label` via the `override:Order` door. It is one
  * way onto `processing` — the ordinary one is `POST /delivery/order/{id}/start` — and the one
  * this walk takes, since it is about shipping and the ledger, not the start. `PUT /orders/:id`
  * carries no `status` field, and shipping itself only ever moves `processing → shipped`.

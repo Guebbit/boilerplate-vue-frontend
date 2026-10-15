@@ -84,7 +84,7 @@ flowchart TD
 shows the server's refund and opens `CancelRemainderDialog`, which sends `POST /returns` with
 `kind: cancellation` and the fulfillment order's id. The buyer's cancellation is part of their
 withdrawal (`reason: withdrawal`, no note); a staff member holding the refund key
-(`payments.any.update`) cancels with reason `other` and an optional note, and the http layer prompts
+(`create:Refund`) cancels with reason `other` and an optional note, and the http layer prompts
 for the password first — the key is step-up gated. The record is born `closed`, its lines are the
 remainder, and the panel lists it like any other return. Rank, window and who may refuse are the
 server's.

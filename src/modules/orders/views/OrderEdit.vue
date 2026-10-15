@@ -114,7 +114,7 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
  * The order's own `actions.override` — every status `POST /orders/{id}/status-override` would
- * currently accept for this caller. Empty for anyone without `orders.any.override`, or once the
+ * currently accept for this caller. Empty for anyone without `override:Order`, or once the
  * order has left every overridable status — the server's answer, not a locally filtered copy.
  */
 const overrideTargets = computed(() => currentOrder.value?.actions?.override ?? []);
@@ -153,7 +153,7 @@ const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
 const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
 
 /**
- * The session, asked whether recording money is this account's to do: `payments.any.create`, which
+ * The session, asked whether recording money is this account's to do: `create:Payment`, which
  * the manager (an order editor, not a payment one) does not hold.
  */
 const session = useSessionStore();
@@ -545,7 +545,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 <!--
                     The admin-only correction door: PUT /orders/:id carries no status field, so
                     this is the only way onto processing/shipped/delivered outside the ordinary
-                    flow. Gated on the `orders.any.override` permission, not on any order-state
+                    flow. Gated on the `override:Order` permission, not on any order-state
                     flag, since the whole point is bypassing the ordinary rule.
                 -->
                 <div v-if="canOverride" class="mt-6 border-t pt-5">

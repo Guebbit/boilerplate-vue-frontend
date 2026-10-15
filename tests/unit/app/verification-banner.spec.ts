@@ -1,7 +1,7 @@
 /**
  * `AppVerificationBanner` — it keys on `viewer.verified`, not on a shop permission. A
  * platform-only operator holding no `Cart` subject at all must still see it while unverified, and
- * a verified customer must not see it just because they also hold `cart.self.checkout`.
+ * a verified customer must not see it just because they also hold `checkout:Cart`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';

@@ -81,7 +81,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
 
     /**
      * One page of the preorder board's second tab: fulfillment orders made from preorder lines,
-     * each with its buyer. Staff holding `orders.any.read` see every row, anyone else their own.
+     * each with its buyer. Staff holding `display:Order` see every row, anyone else their own.
      */
     const preorderBoard = ref<PreorderFulfillmentOrder[]>([]);
 
@@ -192,7 +192,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      *
      * @param fulfillmentOrderId - The fulfillment order shipping.
      * @param input - `lines` (absent = everything remaining), `trackingCode`, and `forced` +
-     *  `reason` for an `orders.any.override` holder skipping the `start` step.
+     *  `reason` for an `override:Order` holder skipping the `start` step.
      * @returns A promise resolving with the new shipment, after the lists are re-read.
      */
     const ship = (fulfillmentOrderId: string, input: ShipFulfillmentOrderRequest = {}) =>
@@ -264,7 +264,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * shipment has arrived and nothing remains.
      *
      * @param shipmentId - The shipment that arrived.
-     * @param forced - Records it without a carrier confirmation, for an `orders.any.override`
+     * @param forced - Records it without a carrier confirmation, for an `override:Order`
      *  holder; `reason` is then required by the API.
      * @param reason - Why the normal door didn't apply. Required exactly when `forced` is `true`.
      * @returns A promise resolving with the shipment, after the lists are re-read.

@@ -339,7 +339,7 @@ describe('the VAT summary', () => {
 });
 
 /**
- * Grants (or withholds) `audit.any.read`, the ability the "History" link is gated on — see
+ * Grants (or withholds) `read:AuditLog`, the ability the "History" link is gated on — see
  * `users/tests/user-view.spec.ts` for the same gate on the user detail page.
  *
  * @param canReadAuditLog - Whether to hold the ability.
@@ -355,7 +355,7 @@ const signIn = (canReadAuditLog: boolean) => {
 };
 
 describe('the "History" link', () => {
-    it('is absent for a visitor with no audit.any.read', () => {
+    it('is absent for a visitor with no read:AuditLog', () => {
         signIn(false);
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
 

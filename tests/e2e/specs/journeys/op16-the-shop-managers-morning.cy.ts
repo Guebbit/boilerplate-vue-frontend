@@ -65,7 +65,7 @@ describe('OP16 · The shop manager’s morning', () => {
                 expect(links, page).to.include(`/en${page}`);
             }
             // No Users entry: running the shop does not need the accounts, so the manager holds no
-            // `users.any.read` (the role-by-role pass), and the page turns them back.
+            // `read:User` (the role-by-role pass), and the page turns them back.
             for (const page of ['/users', '/api-keys', '/admin', '/playground/realtime']) {
                 expect(links, page).to.not.include(`/en${page}`);
             }

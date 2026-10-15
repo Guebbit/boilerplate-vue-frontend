@@ -2,7 +2,7 @@
 /**
  * @module
  * Staff cut a shipment from one fulfillment order: a quantity per remaining line (default: all),
- * a tracking code, and the forced door for an `orders.any.override` holder when the ordinary one
+ * a tracking code, and the forced door for an `override:Order` holder when the ordinary one
  * is closed. The dialog owns its call and reports the outcome in place; the server re-checks every
  * limit, so the form only keeps staff from asking for the impossible.
  */

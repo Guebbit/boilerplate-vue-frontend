@@ -128,8 +128,8 @@ const session = useSessionStore();
 /**
  * Whether this is the staff page: the search-by-id/user/product/email boxes and the transfer queue
  * mean nothing on the account page, whose list is only the viewer's own. The route guard
- * (`meta.others`) is what keeps a customer off the staff page; the wide read (`orders.any.read`)
- * is what lets the warehouse and support, who read every order and edit none, in.
+ * (`meta.can: ['display', 'Order']`) keeps a customer off the staff page and lets in the warehouse
+ * and support, who read every order and edit none.
  */
 const isStaff = computed(() => props.scope === 'all');
 

@@ -20,12 +20,11 @@ export default [
         path: 'sales/preorders',
         name: 'PreordersBoard',
         component: () => import('./views/PreordersBoard.vue'),
-        // `others`: `orders.self.read` would admit a customer, and the board lists other people's
-        // fulfillment orders; only the key on other people's orders opens it.
+        // `display`: `read:Order` would admit a customer, and the board lists other people's
+        // fulfillment orders; only the staff action on orders opens it.
         meta: {
             access: 'auth',
-            can: ['read', 'Order'],
-            others: true,
+            can: ['display', 'Order'],
             title: 'preorders-page.page-title'
         }
     }

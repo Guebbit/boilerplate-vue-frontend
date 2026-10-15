@@ -83,7 +83,7 @@ const holdOpen = ref(false);
 const { message: cardError, report: reportCardError, clear: clearCardError } = useBlockingError();
 
 /**
- * Whether the caller may force a shipment right now (an `orders.any.override` holder).
+ * Whether the caller may force a shipment right now (an `override:Order` holder).
  */
 const canForceShip = computed(() => (props.override ?? []).includes(OrderStatus.shipped));
 

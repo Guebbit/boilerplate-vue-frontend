@@ -84,7 +84,7 @@ const mountPage = () =>
     });
 
 /**
- * Signs in holding exactly these rules — the buttons under test are `users.any.update`'s.
+ * Signs in holding exactly these rules — the buttons under test are `update:User`'s.
  *
  * @param tenant - the packed tenant rules the viewer holds
  */
@@ -131,7 +131,7 @@ describe('User (detail page)', () => {
         });
     });
 
-    // Support holds `users.any.update` and not `users.any.ban`: the edit is offered, and the dialog
+    // Support holds `update:User` and not `ban:User`: the edit is offered, and the dialog
     // opens for a role change with its active switch disabled.
     it('offers Edit and the access dialog when only update is allowed, as for a support agent', () => {
         queueGetResponses(

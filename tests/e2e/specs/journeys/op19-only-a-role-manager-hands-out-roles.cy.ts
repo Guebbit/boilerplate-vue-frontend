@@ -2,7 +2,7 @@
 /**
  * @module
  * OP19 · Only a role manager hands out roles. Handing a staff role out, or taking one away, needs
- * `roles.any.assign`, which only the administrator holds. The moderator and support may edit a
+ * `assign:Role`, which only the administrator holds. The moderator and support may edit a
  * customer but are offered no role to grant, and the server refuses a role asked for by hand; the
  * administrator may promote a customer to the warehouse, and that person's next sign-in shows the
  * warehouse menu.

@@ -45,9 +45,9 @@ export default [
         component: () => import('./views/LocaleEntries.vue')
     },
     /*
-     * The generic translation door's own screen — gated on `translations.any.read`
+     * The generic translation door's own screen — gated on `read:Translation`
      * (`read Translation`), not a product key: an unrestricted admin still reaches it, but the
-     * narrower key is what would let a translations-only role in without `products.any.update`.
+     * narrower key is what would let a translations-only role in without `update:Product`.
      * No shipped role holds exactly that shape (`editor` carries both), but the key stays
      * separable for one that would.
      */

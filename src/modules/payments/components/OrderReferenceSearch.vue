@@ -13,7 +13,7 @@ export default {
  * @module
  * The admin's own way in when a bank statement line, not an order, is what they are holding: paste
  * the RF creditor reference and find the order it belongs to. Published only to an operator who
- * could act on what it finds — `payments.any.create`, the same key that gates recording the
+ * could act on what it finds — `create:Payment`, the same key that gates recording the
  * payment itself.
  *
  * `payments` declares no `MODULE_EDGES` reach into `orders` — this component is published

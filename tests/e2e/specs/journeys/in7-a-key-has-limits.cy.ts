@@ -16,10 +16,10 @@ import { datetimeLocalIn, seededSubscription } from '../../../support/e2e/integr
 const HOUR_MS = 60 * 60 * 1000;
 
 /** A permission the admin does not hold: a platform key, which no shop role carries. */
-const NOT_THE_ADMINS = 'platform.observability.any.read';
+const NOT_THE_ADMINS = 'read:ObservabilitySnapshot';
 
 /** The one write the key is given. */
-const GIVEN = 'webhooks.any.create';
+const GIVEN = 'create:WebhookSubscription';
 
 /** A name for the key, unique enough that two runs on one backend never read each other's row. */
 const KEY_NAME = `in7-writer-${String(Date.now())}`;

@@ -273,7 +273,7 @@ export const useOrdersStore = defineStore('orders', () => {
 
     /**
      * Forces a move to `processing`, `shipped` or `delivered` with a reason, bypassing the
-     * ordinary transition rule — `orders.any.override` only. No parcel record and no shipped
+     * ordinary transition rule — `override:Order` only. No parcel record and no shipped
      * email fire; this is a manual correction, not the shipping flow (`useDeliveryStore`'s
      * `ship`/`deliver` are that door, with their own `forced` option). `updateTarget` replaces the
      * cached record and its query-cache entry, same reasoning as {@link cancelOrder}.
@@ -327,7 +327,7 @@ export const useOrdersStore = defineStore('orders', () => {
 
     /**
      * Downloads every order the filters match as one CSV file — `GET /orders/export`
-     * (`orders.any.export`, step-up). Held outside `fetchAny`: a file is not a record, and the
+     * (`export:Order`, step-up). Held outside `fetchAny`: a file is not a record, and the
      * page keeps its own `exporting` flag so the table stays usable meanwhile. The step-up
      * prompt is the HTTP layer's job; a 422 (too many rows) and a 429 reach the caller as is.
      *

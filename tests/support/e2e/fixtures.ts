@@ -384,10 +384,10 @@ Cypress.Commands.add('createWebhookSubscription', (overrides: Record<string, unk
 
 Cypress.Commands.add('mintApiKey', (overrides: Record<string, unknown> = {}) =>
     adminApi<ApiKeyLike>('/api-keys', 'POST', {
-        // Unique per test; `products.any.read` is a real declared tenant key — an invented
+        // Unique per test; `display:Product` is a real declared tenant key — an invented
         // string, or the ungranted `products.read`, is a 422, mint's own floor.
         name: `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`,
-        permissions: ['products.any.read'],
+        permissions: ['display:Product'],
         // Every key expires, at most a year ahead — the mint refuses a request without one.
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         ...overrides

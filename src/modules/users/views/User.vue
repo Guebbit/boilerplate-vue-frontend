@@ -58,7 +58,7 @@ const { id } = defineProps<{
 const { watchUser } = useUsersStore();
 
 /**
- * The session, for the `meta.can` rule that gates "History" (`audit.any.read`). Edit and the
+ * The session, for the `meta.can` rule that gates "History" (`read:AuditLog`). Edit and the
  * access buttons are gated by the row's `actions` instead — a button the backend answers with 403
  * is a button not to show.
  */

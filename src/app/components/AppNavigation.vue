@@ -195,7 +195,7 @@ const badgeDetails = new Map(
  * @returns The localized, locale-prefixed visible entries, keyed by section.
  */
 const visibleSections = computed((): Record<AppNavigationSection, AppNavItem[]> => {
-    const visitor = { isAuth: isAuth.value, can: session.can, canOnOthers: session.canOnOthers };
+    const visitor = { isAuth: isAuth.value, can: session.can };
     const resolve = (entries: AppNavigationEntry[]): AppNavItem[] =>
         entries
             .filter(({ name }) => canAccess(router.resolve({ name }).meta, visitor))

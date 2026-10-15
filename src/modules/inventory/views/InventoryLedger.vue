@@ -40,7 +40,7 @@ const movementLedger = ref<InstanceType<typeof MovementLedger>>();
 
 /**
  * The session, asked whether the two forms are this account's to use: recording a receipt or an
- * adjustment is `inventory.any.create`, which the manager (a reader of stock) does not hold.
+ * adjustment is `create:StockMovement`, which the manager (a reader of stock) does not hold.
  */
 const session = useSessionStore();
 </script>

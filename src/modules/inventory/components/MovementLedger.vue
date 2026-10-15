@@ -61,7 +61,7 @@ const orderTargetTo = (reference: string | null | undefined) =>
     reference ? linkIfRouted(router, 'OrderTarget', { id: reference }) : undefined;
 
 /**
- * The session, asked whether the sweep is this account's to press: `inventory.any.sweep` is the
+ * The session, asked whether the sweep is this account's to press: `sweep:StockLevel` is the
  * admin's alone, so the warehouse and the manager read the ledger without the button.
  */
 const session = useSessionStore();

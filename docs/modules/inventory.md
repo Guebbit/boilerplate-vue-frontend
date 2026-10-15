@@ -82,7 +82,7 @@ flowchart LR
 ```
 
 - The limit is set from a dialog on the board row (`PUT /inventory/levels/{id}/preorder-limit`),
-  offered only to a holder of the stock write (`inventory.any.create`). It is absolute and
+  offered only to a holder of the stock write (`create:StockMovement`). It is absolute and
   idempotent, may sit below what is outstanding (only new orders are refused), and is **not** a
   movement: it leaves no ledger row.
 - The ledger has a "Preordered" column for the third counter, and two reasons: `preorder` (units
@@ -90,7 +90,7 @@ flowchart LR
 
 ## The preorder board
 
-`/sales/preorders`, in the Sales menu group, for anyone holding `orders.any.read` (the same audience
+`/sales/preorders`, in the Sales menu group, for anyone holding `display:Order` (the same audience
 as the orders it lists). Two tabs, kept in `?tab=`; the product the second tab is narrowed to in
 `?productId=`.
 
@@ -104,7 +104,7 @@ flowchart LR
     t1 -. "show its orders" .-> t2
 ```
 
-- **Products** (needs `inventory.any.read`, so a viewer without it has only the second tab): one
+- **Products** (needs `read:StockLevel`, so a viewer without it has only the second tab): one
   row per product from the union of the two reads, the worst first (most late, then most
   outstanding). Limit, outstanding (with its unpaid/paid split), left to order, lifetime ordered;
   the units by state (waiting, awaiting an answer, allocated, shipped, cancelled, late), only the
@@ -130,10 +130,10 @@ Store `inventory`, from `store.ts`. Only what the setup function returns is list
 
 ## Screens
 
-| Path              | Route name        | Access | Permission            | View                        |
-| ----------------- | ----------------- | ------ | --------------------- | --------------------------- |
-| `inventory`       | `InventoryLedger` | `auth` | `read StockLevel`     | `views/InventoryLedger.vue` |
-| `sales/preorders` | `PreordersBoard`  | `auth` | `read Order` (others) | `views/PreordersBoard.vue`  |
+| Path              | Route name        | Access | Permission        | View                        |
+| ----------------- | ----------------- | ------ | ----------------- | --------------------------- |
+| `inventory`       | `InventoryLedger` | `auth` | `read StockLevel` | `views/InventoryLedger.vue` |
+| `sales/preorders` | `PreordersBoard`  | `auth` | `display Order`   | `views/PreordersBoard.vue`  |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 

@@ -49,16 +49,16 @@ const BUYER_ROWS: OrderTimelineEntry[] = STAFF_ROWS.slice(0, 2).map(
 );
 
 /**
- * Signs in with one read rule on orders: the wide one makes a viewer staff, the pinned one a buyer.
+ * Signs in with one read rule on orders: the staff `display` makes a viewer staff, the pinned `read` a buyer.
  *
- * @param staff - whether the rule is `orders.any.read`
+ * @param staff - whether the rule is `display:Order`
  */
 const signIn = (staff: boolean) => {
     const session = useSessionStore();
     session.accessToken = 'test-token';
     session.viewer = { id: 'u1', email: 'a@example.com', role: 'owner' };
     session.setAbilities({
-        tenant: [['read', 'Order', staff ? {} : { userId: 'u1' }]],
+        tenant: [staff ? ['display', 'Order', {}] : ['read', 'Order', { userId: 'u1' }]],
         platform: []
     });
 };

@@ -43,7 +43,7 @@ import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus }
 const { t } = useI18n();
 
 /**
- * The session, for what a reader of the inbox may do with a ticket: `feedback.any.read` alone
+ * The session, for what a reader of the inbox may do with a ticket: `read:Feedback` alone
  * (the manager) sees tickets and notes, `.update` moves and annotates them, `.delete` erases.
  */
 const session = useSessionStore();

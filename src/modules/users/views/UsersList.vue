@@ -80,7 +80,7 @@ const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal,
     storeToRefs(useUsersStore());
 
 /**
- * The session, for the create button: `users.any.create` is a key some staff roles lack. The row
+ * The session, for the create button: `create:User` is a key some staff roles lack. The row
  * actions are not the session's call: each row carries its own `actions` — the server's answer for
  * THIS admin on THIS account, key and rank together — and a button the backend would answer with
  * 403 is a button not to show.

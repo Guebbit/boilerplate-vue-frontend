@@ -1,7 +1,7 @@
 // requires-module: account, orders, payments
 /**
  * @module
- * OP4 · A return: refund a delivered order. A moderator may refund money (`payments.any.update`)
+ * OP4 · A return: refund a delivered order. A moderator may refund money (`create:Refund`)
  * but the parcel is long delivered, so the order must stay as it is: the refund moves the money
  * and nothing else. A delivered order cannot be cancelled, and the page says so by leaving both
  * cancel buttons shut while "refund only" is open.
