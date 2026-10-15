@@ -335,3 +335,33 @@ describe('logoutEverywhere', () => {
             });
     });
 });
+
+describe('restoreFromCookies after a failed mode read', () => {
+    it('asks for the mode again and opens a cookie session, instead of refreshing as jwt', () => {
+        responses['GET /account/session-config'] = orvalEnvelope({ mode: 'cookie' });
+        vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
+
+        return useSessionStore()
+            .loadSessionMode()
+            .then(() => {
+                expect(useSessionStore().mode).toBeUndefined();
+                return useSessionStore().restoreFromCookies();
+            })
+            .then(() => {
+                expect(useSessionStore().mode).toBe('cookie');
+                expect(useSessionStore().hasSession).toBe(true);
+                expect(requestedUrls()).not.toContain('/account/refresh');
+            });
+    });
+
+    it('does nothing, and does not refresh, while the mode stays unknown', () => {
+        vi.mocked(orvalMutator).mockRejectedValue(new Error('network down'));
+
+        return useSessionStore()
+            .restoreFromCookies()
+            .then(() => {
+                expect(useSessionStore().hasSession).toBe(false);
+                expect(requestedUrls()).not.toContain('/account/refresh');
+            });
+    });
+});

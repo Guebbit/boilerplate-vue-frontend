@@ -572,13 +572,18 @@ export const useSessionStore = defineStore('session', () => {
      * cookie is the credential and the next request proves it. A dead cookie shows up as a 401
      * on that request, which ends the session there.
      *
-     * @returns A promise resolving once the tab holds a session, or the attempt failed quietly.
+     * @returns A promise resolving once the tab holds a session, or the attempt failed quietly —
+     *  including when the deployment's mode could not be read, which leaves the hint cookie for
+     *  the next attempt.
      */
-    const restoreFromCookies = (): Promise<void> => {
-        if (mode.value !== 'cookie') return refreshToken().then(() => undefined);
-        startCookieSession();
-        return Promise.resolve();
-    };
+    const restoreFromCookies = (): Promise<void> =>
+        // A mode that is still unknown is asked again, never assumed `jwt`: that refresh is a 404
+        // in a cookie deployment, and the answer to it ends a login that was perfectly good.
+        (mode.value === undefined ? loadSessionMode() : Promise.resolve()).then(() => {
+            if (mode.value === undefined) return;
+            if (mode.value !== 'cookie') return refreshToken().then(() => undefined);
+            startCookieSession();
+        });
 
     /**
      * Asks the API who the current token belongs to and stores the projection.
