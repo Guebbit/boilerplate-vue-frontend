@@ -9,7 +9,7 @@
  * screens show no control the backend would refuse.
  *
  * Money is not the manager's: refund buttons stay shut and there is no offline-payment form. Nor
- * are the accounts (no Users page) or a basket (staff do not shop).
+ * are the accounts (no Users page). The manager is a customer too, so a basket is theirs.
  */
 
 /**
@@ -74,14 +74,13 @@ describe('OP16 · The shop manager’s morning', () => {
         isTurnedBack('/en/api-keys');
         isTurnedBack('/en/admin');
 
-        cy.step('staff do not shop: no basket in the bar, no add-to-cart on a product');
-        cy.get('[data-test=pinned-Cart]').should('not.exist');
+        cy.step('staff are customers too: a basket in the bar and add-to-cart on a product');
+        cy.get('[data-test=pinned-Cart]').should('exist');
         cy.subjectId('product.rich').then((productId) => {
             cy.visit(`/en/products/${productId}`);
             cy.get('[data-test=go-to-edit]').should('exist');
-            cy.get('[data-test=add-to-cart]').should('not.exist');
+            cy.get('[data-test=add-to-cart]').should('exist');
         });
-        isTurnedBack('/en/cart');
 
         cy.step('a paid order: the manager starts work on it, and has no ship button');
         cy.subjectId('order.paid').then((orderId) => {

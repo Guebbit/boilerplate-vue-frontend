@@ -150,7 +150,7 @@ describe('PaymentDrawer', () => {
             success: false,
             status: 403,
             message: 'Forbidden',
-            errors: [{ code: 'OUTRANKED', message: 'You may not refund this buyer.' }]
+            errors: [{ code: 'FORBIDDEN', message: 'You may not refund this buyer.' }]
         });
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const wrapper = mountDrawer(FULL);

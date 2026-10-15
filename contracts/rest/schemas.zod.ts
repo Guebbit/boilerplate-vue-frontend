@@ -6049,7 +6049,7 @@ export const ListOrdersResponse = zod.strictObject({
     })
 });
 /**
- * Creates a new order directly from the supplied payload, for the account named in `userId`. The rank rule applies to that account: an operator raises orders for customers, never for an equal or a superior (`OUTRANKED`). Raising one for oneself is allowed, but the steps that move its money then refuse the caller.
+ * Creates a new order directly from the supplied payload, for the account named in `userId`. Raising one for oneself is allowed.
  * A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
  * @summary Create order
  */
@@ -7581,7 +7581,7 @@ export const HardDeleteOrderByIdResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator can cancel a customer's, never an equal's or a superior's (`OUTRANKED`). The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const cancelOrderByIdPathIdMax = 64;
@@ -8582,7 +8582,7 @@ export const GetOrderByReferenceResponse = zod.strictObject({
     })
 });
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `payments.any.update`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrderPathOrderIdMax = 64;
@@ -8720,7 +8720,7 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
     })
 });
 /**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Record a payment that arrived outside the provider
  */
 export const recordOfflinePaymentPathOrderIdMax = 64;
@@ -10507,7 +10507,7 @@ export const ListReturnsResponse = zod.strictObject({
 /**
  * The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
  * Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
- * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical` — and the buyer must be someone else who ranks below them. `GET /returns/options` says what each door would take and refund.
+ * `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical`. `GET /returns/options` says what each door would take and refund.
  * A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
  * @summary Open a return, or withdraw from the contract
  */
@@ -10793,7 +10793,7 @@ export const GetReturnByIdResponse = zod.strictObject({
     })
 });
 /**
- * Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409. Never for a return on the caller's own order: approving opens the way to a refund, and nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (declining one's own return is allowed).
+ * Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
  * @summary Approve a return request
  */
 export const approveReturnPathIdMax = 64;
@@ -10959,7 +10959,7 @@ export const DeclineReturnResponse = zod.strictObject({
     })
 });
 /**
- * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409. Never for a return on the caller's own order: receiving opens the refund, and nobody handles their own money, so the buyer is refused with `403 FORBIDDEN`.
+ * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
  * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */

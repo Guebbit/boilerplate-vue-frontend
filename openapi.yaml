@@ -5027,7 +5027,7 @@ paths:
         - Orders
       summary: Create order
       description: |-
-        Creates a new order directly from the supplied payload, for the account named in `userId`. The rank rule applies to that account: an operator raises orders for customers, never for an equal or a superior (`OUTRANKED`). Raising one for oneself is allowed, but the steps that move its money then refuse the caller.
+        Creates a new order directly from the supplied payload, for the account named in `userId`. Raising one for oneself is allowed.
         A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
       operationId: createOrder
       security:
@@ -5443,7 +5443,7 @@ paths:
       tags:
         - Orders
       summary: Cancel order
-      description: "Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator can cancel a customer's, never an equal's or a superior's (`OUTRANKED`). The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner."
+      description: "Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner."
       operationId: cancelOrderById
       security:
         - bearerAuth: []
@@ -5803,7 +5803,7 @@ paths:
       tags:
         - Payments
       summary: Refund an order's payment
-      description: "Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of \"cancel and refund\" when a client sends both. Admin only, and never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
+      description: "Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of \"cancel and refund\" when a client sends both. Needs `payments.any.update`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
       operationId: refundPaymentByOrder
       security:
         - bearerAuth: []
@@ -5853,7 +5853,7 @@ paths:
       tags:
         - Payments
       summary: Record a payment that arrived outside the provider
-      description: "An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Never on the caller's own order: nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (and a buyer who ranks at or above the caller with `OUTRANKED`). Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
+      description: "An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
       operationId: recordOfflinePayment
       security:
         - bearerAuth: []
@@ -6615,7 +6615,7 @@ paths:
       description: |-
         The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
         Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
-        `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical` — and the buyer must be someone else who ranks below them. `GET /returns/options` says what each door would take and refund.
+        `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `payments.any.update` — the refund key, `stepUp: critical`. `GET /returns/options` says what each door would take and refund.
         A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
       operationId: createReturn
       security:
@@ -6733,7 +6733,7 @@ paths:
       tags:
         - Returns
       summary: Approve a return request
-      description: "Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409. Never for a return on the caller's own order: approving opens the way to a refund, and nobody handles their own money, so the buyer is refused with `403 FORBIDDEN` (declining one's own return is allowed)."
+      description: Staff accept a `requested` return; the customer is told they may send the goods back. The write is conditional on the return still being `requested`, so two staff members deciding at once cannot both win — the second answers 409.
       operationId: approveReturn
       security:
         - bearerAuth: []
@@ -6816,7 +6816,7 @@ paths:
         - Returns
       summary: Record that the returned goods arrived
       description: |-
-        The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409. Never for a return on the caller's own order: receiving opens the refund, and nobody handles their own money, so the buyer is refused with `403 FORBIDDEN`.
+        The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
         What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
       operationId: receiveReturn
       security:
@@ -9603,17 +9603,17 @@ components:
         - update
         - ban
         - delete
-      description: "What the requesting caller may do to this account. Each is the route's permission key AND the rank rule: an account at the caller's own level or above is `false` for all three, the caller's own account is judged by the keys alone."
+      description: "What the requesting caller may do to this account. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all three unless the caller holds `roles.any.assign`; the caller's own account is judged by the keys alone."
       properties:
         update:
           type: boolean
-          description: "Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `users.any.update`, and the account ranks below the caller. Never covers a credential: no caller changes another person's email, password or second factor."
+          description: "Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `users.any.update`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor."
         ban:
           type: boolean
-          description: Whether the account may be deactivated or reactivated — `users.any.ban`, and the account ranks below the caller.
+          description: Whether the account may be deactivated or reactivated — `users.any.ban`, and the account is not a staff account the caller may not manage.
         delete:
           type: boolean
-          description: Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `users.any.delete`, and the account ranks below the caller.
+          description: Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `users.any.delete`, and the account is not a staff account the caller may not manage.
     HardDeleteRequest:
       type: object
       additionalProperties: false
@@ -13974,7 +13974,7 @@ components:
         - override
         - invoice
         - withdraw
-      description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Cancel and pay are the BUYER's (reading an order is not owning it), and every move an operator makes is withheld when the buyer ranks at or above them — a staff member's order is one only an admin handles. Nobody handles their own money: recording a payment by hand is withheld on the caller's own order too."
+      description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included."
       properties:
         transitions:
           type: array
@@ -13992,7 +13992,7 @@ components:
           description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest."
         recordPayment:
           type: boolean
-          description: "Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment, the caller holds the key that records one and their rank reaches the buyer. Never true for the buyer, whose own step is `pay` — not even for a buyer who is staff or an administrator."
+          description: "Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record."
         start:
           type: boolean
           description: "Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
@@ -14577,7 +14577,7 @@ components:
           description: Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `cart.self.checkout` (staff reading the payment are never offered it).
         refund:
           type: boolean
-          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking, false when the order's buyer ranks at or above the caller (`OUTRANKED`), and false when the buyer is the caller (nobody refunds their own order).
+          description: Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking.
     Payment:
       type: object
       additionalProperties: false
@@ -14916,7 +14916,7 @@ components:
         - hold
         - release
         - confirmWait
-      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false when the buyer of the order ranks at or above the caller, and for anyone without `delivery.any.update`; `confirmWait` is the order's own buyer's.
+      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `delivery.any.update`; `confirmWait` is the order's own buyer's.
       properties:
         ship:
           type: boolean
@@ -15473,7 +15473,7 @@ components:
         - approve
         - decline
         - receive
-      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. All three are false when the buyer of the return's order ranks at or above the caller (`OUTRANKED`). `approve` and `receive` move money, so they are also false when the buyer is the caller; `decline` is not.
+      description: What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
       properties:
         approve:
           type: boolean
@@ -18750,9 +18750,6 @@ x-error-codes:
   ORDER_OVERRIDE_NOT_ALLOWED:
     status: 409
     description: This status transition is not on the admin override's allowed list.
-  OUTRANKED:
-    status: 403
-    description: "The caller holds the permission this route requires, but the person whose account, order, payment, return or API key it would change ranks at or above the caller. The one exception is the caller's own: staff and administrators change what is theirs, never what belongs to an equal or a superior. The four steps that move money (recording a payment by hand, a refund, approving a return, receiving a return) refuse the caller's own order too, with a plain `FORBIDDEN`."
   PAYLOAD_TOO_LARGE:
     status: 413
     description: The request body exceeds this deployment's size limit.
@@ -18816,6 +18813,9 @@ x-error-codes:
   RETURN_WINDOW_CLOSED:
     status: 409
     description: The withdrawal period for this order has ended.
+  ROLE_MANAGEMENT_REQUIRED:
+    status: 403
+    description: The caller holds the permission this route requires, but the account it would change holds a staff role, and only a holder of `roles.any.assign` may change such an account. Staff without it change customers only. The caller's own account is never refused.
   SERVICE_UNAVAILABLE:
     status: 503
     description: A dependency (database, broker) is unreachable. Carries a `Retry-After` hint.

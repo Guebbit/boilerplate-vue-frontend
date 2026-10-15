@@ -132,8 +132,6 @@ export const ERROR_CODES = {
     ORDER_OVERRIDE_AWAITING_STOCK: 'ORDER_OVERRIDE_AWAITING_STOCK',
     /** 409 — This status transition is not on the admin override's allowed list. */
     ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',
-    /** 403 — The caller holds the permission this route requires, but the person whose account, order, payment, return or API key it would change ranks at or above the caller. The one exception is the caller's own: staff and administrators change what is theirs, never what belongs to an equal or a superior. The four steps that move money (recording a payment by hand, a refund, approving a return, receiving a return) refuse the caller's own order too, with a plain `FORBIDDEN`. */
-    OUTRANKED: 'OUTRANKED',
     /** 413 — The request body exceeds this deployment's size limit. */
     PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
     /** 409 — This deployment has no card payment provider, so a card payment cannot be started. */
@@ -176,6 +174,8 @@ export const ERROR_CODES = {
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
     /** 409 — The withdrawal period for this order has ended. */
     RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
+    /** 403 — The caller holds the permission this route requires, but the account it would change holds a staff role, and only a holder of `roles.any.assign` may change such an account. Staff without it change customers only. The caller's own account is never refused. */
+    ROLE_MANAGEMENT_REQUIRED: 'ROLE_MANAGEMENT_REQUIRED',
     /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
     /** 401 — A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this. */

@@ -1,25 +1,25 @@
 // requires-module: account, inventory, users
 /**
  * @module
- * OP19 · Nobody hands out more than they hold. A role may only be granted by someone who holds
- * every permission it carries. The moderator may make a customer a moderator but not an
- * administrator; support may grant nothing above itself; the administrator may promote a customer
- * to the warehouse, and that person's next sign-in shows the warehouse menu. A role the caller
- * cannot grant is not in the picker, and the server refuses it when asked by hand.
+ * OP19 · Only a role manager hands out roles. Handing a staff role out, or taking one away, needs
+ * `roles.any.assign`, which only the administrator holds. The moderator and support may edit a
+ * customer but are offered no role to grant, and the server refuses a role asked for by hand; the
+ * administrator may promote a customer to the warehouse, and that person's next sign-in shows the
+ * warehouse menu.
  *
- * The person acted on is the seeded `unverified` account: a customer, so the people acting are all
- * above it. The grant is on record in the audit trail.
+ * The person acted on is the seeded `unverified` account: a customer. The grant is on record in the
+ * audit trail.
  *
- * The second story is the other half of the rule: nobody changes their own role, and nobody ranks
- * low enough to change an administrator's, so a moderator is shown no way to demote one.
+ * The second story is the other half of the rule: an account that holds a role is changed only by a
+ * role manager, so a moderator is shown no way to demote an administrator.
  */
 import { eventually } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import type { E2ERole } from '../../../support/e2e/scenario';
 
-/** The slice of a user this story reads. */
+/** The slice of a user this story reads: a plain customer has no `role` at all. */
 interface UserLike {
-    role: string;
+    role?: string;
 }
 
 /** One audit row, as far as this story reads it. */
@@ -65,37 +65,33 @@ const grantRole = (userId: string, role: string): void => {
  * Asserts the role the API reports for the target, as a reader that may see it.
  *
  * @param userId - whose role
- * @param role - the role expected
+ * @param role - the role expected, or `undefined` for a plain customer
  */
-const roleIs = (userId: string, role: string): void => {
+const roleIs = (userId: string, role: string | undefined): void => {
     cy.apiAs<UserLike>('admin', 'GET', `/users/${userId}`).should((user) => {
         expect(user?.role).to.equal(role);
     });
 };
 
 /**
- * A role the picker does not offer, and the server refusing it all the same: the select lists
- * only what `grantableRoles` published, and a request made by hand is answered `409` with the
- * role staying as it was.
+ * A caller without role management: the picker offers no role to grant, and the server refuses one
+ * asked for by hand with a `409`, the account staying as it was.
  *
  * @param userId - whose role
  * @param role - the role asked for
- * @param stays - the role the person holds all along
  * @param as - the seeded account making the request
  */
-const notOfferedAndRefused = (userId: string, role: string, stays: string, as: E2ERole): void => {
+const noRoleOffered = (userId: string, role: string, as: E2ERole): void => {
     cy.visit(`/en/users/${userId}`);
     cy.get('[data-test=user-manage-access]').click();
-    cy.get('[data-test=user-access-role]').click();
-    cy.get('[role=listbox] [role=option]').should('not.contain', role);
-    cy.get('body').type('{esc}');
+    cy.get('[data-test=user-access-role]').should('have.class', 'v-input--disabled');
     cy.get('[data-test=user-access-cancel]').click();
     loginDevice(as).then((device) => {
         requestAsDevice(device, 'PATCH', `/users/${userId}`, { role })
             .its('status')
             .should('equal', 409);
     });
-    roleIs(userId, stays);
+    roleIs(userId, undefined);
 };
 
 describe('OP19 · Nobody hands out more than they hold', () => {
@@ -105,22 +101,16 @@ describe('OP19 · Nobody hands out more than they hold', () => {
         cy.visit('/en');
     });
 
-    it('the moderator and support are refused what they do not hold, and the administrator’s promotion takes effect', () => {
+    it('the moderator and support are refused every role, and the administrator’s promotion takes effect', () => {
         cy.accountInRole('unverified').then(({ id: targetId }) => {
-            cy.step('the moderator may not make anyone an administrator, and the role stays');
+            cy.step('the moderator holds no role management: nothing to pick, every role refused');
             cy.loginAs('moderator');
-            notOfferedAndRefused(targetId, 'admin', 'customer', 'moderator');
+            noRoleOffered(targetId, 'admin', 'moderator');
+            noRoleOffered(targetId, 'moderator', 'moderator');
 
-            cy.step('but may make a moderator, which it holds itself');
-            grantRole(targetId, 'moderator');
-            cy.get('[data-test=user-manage-access-error]').should('not.exist');
-            roleIs(targetId, 'moderator');
-
-            cy.step('support holds neither, and is refused both, the role staying as it was');
-            cy.apiAs('admin', 'PATCH', `/users/${targetId}`, { role: 'customer' });
+            cy.step('support is refused the same, the account staying a customer');
             cy.switchUser('support');
-            notOfferedAndRefused(targetId, 'admin', 'customer', 'support');
-            notOfferedAndRefused(targetId, 'moderator', 'customer', 'support');
+            noRoleOffered(targetId, 'moderator', 'support');
 
             cy.step('the administrator promotes the same account to the warehouse');
             cy.switchUser('admin');
@@ -153,32 +143,17 @@ describe('OP19 · Nobody hands out more than they hold', () => {
         });
     });
 
-    it('nobody changes their own role, and a moderator cannot demote an administrator', () => {
+    it('a moderator cannot demote an administrator', () => {
         cy.accountInRole('admin').then(({ id: adminId }) => {
-            cy.step('the administrator’s own access dialog offers no role to pick');
-            cy.loginAs('admin');
-            cy.visit(`/en/users/${adminId}`);
-            cy.get('[data-test=user-manage-access]').click();
-            cy.get('[data-test=user-access-role]').should('have.class', 'v-input--disabled');
-            cy.get('[data-test=user-access-cancel]').click();
-
-            cy.step('and the server refuses it however the request is made');
-            loginDevice('admin').then((device) => {
-                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { role: 'customer' })
-                    .its('status')
-                    .should('equal', 403);
-            });
-            roleIs(adminId, 'admin');
-
-            cy.step('a moderator opening that administrator’s page is offered no way to change it');
-            cy.switchUser('moderator');
+            cy.step('a moderator opening an administrator’s page is offered no way to change it');
+            cy.loginAs('moderator');
             cy.visit(`/en/users/${adminId}`);
             cy.get('[data-test=user-go-to-edit]').should('not.exist');
             cy.get('[data-test=user-manage-access]').should('not.exist');
 
             cy.step('and the server refuses the demotion, the role staying as it was');
             loginDevice('moderator').then((device) => {
-                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { role: 'customer' })
+                requestAsDevice(device, 'PATCH', `/users/${adminId}`, { role: null })
                     .its('status')
                     .should('equal', 403);
             });
