@@ -12,6 +12,7 @@
  * only decides WHEN to call it and what to do with what it returns.
  */
 
+import { ERROR_CODES } from '@api/error-codes';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { instance } from './client.ts';
 import { onResponseReject } from './interceptors.ts';
@@ -51,6 +52,18 @@ const shouldSkipRefresh = (url?: string) => {
 };
 
 /**
+ * Whether a 401 says the session ended for inactivity — the server's `SESSION_IDLE`.
+ *
+ * @param error - The failed request.
+ */
+const isIdleRefusal = (
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
+): boolean =>
+    error.response?.status === 401 &&
+    (error.response.data as { errors?: { code?: string }[] } | undefined)?.errors?.[0]?.code ===
+        ERROR_CODES.SESSION_IDLE;
+
+/**
  * A 401 in `cookie` mode: the cookie no longer names a live session. A visitor who held one is
  * told it expired; a guest's 401 is just a refusal.
  *
@@ -76,6 +89,12 @@ export const onResponseRejectWithRefresh = (
 ) => {
     const session = useSessionStore();
     const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
+    // A staff session that sat idle too long: refreshing would only mint a token for a session the
+    // server has already ended, so say why and stop.
+    if (isIdleRefusal(error)) {
+        session.signalIdle();
+        return onResponseReject(error);
+    }
     // `_refreshed` is the loop guard: a 401 on the refresh call itself, or on a request already
     // replayed once, must not trigger another refresh. It does NOT also block a step-up —
     // that branch has its own `_steppedUp` guard, so a request may be refreshed once and stepped

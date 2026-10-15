@@ -74,7 +74,9 @@ vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     requestEmailVerification: () => requestEmailVerificationMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    updateAccount: (body: { locale: string }) => updateAccountMock(body)
+    updateAccount: (body: { locale: string }) => updateAccountMock(body),
+    // The idle clock is read once per signed-in stretch; a shopper's answer names no timeout.
+    touchSession: () => Promise.resolve({ data: { lastActiveAt: new Date().toISOString() } })
 }));
 
 /** The store under test, imported after the mocks are in place. */

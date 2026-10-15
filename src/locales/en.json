@@ -33,6 +33,13 @@
         "filter-deleted-only": "Deleted only",
         "deleted": "Deleted"
     },
+    "idle-session": {
+        "title": "Still there?",
+        "message": "For your security this session ends after a period of inactivity. It ends in {time}.",
+        "button-stay": "Stay signed in",
+        "button-leave": "Sign out",
+        "ended": "Your session ended after a period of inactivity. Please sign in again."
+    },
     "session-expired": {
         "message": "Your session has expired. Please sign in again."
     },

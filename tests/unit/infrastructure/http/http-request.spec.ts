@@ -24,8 +24,11 @@ const cookieSession = ref(false);
 /** What the real store derives: a token OR a cookie session. */
 const hasSession = computed(() => Boolean(accessToken.value) || cookieSession.value);
 
+/** Counts the requests the interceptor reports as the person acting. */
+const noteActivity = vi.fn();
+
 vi.mock('@/infrastructure/session', () => ({
-    useSessionStore: () => ({})
+    useSessionStore: () => ({ noteActivity })
 }));
 
 vi.mock('pinia', async (importOriginal) => ({
@@ -60,7 +63,8 @@ vi.mock('@/i18n', () => ({
 const { onRequest, onRequestReject } = await import('@/infrastructure/http');
 
 /** Minimal outgoing config — `onRequest` only writes to `headers`. */
-const makeConfig = () => asStub<InternalAxiosRequestConfig<unknown>>({ headers: {} });
+const makeConfig = (headers: Record<string, string> = {}) =>
+    asStub<InternalAxiosRequestConfig<unknown>>({ headers });
 
 beforeEach(() => {
     accessToken.value = undefined;
@@ -71,6 +75,16 @@ beforeEach(() => {
 });
 
 describe('onRequest', () => {
+    it('counts a signed-in request as the person acting, and a passive one as not', () => {
+        accessToken.value = 'token';
+        noteActivity.mockClear();
+
+        onRequest(makeConfig());
+        onRequest(makeConfig({ 'X-Session-Passive': 'true' }));
+
+        expect(noteActivity).toHaveBeenCalledTimes(1);
+    });
+
     it('attaches the bearer token when authenticated', () => {
         accessToken.value = 'abc.def.ghi';
 

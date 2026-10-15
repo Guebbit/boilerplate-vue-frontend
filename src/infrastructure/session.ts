@@ -24,7 +24,8 @@ import {
     reauth as apiReauth,
     getReauthMethods as apiGetReauthMethods,
     sendReauthCode as apiSendReauthCode,
-    requestEmailVerification as apiRequestEmailVerification
+    requestEmailVerification as apiRequestEmailVerification,
+    touchSession as apiTouchSession
 } from '@api';
 import { ERROR_CODES } from '@api/error-codes';
 import type { PermissionAction } from '@api/permission-actions';
@@ -273,6 +274,19 @@ export const useSessionStore = defineStore('session', () => {
      * this to turn it into a toast and a redirect to login; a plain logout needs neither.
      */
     const expiredSignal = ref(0);
+
+    /**
+     * The staff idle clock, from the server's own numbers: how long the session may sit unused
+     * and when it last saw a request (this client's epoch milliseconds). `undefined` for a
+     * shopper, whose session never idles out, and until the first answer lands.
+     */
+    const idle = ref<{ timeoutMs: number; lastActiveAt: number }>();
+
+    /**
+     * Bumped when the session ended for inactivity — the server answered `SESSION_IDLE`, or the
+     * clock ran out here first. `LayoutDefault.vue` turns it into its own toast and a redirect.
+     */
+    const idleSignal = ref(0);
 
     /**
      * The rules the SERVER enforces, unpacked from `GET /account/abilities` — one ability per
@@ -602,19 +616,26 @@ export const useSessionStore = defineStore('session', () => {
                 thumbnailUrl?: string;
                 verifiedAt?: string | null;
             }>(data);
-            return setViewer(
-                payload && {
-                    id: payload.id,
-                    email: payload.email,
-                    // `unverified`, not `customer` — same least-privileged fallback the backend
-                    // resolves an absent role to (`account/module.ts`).
-                    role: payload.role ?? 'unverified',
-                    imageUrl: payload.imageUrl,
-                    thumbnailUrl: payload.thumbnailUrl,
-                    // Absent means unverified: the backend sends the field only once it's set.
-                    verified: payload.verifiedAt != null
-                }
-            ).then(() => payload);
+            return (
+                setViewer(
+                    payload && {
+                        id: payload.id,
+                        email: payload.email,
+                        // `unverified`, not `customer` — same least-privileged fallback the backend
+                        // resolves an absent role to (`account/module.ts`).
+                        role: payload.role ?? 'unverified',
+                        imageUrl: payload.imageUrl,
+                        thumbnailUrl: payload.thumbnailUrl,
+                        // Absent means unverified: the backend sends the field only once it's set.
+                        verified: payload.verifiedAt != null
+                    }
+                )
+                    // Read the idle clock once per signed-in stretch, from the server's numbers. Not on
+                    // every viewer load: a touch counts as activity, and a silent token refresh is not
+                    // the person acting.
+                    .then(() => (idle.value ? undefined : touchSession()))
+                    .then(() => payload)
+            );
         });
 
     /**
@@ -660,6 +681,7 @@ export const useSessionStore = defineStore('session', () => {
         setAbilities();
         // The record versions the last person read are theirs; the next one must not send them.
         clearEtags();
+        idle.value = undefined;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
@@ -669,14 +691,61 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
+     * Records that the session saw a request at `at`, without telling the other tabs.
+     *
+     * @param at - epoch milliseconds
+     */
+    const markActive = (at: number) => {
+        if (idle.value) idle.value = { ...idle.value, lastActiveAt: at };
+    };
+
+    /**
+     * Records that THIS tab just made a request the server counts as the person acting, and tells
+     * the other tabs: they share one session, so one idle clock. Called by the request interceptor
+     * for every request that is not marked passive.
+     */
+    const noteActivity = () => {
+        if (!idle.value) return;
+        const at = Date.now();
+        markActive(at);
+        sessionChannel?.postMessage({ type: 'activity', at });
+    };
+
+    /**
+     * Counts the session as active and reads its idle clock — the "still there?" answer, and the
+     * first read after a sign-in or a restore. A failure is quiet: the clock then stays as it was,
+     * and the server's own `SESSION_IDLE` is the authority either way.
+     *
+     * @returns A promise resolving once the clock reflects the server's answer.
+     */
+    const touchSession = (): Promise<void> =>
+        apiTouchSession()
+            .then((data) => {
+                const clock = getPayloadFromResponse<{
+                    lastActiveAt: string;
+                    idleTimeoutSeconds?: number;
+                }>(data);
+                idle.value = clock?.idleTimeoutSeconds
+                    ? {
+                          timeoutMs: clock.idleTimeoutSeconds * 1000,
+                          lastActiveAt: Date.parse(clock.lastActiveAt)
+                      }
+                    : undefined;
+                if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });
+            })
+            .catch(() => undefined);
+
+    /**
      * Reacts to another tab's broadcast: a `logout` message clears this tab's session locally
      * without echoing the message back, so two tabs cannot ping-pong it.
      */
     const onBroadcast = (event: MessageEvent<unknown>) => {
         // Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
         // running an older or newer build with a different message shape.
-        if ((event.data as { type?: unknown } | undefined)?.type === 'logout')
-            clearSessionLocally();
+        const message = event.data as { type?: unknown; at?: unknown } | undefined;
+        if (message?.type === 'logout') clearSessionLocally();
+        // Another tab acted: the server's one idle clock is shared by every tab of this session.
+        if (message?.type === 'activity' && typeof message.at === 'number') markActive(message.at);
     };
     sessionChannel?.addEventListener('message', onBroadcast);
     // Each `createPinia()` (every test file, every HMR reload) re-runs this setup and would
@@ -705,6 +774,15 @@ export const useSessionStore = defineStore('session', () => {
     const signalExpired = () => {
         clearSession();
         expiredSignal.value += 1;
+    };
+
+    /**
+     * Ends the session the way the idle timeout does: like {@link signalExpired}, but the shell
+     * owes the visitor a different sentence — they were not logged out by a fault.
+     */
+    const signalIdle = () => {
+        clearSession();
+        idleSignal.value += 1;
     };
 
     /**
@@ -810,6 +888,10 @@ export const useSessionStore = defineStore('session', () => {
         viewer,
         isAuth,
         expiredSignal,
+        idle,
+        idleSignal,
+        noteActivity,
+        touchSession,
         setAccessToken,
         startCookieSession,
         adoptSession,
@@ -826,6 +908,7 @@ export const useSessionStore = defineStore('session', () => {
         requestEmailVerification,
         clearSession,
         signalExpired,
+        signalIdle,
         logout,
         logoutAll
     };

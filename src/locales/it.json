@@ -33,6 +33,13 @@
         "filter-deleted-only": "Solo eliminati",
         "deleted": "Eliminato"
     },
+    "idle-session": {
+        "title": "Sei ancora qui?",
+        "message": "Per la tua sicurezza questa sessione termina dopo un periodo di inattività. Termina tra {time}.",
+        "button-stay": "Resta connesso",
+        "button-leave": "Esci",
+        "ended": "La sessione è terminata per inattività. Accedi di nuovo."
+    },
     "session-expired": {
         "message": "La tua sessione è scaduta. Accedi di nuovo."
     },

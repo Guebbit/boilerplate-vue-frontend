@@ -78,6 +78,10 @@ export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) 
     // `cookie` mode has no token: the HttpOnly cookie rides along on its own (`withCredentials`).
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
     config.headers['Accept-Language'] = getCurrentLocale();
+    // The server counts any request not marked passive as the person acting; this tab keeps its
+    // copy of the idle clock in step, and tells the other tabs.
+    if (hasSession.value && config.headers['X-Session-Passive'] !== 'true')
+        useSessionStore().noteActivity();
 
     if (
         !hasSession.value &&

@@ -72,13 +72,16 @@ interface Scenario {
     refreshOmitsToken: boolean;
     /** Whether the protected route accepts {@link FRESH_TOKEN}; `false` makes the replay 401 too. */
     protectedAccepts: boolean;
+    /** Whether the protected route answers `401 SESSION_IDLE`: a staff session that idled out. */
+    protectedIdle: boolean;
 }
 
 /** @returns The scenario every case starts from: one refresh available, nothing accepted yet. */
 const defaultScenario = (): Scenario => ({
     refreshBudget: 1,
     refreshOmitsToken: false,
-    protectedAccepts: false
+    protectedAccepts: false,
+    protectedIdle: false
 });
 
 /** Requests seen by the server, in arrival order. Cleared before every case. */
@@ -126,6 +129,17 @@ const server = setupServer(
     http.get(`${API}/orders`, ({ request }) => {
         const authorization = request.headers.get('authorization') ?? undefined;
         requestLog.push({ route: 'GET /orders', authorization });
+
+        if (scenario.protectedIdle)
+            return HttpResponse.json(
+                {
+                    success: false,
+                    status: 401,
+                    message: 'Idle',
+                    errors: [{ code: 'SESSION_IDLE', message: 'Your session ended.' }]
+                },
+                { status: 401 }
+            );
 
         return scenario.protectedAccepts && authorization === `Bearer ${FRESH_TOKEN}`
             ? HttpResponse.json({ success: true, status: 200, data: { items: [] } })
@@ -207,6 +221,22 @@ beforeEach(() => {
     scenario = defaultScenario();
     clearAuthCookie();
     vi.unstubAllEnvs();
+});
+
+describe('a 401 SESSION_IDLE', () => {
+    it('ends the session for inactivity without refreshing: there is nothing left to renew', () => {
+        scenario.protectedIdle = true;
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                orvalMutator({ url: '/orders', method: 'GET' }).catch(() => undefined)
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders']);
+                expect(useSessionStore().idleSignal).toBe(1);
+                expect(useSessionStore().expiredSignal).toBe(0);
+            });
+    });
 });
 
 describe('401 refresh flow', () => {

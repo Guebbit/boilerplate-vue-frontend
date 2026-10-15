@@ -28,6 +28,7 @@ import {
 } from '@/infrastructure/analytics-consent.ts';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
+import IdleSessionDialog from '@/app/components/IdleSessionDialog.vue';
 import PageHeader from '@/ui/molecules/PageHeader.vue';
 import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
@@ -197,7 +198,7 @@ const router = useRouter();
  * The session store's own counter, bumped only when a session died on its own (a refresh the
  * server definitively refused) and never on an explicit logout.
  */
-const { expiredSignal } = storeToRefs(useSessionStore());
+const { expiredSignal, idleSignal } = storeToRefs(useSessionStore());
 
 /**
  * A session that died on its own: say so, then re-enter the current route. A forced `replace` to
@@ -209,6 +210,15 @@ watch(expiredSignal, () => {
     useNotificationsStore().addMessage(t('session-expired.message'));
     // `force`: a navigation to the address already shown is otherwise dropped as a duplicate,
     // and the guard is exactly what has to run again.
+    void router.replace({ path: route.path, query: route.query, hash: route.hash, force: true });
+});
+
+/**
+ * A staff session that ended for inactivity: the same toast-and-redirect as a dead session, with
+ * the sentence that says why.
+ */
+watch(idleSignal, () => {
+    useNotificationsStore().addMessage(t('idle-session.ended'));
     void router.replace({ path: route.path, query: route.query, hash: route.hash, force: true });
 });
 
@@ -308,6 +318,7 @@ watch(expiredSignal, () => {
 
         <!-- The step-up prompt, opened by the http layer's `REAUTH_REQUIRED` interceptor -->
         <ReauthDialog />
+        <IdleSessionDialog />
 
         <!--
             Toast stack. The wrapper is a named region, NOT a live region: each alert announces
