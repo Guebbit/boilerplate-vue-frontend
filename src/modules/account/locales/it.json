@@ -12,7 +12,7 @@
         "page-title": "Registrazione",
         "label-email": "Email",
         "label-password": "Password",
-        "text-terms": "Accetto i {terms} e la {privacy}",
+        "text-terms": "Accetto i {terms} e ho letto la {privacy}",
         "text-analytics-consent": "Condividi dati di utilizzo per aiutarci a migliorare il prodotto",
         "button-submit": "Registrati",
         "success-email-code-sent": "Benvenuto! Ti abbiamo inviato un link per confermare il tuo indirizzo email — intanto puoi guardarti attorno.",
@@ -226,6 +226,7 @@
     },
     "oauth": {
         "divider": "oppure",
+        "text-terms-notice": "Continuando con un provider accetti i {terms} e dichiari di aver letto la {privacy}",
         "continue-with": "Continua con {provider}",
         "callback-page": {
             "page-title": "Accesso in corso…",

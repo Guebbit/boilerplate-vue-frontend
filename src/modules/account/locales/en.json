@@ -12,7 +12,7 @@
         "page-title": "Sign up",
         "label-email": "Email",
         "label-password": "Password",
-        "text-terms": "I accept the {terms} and the {privacy}",
+        "text-terms": "I accept the {terms} and have read the {privacy}",
         "text-analytics-consent": "Share usage analytics to help us improve the product",
         "button-submit": "Register now",
         "success-email-code-sent": "Welcome! We sent a link to confirm your email address — you can look around in the meantime.",
@@ -226,6 +226,7 @@
     },
     "oauth": {
         "divider": "or",
+        "text-terms-notice": "By continuing with a provider you agree to the {terms} and have read the {privacy}",
         "continue-with": "Continue with {provider}",
         "callback-page": {
             "page-title": "Signing you in…",

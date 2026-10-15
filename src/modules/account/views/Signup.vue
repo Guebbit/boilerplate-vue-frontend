@@ -17,17 +17,16 @@ export default {
  * file), wrapped in `trackUpload` so `FormImageUpload` can show real upload progress. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useAuthStore } from '../stores/auth.ts';
-import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/oauth.ts';
-import { RouterLink, useRoute } from 'vue-router';
+import OAuthButtons from '../components/OAuthButtons.vue';
+import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { usePostLoginRedirect, isSameOriginPath } from '../composables/use-post-login-redirect.ts';
+import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -50,30 +49,10 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Current route, read for its `?continue=` — forwarded onto the OAuth start URL below.
- */
-const route = useRoute();
-
-/**
  * Where a fresh session lands — the same ending both login steps use, so a signup that now
  * carries a session honours `?continue=` exactly as they do.
  */
 const { redirectAfterLogin } = usePostLoginRedirect();
-
-/**
- * Which OAuth providers to offer, fetched once — see the store's own doc for why a later mount
- * of this view is a no-op rather than a second request.
- */
-const { providers: oauthProviders } = storeToRefs(useOAuthProvidersStore());
-void useOAuthProvidersStore().fetchProviders();
-
-/**
- * The same-origin `?continue=` this page arrived with, if any — forwarded onto the OAuth start
- * URL below, same as `Login.vue`.
- */
-const continueTo = computed(() =>
-    isSameOriginPath(route.query.continue) ? route.query.continue : undefined
-);
 
 /**
  * Form logics
@@ -348,27 +327,7 @@ const submitForm = () => {
                     data-test="signup-error"
                 />
             </form>
-            <template v-if="oauthProviders.length > 0">
-                <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-70">
-                    <v-divider />
-                    {{ t('oauth.divider') }}
-                    <v-divider />
-                </div>
-                <!-- A real `<a href>` via v-btn's `href` prop: the redirect dance needs a genuine
-                     top-level navigation, which a RouterLink or a click handler cannot provide. -->
-                <v-btn
-                    v-for="provider in oauthProviders"
-                    :key="provider"
-                    :data-test="`oauth-${provider}`"
-                    :href="oauthStartUrl(provider, { continueTo, locale })"
-                    variant="outlined"
-                    size="large"
-                    block
-                    class="mb-2"
-                >
-                    {{ t('oauth.continue-with', { provider: providerLabel(provider) }) }}
-                </v-btn>
-            </template>
+            <OAuthButtons />
         </v-card>
     </div>
 </template>
