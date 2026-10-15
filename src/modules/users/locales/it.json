@@ -104,6 +104,7 @@
     "user-access-dialog": {
         "title-pick": "Gestisci accesso di {name}",
         "title-confirm": "Conferma modifica accesso di {name}",
+        "role-none": "Nessun ruolo di staff (cliente)",
         "label-role": "Ruolo",
         "label-active": "Attivo",
         "hint-active": "Disattivare disconnette immediatamente questo utente da ogni sessione.",

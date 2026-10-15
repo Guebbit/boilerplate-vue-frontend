@@ -147,7 +147,12 @@ const summaryLines = computed(() => {
     const name = props.target?.name ?? '';
     const lines: string[] = [];
     if (roleChanged.value) {
-        lines.push(t('user-access-dialog.summary-role', { name, role: selectedRole.value }));
+        lines.push(
+            t('user-access-dialog.summary-role', {
+                name,
+                role: selectedRole.value || t('user-access-dialog.role-none')
+            })
+        );
     }
     if (activeChanged.value) {
         lines.push(

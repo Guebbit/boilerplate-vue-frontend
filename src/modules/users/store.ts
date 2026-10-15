@@ -156,16 +156,19 @@ export const useUsersStore = defineStore('users', () => {
             // `locale`/`phone`/`website`/`imageUrl` accept `null` on the wire (clears the field)
             // but the LOCAL `User` never does; `null` reads as "leave the optimistic guess alone"
             // here, since the real clear only takes visible effect once the response `update:`
-            // above already waits for lands.
+            // above already waits for lands. `role: null` is the exception: no staff role is a
+            // plain customer, which the local `User` spells as an absent `role`.
             optimisticPatch: ({
                 imageUpload: _uploaded,
                 locale,
                 phone,
                 website,
                 imageUrl,
+                role,
                 ...userData
             } = {}) => ({
                 ...userData,
+                ...(role === undefined ? {} : { role: role ?? undefined }),
                 ...omitNulls({ locale, phone, website, imageUrl }, [
                     'locale',
                     'phone',

@@ -414,8 +414,8 @@ describe('UserEdit — what each row allows', () => {
         });
     });
 
-    it('offers a moderator-like caller only customer, plus the account’s current role', () => {
-        useSessionStore().grantableRoles = ['customer'];
+    it('offers a moderator-like caller only support, plus the account’s current role', () => {
+        useSessionStore().grantableRoles = ['support'];
         loadedUser = aUser({ ...LOADED_USER, role: 'manager' });
         const wrapper = mountPage();
 
@@ -424,7 +424,8 @@ describe('UserEdit — what each row allows', () => {
                 .findAllComponents({ name: 'VSelect' })
                 .find((candidate) => candidate.attributes('data-test') === 'user-edit-role');
             expect(select?.props('items')).toEqual([
-                { value: 'customer', title: 'customer' },
+                { value: '', title: 'No staff role (customer)' },
+                { value: 'support', title: 'support' },
                 { value: 'manager', title: 'manager' }
             ]);
         });

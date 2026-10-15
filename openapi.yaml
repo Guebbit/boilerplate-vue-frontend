@@ -2349,7 +2349,7 @@ paths:
       tags:
         - Auth
       summary: Signup
-      description: "Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards."
+      description: "Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.self.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards."
       operationId: signup
       security: []
       parameters:
@@ -12362,7 +12362,9 @@ components:
           minLength: 3
           maxLength: 50
         role:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 64
           minLength: 1
         active:
@@ -12428,7 +12430,9 @@ components:
           minLength: 3
           maxLength: 50
         role:
-          type: string
+          type:
+            - string
+            - "null"
           maxLength: 64
           minLength: 1
         active:

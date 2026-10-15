@@ -2485,7 +2485,7 @@ export const LoginResponse = zod.strictObject({
     ])
 });
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.self.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signupHeaderXAntibotChallengeTokenMax = 4096;
@@ -3200,7 +3200,7 @@ export const replaceUserByIdBodyPhoneMax = 32;
 export const replaceUserByIdBodyWebsiteMax = 2048;
 export const ReplaceUserByIdBody = zod.strictObject({
     username: zod.string().min(replaceUserByIdBodyUsernameMin).max(replaceUserByIdBodyUsernameMax),
-    role: zod.string().min(1).max(replaceUserByIdBodyRoleMax),
+    role: zod.string().min(1).max(replaceUserByIdBodyRoleMax).nullable(),
     active: zod.boolean(),
     imageUrl: zod.null().optional(),
     locale: zod
@@ -3288,7 +3288,7 @@ export const UpdateUserByIdBody = zod.strictObject({
         .min(updateUserByIdBodyUsernameMin)
         .max(updateUserByIdBodyUsernameMax)
         .optional(),
-    role: zod.string().min(1).max(updateUserByIdBodyRoleMax).optional(),
+    role: zod.string().min(1).max(updateUserByIdBodyRoleMax).nullish(),
     active: zod.boolean().optional(),
     imageUrl: zod.null().optional(),
     locale: zod

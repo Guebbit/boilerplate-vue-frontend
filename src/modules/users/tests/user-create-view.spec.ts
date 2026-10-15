@@ -236,13 +236,16 @@ describe('UserCreate', () => {
     });
 
     it('offers a moderator-like caller only the roles the server listed', () => {
-        useSessionStore().grantableRoles = ['customer'];
+        useSessionStore().grantableRoles = ['support'];
         const { wrapper } = mountPage();
 
         const select = wrapper
             .findAllComponents({ name: 'VSelect' })
             .find((candidate) => candidate.attributes('data-test') === 'user-role');
-        expect(select?.props('items')).toEqual([{ value: 'customer', title: 'customer' }]);
+        expect(select?.props('items')).toEqual([
+            { value: '', title: 'No staff role (customer)' },
+            { value: 'support', title: 'support' }
+        ]);
     });
 
     it('hides the role field for a caller who may assign no role, and still sends no role', () => {

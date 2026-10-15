@@ -111,9 +111,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
             user && {
                 id: user.id,
                 email: user.email,
-                // `unverified`, not `customer` — same least-privileged fallback the backend
-                // resolves an absent role to (`account/module.ts`).
-                role: user.role ?? 'unverified',
+                // Absent for a plain customer: only a staff role is ever stored.
+                role: user.role,
                 imageUrl: user.imageUrl,
                 // Absent means unverified: the backend sends the field only once it's set.
                 verified: user.verifiedAt != null

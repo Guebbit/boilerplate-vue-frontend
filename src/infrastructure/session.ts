@@ -118,14 +118,15 @@ export interface SessionViewer {
      */
     email: string;
     /**
-     * The role they hold inside the shop, by name — `customer`, `manager`, `warehouse`,
-     * `support`, `admin`, or one a deployment added.
+     * The staff role they hold inside the shop, by name — `manager`, `warehouse`, `support`,
+     * `admin`, or one a deployment added. Absent for a plain customer: `customer` and
+     * `unverified` are computed by the server from `verified`, never stored.
      *
      * Read by the route guards, so it is the one field here that decides what is RENDERED rather
      * than describing a person. It decides nothing else: the server re-evaluates every request,
      * and a client that believed itself an admin would still be refused.
      */
-    role: string;
+    role?: string;
     /**
      * The visitor's own picture, for the avatar the account menu wears — the shell renders it on
      * every page, so it is one of the few user fields the shell genuinely needs rather than one
@@ -621,9 +622,8 @@ export const useSessionStore = defineStore('session', () => {
                     payload && {
                         id: payload.id,
                         email: payload.email,
-                        // `unverified`, not `customer` — same least-privileged fallback the backend
-                        // resolves an absent role to (`account/module.ts`).
-                        role: payload.role ?? 'unverified',
+                        // Absent for a plain customer: only a staff role is ever stored.
+                        role: payload.role,
                         imageUrl: payload.imageUrl,
                         thumbnailUrl: payload.thumbnailUrl,
                         // Absent means unverified: the backend sends the field only once it's set.

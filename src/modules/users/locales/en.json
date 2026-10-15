@@ -104,6 +104,7 @@
     "user-access-dialog": {
         "title-pick": "Manage access for {name}",
         "title-confirm": "Confirm access change for {name}",
+        "role-none": "No staff role (customer)",
         "label-role": "Role",
         "label-active": "Active",
         "hint-active": "Deactivating logs this user out of every session immediately.",

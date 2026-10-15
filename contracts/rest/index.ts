@@ -1949,8 +1949,9 @@ export interface ReplaceUserByIdRequest {
     /**
      * @minLength 1
      * @maxLength 64
+     * @nullable
      */
-    role: string;
+    role: string | null;
     active: boolean;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
@@ -2004,8 +2005,9 @@ export interface UpdateUserByIdRequest {
     /**
      * @minLength 1
      * @maxLength 64
+     * @nullable
      */
-    role?: string;
+    role?: string | null;
     active?: boolean;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
@@ -7882,7 +7884,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account holds `unverified` until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `cart.self.checkout`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signup = (

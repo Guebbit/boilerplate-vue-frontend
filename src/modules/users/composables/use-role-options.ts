@@ -5,11 +5,13 @@
  * drift, and the picker offers exactly what the write would accept instead of a role it would
  * answer `409` to.
  */
+import { useI18n } from 'vue-i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
- * One `v-select` option. Value and title are the same raw name: roles are data a deployment may
- * rename or add to, not an enum with translated titles.
+ * One `v-select` option. A role's value and title are the same raw name: roles are data a
+ * deployment may rename or add to, not an enum with translated titles. The one translated option
+ * is the empty value, which means "no staff role": a plain customer.
  */
 export interface RoleOption {
     value: string;
@@ -25,17 +27,22 @@ export interface RoleOption {
 export const useRoleOptions = () => {
     /** The session, whose `grantableRoles` is what the server last answered. */
     const session = useSessionStore();
+    /** Translates the one option that is not a role name. */
+    const { t } = useI18n();
 
     /**
-     * Select items: the grantable roles, plus the target's current role so the select can still
-     * show a value the caller could not assign themselves.
+     * Select items: "no staff role" first, then the grantable roles, plus the target's current role
+     * so the select can still show a value the caller could not assign themselves.
      *
      * @param currentRole - the role the edited account holds now, if any
      */
     const roleOptions = (currentRole?: string): RoleOption[] => {
         const names = new Set(session.grantableRoles);
         if (currentRole) names.add(currentRole);
-        return [...names].map((role) => ({ value: role, title: role }));
+        return [
+            { value: '', title: t('user-access-dialog.role-none') },
+            ...[...names].map((role) => ({ value: role, title: role }))
+        ];
     };
 
     return { grantableRoles: () => session.grantableRoles, roleOptions };

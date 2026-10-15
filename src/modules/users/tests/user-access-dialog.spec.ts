@@ -229,8 +229,8 @@ describe('UserAccessDialog — what the picker offers', () => {
         });
     });
 
-    it('offers a moderator-like caller only customer, plus the account’s current role', () => {
-        useSessionStore().grantableRoles = ['customer'];
+    it('offers a moderator-like caller only support, plus the account’s current role', () => {
+        useSessionStore().grantableRoles = ['support'];
 
         return mountDialog({
             target: { id: 'u1', name: 'ada', role: 'manager', active: true }
@@ -239,7 +239,8 @@ describe('UserAccessDialog — what the picker offers', () => {
                 .findAllComponents({ name: 'VSelect' })
                 .find((candidate) => candidate.attributes('data-test') === 'user-access-role');
             expect(select?.props('items')).toEqual([
-                { value: 'customer', title: 'customer' },
+                { value: '', title: 'No staff role (customer)' },
+                { value: 'support', title: 'support' },
                 { value: 'manager', title: 'manager' }
             ]);
         });
