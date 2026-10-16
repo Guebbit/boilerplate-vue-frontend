@@ -27,7 +27,8 @@ const OPTION: CancellableFulfillmentOrder = {
     number: 2,
     lines: [{ productId: 'p2', title: 'Mug', quantity: 1 }],
     refundAmount: 12.5,
-    shippingRefund: 0
+    shippingRefund: 0,
+    cancel: true
 };
 
 /**

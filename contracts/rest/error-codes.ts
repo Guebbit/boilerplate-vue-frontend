@@ -158,7 +158,7 @@ export const ERROR_CODES = {
     REORDER_UNAVAILABLE: 'REORDER_UNAVAILABLE',
     /** 422 — A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name. */
     REQUEST_ERROR: 'REQUEST_ERROR',
-    /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. */
+    /** 422 — A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`; anyone else (staff) may name any reason but `withdrawal`, which is the buyer's own right. */
     RETURN_CANCELLATION_INVALID: 'RETURN_CANCELLATION_INVALID',
     /** 422 — The handling deduction is more than the refund is worth. */
     RETURN_DEDUCTION_INVALID: 'RETURN_DEDUCTION_INVALID',

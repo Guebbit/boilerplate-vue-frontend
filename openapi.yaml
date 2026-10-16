@@ -6615,7 +6615,7 @@ paths:
       description: |-
         The customer's one door for sending goods back — and the EU "withdraw from contract here" button (Consumer Rights Directive Art. 11a): a withdrawal is a return with `reason: withdrawal`, not a separate endpoint.
         Always answers a `Return` (201, with `Location`); where the goods are decides what it is. Once they have shipped, a withdrawal is born `approved` and any other reason waits for staff. Before dispatch there is nothing to send back, so a withdrawal cancels the order — refunded in full, stock released — and the `Return` is born `closed`: `reason: withdrawal`, no `lines`, `refundAmount` what the order cost (zero when nothing was paid). Either way the customer gets an acknowledgement email carrying the exact date and time, and `Return.orderId` is where the client reloads the order from. `Order.actions.withdraw` says whether the button is offered; the client never counts the days.
-        `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal; staff may use it too (out of stock for good), and then need `create:Refund` — the refund key, `stepUp: critical`. `GET /returns/options` says what each door would take and refund.
+        `kind: cancellation` cancels what has not shipped yet — the remainder of ONE fulfillment order (`fulfillmentOrderId`) once something has shipped from the order. It is born `closed`, its `lines` are the remainder, and the refund of those lines follows (plus the delivery when it takes the last unit of the order). The buyer uses it as part of their withdrawal, and names `reason: withdrawal`; staff may use it too (out of stock for good), name any other reason, and need `create:Refund` — the refund key, `stepUp: critical`. Staff naming `withdrawal` on someone else's order are refused (`RETURN_CANCELLATION_INVALID`): that reason is the buyer's right, and writing it for them would falsify a legal record. A staff cancellation asks a fresh session; the buyer's own withdrawal never does. `GET /returns/options` says what each door would take and refund, and whether this caller may use it (`cancel`).
         A return answers for goods that left (`kind: return`, the default); only the order's own buyer opens one, an operator included. Sending `Idempotency-Key` makes a retry safe.
       operationId: createReturn
       security:
@@ -15683,6 +15683,7 @@ components:
         - lines
         - refundAmount
         - shippingRefund
+        - cancel
       description: A fulfillment order with a remainder that can still be cancelled, and what cancelling it would refund.
       properties:
         fulfillmentOrderId:
@@ -15704,6 +15705,9 @@ components:
           format: double
           minimum: 0
           description: The delivery inside `refundAmount` — non-zero only when this cancel takes the last unit of the order.
+        cancel:
+          type: boolean
+          description: "Whether THIS caller may cancel this remainder, so a client offers only a door that opens. The order's buyer: within the withdrawal window, and only when the remainder holds no goods excluded from withdrawal (Art. 16). Anyone else: holding `create:Refund`."
     ReturnOptions:
       type: object
       additionalProperties: false
@@ -18796,7 +18800,7 @@ x-error-codes:
     description: A 4xx with no more specific code of its own. Mostly a 422 refused for a reason that is not one field (a field-level failure is `VALIDATION_ERROR`); also a 429 and any other 4xx the status table does not name.
   RETURN_CANCELLATION_INVALID:
     status: 422
-    description: A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order.
+    description: "A cancellation names no fulfillment order of this order, or sends `lines` (the remainder is its lines), or a return names a fulfillment order. Also the reason does not fit the caller: the order's buyer cancels only as a `withdrawal`; anyone else (staff) may name any reason but `withdrawal`, which is the buyer's own right."
   RETURN_DEDUCTION_INVALID:
     status: 422
     description: The handling deduction is more than the refund is worth.

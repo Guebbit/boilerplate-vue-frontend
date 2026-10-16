@@ -233,7 +233,8 @@ describe('WithdrawalPanel', () => {
                     number: 2,
                     lines: [{ productId: 'p2', title: 'Mug', quantity: 1 }],
                     refundAmount: 12.5,
-                    shippingRefund: 0
+                    shippingRefund: 0,
+                    cancel: true
                 }
             ]
         };
@@ -265,6 +266,19 @@ describe('WithdrawalPanel', () => {
             expect(wrapper.find('[data-test=cancel-remainder-open]').exists()).toBe(true);
             expect(wrapper.find('[data-test=withdraw-button]').exists()).toBe(false);
             expect(wrapper.find('[data-test=cancel-hint]').exists()).toBe(false);
+        });
+
+        it('hides a remainder the server says this caller may not cancel', async () => {
+            signInWith([['create', 'Refund']]);
+            const [first] = CANCELLABLE.cancellable;
+            const refused: ReturnOptions = {
+                ...CANCELLABLE,
+                cancellable: [{ ...first, cancel: false }]
+            };
+            const { wrapper } = mountPanel({ canWithdraw: false }, [], refused);
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=cancellable-list]').exists()).toBe(false);
         });
 
         it('offers nothing to a caller who is neither the buyer nor holds the refund key', async () => {

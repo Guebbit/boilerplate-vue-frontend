@@ -94,8 +94,8 @@ const options = ref<ReturnOptions>();
 const session = useSessionStore();
 
 /**
- * Who may cancel what has not shipped: the buyer (their withdrawal), or staff holding the refund
- * key (`create:Refund`). The server makes the final call, rank included.
+ * Which door is used to cancel what has not shipped: the buyer's withdrawal, or staff holding the
+ * refund key (`create:Refund`). Whether a given remainder is offered is the server's `cancel` flag.
  */
 const cancelMode = computed<'buyer' | 'staff' | undefined>(() => {
     if (props.canWithdraw) return 'buyer';
@@ -103,9 +103,12 @@ const cancelMode = computed<'buyer' | 'staff' | undefined>(() => {
 });
 
 /**
- * The remainders on offer: none for a caller with no door.
+ * The remainders on offer: none for a caller with no door, and only those the server says THIS
+ * caller may cancel (`cancel`) — a closed window, excluded goods or a missing key never reach a button.
  */
-const cancellable = computed(() => (cancelMode.value ? (options.value?.cancellable ?? []) : []));
+const cancellable = computed(() =>
+    cancelMode.value ? (options.value?.cancellable ?? []).filter(({ cancel }) => cancel) : []
+);
 
 /**
  * The lines the returns form offers, as the server counted them.
