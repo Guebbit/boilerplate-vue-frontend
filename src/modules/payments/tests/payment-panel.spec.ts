@@ -264,3 +264,41 @@ describe('the status chip', () => {
         });
     });
 });
+
+describe('PaymentPanel — a waiting bank transfer', () => {
+    const waiting: Payment = {
+        ...handPaidSucceededPayment,
+        status: 'requires_action',
+        displayStatus: 'pending',
+        nextAction: {
+            type: 'bank_transfer',
+            beneficiary: 'Guebbit Shop',
+            iban: 'IT60 X054 2811 1010 0000 0123 456',
+            reference: 'RF132EY8H44VJAVZKX80JRL',
+            payBy: '2026-01-01T00:00:00.000Z'
+        },
+        actions: { pay: true, refund: false }
+    };
+
+    it('shows the instructions, offers no "finish at your bank" step, and keeps the card form when payable', () => {
+        const { wrapper, store } = mountPanel();
+        store.payment = waiting;
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.find('[data-test=transfer-instructions-panel]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=payment-finish]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=payment-submit]').exists()).toBe(true);
+        });
+    });
+
+    it('shows staff the instructions and no card form or finish button', () => {
+        const { wrapper, store } = mountPanel({ orderPayable: false });
+        store.payment = { ...waiting, actions: { pay: false, refund: false } };
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.find('[data-test=transfer-instructions-panel]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=payment-finish]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=payment-submit]').exists()).toBe(false);
+        });
+    });
+});

@@ -5757,7 +5757,7 @@ paths:
       tags:
         - Payments
       summary: Find the order behind an RF reference
-      description: "The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
+      description: "The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. The reference lives on the bank-transfer payment, which is kept for a year after its order is cancelled, so a transfer that arrives late still finds its order. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
       operationId: getOrderByReference
       security:
         - bearerAuth: []
@@ -5854,7 +5854,10 @@ paths:
       tags:
         - Payments
       summary: Record a payment that arrived outside the provider
-      description: "An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request."
+      description: |-
+        An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+        A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+        Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
       operationId: recordOfflinePayment
       security:
         - bearerAuth: []
@@ -13901,24 +13904,6 @@ components:
           $ref: "#/components/schemas/CountryCode"
         phone:
           type: string
-    OrderTransferInstructions:
-      type: object
-      additionalProperties: false
-      required:
-        - beneficiary
-        - iban
-        - reference
-      properties:
-        beneficiary:
-          type: string
-        iban:
-          type: string
-        bic:
-          type: string
-          description: Absent when the deployment has not configured one.
-        reference:
-          type: string
-          description: The ISO 11649 "RF" creditor reference minted for this order at checkout — what the customer writes into the transfer's description, so an admin can match the incoming payment back to it via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference.
     OrderStatus:
       type: string
       enum:
@@ -14115,8 +14100,6 @@ components:
           type: string
           readOnly: true
           example: 2026-000041
-        transferInstructions:
-          $ref: "#/components/schemas/OrderTransferInstructions"
         status:
           $ref: "#/components/schemas/OrderStatus"
         paymentStatus:
@@ -14558,6 +14541,42 @@ components:
         - failed
         - cancelled
       description: The label a payment shows, derived from the stored status and its refund records (Shopify's `displayFinancialStatus`). `incomplete` — awaiting confirmation or action; `pending` — processing; `succeeded` — paid, no refund record; `refund_pending` — any refund still pending or failed (wins over the next two); `partially_refunded` — paid with at least one settled refund; `refunded` — fully returned (every unit of `amount`, no refund still open); `failed` — declined; `cancelled` — the order was cancelled before the payment settled.
+    PaymentBankTransferAction:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - beneficiary
+        - iban
+        - reference
+        - payBy
+      properties:
+        type:
+          type: string
+          enum:
+            - bank_transfer
+        beneficiary:
+          type: string
+        iban:
+          type: string
+          description: Grouped into blocks of four, the way a bank's own transfer form shows one.
+        bic:
+          type: string
+          description: Absent when the deployment has not configured one.
+        reference:
+          type: string
+          description: The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference.
+        payBy:
+          type: string
+          format: date-time
+          description: When the order's stock hold ends. Past it, with no money received, the order is cancelled.
+    PaymentNextAction:
+      oneOf:
+        - $ref: "#/components/schemas/PaymentBankTransferAction"
+      discriminator:
+        propertyName: type
+        mapping:
+          bank_transfer: "#/components/schemas/PaymentBankTransferAction"
     PaymentActions:
       type: object
       additionalProperties: false
@@ -14620,9 +14639,11 @@ components:
             - succeeded
             - declined
             - cancelled
-          description: "The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the bank wants a challenge answered in the browser (3-D Secure) and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
+          description: "The provider-facing lifecycle. A refunded payment, whole or in part, stays `succeeded`: `displayStatus` and `amountRefunded` say how much went back. `cancelled` means the order was cancelled and the provider confirmed the intent closed; money that still arrives on it is settled and returned. `requires_action` means the buyer has something to do: the bank wants a challenge answered in the browser (3-D Secure), or a bank transfer is waiting to be sent (`nextAction` says how) — and `processing` that the provider has taken the payment but not settled it — both are in flight, and `POST /payments/{id}/sync` is what resolves them without waiting for the webhook. `declined` is retryable: the confirm endpoint accepts the same payment again with another method. Full transition table: docs/modules/payments.md#status-transitions"
         displayStatus:
           $ref: "#/components/schemas/PaymentDisplayStatus"
+        nextAction:
+          $ref: "#/components/schemas/PaymentNextAction"
         providerRef:
           type: string
           description: The provider's own id for the payment intent (Stripe's `pi_…`). Sent only to a caller holding `display:Payment`, so support can look the payment up at the provider; never to the payer. Absent on a `manual` payment.

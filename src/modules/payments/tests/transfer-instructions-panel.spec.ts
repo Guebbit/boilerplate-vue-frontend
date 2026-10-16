@@ -11,10 +11,12 @@ import { createPinia, setActivePinia } from 'pinia';
 import TransferInstructionsPanel from '../components/TransferInstructionsPanel.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { OrderTransferInstructions } from '@types';
+import type { PaymentBankTransferAction } from '@types';
 
 /** Bank-transfer details the panel renders and offers to copy. */
-const INSTRUCTIONS: OrderTransferInstructions = {
+const INSTRUCTIONS: PaymentBankTransferAction = {
+    type: 'bank_transfer',
+    payBy: '2026-01-01T00:00:00.000Z',
     beneficiary: 'Guebbit Shop',
     iban: 'IT60X0542811101000000123456',
     bic: 'BPMOIT22XXX',
@@ -27,9 +29,9 @@ const writeText = vi.fn(() => Promise.resolve());
 Object.assign(navigator, { clipboard: { writeText } });
 
 /** Mounts the panel with the given instructions and optional deadline. */
-const mountPanel = (instructions: OrderTransferInstructions = INSTRUCTIONS, payBy?: string) =>
+const mountPanel = (instructions: PaymentBankTransferAction = INSTRUCTIONS) =>
     mount(TransferInstructionsPanel, {
-        props: { instructions, payBy },
+        props: { instructions },
         global: { plugins: [vuetify, i18n] }
     });
 
@@ -88,12 +90,7 @@ describe('TransferInstructionsPanel', () => {
         expect(wrapper.find('[data-test=transfer-bic]').exists()).toBe(false);
     });
 
-    it('shows the deadline only when payBy is given', () => {
-        expect(mountPanel().find('[data-test=transfer-deadline]').exists()).toBe(false);
-        expect(
-            mountPanel(INSTRUCTIONS, '2026-01-01T00:00:00.000Z')
-                .find('[data-test=transfer-deadline]')
-                .exists()
-        ).toBe(true);
+    it('always shows the deadline: it is part of the instructions', () => {
+        expect(mountPanel().find('[data-test=transfer-deadline]').exists()).toBe(true);
     });
 });

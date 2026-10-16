@@ -25,6 +25,7 @@ import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/http/antibot.ts';
 import { usePaymentsStore } from '../store.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
+import TransferInstructionsPanel from './TransferInstructionsPanel.vue';
 import { OrderStatus } from '@/types/enums.ts';
 
 /**
@@ -156,7 +157,9 @@ const payable = computed(() =>
  * panel offers the next step rather than the form again.
  */
 const inFlight = computed(
-    () => payment.value?.status === 'requires_action' || payment.value?.status === 'processing'
+    () =>
+        !payment.value?.nextAction &&
+        (payment.value?.status === 'requires_action' || payment.value?.status === 'processing')
 );
 
 /**
@@ -276,6 +279,13 @@ watch(
             {{ t('payments-panel.label-deadline', { payBy: formatDateTime(payBy) }) }}
         </p>
 
+        <!-- A waiting bank transfer: where to send the money, beside the card form when the buyer may still pay that way. -->
+        <TransferInstructionsPanel
+            v-if="payment?.nextAction"
+            :instructions="payment.nextAction"
+            class="mb-3"
+        />
+
         <InlineErrorAlert :message="paymentError" class="mb-3" data-test="payment-panel-error" />
 
         <!--
@@ -336,7 +346,7 @@ watch(
                 only says something new when an admin recorded the money by hand.
             -->
             <p
-                v-if="payment.method !== 'card'"
+                v-if="payment.method !== 'card' && !payment.nextAction"
                 class="mt-2 mb-0 text-sm opacity-75"
                 data-test="payment-offline-detail"
             >

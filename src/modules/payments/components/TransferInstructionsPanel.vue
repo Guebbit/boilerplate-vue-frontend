@@ -11,10 +11,9 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Order-page panel component: presentational only — everything it shows arrives on the order
- * itself, so there is no store call here, unlike `PaymentPanel`. The caller mounts it only while
- * `transferInstructions` is present, which the API already scopes to the order's own owner and
- * to staff, and only while the order is still `pending`.
+ * Presentational only — everything it shows arrives on the payment's `nextAction`, so there is no
+ * store call here. `PaymentPanel` mounts it while the payment carries one, which the API already
+ * scopes to the payment's own buyer and to staff.
  */
 
 import { computed } from 'vue';
@@ -22,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { copyToClipboard } from '@guebbit/js-toolkit';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
-import type { OrderTransferInstructions } from '@types';
+import type { PaymentBankTransferAction } from '@types';
 
 /**
  * Props: the bank-transfer details to show and the optional payment deadline.
@@ -31,11 +30,7 @@ const { instructions } = defineProps<{
     /**
      * The beneficiary/IBAN/BIC/reference to transfer to.
      */
-    instructions: OrderTransferInstructions;
-    /**
-     * When the hold ends — the sweep cancels the order past this with no money received.
-     */
-    payBy?: string;
+    instructions: PaymentBankTransferAction;
 }>();
 
 /**
@@ -87,8 +82,12 @@ const groupedReference = computed(
 <template>
     <v-card class="p-4" data-test="transfer-instructions-panel">
         <h3 class="mb-2 text-base font-semibold">{{ t('transfer-instructions-panel.title') }}</h3>
-        <p v-if="payBy" class="mb-3 text-sm opacity-75" data-test="transfer-deadline">
-            {{ t('transfer-instructions-panel.label-deadline', { payBy: formatDateTime(payBy) }) }}
+        <p class="mb-3 text-sm opacity-75" data-test="transfer-deadline">
+            {{
+                t('transfer-instructions-panel.label-deadline', {
+                    payBy: formatDateTime(instructions.payBy)
+                })
+            }}
         </p>
         <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-2 text-sm">
             <dt class="opacity-70">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>

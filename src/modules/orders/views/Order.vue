@@ -65,7 +65,7 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
-import { PaymentPanel, TransferInstructionsPanel } from '@/modules/payments';
+import { PaymentPanel } from '@/modules/payments';
 import { WithdrawalPanel } from '@/modules/returns';
 import { ShipmentPanel, ShippingMethodName } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -586,11 +586,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-status="currentOrder.status"
                         :pay-by="currentOrder.payBy"
                         @paid="fetchOrder(currentOrder.id, { forced: true })"
-                    />
-                    <TransferInstructionsPanel
-                        v-if="currentOrder?.transferInstructions"
-                        :instructions="currentOrder.transferInstructions"
-                        :pay-by="currentOrder.payBy"
                     />
                     <ShipmentPanel
                         v-if="currentOrder"

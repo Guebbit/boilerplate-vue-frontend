@@ -5428,14 +5428,6 @@ export const CheckoutResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -5960,14 +5952,6 @@ export const ListOrdersResponse = zod.strictObject({
                 paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 orderNumber: zod.string(),
-                transferInstructions: zod
-                    .strictObject({
-                        beneficiary: zod.string(),
-                        iban: zod.string(),
-                        bic: zod.string().optional(),
-                        reference: zod.string()
-                    })
-                    .optional(),
                 status: zod.enum([
                     'pending',
                     'paid',
@@ -6238,14 +6222,6 @@ export const CreateOrderResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -6582,14 +6558,6 @@ export const SearchOrdersResponse = zod.strictObject({
                 paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
                 payBy: zod.iso.datetime({ offset: true }).optional(),
                 orderNumber: zod.string(),
-                transferInstructions: zod
-                    .strictObject({
-                        beneficiary: zod.string(),
-                        iban: zod.string(),
-                        bic: zod.string().optional(),
-                        reference: zod.string()
-                    })
-                    .optional(),
                 status: zod.enum([
                     'pending',
                     'paid',
@@ -6829,14 +6797,6 @@ export const GetOrderByIdResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -7051,14 +7011,6 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -7273,14 +7225,6 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -7512,14 +7456,6 @@ export const RestoreOrderByIdResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -7748,14 +7684,6 @@ export const CancelOrderByIdResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -7975,14 +7903,6 @@ export const OverrideOrderStatusResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -8215,6 +8135,16 @@ export const CreatePaymentIntentResponse = zod.strictObject({
             'failed',
             'cancelled'
         ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
         email: zod.string().optional(),
@@ -8338,6 +8268,16 @@ export const GetPaymentByOrderResponse = zod.strictObject({
             'failed',
             'cancelled'
         ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
         email: zod.string().optional(),
@@ -8359,7 +8299,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
     })
 });
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. The reference lives on the bank-transfer payment, which is kept for a year after its order is cancelled, so a transfer that arrives late still finds its order. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReferenceQueryRefMax = 64;
@@ -8531,14 +8471,6 @@ export const GetOrderByReferenceResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -8697,6 +8629,16 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
             'failed',
             'cancelled'
         ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
         email: zod.string().optional(),
@@ -8718,7 +8660,9 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
     })
 });
 /**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted the row of a card intent nobody paid. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+ * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+ * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Record a payment that arrived outside the provider
  */
 export const recordOfflinePaymentPathOrderIdMax = 64;
@@ -8836,6 +8780,16 @@ export const RecordOfflinePaymentResponse = zod.strictObject({
             'failed',
             'cancelled'
         ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
         email: zod.string().optional(),
@@ -8973,6 +8927,16 @@ export const ConfirmPaymentResponse = zod.strictObject({
             'failed',
             'cancelled'
         ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
         email: zod.string().optional(),
@@ -9090,6 +9054,16 @@ export const SyncPaymentResponse = zod.strictObject({
             'failed',
             'cancelled'
         ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
         providerRef: zod.string().optional(),
         orderNumber: zod.string().optional(),
         email: zod.string().optional(),
@@ -9502,14 +9476,6 @@ export const StartFulfilmentResponse = zod.strictObject({
         paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
         payBy: zod.iso.datetime({ offset: true }).optional(),
         orderNumber: zod.string(),
-        transferInstructions: zod
-            .strictObject({
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string()
-            })
-            .optional(),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
         fulfillmentStatus: zod.enum([
@@ -12635,14 +12601,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
             paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
             payBy: zod.iso.datetime({ offset: true }).optional(),
             orderNumber: zod.string(),
-            transferInstructions: zod
-                .strictObject({
-                    beneficiary: zod.string(),
-                    iban: zod.string(),
-                    bic: zod.string().optional(),
-                    reference: zod.string()
-                })
-                .optional(),
             status: zod.enum([
                 'pending',
                 'paid',
@@ -13591,6 +13549,16 @@ export const ListPaymentsResponse = zod.strictObject({
                     'failed',
                     'cancelled'
                 ]),
+                nextAction: zod
+                    .strictObject({
+                        type: zod.enum(['bank_transfer']),
+                        beneficiary: zod.string(),
+                        iban: zod.string(),
+                        bic: zod.string().optional(),
+                        reference: zod.string(),
+                        payBy: zod.iso.datetime({ offset: true })
+                    })
+                    .optional(),
                 providerRef: zod.string().optional(),
                 orderNumber: zod.string().optional(),
                 email: zod.string().optional(),
@@ -13789,6 +13757,16 @@ export const SearchPaymentsResponse = zod.strictObject({
                     'failed',
                     'cancelled'
                 ]),
+                nextAction: zod
+                    .strictObject({
+                        type: zod.enum(['bank_transfer']),
+                        beneficiary: zod.string(),
+                        iban: zod.string(),
+                        bic: zod.string().optional(),
+                        reference: zod.string(),
+                        payBy: zod.iso.datetime({ offset: true })
+                    })
+                    .optional(),
                 providerRef: zod.string().optional(),
                 orderNumber: zod.string().optional(),
                 email: zod.string().optional(),

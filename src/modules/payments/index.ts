@@ -14,7 +14,6 @@
 
 export { default as PaymentPanel } from './components/PaymentPanel.vue';
 export { default as PaymentMethodSelector } from './components/PaymentMethodSelector.vue';
-export { default as TransferInstructionsPanel } from './components/TransferInstructionsPanel.vue';
 export { default as RecordOfflinePaymentForm } from './components/RecordOfflinePaymentForm.vue';
 export { default as OrderReferenceSearch } from './components/OrderReferenceSearch.vue';
 export { useOrderRefund } from './composables/use-order-refund';
