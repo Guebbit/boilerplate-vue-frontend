@@ -2076,7 +2076,7 @@ export const ListSessionsResponse = zod.strictObject({
     })
 });
 /**
- * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails.
+ * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
  * @summary Revoke one session
  */
 export const revokeSessionPathSessionIdMax = 64;
@@ -2619,7 +2619,7 @@ export const RefreshTokenResponse = zod.strictObject({
     })
 });
 /**
- * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies.
+ * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
  * @summary Logout from all devices
  */
 export const LogoutAllResponse = zod.strictObject({
@@ -2632,7 +2632,7 @@ export const LogoutAllResponse = zod.strictObject({
  *
  * One live export per account. Asking while one is `building` returns that one; asking after one is `ready` or `failed` replaces it (the old file and record are deleted first). A file is kept for `NODE_ACCOUNT_EXPORT_TTL_DAYS` days. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
  *
- * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged.
+ * Starting a NEW build costs one mail from the per-mailbox mail budget, since it ends in a mailed link: a spent budget answers `429`, and the previous export is left in place. Asking while one is `building` is not charged. Needs a fresh session (sensitive tier: `401 REAUTH_REQUIRED`), as does downloading the file.
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExportResponseDataIdMax = 64;
@@ -2647,7 +2647,7 @@ export const RequestAccountExportResponse = zod.strictObject({
             .min(1)
             .max(requestAccountExportResponseDataIdMax)
             .regex(requestAccountExportResponseDataIdRegExp),
-        status: zod.enum(['building', 'ready', 'failed'])
+        status: zod.enum(['building'])
     })
 });
 /**
@@ -4005,7 +4005,7 @@ export const ListProductsResponse = zod.strictObject({
     })
 });
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A body naming an opening count (`onHand` above zero) books a stock movement, so it also needs `create:StockMovement`: a caller who edits the catalogue without it is refused `403` and nothing is written.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
 export const createProductBodyTranslationsOneTitleMin = 5;
@@ -4013,8 +4013,6 @@ export const createProductBodyTranslationsOneTitleMax = 200;
 export const createProductBodyTranslationsOneDescriptionMax = 10000;
 export const createProductBodyPriceMin = 0;
 export const createProductBodySkuMax = 64;
-export const createProductBodyOnHandDefault = 0;
-export const createProductBodyOnHandMin = 0;
 export const createProductBodyActiveDefault = true;
 export const createProductBodyPurchasableDefault = true;
 export const createProductBodyRequiresShippingDefault = true;
@@ -4044,7 +4042,6 @@ export const CreateProductBody = zod.strictObject({
     taxClass: zod.enum(['reduced', 'zero']).optional(),
     rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional(),
     sku: zod.string().min(1).max(createProductBodySkuMax).optional(),
-    onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
     active: zod.boolean().default(createProductBodyActiveDefault),
     purchasable: zod.boolean().default(createProductBodyPurchasableDefault),
     releaseDate: zod.iso.datetime({ offset: true }).optional(),
@@ -5239,7 +5236,7 @@ export const GetCartSummaryResponse = zod.strictObject({
     })
 });
 /**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+ * Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkoutHeaderIdempotencyKeyMax = 200;
@@ -5480,7 +5477,7 @@ export const CheckoutResponse = zod.strictObject({
     })
 });
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass 999 is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Admins are scoped to their own orders too — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Admins are scoped to their own orders too — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorderPathOrderIdMax = 64;
@@ -8027,7 +8024,7 @@ export const OverrideOrderStatusResponse = zod.strictObject({
     })
 });
 /**
- * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or the rare gap the "gaps are acceptable" numbering policy already accepts). The client should stream or save the response with an appropriate `Content-Disposition` header.
+ * The frozen tax invoice for the order identified by `{id}`, as a binary PDF — numbered and issued once, the moment the order moved `pending → paid`, never re-rendered from today's config. Refuses with `404` for an order that has not been invoiced yet (never paid, or paid while its invoice listener failed: such an order is not invoiced yet, and takes no number from the gap-free series). The client should stream or save the response with an appropriate `Content-Disposition` header.
  * @summary Download the order's invoice (PDF)
  */
 export const getOrderInvoicePathIdMax = 64;
@@ -8362,7 +8359,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
     })
 });
 /**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Admin only — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReferenceQueryRefMax = 64;
@@ -12059,7 +12056,7 @@ export const ListApiKeysResponse = zod.strictObject({
  * session that made it. `expiresAt` is required and at most one year ahead, or the
  * request is refused with 422. The minter is mailed that a key was created, and every
  * key a person minted is revoked (and listed to them by mail) when they log out
- * everywhere or reset their password.
+ * everywhere, reset their password or report an email change as not theirs.
  * @summary Mint a machine-to-machine credential
  */
 export const mintApiKeyBodyNameMax = 200;

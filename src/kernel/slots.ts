@@ -19,13 +19,17 @@ import type { Component, InjectionKey } from 'vue';
  * components receive.
  *
  * - `product-actions`: the storefront buttons on the product page; receives `{ product }`.
+ * - `product-create-extras`: the product create form, beside its fields; receives
+ *   `{ registerAfterCreate }`, a function taking a step to run with the new product's id once it
+ *   exists. Stock is not a product field, so `inventory` puts its opening-stock field here.
  * - `app-bar`: the shell's app bar, beside the account menu; receives nothing. A contribution
  *   owns its own visibility, because it is mounted for guests too.
  * - `payments-awaiting-transfer`: the "Awaiting transfer" tab of the payments page; receives
  *   nothing. That tab reads ORDERS (no payment exists until the money is recorded), so `orders`
  *   fills it and `payments` never imports it.
  */
-export type SlotName = 'product-actions' | 'app-bar' | 'payments-awaiting-transfer';
+export type SlotName =
+    'product-actions' | 'product-create-extras' | 'app-bar' | 'payments-awaiting-transfer';
 
 /**
  * The collected contributions: slot name to the components every enabled module put there, in

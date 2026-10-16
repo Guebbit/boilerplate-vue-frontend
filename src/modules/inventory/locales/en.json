@@ -51,6 +51,11 @@
         "column-preordered": "Preordered",
         "button-preorder-limit-named": "Set the preorder limit of {name}"
     },
+    "opening-stock-field": {
+        "label": "Opening stock",
+        "failed": "The product was created, but its opening stock was not recorded. Add it from Inventory.",
+        "note": "Opening stock"
+    },
     "navigation": {
         "label-inventory": "Inventory",
         "label-preorders": "Preorders"

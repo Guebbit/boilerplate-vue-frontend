@@ -4,6 +4,7 @@
  * `AppModule`: routes, nav entry, response-schema validation and locale loaders, assembled from
  * this module's own files and wired into the kernel's registry.
  */
+import { defineAsyncComponent } from 'vue';
 import { CalendarClock, Warehouse } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
 import type { AppModule } from '@/kernel/registry';
@@ -50,5 +51,11 @@ export default {
     locales: {
         en: () => import('./locales/en.json').then(dictionary),
         it: () => import('./locales/it.json').then(dictionary)
+    },
+    // The product create form's opening-stock field: lazy, and `products` never imports it.
+    slots: {
+        'product-create-extras': [
+            defineAsyncComponent(() => import('./components/OpeningStockField.vue'))
+        ]
     }
 } satisfies AppModule;

@@ -51,6 +51,11 @@
         "column-preordered": "Preordinati",
         "button-preorder-limit-named": "Imposta il limite di preordini di {name}"
     },
+    "opening-stock-field": {
+        "label": "Scorta iniziale",
+        "failed": "Il prodotto è stato creato, ma la scorta iniziale non è stata registrata. Aggiungila da Inventario.",
+        "note": "Scorta iniziale"
+    },
     "navigation": {
         "label-inventory": "Magazzino",
         "label-preorders": "Preordini"

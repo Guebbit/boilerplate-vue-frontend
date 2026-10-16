@@ -22,8 +22,8 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '../store';
-import { useSessionStore } from '@/infrastructure/session.ts';
-import { productsSchema, productsOnHandMin, productsOnHandDefault } from '../schemas.ts';
+import { useSlot } from '@/kernel/slots.ts';
+import { productsSchema } from '../schemas.ts';
 import { useActiveLocales } from '../composables/use-active-locales.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
@@ -61,8 +61,25 @@ const router = useRouter();
  */
 const { createProduct } = useProductsStore();
 
-/** The session, asked which of the form's fields the signed-in caller may use. */
-const session = useSessionStore();
+/**
+ * Components other modules put beside the form (the stock field, which `inventory` owns): stock is
+ * not a product field, so the create body carries none. Each is handed {@link registerAfterCreate}
+ * and may register a step to run once the product exists.
+ */
+const afterCreateContributions = useSlot('product-create-extras');
+
+/** The steps contributions registered to run, in order, once the product has been created. */
+const afterCreateSteps: ((productId: string) => Promise<void>)[] = [];
+
+/**
+ * What a contribution calls to ask for a step after the create. A step settles its own failure
+ * (it knows what to tell the user); the create is never undone by one.
+ *
+ * @param step - Runs with the new product's id.
+ */
+const registerAfterCreate = (step: (productId: string) => Promise<void>) => {
+    afterCreateSteps.push(step);
+};
 
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers.
@@ -87,9 +104,6 @@ interface ProductCreateForm {
     // Absent means the shop's standard rate; an edit sends `null` for the same meaning, but a
     // create simply omits the key rather than declaring a clear that has nothing to clear yet.
     taxClass?: TaxClass;
-    // Create-only: the opening stock count. An edit never carries this field — every later change
-    // to stock goes through `/inventory`'s signed transitions instead.
-    onHand?: number;
     categories?: string[];
     tags?: string[];
     translations: ProductTranslationsWrite;
@@ -144,7 +158,6 @@ const {
         purchasable: true,
         requiresShipping: true,
         noWithdrawal: false,
-        onHand: productsOnHandDefault,
         translations: {}
     },
     schema: createSchema,
@@ -207,11 +220,13 @@ const submitForm = () => {
             )
             .then((newProduct) => {
                 if (!newProduct) return;
-                addMessage(t('product-create-page.success-create'));
-                // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
-                void router.push(
-                    routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
-                );
+                return Promise.all(afterCreateSteps.map((step) => step(newProduct.id))).then(() => {
+                    addMessage(t('product-create-page.success-create'));
+                    // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
+                    void router.push(
+                        routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
+                    );
+                });
             });
     }).catch(handleSubmitFailure);
 };
@@ -333,20 +348,14 @@ const submitForm = () => {
                 class="mb-2"
             />
             <!--
-                Create-only: opening stock. An edit never shows this field, since every later
-                stock change goes through /inventory's signed transitions instead. Offered only to
-                a caller who may book stock: the server refuses an opening count without it.
+                Contributions from other modules (the opening stock, from `inventory`): this view
+                never imports them, and the create body carries nothing of theirs.
             -->
-            <v-number-input
-                v-if="session.can('create', 'StockMovement')"
-                v-model="form.onHand"
-                :label="t('product-create-page.label-on-hand')"
-                :min="productsOnHandMin"
-                :step="1"
-                :precision="0"
-                control-variant="stacked"
-                data-test="product-on-hand-field"
-                class="mb-2"
+            <component
+                :is="contribution"
+                v-for="(contribution, index) in afterCreateContributions"
+                :key="index"
+                :register-after-create="registerAfterCreate"
             />
             <v-combobox
                 v-model="form.categories"

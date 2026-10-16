@@ -43,13 +43,9 @@ export type OrderPaidEventType = "order.paid";
 export interface OrderCancelledEnvelope {
   'type': OrderCancelledEventType;
   'timestamp': string;
-  'data': OrderCancelledPayload;
+  'data': OrderIdPayload;
 }
 export type OrderCancelledEventType = "order.cancelled";
-export interface OrderCancelledPayload {
-  'orderId': string;
-  'refund': boolean;
-}
 export interface ShipmentShippedEnvelope {
   'type': ShipmentShippedEventType;
   'timestamp': string;
@@ -60,9 +56,9 @@ export interface ShipmentPayload {
   'orderId': string;
   'shipmentId': string;
   'fulfillmentOrderId': string;
-  'lines': AnonymousSchema31[];
+  'lines': AnonymousSchema29[];
 }
-export interface AnonymousSchema31 {
+export interface AnonymousSchema29 {
   'productId': string;
   'quantity': number;
 }
@@ -149,37 +145,37 @@ export interface NotificationCreatedPayload {
 }
 export interface NotificationCartLineRemovedPayload {
   'id': string;
-  'code': AnonymousSchema69;
+  'code': AnonymousSchema67;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema73;
+  'severity': AnonymousSchema71;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema69 = "notifications.cart-line-removed";
+export type AnonymousSchema67 = "notifications.cart-line-removed";
 export interface CartLineRemovedParamsPayload {
   'productId': string;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema73 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema71 = "info" | "success" | "warning" | "error";
 export interface NotificationWishlistItemRemovedPayload {
   'id': string;
-  'code': AnonymousSchema77;
+  'code': AnonymousSchema75;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema78;
+  'severity': AnonymousSchema76;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema77 = "notifications.wishlist-item-removed";
-export type AnonymousSchema78 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema75 = "notifications.wishlist-item-removed";
+export type AnonymousSchema76 = "info" | "success" | "warning" | "error";
 export interface NotificationCartMergeRefusedPayload {
   'id': string;
-  'code': AnonymousSchema82;
+  'code': AnonymousSchema80;
   'params': CartMergeRefusedParamsPayload;
-  'severity': AnonymousSchema88;
+  'severity': AnonymousSchema86;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema82 = "notifications.cart-merge-refused";
+export type AnonymousSchema80 = "notifications.cart-merge-refused";
 export interface CartMergeRefusedParamsPayload {
   'lines': CartMergeRefusedLinePayload[];
 }
@@ -188,16 +184,16 @@ export interface CartMergeRefusedLinePayload {
   'requested': number;
   'titles': { [name: string]: string };
 }
-export type AnonymousSchema88 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema86 = "info" | "success" | "warning" | "error";
 export interface NotificationPreorderDelayedPayload {
   'id': string;
-  'code': AnonymousSchema92;
+  'code': AnonymousSchema90;
   'params': PreorderDelayedParamsPayload;
-  'severity': AnonymousSchema100;
+  'severity': AnonymousSchema98;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema92 = "notifications.preorder-delayed";
+export type AnonymousSchema90 = "notifications.preorder-delayed";
 export interface PreorderDelayedParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
@@ -206,17 +202,17 @@ export interface PreorderDelayedParamsPayload {
   'expectedAt'?: string;
   'answerBy'?: string;
 }
-export type AnonymousSchema100 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema98 = "info" | "success" | "warning" | "error";
 export interface NotificationPreorderConfirmWaitPayload {
   'id': string;
-  'code': AnonymousSchema104;
+  'code': AnonymousSchema102;
   'params': PreorderDelayedParamsPayload;
-  'severity': AnonymousSchema105;
+  'severity': AnonymousSchema103;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema104 = "notifications.preorder-confirm-wait";
-export type AnonymousSchema105 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema102 = "notifications.preorder-confirm-wait";
+export type AnonymousSchema103 = "info" | "success" | "warning" | "error";
 export interface NotificationsDeletedPayload {
   'all': boolean;
   'ids': string[];

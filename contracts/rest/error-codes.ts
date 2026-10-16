@@ -64,7 +64,7 @@ export const ERROR_CODES = {
     DELIVERY_NOT_PHYSICAL: 'DELIVERY_NOT_PHYSICAL',
     /** 409 — The fulfillment order is not on hold, or waits for stock and is released only by the stock arriving. */
     DELIVERY_NOT_RELEASABLE: 'DELIVERY_NOT_RELEASABLE',
-    /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled. */
+    /** 409 — The fulfillment order cannot ship now: it is on hold, closed or cancelled, or the order is cancelled, or still `pending` (never paid: start or pay it first). */
     DELIVERY_NOT_SHIPPABLE: 'DELIVERY_NOT_SHIPPABLE',
     /** 422 — A forced shipment or delivery requires a reason and none was supplied. */
     DELIVERY_OVERRIDE_REASON_REQUIRED: 'DELIVERY_OVERRIDE_REASON_REQUIRED',

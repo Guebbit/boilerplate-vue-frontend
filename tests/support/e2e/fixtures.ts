@@ -303,7 +303,9 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
     // Callers may override `translations` wholesale (a multi-language fixture) or just pass a
     // flat `title`, which is folded into the fallback locale's entry below — the shape most
     // specs actually want to write.
-    const { title, translations, ...rest } = overrides;
+    // `onHand` is not a product field: the create body carries no stock, so an opening count is
+    // received right after, through the inventory door, as a real shop does it.
+    const { title, translations, onHand, ...rest } = overrides;
     return adminApi<ProductLike>('/products', 'POST', {
         price: 10,
         ...rest,
@@ -315,7 +317,15 @@ Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) 
                     title ?? `e2e ${asStub<CypressWithRunnableState>(Cypress).state('runnable').id}`
             }
         }
-    });
+    }).then((product) =>
+        typeof onHand === 'number' && onHand > 0
+            ? adminApi('/inventory/receipts', 'POST', {
+                  productId: product.id,
+                  quantity: onHand,
+                  note: 'Opening stock'
+              }).then(() => product)
+            : cy.wrap(product)
+    );
 });
 
 Cypress.Commands.add('softDeleteProduct', (id: string) =>
