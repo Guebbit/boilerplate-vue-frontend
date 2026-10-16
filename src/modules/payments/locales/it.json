@@ -116,8 +116,6 @@
         "failure-reason-unknown": "Il provider non ha indicato un motivo utilizzabile",
         "attention-kind-stale_refund": "Rimborso aperto da troppo tempo",
         "attention-kind-manual_refund_owed": "Denaro da restituire fuori dal sistema",
-        "attention-kind-payment_effect_pending": "Scarico di magazzino ancora da fare",
-        "attention-kind-order_refund_owed": "Rimborso dovuto dopo un annullamento",
         "attention-hint": "Solo i problemi ancora registrati su un pagamento o un ordine. Uno risolto sparisce alla lettura successiva.",
         "button-reload": "Ricarica",
         "attention-audit-note": "Un pagamento il cui importo non corrispondeva all'ordine non compare qui: è stato annullato e rimborsato in automatico, e registrato nel registro di audit come payment.amount_mismatch.",

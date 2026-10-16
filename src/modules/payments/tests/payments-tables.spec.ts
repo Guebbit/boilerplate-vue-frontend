@@ -316,7 +316,15 @@ describe('AttentionList', () => {
             failureReason: 'provider_unavailable',
             since: '2026-03-04T10:00:00Z'
         },
-        { kind: 'order_refund_owed', orderId: 'o1', since: '2026-03-04T10:00:00Z' }
+        {
+            kind: 'manual_refund_owed',
+            orderId: 'o1',
+            paymentId: 'pay-1',
+            refundId: 'r2',
+            amount: 12,
+            currency: 'EUR',
+            since: '2026-03-04T10:00:00Z'
+        }
     ];
 
     it('lists every problem, even two with the same order and time', async () => {
@@ -334,9 +342,9 @@ describe('AttentionList', () => {
         );
         expect(rows[0]?.text()).toContain('€5.00');
         expect(rows[1]?.get('[data-test="attention-kind"]').text()).toBe(
-            'Refund owed after a cancellation'
+            'Money to hand back outside the system'
         );
-        expect(rows[1]?.text()).toContain('—');
+        expect(rows[1]?.text()).toContain('€12.00');
     });
 
     it('links each problem to its order', async () => {

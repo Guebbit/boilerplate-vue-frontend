@@ -458,6 +458,8 @@ describe('the staff lists', () => {
                 {
                     kind: 'manual_refund_owed',
                     orderId: 'order-1',
+                    paymentId: 'payment-1',
+                    refundId: 'refund-1',
                     amount: 5,
                     currency: 'EUR',
                     since: '2026-03-04T10:00:00Z'

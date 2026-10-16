@@ -5263,25 +5263,23 @@ export interface RefundsResponseEnvelope {
 }
 
 /**
- * `stale_refund` — a provider refund open past the threshold; `manual_refund_owed` — money to hand back outside the system on a `manual` payment; `payment_effect_pending` — the stock commit of a succeeded payment is still owed; `order_refund_owed` — an order cancelled after payment whose refund has not happened.
+ * `stale_refund` — a provider refund open past the threshold; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
  */
 export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
 
 export const PaymentAttentionKind = {
     stale_refund: 'stale_refund',
-    manual_refund_owed: 'manual_refund_owed',
-    payment_effect_pending: 'payment_effect_pending',
-    order_refund_owed: 'order_refund_owed'
+    manual_refund_owed: 'manual_refund_owed'
 } as const;
 
 export interface PaymentAttentionItem {
     kind: PaymentAttentionKind;
     orderId: Id;
-    paymentId?: Id;
-    refundId?: Id;
+    paymentId: Id;
+    refundId: Id;
     /** @minimum 0 */
-    amount?: number;
-    currency?: string;
+    amount: number;
+    currency: string;
     failureReason?: RefundFailureReason;
     /** When the problem was recorded, so the page can sort by age. */
     since: string;

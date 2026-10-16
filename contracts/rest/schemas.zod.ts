@@ -13959,12 +13959,7 @@ export const ListPaymentAttentionResponse = zod.strictObject({
     data: zod.strictObject({
         items: zod.array(
             zod.strictObject({
-                kind: zod.enum([
-                    'stale_refund',
-                    'manual_refund_owed',
-                    'payment_effect_pending',
-                    'order_refund_owed'
-                ]),
+                kind: zod.enum(['stale_refund', 'manual_refund_owed']),
                 orderId: zod
                     .string()
                     .min(1)
@@ -13974,19 +13969,14 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                     .string()
                     .min(1)
                     .max(listPaymentAttentionResponseDataItemsItemPaymentIdMax)
-                    .regex(listPaymentAttentionResponseDataItemsItemPaymentIdRegExp)
-                    .optional(),
+                    .regex(listPaymentAttentionResponseDataItemsItemPaymentIdRegExp),
                 refundId: zod
                     .string()
                     .min(1)
                     .max(listPaymentAttentionResponseDataItemsItemRefundIdMax)
-                    .regex(listPaymentAttentionResponseDataItemsItemRefundIdRegExp)
-                    .optional(),
-                amount: zod
-                    .number()
-                    .min(listPaymentAttentionResponseDataItemsItemAmountMin)
-                    .optional(),
-                currency: zod.string().optional(),
+                    .regex(listPaymentAttentionResponseDataItemsItemRefundIdRegExp),
+                amount: zod.number().min(listPaymentAttentionResponseDataItemsItemAmountMin),
+                currency: zod.string(),
                 failureReason: zod
                     .enum([
                         'declined',

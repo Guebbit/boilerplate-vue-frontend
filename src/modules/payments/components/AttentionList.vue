@@ -25,7 +25,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { usePaymentsStore } from '../store.ts';
@@ -74,7 +74,7 @@ onMounted(() => {
 const rows = computed(() =>
     attention.value.map((item, index) => ({
         ...item,
-        rowKey: `${item.kind}-${item.orderId}-${item.refundId ?? item.paymentId ?? ''}-${index}`
+        rowKey: `${item.kind}-${item.orderId}-${item.refundId}-${index}`
     }))
 );
 
@@ -155,11 +155,7 @@ const auditLink = computed(() => {
                 {{ formatDateTime(item.since) }}
             </template>
             <template v-slot:[`item.amount`]="{ item }">
-                {{
-                    item.amount !== undefined && item.currency
-                        ? formatCurrency(item.amount, item.currency)
-                        : EMPTY_VALUE
-                }}
+                {{ formatCurrency(item.amount, item.currency) }}
             </template>
             <template v-slot:[`item.orderId`]="{ item }">
                 <router-link

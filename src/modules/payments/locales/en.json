@@ -116,8 +116,6 @@
         "failure-reason-unknown": "The provider gave no usable reason",
         "attention-kind-stale_refund": "Refund open for too long",
         "attention-kind-manual_refund_owed": "Money to hand back outside the system",
-        "attention-kind-payment_effect_pending": "Stock commit still owed",
-        "attention-kind-order_refund_owed": "Refund owed after a cancellation",
         "attention-hint": "Only problems still recorded on a payment or an order. A fixed one disappears on the next read.",
         "button-reload": "Reload",
         "attention-audit-note": "A payment whose amount did not match its order is not listed here: it was cancelled and refunded automatically, and recorded in the audit log as payment.amount_mismatch.",
