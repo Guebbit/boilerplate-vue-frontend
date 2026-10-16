@@ -132,6 +132,8 @@ export const ERROR_CODES = {
     ORDER_OVERRIDE_AWAITING_STOCK: 'ORDER_OVERRIDE_AWAITING_STOCK',
     /** 409 — This status transition is not on the admin override's allowed list. */
     ORDER_OVERRIDE_NOT_ALLOWED: 'ORDER_OVERRIDE_NOT_ALLOWED',
+    /** 409 — An admin-created order names a product that is hidden (`active: false`), off sale (`purchasable: false`) or soft-deleted: refused exactly as checkout refuses it. `errors[].details.productIds` names each one. */
+    ORDER_PRODUCT_UNAVAILABLE: 'ORDER_PRODUCT_UNAVAILABLE',
     /** 413 — The request body exceeds this deployment's size limit. */
     PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
     /** 409 — This deployment has no card payment provider, so a card payment cannot be started. */

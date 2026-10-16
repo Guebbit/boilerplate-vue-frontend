@@ -6050,6 +6050,7 @@ export const ListOrdersResponse = zod.strictObject({
 });
 /**
  * Creates a new order directly from the supplied payload, for the account named in `userId`. Raising one for oneself is allowed.
+ * It sells the shelf a shopper buys from: a hidden, off-sale or soft-deleted product is refused with `409 ORDER_PRODUCT_UNAVAILABLE`, exactly as checkout refuses it, and stock is held the same way (`409 ORDER_INSUFFICIENT_STOCK`).
  * A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
  * @summary Create order
  */

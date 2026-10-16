@@ -5028,6 +5028,7 @@ paths:
       summary: Create order
       description: |-
         Creates a new order directly from the supplied payload, for the account named in `userId`. Raising one for oneself is allowed.
+        It sells the shelf a shopper buys from: a hidden, off-sale or soft-deleted product is refused with `409 ORDER_PRODUCT_UNAVAILABLE`, exactly as checkout refuses it, and stock is held the same way (`409 ORDER_INSUFFICIENT_STOCK`).
         A body is bounded twice. The schema caps it at 1000 lines of at most 999999 units (what the contract promises); a deployment may set a lower limit in `NODE_ADMIN_ORDER_MAX_LINES` and `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`, and a body over it answers `422` with `ORDER_LINE_LIMIT_EXCEEDED`.
       operationId: createOrder
       security:
@@ -18759,6 +18760,9 @@ x-error-codes:
   ORDER_OVERRIDE_NOT_ALLOWED:
     status: 409
     description: This status transition is not on the admin override's allowed list.
+  ORDER_PRODUCT_UNAVAILABLE:
+    status: 409
+    description: "An admin-created order names a product that is hidden (`active: false`), off sale (`purchasable: false`) or soft-deleted: refused exactly as checkout refuses it. `errors[].details.productIds` names each one."
   PAYLOAD_TOO_LARGE:
     status: 413
     description: The request body exceeds this deployment's size limit.
