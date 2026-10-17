@@ -1,15 +1,16 @@
 /**
  * @module
- * One reusable `Idempotency-Key` per user intent: mint a UUID, keep it across a
- * retryable failure (a transport error or a 5xx — nothing conclusive happened server-side), and
- * mint a fresh one after any definitive answer (success, or a 4xx that means the next attempt is
- * genuinely new). Mirrors the cart store's own `checkoutIdempotencyKey` (a separate copy, not built
- * on this helper) and `withAntibotToken` (`infrastructure/http/antibot.ts`) for the header-merge
- * shape.
+ * One reusable `Idempotency-Key` per user intent: mint a UUID, keep it only while the first attempt
+ * may still be running or never arrived (a lost connection, or `409 IDEMPOTENCY_IN_FLIGHT`), and
+ * mint a fresh one after any answer, a 5xx included: the API stores every answer and replays it for
+ * the same key, so resending a key after a fault would replay the fault. Mirrors the cart store's
+ * own `checkoutIdempotencyKey` (a separate copy, not built on this helper) and `withAntibotToken`
+ * (`infrastructure/http/antibot.ts`) for the header-merge shape.
+ * See: docs/tools/idempotency.md in the backend, "What a failure stores".
  */
 import { ref } from 'vue';
 import type { AxiosRequestConfig } from 'axios';
-import { isRetryableFailure } from '@/infrastructure/utils/errors.ts';
+import { keepsIdempotencyKey } from '@/infrastructure/utils/errors.ts';
 
 /** The header the paired backend's `idempotency` middleware reads off a guarded write. */
 export const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
@@ -26,8 +27,8 @@ export interface IdempotencyKeyKeeper {
     withKey: (options?: AxiosRequestConfig) => AxiosRequestConfig;
 
     /**
-     * Settles the attempt this key guarded: keeps it when `error` is retryable, mints a fresh one
-     * on success or on a definitive (non-retryable) failure.
+     * Settles the attempt this key guarded: keeps it when the attempt may still be running or never
+     * arrived (see {@link keepsIdempotencyKey}), mints a fresh one on success and on every answer.
      *
      * @param error - The rejected value, when the guarded call failed; omitted on success.
      */
@@ -55,7 +56,37 @@ export const useIdempotencyKey = (): IdempotencyKeyKeeper => {
             headers: { ...options?.headers, [IDEMPOTENCY_KEY_HEADER]: current.value }
         }),
         settle: (error) => {
-            if (error === undefined || !isRetryableFailure(error)) mint();
+            if (error === undefined || !keepsIdempotencyKey(error)) mint();
+        }
+    };
+};
+
+/** One operation's keepers, one per subject it can be asked about. */
+export interface IdempotencyKeysBySubject {
+    /**
+     * The keeper for one subject (an order, a product, a return), made on first use.
+     *
+     * @param subject - What the call is about: two calls about different subjects never share a key.
+     * @returns That subject's keeper.
+     */
+    forSubject: (subject: string) => IdempotencyKeyKeeper;
+}
+
+/**
+ * Starts the keepers of one operation that is asked about many subjects (a refund of any order).
+ * A single keeper would carry a key kept for order A into a call about order B, which the API
+ * refuses as a reused key on a different request.
+ *
+ * @returns A lookup that hands out one keeper per subject.
+ */
+export const useIdempotencyKeys = (): IdempotencyKeysBySubject => {
+    const keepers = new Map<string, IdempotencyKeyKeeper>();
+
+    return {
+        forSubject: (subject) => {
+            const keeper = keepers.get(subject) ?? useIdempotencyKey();
+            keepers.set(subject, keeper);
+            return keeper;
         }
     };
 };

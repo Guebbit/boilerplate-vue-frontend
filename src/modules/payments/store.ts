@@ -33,8 +33,8 @@ import type {
     RefundListItem,
     SearchPaymentsRequest
 } from '@types';
-import { rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
-import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
+import { isTransportFailure, rethrowUnlessAbsent } from '@/infrastructure/utils/errors';
+import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 
 /**
  * The payment behind an order — one record, mirrored from whatever the API last said.
@@ -61,23 +61,25 @@ export const usePaymentsStore = defineStore('payments', () => {
     const payment = ref<Payment | undefined>();
 
     /**
-     * `Idempotency-Key` for `confirmPayment` — the contract declares the header on
+     * `Idempotency-Key`s for `confirmPayment`, one per order — the contract declares the header on
      * `POST /payments/{id}/confirm` only: `POST /payments/intent` takes none (asking again already
      * refreshes the same intent, and a stored replay would keep its `clientSecret`). A retry after
-     * a network error or a 5xx resends the key unchanged; any other outcome (success, or a decline
-     * the visitor answers with a different method) mints a fresh one.
+     * a lost connection resends the key unchanged; any answer (success, a decline the visitor
+     * answers with a different method, a fault) mints a fresh one.
      */
-    const confirmIdempotencyKey = useIdempotencyKey();
+    const confirmIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key` for `refundForOrder`'s `POST /payments/order/{orderId}/refund`.
+     * `Idempotency-Key`s for `refundForOrder`'s `POST /payments/order/{orderId}/refund`, one per
+     * order: a key kept for order A must never ride on a refund of order B.
      */
-    const refundIdempotencyKey = useIdempotencyKey();
+    const refundIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key` for `recordOfflinePayment`'s `POST /payments/order/{orderId}/offline`.
+     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /payments/order/{orderId}/offline`, one
+     * per order, for the same reason as the refund's.
      */
-    const offlineIdempotencyKey = useIdempotencyKey();
+    const offlineIdempotencyKeys = useIdempotencyKeys();
 
     /**
      * The methods this deployment offers — `card` always, `bank_transfer` once the deployment has
@@ -122,6 +124,27 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
+     * After a server fault, re-reads the order's payment before rethrowing the fault: the write
+     * may have landed before the 500, and a spent key means a retry is a NEW attempt, so the page
+     * must show where the money stands first. Any other failure is rethrown as it is.
+     *
+     * @param orderId - The order the failed call was about.
+     * @param error - The rejected value, rethrown unchanged.
+     * @returns A promise that always rejects with `error`.
+     * @throws The original error, once the payment has been re-read.
+     */
+    const rereadAfterFault = (orderId: string, error: unknown): Promise<never> =>
+        (isTransportFailure(error) || (error as { status: number }).status < 500
+            ? Promise.resolve()
+            : fetchPaymentForOrder(orderId).then(
+                  () => undefined,
+                  () => undefined
+              )
+        ).then(() => {
+            throw error;
+        });
+
+    /**
      * Pays an order: intent first, then the confirm with the provider's method reference.
      *
      * The answer is NOT always final — `requires_action` means the bank wants a challenge and
@@ -144,26 +167,28 @@ export const usePaymentsStore = defineStore('payments', () => {
         orderId: string,
         paymentMethodRef: string,
         confirmOptions?: AxiosRequestConfig
-    ) =>
-        fetchAny(() =>
+    ) => {
+        const confirmKeeper = confirmIdempotencyKeys.forSubject(orderId);
+        return fetchAny(() =>
             createPaymentIntent({ orderId })
                 .then((intentResponse) =>
                     confirmPayment(
                         intentResponse.data.id,
                         { paymentMethodRef },
-                        confirmIdempotencyKey.withKey(confirmOptions)
+                        confirmKeeper.withKey(confirmOptions)
                     )
                 )
                 .then((response) => {
-                    confirmIdempotencyKey.settle();
+                    confirmKeeper.settle();
                     payment.value = response.data;
                     return payment.value;
                 })
                 .catch((error: unknown) => {
-                    confirmIdempotencyKey.settle(error);
-                    throw error;
+                    confirmKeeper.settle(error);
+                    return rereadAfterFault(orderId, error);
                 })
         );
+    };
 
     /**
      * Tells the API the browser has finished at the provider, so it re-reads the provider's own
@@ -195,23 +220,27 @@ export const usePaymentsStore = defineStore('payments', () => {
      *  everything still refundable.
      * @returns A promise resolving with the refunded payment.
      */
-    const refundForOrder = (orderId: string, amount?: number) =>
-        fetchAny(() =>
+    const refundForOrder = (orderId: string, amount?: number) => {
+        const keeper = refundIdempotencyKeys.forSubject(orderId);
+        return fetchAny(() =>
             refundPaymentByOrder(
                 orderId,
                 amount === undefined ? undefined : { amount },
-                refundIdempotencyKey.withKey()
+                keeper.withKey()
             )
                 .then((response) => {
-                    refundIdempotencyKey.settle();
+                    keeper.settle();
+                    // The refund's own answer carries no `actions`, so the control would grey out
+                    // after a PART refund: the read is what says whether money is still left.
                     payment.value = response.data;
-                    return payment.value;
+                    return fetchPaymentForOrder(orderId).catch(() => payment.value);
                 })
                 .catch((error: unknown) => {
-                    refundIdempotencyKey.settle(error);
-                    throw error;
+                    keeper.settle(error);
+                    return rereadAfterFault(orderId, error);
                 })
         );
+    };
 
     /**
      * Records money that arrived outside the provider — cash, a transfer, by hand. Admin-only at
@@ -225,19 +254,21 @@ export const usePaymentsStore = defineStore('payments', () => {
      * @param body - The method, an optional reference, and when the money actually arrived.
      * @returns A promise resolving with the payment as it now stands.
      */
-    const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) =>
-        fetchAny(() =>
-            recordOfflinePaymentRequest(orderId, body, offlineIdempotencyKey.withKey())
+    const recordOfflinePayment = (orderId: string, body: RecordOfflinePaymentRequest) => {
+        const keeper = offlineIdempotencyKeys.forSubject(orderId);
+        return fetchAny(() =>
+            recordOfflinePaymentRequest(orderId, body, keeper.withKey())
                 .then((response) => {
-                    offlineIdempotencyKey.settle();
+                    keeper.settle();
                     payment.value = response.data;
                     return payment.value;
                 })
                 .catch((error: unknown) => {
-                    offlineIdempotencyKey.settle(error);
-                    throw error;
+                    keeper.settle(error);
+                    return rereadAfterFault(orderId, error);
                 })
         );
+    };
 
     /**
      * Finds the order behind an RF creditor reference — the admin's own step before recording an

@@ -372,6 +372,11 @@ describe('refundForOrder', () => {
             status: 'succeeded',
             amountRefunded: 12.5
         });
+        responses['GET /payments/order/order-1'] = orvalEnvelope({
+            ...PAYMENT,
+            status: 'succeeded',
+            amountRefunded: 12.5
+        });
         const store = usePaymentsStore();
 
         return store.refundForOrder('order-1', 12.5).then(() => {
@@ -380,6 +385,108 @@ describe('refundForOrder', () => {
             });
             expect(store.payment?.amountRefunded).toBe(12.5);
         });
+    });
+
+    it('re-reads the payment after a refund, since the refund answer carries no actions', () => {
+        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
+            ...PAYMENT,
+            status: 'succeeded',
+            amountRefunded: 5
+        });
+        responses['GET /payments/order/order-1'] = orvalEnvelope({
+            ...PAYMENT,
+            status: 'succeeded',
+            amountRefunded: 5,
+            actions: { pay: false, refund: true }
+        });
+        const store = usePaymentsStore();
+
+        return store.refundForOrder('order-1', 5).then(() => {
+            expect(store.payment?.actions?.refund, 'money is still left to refund').toBe(true);
+        });
+    });
+});
+
+/** The key the refund request number `index` carried. */
+const refundKeyAt = (index: number): string | undefined => {
+    const calls = vi
+        .mocked(orvalMutator)
+        .mock.calls.filter((entry) => (entry[0] as { url: string }).url.endsWith('/refund'));
+    const options = calls[index]?.[1] as { headers?: Record<string, string> } | undefined;
+    return options?.headers?.['Idempotency-Key'];
+};
+
+describe('the refund key after a failure', () => {
+    beforeEach(() => {
+        responses['POST /payments/order/order-1/refund'] = new Error('the database went away');
+        responses['POST /payments/order/order-2/refund'] = orvalEnvelope({
+            ...PAYMENT,
+            orderId: 'order-2',
+            status: 'succeeded',
+            amountRefunded: 50
+        });
+        responses['GET /payments/order/order-2'] = orvalEnvelope({
+            ...PAYMENT,
+            orderId: 'order-2'
+        });
+    });
+
+    it('spends the key on a server fault, so a retry is a new attempt', () => {
+        const store = usePaymentsStore();
+
+        return store
+            .refundForOrder('order-1')
+            .catch(() => undefined)
+            .then(() => store.refundForOrder('order-1').catch(() => undefined))
+            .then(() => {
+                expect(refundKeyAt(1)).toEqual(expect.any(String));
+                expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
+            });
+    });
+
+    it('re-reads the payment after a server fault, before the caller may press again', () => {
+        const store = usePaymentsStore();
+
+        return store
+            .refundForOrder('order-1')
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toContain('/payments/order/order-1');
+            });
+    });
+
+    it('keeps the key after a lost connection, so the retry replays the first attempt', () => {
+        responses['POST /payments/order/order-1/refund'] = {
+            status: 0,
+            code: 'NETWORK',
+            message: 'offline'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .refundForOrder('order-1')
+            .catch(() => undefined)
+            .then(() => store.refundForOrder('order-1').catch(() => undefined))
+            .then(() => {
+                expect(refundKeyAt(1)).toBe(refundKeyAt(0));
+            });
+    });
+
+    it('never carries a key kept for one order onto a refund of another', () => {
+        responses['POST /payments/order/order-1/refund'] = {
+            status: 0,
+            code: 'NETWORK',
+            message: 'offline'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .refundForOrder('order-1')
+            .catch(() => undefined)
+            .then(() => store.refundForOrder('order-2'))
+            .then(() => {
+                expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
+            });
     });
 });
 
