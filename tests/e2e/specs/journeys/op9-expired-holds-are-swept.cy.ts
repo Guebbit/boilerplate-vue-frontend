@@ -52,6 +52,7 @@ describe('OP9 · Expired holds are swept', () => {
                 cy.checkoutWith('pickup');
                 cy.get('#order-target').should('exist');
                 cy.get('[data-test=payment-submit]').should('exist');
+                cy.get('[data-test=payment-deadline]').should('exist');
                 idFromLocation().then((orderId) => {
                     cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should(
                         (product) => {

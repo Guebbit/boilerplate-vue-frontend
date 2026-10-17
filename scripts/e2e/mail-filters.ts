@@ -7,7 +7,7 @@
  *
  * Pure, and outside `tests/support/e2e/` so the unit suite can pin the rules without a browser.
  */
-import type { MailedEmail } from './mail-message';
+import { mailMentions, type MailedEmail } from './mail-message';
 
 /**
  * Matches the email the backend rendered from one outbox template.
@@ -39,3 +39,18 @@ export const inLocale =
         if (email.locale !== undefined) return email.locale === tag;
         return liveSubject === undefined || email.subject.includes(liveSubject);
     };
+
+/**
+ * Matches the email about one order: its subject carries `subject` and it names the order number.
+ *
+ * Subject plus number holds on both profiles and survives a sender or template moving between
+ * modules, which a template key would not.
+ *
+ * @param subject - a fragment of the subject, in the language the mail was sent in
+ * @param orderNumber - the order number the mail must mention
+ */
+export const mailAbout =
+    (subject: string, orderNumber: string) =>
+    (email: MailedEmail): boolean =>
+        email.subject.toLowerCase().includes(subject.toLowerCase()) &&
+        mailMentions(email, orderNumber);

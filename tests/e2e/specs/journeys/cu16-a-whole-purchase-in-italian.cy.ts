@@ -120,7 +120,15 @@ describe('CU16 · A whole purchase in Italian', () => {
         cy.step('the shop’s mails arrive in Italian, and link to the Italian order page');
         cy.accountOf('user').then(({ email }) => {
             // Found BY the Italian subject: the mail only turns up if it was sent in Italian.
-            cy.emailTo(email, (mail) => mail.subject.includes('Ordine ricevuto'));
+            cy.emailTo(email, (mail) => mail.subject.includes('Ordine ricevuto')).then(
+                (received) => {
+                    const body = [...(received.lines ?? []), received.text ?? ''].join(' ');
+                    expect(
+                        body,
+                        'the total is written as Italian money, not a bare number'
+                    ).to.match(/\d,\d{2}\s*€/);
+                }
+            );
             cy.emailTo(email, (mail) => mail.subject.includes('Pagamento ricevuto')).then(
                 (paid) => {
                     expect(
