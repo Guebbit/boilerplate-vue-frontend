@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/http/step-up.ts
-sha256: 482b56395ab79da9a36bf801e4b328afe1509f0adf72372687dfdc766fd54b35
-generated_at: 2026-10-02T11:58:56.294649+00:00
+sha256: b2b47a28a8aa6798ff7f65602814ab86b88ff745b3da0cf312dc7222f6007b03
+generated_at: 2026-10-17T00:10:50.965820+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Response interceptor that handles the step-up (re-auth) flow. When the API returns a `REAUTH_REQUIRED` 401, it parks the failed request, shows a single `ReauthDialog` prompt, and replays the request once a fresh session is established. All other 401s are passed through to the standard refresh-and-retry path unchanged. It exists to intercept the step-up error *before* the generic refresh interceptor can "fix" the 401 with a token refresh that would simply produce the same error again.
+Response interceptor that handles the step-up authentication flow: when the server rejects a request with a `REAUTH_REQUIRED` 401, this file parks the request, surfaces a single reauth prompt, and replays the request once the visitor has re-proven their identity. All other 401s fall through to the standard refresh-and-retry path untouched.
 
 ## Key elements
 
-- **`requestFreshSession`** — `singleFlight`-wrapped call to `useReauthPromptStore().requestStepUp()`. Guarantees exactly one dialog regardless of how many concurrent requests hit `REAUTH_REQUIRED`. Resolves when a fresh session exists; rejects if the user dismisses the prompt.
-- **`onResponseRejectWithStepUp(error)`** (exported) — The interceptor function. Checks three conditions: status is 401, the API error code is `REAUTH_REQUIRED`, and the request hasn't already been stepped up (`_steppedUp` flag). If all pass, it awaits `requestFreshSession`, then replays the original request via `instance.request` with `_steppedUp: true`. On prompt dismissal it falls through to `onResponseReject`. Otherwise it delegates to `onResponseRejectWithRefresh`.
+- **`onResponseRejectWithStepUp`** (exported) — The sole public function. Inspects the error code; if it is `REAUTH_REQUIRED` and the request has not yet been stepped up, it triggers the prompt flow. Otherwise it delegates to `onResponseRejectWithRefresh`.
+- **`requestFreshSession`** — A `singleFlight`-wrapped call to `useReauthPromptStore().requestStepUp(demandedMethods)`. Guarantees one dialog for N concurrent parked requests.
+- **`demandedMethods`** (module-level) — Module-scoped array set to the first challenge's `details.methods` before the prompt opens. Parked requests that join the same prompt share the first one's demand.
+- **`methodsOf`** — Extracts and validates the `methods` array from a `REAUTH_REQUIRED` error `details` object; returns `[]` when the challenge asks for recency alone.
 
 ## Relationships
 
-- **`client.ts`** — imports `instance` (the shared Axios instance) to replay the parked request.
-- **`envelope.ts`** — imports `getFirstApiError` to extract the structured error code from the response body.
-- **`interceptors.ts`** — imports `onResponseReject` as the terminal fallback when the user closes the prompt without re-authenticating.
-- **`refresh.ts`** — imports `onResponseRejectWithRefresh`; every non-step-up 401 is handed off here. Ordering in the interceptor chain is critical: this file must run *before* `refresh.ts`'s handler sees the 401.
-- **`reauth-prompt.ts`** — imports `useReauthPromptStore` (Pinia store) to trigger the dialog and await session establishment.
-- **`single-flight.ts`** — imports `singleFlight` to deduplicate concurrent re-auth prompts into one.
-- **`types.ts`** — imports `AxiosRequestConfigWithRetry`, `AxiosResponseErrorBody`, `AxiosResponseErrorData` for type annotations.
+- **`client.ts`** — Imports `instance` to replay the original request via `instance.request(...)` after the prompt resolves.
+- **`envelope.ts`** — Uses `getFirstApiError` to pull `{ code, details }` from the response body and `isObjectRecord` to safely shape-check `details` inside `methodsOf`.
+- **`interceptors.ts`** — Calls `onResponseReject` as the rejection handler when the visitor closes the prompt without re-authenticating.
+- **`refresh.ts`** — Delegates every non-step-up 401 to `onResponseRejectWithRefresh`, preserving the existing token-refresh behaviour.
+- **`reauth-prompt.ts`** — Calls `useReauthPromptStore().requestStepUp(...)` to open the `ReauthDialog.vue` prompt and await its resolution.
+- **`single-flight.ts`** — Wraps `requestFreshSession` so concurrent `REAUTH_REQUIRED` 401s share one dialog rather than opening N.
+- **`types.ts`** — Imports `AxiosRequestConfigWithRetry`, `AxiosResponseErrorBody`, and `AxiosResponseErrorData` for typed error/config handling.
 
 ## Notes
 
-- **Interceptor ordering is load-bearing.** `REAUTH_REQUIRED` is still a 401; if the refresh interceptor runs first it will successfully refresh the token, replay the request, and get `REAUTH_REQUIRED` back with no further recourse. This interceptor must be registered to see the error code first.
-- **`_steppedUp` flag** prevents an infinite replay loop: the replayed request carries `_steppedUp: true`, so even if the server still rejects, the step-up branch is skipped and the error falls through to `onResponseReject`.
-- The file does **not** intercept any status other than 401, nor any error code other than `REAUTH_REQUIRED`. Everything else is opaque passthrough.
+- **Interceptor ordering is critical.** A `REAUTH_REQUIRED` 401 is still a 401; if `onResponseRejectWithRefresh` sees it first, the refresh succeeds (the refresh cookie is still valid), the replay gets `REAUTH_REQUIRED` again, and the flow is stuck. This interceptor must be registered so it evaluates the error code *before* the refresh branch runs.
+- **`_steppedUp` flag.** Set to `true` on the replayed config to prevent an infinite step-up loop if the server still returns `REAUTH_REQUIRED` after re-auth.
+- **`demandedMethods` is write-once per prompt cycle.** Only the first request that *starts* the prompt reads it; later parked requests that join the same single-flight call inherit the first request's method list.
+- **No interaction with `index.ts`** is visible in this file's imports; it is presumably re-exported there.

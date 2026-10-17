@@ -1,7 +1,7 @@
 ---
 source: src/modules/cart/components/AddToCartButton.vue
-sha256: a046951f2084cb1c1c1012906281a17624b7c8fb4b5027e784e3dd83a81f7a73
-generated_at: 2026-10-02T14:56:41.085511+00:00
+sha256: 46e43acba3c5c1979a5dcfaefd0da504585f447ac5579971a5e5585e70c52b10
+generated_at: 2026-10-17T00:33:26.939288+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The product-page "add to cart" button, rendered inside the products module's `product-actions` slot via this module's manifest. The products module owns the page and never imports cart code directly; this component is the cart module's only visible surface on that page. A failed request blocks the button in place with an inline alert rather than raising a global toast.
+Renders the product page's "Add to Cart" button. It is contributed to the `product-actions` slot via the cart module's manifest so the products module never imports cart code directly. Routes the add action differently based on session state: signed-in users hit the server (`POST /cart`), guests grow a local browser list. Failures are surfaced inline via `InlineErrorAlert` rather than a toast.
 
 ## Key elements
 
-- **`handleAddToCart`** — Clears any prior error, calls `cartStore.addCartItem(product.id, 1)`, shows a success toast on resolve, or reports the error via `useBlockingError` on reject. Always adds exactly one unit; never reads a local cart quantity.
-- **`outOfStock`** (computed) — `product.available === 0`. An absent or `null` `available` field is treated as *unconstrained*, so legacy rows don't render as sold out.
-- **`loading`** — Reactive in-flight flag from the cart store (via `storeToRefs`). Acts as the button's double-click guard.
-- **`isAuth`** — From `useSessionStore`; a guest (not signed in) gets a disabled button with no cart to write to.
-- **`error` / `reportError` / `clearError`** — Destructured from `useBlockingError`; drives the `InlineErrorAlert` shown beneath the button.
-- **`addMessage`** — From `@guebbit/vue-toolkit` notifications store; fires the one-time success toast.
+- **`product` prop** (`Product`) — the single unit being added.
+- **`mayShop`** (computed) — hides the entire button (not just disables it) for staff/admins who lack the `update Cart` permission; guests and shoppers see it.
+- **`shelf`** (computed, via `shelfStateOf(product)`) — resolves to `'in-stock' | 'preorder' | 'off-sale' | 'out-of-stock'`; drives both the disabled state and the visible label.
+- **`label`** (computed) — i18n string reflecting shelf state ("Preorder", "Out of stock", etc.).
+- **`handleAddToCart`** — entry point on click. Clears any prior inline error, then delegates to the guest or authenticated path.
+- **`addToGuestCart`** — calls `cartStore.addGuestItem(product.id, 1)`; reports an inline error if the guest list is full.
+- **`handleAddToCart` (auth path)** — calls `cartStore.addCartItem(product.id, 1)` (a `POST` that grows an existing line); success fires a toast, failure populates the inline error.
+- **`useBlockingError`** — provides `error`, `reportError`, `clearError` for the inline alert pattern.
+- **`loading`** (reactive from cart store) — doubles as a click guard while a request is in flight.
 
 ## Relationships
 
-- **`src/modules/cart/store.ts`** — The component calls `cartStore.addCartItem(product.id, 1)` to perform the API write and reads `cartStore.loading` (via `storeToRefs`) to disable the button while the request is in flight. This is the sole interaction with the store; the component never reads cart line-items or quantities locally.
+- **`src/modules/cart/store.ts`** — provides `useCartStore`; this component reads `loading` (reactive) and calls `addCartItem` / `addGuestItem`. All cart mutations flow through that store; this component never builds a request itself.
+- **`src/modules/cart/tests/add-to-cart-button.spec.ts`** — unit/integration test for this component; exercises the guest vs. auth paths, shelf-state disabling, and the inline-error path.
 
 ## Notes
 
-- **Slot-based composition:** The products module never imports this file. The cart module's manifest injects it into `product-actions`. If the button "disappears," check the manifest wiring, not the products page.
-- **`outOfStock` is strict `=== 0`:** Do not "simplify" to `!product.available`; that would treat `undefined` (rows predating the column) as out of stock.
-- **Error is inline, success is a toast:** Deliberate asymmetry. Errors block the single action in place; success is a transient acknowledgment. Don't swap them.
-- **`loading` is the double-click guard:** There is no local `submitting` ref. If you add a second async action to this button, share the store's `loading` flag or add a second one—don't remove the existing guard.
+- The button is **removed from the DOM** (`v-if="mayShop"`) for staff/admins, not merely disabled — they see no cart affordance at all.
+- Preorders are **not** disabled: `disabled` is true only for `'off-sale'` and `'out-of-stock'`.
+- `storeToRefs` is used (not destructuring) to keep `isAuth` and `loading` reactive; destructuring would break reactivity.
+- The quantity is always `1` — there is no read-then-increment logic here; the server (or guest list) handles line-item growth.
+- Success is a **toast** (`addMessage`); failure is **inline** (`InlineErrorAlert`). Do not add a toast for errors here.

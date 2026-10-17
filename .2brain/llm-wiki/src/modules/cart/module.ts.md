@@ -1,40 +1,34 @@
 ---
 source: src/modules/cart/module.ts
-sha256: 4980d2ef22b4ce115f387b8009b366c581e744500500d645b23610d27c5b80d1
-generated_at: 2026-10-02T14:58:49.719023+00:00
+sha256: 5dc9c7c851f655c81ef3ccbfb3c168d586c41dd87067756c4c96f66a4b2649a5
+generated_at: 2026-10-17T00:36:31.823343+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/cart/module.ts
 
 ## Purpose
-
-Module manifest for the cart feature. It registers the cart's routes, navigation entry (with a live count badge and currency total), response schemas, locale loaders, and the `product-actions` slot contribution with the app's `AppModule` registry so the shell can render navigation, load routes, and expose the "Add to Cart" button on the products page without the products module importing cart directly.
+The Cart module manifest. Declares the module's identity (`name`, `loadingKeys`, `icon`, `section`, `order`), wires its routes and locales into the app registry, and defines the navigation entry—including a live badge (count + formatted total) and the auth-driven seed/reset logic that makes the badge correct across sign-in, sign-out, and account-switch events. Also contributes the `AddToCartButton` slot to the products module's `product-actions` area.
 
 ## Key elements
-
-- **Default export (`satisfies AppModule`)** — the single object the app registry consumes.
-  - `name`, `loadingKeys` — identity and preload keys for the registry.
-  - `routes` — re-exported from `./routes`.
-  - `navigation[0]` — the "Cart" nav entry.
-    - `badge` — returns a reactive `badgeQuantity` ref; on first auth it calls `cartStore.fetchSummary()` (lightweight `GET /cart/summary`); on real session loss it calls `clearCheckoutDrafts()`.
-    - `detail` — a `computed` that formats `badgeMoney.total` via `formatCurrency`, tracking both the store and the active i18n locale.
-  - `responseSchemas` — lazy-imports `cartResponseSchemas` for the API schema registry.
-  - `locales` — async locale loaders (`en`, `it`) wired through the `dictionary` helper.
-  - `slots['product-actions']` — `defineAsyncComponent` loading `AddToCartButton.vue`, so the button stays out of the eager entry chunk.
+- **Default export** — an `AppModule` object (`satisfies AppModule`) that the kernel registry consumes to mount the cart.
+- **`routes`** — imported from `./routes` and passed through to the router.
+- **`navigation[0].badge`** — returns `storeToRefs(cartStore).badgeQuantity`; sets up two watchers: one that calls `cartStore.seedAfterSignIn()` whenever a shopper-qualified session appears (keyed on `session.can('update','Cart')` + viewer id, `flush:'post'`), and one that calls `clearCheckoutDrafts()` on a genuine sign-out (`wasAuth && !auth`).
+- **`navigation[0].detail`** — a `computed` that formats `badgeMoney` via `formatCurrency`, returning `undefined` when the cart is empty.
+- **`slots['product-actions']`** — `defineAsyncComponent(() => import('./components/AddToCartButton.vue'))`, keeping the button out of the eager entry chunk.
+- **`responseSchemas`** — lazy import of `./response-schemas`.
+- **`locales`** — en/it JSON loaders registered through `dictionary`.
 
 ## Relationships
-
-- **`./store.ts`** — `useCartStore` is called inside `badge` and `detail` to expose `badgeQuantity` and `badgeMoney` to the navigation chrome.
-- **`./routes.ts`** — imported wholesale and passed as the manifest's `routes` field.
-- **`./composables/use-checkout-draft.ts`** — `clearCheckoutDrafts` is invoked in the `isAuth` watcher when a session truly ends (previously-authed → unauthed) to discard in-progress checkout state.
-- **`@/infrastructure/session.ts`** — `useSessionStore` provides the reactive `isAuth` ref that drives the badge's auth-aware behaviour.
-- **`@/infrastructure/utils/formatters.ts`** — `formatCurrency` is used in `detail` to render the money string in the shell.
-- **`@/kernel/registry`** — `dictionary` (locale helper) and the `AppModule` type shape the export.
+- **`src/modules/cart/routes.ts`** — imported and assigned directly to the manifest's `routes` field.
+- **`src/modules/cart/store.ts`** — `useCartStore` is called inside both `badge()` and `detail()` to read `badgeQuantity` and `badgeMoney` reactively.
+- **`src/modules/cart/composables/use-checkout-draft.ts`** — `clearCheckoutDrafts` is invoked from the sign-out watcher to discard any in-progress checkout state.
+- **`src/modules/cart/tests/module-badge.spec.ts`** — exercises the badge count and detail formatting logic defined in this manifest.
+- **`src/modules/cart/tests/module-badge-account-switch.spec.ts`** — covers the account-switch watch (seed-after-reset, `flush:'post'` ordering) and the sign-out draft-clearing path.
 
 ## Notes
-
-- The `badge` watcher treats a reload (signed-out → signed-in) differently from a real logout: `clearCheckoutDrafts` only fires when `wasAuth && !auth`, preserving a draft across the brief unauth window of a page refresh.
-- `detail` is a `computed`, not a plain function, so it re-evaluates when either the store's total or the active locale changes.
-- `AddToCartButton` is wrapped in `defineAsyncComponent` deliberately to keep it out of the initial bundle; the products module owns the `product-actions` slot and never imports the cart module.
-- The file's long docblock uses Hexagonal-architecture vocabulary (`customer-supplier`, `conformist`, `published-language`) to document intent-level relationships with `products`, `delivery`, `payments`, `account`, `orders`, and `wishlist`.
+- The badge watches `session.can('update', 'Cart')` in addition to `isAuth` because role abilities arrive asynchronously after session restore; watching auth alone would miss the first shopper.
+- `flush: 'post'` on the seed watcher is deliberate: it guarantees the seed runs *after* the store's own per-person reset, so the new user's data isn't clobbered by the old user's.
+- The sign-out draft-clear guard (`wasAuth && !auth`) exists to skip the brief signed-out state during a page reload that restores a session.
+- Currency formatting lives in the manifest (`detail`), not the store—the store holds raw numbers; the shell renders text.
+- The file's JSDoc describes the intended dependency-direction vocabulary (`customer-supplier`, `conformist`, `published-language`) between cart and delivery/payments/account/products modules.

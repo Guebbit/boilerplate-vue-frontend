@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/response-schemas.ts
-sha256: 1eeb384bb1f16d37e56b828f7ee154e13f8069109e01dabe4e5d67ddf24003bb
-generated_at: 2026-10-02T12:16:13.839294+00:00
+sha256: 558cce952fbc8dd434dc15960d32060c1dbca1f23be5fc736ebd8b1e3a745853
+generated_at: 2026-10-17T00:18:07.178823+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,20 +9,21 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Declares the response-schema contract-validation rows for every REST endpoint attributed to the `account` or `addresses` backend module (the address-book screens have no dedicated frontend module). Registering these rows via the module manifest is what turns envelope validation on or off for the account domain as a whole.
+Declares the response-envelope schema rows for every REST endpoint the **account** and **addresses** domains call. It registers those rows so that enabling the account domain in the module manifest activates OpenAPI contract validation for those responses, and deleting the folder disables it. The `addresses` module has no frontend of its own; its address-book screens live in this account module.
 
 ## Key elements
 
-- **`accountResponseSchemas: ResponseSchemaRoute[]`** — The single export. Built by calling `routesForModules(schemas, ['account', 'addresses'])`, which selects from the shared `@api/schemas` registry all rows stamped with one of those two `x-module` values. Consumed downstream by `@/infrastructure/http/response-schema-map` to wire Zod (or equivalent) validation into the HTTP client.
+- **`accountResponseSchemas: ResponseSchemaRoute[]`** — The single export. Built by calling `routesForModules(schemas, ['account', 'addresses'])`, which filters the full OpenAPI-derived schema table (generated into `contracts/rest/routes.ts` from `openapi.yaml` `x-module` stamps) down to the two modules this file covers.
+- **`routesForModules`** (imported from `@/infrastructure/http/response-schema-map`) — The function that performs the module-filtering; lives in the shared infrastructure layer, not here.
+- **`@api/schemas`** — The generated schema definitions passed as the first argument to `routesForModules`.
 
 ## Relationships
 
-- **`@/infrastructure/http/response-schema-map`** — Supplies both the `routesForModules` helper and the `ResponseSchemaRoute` type used here. The map also defines `SESSION_AND_BOOT_SCHEMA_NAMES`, which explicitly *excludes* the four boot-path calls made by `infrastructure/session.ts` so they are not double-validated.
-- **`@api/schemas`** — The generated schema registry (originating from `openapi.yaml`). This file only selects a subset of it; it never defines schemas itself.
-- **`contracts/rest/routes.ts`** (generated) — The source of truth for which route belongs to which module; this file's docblock references it for the attribution rule.
+- Consumed by the module manifest (referenced in the docblock), which is the toggle that turns contract validation on/off for these endpoints.
+- Depends on `@/infrastructure/http/response-schema-map` for `routesForModules` and the `ResponseSchemaRoute` type.
+- The session/boot-path calls intentionally excluded from this file are tracked separately in `response-schema-map.ts` under `SESSION_AND_BOOT_SCHEMA_NAMES`.
 
 ## Notes
 
-- The `addresses` module has **no** corresponding frontend module folder; its screens live under `src/modules/account/`, which is why it is grouped here.
-- Boot-path calls in `infrastructure/session.ts` are intentionally **absent** from this list (see `SESSION_AND_BOOT_SCHEMA_NAMES`). Do not add them.
-- Deleting this file (or the `account` module folder) disables contract validation for the account domain via the manifest mechanism — there is no separate runtime toggle.
+- Session and boot-path schema rows are **not** included here; they live in `infrastructure/session.ts` and are explicitly excluded via `SESSION_AND_BOOT_SCHEMA_NAMES` in the map module. Don't add them to this array.
+- The `addresses` module has no standalone frontend module; its UI screens are co-located under account. Any new address-book endpoint will need its `x-module` stamp set to `addresses` in `openapi.yaml` to appear in this file automatically.

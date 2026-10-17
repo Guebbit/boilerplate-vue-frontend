@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/utils/country-codes.ts
-sha256: 27d2788153a3fe19743dac0fa2dcc6c6be8b6aa3c53e23926b4d01655d7a7b65
-generated_at: 2026-10-02T12:03:18.405724+00:00
+sha256: 05ab0f8167e7eb8bbe6e56bc6d64333d6895446cb17db29aa52372d5675966af
+generated_at: 2026-10-17T00:12:32.492491+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,18 +9,18 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A static, dependency-free list of all current ISO 3166-1 alpha-2 country codes. It exists as a plain constant so that consumers can enumerate valid codes (e.g., for form dropdowns, validation) without pulling in a runtime library.
+Provides the complete list of ISO 3166-1 alpha-2 country codes as a plain static constant. It exists so the codebase does not need a runtime dependency (e.g. `i18n-iso-countries`) for what is ultimately a fixed, well-known set of two-letter strings.
 
 ## Key elements
 
-- **`ISO_COUNTRY_CODES: readonly string[]`** — Alphabetical array of every current alpha-2 code (e.g. `'US'`, `'DE'`, `'JP'`). Typed `readonly` so callers cannot mutate the list.
+- **`ISO_COUNTRY_CODES: readonly string[]`** – Alphabetically ordered array of every current ISO 3166-1 alpha-2 code (e.g. `'AD'`, `'US'`, `'ZW'`). Exposed as a `readonly` tuple of `string`s; each value matches the `CountryCode` contract pattern `^[A-Z]{2}$`.
 
 ## Relationships
 
-No graph neighbors. This file has no imports and is consumed by whatever layer needs the full code list (e.g., a `countryLabel` lookup helper or a `CountryCode` contract type).
+No dependency-graph neighbors. This file is a leaf: it imports nothing and is a pure data export.
 
 ## Notes
 
-- **No display names stored here.** Each code's human-readable label is resolved at call time via a separate `countryLabel` utility; this file intentionally avoids duplicating names to prevent drift.
-- **Library deliberately not used.** `i18n-iso-countries` was evaluated and rejected because its last release falls outside the repo's 12-month maintenance rule (see `DECISIONS_0925_2_SHOP_SCOPE.md`, entry E12). The list is maintained inline instead.
-- **Shape contract.** Every entry satisfies the `^[A-Z]{2}$` pattern enforced by the `CountryCode` type in the contract layer.
+- Country *display names* are intentionally **not** stored here. The docstring points to a `countryLabel` lookup (lived elsewhere) that resolves a code to its human-readable name at runtime, keeping this file free of duplicated strings.
+- The array is typed `readonly string[]`, not `as const`, so callers get a plain string array without a literal-union type. Treat entries as untyped `string` values; any code that needs the `CountryCode` contract should validate or cast at its own boundary.
+- The list is static reference data. If ISO 3166-1 adds or retires codes, this array must be updated manually — there is no build-step or sync mechanism.

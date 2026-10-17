@@ -1,36 +1,34 @@
 ---
 source: src/modules/observability/views/RealtimePlayground.vue
-sha256: af7b578473aabf8f31a70eaf5f9818ed824555bd8b73cfba10aecb7d0be2c2d1
-generated_at: 2026-10-02T15:20:23.395846+00:00
+sha256: 45c8903e87094bc393bc22e8ce0bc916e4b71b285a2031c8a0cab1c2052c02b1
+generated_at: 2026-10-17T01:14:29.163363+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/observability/views/RealtimePlayground.vue
 
 ## Purpose
-Route view that renders the live SSE observability stream: connection status, a KPI summary of the latest event, and a scrollable feed where each entry can display either a formatted metric grid or the raw JSON payload. It exists as the human-facing "playground" page for inspecting realtime metrics without any external tooling.
+
+Route view that renders the live SSE observability stream: a connection-status chip with connect/disconnect controls, KPI tiles for the most recent event (uptime, heap, requests, SSE clients), and a scrollable feed of entries that can toggle between a formatted metric grid and raw JSON.
 
 ## Key elements
 
-- **`showRawEvents` (ref)** — toggles feed entries between the metric `<dl>` grid and a `<pre>` block showing `JSON.stringify(entry.payload, null, 2)`.
-- **`KIND_META`** — static lookup mapping each `RealtimeMetricsEntry['kind']` (`snapshot`, `update`, `heartbeat`) to a lucide icon, Vuetify chip color, and left-border accent class.
-- **`latestEntry` (computed)** — the most recent entry in the SSE buffer; drives the four `CardMaterialStat` KPI tiles (uptime, heap, requests/errors, SSE client count).
-- **`feedEntries` (computed)** — `observabilityEntries` reversed so the newest event appears first (avoids the reader scrolling down on every new event).
-- **`onUnmounted(disconnectObservability)`** — ensures the SSE connection is torn down when the user navigates away, preventing a lingering socket for the rest of the session.
-- **`useRealtimeObservability()`** — provides `status`, `entries`, `connect`, and `disconnect` for the SSE stream; the component is a pure consumer of that state.
+- **`useRealtimeObservability()`** destructured into `observabilityStatus`, `observabilityEntries`, `connectObservability`, `disconnectObservability` — the sole source of SSE state and lifecycle controls.
+- **`showRawEvents`** (`ref<boolean>`) — toggles each feed card between a `<dl>` metric grid and a `<pre>` with `JSON.stringify(entry.payload, null, 2)`.
+- **`KIND_META`** — maps each `RealtimeMetricsEntry['kind']` (`snapshot`, `update`, `heartbeat`) to a lucide icon, chip color, and left-border accent class.
+- **`latestEntry`** (computed) — last item in the entries array; drives the KPI tile row.
+- **`feedEntries`** (computed) — entries reversed so newest appears first in the scrollable feed.
+- **`onUnmounted(disconnectObservability)`** — guarantees the SSE connection is torn down when the view is navigated away.
+- **Template sections** — status chip (`role="status"`), control buttons (`data-test="realtime-connect"` / `realtime-disconnect`), KPI grid via `CardMaterialStat`, and a `role="log"` feed container with `tabindex="0"` for keyboard access.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. At runtime it depends on:
-
-- `useRealtimeObservability` composable (source of all SSE state and controls).
-- `CardMaterialStat` UI organism (renders each KPI tile).
-- `formatUptime`, `formatMegabytes`, `formatTime` formatters (display helpers).
-- `RealtimeMetricsEntry` type (shapes the feed payload).
+- **`../use-realtime-observability.ts`** — provides the composable whose `status`, `entries`, `connect`, and `disconnect` members are the only reactive state this view reads or acts on.
+- **`../types.ts`** — supplies the `RealtimeMetricsEntry` type used to type `KIND_META` and to shape all payload field accesses in the template.
 
 ## Notes
 
-- The feed container has `role="log"` and `tabindex="0"` so keyboard users can focus and scroll it; the live-region summary line (`role="status"`, `aria-live="polite`) is deliberately separate from the list to avoid re-announcing every card on each event.
-- `data-test` attributes (`realtime-status`, `realtime-connect`, `realtime-disconnect`, `realtime-raw-events`, `realtime-requests`, `realtime-feed-summary`) are the hooks for E2E tests — keep them stable.
-- The feed is capped at `max-h-[320px]` with `overflow-y-auto`; it does not virtualize, so very long sessions will accumulate DOM nodes.
-- All user-visible strings go through `t()` with keys under the `realtime-playground-page.*` namespace.
+- The feed is rendered **newest-first** via `.toReversed()`; there is no virtualization — the list is capped at `max-h-[320px]` with `overflow-y-auto`.
+- Accessibility: the live-region summary is a single `<p role="status" aria-live="polite">` line, deliberately kept **outside** the card list to avoid re-announcing every card on each event. The scroll container carries `role="log"` and `tabindex="0"`.
+- All user-facing strings go through `t()` (vue-i18n); the i18n namespace is `realtime-playground-page.*`.
+- `data-test` attributes (`realtime-status`, `realtime-connect`, `realtime-disconnect`, `realtime-raw-events`, `realtime-requests`, `realtime-feed-summary`) are the stable selectors for E2E tests.

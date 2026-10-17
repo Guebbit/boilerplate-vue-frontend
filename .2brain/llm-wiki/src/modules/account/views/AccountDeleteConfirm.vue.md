@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/views/AccountDeleteConfirm.vue
-sha256: 66f82f4328f1a16a0038ba43f9befce28b0b2fa265b8d119bf9635b65ae9cb90
-generated_at: 2026-10-02T12:35:12.986483+00:00
+sha256: baa16cb0032300d30ace7ee7a77f82c6db08cc6b3f11a2c77f85d0fd10ab8644
+generated_at: 2026-10-17T00:28:57.137837+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,24 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Public, unauthenticated confirmation page that completes an account deletion started by an emailed link. The one-time token carried in the URL query is the sole credential, so the route has no auth guard and the form works for a signed-out visitor.
+Public, unauthenticated confirmation page for permanent account deletion. The one-time token delivered via email link serves as the sole credential, so the route requires no auth guard and must work for a signed-out visitor.
 
 ## Key elements
 
-- **`AccountDeleteConfirmForm`** – single-field form state (`token?: string`), prefilled from `route.query.token`.
-- **Zod schema + `useStructureFormValidation`** – validates that the token is a non-empty string; on submit, invalid input is announced and the first bad field is focused via `VUIFY_INVALID_FIELD_SELECTOR`.
-- **`useClearQueryOnMount(route, router)`** – strips the `token` query param after mount so it does not persist in browser history, Umami, or Faro pageview events.
-- **`useBlockingError`** – captures API errors that name no specific field (e.g., a spent or unknown token) and surfaces them in an `InlineErrorAlert` next to the submit button rather than as a toast.
-- **`submitForm`** – orchestrates the flow: clears prior blocking error → validates → calls `confirmAccountDelete(token)` from the profile store → on success shows a toast and navigates to `Home`; on failure maps server errors to fields or falls back to the blocking error.
-- **Template** – warning `v-alert`, single `v-text-field` for the token, a red submit button (loading/disabled while in-flight), an `InlineErrorAlert`, and a "go back to Profile" link.
+- **`submitForm`** — Orchestrates the deletion flow: clears any prior blocking error, runs `confirmAccountDelete` through the toolkit's `handleSubmit`, toasts success and redirects to `Home`, or routes server errors to a field / the inline blocking alert.
+- **`useStructureFormValidation` (from `@guebbit/vue-toolkit`)** — Provides `form`, `formErrors`, `showFormErrors`, `isSubmitting`, `handleSubmit`, and `applyServerErrors`. The schema requires a non-empty `token`; `revalidateOn` is bound to `locale`.
+- **`useLinkTokenCleanup(route, router)`** — Strips the `#token=` fragment from the URL after mount so it stops leaking into pageview analytics (Umami, Faro) and browser history.
+- **`useBlockingError()`** — Local error surface for responses that name no specific field (e.g. a spent/unknown token); rendered as an `InlineErrorAlert` next to the submit button.
+- **`AccountDeleteConfirmForm`** — Local interface describing the single `token?` field.
+- **Template** — A `v-card` with a warning `v-alert`, a `v-text-field` for the token, a `v-btn` submit, an `InlineErrorAlert` for blocking errors, and a "go back" link to the Profile page.
 
 ## Relationships
 
-- **`src/modules/account/stores/profile.ts`** – calls `confirmAccountDelete(token)` to perform the irreversible deletion.
-- **`src/modules/account/views/TwoFactorChallenge.vue`** and **`src/infrastructure/utils/logger.ts`** – listed as graph neighbors but not directly imported or referenced in this file; no interaction is visible here.
+- **`src/modules/account/stores/profile.ts`** — Imported as `useProfileStore`; its `confirmAccountDelete(token)` action is the sole mutation this page triggers.
 
 ## Notes
 
-- The token is deliberately removed from the URL on mount (`useClearQueryOnMount`) to avoid leaking it into analytics and history.
-- The `router.push` result is explicitly swallowed (`.then(() => undefined)`) because `NavigationFailure | undefined` is incompatible with the `Promise<void>` contract of the submit handler; navigation failures are the router's own concern.
-- The page is intentionally **public** (no auth guard). Do not add an auth requirement to the route without also handling the token-as-credential flow.
+- The component declares its `name` in a separate `<script>` block because `<script setup>` cannot set one; this is needed for `<KeepAlive>` and devtools.
+- `router.push` resolves to `NavigationFailure | undefined`, which doesn't satisfy `Promise<void>`; the extra `.then(() => undefined)` swallows it intentionally. Navigation failures are the router's `onError` concern, not this form's.
+- The `token` field is prefilled from the route via `readLinkToken(route)`—it is not a user-typed secret in practice, but the UI still validates it client-side before the API call.
+- The page is deliberately **not** behind an auth guard; the token *is* the authentication.

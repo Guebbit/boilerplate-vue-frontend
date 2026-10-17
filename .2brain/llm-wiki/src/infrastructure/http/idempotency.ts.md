@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/http/idempotency.ts
-sha256: 7a0328f3fb861ac2a244371c301f2dce99cb18a1455e1248bfe9640cf725d53d
-generated_at: 2026-10-02T11:56:05.074546+00:00
+sha256: dd74aba963f83b0ba8dcca87f950a1fadec9fdbdf4878751dde4e72ad71ac801
+generated_at: 2026-10-17T00:09:27.363425+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Provides a Vue reactive helper for managing a single `Idempotency-Key` header across retries of the same user intent. It mints a UUID at creation, reuses it through retryable failures (transport errors, 5xx), and replaces it after any definitive answer (success or 4xx), so the backend's idempotency middleware can deduplicate exactly the attempts it should.
+Provides a Vue composable (`useIdempotencyKey`) that mints and tracks a single `Idempotency-Key` header value per user intent (e.g. one payment step, one form submission). The key survives retryable failures (transport errors, 5xx) so the server can deduplicate retries, and is replaced with a fresh UUID after any definitive response (success or 4xx), signaling that the next attempt is a genuinely new intent.
 
 ## Key elements
 
-- **`IDEMPOTENCY_KEY_HEADER`** — exported constant (`'Idempotency-Key'`); the exact header name the paired backend's `idempotency` middleware reads.
-- **`IdempotencyKeyKeeper`** — interface exposing two methods:
-  - `withKey(options?)` — returns a shallow-copied `AxiosRequestConfig` with the current key merged into `headers` (preserving any pre-existing headers, e.g. an antibot token).
-  - `settle(error?)` — settles the guarded attempt: keeps the current key when `error` is retryable; mints a fresh UUID on success or non-retryable failure.
-- **`useIdempotencyKey()`** — composable factory. Returns a keeper scoped to the caller. The key is minted eagerly (`crypto.randomUUID()`) so the very first call already carries one.
+- **`IDEMPOTENCY_KEY_HEADER`** — Exported constant (`'Idempotency-Key'`); the header name the paired backend's idempotency middleware reads.
+- **`IdempotencyKeyKeeper`** (interface) — The contract a keeper exposes:
+  - `withKey(options?)` — Merges the current key into an `AxiosRequestConfig`, preserving any pre-set headers (e.g. an antibot token).
+  - `settle(error?)` — Called after the guarded request resolves or rejects; keeps the key if the error is retryable, otherwise mints a new one.
+- **`useIdempotencyKey()`** (composable) — Creates a keeper backed by a Vue `ref<UUID>`. Mints a key immediately so the first attempt already carries one. Returns the two methods above. Uses `crypto.randomUUID()` for key generation.
+- **`isRetryableFailure`** (imported from `@/infrastructure/utils/errors.ts`) — Used inside `settle` to decide whether an error warrants keeping the key.
 
 ## Relationships
 
-- **`src/infrastructure/utils/errors.ts`** — imports `isRetryableFailure`, the predicate that decides whether a rejected value means "nothing conclusive happened server-side" (retry → keep key) vs. "definitive answer" (settle → mint new key).
-- The listed graph neighbor `src/infrastructure/utils/logger.ts` has no visible import or interaction in this file.
+- **`src/infrastructure/utils/logger.ts`** — Listed as a graph neighbor; no direct import or reference is visible in this file's source. The interaction is likely indirect (e.g. a shared parent module or a convention-level coupling).
+- **`src/infrastructure/utils/errors.ts`** — Imported for `isRetryableFailure`, which determines whether `settle` preserves or replaces the key.
+- **`src/infrastructure/http/antibot.ts`** (referenced in docs, not imported) — `withAntibotToken` sets headers in the same shape; callers are expected to merge their antibot config into the same `AxiosRequestConfig` that `withKey` produces.
+- **Cart store's `checkoutIdempotencyKey`** (referenced in docs) — A separate, independent copy of the same concept; this module is not a dependency of it.
 
 ## Notes
 
-- One keeper per **distinct user intent** (a signup, one payment step, one contact-form submission). Do not share a keeper across unrelated calls.
-- The header-merge shape intentionally mirrors `withAntibotToken` (`infrastructure/http/antibot.ts`); callers chain them so both headers land in the same config object.
-- The cart store carries its own copy (`checkoutIdempotencyKey`, B19) rather than importing this helper, to keep the `checkout` lane's files self-contained.
-- `settle` is a no-op guard: passing `undefined` (the success path) always triggers a fresh mint.
+- One keeper per distinct user intent. A component or store holds it for as long as retrying the *same* intent should reuse the *same* key. Creating a second keeper (e.g. in a separate reactive effect) gives an independent key.
+- `withKey` returns a shallow copy of the passed config; it does not mutate the caller's object. The nested `headers` object is also a fresh spread, so the caller's original `headers` is untouched.
+- The `settle` contract: pass `undefined` (or omit the argument) on success to force a fresh key; pass the rejected value on failure so `isRetryableFailure` can inspect it.
+- An eslint-disable comment documents that spreading an `AxiosHeaders` instance is intentional and mirrors what `orvalMutator` does elsewhere.

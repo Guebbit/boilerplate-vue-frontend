@@ -1,7 +1,7 @@
 ---
 source: src/app/components/AppNavMenu.vue
-sha256: 548cf6b0cd48873b23df0d01b706a1593f7e66dcb03ed717f6994017c6861c1d
-generated_at: 2026-10-02T11:44:24.170978+00:00
+sha256: 716889ee2ccc45fa1ca080f8c2834b5f542aab3f0154c8ff43dc0dfd86c66d11
+generated_at: 2026-10-17T00:04:48.631384+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A generic dropdown-menu shell that wraps `AppNavIconButton` as the activator and renders a list of `AppNavItem` entries as a WAI-ARIA `role="menu"`. It serves both the account menu and the admin menu, providing shared keyboard behavior (via Vuetify's `v-menu`) and an `#after` slot for non-navigation actions like logout.
+A generic dropdown-menu shell that wraps an `AppNavIconButton` activator and renders an array of `AppNavItem`s as a WAI-ARIA `role="menu"` list. It exists so the account menu and the admin menu share one keyboard/interaction contract (Vuetify `v-menu` arrow-key navigation, Escape-to-close, focus management) without duplicating that logic in two places.
 
 ## Key elements
 
-- **Props** (`items`, `label`, `icon`, `description`, `badge`, `avatar`, `avatarUrl`, `avatarThumbnailUrl`, `dataTest`) — configure the activator button and the menu's visible content. `avatar`/`avatarUrl`/`avatarThumbnailUrl` are account-menu-specific; `badge` is used by e.g. the cart.
-- **`menuOpen` (ref)** — two-way bound to `v-model` on `v-menu`; also read by `focusFirstItemOnOpen` to ignore stale `afterEnter` callbacks after a fast Escape-close.
-- **`listElement` (ref)** — points at the rendered `v-list`; used to query the first `[role="menuitem"]` for the focus fallback.
-- **`focusFirstItemOnOpen`** — fallback focus handler per the WAI-ARIA APG menu-button pattern. Fires on `after-enter`; if focus is not already inside the menu content, it calls `.focus()` on the first `menuitem`. Guards against both the menu being closed and focus already being inside the list (meaning Vuetify's built-in `focusChild()` already succeeded).
-- **`#after` slot** — rendered inside the `v-list` after the item loop; used for actions like a logout button that are not navigation links.
+- **Props** — `items`, `label`, `icon`, `description?`, `badge?`, `avatar?`, `avatarUrl?`, `avatarThumbnailUrl?`, `dataTest?`. The `avatar*` props are only meaningful for the account-menu variant; `dataTest` is forwarded to the activator for e2e selectors.
+- **`menuOpen` (ref)** — bound to `v-model` on `v-menu`; also read by the focus-fallback to ignore a late `afterEnter` that fires after a fast Escape close.
+- **`listElement` (ref)** — template ref on the inner `v-list`, used to query the first `menuitem` for focus.
+- **`focusFirstItemOnOpen()`** — WAI-ARIA APG menu-button fallback: if the menu is open but focus is not yet inside it (because Vuetify's own `focusChild()` landed while content was still `visibility: hidden`), it programmatically focuses the first `[role="menuitem"]`.
+- **`#after` slot** — renders arbitrary content at the bottom of the menu (e.g. a logout button) that is not a navigation entry.
+- **Group subheaders** — rendered via `v-list-subheader` with `aria-hidden="true"` when consecutive items share a `group` value; only the first item of a run gets a heading.
 
 ## Relationships
 
-- **`AppNavIconButton`** (imported) — rendered as the `v-menu` activator; receives all activator-facing props (`label`, `icon`, `description`, `badge`, `avatar*`, `data-test`) plus the Vuetify activator `props` binding.
-- **`AppNavItem`** (type import from `app-nav-item.ts`) — shapes the `items` prop array; each item contributes `name` (key), `title`, `to`, optional `icon`, and optional `badge`.
-- **`vue-i18n`** — `useI18n()` provides `t()` used to translate the badge label (`navigation.badge-items`) and item badges.
+- **`AppNavIconButton.vue`** (imported) — rendered inside the `v-menu` activator slot; receives all presentation props (icon, label, badge, avatar, `dataTest`) and the `menuProps` spread from Vuetify.
+- **`app-nav-item.ts`** (imported) — provides the `AppNavItem` type consumed by the `items` prop and the template loop.
+- **`vue-i18n`** (imported) — `useI18n()` supplies the `t` function used for badge label translations (`navigation.badge-items`).
 
 ## Notes
 
-- The `v-list-subheader` rendering `description` is marked `aria-hidden="true"` because a heading is not a valid child of `role="menu"`; the description is already part of the activator's accessible name.
-- `focusFirstItemOnOpen` exists because Vuetify's internal `focusChild()` call can land while the opening transition still has `visibility: hidden`, causing `.focus()` to silently no-op under load. It is deliberately a fallback, not the primary mechanism.
-- The component does not manage routing or state beyond open/closed; navigation is delegated to `v-list-item :to` and the `#after` slot's own elements.
+- The description heading and group subheaders inside the menu are `aria-hidden="true"` because a heading is not a permitted child of a `role="menu"` element per the ARIA spec; the information is already conveyed by the activator's accessible name and each item's own title.
+- `focusFirstItemOnOpen` guards on `content.contains(document.activeElement)` rather than checking the activator specifically, because by the time `afterEnter` fires, Vuetify's own `focusChild()` has usually already succeeded and the guard is a no-op.
+- The component is intentionally generic: it does not import or reference the account or admin menus directly. Callers pass their own `items` array and decide whether to set `avatar: true`.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/inventory/tests/store.spec.ts
-sha256: 8d6af921987fc1d7a611a6f13d9739e3ed77b9e3f09dd28f2acfb2bbabfe756b
-generated_at: 2026-10-02T15:10:57.163353+00:00
+sha256: fbec65fbda65633ddf40a1748adb6757bb6cb98c8c38ca25ae60be2cc2dc8b68
+generated_at: 2026-10-17T01:01:55.722568+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit test suite for the inventory Pinia store (`useInventoryStore`). It mocks the HTTP transport at the `orvalMutator` seam, feeds canned API envelopes back through the real response-parsing pipeline, and asserts the store's data-shaping, query-passing, reload-order, and idempotency-key behaviour for every action (`fetchMovements`, `fetchLevels`, `receive`, `adjust`, `sweep`).
+Unit spec for the inventory Pinia store that exercises every read and write action with a fully mocked HTTP transport. It pins down the store's contract: whole-list replacement on reads, the exact reload sequence after writes (ledger before board), idempotency-key lifecycle on stock writes, and pagination behaviour for preorder levels.
 
 ## Key elements
 
-- **`MOVEMENT` / `LEVEL`** — Fixture rows shaped exactly as the API contract expects (one movement, one stock level). Used to build canned responses and to assert store state.
-- **`responses`** — A `Record<string, unknown>` keyed by `"METHOD /path"` that acts as the mock transport's response table. Reset in `beforeEach`.
-- **`vi.mock('@/infrastructure/http', …)`** — Replaces `orvalMutator` with a function that looks up `responses` by the incoming `method + url` and pipes the raw fixture through `parseOrvalFixture`, so schema validation still runs.
-- **`requestedUrls()`** — Extracts the ordered list of URLs from `orvalMutator` mock calls; used to assert the write→reload sequence.
-- **`keyOfFirstCall()`** — Pulls the `Idempotency-Key` header from the first mock-call's config; used to verify key freshness/reuse.
-- **`beforeEach`** — Creates a fresh Pinia, clears all mocks, and seeds the default response table (movements, levels, receipts, adjustments).
-- **`describe('fetchMovements')`** — Four tests: whole-list replacement, `productId` query passthrough, `totalItems` taken from `meta` (not array length), and last-query replay on bare re-fetch.
-- **`describe('fetchLevels')`** — Single test: board is replaced with the API's answer.
-- **`describe('receive')`** — Three tests: returns the API-reported level, asserts reload order (receipts → movements → levels), validates the request body via `contractRequest`, and checks that an optional operator note lands on the body.
-- **`describe('the Idempotency-Key on a stock write')`** — Two tests (parameterised over `receive` and `adjust`): a fresh key is generated per successful write; a failed-then-retried write reuses the original key so the server can replay.
-- **`describe('sweep')`** — Asserts the expired count is surfaced and that both views are reloaded in the canonical order.
-- **`describe('adjust')`** — Asserts the signed `delta` is passed through in the body and that the same reload sequence as `receive` fires.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a function that looks up a canned response in the `responses` record keyed by `"METHOD /path"`, then parses it through `parseOrvalFixture` so schema validation still runs.
+- **`responses`** (module-level `let`, reset in `beforeEach`) — the fixture table: GET endpoints for movements, levels, preorders; PUT for `preorder-limit`; POST for receipts, adjustments, and reservations/sweep.
+- **`MOVEMENT` / `LEVEL`** — minimal fixture rows used across most tests.
+- **`requestedUrls()`** — extracts the URL from every recorded `orvalMutator` call; used to assert call order.
+- **`allowancePage(productId, pageNumber)`** — helper that builds a two-page preorder envelope for the pagination test.
+- **`keyOfFirstCall()`** — pulls the `Idempotency-Key` header off the first recorded call's options.
+- **Test suites** — `fetchMovements`, `fetchLevels`, `fetchPreorderLevels`, `setLimit`, `receive`, `sweep`, and a dedicated `Idempotency-Key on a stock write` suite (parameterised over receipt and adjustment).
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — The module under mock. The test replaces `orvalMutator` so no real HTTP occurs; every assertion about "what was sent" inspects the mock call arguments that would have been handed to this function.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope (once per file load) to register test doubles into the app's module registry before any store is instantiated.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Supplies the three helpers used throughout: `orvalEnvelope` (wrap a payload in the API's standard envelope), `parseOrvalFixture` (validate a raw fixture against the generated schema at mock-execution time), and `contractRequest` (validate a request body against the generated schema and return the normalised object for assertion).
+- **`src/modules/inventory/store.ts`** — the unit under test; `useInventoryStore` is called in every test to obtain a fresh Pinia-backed instance.
+- **`src/infrastructure/http/index.ts`** — mocked at module level via `vi.mock('@/infrastructure/http')`; the real `orvalMutator` is never exercised, but its export signature is preserved so the mock matches.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is invoked once at the top of the spec (outside any `beforeEach`) to register the module graph so `@/infrastructure/http` and `@api/schemas` resolve.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `orvalEnvelope` (builds the standard `{ data, meta }` shape), `parseOrvalFixture` (validates a raw response against the Orval schema before returning it), and `contractRequest` (validates a request body against a typed schema and returns the parsed object for assertion).
 
 ## Notes
 
-- The reload order is asserted, not assumed: writes must hit **movements before levels**. The file comment frames this as "the ledger explains the board"—a level row that arrives before the movement history reads as a number with no explanation.
-- `totalPages` in the `meta` fixture is intentionally included because the real API contract requires it; its presence was verified by `parseOrvalFixture` before the test could pass, making the fixture a living contract check.
-- The idempotency-retry test works by deleting the response entry (setting it to `undefined`) *and* calling `mockRejectedValueOnce`, then restoring the entry before the retry. Both mechanisms are needed to simulate a network failure that the store treats as retryable.
-- `wireModulesIntoCore()` runs at import time, not inside `beforeEach`, so it executes exactly once per test-file load.
+- The transport mock is **file-scoped**, not per-test. The preorder pagination test uses `mockImplementationOnce` twice to temporarily override it; the `mockClear`/`responses` reset in `beforeEach` restores the default table for subsequent tests.
+- Reload order after writes is asserted as a **hard contract**: `setLimit` → `PUT …preorder-limit` then `GET /inventory/levels`; `receive` / `adjust` → `POST …` then `GET /inventory/movements` then `GET /inventory/levels`. The comments call this out explicitly ("the ledger explains the board").
+- `fetchMovements` with no args re-sends the **previous** query params — a deliberate reload-after-write convention that the spec locks in with the `repeats the last query` test.
+- The `totalPages` field in every envelope `meta` block is required by the Orval contract; the comment notes it was absent from the fixture until `parseOrvalFixture` enforcement caught it.
+- The `sweep` suite adds its own `responses` entry inline (`POST /inventory/reservations/sweep`) because the `beforeEach` table does not include it by default.

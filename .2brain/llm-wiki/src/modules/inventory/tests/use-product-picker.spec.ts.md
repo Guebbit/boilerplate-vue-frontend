@@ -1,7 +1,7 @@
 ---
 source: src/modules/inventory/tests/use-product-picker.spec.ts
-sha256: 4386df9f041124d2a91aa23dfac9d94330543e794db563fa804c89a0c64683fd
-generated_at: 2026-10-02T15:11:19.565339+00:00
+sha256: 532385b376d8541c0fb0ff173747a61170528239b7f2c55223a9c6eaa07e9360
+generated_at: 2026-10-17T01:02:08.822072+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for the `useProductPicker` composable (and its `useProductPickerPin` helper), covering the shared search-as-you-type list and `pin()` behaviour that `StockMovementForm` and `MovementLedger` now use in place of their former per-form product caches (FE_PARITY_0924 B2). Only `orvalMutator` is mocked so the actual request body shape built by `searchProducts` is exercised.
+Unit tests for the `useProductPicker` / `useProductPickerPin` composables, covering the search-as-you-type list and the `pin()` mechanism that `StockMovementForm` and `MovementLedger` share. Only the HTTP transport (`orvalMutator`) is mocked; the real request builder and API schemas stay in the loop so a shape regression would surface here.
 
 ## Key elements
 
-- **`respondWith(items)`** — Test helper that makes the next `orvalMutator` call resolve with a single-page product list, wrapped in a parsed Orval fixture envelope.
-- **`lastRequest()`** — Extracts the most recent axios-config argument passed to the mocked `orvalMutator` for assertion.
-- **`WIDGET` / `GADGET`** — Two fixed `Product` fixtures (`p1`/`p2`) used throughout as stand-ins for search-page results and pinned items.
-- **`describe('useProductPicker')`** — Five tests: initial empty-query fetch (POST `/products/search`, `pageSize: 20`); debounce (3 keystrokes → 1 call after 300 ms); pin of an id already on the page (no extra fetch); pin of an off-page id (separate `id: ['p2'], pageSize: 1` lookup, prepended to options); dedup when a fresh search returns the pinned id.
-- **`describe('useProductPickerPin')`** — Verifies that passing a getter to `useProductPickerPin` triggers a pin on the initial value.
-- **`vi.mock('@/infrastructure/http', …)`** — Replaces the entire HTTP module with a single `orvalMutator` spy, keeping `@api` schema imports real.
+- **`lastRequest()`** – returns the most recent axios config (url, method, data) passed to `orvalMutator`; throws if it was never called.
+- **`respondWith(items)`** – sets the next `orvalMutator` implementation to resolve a schema-valid envelope wrapping the given `Product[]`.
+- **`WIDGET` / `GADGET`** – two fixed `Product` fixtures used throughout the suite to represent "current page" and "pinned" items.
+- **`describe('useProductPicker')`** – five cases:
+  - immediate search on mount (empty query, `pageSize: 20`).
+  - 300 ms debounce: three keystrokes produce exactly one request carrying the final text.
+  - `pin(id)` is a no-op when the id is already in the current result page.
+  - `pin(id)` issues a by-id fetch (`id: [id]`, `pageSize: 1`) and prepends the result.
+  - a subsequent search that naturally returns the pinned id causes the pin to be dropped (no duplicate).
+- **`describe('useProductPickerPin')`** – verifies the reactive wrapper pins the getter's value immediately and re-pins on every change.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — The module under mock. The test replaces `orvalMutator` (the single HTTP transport) with a `vi.fn()` so no real network call is made; all assertions on request shape go through the mocked function's call arguments.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Provides `contractRequest` (validates a request body against an API schema without throwing), `orvalEnvelope` (builds the standard response envelope), and `parseOrvalFixture` (deserialises the envelope into a typed response). The test imports these to assert request contracts and to shape mock responses.
+- **`src/modules/inventory/composables/use-product-picker.ts`** – the module under test; the spec imports `useProductPicker` and `useProductPickerPin` directly.
+- **`src/infrastructure/http/index.ts`** – the sole mock target (`orvalMutator`). All assertions about *what* is sent go through the real request builder; only the network boundary is faked.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – supplies `contractRequest` (validates a request body against the `@api/schemas` contract), `orvalEnvelope`, and `parseOrvalFixture` (wraps raw items in the expected HTTP envelope for the mock to return).
 
 ## Notes
 
-- The module doc comment explicitly states the intent: `@api` stays real; only the transport is faked. A regression in the *request shape* of `searchProducts` would surface here, not in a component test.
-- Debounce timing is pinned to 300 ms via `vi.advanceTimersByTimeAsync(299)` / `(1)` — if the composable's debounce constant changes, these thresholds must follow.
-- The `pin()` off-page test re-invokes `respondWith([GADGET])` to give the pin's own by-id lookup a different answer than the initial page; forgetting that swap makes the test pass trivially.
-- `contractRequest` is imported from the fixture helper, not from `@api` directly — it wraps the schema check so a mismatch *throws*, letting `toMatchObject` confirm the expected fields.
+- **Fake timers are mandatory.** `beforeEach` installs `vi.useFakeTimers()`; every `await` that touches the debounce must be paired with `vi.runAllTimersAsync()` or `vi.advanceTimersByTimeAsync()`. Forgetting this leaves promises unflushed.
+- **Schema-validated requests.** The spec does not hand-craft expected payloads; it runs the actual request body through `contractRequest(schemas.SearchProductsBody, …)` so a drift in the generated API contract fails the test rather than a hard-coded assertion.
+- **Pin deduplication is an invariant, not a feature flag.** The "drops the pin once a fresh search brings the same id back" test encodes the rule that `options` must never contain the same product id twice, regardless of how it got there.
+- **`useProductPickerPin` is thin.** It only re-invokes the existing `pin` function whenever the reactive getter changes; there is no separate fetch path or state to test beyond delegation.

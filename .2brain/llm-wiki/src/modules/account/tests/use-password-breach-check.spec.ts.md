@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/use-password-breach-check.spec.ts
-sha256: d884d63ed67c24a70aad747e8437e8453223724014d2a5229d5750249d8715ec
-generated_at: 2026-10-02T12:34:01.489635+00:00
+sha256: e6da894cbd57aa8c601625b51c5831ed95834f9ba2e45bb0cf04961070d80b2b
+generated_at: 2026-10-17T00:28:22.857769+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,34 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for the `usePasswordBreachCheck` composable. It verifies the debounce logic (one API call per keystroke burst), the reactive `breached` flag, and edge cases like scope disposal, empty input, network failure, and stale-response ordering. Fake timers are used because the 500 ms delay is the subject under test—a real wait would slow the suite and introduce flakiness.
+Vitest spec for the `usePasswordBreachCheck` composable. Verifies that rapid keystrokes produce a single debounced API call, that pending checks are cancelled on scope disposal or empty input, that the breach flag reflects the server verdict without alarming on failures, and that stale responses are discarded in favor of newer ones.
 
 ## Key elements
 
-- **`DELAY` (500)** – The debounce window passed to the composable in every test.
-- **`envelope(breached)`** – Helper that builds a resolved `PasswordCheckEnvelope` promise so tests don't repeat the success-envelope shape.
-- **`vi.mock('@api', …)`** – Module-level mock of `checkPasswordBreached`, reset in `beforeEach`.
-- **`describe('debouncing')`** – Three tests:
-  - A rapid `check('p')→check('pa')→check('pas')` burst produces exactly one API call with the final value.
-  - Disposing the owning `effectScope` cancels the pending timer and prevents the call.
-  - Calling `check('')` after `check('password1')` cancels the pending call and resets `breached` to `false`.
-- **`describe('the verdict')`** – Three tests:
-  - `breached` becomes `true` when the server reports a breach.
-  - A rejected promise (network error) leaves `breached` at `false` — advisory-only, no alarm.
-  - A stale (slower) breached response that resolves after a newer clean response is discarded; `breached` stays `false`. Uses `mockImplementationOnce` + manual `resolveFirst` to control resolution order.
+- **`DELAY`** (const, 500) — the debounce interval the tests advance via fake timers; mirrors the value passed to the composable under test.
+- **`envelope(breached)`** (helper) — returns a resolved `Promise<PasswordCheckEnvelope>` shaped like the real success response, parameterised by breach status.
+- **`describe('debouncing')`** — three tests: single request for a burst of keystrokes; cancellation when the owning `effectScope` is stopped; cancellation and flag-reset when the field is cleared to `''`.
+- **`describe('the verdict')`** — three tests: `breached` flag set on a positive server answer; flag stays `false` when the API rejects (advisory-only contract); stale (slow) response dropped when a newer request has already resolved.
+- **`vi.mock('@api', …)`** — module-level mock replacing `checkPasswordBreached` with a `vi.fn()`, so no real HTTP is ever issued.
+- **Fake-timer lifecycle** — `vi.useFakeTimers()` in `beforeEach`, `vi.useRealTimers()` in `afterEach`; every assertion after a debounce window uses `vi.advanceTimersByTimeAsync(DELAY)`.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. Direct imports visible in the source:
-
-- `usePasswordBreachCheck` (`@/modules/account/composables/use-password-breach-check.ts`) — the unit under test.
-- `checkPasswordBreached` (`@api`) — mocked at module level.
-- `PasswordCheckEnvelope` (`@types`) — type-only import for the envelope helper.
-- `effectScope` (`vue`) — used to test scope-disposal cancellation.
-- `flushPromises` (`@vue/test-utils`) — used in the stale-response test to drain microtasks.
+- **`src/modules/account/composables/use-password-breach-check.ts`** — the system under test; this file imports `usePasswordBreachCheck` and exercises every public contract (the `check` function, the `breached` ref, scope-aware cancellation, stale-response suppression).
+- **`@api` (mocked)** — the `checkPasswordBreached` function is replaced at module level; no real network call is made. The spec asserts call arguments (`{ password: … }`) and return/rejection behaviour.
+- **`@types`** — imports the `PasswordCheckEnvelope` type used to shape the mock envelope helper.
 
 ## Notes
 
-- Fake timers (`vi.useFakeTimers` / `vi.useRealTimers`) are toggled in `beforeEach`/`afterEach`; every test that advances time uses `vi.advanceTimersByTimeAsync` rather than `vi.advanceTimersByTime` so the mock's internal `setTimeout` callback runs in the same tick.
-- The stale-response test manually controls when the first (breached) promise resolves via a captured `resolveFirst` closure, then calls `flushPromises()` to let the composable's `.then` handler run—without that extra flush the assertion would be racy.
-- The file follows the same fake-timers pattern as `cart/tests/use-line-quantity.spec.ts` (noted in the module doc comment).
+- The module doc comment explicitly states the fake-timers rationale: the debounce delay *is* the behaviour under test, so real `setTimeout` waits would make the suite slow and flaky. The same pattern is referenced in `cart/tests/use-line-quantity.spec.ts`.
+- The "stale response" test manually controls promise resolution order (capturing `resolve` from the first mock implementation) to simulate a slow first response landing after a fast second one. This is the only test that uses `flushPromises` from `@vue/test-utils`; all others rely solely on the fake-timer advance.
+- `effectScope` (from `vue`) is used in one test to verify that stopping the scope cancels a pending debounced call — this exercises the composable's internal `onScopeDispose`-style cleanup rather than any public "cancel" method.

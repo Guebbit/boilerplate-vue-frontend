@@ -1,31 +1,26 @@
 ---
 source: src/modules/account/components/TwoFactorBackupCodes.vue
-sha256: 67674732d0f5833078d8d2d3c18a792e113ae7e5adf122e0a66fd75ab7403e9f
-generated_at: 2026-10-02T12:13:03.900774+00:00
+sha256: 36eaa532a1ff10dc8b69b2733ebdd898f0ef8d247ee921917405075a0032dc55
+generated_at: 2026-10-17T00:17:03.624316+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/components/TwoFactorBackupCodes.vue
 
 ## Purpose
-
-Renders the one-time backup-codes screen shown during two-factor enrolment. It displays the `codes` prop in the clear, forces the visitor to acknowledge saving them via a checkbox, and emits `done` only after that confirmation. By design there is no "skip" or "close" path — the codes are never retrievable again.
+A one-time, blocking confirmation screen that displays a set of 2FA backup codes to the user. It is rendered only at the moment an account first arms a second factor (the store's `confirmed.backupCodes` is populated exactly once), and the user must explicitly acknowledge having saved the codes before proceeding. Because the codes are never retrievable again, this component acts as a hard gate in the enrollment flow.
 
 ## Key elements
-
-- **`codes: string[]` (prop)** — The backup codes to display. Populated once at enrolment by the parent and never re-fetched.
-- **`confirmedSaved` (ref)** — Local toggle bound to the "I have saved these codes" checkbox. Gates the Done button.
-- **`watch(() => codes, …)`** — Resets `confirmedSaved` to `false` whenever a new `codes` array arrives, preventing a stale tick from auto-confirming a fresh set.
-- **`emit('done')`** — Single emitted event, fired by the Done button once the checkbox is ticked.
-- **`t` (from `useI18n`)** — All visible copy is i18n-keyed under the `two-factor.backup-codes-*` namespace.
+- **`codes: string[]` (prop)** — The backup codes to render, shown in the clear. Passed down from the parent; this component never fetches them itself.
+- **`done` (emit)** — Fired once the user checks the "I have saved these codes" checkbox and clicks the primary button.
+- **`confirmedSaved` (ref)** — Gates the `Done` button (`:disabled`). Reset to `false` by a `watch` on `codes`, so a stale tick from a previous enrollment cannot bypass the acknowledgement.
+- **Dual `<script>` blocks** — The non-setup block exists solely to assign `name: 'TwoFactorBackupCodes'` for `<KeepAlive>` / devtools, since `<script setup>` cannot set a component name.
+- **`data-test` attributes** — `two-factor-backup-codes`, `backup-codes-list`, `backup-codes-confirm-saved`, `backup-codes-continue` — stable hooks for e2e tests.
 
 ## Relationships
-
-No graph neighbours are recorded for this file. It is a leaf presentational component: it receives `codes` and emits `done`; the parent component (not listed) owns the store interaction and navigation.
+- **`ProfileTwoFactor.vue`** — Parent/owner. Renders this component, supplies the `codes` prop (from `useTwoFactorStore().confirmed.backupCodes`), and listens for the `done` event to advance the enrollment flow and clear the one-time code from state.
 
 ## Notes
-
-- Two `<script>` blocks are used: the plain `<script lang="ts">` sets the component `name` for DevTools/debugging, while all logic lives in `<script setup lang="ts">`.
-- The component is intentionally **blocking** — there is no close button, no "I'll save them later" path, and the Done button stays disabled until `confirmedSaved` is true. This is a product requirement, not an oversight.
-- All interactive elements carry `data-test` attributes (`two-factor-backup-codes`, `backup-codes-list`, `backup-codes-confirm-saved`, `backup-codes-continue`) for E2E test selectors.
-- The codes list uses a CSS grid (`grid-cols-2`) with a monospace font for readability; codes are rendered in the clear with no masking.
+- The component is intentionally stateless beyond the `confirmedSaved` ref; all data is injected via props and all navigation is delegated via the `done` emit. It has no route or store coupling of its own.
+- The `watch` on `codes` is a defensive reset: if a parent were to re-mount this component with a new code list, the user would be forced to re-acknowledge rather than inheriting a stale tick.
+- Translation keys follow the `two-factor.backup-codes-*` namespace; adding a new screen string requires a matching i18n entry.

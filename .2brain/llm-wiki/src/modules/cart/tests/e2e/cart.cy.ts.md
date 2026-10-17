@@ -1,7 +1,7 @@
 ---
 source: src/modules/cart/tests/e2e/cart.cy.ts
-sha256: d8f2083b91ddc2ed85ad84836bddd9b9a54e07515d782a8b77098372b0c390bb
-generated_at: 2026-10-02T15:01:47.019218+00:00
+sha256: bf4fcd27cfd1f541af4f73c988e54a292eda3527e7aa2120f99d141df8c22ca5
+generated_at: 2026-10-17T00:39:38.181933+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Cypress end-to-end test suite for the cart page, covering the full user flow: viewing an empty cart, incrementing/decrementing quantities, removing individual items, clearing the cart (with confirm and decline paths), and completing a checkout that redirects to the new order.
+Cypress end-to-end suite for the cart page. It verifies the full user journey against a running app: empty-cart rendering, item display, quantity stepping, item removal, cart clearing (both confirm and cancel paths), and checkout with redirect to the order page.
 
 ## Key elements
 
-- **`readFirstItemQuantity`** — Module-level helper. Locates the first `[data-test=cart-item]`, extracts the `Quantity: N` label via regex, asserts N is a positive integer, and returns the parsed number. Used by the increase/decrease tests to assert relative quantity changes.
-- **`describe('Cart')` > `beforeEach`** — Visits `/en` and calls `cy.restore()` to reset to seeded state before every test.
-- **`describe('Empty cart')`** — Sub-suite that (in its own `beforeEach`) logs in as admin, navigates to `/en/cart`, conditionally clears any residual items, and asserts the "Your cart is empty" state. Tests: page title present, no items/summary rendered, "Browse products" link visible.
-- **`describe('Cart with items')`** — Sub-suite whose `beforeEach` logs in, visits the cart, and waits (10 s timeout) for at least one `[data-test=cart-item]`. Tests:
-  - Items and summary (Items/Total labels) are displayed.
-  - Minus button decreases quantity (or is disabled at 1).
-  - Plus button increases quantity.
-  - "Remove" button removes the last item.
-  - "Clear cart" + confirm empties the cart.
-  - "Clear cart" + cancel preserves items.
-  - Checkout with pickup shipping method redirects to `/orders/:id`.
+- **`readFirstItemQuantity()`** — Helper that grabs the first `[data-test=cart-item]`, extracts the numeric quantity from its "Quantity: N" label via regex, asserts it is a positive integer, and returns it. Used by the increase/decrease tests to assert the exact expected new value.
+- **`describe('Cart')`** — Top-level suite. Its `beforeEach` visits `/en` and calls `cy.restore()`.
+- **`describe('Empty cart')`** — Logs in as `user`, clears any residual cart, then asserts the page title, "Your cart is empty" message, absence of items/summary, and presence of a "Browse products" link.
+- **`describe('Cart with items')`** — Seeds two cart lines via `cy.apiAs` (`product.inStock` × 2, `product.rich` × 1), then tests: item visibility, summary totals, decrease/increase quantity, remove-last-item, clear-cart (confirm), clear-cart (cancel), and checkout via the `pickup` shipping method.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It is a leaf test file with no outbound imports (Cypress globals are provided by the runtime) and no inbound imports from other source modules.
+No graph neighbors are registered for this file. It depends on the running application under test (the cart page at `/en/cart`, the `/cart` API endpoint, and the order page) and on custom Cypress commands (`cy.subjectId`, `cy.apiAs`, `cy.loginAs`, `cy.restore`) defined elsewhere in the project's support files.
 
 ## Notes
 
-- **Seeded data dependency.** The "Cart with items" suite relies on `cy.restore()` seeding a cart that already contains at least one item; the 10 s timeout in `beforeEach` masks flakiness if seeding is slow. The "Empty cart" suite defensively clears the cart in its setup to guard against residual state.
-- **Custom commands.** `cy.loginAs('admin')` and `cy.restore()` are project-level Cypress commands defined elsewhere in the repo, not standard API calls.
-- **Checkout test assumption.** The comment notes that pickup is chosen because it requires no shipping address, while the seeded cart holds physical goods that must still be fulfilled. If the seeded cart changes to virtual-only items, the test rationale shifts.
-- **Selectors.** All queries use `data-test` attributes; the suite is tightly coupled to those hook names existing in the cart component markup.
+- Selectors are exclusively `data-test` attributes plus a few structural selectors (`#cart-page`, `#order-target`, `h1`). Avoid relying on text-only selectors when extending.
+- The "Cart with items" `beforeEach` seeds state via the API (`cy.apiAs … POST /cart`) rather than clicking through the UI, so the suite doesn't depend on a pre-existing basket.
+- The checkout test deliberately selects the `pickup` shipping method to avoid the address-requirement flow; it asserts the redirect URL matches `/orders/{id}` and that `#order-target` renders.
+- `readFirstItemQuantity` is module-scoped (not exported); if a future test needs the quantity of a *specific* line, generalize it before reusing.

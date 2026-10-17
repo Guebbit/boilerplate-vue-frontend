@@ -1,7 +1,7 @@
 ---
 source: contracts/rest/error-codes.ts
-sha256: e5ce5332a80a96fbb5663f50c5ba94931f5ecb41d1d9f8b92e66a50b61711a88
-generated_at: 2026-10-02T14:29:54.953239+00:00
+sha256: 258cf687dac9b710af56ea8fdfc12da4f831921a819514d9e9b75f4e5196cd7c
+generated_at: 2026-10-16T23:54:31.039353+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,21 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Generated registry of every error code the REST contract declares. It exists so that both server and client can reference a single typed constant for `errors[].code` values without hard-coding strings. Generated from `openapi.yaml` via `npm run gen:api` — do not edit by hand.
+Auto-generated enumeration of every error code declared in the OpenAPI contract. It exists as the single typed reference for all REST error codes so that consumers (client SDKs, error-handling middleware, test suites) can match against a known set rather than raw strings. Adding a new code is additive and never a breaking change.
 
 ## Key elements
 
-- **`ERROR_CODES`** — A `const` object mapping named keys to their string values (e.g. `ANTIBOT_NO_CHALLENGE`, `CART_CHANGED`, `RATE_LIMITED`, …). Each entry's JSDoc states the HTTP status it pairs with and a one-line description. Covers auth, cart/checkout, orders, payments, returns, inventory, rate-limiting, multipart upload limits, webhooks, and generic fallbacks.
-- **`ErrorCode`** — Union type derived from the values of `ERROR_CODES`. The JSDoc explicitly notes it is *not* exhaustive at the type level because the wire contract uses a bare `code: string`.
+- **`ERROR_CODES`** — `export const`; a flat object whose keys and string values are identical (e.g. `CART_EMPTY: 'CART_EMPTY'`). Each property carries a JSDoc comment stating the HTTP status, the trigger condition, and—where applicable—what the `errors[].details` payload contains. Codes span: cart/checkout, order lifecycle, delivery/fulfillment, payment, email/verification, idempotency, multipart upload limits, inventory, inventory, and generic handler defaults (`BAD_REQUEST`, `NOT_FOUND`, `CONFLICT`, `INTERNAL_ERROR`, `INVALID_REQUEST`).
 
 ## Relationships
 
-No graph neighbors. This file has no imports and, per the dependency graph, nothing imports it (consumers likely reference the type/constant via the generated client or shared types pulled from the same spec).
+No graph neighbors.
 
 ## Notes
 
-- **Generated — do not edit.** Regenerate with `npm run gen:api`.
-- **Open-ended by design (CT-D5):** adding a new code is additive and never a breaking change; the type union grows accordingly.
-- **Not a closed enum on the wire:** the contract's `errors[].code` field is typed as `string`, so consumers must handle unknown codes gracefully even though the `ErrorCode` union lists the known ones.
-- **Status-code pairing is documentation, not enforcement:** the HTTP status is recorded in the JSDoc comment only; the object itself carries no status numbers.
-- Some codes are domain-specific fallbacks (e.g. `REQUEST_ERROR`, `INTERNAL_ERROR`) intended to catch cases where no more specific code applies.
+- **Generated file** — do not edit manually. Regenerate with `npm run gen:api` (source: `openapi.yaml`).
+- The values are **identical strings** to their keys; the object exists for autocomplete and type-safety, not for mapping.
+- Several codes encode deployment-specific limits (`NODE_ADDRESS_BOOK_MAX`, `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT`, `NODE_ORDER_EXPORT_MAX_ROWS`, `NODE_ADMIN_ORDER_MAX_LINES`, `NODE_ADMIN_ORDER_MAX_LINE_QUANTITY`). The numeric cap is never embedded in the code string itself; it is named only in the JSDoc.
+- `INVALID_REQUEST` is a catch-all for unhandled 4xx that bubble to the global error handler; routes that catch the failure themselves should answer with the status-derived code instead.
+- `FORBIDDEN` can be overridden per-key by a key's own `deniedCode` for a more specific response.
+- 429-family codes (`EMAIL_CHANGE_TOO_SOON`, `EMAIL_VERIFY_RESEND_TOO_SOON`) carry a `details.retryAfter` field.
+- Stock-related codes (`CART_INSUFFICIENT_STOCK`, `ORDER_INSUFFICIENT_STOCK`) include `availability` / `available` in details **only** for callers holding the `read:StockLevel` permission.

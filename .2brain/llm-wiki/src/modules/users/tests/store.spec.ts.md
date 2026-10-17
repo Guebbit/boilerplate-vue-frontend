@@ -1,38 +1,33 @@
 ---
 source: src/modules/users/tests/store.spec.ts
-sha256: 0e3d47adca5b5c180e194d7fc3cdcf716930f72d0f9f79642fc93605aeffcefc
-generated_at: 2026-10-02T15:48:28.555640+00:00
+sha256: ed9f2dd8c099ea813d5150f637e7b79708ae38d48edbfe62c191cf65995e547f
+generated_at: 2026-10-17T01:47:52.803482+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/users/tests/store.spec.ts
 
 ## Purpose
-
-Unit tests for the users Pinia store. The HTTP transport (`orvalMutator`) is mocked so that tests can inspect the raw axios configs the store's actions produce (URL, method, body encoding). The file mirrors the products store spec in structure, with one additional concern: verifying that `updateUser` never persists a submitted password or an uploaded `Blob` into client-side store state.
+Unit tests for the `useUsersStore` Pinia store. Mocks `orvalMutator` (the HTTP transport) so that multipart encoding, JSON serialisation, and URL construction — all of which live in the generated `@api` client — are exercised for real, while the network boundary is stubbed. Asserts raw request shapes (URL, method, body encoding) and store-state invariants such as "a password never lands in client-side state."
 
 ## Key elements
-
-- **`lastRequest()`** — returns the axios config object from the most recent `orvalMutator` call; throws if the mock was never invoked.
-- **`lastFormData()`** — same lookup as above, additionally asserts the body is a `FormData` instance before returning it.
-- **`respondWithItems(items)`** — overrides the transport to resolve with a paginated `orvalEnvelope` (including `meta.totalPages`, which `store.ts` reads for `pageTotal`).
-- **`lastBody()`** — convenience: extracts the JSON `data` field from `lastRequest()`.
-- **`getRequestCount()`** — counts how many GET calls the mock has received; used to prove the store bypasses its own `staleTime` cache.
-- **`describe('createUser')`** — asserts JSON vs. multipart encoding, Blob (not File) attachment, and that unset optional fields are omitted rather than serialized as `"undefined"`.
-- **`describe('updateUser')`** — asserts PATCH (not PUT) semantics, multipart upload path, the two-request "clear + upload" sequence when a `null` field is saved alongside an avatar, and that password / Blob / in-flight `imageUrl` never contaminate store state.
+- **`vi.mock('@/infrastructure/http', …)`** – replaces `orvalMutator` with a factory that resolves a fixture envelope per method/URL; `DELETE` returns an empty envelope, all other writes return a single-record envelope.
+- **`lastRequest()` / `lastFormData()` / `lastBody()`** – helpers that pull the most recent `orvalMutator` call arguments so tests can inspect URL, method, and body without re-implementing call-queue logic.
+- **`respondWithItems(items)`** – overrides the mock to return a paginated envelope (`items` + `meta` matching `PaginationMeta`).
+- **`describe('createUser')`** – covers JSON POST vs multipart POST, Blob (not just File) round-tripping, and omission of `undefined` optional fields.
+- **`describe('updateUser')`** – covers PATCH semantics (not PUT), multipart with avatar, the two-request split when a `null` clear shares a save with an upload, absence of the Blob in store state, cached-`imageUrl` preservation during an in-flight clear, and `onUploadProgress` forwarding.
+- **`contractRequest(schemas.X, body)`** – validates a request body against the generated OpenAPI schema before comparing fields.
 
 ## Relationships
-
-- **`src/infrastructure/http/index.ts`** — its `orvalMutator` export is the sole transport under test, replaced entirely via `vi.mock`.
-- **`tests/support/stub.ts`** — provides `asStub`, used by `lastBody()` to cast the untyped request config.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level to register the DI container before any test executes.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `parseOrvalFixture`, `orvalEnvelope`, and `contractRequest`, which together build well-typed transport responses and validate request bodies against the `@api/schemas` contracts.
+- **`src/modules/users/store.ts`** – the SUT; `useUsersStore` is imported and its actions (`createUser`, `updateUser`, `addUser`) are the targets under test.
+- **`src/infrastructure/http/index.ts`** – exports `orvalMutator`; the test mocks this module so no real HTTP occurs.
+- **`tests/support/stub.ts`** – provides `asStub<T>()` for safely casting the mock call arguments.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called once at module scope to register the users module in the core DI container before any store instance is created.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – supplies `parseOrvalFixture`, `orvalEnvelope`, and `contractRequest`, which the mock factory and assertions use to build/validate fixture payloads.
 
 ## Notes
-
-- Tests **return** their promise chains (`.then(...)`) instead of `await`-ing; Vitest treats a rejected returned promise as a failure, so assertions are equally binding. See `docs/tools/unit-testing.md`.
-- `vi.clearAllMocks()` in `beforeEach` clears *recorded calls* but **not** implementations set via `mockReturnValue`. A persistent override therefore leaks into subsequent tests; one-shot overrides must use `mockImplementationOnce`.
-- `@api/schemas` is **not** mocked — multipart encoding lives in the generated client, so the transport layer is the correct seam.
-- The default mock differentiates `DELETE` (empty envelope) from other write methods (record-shaped envelope) by inspecting `config.method`.
-- The "clear + avatar" test expects **two** sequential `orvalMutator` calls: a multipart `FormData` upload first, then a separate JSON `PATCH` carrying only the `null` field (a multipart part cannot represent `null`).
-- `respondWithItems` deliberately includes `meta: { totalPages: 1, … }` because the store reads `meta.totalPages`; an envelope without it would not mirror a real server response.
+- **Return-chain style**: every `it` returns its promise chain instead of `await`-ing. Vitest treats a returned rejecting promise as a test failure, so this is equivalent to `await` but keeps the test body a single expression. See `docs/tools/unit-testing.md`.
+- **`@api` is deliberately *not* mocked** — the multipart encoder lives inside the generated client, so mocking the transport (`orvalMutator`) still exercises encoding. Mocking `@api` would bypass the very behaviour under test.
+- **`mockImplementationOnce` for the in-flight test**: the persistent `mockImplementation` set in `vi.mock` is cleared by `vi.clearAllMocks()` (which wipes calls but *not* a return-value override), so the "clear is in flight" test must use `mockImplementationOnce` to avoid leaking a settled promise into later tests.
+- **Two-request clear+upload**: when `updateUser` receives both a `null` field and an `imageUpload`, the store issues a multipart PATCH (upload) followed by a JSON PATCH (null-clear), because `FormData` cannot represent `null`. Tests assert exactly two `orvalMutator` calls in order.
+- **`schemas` import from `@api/schemas`** is used read-only (for `contractRequest`); it is not mocked and is safe because the generated types are pure type/data declarations.

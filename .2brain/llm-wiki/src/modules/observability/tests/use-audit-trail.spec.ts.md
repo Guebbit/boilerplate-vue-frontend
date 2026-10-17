@@ -1,31 +1,32 @@
 ---
 source: src/modules/observability/tests/use-audit-trail.spec.ts
-sha256: 84f8852bdc4e536fdbb67a94eaf58491cd7d6a5cf96102946266eb1a09dfaebb
-generated_at: 2026-10-02T15:19:51.522280+00:00
+sha256: d9eb6164239deb7a6e92145e52f3714e3de4d61a87726c30c69287e62a4b36c7
+generated_at: 2026-10-17T01:13:24.779322+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/observability/tests/use-audit-trail.spec.ts
 
 ## Purpose
-Unit tests for the `useAuditTrail` composable, verifying that each `endpoint` value routes to the correct API contract, that the `target` filter is merged into shop requests but excluded from platform requests, that the response envelope is split into `entries`/`total`/`pages`, and that a failed call degrades to an `error` string rather than rejecting.
+
+Vitest unit tests for the `useAuditTrail` composable (the fetcher behind `AdminAuditTab.vue`). They pin the contract-level behavior of both the **platform** and **shop** audit endpoints: which API function is called, how filters are passed (especially the `target` asymmetry), how the response envelope is split into reactive `entries`/`total`/`pages`, and how a failed call degrades to an `error` state instead of throwing.
 
 ## Key elements
-- **`meta(totalItems, …)`** — helper that builds a `PaginationMeta` object with sensible defaults.
-- **`EVENT_ITEM`** — a fully-typed `AuditEventItem` fixture for platform-trail responses.
-- **`ENTRY_ITEM`** — a fully-typed `AuditEntryItem` fixture for shop-trail responses.
-- **`apiFailure(status, message)`** — builds a failure envelope matching the API error shape.
-- **`vi.mock('@api', …)`** — replaces `getObservabilityAuditLogs` and `listAuditEntries` with resolvers that return schema-validated responses via `contractResponse`.
-- **`describe('useAuditTrail — platform endpoint')`** — asserts correct endpoint routing, filter passthrough, datetime-local → ISO conversion, and error degradation.
-- **`describe('useAuditTrail — shop endpoint')`** — asserts correct endpoint routing, `target` merge behavior (present when fixed, `undefined` when absent), and that `getObservabilityAuditLogs` is never called.
+
+- **`meta(totalItems, …)`** – local helper that builds a `PaginationMeta` object for fixtures.
+- **`EVENT_ITEM` / `ENTRY_ITEM`** – representative `AuditEntryItem` rows for the platform and shop trails respectively.
+- **`apiFailure(status, message)`** – builds the `{ success: false, … }` envelope the API returns on error, used with `mockRejectedValueOnce`.
+- **`vi.mock('@api', …)`** – module-level mock that resolves `listObservabilityAuditEntries` and `listAuditEntries` via `contractResponse` + schema shapes.
+- **`describe('useAuditTrail — platform endpoint')`** – five tests: envelope split, absence of `target` in the call, all-filter pass-through, `datetime-local` → ISO conversion, and failure-to-error fallback.
+- **`describe('useAuditTrail — shop endpoint')`** – three tests: envelope split, `target` merged into every request, and `target: undefined` when no record is fixed.
 
 ## Relationships
-- **SUT:** imports `useAuditTrail` from `@/modules/observability/composables/use-audit-trail.ts` — the composable under test.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`:** imports `contractResponse`, which wraps a response payload against the generated Orval schema so the mock returns structurally valid data.
-- **`@api` (mocked):** `getObservabilityAuditLogs` (platform) and `listAuditEntries` (shop) are the two contract functions whose call arguments the tests assert on.
-- **`@api/schemas`:** imported to reference `GetObservabilityAuditLogsResponse` and `ListAuditEntriesResponse` schemas inside `contractResponse`.
+
+- **`src/modules/observability/composables/use-audit-trail.ts`** – the system under test; imported and exercised directly via `useAuditTrail(endpoint, target?)`.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – provides `contractResponse`, which wraps raw data in the schema-conformed envelope shape so mocks match what the real Orval-generated client would return.
 
 ## Notes
-- The platform "no target" test uses `expect.not.objectContaining({ target: expect.anything() })` with an inline `eslint-disable` for `@typescript-eslint/no-unsafe-assignment` because Vitest types `expect.anything()` as `any`.
-- The `since` conversion test specifically uses a `datetime-local` string (no `Z`, no offset) to pin the composable's normalization to `new Date(…).toISOString()`.
-- `beforeEach` clears all mocks; individual tests may layer `mockRejectedValueOnce` on top for failure-path coverage.
+
+- `target` is a **shop-only** filter: the platform contract (`listObservabilityAuditEntries`) declares no such field, so the composable must omit it. The tests assert its absence with `expect.not.objectContaining`.
+- The `since` test uses `'2026-09-24T10:00'` (no `Z`/offset) to mirror what `<input type="datetime-local">` actually emits; the composable is expected to normalize it to a full ISO instant before sending.
+- Mocks are set up once at module scope via `vi.mock`; `beforeEach(vi.clearAllMocks)` resets call counts between tests, but the factory's default `mockImplementation` still applies unless overridden with `mockRejectedValueOnce`.

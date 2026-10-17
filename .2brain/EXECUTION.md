@@ -33,11 +33,11 @@ Run pattern: `docker compose -f docker-compose.production.yml run --rm <service>
 - `npm run check:docs-references`
 - `npm run prettier:check`
 - `npm run test:unit`
-- `npm run test:unit:coverage`
 - `npm run test:unit:ci`
 - `npm run test:mutation`
 - `npm run test:mutation:check`
 - `npm run test:mutation:baseline`
+- `npm run test:mutation:pull`
 - `npm run test:e2e`
 
 ## Project Scripts
@@ -49,7 +49,7 @@ Run pattern: `docker compose -f docker-compose.production.yml run --rm <service>
 - `demo:remove` → `tsx scripts/demo/demo-remove.ts`
 - `measure:demo-strip` → `tsx scripts/demo/measure-demo-strip.ts`
 - `build-only` → `vite build`
-- `build:e2e` → `cross-env VITE_VALIDATE_RESPONSES=true VITE_VALIDATE_REQUESTS=true vite build --outDir dist-e2e`
+- `build:e2e` → `cross-env VITE_VALIDATE_RESPONSES=true VITE_VALIDATE_REQUESTS=true VITE_TEST_CARDS=true vite build --outDir dist-e2e`
 - `type-check-only` → `vue-tsc --build --force`
 - `lint` → `eslint --max-warnings 0`
 - `lint:fix` → `eslint --fix`
@@ -59,13 +59,13 @@ Run pattern: `docker compose -f docker-compose.production.yml run --rm <service>
 - `check:docs-references` → `tsx scripts/docs/check-references.ts`
 - `prettier:check` → `prettier --check .`
 - `prettier:fix` → `prettier . --write`
-- `test` → `npm run test:unit:coverage && npm run test:e2e`
+- `test` → `npm run test:unit && npm run test:e2e`
 - `test:unit` → `vitest run`
-- `test:unit:coverage` → `vitest run --coverage`
-- `test:unit:ci` → `vitest run --coverage --reporter=default --reporter=json --outputFile=reports/test-report.json`
+- `test:unit:ci` → `vitest run --reporter=default --reporter=json --outputFile=reports/test-report.json`
 - `test:mutation` → `tsx scripts/mutation/run-tests.ts`
 - `test:mutation:check` → `tsx scripts/mutation/check-baseline.ts`
 - `test:mutation:baseline` → `tsx scripts/mutation/check-baseline.ts --update`
+- `test:mutation:pull` → `tsx scripts/mutation/pull-baseline.ts`
 - `test:e2e` → `npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'tsx scripts/e2e/run-shards.ts'`
 - `test:e2e:serial` → `npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 "cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/specs/**/!(*.antibot).cy.ts,src/modules/*/tests/e2e/**/!(*.visual|*.antibot).cy.ts'"`
 - `test:e2e:antibot` → `npm run build:e2e && start-server-and-test 'npm run backend:demo -- --antibot' http-get://localhost:3100 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 "cross-env CYPRESS_apiUrl=http://localhost:3100 cypress run --e2e --spec 'tests/e2e/specs/**/*.antibot.cy.ts,src/modules/*/tests/e2e/**/*.antibot.cy.ts'"`
@@ -102,7 +102,7 @@ Run pattern: `docker compose -f docker-compose.production.yml run --rm <service>
 
 ## CI Workflows
 - `.github/workflows/ci.yml` — CI
-  - `run: npx commitlint \ ⏎ --from ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }} \ ⏎ --to ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.after }} \ ⏎ --verbose`
+  - `run: npx commitlint --from ${{ github.event.before }} --to ${{ github.event.after }} --verbose`
   - `run: npm run lint`
   - `run: npm run prettier:check`
   - `run: npm run lint:openapi`
@@ -116,9 +116,10 @@ Run pattern: `docker compose -f docker-compose.production.yml run --rm <service>
   - `run: docker rm -f frontend-smoke || true`
 - `.github/workflows/codeql.yml` — CodeQL
 - `.github/workflows/e2e-live.yml` — E2E (live backend)
-  - `run: if [ -n "$GREP" ]; then ⏎ echo 'matrix={"shard":[1],"total":[1]}' >> "$GITHUB_OUTPUT" ⏎ echo 'timeout=15' >> "$GITHUB_OUTPUT" ⏎ else ⏎ shards=$(seq -s, 1 "$LIVE_SHARDS") ⏎ # The last entry is not a slice: `print-live-shard.ts` reads `antibot` as "the ⏎ # antibot specs", and the backend step below boots with the provider on for it. ⏎ echo "matrix={\"shard\":[$shards,\"antibot\"],\"total\":[$LIVE_SHARDS]}" >> "$GITHUB_OUTPUT" ⏎ echo 'timeout=45' >> "$GITHUB_OUTPUT" ⏎ fi`
+  - `run: if [ -n "$SESSION_MODE" ]; then modes="\"$SESSION_MODE\""; else modes='"jwt","cookie"'; fi ⏎ if [ -n "$GREP" ]; then ⏎ echo "matrix={\"shard\":[1],\"total\":[1],\"session-mode\":[$modes]}" >> "$GITHUB_OUTPUT" ⏎ echo 'timeout=15' >> "$GITHUB_OUTPUT" ⏎ else ⏎ shards=$(seq -s, 1 "$LIVE_SHARDS") ⏎ # The `include` entry is not a slice: `print-live-shard.ts` reads `antibot` as ⏎ # "the antibot specs", and the backend step below boots with the provider on ⏎ # for it. It is about the challenge, not the session, so it runs in jwt only. ⏎ echo "matrix={\"shard\":[$shards],\"total\":[$LIVE_SHARDS],\"session-mode\":[$modes],\"include\":[{\"shard\":\"antibot\",\"total\":$LIVE_SHARDS,\"session-mode\":\"jwt\"}]}" >> "$GITHUB_OUTPUT" ⏎ echo 'timeout=45' >> "$GITHUB_OUTPUT" ⏎ fi`
   - `run: npm ci`
   - `run: # mongo:8 ⏎ docker run -d --name mongo -p 27017:27017 \ ⏎ mongo@sha256:5d7043a4ffe02b9ed1b6e0bab057546981af5ca0a79107e9c461e49bc44c0a7b \ ⏎ --replSet rs0 --bind_ip_all ⏎ until docker exec mongo mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' >/dev/null 2>&1; do sleep 2; done ⏎ docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })' ⏎ # Wait for the election: a seed that starts before there is a primary fails on its ⏎ # first write. ⏎ until docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; do sleep 2; done`
+  - `run: # caddy:2.10.2-alpine ⏎ docker run -d --name webhook-tls --network host \ ⏎ -e WEBHOOK_TLS_PORT=3070 -e WEBHOOK_UPSTREAM=127.0.0.1:3071 \ ⏎ -v "$GITHUB_WORKSPACE/$BACKEND_PATH/docker/webhook-tester-tls.Caddyfile:/etc/caddy/Caddyfile:ro" \ ⏎ -v "$GITHUB_WORKSPACE/$BACKEND_PATH/scenarios/support/tls:/certs:ro" \ ⏎ caddy@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d \ ⏎ caddy run --config /etc/caddy/Caddyfile --adapter caddyfile`
   - `run: npm run host -- db:bootstrap`
   - `run: sh docker/observability/umami-init.sh`
   - `run: npm run host -- e2e:serve > "$GITHUB_WORKSPACE/backend.log" 2>&1 & ⏎ echo $! > "$GITHUB_WORKSPACE/backend.pid"`
@@ -133,8 +134,10 @@ Run pattern: `docker compose -f docker-compose.production.yml run --rm <service>
   - `run: npm ci`
   - `run: npm run test:mutation -- --concurrency 3 --force`
   - `run: npm run test:mutation:check`
-  - `run: npm run test:mutation:baseline ⏎ git config user.name 'github-actions[bot]' ⏎ git config user.email 'github-actions[bot]@users.noreply.github.com' ⏎ if git diff --quiet -- mutation-baseline.json; then ⏎ echo "no change to mutation-baseline.json" ⏎ exit 0 ⏎ fi ⏎ git add mutation-baseline.json ⏎ git commit -m "chore(mutation): fold tonight's sweep into the baseline" ⏎ git push`
+  - `run: npm run test:mutation:baseline`
   - `run: echo "mutation run: ${{ steps.mutation.outcome }}" ⏎ echo "per-file baseline: ${{ steps.baseline.outcome }}" ⏎ exit 1`
+- `.github/workflows/pr-title.yml` — PR title
+  - `run: printf '%s\n' "$PR_TITLE" | npx commitlint --verbose`
 - `.github/workflows/release.yml` — Release
   - `run: npm run build`
   - `run: find dist -name '*.map' -type f -print0 > /tmp/sourcemap-paths ⏎ tar --null --files-from=/tmp/sourcemap-paths \ ⏎ -czf sourcemaps-${{ needs.release-please.outputs.tag_name }}.tar.gz`

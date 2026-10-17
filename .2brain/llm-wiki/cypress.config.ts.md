@@ -1,7 +1,7 @@
 ---
 source: cypress.config.ts
-sha256: 87300552b1b3bd8f22a521ab167c26dcae0859379c7da2f9eeb22580bd35c170
-generated_at: 2026-10-02T14:31:54.801970+00:00
+sha256: c889a2d89a370233f17616348a587564518c93340729710106b57ec16e3a5a70
+generated_at: 2026-10-16T23:55:36.043107+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,38 +9,42 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Cypress configuration that wires together the e2e suite: it defines viewport, retries, memory settings, the `@cypress/grep` tier filter, and registers every Node-side `cy.task` the browser cannot perform (image diffing, server-side auth, TOTP generation, webhook delivery). It also loads the project `.env` and Vite variables so that the `demo` vs `live` profile branching (driven by `liveProfile`) resolves correctly before any spec executes.
+Cypress configuration for all browser-based e2e suites. It pins the viewport, configures retry/memory behavior, wires Node-side tasks (filesystem access, server-side API calls, webhook sinks) that the browser cannot perform, and exposes tier-filter tags to `@cypress/grep`. The same spec set runs under a **demo** or **live** profile, selected at runtime via the `liveProfile` flag rather than via separate configs.
 
 ## Key elements
 
-- **`defineConfig` export** — the single default export. Sets `viewportWidth/Height` (1280×800), `retries` (run 1 / open 0), `experimentalMemoryManagement`, `numTestsKeptInMemory`, folder paths, and `expose.grepTags` / `grepFilterSpecs`.
-- **`hostedWebhookSink()`** — memoised singleton that starts a webhook sink on the port from `E2E_WEBHOOK_SINK_PORT` (or `SINGLE_PROCESS_SINK_PORT`). Persists across repeated `setupNodeEvents` calls (e.g. `cypress open` hot-reload).
-- **`setupNodeEvents` → `on('before:run')`** — resets the flaky-test report for non-sharded runs.
-- **`setupNodeEvents` → `on('after:spec')`** — records per-test flaky results and per-spec duration (used by the shard balancer).
-- **`setupNodeEvents` → `on('task', …)`** — registers tasks: `adminApi`, `deviceLogin`/`deviceRefresh`/`deviceRequest`, `postPaymentWebhook`, `totpCode`, `webhookSinkRequests`/`webhookSinkClear`/`webhookSignatureValid`, `readWebhookTester`, `recordA11yViolations`, `compareVisualSnapshot`.
-- **Env bootstrap** — `process.loadEnvFile()` (swallowed on failure) followed by Vite's `loadEnv`, executed at module top-level before any task reads `process.env`.
-- **`ALL_SPEC_GLOBS` import** — consumed by the spec globbing / sharding logic (referenced for completeness of the `e2e.specPattern` or test orchestration).
+- **`defineConfig` (default export)** — viewport 1280×800, `retries: {runMode:1, openMode:0}`, `experimentalMemoryManagement`, `numTestsKeptInMemory: 5`, `expose.grepTags` (read from `E2E_GREP_TAGS`), screenshot/video/download folders.
+- **`setupNodeEvents`** — registers all `cy.task` handlers and the `before:run` / `after:spec` lifecycle hooks.
+  - *before:run* — calls `resetFlakyReport()` unless `E2E_SHARDED=true`.
+  - *after:spec* — records flaky (retry-pass) tests and per-spec duration for the shard balancer.
+  - *tasks* — `adminApi`, `guestApi`, `deviceLogin`, `deviceRefresh`, `deviceRequest`, `postPaymentWebhook`, `totpCode`, `webhookSinkRequests`, `webhookSinkClear`, `webhookSignatureValid`, `compareVisualSnapshot`, `recordA11yViolations`, `readScenarioFile`.
+- **`hostedWebhookSink()`** — lazy singleton that starts the demo-profile webhook sink on the port from `E2E_WEBHOOK_SINK_PORT` (default `SINGLE_PROCESS_SINK_PORT`). Survives `cypress open` config-reload cycles.
+- **`process.loadEnvFile()` + `loadEnv`** — populates `process.env` from `.env` before any pairing resolution runs, so `resolveBackendPath` and `resolveLiveResetCommand` see the same values as `check-spec-identity.ts`.
+- **`A11Y_REPORT_TASK` / `A11Y_REPORT_DIRECTORY`** — constants shared with `tests/support/e2e/commands.ts` for the a11y task name and report output path.
 
 ## Relationships
 
-- **`scripts/pairing/paired-backend-path.ts`** — imports `LIVE_SCENARIO_FILE`, `resolveBackendPath`, `resolveLiveResetCommand`; the config reads these to determine which backend the checkout is paired with and to register the `readScenarioFile` task.
-- **`scripts/e2e/cypress-spec-globs.ts`** — imports `ALL_SPEC_GLOBS` for spec discovery / sharding.
-- **`scripts/e2e/flaky-report.ts`** — imports `flakyTestsIn`, `recordFlakyTests`, `resetFlakyReport`; the `before:run`/`after:spec` hooks call these to track retry-passes.
-- **`scripts/e2e/spec-durations.ts`** — imports `recordSpecDuration`; called in `after:spec` to feed the shard balancer.
-- **`scripts/e2e/device-session.ts`** — imports `deviceLogin`, `deviceRefresh`, `deviceRequest`; registered as tasks so a second device can be authenticated server-side without touching the browser cookie jar.
-- **`scripts/e2e/payment-webhook.ts`** — imports `postPaymentWebhook`; registered as a task to sign and POST a payment-provider event.
-- **`scripts/e2e/totp.ts`** — imports `totpCode`; registered as a task (browser bundle lacks the needed crypto).
-- **`scripts/e2e/webhook-sink.ts`** — imports `SINGLE_PROCESS_SINK_PORT`, `startWebhookSink`, `verifiesStandardWebhook`; the config hosts the sink and exposes it via tasks.
-- **`scripts/e2e/webhook-tester.ts`** — imports `readWebhookTester`; registered as a task to read captured deliveries.
-- **`tests/support/e2e/visual-task.ts`** — imports `compareSnapshot`; registered as the `compareVisualSnapshot` task (browser cannot read baseline files).
-- **`tests/support/e2e/a11y-task.ts`** — imports `recordA11yViolations` and the `A11yRecordRequest` type; registered as the `recordA11yViolations` task.
-- **`tests/support/e2e/admin-api-task.ts`** — imports `adminApi`; registered as a task so fixtures can make authenticated calls without mutating the page's session.
-- **`tsconfig.cypress.json`** — the `tsconfig` that includes this file and its imports under the Cypress-specific compiler path (ensures `node:` prefix and type-checking work).
+| Neighbor | Interaction |
+|---|---|
+| `scripts/e2e/cypress-spec-globs.ts` | Supplies `ALL_SPEC_GLOBS` used as the spec pattern. |
+| `scripts/e2e/device-session.ts` | Provides `deviceLogin`, `deviceRefresh`, `deviceRequest` — registered as Node tasks. |
+| `scripts/e2e/flaky-report.ts` | Provides `resetFlakyReport`, `flakyTestsIn`, `recordFlakyTests` — used in lifecycle hooks. |
+| `scripts/e2e/payment-webhook.ts` | Provides `postPaymentWebhook` — registered as a Node task. |
+| `scripts/e2e/spec-durations.ts` | Provides `recordSpecDuration` — called in `after:spec`. |
+| `scripts/e2e/totp.ts` | Provides `totpCode` — registered as a Node task. |
+| `scripts/e2e/webhook-sink.ts` | Provides `startWebhookSink`, `SINGLE_PROCESS_SINK_PORT`, `verifiesStandardWebhook`, `WebhookSink` type — used by the sink singleton and signature task. |
+| `scripts/e2e/webhook-tester.ts` | Provides `readWebhookTester` — used by the `webhookSignatureValid` task. |
+| `scripts/pairing/paired-backend-path.ts` | Provides `LIVE_SCENARIO_FILE`, `resolveBackendPath`, `resolveLiveResetCommand` — drive demo-vs-live backend selection and the `readScenarioFile` task. |
+| `tests/support/e2e/a11y-task.ts` | Provides `recordA11yViolations` and `A11yRecordRequest` type — registered as the a11y task. |
+| `tests/support/e2e/admin-api-task.ts` | Provides `adminApi`, `guestApi` — registered as Node tasks for server-side admin calls. |
+| `tests/support/e2e/visual-task.ts` | Provides `compareSnapshot` — the image-diff behind `cy.compareSnapshot()`. |
+| `tsconfig.cypress.json` | TypeScript project config that includes this file for type-checking. |
 
 ## Notes
 
-- **`expose.grepTags` vs `env.grepTags`** — `@cypress/grep` v7 reads the filter from `expose`, not `env`. A `CYPRESS_grepTags` env var is silently ignored. Always set via `expose` (sourced from `E2E_GREP_TAGS`).
-- **Webhook sink is a singleton** — `hostedWebhookSink()` caches the promise in a module-level `let`. Re-registering a second listener on the same port would throw; this pattern exists specifically because `cypress open` re-invokes `setupNodeEvents` on config changes.
-- **Memory settings are load-bearing for live runs** — `test:e2e:live` runs all specs in one process; without `experimentalMemoryManagement` + `numTestsKeptInMemory: 5`, V8 heap pressure causes a hard crash (`trap invalid opcode`). These flags are not optional tuning knobs.
-- **`process.loadEnvFile()` is wrapped in `try/catch`** — CI passes real environment variables; a missing `.env` in a local checkout is expected and must not abort config loading.
-- **Viewport is intentionally pinned at config level** (not per-spec) so no spec can drift the size and silently invalidate visual baselines.
+- **Viewport is deliberately 1280×800**, not Cypress's default 1000×660. Changing it invalidates every committed visual baseline; it is pinned here so no spec can drift.
+- **`expose`, not `env`, for grep tags.** `@cypress/grep` v7 reads from `expose`; a `CYPRESS_grepTags` env var would be silently ignored.
+- **Webhook sink is a module-level singleton** (`let webhookSink`). `cypress open` re-invokes `setupNodeEvents` on config changes; a second listener on the same port would throw.
+- **`numTestsKeptInMemory: 5` + `experimentalMemoryManagement`** exist because the live profile runs all specs in one process against one shared backend (no sharding). Without them, long runs exhaust the V8 heap (`trap invalid opcode`).
+- **Two-profile pattern:** specs do not know which backend they hit. `cy.restore()` branches on `liveProfile`; specs exclusive to one profile open with `cy.skipUnlessLive()` instead of silently passing in the other.
+- **`process.loadEnvFile()`** is wrapped in `try/catch` — CI supplies the variables as real env vars, so a missing `.env` is expected and not an error.

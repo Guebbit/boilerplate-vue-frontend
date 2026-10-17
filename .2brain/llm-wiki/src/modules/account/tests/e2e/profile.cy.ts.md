@@ -1,39 +1,34 @@
 ---
 source: src/modules/account/tests/e2e/profile.cy.ts
-sha256: 665519a553a217ce99d703c142de64d0cd4697153b8df76a1cb2b28a783da644
-generated_at: 2026-10-02T14:49:37.772361+00:00
+sha256: c6ef6f5976aa47e00dba560afebb2974d3a2abbc38f1b4b86f761dcd3fadf9ca
+generated_at: 2026-10-17T00:22:15.055650+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/tests/e2e/profile.cy.ts
 
 ## Purpose
-
-Cypress e2e spec for the self-service account profile page. Exercises password change, session management, the address book, and email-verification UI against the real API in its demo profile. The tests pin the *page's* honouring of backend invariants (one default address, a `current` session flag, a `pendingEmail` park) rather than the rules themselves, which belong to backend tests.
+End-to-end specs for the signed-in **Profile** self-service surface: language preference, password change, active-session list/revocation, the address book (add / promote / remove default), and email-change behaviour. Runs against the real API in its demo profile so the invariants under test (one default address, a `current` session flag, a `pendingEmail` park) are the backend's own. The specs pin the *page's* honouring of those invariants, not the business rules themselves.
 
 ## Key elements
-
-- **`fillAddress(label, street)`** — Fills the six required inputs of the address dialog (label, name, street, zip, city) by input index, then selects "Italy" via the `v-autocomplete` country field and clicks save.
-- **`loginFromAnotherDevice()`** — Wraps `loginDevice('user')` to create a second real session server-side, leaving the current cookie and `current` flag untouched.
-- **`describe('Profile access')`** — Two guest-path specs: redirect to login with a `continue=` param; rejection of a fabricated verification token (422, no toast, no redirect).
-- **`describe('Profile self-service')`** — Main block; `beforeEach` restores state, logs in as `user`, and navigates to `/en/profile`.
-  - **language preference** — Saving a locale switches the page immediately and persists across a fresh login (asserted via URL match `/\/it(\/|$)/`).
-  - **password change** — Happy path using `seedAccount('user').password`; wrong-current-password path asserts an inline error with the API's own sentence (not the envelope's HTTP phrase) and that the session survives.
-  - **sessions** — Verifies two items with exactly one `[data-test=session-current]` after `loginFromAnotherDevice`; revokes the non-current session and confirms the list drops to one.
-  - **address book** — Asserts the seeded single default; adds a second entry without stealing the slot; promotes the new entry then removes the default, confirming the survivor auto-promotes and exactly one default always exists.
-  - **email verification** — No banner for a verified seed account; an email change parks as `pendingEmail` (notice shows the new address) while the verified state and absence of the banner are preserved.
+- **`fillAddress(label, street)`** — fills the six inputs in the address dialog and clicks save. Types "Italy" into the `v-autocomplete` country field (≈249 ISO 3166-1 codes, not all rendered) rather than scrolling.
+- **`loginFromAnotherDevice()`** — wraps `loginDevice('user')` to create a second *server-side* session without disturbing the page's refresh cookie or the `current` flag.
+- **`describe('Profile access')`** — unauthenticated `/profile` redirect (with `continue=` target) and rejection of a fabricated verify-token.
+- **`describe('Profile self-service')`** — the bulk of the suite, with sub-describes:
+  - *language preference* — save language → page re-renders in Italian **and** the `:locale` URL segment updates; survives a full logout/login cycle.
+  - *password change* — happy path (uses `seedAccount('user').password`) and wrong-current-password error path (inline API message, no logout).
+  - *sessions* — lists two sessions after a second login; revokes the non-current one.
+  - *address book* — seeds exactly one default; add a second, promote it, remove the default → survivor is auto-promoted.
+  - *email verification* — no banner for a verified seed; email change parks in `pendingEmail` without un-verifying.
 
 ## Relationships
-
-- **`tests/support/e2e/scenario.ts`** — `seedAccount('user')` supplies the demo user's password and email, used in the password-change spec and the email-change spec.
-- **`tests/support/e2e/harness.ts`** — `loginDevice('user')` creates a second server-side session without touching the current auth cookie, enabling the multi-session and revoke specs.
-- **`tests/support/e2e/commands.ts`** — `expectMailTemplate` and `mailedLinkUrl` are imported for email-verification assertions (used in the truncated portion of the spec).
+- **`tests/support/e2e/scenario.ts`** — provides `seedAccount('user')` for the known password and email of the demo fixture.
+- **`tests/support/e2e/harness.ts`** — provides `loginDevice`, which opens a second session entirely on the server side so the page's own auth cookies stay stable.
+- **`tests/support/e2e/commands.ts`** — provides `expectMailTemplate` and `mailedLinkUrl`, imported for mail-outbox assertions (used in the truncated email-verification tail).
 
 ## Notes
-
-- **Index-based input targeting**: `fillAddress` selects fields via `.eq(0)`–`.eq(4)` inside the dialog. Any reordering of inputs in the dialog markup will silently type into the wrong field.
-- **Country autocomplete**: The `v-autocomplete` renders only a subset of ~249 ISO 3166-1 entries; the spec types "Italy" to filter rather than scrolling.
-- **Deliberate scope boundary**: The token-spends-and-banner-dismisses flow is *not* in this file; it lives in `registration.cy.ts` because it requires an account that never proved its address.
-- **`cy.restore()` after `cy.visit('/en')`**: Resets app-level state before visiting the target route; omitting it can leak state between specs.
-- **`loginAs` lands on `/en/login`**: The language-persistence test matches the post-login URL with the regex `/\/it(\/|$)/` because the home route is bare `/it` with no trailing slash.
-- **Error-message assertion**: The wrong-password spec explicitly negates `'Unprocessable Entity'` to guard against the UI surfacing the HTTP envelope's top-level `message` instead of the field-level `errors[0].message`.
+- **App-level confirm dialog ≠ browser `confirm()`**: Cypress auto-accepts only the browser dialog. Address-removal uses `[data-test=app-dialog-confirm]`; forgetting to click it silently skips the assertion.
+- **Country autocomplete**: the full list is virtualised; you must *type* to filter, then click the rendered `.v-list-item` inside `.v-overlay-container`. Scrolling or index-based selection will fail.
+- **Error-message source**: the password-change error element must contain the API's `errors[0].message` and must **not** contain the HTTP-level phrase (e.g. "Unprocessable Entity") from the envelope's top-level `message`.
+- **Token-spending flow is deliberately absent**: it requires an unverified account, which `registration.cy.ts` owns end-to-end. Do not add it here.
+- **Language assertion after re-login**: use `match /\/it(\/|$)/` (not `include '/it/'`) because login lands on `/it` with no trailing segment.

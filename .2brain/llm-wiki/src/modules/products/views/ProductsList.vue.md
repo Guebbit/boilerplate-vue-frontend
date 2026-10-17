@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/views/ProductsList.vue
-sha256: 60ddc086627b40e005a72192b370cc0915fa708a55f272580d640a6e13c22112
-generated_at: 2026-10-02T15:42:06.621614+00:00
+sha256: 625e12ef16b10af1a4c60dfdf876376076f54275fc574f2d0f70c66a3b02f8ca
+generated_at: 2026-10-17T01:36:24.885297+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,33 +9,32 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The main products list page. It renders two distinct experiences from one component: a public storefront grid (image cards with price, availability, add-to-cart) for any visitor, and a staff admin table with row actions (edit, soft-delete, restore, hard-delete) for users holding at least one Product write permission. Both views share a search/filter form, facet chips (category, tag), server-side sorting, and URL-synced pagination.
+The main products list page. It renders two views from the same data: a shopper-facing grid of `ProductCard` components (image, price, availability, add-to-cart) and a staff-facing `DataTable` with row actions (edit, soft-delete, restore, hard-delete). Both include a search/filter form, facet chips, server-side sorting, and pagination. The split is on *what the viewer may do* (any single write permission on `Product`), not on authentication.
 
 ## Key elements
 
-- **`isStaff`** (computed) — checks `session.can('create'|'update'|'delete', 'Product')`; drives the grid-vs-table split and visibility of admin-only filters.
-- **`activeOptions` / `deletedOptions`** — admin-only filter dropdowns ("Active", "Deleted"). The "all" row in `activeOptions` uses `null` (not `undefined`) to avoid a Vuetify quirk.
-- **`activeChoice` / `deletedChoice`** — `useAnyFilterChoice` wrappers that map the `null` "any" UI value to an absent filter key.
-- **`tableHeaders`** (computed) — column definitions for the staff `DataTable`; `image` and `actions` are marked `synthetic` so they are non-sortable.
-- **`sortableKeys` / `sortChoice`** — server-side sort via `useServerSort`; options are a subset of the `ProductSort` enum (price, title, asc/desc).
-- **`syncUrl`** — `useListUrlState` keeps filters, page, and page-size in the query string for deep-linkable views.
-- **`handleSearch` / `handleReset`** — from `useListSearch`; both restart pagination and sync the URL.
-- **`handleCategoryChip` / `handleTagChip`** — toggle a single facet chip on/off and re-search from page 1.
-- **`handleDelete`** — soft-delete behind a `useDialogStore` confirm; failure surfaces via `reportRowActionError`.
-- **`handleRestore`** — undo soft-delete (no confirm); re-runs `search(true)` because the active filter may no longer match.
-- **`handleHardDelete`** — permanent delete behind a confirm dialog; same error path as soft-delete.
-- **`rowActionError` / `reportRowActionError` / `clearRowActionError`** — one shared `useBlockingError` instance for all row-action mutations; rendered as an `InlineErrorAlert` above the table.
-- **`onMounted(fetchFacets)`** — loads facet chips once on page mount.
+- **`isStaff` (computed)** — true if the session has *any* of `create`, `update`, or `delete` on `Product`; gates the table view and the admin-only filters (Active, Purchasable, Deleted).
+- **`handleSearch`** — applies filters via `applySearch`, then reports the search to the analytics relay (`trackBrowsing`). Sort changes and paging call `applySearch` alone (they refine, not initiate, a search).
+- **`applySearch` / `handleReset`** — from `useListSearch`; reset returns to page 1 and re-syncs the URL.
+- **`handleCategoryChip` / `handleTagChip`** — toggle a single facet value (selecting the active chip clears it) and re-run the search from page 1.
+- **`handleDelete`** — opens a `useDialogStore().confirm` dialog, then calls `deleteProduct`. Failure is surfaced via `useBlockingError` (inline alert), not a toast.
+- **`tableHeaders`** — localised `CoreDataTableHeader<Product>[]` for the staff table; `image` and `actions` are `synthetic: true`.
+- **`useServerSort` / `sortOptions`** — sort state lives in `filters.sort` so it travels in the URL and the API request. Shopper options are a subset of the `ProductSort` enum.
+- **`useListUrlState`** — keeps filters, page, and page-size in the URL for deep-linking and reload fidelity.
+- **`activeOptions` / `purchasableOptions` / `deletedOptions`** — admin-only filter selects. Each "all" row uses `value: null` (not `undefined`) to avoid Vuetify posting the translated label.
+- **`useAnyFilterChoice`** — maps the `null` "all" sentinel to `undefined` (no filter) on the store's `filters` object.
+- **`useBlockingError` (`rowActionError`)** — shared between delete and hard-delete; renders an inline alert above the table. Distinct from the toast-based `notifyErrorMessages` used for search failures.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — No direct import or call is visible in this file's source. The adjacency is likely indirect (e.g., a shared store or composable logs internally); no interaction to document from this file's perspective.
-- **`src/modules/payments/components/OrderReferenceSearch.vue`** — No import or reference visible here. The graph link is probably transitive (shared UI molecules or store patterns); no direct interaction to document.
+- **`src/modules/products/store.ts`** — Pinia store (`useProductsStore`). Provides reactive state (`filters`, `pageItemList`, `facets`, `loading`, etc.) via `storeToRefs` and all mutation actions (`watchSearchProducts`, `deleteProduct`, `hardDeleteProduct`, `restoreProduct`, `fetchFacets`).
+- **`src/modules/products/components/ProductCard.vue`** — Imported and rendered inside the shopper-facing grid (one card per product in `pageItemList`).
+- **`src/modules/products/tests/products-list-view.spec.ts`** — Unit/integration test suite that exercises this view's rendering, filters, and row actions.
 
 ## Notes
 
-- **`null` vs `undefined` in `activeOptions`:** The "all" row value is `null`. Vuetify treats an `undefined` option value as "use the title as the value," which would POST the translated label instead of clearing the filter.
-- **Error-channel split:** Row-action failures (delete / restore / hard-delete) use the blocking `InlineErrorAlert` (table stays interactive). Search failures use toast notifications via `notifyErrorMessages` (ambient, list just hasn't refreshed).
-- **`image` column is `synthetic`:** Even though `imageUrl` is a real field, it's marked synthetic to prevent a "sort by image URL" control that serves no purpose.
-- **Restore re-fetches the list:** After `handleRestore` succeeds, `search(true)` is called because the current `active` filter (if set to `true`) would no longer include the restored row.
-- **Permission granularity:** `isStaff` is true if *any* of the three Product write permissions exists; a role that can edit but not delete still gets the full admin table.
+- **`null` vs `undefined` in filter selects:** Vuetify interprets an `undefined` item value as "use the label string," which would POST the translated text instead of omitting the filter. All "all" options therefore use `value: null`.
+- **`synthetic: true` on the image column:** `imageUrl` is a real field, but the cell renders an image, not a URL string, and URL-sorting is meaningless to the user.
+- **Dual script blocks:** The `export default { name: 'ProductsListPage' }` block is required because `<script setup>` cannot declare a component name; it keeps the component stable for `<KeepAlive>` and DevTools.
+- **Analytics is search-only:** `trackBrowsing` fires in `handleSearch` (initial apply), not in `applySearch` (sort/page changes), to avoid double-reporting.
+- **Row-action errors vs. search errors:** Delete/hard-delete failures use `useBlockingError` (inline, blocks the list); search failures use `notifyErrorMessages` (toast, the table simply shows stale data). See `docs/theory/request-flow.md` for the distinction.

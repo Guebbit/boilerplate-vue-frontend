@@ -1,7 +1,7 @@
 ---
 source: src/modules/webhooks/tests/webhook-deliveries-rows.spec.ts
-sha256: b3f06416ffa30d3d5d6479514f6491ac48f717337e26b9f04568511fc112b535
-generated_at: 2026-10-02T15:56:47.126860+00:00
+sha256: 1882ac59794ca97b7bbd8c2918ddf1963b3e0cc05ac40b765bcdb22f32806a40
+generated_at: 2026-10-17T01:52:25.924932+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,20 +9,20 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit test for the `WebhookDeliveriesFilters` component's table rows. It verifies that every rendered row carries the `data-test="webhook-delivery-row"` hook and displays its event type, so higher-level specs can locate a delivery by type without asserting on its (always-`pending` in unit scope) status.
+Verifies that each row rendered by `WebhookDeliveriesFilters` carries a stable `data-test="webhook-delivery-row"` attribute and that the event type string is visible in the row's text. This lets other specs (and e2e flows) assert "a delivery for `order.created` exists" without coupling to delivery status, which stays `pending` in the absence of a live broker.
 
 ## Key elements
 
-- **`delivery(id, eventType)`** – Factory that returns a fully-populated `WebhookDelivery` object. `status` is hard-coded to `'pending'` because no message broker is available in the unit environment.
-- **`describe('WebhookDeliveriesFilters rows')`** – Single test block.
-  - *`puts webhook-delivery-row on every row, event type included`* – Mounts the component with two deliveries, awaits render, then asserts (1) exactly two `[data-test=webhook-delivery-row]` elements exist and (2) each row's text contains the correct event type string.
+- **`delivery(id, eventType)`** — factory that returns a minimal `WebhookDelivery` object (id, subscriptionId, eventId, eventType, attempt, status, timestamps) used as fixture data for the test.
+- **`describe('WebhookDeliveriesFilters rows')` / `it(...)`** — single test that mounts the component with two deliveries, awaits a render tick, then asserts two rows matching `[data-test=webhook-delivery-row]` and that each row's text contains its respective event type.
 
 ## Relationships
 
-- **`tests/support/unit/mounted-vm.ts`** – Supplies `nextRenderTick`, a helper that resolves after Vue's microtask/render flush so DOM assertions run against the committed tree rather than the initial synchronous mount.
+- **`src/modules/webhooks/components/WebhookDeliveriesFilters.vue`** — the SUT. Mounted via `@vue/test-utils` with `deliveries`, `total`, `pages`, `loading`, `subscriptions`, and `replayingIds` props; vuetify and i18n injected as global plugins.
+- **`tests/support/unit/mounted-vm.ts`** — provides `nextRenderTick`, an async helper that waits for the component to finish rendering before assertions run.
 
 ## Notes
 
-- The `delivery` helper leaves optional fields absent; only the fields the component contract requires are populated. Add new required fields there when the `WebhookDelivery` type grows.
-- Status is intentionally `'pending'`—this file tests *row presence and labeling*, not delivery lifecycle. Do not add status-conditional assertions here.
-- The component is mounted with `vuetify` and `i18n` plugins (matching the app's global setup) but with empty `subscriptions` and `replayingIds`; the test is scoped to row rendering only.
+- All fixture deliveries use `status: 'pending'` deliberately; the test never asserts on status. Any future change that gates row rendering on status will break this spec.
+- The selector is the `data-test` attribute, not a CSS class — treat it as a semi-stable contract for cross-spec lookups.
+- The component receives `subscriptions: []` and an empty `replayingIds` set, so filter/replay logic is out of scope here.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/observability/views/Admin.vue
-sha256: 693133d0080dda31e02fd184c84327a93685b965af5b2c072f8f56c3ca36def8
-generated_at: 2026-10-02T15:20:04.520522+00:00
+sha256: c380bc762e59b2a38beba0817b2fbdb647120564dca5e3fba599ae3511c050a8
+generated_at: 2026-10-17T01:14:10.484344+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Admin dashboard shell for the observability module. Owns the active-tab state (overview vs. audit), fetches shared health/metrics data on mount, and dispatches the token-purge confirmation + toast. The two tab components render declaratively from props this view supplies.
+Admin dashboard shell that owns the active-tab state (overview vs. audit), invokes the shared `useAdminObservability` composable on mount, and distributes the resulting state down to `AdminOverviewTab`. It does not render any domain data itself — it is purely a layout/orchestration view.
 
 ## Key elements
 
-- **`activeTab`** – `ref<AdminTabKey>` toggling between `'overview'` and `'audit'`; drives both `v-tabs` and `v-tabs-window`.
-- **`useAdminObservability()` destructure** – pulls `health`, `metrics`, `loadingHealth`, `loadingMetrics`, `errorHealth`, `errorMetrics`, `fetchAll`, `clearingExpiredTokens`, `clearExpiredTokens`. Only the overview tab receives these as props; the audit tab is self-sufficient.
-- **`overviewLoading`** – computed; `true` while either the health or metrics request is in flight.
-- **`confirmClearExpiredTokens`** – opens a `useDialogStore().confirm()` dialog, then on acceptance calls `clearExpiredTokens()` and raises a success/error toast via `useNotificationsStore().addMessage()`. Returns early (no toast) if the user declines.
-- **`onMounted` → `fetchAll()`** – triggers the initial data load for the overview tab.
-- **Template** – Vuetify `v-tabs` / `v-tabs-window` layout, a "Clear expired tokens" button (bound to `clearingExpiredTokens` for the spinner), and the two tab child components.
+- **`activeTab`** (`ref<AdminTabKey>`) — which tab is visible; defaults to `'overview'`. Drives both `<v-tabs>` and `<v-tabs-window>`.
+- **`useAdminObservability()`** — composable call that yields `health`, `metrics`, `loadingHealth`, `loadingMetrics`, `errorHealth`, `errorMetrics`, and `fetchAll`.
+- **`overviewLoading`** (computed) — `true` while either the health or metrics request is in flight; passed to `AdminOverviewTab` as `:loading`.
+- **`onMounted` → `fetchAll()`** — fires the initial data fetch (fire-and-forget via `void`).
+- **Template** — two `<v-tabs-window-item>` slots: one wraps `AdminOverviewTab` (props + `@refresh` emit), the other wraps `AdminAuditTab` (single `endpoint="platform"` prop).
 
 ## Relationships
 
-No graph neighbors are recorded for this file.
+| Neighbor | Interaction |
+|---|---|
+| `use-admin-observability.ts` | Called once in setup; provides all shared reactive state and the `fetchAll` fetcher used on mount and as the `@refresh` handler. |
+| `AdminOverviewTab.vue` | Receives `health`, `metrics`, `loading`, `health-error`, `metrics-error` as props and emits `refresh` back to the parent to re-trigger `fetchAll`. |
+| `AdminAuditTab.vue` | Receives only `endpoint="platform"`; manages its own fetching and state internally (does **not** consume the shared composable state). |
+| `types.ts` | Supplies the `AdminTabKey` union type constraining `activeTab`. |
 
 ## Notes
 
-- The audit tab (`AdminAuditTab`) receives only an `endpoint="platform"` prop and manages its own data fetching internally; it does **not** consume the composable state destructured here.
-- `clearExpiredTokens` is the only async action in the composable that *rejects* (vs. the four reads which resolve with error payloads). The `.catch()` in `confirmClearExpiredTokens` relies on that rejection.
-- All user-facing strings go through `t()` (vue-i18n) with keys under the `admin-page.*` namespace.
-- The token-purge button is the only mutation affordance on the page; everything else is read-only or refresh.
+- **Asymmetric tab wiring:** The overview tab is a pure presentational component fed entirely by props. The audit tab is self-sufficient and fetches its own data. Adding shared state to the audit tab would break this convention.
+- **`void fetchAll()`** on mount is intentionally un-awaited; error handling is delegated to the reactive `errorHealth`/`errorMetrics` refs surfaced to the overview tab.
+- **Data-test attributes** (`data-test="admin-tab-overview"`, `data-test="admin-tab-audit"`) exist for E2E selectors — preserve them when refactoring the tab markup.

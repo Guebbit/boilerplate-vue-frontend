@@ -1,7 +1,7 @@
 ---
 source: eslint.config.ts
-sha256: 45b8f2acd649402ab5750764ed7ee1a0fe4ca12d2c4124d5b9856f49e5d4d4a0
-generated_at: 2026-10-02T11:23:38.757431+00:00
+sha256: 5e5f6b03d2291a7d06bd11fb9d2b8c880bb225dd32c94db8aefc9603821ccac4
+generated_at: 2026-10-16T23:56:42.938348+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Flat ESLint configuration for a Vue + TypeScript monorepo. Beyond standard lint rules, it encodes the entire architectural layer system and module-boundary contract as `eslint-plugin-boundaries` policies, so that a forbidden import, a cycle in the module graph, or a `foundation → shop` dependency fails at `npm run lint` time rather than in review.
+Flat ESLint configuration (TypeScript) that enforces the project's architectural rules at lint time: a strict tier ladder (i18n → infrastructure → ui → kernel → modules → app), per-module dependency boundaries via `eslint-plugin-boundaries`, and integration with Vue, Cypress, Vitest, JSDoc, and other lint plugins. Module folders are discovered from the filesystem at config-load time, so adding a domain requires no edit to this file.
 
 ## Key elements
 
-- **`shopModuleNames`** — one-time list of modules labelled `shop` in `MODULE_GROUPS`; used in the foundation→shop disallow policy.
-- **`moduleFolderNames`** — directory listing of `src/modules/*` read at config-load time; the source of truth for which modules exist (no hardcoded list).
-- **`assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames)`** — called once at config evaluation; throws (failing every lint run) if the edge graph is cyclic or references a module folder that no longer exists.
-- **`moduleDependencyPolicies`** — per-module `boundaries/dependencies` entries enforcing (a) the "one door" rule: a sibling is only reachable via its `index.ts`, and (b) the foundation→shop prohibition.
-- **`boundariesElements`** — tier descriptors (`domain`, `module`, `kernel`, `ui`, `infrastructure`, `i18n`, `app`, `types`) with `capture` patterns and `partialMatch: false`. Order matters: first match wins, so `domain` precedes `module`.
-- **`boundariesFiles`** — explicit per-file classifications (composition-root, registry, ambient, spec, infra-app-state). No wildcards for new files; `session.ts` and `observability/**` carry an `infra-app-state` category that `ui`'s policy later disallows.
-- **`layerDependencyPolicies`** — the tier ladder as a sequence of allow/disallow entries. `default: 'disallow'` means every edge is refused unless a policy opens it; the **last** matching policy wins, so narrower carve-outs (e.g. `ui` disallowing `infra-app-state`) override earlier broader allows.
+- **`shopModuleNames`** — Derived from `MODULE_GROUPS`; the set of modules labelled `shop` (the removable demo domain).
+- **`moduleFolderNames`** — Read via `readdirSync` on `src/modules/`; drives all boundary policies dynamically.
+- **`assertAcyclicModuleEdges(MODULE_EDGES, moduleFolderNames)`** — Walks the full module-edge graph once at config load; throws (failing every `npm run lint`) if a cycle exists or a key references a deleted module.
+- **`moduleDependencyPolicies`** — Per-module `boundaries/dependencies` rules: (1) a module may import only a sibling's `index.ts` (the "one door"), (2) a `foundation` module may not import any `shop` module.
+- **`boundariesElements`** — `boundaries/elements` descriptors for `domain`, `module`, `kernel`, `ui`, `infrastructure`, `i18n`, `app`, `types`. Order is significant; `domain` precedes `module`. All use `partialMatch: false`.
+- **`boundariesFiles`** — `boundaries/files` categories for individual files (`composition-root`, `registry`, `ambient`, `spec`, `infra-app-state`). No wildcards.
+- **`layerDependencyPolicies`** — The tier ladder as allow/disallow rules. `default: 'disallow'` is set in the rule config; each entry here *opens* one edge. Last matching policy wins, so narrower disallows (e.g. `ui` → `infra-app-state`, `kernel` → `ui`) override broader allows stated earlier.
+- **Vue/TS/Cypress/Vitest plugin wiring** — `configureVueProject`, `defineConfigWithVueTs`, `vueTsConfigs`, `pluginCypress`, `pluginVitest`, etc., plus `globalIgnores` and `comments` (eslint-comments) configs.
 
 ## Relationships
 
-- **`scripts/module-edges.ts`** — provides `MODULE_EDGES` (per-module allowed sibling list, backend-named values filtered to existing FE folders) and `assertAcyclicModuleEdges` (whole-graph cycle check run at config load).
-- **`scripts/module-groups.ts`** — provides `MODULE_GROUPS` (maps each module to `foundation` | `shop`); the config derives `shopModuleNames` and per-module `isFoundation` from it.
-- **`scripts/e2e/cypress-spec-globs.ts`** — exports `ALL_SPEC_GLOBS`, imported here to include Cypress spec files in lint scope/ignore configuration.
+- **`scripts/module-groups.ts`** — Exports `MODULE_GROUPS`; this file reads it to compute `shopModuleNames` and to decide whether a module is `foundation` (and thus barred from importing `shop`).
+- **`scripts/module-edges.ts`** — Exports `MODULE_EDGES` and `assertAcyclicModuleEdges`; this file calls the assertion at load time and uses `MODULE_EDGES` values to generate the per-module "one door" allow-lists.
+- **`scripts/e2e/cypress-spec-globs.ts`** — Exports `ALL_SPEC_GLOBS`; used in this file's ignore/plugin configuration so Cypress spec files are matched by the correct glob patterns.
 
 ## Notes
 
-- `boundariesElements` order is **significant**: `domain` must precede `module` because the first pattern to match a path claims it.
-- `partialMatch: false` on every element pattern anchors the match at the repo root, preventing e.g. `src/ui` from also matching `src/infrastructure/ui-adjacent-thing`.
-- `boundariesFiles` deliberately avoids wildcards for new files so that `boundaries/no-unknown-files` forces classification of any new file before it can import anything.
-- The tier ladder (bottom→top): `i18n → infrastructure → ui → kernel → modules(+domain) → app`. `app` is terminal: nothing may import it. `types` is reachable from every tier (erased at compile time).
-- `MODULE_EDGES` values that name backend-only modules (e.g. `addresses`, `invoicing`) are filtered out of `moduleDependencyPolicies` because no matching FE folder exists.
-- Adding a new module directory under `src/modules/` requires **no edit to this file**; the filesystem read and the per-module policy generation pick it up automatically.
+- **Policy order matters.** In both `layerDependencyPolicies` and `moduleDependencyPolicies`, the *last* matching policy wins. Disallow entries must appear after the broader allow they override.
+- **`partialMatch: false`** anchors every element/file pattern at the repo root. Without it, `src/ui` would also match `src/infrastructure/ui-adjacent-thing`.
+- **`domain` before `module`** in `boundariesElements` is load-bearing: the first matching descriptor claims the path, so a module's `domain/` subfolder must be classified before the generic `module` pattern swallows it.
+- **`MODULE_EDGES` values are backend module names.** A value with no matching FE folder (e.g. `addresses`, `audit-logs`, `invoicing`) is filtered out of the boundary policies rather than left to name a pattern nothing under `src/modules` will match.
+- **`default: 'disallow'`** in the `boundaries/dependencies` rule means every edge starts refused; the policies here are the explicit exceptions. A file not matched by any `boundariesFiles` entry is unknown and may not import anything.
+- **`session.ts` and `observability/**`** are classified as both `infrastructure` (by folder) and `infra-app-state` (by file rule). Both classifications apply simultaneously, which is what lets the `ui` policy allow `infrastructure` in general and then disallow these two specifically.
+- Adding a new module directory under `src/modules/` is sufficient for boundary coverage; no edit to this file is needed. The same principle applies to `src/modules.ts` being the only place that names a module.

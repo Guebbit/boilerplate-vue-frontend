@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/components/ProfileTwoFactor.vue
-sha256: e17d099a30ea2aeb793eef5c590636e25854445edfa22e6a4614ecb7698bd677
-generated_at: 2026-10-02T14:45:24.382888+00:00
+sha256: dcd5e5b5ee2492dd1f934afe05e6ab604445811288fe96bf47722791d8aa5662
+generated_at: 2026-10-17T00:16:55.128880+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,34 +9,36 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The account's two-factor authentication management panel. It renders the list of armed 2FA methods (each removable, or replaceable if already armed), offers enrollment for methods the server says are still available, and manages backup-code reveal/regeneration. Every mutation that must prove an existing factor funnels through a single shared code-prompt dialog, layered on top of the fresh-auth re-authentication the route already requires.
+The account's 2FA management panel. It renders the list of armed second-factor methods (each removable; an already-armed one also replaceable), the methods still available for enrollment, and the backup-codes count. Every code-guarded mutation (remove, disable-all, regenerate, enroll-while-armed) flows through a single shared code-prompt dialog, with in-dialog error blocking instead of toasts.
 
 ## Key elements
 
-- **`openEnroll(method)`** — Entry point for "Add" / "Replace" on a method row. First factor: opens `TwoFactorEnroll` directly. Already-armed: confirms via `useDialogStore().confirm` first, then delegates to `startCodePrompt`. New second method: goes straight to the code prompt.
-- **`CodePromptRequest`** (type) — Discriminated union (`remove`, `disable`, `regenerate`, `enroll`) that the single code-prompt dialog dispatches on in `runCodePromptMutation`.
-- **`startCodePrompt` / `openCodePrompt`** — Open or confirm-then-open the shared code prompt, resetting the input and any prior blocking error.
-- **`submitCode()`** — Reads the typed code, calls `runCodePromptMutation`, toasts on success (when applicable), closes the prompt, or feeds the error back into the dialog via `useBlockingError`.
-- **`runCodePromptMutation(request, code)`** — Routes to the correct `twoFactor` store action (`removeMethod`, `disableAll`, `setupMethod`, `regenerateBackupCodes`) and returns the toast string (or `undefined` when the follow-up dialog itself is the feedback).
-- **`handleEnrollClose` / `handleBackupCodesDone`** — Bridge between the enroll dialog and the backup-codes reveal; the latter also calls `twoFactor.clearSetup()` to reset resend cooldown.
-- **`revealedBackupCodes`** (ref) — Holds one-time backup codes locally; deliberately kept out of the Pinia store (same "never park a secret in a store" idiom used by `api-keys` / `webhooks`).
-- **`deliveredMethod`** (computed) — Finds the one armed method whose `delivers` flag is true, used by the "send code" button so a caller without a device can still prove identity.
-- **`availableToEnroll` / `unavailable`** (computed) — Split `status.available` by the server's `enrollable` flag; no client-side method-name checks.
-- **`useReturnFocus`** calls — Restore keyboard focus to the originating control when the enroll, backup-codes, or code-prompt dialog closes.
+- **`CodePromptRequest`** — discriminated union (`remove | disable | regenerate | enroll`) that drives the shared code-prompt dialog; `submitCode` dispatches to the correct store action based on `kind`.
+- **`openEnroll(method)`** — decides whether to open the enrollment dialog directly (first factor), go straight to the code prompt (new method), or show a destructive confirm before the code prompt (replace an armed method). Reads `status` rather than accepting a flag.
+- **`openCodePrompt(request)`** — wraps `useDialogStore().confirm()` then calls `startCodePrompt`, used by `handleRemove`, `handleDisableAll`, and `handleRegenerate`.
+- **`runCodePromptMutation(request, code)`** — maps the four `CodePromptRequest` kinds to their store actions and resolves a toast message (or `undefined` when the follow-up dialog *is* the feedback).
+- **`submitCode()`** — submits the typed code; on success toasts and closes the prompt, on failure calls `reportCodePromptError` so the dialog stays open.
+- **`revealedBackupCodes` (local ref)** — holds one-time backup codes after first-enrollment or regeneration. Intentionally kept out of the Pinia store ("never park a secret in a store" idiom).
+- **`enrolling` (local ref)** — which method is currently open in `TwoFactorEnroll.vue`; `undefined` when closed.
+- **`pendingSetup` (local ref)** — the `TwoFactorSetup` payload from `setupMethod`, passed to the enrollment dialog so it resumes rather than re-initialising.
+- **`deliveredMethod` / `sendProofCode()`** — finds the first armed method with `delivers: true` and mails a proof code into the open code prompt (refusal stays in the prompt via `reportCodePromptError`).
+- **`availableToEnroll` / `unavailable` (computed)** — split `status.available` on the server's `enrollable` flag; never inspects the method name locally.
+- **`useReturnFocus`** — three instances restore focus to the trigger control when the enroll, backup-codes, or code-prompt dialog closes.
 
 ## Relationships
 
-- **`useTwoFactorStore`** (`@/modules/account/stores/two-factor.ts`) — All read state (`status`, `mutatingWithCode`, `sendingCode`, `secondsUntilResend`) and every mutation action flow through this Pinia store.
-- **`useMethodLabel`** (`@/modules/account/composables/use-method-label.ts`) — Translates wire method names into display labels for confirmations and toasts.
-- **`useDialogStore`** (`@/ui/dialog.ts`) — Confirmation prompts before destructive actions (remove, disable-all, regenerate, re-enroll).
-- **`useBlockingError`** (`@/infrastructure/utils/use-blocking-error.ts`) — Keeps a wrong-code or other failure visible inside the code-prompt dialog instead of dismissing it.
-- **`TwoFactorEnroll.vue` / `TwoFactorBackupCodes.vue`** — Child dialogs for enrollment flow and backup-code reveal, respectively.
-- **`src/infrastructure/utils/logger.ts`** — Listed as a graph neighbor; no direct import is visible in the provided content, so the interaction (if any) is indirect or in the truncated portion.
+- **`two-factor.ts` store** — primary data source; `fetchStatus` is called on mount, and all mutations (`removeMethod`, `disableAll`, `setupMethod`, `regenerateBackupCodes`, `sendMethodCode`, `clearSetup`) are dispatched through it.
+- **`use-method-label.ts`** — provides `methodLabel()` used in confirm-dialog copy and success toasts.
+- **`TwoFactorEnroll.vue`** — child dialog for the enrollment/setup flow; receives `pendingSetup` and emits `close` with optional backup codes via `handleEnrollClose`.
+- **`TwoFactorBackupCodes.vue`** — child dialog that reveals `revealedBackupCodes`; emits a done event handled by `handleBackupCodesDone`.
+- **`Profile.vue`** — parent view that renders this component and gates it behind `ReauthDialog.vue` fresh-auth before any mutation is reachable.
+- **`two-factor-view.spec.ts`** — unit-test suite covering this component's behaviour.
+- **`@/infrastructure/utils/use-blocking-error.ts`** — provides the `useBlockingError` composable that keeps errors visible inside the code-prompt dialog rather than in the toast queue.
 
 ## Notes
 
-- **Errors stay in the dialog.** A wrong code or server failure does not toast; `useBlockingError` surfaces the message inline and the dialog stays open for another attempt. This is intentional (see `docs/theory/request-flow.md`).
-- **First factor is special-cased.** It skips the code prompt entirely because the route's re-auth already proved identity. The code reads `status.methods.length` to decide; there is no separate "isFirst" flag.
-- **Replace = confirm + code prompt.** Re-enrolling an already-armed method requires a destructive confirmation *before* the code prompt, because it disarms the current factor.
-- **Server decides availability.** Both `availableToEnroll` and `deliveredMethod` read server-provided flags (`enrollable`, `delivers`); no client-side method-name branching, so new methods need no code change here.
-- **`pendingSetup`** carries the setup payload from `setupMethod` into `TwoFactorEnroll` so the dialog resumes rather than starting a second setup session.
+- The file uses a separate non-`setup` `<script>` block solely to set `name: 'ProfileTwoFactor'`, because `<script setup>` cannot declare a component name. This is needed for `<KeepAlive>` and devtools.
+- A wrong code or any other failure **never** toasts; it is reported via `useBlockingError` so the dialog stays open for a retry. This is a deliberate contrast with the success path, which *does* toast.
+- `openEnroll` reads `status.value.methods` to decide "first factor vs. replace vs. add" rather than accepting a boolean from the caller, avoiding a single-source-of-truth mismatch.
+- `enrollable` and `delivers` are server-driven flags; the component intentionally avoids hard-coding method-name checks so new methods added server-side require no code change here.
+- Backup codes live in a local `ref`, not in the Pinia store, matching the same "don't park one-time secrets in a store" pattern used by `api-keys` and `webhooks`.

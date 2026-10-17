@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/store.ts
-sha256: 65a4863a5279258e54634a2338cf03f2f6218d81019ff7a06db1c60ff219b483
-generated_at: 2026-10-02T15:14:16.680830+00:00
+sha256: b74e8729d380d13e3d038f91b96b4c7e3b494c017860f006142c2d52a7b51a6c
+generated_at: 2026-10-17T01:04:50.690479+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,34 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store that powers the translation-admin screen. It manages two distinct resources behind one `defineStore`: the language **capabilities manifest** (which languages exist, their names, direction, visibility, default/fallback) and one language's **translation entries** (paginated CRUD rows). The manifest half always refetches after a write because the API returns differently-shaped records for reads (`LocaleCapability`) vs. writes (`Language`); the entries half delegates to the shared `useStructureCrudApi` toolkit.
+Pinia store that powers the translation-admin UI. It is deliberately split into two halves behind a single `defineStore` setup function: (1) language **capabilities** — reading the merged manifest and wrapping every write in an explicit refetch — and (2) one language's **entries** — a standard paginated CRUD resource driven by the `useStructureCrudApi` toolkit composable. The split exists because the API returns two different record shapes (`LocaleCapability` vs. `Language`), making a single generic CRUD resource impossible.
 
 ## Key elements
 
-- **`useLocalesStore`** — the exported Pinia store. Exposes `capabilities`, `tenants`, `defaultLocale`, `fallbackLocale`, `ownTenant`, `backendTenant`, `tenantLabel`, `fetchLanguages`, `fetchTenants`, `createLanguage`, `editLanguage`, `removeLanguage`, `addEntry`, `editEntry`, plus the toolkit-driven entry list (`filters`, `loading`, `pageItemList`, `pageCurrent`, `pageTotal`, `watchSearchEntries`).
-- **`LocaleEntriesFilters`** — interface for the entries search cache key (`tag`, `text`, `tenant`). `tag` is intentionally inside the filters object so the toolkit's per-key cache cannot cross-contaminate languages.
-- **`fetchApiDictionary(tag)`** — fetches and flattens the API's deployed dictionary for one language (tier-1 / backend). Resolves `{}` on 404 (dynamic-only language).
-- **`fetchBundledDictionary(tag)`** — flattens this build's bundled i18n dictionary for one language. Empty if the build doesn't ship that locale.
-- **`invalidateEntrySearches()`** — calls `queryClient.invalidateQueries({ queryKey: [resourceKey, 'search'] })` to mark every cached entry-search page stale. Used after `addEntry` / bulk imports because those write into the cache directly and bypass the toolkit's automatic invalidation.
-- **`addEntry` / `editEntry`** — explicit wrappers (not generic `createOne`) because every entry operation needs both the language `tag` and the row id. Each calls `addRecord` + `invalidateEntrySearches` to keep the paginated list consistent.
-- **`createLanguage` / `editLanguage` / `removeLanguage`** — write through `fetchAny`, then call `fetchLanguages()` to reload the manifest before resolving the API's `Language` row.
+- **`LocaleEntriesFilters`** (exported interface) — search criteria (`tag`, `text`, `app`) for the entries half. `tag` is intentionally inside the filters object so the toolkit's cache key distinguishes languages; keeping it out would let two languages serve each other's cached pages.
+- **`useLocalesStore`** (exported, `defineStore('locales', …)`) — the store itself. Exposes:
+  - *Entries half:* `filters`, `loading`, `pageCurrent`, `pageSize`, `entriesPageTotal`, `pageItemList`, `watchSearchEntries`, `addRecord`, `deleteTarget`, `fetchAny`, and CRUD wrappers (`addEntry`, `editEntry`, `removeEntry`, bulk/merge/replace operations, entity-translation upsert).
+  - *Capabilities half:* `capabilities`, `apps`, `ownApp`, `backendApp`, `appLabel(id)`, `defaultLocale`, `fallbackLocale`, and write wrappers `fetchLanguages`, `fetchApps`, `createLanguage`, `editLanguage`, `removeLanguage` — each write refetches the manifest.
+  - **`invalidateEntrySearches()`** — manual `queryClient.invalidateQueries([resourceKey, 'search'])` used after cache-mutating writes (`addRecord`, bulk import) that bypass the toolkit's automatic invalidation.
+- **`fetchApiDictionary(tag)`** (internal) — fetches and flattens the API's deployed dictionary for a tag; resolves `{}` on 404 (dynamic-only language is normal).
+- **`fetchBundledDictionary(tag)`** (internal) — flattens this build's bundled dictionary for a tag; never rejects.
+- **`listEntriesOf(tag, app, query)`** (internal) — routes to `listAppLocaleEntries` or `listLocaleEntries` depending on whether an app is scoped.
 
 ## Relationships
 
-- **`src/modules/locales/dictionaries.ts`** — imports `flattenDictionary`, used by both `fetchApiDictionary` and `fetchBundledDictionary` to turn nested dictionary objects into flat `key → value` maps.
-- **`src/kernel/registry.ts`** — no direct import or call is visible in this file; the dependency-graph link is indirect (likely through the shared `queryClient` or the `@api` / `@types` barrel). No direct interaction to document here.
+- **`src/modules/locales/dictionaries.ts`** — imports `flattenDictionary`, used by both internal dictionary fetchers to normalise nested message objects into flat `key → value` maps.
+- **`src/modules/locales/views/LocaleEntries.vue`** — consumes the entries half (filters, pagination, CRUD wrappers). The store's JSDoc explicitly delegates live-dictionary reloading to this view's `applyLiveOverrides` helper so the store never touches the running app's `i18n` instance.
+- **`src/modules/locales/views/LocalesList.vue`** — consumes the capabilities half (language list, create/edit/remove wrappers, manifest state).
+- **`src/modules/locales/views/LocalesDictionary.vue`** and **`EntityTranslations.vue`** — consume the store's dictionary helpers and entity-translation API wrappers.
+- **`src/modules/locales/tests/store.spec.ts`** — unit-tests the store's write-then-refetch contract and cache-invalidation behaviour.
+- **`@/infrastructure/query-client.ts`** — the shared `sharedQueryClient` instance is passed into `useStructureCrudApi`, giving the store a single source of truth for query-cache keys across the app.
+- **`@/infrastructure/locale-overrides.ts`** — provides `localeApp()` so the store knows which app id belongs to the running frontend (used for `ownApp`).
 
 ## Notes
 
-- **Never patches the running app's i18n.** The store deliberately avoids touching `vue-i18n` state; reloading the visitor's visible strings is the view's responsibility (`applyLiveOverrides` in `LocaleEntries.vue`). Coupling the store to `i18n` would tie every importer to boot order.
-- **409 on `addEntry` is rethrown untouched** so the view can display the server's collision explanation (both offending keys) verbatim.
-- **`removeLanguage` depends on the API's 409 guard:** the server refuses deletion while the language is still active; the caller must deactivate first. The store does not soften that constraint.
-- **`ownTenant`** comes from `localeTenant()` at module scope (build-time constant), while **`backendTenant`** is computed from the server-fetched registry. The two can differ; UI must not assume they are the same.
-- All manifest writes go through `fetchAny` (TanStack Query) so concurrent calls de-duplicate; entry-search invalidation is manual because `addRecord` writes into the cache directly rather than through the toolkit's mutation path.
+- **Write-then-refetch, not patch.** Every capabilities write (`createLanguage`, `editLanguage`, `removeLanguage`) calls `fetchLanguages()` after the mutation instead of splicing the returned `Language` row into the `LocaleCapability[]` list, because the two shapes are incompatible.
+- **Cache invalidation is manual for adds/imports.** `addRecord` and bulk imports write directly into the TanStack cache; they do not go through a toolkit `create` hook, so the store calls `invalidateEntrySearches()` by hand. The `[resourceKey, 'search']` key prefix targets only search pages, leaving `fetchAny`-cached manifest entries untouched.
+- **No `i18n` coupling.** The store deliberately never mutates the running app's dictionaries. Live reloading after an edit is the view's responsibility to avoid coupling every import of this module to i18n boot order.
+- **`tag` in filters is a cache-key design decision.** Removing it from `LocaleEntriesFilters` into a separate ref would cause cross-language cache collisions in the toolkit.
+- **404 on dictionary fetch is expected.** A freshly added language has no deployed file; `fetchApiDictionary` swallows the error and returns `{}`.
+- **Deletion guard is server-side.** `removeLanguage` relies on the API's 409 response (language still active) rather than enforcing a two-step deactivation→deletion sequence in the store.

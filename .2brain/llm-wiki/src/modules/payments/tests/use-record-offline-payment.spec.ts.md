@@ -1,7 +1,7 @@
 ---
 source: src/modules/payments/tests/use-record-offline-payment.spec.ts
-sha256: d73954b4660eb8c841ff105aa1d6a2a909a2562df4b3b39eb34d0ff557e5f85e
-generated_at: 2026-10-02T15:32:28.882029+00:00
+sha256: f8ae1f1335659acfb767b18aad3c7a29f3cbd3253cfb9d5b3101d589bb80f4cd
+generated_at: 2026-10-17T01:26:36.130776+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for the `useRecordOfflinePayment` composable. It pins the contract that the composable is a thin "perform the call and mirror the answer" layer: it performs the `POST /payments/order/:id/offline` request, mirrors a success into the payments store, and passes a rejection envelope through untouched. Business-rule decisions (e.g. "a card charge is in flight") are the server's 409, not the composable's.
+Unit tests for the `useRecordOfflinePayment` composable. They pin down a deliberate design contract: the composable performs the API call and mirrors the response, but makes **no** client-side decision about whether recording is allowed. Business-rule rejections (e.g. a card charge already in flight) are the server's 409, surfaced to the caller as a toast.
 
 ## Key elements
 
-- **`useRecordOfflinePayment(orderId: Ref<string | undefined>)`** — the composable under test (imported from `@/modules/payments/composables/`). Returns `{ recordOfflinePayment }`.
-- **`PAYMENT`** — static fixture object (id, orderId, userId, amount 50 EUR, status `succeeded`, provider `manual`, method `cash`).
-- **`rejectWith(status, message, code?)`** — builds the client's rejection envelope shape (`{ success: false, status, message, errors: [{ code, message }] }`) used to simulate API-level refusals.
-- **`isDeclined`** — type guard distinguishing a stubbed 4xx/5xx refusal object from a success fixture.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a router keyed on `METHOD url`; undefined keys 404, `Declined` objects reject, everything else resolves via `parseOrvalFixture`.
-- **Three `it` blocks** — success (store mirror), 409 pass-through (caller owns the toast), missing order-id no-op (returns `undefined`, no network call).
+- **`PAYMENT`** – Canned cash-payment object (order `o1`, €50, `manual`/`cash`) used as the success fixture.
+- **`responses`** – Mutable `Record<string, unknown>` keyed by `"METHOD /url"`; reassigned in `beforeEach` and per-test to drive the mocked transport.
+- **`rejectWith(status, message, code)`** – Returns a rejected Promise whose value is the API's error *envelope* (`{ success: false, status, message, errors }`), matching the composable's only catch shape.
+- **`Declined` / `isDeclined`** – Interface + type-guard distinguishing a stubbed refusal entry from a success fixture in `responses`.
+- **`vi.mock('@/infrastructure/http')`** – Replaces `orvalMutator` with a stub that looks up `responses[key]`, rejects with `rejectWith` on a `Declined` entry or missing key, and resolves via `parseOrvalFixture` otherwise.
+- **`beforeEach`** – Resets Pinia (`createPinia`), clears all mocks, and seeds `responses` with the default `POST /payments/order/o1/offline` success envelope.
+- **`describe('useRecordOfflinePayment')`** – Three tests:
+  1. *records the payment and mirrors it into the payments store* – happy path.
+  2. *lets a refusal through — the caller owns the toast* – asserts the 409 envelope propagates unchanged.
+  3. *does nothing without an order id rather than calling a broken url* – asserts `undefined` return when the order-id ref is `undefined`.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** → `wireModulesIntoCore()` is called once at module top-level to register the payments module's Pinia stores and DI wiring before any test runs.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** → provides `orvalEnvelope` (wraps `PAYMENT` into the expected API envelope) and `parseOrvalFixture` (deserialises the envelope back into the typed shape the composable consumes).
+- **`src/modules/payments/composables/use-record-offline-payment.ts`** – The system under test; imported directly and exercised via `useRecordOfflinePayment(ref(…))`.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called once at module scope to register Pinia modules so the composable's internal store access resolves.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Provides `orvalEnvelope` (wraps a domain object into the API success envelope) and `parseOrvalFixture` (validates/normalises the fixture against the expected method+url shape).
 
 ## Notes
 
-- The composable is **not** re-exported through the module barrel; only `RecordOfflinePaymentForm` calls it. This spec is the sole behavioural contract.
-- `orvalMutator` is mocked at the `@/infrastructure/http` boundary, so no real HTTP layer or Orval-generated client code runs.
-- `vi.clearAllMocks()` in `beforeEach` resets the `orvalMutator` mock call counts; the `responses` map is re-seeded each time.
-- The rejection envelope shape (`success: false`, `errors[]`) is the **client's** rejection contract — it is not a raw `Error` or HTTP `Response`.
+- The `rejectWith` helper carries an `eslint-disable` for `prefer-promise-reject-errors`: the API's error *envelope* is the client's rejection contract, so rejecting with a plain object is intentional, not an oversight.
+- The mock routes purely on the `${method} ${url}` string; any test that changes the URL pattern must update the key in `responses` accordingly.
+- `wireModulesIntoCore()` runs once outside `beforeEach`; Pinia is recreated per test, but the module wiring persists for the file's lifetime.

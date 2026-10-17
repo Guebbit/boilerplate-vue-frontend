@@ -1,37 +1,32 @@
 ---
 source: src/modules/payments/tests/store.spec.ts
-sha256: 6decc5c31a7dabde2824e3b232766f82f0b72ff68ce7bdcabf4f748d8b6217ea
-generated_at: 2026-10-02T15:31:42.280321+00:00
+sha256: 2d011684335a1980ffb3ba6b68f716c532d384508aae40b126b6bfc498bed5aa
+generated_at: 2026-10-17T01:25:59.328802+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/payments/tests/store.spec.ts
 
 ## Purpose
-
-Unit tests for the payments Pinia store (`usePaymentsStore`). The transport (`orvalMutator`) is mocked as a key-based router while the generated API client and the store under test remain real. The suite pins the PSP call sequence (intent → confirm → sync), the semantic split between "404 = no payment yet" and "any other failure = reject to caller", and the exact request-body shapes the store sends to each endpoint.
+Vitest unit tests for the payments Pinia store. The HTTP transport (`orvalMutator`) is mocked as a method/URL-keyed router so the generated client and the store itself remain real. The tests pin the PSP sequence (intent → confirm with provider method ref → sync for challenge resolution) and the critical distinction that a 404 on read resolves to `undefined` ("no payment yet") while every other failure still rejects to the caller.
 
 ## Key elements
-
-- **`PAYMENT`** — shared fixture object (id, orderId, amount, status, etc.) reused across tests.
-- **`responses: Record<string, unknown>`** — mutable per-test routing table keyed by `"METHOD /url"`; the mock consults it to decide what to return.
-- **`rejectWith(status, message, code?)`** — builds the rejection envelope that `onResponseReject` would produce (plain object with `success: false`, `status`, `errors[]`), not a native `Error`.
-- **`Declined` / `isDeclined`** — type guard distinguishing an API-level refusal (`{ status, code, message }`) from a transport `Error` inside the mock router.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a function that looks up `responses[key]`, returns 404 on miss, wraps `Error` instances as 500, maps `Declined` to the envelope, and parses valid fixtures via `parseOrvalFixture`.
-- **`requestedUrls()`** — extracts the `url` field from every recorded `orvalMutator` call; used to assert call order.
-- **`describe` blocks** — one per store method: `fetchMethods`, `fetchPaymentForOrder`, `payForOrder`, `finishAtProvider`, `recordOfflinePayment`, `findOrderByReference`.
-- **`contractRequest(schema, body)`** — validates a recorded request body against the generated OpenAPI schema (e.g. `ConfirmPaymentBody`, `RecordOfflinePaymentBody`) to catch payload-shape regressions.
+- **`responses`** — mutable record mapping `METHOD /url` strings to canned replies; set in `beforeEach` and overridden per-test.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a router that dispatches on the request key; returns a resolved envelope, a `rejectWith` rejection, or a `Declined`-shaped 4xx.
+- **`rejectWith(status, message, code)`** — builds the exact rejection envelope (`{ success: false, status, message, errors: [{ code, message }] }`) that `onResponseReject` would produce.
+- **`isDeclined`** — type guard distinguishing a canned API-level refusal (`{ status, code, message }`) from a generic `Error` (transport failure).
+- **`requestedUrls()` / `idempotencyKeyOf(suffix)`** — assertion helpers that inspect `orvalMutator` mock calls in order.
+- **`describe` blocks** — `fetchMethods`, `fetchPaymentForOrder`, `payForOrder`, `finishAtProvider`, `recordOfflinePayment`; each covers the happy path, the 404-as-absence case (where applicable), and the "other failures propagate" case.
 
 ## Relationships
-
-- **`src/infrastructure/http/index.ts`** — provides `orvalMutator`, the HTTP transport the store calls. This file mocks that entire module so the store runs against deterministic routing instead of a network.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is invoked at module top-level to register the DI bindings the store depends on before any test executes.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `orvalEnvelope` (wrap a domain object in the API response envelope), `parseOrvalFixture` (validate a fixture against the generated schema before resolving), and `contractRequest` (validate a request body). All three are imported and used throughout.
+- **`src/modules/payments/store.ts`** — the system under test; `usePaymentsStore` is instantiated against a fresh Pinia per test.
+- **`src/infrastructure/http/index.ts`** — source of `orvalMutator`; fully replaced by the `vi.mock` factory so no real network code runs.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope to register the store and its dependencies in the DI/module system before any test executes.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `orvalEnvelope` (wraps a fixture in the API envelope), `parseOrvalFixture` (used inside the mock to shape the resolved value), and `contractRequest` (validates a request body against an OpenAPI schema before comparison).
 
 ## Notes
-
-- The mock router distinguishes **four** shapes: `undefined` → 404, `Error` instance → 500 transport failure, `Declined` object → API refusal with a specific `errors[].code`, and a valid fixture → success. Conflating these would hide bugs in the store's error-handling logic.
-- The `eslint-disable` on `rejectWith` is deliberate: the rejection contract is a plain object (the API's error envelope), not a `Error` subclass. The store reads `.status` off the rejection to separate "absence" from "failure"; a native `Error` would not carry that field.
-- A `requires_action` response (3-D Secure / bank challenge) must **resolve**, not reject. A regression that rejects here would strand every challenge-based payment.
-- The confirm step sends only a `paymentMethodRef` (e.g. `'pm_card_visa'`); raw card digits must never appear in the request body. The `contractRequest` assertion enforces this.
-- `recordOfflinePayment` can be rejected with `PAYMENT_IN_FLIGHT` — a distinct code from `PAYMENT_DECLINED` — because an already-in-flight card charge would cause a double-charge if the offline record were also accepted.
+- The reject envelope is a **plain object**, not an `Error`. The eslint-disable comment marks this as intentional: it mirrors the client's actual rejection contract.
+- Idempotency-key assertions are a security guard: the intent request must carry **no** `Idempotency-Key` header (a stored replay could leak the key), while confirm must.
+- `contractRequest` is used to assert that confirm/offline request bodies contain only a provider method reference (`pm_card_visa`), never raw card digits — a regression to inline card data would fail the schema check.
+- The `Declined` interface and `isDeclined` guard exist so tests can stub the exact `errors[].code` shape a real 4xx sends (e.g. `PAYMENT_DECLINED`, `PAYMENT_IN_FLIGHT`) rather than collapsing everything into a generic 500.
+- A 3-D Secure / bank-transfer challenge (`requires_action`) is asserted to **resolve**, not reject; treating it as a failure would strand every challenge-based payment.

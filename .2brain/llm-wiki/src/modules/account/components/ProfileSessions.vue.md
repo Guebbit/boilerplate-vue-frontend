@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/components/ProfileSessions.vue
-sha256: adce0d28a1e34684069e788d18fd052c3a277fb8524f43afb49718e6d69acd51
-generated_at: 2026-10-02T12:12:13.830485+00:00
+sha256: e6753be19d1d69dfd1e46a61f92da8824c04380891d75c0d1ebcd1b37049051d
+generated_at: 2026-10-17T00:16:37.409918+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Device-sessions panel on the profile page. Renders every live refresh token as a row, lets the visitor revoke a single session, and offers a "log out everywhere" action. Revoking the *current* session is treated by the API as a logout, so the component navigates home afterwards.
+A profile-page panel that lists the visitor's live device sessions and lets them revoke any single session or end all of them at once. It exists as a standalone SFC so the profile view stays a thin layout shell and the session UI (list, per-row revoke, logout-everywhere) is self-contained with its own loading and error handling.
 
 ## Key elements
 
-- **`handleRevoke(sessionId, current)`** — revokes one session via the sessions store. On success, toasts and (if it was the current session) pushes to the `Logout` route. On failure, reports into the shared blocking-error state.
-- **`handleLogoutEverywhere()`** — opens a Vuetify confirmation dialog (`useDialogStore`), then calls `logoutEverywhere()` from the auth store. Navigates to `Home` on success; reports errors into the same blocking-error state.
-- **`revokingId` (ref)** — per-row loading flag. Deliberately local rather than the store's page-wide `loading`, so unrelated fetches don't put every revoke button into its spinner/label-dimmed state.
-- **`sessionsActionError` / `reportSessionsActionError` / `clearSessionsActionError`** — one `useBlockingError()` instance shared by both revoke and logout-everywhere, rendered as a single `InlineErrorAlert` above the list.
-- **`fetchSessions` / `revokeSession`** — actions from `useAccountSessionsStore`; `fetchSessions` runs on mount (ambient load, not gated by the blocking error).
-- **`logoutEverywhere`** — action from `useAuthStore` that ends all sessions across devices.
-- **Scoped style override** — raises `--v-medium-emphasis-opacity` to `1` on `.session-last-used` and `.session-expiry` so Vuetify's 0.6 subtitle opacity stays above the 4.5:1 WCAG AA contrast threshold (verified by `account/tests/e2e/a11y.cy.ts`).
+- **`handleRevoke(sessionId, current)`** – Revokes one session via the sessions store. If `current` is true, navigates to the `Logout` route after success (the API treats that revoke as a logout). On failure, reports into the shared blocking-error slot.
+- **`handleLogoutEverywhere()`** – Shows a confirm dialog, then calls `logoutEverywhere` from the auth store and navigates to `Home` on success.
+- **`revokingId` (ref)** – Per-row loading state bound to each revoke button's `:loading`, chosen over the store's page-wide flag so unrelated fetches don't spin every button.
+- **`useBlockingError()`** – Single shared instance for both write actions (revoke + logout-everywhere); its `message` feeds the `InlineErrorAlert` rendered above the list.
+- **`onMounted(fetchSessions)`** – Loads the session list on mount (ambient, no blocking UI).
+- **Scoped style block** – Raises `--v-medium-emphasis-opacity` to `1` on the three subtitle lines (started, last-used, expiry) so Vuetify's default 0.6 opacity doesn't drop contrast below WCAG AA 4.5:1.
 
 ## Relationships
 
-- **`useAccountSessionsStore`** (`@/modules/account/stores/sessions.ts`) — provides `sessions` (reactive list), `fetchSessions`, and `revokeSession`.
-- **`useAuthStore`** (`@/modules/account/stores/auth.ts`) — provides `logoutEverywhere`.
-- **`useBlockingError`** (`@/infrastructure/utils/use-blocking-error.ts`) — shared error-state composable for the two write actions.
-- **`formatDateTime`** (`@/infrastructure/utils/formatters.ts`) — renders `lastUsedAt` and `expiration` timestamps in the list.
-- **`routerLinkI18n`** (`@/i18n/router-link.ts`) — builds i18n-aware route targets for the post-revoke / post-logout navigations.
-- **`useDialogStore`** (`@/ui/dialog.ts`) — confirmation dialog before "log out everywhere".
-- **`InlineErrorAlert`** (`@/ui/molecules/InlineErrorAlert.vue`) — renders the shared blocking-error message.
-- **`src/infrastructure/utils/logger.ts`** — reached indirectly through the auth/sessions stores and the notification store; no direct import in this file.
+- **`src/modules/account/stores/sessions.ts`** – Consumes `fetchSessions`, `revokeSession`, and the reactive `sessions` array; this component is the sole UI for those store actions.
+- **`src/modules/account/stores/auth.ts`** – Consumes `logoutEverywhere` for the "end all sessions" button.
+- **`src/modules/account/views/Profile.vue`** – Parent view that mounts this component as one of the profile tabs/panels.
+- **`src/modules/account/tests/profile-sessions-last-used.spec.ts`** – Unit/integration test targeting the `session-last-used` subtitle and related rendering logic in this file.
 
 ## Notes
 
-- The blocking-error composable is intentionally **shared** between revoke-one and logout-everywhere because neither action has its own dedicated alert slot; the list itself keeps rendering regardless of which action failed. The pattern mirrors `ProductsList.vue` in the products module.
-- `revokingId` is a **local** ref, not the store's `loading`, to avoid the Vuetify `:loading` side-effect (dimmed label below contrast threshold) on rows the user never touched.
-- The accessibility CSS override targets the **design token** (`--v-medium-emphasis-opacity`) rather than hard-coding `opacity`, so Vuetify's emphasis system remains the single source of truth. The rule is scoped to this component's two subtitle classes.
-- Success on "log out everywhere" navigates away immediately; there is no success toast because the visitor is no longer on the page.
+- The component `name` is declared in a separate non-setup `<script>` block because `<script setup>` cannot set a component name itself; this matters for `<KeepAlive>` and devtools.
+- Neither revoke nor logout-everywhere has a dedicated per-button error slot, so both funnel into one `InlineErrorAlert` above the list. The list's initial load failure is handled separately (ambient), keeping the two concerns split.
+- The contrast override targets the Vuetify CSS custom property rather than hard-coding `opacity`, so a theme-level emphasis change still applies if the token itself is raised elsewhere.

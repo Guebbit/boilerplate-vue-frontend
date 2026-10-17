@@ -1,7 +1,7 @@
 ---
 source: src/modules/api-keys/routes.ts
-sha256: b319fd1aaabc8ac656ecdc55f182b1181f734264e16fb5b3bc9a36dcc3799f62
-generated_at: 2026-10-02T12:40:55.826610+00:00
+sha256: fa03a84a912b43e0d9472819f520d1f009d57ff5d7ebccae093a15625f0ce756
+generated_at: 2026-10-17T00:31:49.791611+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Defines the two route records (list + create) for the api-keys module and exports them as a typed array consumed by the app's module registry. There is intentionally no edit/detail route: all key fields (name, permissions, expiry) are immutable after minting, so a list row is sufficient.
+Declares the two route records for the api-keys module (list and create/mint). There is deliberately no edit or detail route: API keys are immutable after minting, so every field fits in a list row and there is nothing to patch.
 
 ## Key elements
 
-- **`default` (exported array)** — Two `RouteRecordRaw` objects:
-  - `ApiKeysList` (`/api-keys`) — lazy-loads `ApiKeysList.vue`; requires `auth` access and `read ApiKey` permission.
-  - `ApiKeyCreate` (`/api-keys/create`) — lazy-loads `ApiKeyCreate.vue`; requires `auth` access and `create ApiKey` permission.
-- **`satisfies RouteRecordRaw[]`** — Asserts the array shape at compile time while preserving the literal type for downstream consumers.
+- **`export default`** — An array of two `RouteRecordRaw` objects, type-checked via `satisfies RouteRecordRaw[]`.
+  - `ApiKeysList` (`/api-keys`) — lazy-loads `./views/ApiKeysList.vue`; requires `auth` access and the `read ApiKey` ability.
+  - `ApiKeyCreate` (`/api-keys/create`) — lazy-loads `./views/ApiKeyCreate.vue`; requires `auth` access and the `create ApiKey` ability.
+- Both entries use dynamic `import()` so their view components are code-split.
 
 ## Relationships
 
-- **`src/modules/api-keys/module.ts`** — Imports this array (the default export) and registers the routes under the app's module system.
-- **`src/modules/api-keys/tests/routes.spec.ts`** — Unit-tests the route table (paths, names, meta, lazy component paths).
+- **`src/modules/api-keys/module.ts`** — Consumes this default export to register the two routes under the app's module registry.
+- **`src/modules/api-keys/tests/routes.spec.ts`** — Imports the route array and asserts on paths, names, meta fields, and component resolution.
 
 ## Notes
 
-- Route `meta.access: 'auth'` and `meta.can` are enforced by the app-level navigation guard; they are not validated here.
-- `title` values are i18n keys (`.page-title` suffix), not literal strings.
-- The `create` path is a nested child of `api-keys` (`api-keys/create`), not a separate top-level segment.
+- The `path` values are relative (`api-keys`, `api-keys/create`), not absolute — they are expected to be mounted under a parent prefix by `module.ts`.
+- `meta.can` uses the `[verb, resource]` tuple convention (e.g. `['read', 'ApiKey']`); the permission middleware must match on both parts.
+- `satisfies` (not `:`) is used so the array retains its literal type for downstream consumers while still being checked against `RouteRecordRaw[]`.

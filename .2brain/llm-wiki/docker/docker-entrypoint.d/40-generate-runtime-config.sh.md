@@ -1,7 +1,7 @@
 ---
 source: docker/docker-entrypoint.d/40-generate-runtime-config.sh
-sha256: 5f909679e736315b93340dd854b802dfd52cc2590d2c84c7ec69145bffbcc950
-generated_at: 2026-10-02T14:32:38.967803+00:00
+sha256: 4fd51a23a28017903a7696a011b82b6efe8caa28346167c01ad401113df718c2
+generated_at: 2026-10-16T23:56:17.077245+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Generates `/usr/share/nginx/html/config.js` at every container start by reading `VITE_*` environment variables and emitting them as a `window.__APP_CONFIG` JS object literal. This makes a config change a simple restart (new env → new file) rather than a full image rebuild. It runs automatically because the official nginx image sources every executable `*.sh` under `/docker-entrypoint.d/` before launching the server.
+Generates `/usr/share/nginx/html/config.js` from the container's environment variables at every startup, so a config change is a restart rather than a rebuild. It is auto-sourced by the official nginx image's entrypoint, which executes every `*.sh` under `/docker-entrypoint.d/` before starting nginx.
 
 ## Key elements
 
-- **`json_escape(value)`** — escapes backslashes and double-quotes, then strips all C0 control characters (newlines, tabs, etc.) so an operator-supplied env var cannot break the generated script.
-- **`config_entry(key, value)`** — prints a `"key": "value",` line if `value` is non-empty; prints nothing otherwise (the key is simply absent, equivalent to `undefined` on the reader side).
-- **Main block** — opens `window.__APP_CONFIG = {`, calls `config_entry` for each of the ~20 `VITE_*` variables (API URLs, locale settings, logging, Faro, Umami, upload limits, etc.), closes with `};`, and redirects the whole output to `$CONFIG_FILE`.
-- **`CONFIG_FILE`** — hardcoded to `/usr/share/nginx/html/config.js`.
-- **`set -eu`** — aborts on any error or unset variable.
+- **`json_escape()`** – Escapes backslashes and double-quotes in a value, then strips all control characters (`\000`–`\037`, including newlines) so a malformed env var can't break the generated JS.
+- **`config_entry()`** – Emits one `"key": "value",` line if the value is non-empty; emits nothing if unset or blank, leaving the key absent (i.e. `undefined`) to the reader.
+- **Main block (lines writing `window.__APP_CONFIG`)** – Calls `config_entry` for 20 `VITE_*` environment variables (API URLs, app identity, locale, logging, upload limits, Faro telemetry, Umami analytics, etc.) and writes the result to `CONFIG_FILE`.
+- **`CONFIG_FILE`** – Hardcoded to `/usr/share/nginx/html/config.js`, the path `index.html` loads before the app bundle.
 
 ## Relationships
 
-No graph neighbors are recorded. The script's self-documented consumer is `src/infrastructure/runtime-config.ts` (the sole reader of `window.__APP_CONFIG`); `index.html` loads the generated `config.js` before the app bundle.
+No graph-neighbor edges are recorded. The script itself references:
+
+- **`src/infrastructure/runtime-config.ts`** – The sole reader of `window.__APP_CONFIG`; this script is its writer.
+- **`index.html`** – Loads `config.js` before the compiled app bundle, so the object must exist at page-load time.
+- **`docs/tools/environment.md`** – Documents the design, whitelist, and "Runtime configuration" section governing which env vars are exposed here.
 
 ## Notes
 
-- **Trailing comma is intentional.** The last real entry always carries one; it is valid JS in an object literal, so no "last-entry" special-casing is needed.
-- **Unset or blank vars emit nothing.** A missing key reads as `undefined` in the browser — the same state as if `config.js` were never written.
-- **No secrets may appear here.** Every value ships to the browser via the compiled bundle; the design explicitly forbids placing credentials in these env vars (see `FA93` in `FE_AUDIT_0925_6_DEPLOY_AND_TOOLING.md`).
-- **The `40-` prefix** controls execution order among sibling entrypoint scripts; it runs after the nginx defaults (`10-`, `20-`) and before any `50-`+ scripts.
+- **Trailing comma is intentional.** Every `config_entry` call ends with `,`, including the last. A trailing comma in a JS object literal is valid, so no special-casing is needed for "the final key."
+- **Never a secret.** Every value already ships to the browser via the compiled bundle; this script only makes them overridable per-deployment.
+- **POSIX sh, not bash.** The shebang is `#!/bin/sh` and `set -eu` is used; avoid bashisms if editing.
+- **The `40-` prefix** is an ordering convention: the nginx entrypoint sources files in lexical order, and this number was chosen to run after any earlier setup scripts but before nginx starts.
+- **`config_entry` silently drops blank values.** An unset *or* empty-string env var produces no key at all, which the reader treats identically to a missing `config.js`.

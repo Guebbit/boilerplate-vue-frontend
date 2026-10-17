@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/tests/cancel.spec.ts
-sha256: ab62fd631d5c313c02fe055d61c29cd268b0535cd16395a12575720ffca3157b
-generated_at: 2026-10-02T15:21:06.544422+00:00
+sha256: 0854bde7590ccd9b177b2ab45b229ebfe80c9f4618606f5d663a367471a0fb47
+generated_at: 2026-10-17T01:16:48.674027+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for the `cancelOrder` action in the orders store. It mocks `orvalMutator` directly so assertions can inspect the raw request body (not just the URL) and verify the store's single customer-facing write: that the cached order record is replaced by the cancelled one, and that the refund flag is forwarded exactly as the caller expressed it.
+Vitest spec for the orders store's `cancelOrder` action. It mocks `orvalMutator` at the transport boundary so assertions can inspect the **raw request body** (not just the URL) and verify that the server response replaces the cached order record.
 
 ## Key elements
 
-- **`wireModulesIntoCore()`** — called once at module scope to bootstrap the store's dependency graph for the test environment.
-- **`ORDER`** — fixture order (`anOrder({ status: 'cancelled' })`) returned as the canned cancel-endpoint response.
-- **`sent`** (module-level array) — captures every config object passed to the mocked `orvalMutator`, enabling body-level assertions.
-- **`responses`** (module-level record) — maps `"METHOD url"` keys to canned response payloads read by the mock.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a spy that records the config and resolves via `parseOrvalFixture`, so the store receives a well-formed envelope without a real network call.
-- **`describe('cancelOrder')`** — single assertion: after the call, `store.orders.o1.status` is `'cancelled'`.
-- **`describe('cancelOrder — the operator choosing what happens to the money')`** — three cases pinning the request body: no body when `refund` is omitted, `{ refund: false }`, and `{ refund: true }`.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a function that records every outgoing `{ url, method, data }` into `sent` and returns a canned response from `responses`, parsed through `parseOrvalFixture` for schema fidelity.
+- **`sent`** (module-level array) — accumulator of all request configs; tests assert on `sent[0].data` to verify the exact body payload.
+- **`responses`** (module-level record) — canned response bodies keyed by `"METHOD /path"`; reset in `beforeEach`.
+- **`ORDER`** — fixture order (via `anOrder`) with `status: 'cancelled'`, wrapped in `orvalEnvelope` as the 200 response.
+- **`describe('cancelOrder')`** — single test: after the call, `store.orders.o1.status` is `'cancelled'` (replaced, not merged).
+- **`describe('cancelOrder — the operator choosing what happens to the money')`** — three tests pinning the request body: no body when `refund` is omitted, `{ refund: false }` when explicitly false, `{ refund: true }` when true. Assertions use `contractRequest(schemas.CancelOrderByIdBody, …)` for schema-aware comparison.
 
 ## Relationships
 
-- **`tests/support/unit/fixtures.ts`** — supplies the `anOrder()` factory used to build the `ORDER` fixture.
-- **`tests/support/unit/wire-modules.ts`** — supplies `wireModulesIntoCore()`, which injects test doubles into the DI core before the store is instantiated.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies three helpers: `orvalEnvelope` (wrap a payload in the API envelope), `parseOrvalFixture` (decode the canned response the mock returns), and `contractRequest` (validate a sent body against the generated `CancelOrderByIdBody` schema).
+- **`src/modules/orders/store.ts`** — the SUT; imports `useOrdersStore` and exercises its `cancelOrder(id, refund?)` action.
+- **`tests/support/unit/fixtures.ts`** — provides the `anOrder` factory used to build the `ORDER` fixture.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` called once at module top-level to bootstrap the DI container for the store.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `orvalEnvelope` (wrap fixture in the orval response shape), `parseOrvalFixture` (validate/normalise the canned body inside the mock), and `contractRequest` (assert a request body conforms to an API schema while returning it for equality checks).
 
 ## Notes
 
-- This spec intentionally does **not** test response-schema validation. That behaviour lives in `http-validate-responses.spec.ts`; here the mock bypasses validation entirely by resolving the fixture directly.
-- The "no body" case is semantically significant: an absent body signals the API's default (customer cancel). Sending `{ refund: true }` in that path would fabricate a preference the caller never made.
-- `parseOrvalFixture` is called with the *outgoing* method/url, not the response shape — it uses the route to pick the correct decode path for the canned payload.
+- **No schema-validation coverage here.** Response validation against the orval contract is explicitly delegated to `http-validate-responses.spec.ts`; this spec assumes validation passes and focuses solely on body shape and cache replacement.
+- **`sent` and `responses` are module-level, not per-test.** They are re-initialised in `beforeEach` after `vi.clearAllMocks()`, so tests must not rely on values set in a prior `it` block.
+- **Body-assertion convention:** when the store omits a parameter the test expects `data` to be `undefined` (not `{}`), reflecting that an absent body is the API's "default cancel" signal.
+- The `vi.mock` factory closes over the module-level `sent`/`responses` bindings via the `let` declarations; this works because Vitest hoists the mock but the factory body executes lazily on each call.

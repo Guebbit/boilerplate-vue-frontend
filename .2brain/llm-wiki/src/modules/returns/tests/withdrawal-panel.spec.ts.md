@@ -1,7 +1,7 @@
 ---
 source: src/modules/returns/tests/withdrawal-panel.spec.ts
-sha256: 8ca3053b3f6d2dc4cd17667fe05455072f3e9a248963bfc3f48b3ec0a7cb5e31
-generated_at: 2026-10-02T15:46:41.688755+00:00
+sha256: ec71c66d16839725caf66ce621a2480bc996017b8fb22ce648bef4452baa62b7
+generated_at: 2026-10-17T01:39:14.984633+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,32 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest unit tests for the `WithdrawalPanel` Vue component. Verifies the server-gated withdrawal button, its confirmation dialog flow, error reporting, and the nested `ReturnRequestForm` offering rules. Deliberately mocks the Pinia store's actions (transport is `store.spec.ts`'s responsibility) and the dialog store's `confirm` to isolate component logic.
+Vitest spec for `WithdrawalPanel.vue`. Verifies the panel's three main responsibilities: rendering the withdrawal button only when the server permits it, requiring a confirmation dialog before calling the store, and reporting outcomes (success, refusal, or error). Also covers the embedded return-request form and the cancellation-of-unshipped flow.
 
 ## Key elements
 
-- **`mountPanel(props, existing?)`** — Shared setup helper. Creates a fresh Pinia, spies on `fetchOrderReturns` and `openReturn` *before* mounting (the component destructures actions in `setup`), then mounts `WithdrawalPanel` with Vuetify, i18n, and a memory router. Returns `{ wrapper, store }`.
-- **`router`** — Single-route memory-history router matching `/:locale/returns/:id` (name `ReturnTarget`) so `router-link` inside the panel resolves.
-- **`SHIRT`** (inside `returns form` block) — A one-line `Order['items']` fixture (product `p1`, qty 1) used for the form-visibility tests.
-- **Top-level `it` blocks** — Cover: hidden panel, button + deadline text, "delivered" fallback text, confirmed withdrawal (calls `openReturn` with `{orderId, reason:'withdrawal'}` and emits `opened`), declined confirmation (no call, no emit), server refusal (shows `[data-test=withdraw-error]`), and listing an already-opened return.
-- **`describe('returns form')`** — Covers: form appears after `delivered`/`shipped` status, absent before shipping, hidden when all units are already in a return, and that emitting `opened` on the child `ReturnRequestForm` re-fetches the return list.
+- **`mountPanel(props, existing, options)`** – mounts `WithdrawalPanel` with `vuetify`, `i18n`, and a memory router; spies on `fetchOrderReturns`, `fetchReturnOptions`, and `openReturn` *before* mount so the component's destructured actions hit the mocks. Returns `{ wrapper, store }`.
+- **`signInWith(tenant)`** – seeds the session store with a token, viewer identity, and an ability list so permission-gated UI can be exercised.
+- **`NO_OPTIONS`** – baseline `ReturnOptions` fixture (empty `returnable`/`cancellable` arrays).
+- **`describe('WithdrawalPanel')`** – top-level suite: renders nothing when hidden, shows button + deadline, confirmation accept/decline, server-error display, and listing an already-opened withdrawal.
+- **`describe('returns form')`** – asserts `ReturnRequestForm` appears when `returnable` is non-empty, receives the server's lines as props, emits `opened` upward, and re-fetches options after a return is opened.
+- **`describe('cancelling what has not shipped')`** – covers the cancellation path: buyer vs. staff-with-`Refund`-ability, server-level `cancel: false` hiding, and the no-permission case.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module load so the i18n / module registry is populated before any test runs.
-- **`tests/support/unit/fixtures.ts`** — Provides `aReturn()` and `anOrder()` factory helpers used in `mountPanel`'s default mock return and in the returns-form tests.
-- **`tests/support/unit/mounted-vm.ts`** — Provides `emitOn()`, used to programmatically trigger the `opened` event on the child `ReturnRequestForm` component via Vue Test Utils.
+| Neighbor | Interaction |
+|---|---|
+| `WithdrawalPanel.vue` | Component under test; mounted directly. |
+| `ReturnRequestForm.vue` | Queried via `wrapper.getComponent(ReturnRequestForm)` to assert props and to emit `opened` with the `emitOn` helper. |
+| `store.ts` (`useReturnsStore`) | All actions (`fetchOrderReturns`, `fetchReturnOptions`, `openReturn`) are spied and their call arguments / rejection values asserted. |
+| `tests/support/unit/wire-modules.ts` | `wireModulesIntoCore()` called at module top-level to register i18n/interceptors before any test runs. |
+| `tests/support/unit/fixtures.ts` | `aReturn()` factory used for the "already opened" and `openReturn` success mocks. |
+| `tests/support/unit/mounted-vm.ts` | `emitOn()` used to dispatch child-component events (`opened`) that are awkward to trigger via the DOM. |
 
 ## Notes
 
-- Store actions must be spied **before** `mount()` because `WithdrawalPanel` destructures them during `setup`; spying after mount would have no effect.
-- The `existing` parameter of `mountPanel` is cast `as never` at call sites (`[aReturn()] as never`) — a pragmatic escape hatch for fixture typing; not a bug.
-- `vi.mocked(store.openReturn).mockRejectedValue(...)` is used to *re*-configure the mock after `mountPanel` already set it, keeping the helper's default (`mockResolvedValue`) intact for other tests.
-- The dialog store (`useDialogStore().confirm`) is spied per-test rather than in `mountPanel`, because only the withdrawal-click tests exercise it.
+- Store spies must be attached **before** `mount()` because the component destructures action references in `setup`; spying after mount would leave the component holding the original (unmocked) functions.
+- `wireModulesIntoCore()` is a one-time module-level side effect, not repeated in `beforeEach`.
+- `VDialog` is stubbed to a plain slot-forwarding `<div>` so the confirm/cancel buttons are reachable without Vuetify's overlay machinery.
+- The dialog store's `confirm` is spied per-test (not in `mountPanel`) so each test controls the accept/decline path explicitly.
+- Permission tests rely on the `useSessionStore` ability list; the panel reads it internally, so there is no prop to toggle—it is purely store-driven.

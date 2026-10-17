@@ -6,82 +6,80 @@ tags:
 type: module
 module: src/modules/users/
 files: 26
-updated: 2026-10-02T19:31:43.293837+00:00
+updated: 2026-10-17T02:55:59.544416+00:00
 ---
 
 # src/modules/users/
 
 ## Purpose
 
-The users module is the admin-facing surface for managing other user accounts: creating, listing, viewing, editing, soft-deleting, and restoring users, as well as changing a user's role or active status. It encapsulates the domain model (roles, identity fields), validation schemas, a Pinia store that talks to the API, the route tree, and all associated views and tests.
+The users module is the admin-facing domain for managing application user accounts: creating, editing, listing, soft-deleting, restoring, and hard-deleting users, plus the sensitive access-control mutations (role and active-status changes) that require an explicit confirmation gate. All CRUD state lives in a single Pinia store; Zod schemas define the form contracts; and a two-step dialog centralises the "confirm before PATCH" flow for privileged fields.
 
 ## Key parts
 
-- **Domain & schemas** — `domain/roles.ts`, `domain/index.ts` define the role set and domain helpers; `schemas.ts` and `response-schemas.ts` hold Zod schemas (with i18n-thunked messages) that validate form payloads and API responses.
-- **State & transport** — `store.ts` is the Pinia store exposing CRUD actions (`createUser`, `updateUser`, soft/hard delete, restore, paginated search) over the shared `orvalMutator` HTTP transport.
-- **Views** — `UsersList.vue` (primary list/search/filter page with URL-driven state), `UserCreate.vue` (creation form), `UserEdit.vue` (single-user edit with change-diffing and access-dialog gating), `User.vue` (read-only detail page with 2FA-recovery and access-management shortcuts).
-- **Access dialog** — `UserAccessDialog.vue` + `composables/use-user-access-dialog.ts` implement the two-step pick → confirm flow for role/active changes, including a `skipPicker` mode reused by `UserEdit.vue`.
-- **Routing & module wiring** — `routes.ts`, `module.ts`, `index.ts` register the module's routes and export its public API.
-- **Tests** — Unit specs for schemas, store, and each view; e2e specs for full user flows, visual regression, and a11y sweep (declared per-module so coverage is deleted with the module).
+- **Views** (`views/`) — Four pages: `UsersList.vue` (paginated, server-sorted table with per-row actions), `UserCreate.vue` (create form with optional avatar upload), `UserEdit.vue` (profile edit with confirm-gated role/active changes), and `User.vue` (read-only detail with a quick "Manage access" shortcut).
+- **Access-control dialog** — `components/UserAccessDialog.vue` (the two-step pick → confirm UI), `composables/use-user-access-dialog.ts` (promise-based caller API), and `composables/use-role-options.ts` (shapes the server's `grantableRoles` into select options so the picker never offers a role the API would reject).
+- **State & contracts** — `store.ts` (Pinia store built on `useStructureCrudApi`; supplies endpoint bindings, multipart/JSON branching, and two hand-written actions), `schemas.ts` (Zod create/edit form schemas with i18n-thunked messages), `response-schemas.ts` (response-envelope declarations for contract validation).
+- **Module wiring** — `module.ts` (manifest registering routes, nav entry, schemas, locales), `routes.ts` (path → lazy view + access metadata), `index.ts` (barrel that re-exports the Zod schemas for cross-module consumers).
+- **Tests** (`tests/`) — Unit specs for every view, the store, the dialog, and the schemas (including an i18n locale-switch spec); route-metadata pin; e2e functional, a11y-sweep, and visual-regression Cypress specs; all co-located so deleting the module removes its coverage in one step.
 
 ## How it connects
 
-- **contracts/** — Provides the shared API type contracts (e.g. `UpdateUserByIdBody` strictObject) and the Zod + i18n thunk pattern that this module's schemas consume; the cross-cutting schema-i18n test verifies the mechanism, while this module's `tests/schemas-i18n.spec.ts` proves its own schemas and locale dictionaries agree.
-- **src/infrastructure/** — Supplies the `orvalMutator` HTTP client the store's actions call, the `useStructureFormValidation` composable used by `UserEdit.vue`, and shared UI primitives (DataTable, form-field components).
-- **src/modules/account/views/** — The self-service counterpart: that module lets a user manage *their own* profile, while this module lets an admin manage *any* user. They share the same domain role definitions and user identity fields but operate on different actors.
-- **src/modules/demo/** — Seeds or references demo user records that populate this module's list and detail pages during development.
-- **src/modules/payments/** — User roles and the active/inactive flag defined here gate which users can access payment features; deactivating a user in this module has downstream effects on their payment permissions.
+- **`src/modules/account/`** — `use-role-options.ts` reads the signed-in caller's assignable roles from the account session store (`GET /account/abilities`). The module barrel (`index.ts`) re-exports the Zod validation schemas so the account views can import shared field rules without reaching into internal files.
+- **`src/infrastructure/http/`** — The store's CRUD actions and avatar upload go through the generated `orvalMutator` transport layer; the store tests mock this boundary to assert raw request shapes.
+- **`src/modules/products/`** — `store.ts` is deliberately shape-identical to the products store (same `useStructureCrudApi` scaffold, same action surface); the two modules differ only in endpoint bindings and filter fields, making the pattern reusable.
 
 ## Where to start
 
-Read **`store.ts`** first — it is short, shows the full CRUD surface, the exact API endpoints and payload shapes, and the one critical invariant (passwords and Blobs never persist into store state). Then open **`views/UsersList.vue`** to see how the store, filter form, paginated `DataTable`, and per-row actions compose into the module's primary screen. Together they give you the data flow and the dominant UI pattern before you branch into the individual create/edit/detail pages.
+1. **`views/UsersList.vue`** — It is the entry point of the module and shows how the store, DataTable, per-row `actions` gating, and the `UserAccessDialog` composable all fit together in one screen.
+2. **`store.ts`** — Reading this next reveals the full state surface (list, detail, CRUD actions, avatar upload) and the two custom actions (`hardDeleteUser`, `restoreUser`) that the views depend on, giving you the mental model before you explore individual pages.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_src_modules_users["src/modules/users/"]
-    m_contracts["contracts/<br/>8 files"]
-    m_src_infrastructure["src/infrastructure/<br/>39 files"]
-    m_src_modules_account_views["src/modules/account/views/<br/>10 files"]
-    m_src_modules_demo["src/modules/demo/<br/>12 files"]
-    m_src_modules_payments["src/modules/payments/<br/>22 files"]
-    m_src_modules_users --- m_contracts
-    m_src_modules_users --- m_src_infrastructure
+    m_src_infrastructure_http["src/infrastructure/http/<br/>16 files"]
+    m_src_infrastructure_utils["src/infrastructure/utils/<br/>15 files"]
+    m_src_modules_account_views["src/modules/account/views/<br/>12 files"]
+    m_src_modules_payments["src/modules/payments/<br/>33 files"]
+    m_src_modules_products["src/modules/products/<br/>54 files"]
+    m_src_modules_users --- m_src_infrastructure_http
+    m_src_modules_users --- m_src_infrastructure_utils
     m_src_modules_users --- m_src_modules_account_views
-    m_src_modules_users --- m_src_modules_demo
     m_src_modules_users --- m_src_modules_payments
+    m_src_modules_users --- m_src_modules_products
     style m_src_modules_users stroke-width:3px
 ```
 
-[[boilerplate-vue-frontend_ROOT|/ (repository root)]] · [[boilerplate-vue-frontend_contracts|contracts/]] · [[boilerplate-vue-frontend_src_infrastructure|src/infrastructure/]] · [[boilerplate-vue-frontend_src_modules_account_views|src/modules/account/views/]] · [[boilerplate-vue-frontend_src_modules_demo|src/modules/demo/]] · [[boilerplate-vue-frontend_src_modules_payments|src/modules/payments/]]
+[[boilerplate-vue-frontend_ROOT|/ (repository root)]] · [[boilerplate-vue-frontend_src_infrastructure_http|src/infrastructure/http/]] · [[boilerplate-vue-frontend_src_infrastructure_utils|src/infrastructure/utils/]] · [[boilerplate-vue-frontend_src_modules_account_views|src/modules/account/views/]] · [[boilerplate-vue-frontend_src_modules_payments|src/modules/payments/]] · [[boilerplate-vue-frontend_src_modules_products|src/modules/products/]]
 
 ## Files
-- `src/modules/users/components/UserAccessDialog.vue` — A two-step admin dialog (pick → confirm) for changing another user's role and/or active status. It exists to force an explicit, named confirmation—especially when deactivating—before the caller's promise in `useUserAccessDialog()` resolves. It supports a `skipPicker` mode where the values were already chosen elsewhere (`UserEdit.vue`) and only the confirm step runs.
-- `src/modules/users/composables/use-user-access-dialog.ts`
-- `src/modules/users/domain/index.ts`
-- `src/modules/users/domain/roles.ts`
-- `src/modules/users/index.ts`
-- `src/modules/users/module.ts`
-- `src/modules/users/response-schemas.ts`
-- `src/modules/users/routes.ts`
-- `src/modules/users/schemas.ts`
-- `src/modules/users/store.ts`
+- `src/modules/users/components/UserAccessDialog.vue` — A two-step admin dialog (pick → confirm) for changing a target user's role and/or active status. It exists to centralise the access-control mutation behind a confirm gate that names the target, warns about deactivation consequences, and—when the target is the signed-in admin—adds a specific self-deactivation warning. One component serves two entry patterns: the list/detail "choose new values" flow and `UserEdit.vue`'s already-collected "confirm only" flow.
+- `src/modules/users/composables/use-role-options.ts` — Provides the select options for every role picker in the users module. It reads the list of roles the signed-in caller is permitted to assign (sourced from `GET /account/abilities` via the session store) and shapes them into `v-select` items, ensuring the picker never offers a role the server would reject with `409`.
+- `src/modules/users/composables/use-user-access-dialog.ts` — Promise wrapper around `UserAccessDialog.vue` that lets callers `request(...).then((result) => ...)` the way they already await `useDialogStore().confirm()`, instead of each wiring their own open flag and resolver. It exists so that the three call sites (`UsersList.vue`, `User.vue`, `UserEdit.vue`) share one implementation rather than each re-implementing the open/resolve dance.
+- `src/modules/users/index.ts` — Barrel (public surface) for the `users` module. It exists so that sibling modules (specifically `account`) can import the shared validation schemas without reaching into internal files. By exporting the two schemas here, the field rules are written once and agreed upon across modules instead of being re-typed and allowed to diverge.
+- `src/modules/users/module.ts` — Module manifest for the **users** module. It registers the module's routes, admin navigation entry, response schemas, and locale files into the app's central module registry so the kernel can wire everything together at startup.
+- `src/modules/users/response-schemas.ts` — Declares the response-envelope schema list for the `users` domain. It plugs into the module-manifest pattern so that contract validation for users endpoints activates when the domain folder is present and is removed when it is deleted—no manual registration elsewhere.
+- `src/modules/users/routes.ts` — Defines the route table for the users module. Each entry pairs a URL path with a lazy-loaded Vue view and the access/permission metadata the router guard checks before allowing navigation. The array is consumed by the module registry to mount these routes under the application.
+- `src/modules/users/schemas.ts` — Defines Zod validation schemas for the user create/edit forms. Error messages are i18n-thunked (deferred via `() => translate(...)`) so they resolve against the active locale at parse time rather than being baked in at module-load time.
+- `src/modules/users/store.ts` — Pinia store that provides all users-domain state (record cache, list/pagination, CRUD actions, avatar upload) to the user views. It is built on `useStructureCrudApi` from `@guebbit/vue-toolkit`, which generates the boilerplate CRUD/pagination plumbing; this file only supplies the endpoint bindings, the multipart-vs-JSON branching, and two hand-written actions (`hardDeleteUser`, `restoreUser`). The store is intentionally shape-identical to `products/store.ts` apart from endpoints and filters.
 - `src/modules/users/tests/e2e/a11y.cy.ts` — Declares the list of users-module routes to be exercised by the shared a11y sweep, and calls `sweepA11y` to run them as the admin. Co-located with the module so that deleting the module removes its a11y coverage in one step; a cross-cutting spec asserts every routed module ships one of these files, preventing silent loss of a domain.
-- `src/modules/users/tests/e2e/users.cy.ts`
-- `src/modules/users/tests/e2e/users.visual.cy.ts`
-- `src/modules/users/tests/routes.spec.ts`
-- `src/modules/users/tests/schemas-i18n.spec.ts` — Verifies that the users module's Zod schemas produce validation messages in the active locale (English and Italian) by running `safeParse` against the real `vue-i18n` instance. Complements the cross-cutting mechanism test (`tests/cross-cutting/schemas-i18n.spec.ts`) by proving *this* module's schemas and its own locale dictionaries actually agree, rather than demonstrating the thunked-message re-resolution mechanism in isolation.
-- `src/modules/users/tests/schemas.spec.ts`
-- `src/modules/users/tests/store.spec.ts` — Unit tests for the users Pinia store. The HTTP transport (`orvalMutator`) is mocked so that tests can inspect the raw axios configs the store's actions produce (URL, method, body encoding). The file mirrors the products store spec in structure, with one additional concern: verifying that `updateUser` never persists a submitted password or an uploaded `Blob` into client-side store state.
-- `src/modules/users/tests/user-access-dialog.spec.ts` — Vitest spec for `UserAccessDialog.vue`. Validates the two-step picker → confirm flow, the `skipPicker` shortcut mode used by `UserEdit.vue`, the self-deactivation warning, and that the emitted `confirm` payload contains only the fields that actually changed (unchanged fields are `undefined`), ready to serve as a `PATCH` body.
-- `src/modules/users/tests/user-create-view.spec.ts` — Integration-level test suite for the `UserCreate` admin page. It mounts the real component against a real (memory-history) router and verifies: client-side validation refusal, the exact payload dispatched to the store, post-creation navigation, in-place blocking on API rejection, submit-button locking during in-flight requests, and field-level error placement vs. the banner. `createUser` is spied at the Pinia store so no network call is made.
-- `src/modules/users/tests/user-edit-view.spec.ts` — Mounts the real `UserEdit` view against a memory-history router and a mocked `orvalMutator` transport to verify two contract-level behaviours: (1) a PATCH body contains **only** the fields that actually changed (no unchanged `role`/`active` riding along to re-trigger the backend's grant check), and (2) role or active changes are gated behind the `UserAccessDialog` confirmation before any request is sent. The spec also validates PATCH bodies against the real `UpdateUserByIdBody` strictObject schema to catch stray keys or invalid empty-string defaults (regression FA123).
-- `src/modules/users/tests/user-target-view.spec.ts` — Vitest spec for the admin user-detail page (`User.vue`). It mounts the real page against a real memory-history router and verifies two behaviours: (1) the "strip 2FA" button is gated on `twoFactorEnabledAt` and disappears after a forced refetch following the DELETE, and (2) the "Manage access" shortcut passes the loaded user to `UserAccessDialog` and issues a PATCH only when the dialog confirms. The dialog's own picker/confirm logic is out of scope here.
-- `src/modules/users/tests/user-view.spec.ts` — Verifies a single UI concern on the User detail page: the **"History" link** renders only when the current viewer holds the `audit.any.read` ability (CASL subject `AuditLog`), per FE_PARITY_0924 G2. It mounts the real `User.vue` against a memory-history router and a real Pinia store, with `watchUser` stubbed out so no network fetch occurs.
-- `src/modules/users/views/User.vue` — Read-only user detail page (`UserTargetPage`). Resolves a single user from the route `id`, renders their identity fields, role chip, and status chip, and exposes two admin actions: a 2FA recovery button (no-proof path) and a `UserAccessDialog` shortcut for changing role/active status without the full edit form.
-- `src/modules/users/views/UserCreate.vue` — Renders the user-creation form. It collects email, username, password (or a "send setup email" checkbox in its place), role, locale, active flag, and an optional avatar, validates the submission client-side via a Zod schema, and delegates the actual `POST` (multipart or JSON) to the users store.
-- `src/modules/users/views/UserEdit.vue` — Admin-facing page for editing a single user record (email, username, password, role, active status, locale, phone, website, avatar). Built on the shared `useStructureFormValidation` composable, it diffs the form against the loaded record so the `PATCH` only carries changed fields, and gates role/active changes behind a `UserAccessDialog` confirmation step.
-- `src/modules/users/views/UsersList.vue` — The primary list/search page for the Users module. It wires the Pinia users store's paginated search to a filter form, a `DataTable`, and per-row actions (view, edit, soft-delete, hard-delete, restore, manage access). It keeps filters, page, and sort state in the URL so the view is deep-linkable and survives reload.
+- `src/modules/users/tests/e2e/users.cy.ts` — Cypress functional end-to-end spec for the admin-only Users module. Covers the full CRUD lifecycle — list rendering, create, edit, soft-delete, restore, and hard-delete — against the real running app. Accessibility and visual-regression specs live in separate files; this one is purely functional coverage.
+- `src/modules/users/tests/e2e/users.visual.cy.ts` — Declarative visual-regression route list for the users module. It registers the routes and selectors that the shared `sweepVisual` helper will screenshot and compare, so the users module's e2e visual suite knows *what* to capture without duplicating sweep logic.
+- `src/modules/users/tests/routes.spec.ts` — Pins the `meta.access` and `meta.can` declarations on every users route by name, verifying that the route records actually carry their access decisions. It complements the router spec (which proves enforcement is wired up) by proving the declarations themselves are present and correct, without needing a resolved router or locale prefix.
+- `src/modules/users/tests/schemas-i18n.spec.ts` — Verifies that the users module's Zod schemas resolve validation messages in the active locale (English → Italian) at parse time. It lives with the domain (not in the cross-cutting i18n suite) because it asserts *these specific schemas and their locale dictionaries agree*, whereas the mechanism of thunked-message re-resolution is proven once with an invented schema elsewhere.
+- `src/modules/users/tests/schemas.spec.ts` — Vitest spec for the user form's validation rules (email, username, password). It asserts boundary conditions and field-acceptance semantics without testing i18n messages (those live in `schemas-i18n.spec.ts`). Bounds are read from the API contract so the tests track contract changes automatically.
+- `src/modules/users/tests/store.spec.ts` — Unit tests for the `useUsersStore` Pinia store. Mocks `orvalMutator` (the HTTP transport) so that multipart encoding, JSON serialisation, and URL construction — all of which live in the generated `@api` client — are exercised for real, while the network boundary is stubbed. Asserts raw request shapes (URL, method, body encoding) and store-state invariants such as "a password never lands in client-side state."
+- `src/modules/users/tests/user-access-dialog.spec.ts` — Unit tests for `UserAccessDialog.vue`. Validates the two-step picker → confirm flow, the `skipPicker` fast-path used by `UserEdit.vue`, the self-deactivation warning, the emitted payload shape (only changed fields, ready for a `PATCH` body), and which controls are enabled/disabled based on the target user's `actions` and the caller's `grantableRoles`.
+- `src/modules/users/tests/user-create-view.spec.ts` — Unit-test suite for the admin **UserCreate** view. It mounts the real page against a real memory-history router and a spied `createUser` store action, then asserts the full behavioral contract: client-side validation, the exact outgoing payload, post-success navigation, error handling (both field-level and form-level), role-permission gating, and submit-button locking during an in-flight request.
+- `src/modules/users/tests/user-edit-view.spec.ts` — Vitest spec that mounts the real `UserEdit.vue` admin page against a memory-history router to verify the PATCH body sent on save: that unchanged `role`/`active` are excluded (preventing a spurious backend grant-check re-run), that the `UserAccessDialog` confirm gate fires only on role/active changes, and that a 412 response is handled. `UserAccessDialog` itself is stubbed; its internal behaviour belongs to `user-access-dialog.spec.ts`.
+- `src/modules/users/tests/user-target-view.spec.ts` — Integration-style unit test for the admin user-detail page (`User.vue`). It mounts the real page component against a real memory-history router (scoped to enabled modules) and verifies that every visible control is gated by the row's `actions` payload from the server, that no second-factor control exists, and that the "Manage access" shortcut correctly opens a stubbed `UserAccessDialog` and issues a `PATCH` only on confirm.
+- `src/modules/users/tests/user-view.spec.ts` — Vitest spec that mounts the real `User.vue` detail page against a real memory-history router to verify one behavior: the "History" link (gated on the CASL ability `read:AuditLog`) appears, links correctly, or is absent depending on the viewer's abilities and whether the `observability` module is present in the build. The store's `watchUser` fetch is always stubbed so no network call occurs.
+- `src/modules/users/tests/users-list-view.spec.ts` — Page-level spec for the `UsersList` view. It verifies two behaviours end-to-end: (1) clicking a table header triggers a **server-side** sort (the column name is sent as `filters.sort` and the search restarts from page 1) and API-unsortable columns stay inert; (2) the per-row action buttons are driven by the server's per-row `actions` object rather than the current user's global role. The suite shares its template with the equivalent "sorting from the header" tests in the orders list module.
+- `src/modules/users/views/User.vue` — Read-only user detail page that loads a single user by route `id`, renders their profile fields (username, email, role, status, timestamps), and offers a lightweight "Manage access" dialog for changing role/active status without navigating to the full edit form. All mutable controls are gated by the server-provided `actions` object on the user record.
+- `src/modules/users/views/UserCreate.vue` — The user-creation form page. Collects email, username, role, locale, active-status, and an optional avatar upload, validates the input client-side with a Zod schema, then delegates to the users store which branches between multipart (avatar present) and JSON submission. There is intentionally no password field: the new user is emailed a self-service credential-setup link.
+- `src/modules/users/views/UserEdit.vue` — Admin-facing page for editing a single user's profile (username, role, active status, locale, phone, website, avatar). It deliberately omits email and password fields—credentials are owner-only. Role and active-status changes require an explicit `UserAccessDialog` confirmation step before any `PATCH` is dispatched, and the request body only includes those fields when they actually differ from the loaded record.
+- `src/modules/users/views/UsersList.vue` — The users list/search page. Wires the users store's paginated search to a filter form (text, id, email, username, active, deleted) and a `DataTable`, and exposes per-row actions: manage access (role/active change), soft delete, restore, and hard delete. State lives in the Pinia store; this component is the view and interaction layer.
 
 ---
 [[boilerplate-vue-frontend_INDEX|← boilerplate-vue-frontend index]]

@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/http/index.ts
-sha256: 4301f5806b71fd23c58387720656f5bc94711ec460cb756f6873817caddfc227
-generated_at: 2026-10-02T11:56:29.518756+00:00
+sha256: d58695c3b98df65f22c0e40b5a770dd22d8a33b5ad5f902a7a30dc2d92a681dc
+generated_at: 2026-10-17T00:09:41.358080+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Composition root of the HTTP tier. Wires all request/response interceptors onto the shared axios instance at import time and exports `orvalMutator`, the single function through which every API call (generated or hand-written) is dispatched. This is the tier's public surface; `orval.config.ts` points all generated clients at `orvalMutator` here.
+Composition root of the HTTP tier. It wires all interceptors onto the shared axios instance (from `client.ts`) and exports `orvalMutator` as the single function through which every API call—generated or hand-written—passes. `orval.config.ts` points all generated clients at this export, making this file the tier's public surface.
 
 ## Key elements
 
-- **Interceptor wiring (top-level side effects):** Registers `onRequest` → `onEtagRequest` on the request chain, and `onEtagResponse` → `onResponseRejectWithStepUp` on the response chain, in that order.
-- **`send<T>`** (module-private): Calls `instance.request`, optionally validates the response against its contract, and returns `response.data`.
-- **`orvalMutator<T>(config, options?)`** (exported): The sole allowed caller of the shared axios instance. Merges `options` under `config` (config wins on conflict), merges headers one level deeper to preserve multipart boundaries, optionally validates the request against its contract, then delegates to `send`.
-- **Re-exports:** `onRequest`, `onRequestReject`, `onResponseReject` from `./interceptors.ts` — exposed here so test specs can import them from the module's public surface.
+- **`orvalMutator<T>(config, options?)`** – The only function permitted to call the shared axios instance directly. Merges `options` into `config` (with a one-level-deeper header merge), optionally validates the request against a REST contract, delegates to `send`, and resolves with the unwrapped `response.data`.
+- **`send<T>(request)`** *(internal)* – Calls `instance.request<T>` and unwraps `response.data`; runs `validateResponseAgainstContract` when response validation is enabled.
+- **Interceptor wiring** – Registers, in order: `onRequest` → `onEtagRequest` (request side); `onEtagResponse` → `onResponseRejectWithStepUp` (response side).
+- **Re-exports** – `onRequest`, `onRequestReject`, `onResponseReject` from `interceptors.ts`, exposed so test specs can import them through this module.
 
 ## Relationships
 
-- **`src/infrastructure/http/client.ts`** — provides the shared `instance` (axios) on which all interceptors are attached.
-- **`src/infrastructure/http/interceptors.ts`** — supplies the auth/refresh interceptors (`onRequest`, `onRequestReject`) and the rejected `onResponseReject` that is re-exported.
-- **`src/infrastructure/http/etag.ts`** — supplies `onEtagRequest` / `onEtagResponse` for conditional-request caching.
-- **`src/infrastructure/http/step-up.ts`** — supplies `onResponseRejectWithStepUp`, which intercepts `REAUTH_REQUIRED` 401s before the refresh branch can misinterpret them.
-- **`src/infrastructure/http/validate.ts`** — supplies the four validation helpers gated behind `shouldValidate*()` feature flags.
-- **`contracts/rest/index.ts`** — the contract definitions that `validateRequestAgainstContract` / `validateResponseAgainstContract` check against.
-- **`src/modules/account/tests/*.spec.ts`** — import `orvalMutator` and the re-exported interceptors through this module to exercise real HTTP paths in account-module tests.
+- **`src/infrastructure/http/client.ts`** – Supplies the shared `instance`; this file is the sole place its interceptors are registered.
+- **`src/infrastructure/http/interceptors.ts`** – Source of `onRequest`, `onRequestReject` (wired) and `onResponseReject` (re-exported for tests).
+- **`src/infrastructure/http/etag.ts`** – Source of `onEtagRequest` / `onEtagResponse`, wired here.
+- **`src/infrastructure/http/step-up.ts`** – Source of `onResponseRejectWithStepUp`, wired as the final response-reject handler.
+- **`src/infrastructure/http/validate.ts`** – Source of the four `should*` / `validate*` functions consumed by `orvalMutator` and `send`.
+- **`contracts/rest/index.ts`** – REST contract definitions that the validation functions check requests/responses against.
+- **`src/modules/account/tests/*.spec.ts`** – Account-module specs import `onRequest`, `onRequestReject`, `onResponseReject` through this module's re-exports rather than reaching into `interceptors.ts` directly.
 
 ## Notes
 
-- `orvalMutator` is the **only** function permitted to call the shared axios instance directly; all other code must go through it.
-- The second parameter (`options`) exists specifically to give orval-generated functions an `options?` argument so callers can pass per-call config (`signal`, `onUploadProgress`) without importing `orvalMutator` themselves.
-- Header merge is deliberately one level (`options?.headers` under `config.headers`), not a top-level spread, to avoid dropping the multipart `Content-Type` boundary that generated body-callers set.
-- The step-up interceptor is registered **after** the etag response interceptor so that a `REAUTH_REQUIRED` 401 is caught before the refresh branch would attempt to "fix" a cookie that was never the problem.
-- Request/response contract validation is behind runtime feature flags; a validation failure in dev mode is thrown inside a Promise so it lands in `.catch` rather than escaping synchronously.
+- **Interceptor order is load-bearing on the response side.** `onResponseRejectWithStepUp` must come *after* `onEtagResponse` so a `REAUTH_REQUIRED` 401 is intercepted before the refresh branch could renew a stale cookie.
+- **Request-interceptor order is not load-bearing** between `onRequest` and `onEtagRequest` (the latter only adds a header), but they are kept adjacent for discoverability.
+- **Header merge depth.** `orvalMutator` spreads `options.headers` and `config.headers` one level deeper than the top-level spread. This prevents a generated call's `Content-Type` from clobbering caller-supplied headers (e.g., a multipart `Content-Type` with a boundary).
+- **`options` parameter.** Declaring the second parameter on `orvalMutator` gives every generated function an optional `options?` argument, the supported channel for per-call axios config (`signal`, `onUploadProgress`, etc.).
+- **Validation is conditional.** `shouldValidateRequests` / `shouldValidateResponses` gate the contract checks, so they are presumably a dev/test-time toggle and cost nothing in production.
+- **Validation throws are promise-safe.** Request validation runs inside `Promise.resolve().then(...)`, so a dev-mode throw lands in the caller's `.catch` rather than escaping synchronously.

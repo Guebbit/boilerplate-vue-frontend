@@ -1,7 +1,7 @@
 ---
 source: src/modules/users/views/UsersList.vue
-sha256: 43086771c1d75a374237e14871e741366aff4d2cdc049095afa935fc30d9689c
-generated_at: 2026-10-02T15:54:04.308841+00:00
+sha256: 28e1881c8b4836589b6b97fa6d55b907f934eb573d1fa1116894fd6aa0ab07e0
+generated_at: 2026-10-17T01:50:13.005665+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,33 +9,32 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The primary list/search page for the Users module. It wires the Pinia users store's paginated search to a filter form, a `DataTable`, and per-row actions (view, edit, soft-delete, hard-delete, restore, manage access). It keeps filters, page, and sort state in the URL so the view is deep-linkable and survives reload.
+The users list/search page. Wires the users store's paginated search to a filter form (text, id, email, username, active, deleted) and a `DataTable`, and exposes per-row actions: manage access (role/active change), soft delete, restore, and hard delete. State lives in the Pinia store; this component is the view and interaction layer.
 
 ## Key elements
 
-- **`tableHeaders`** – Computed array of `CoreDataTableHeader<User>`; defines the visible columns. `image` and `actions` are marked `synthetic` (rendered via slots, not sortable data).
-- **`activeOptions` / `deletedOptions`** – Localized select-option arrays. The "all" row uses `value: null` (not `undefined`) to avoid Vuetify posting the translated label as the filter value.
-- **`activeChoice` / `deletedChoice`** – Wrappers from `useAnyFilterChoice` that map the `null` "all" screen value to an absent key on `filters`.
-- **`handleDelete` / `handleHardDelete`** – Prompt a confirmation dialog (`useDialogStore().confirm`), then call `deleteUser` / `hardDeleteUser` on the store. Soft-delete reloads the list so the row reappears under the "Deleted" filter; hard-delete is irreversible.
-- **`handleRestore`** – Calls `restoreUser` without a confirmation, then reloads.
-- **`handleManageAccess`** – Opens `UserAccessDialog` via `useUserAccessDialog`; on confirm, PATCHes only the changed fields through `updateUser`.
-- **`sortableKeys`** – Derived from the `UserSortItem` enum via `sortFieldsOf`; only server-orderable columns show a sort affordance.
-- **`syncUrl`** – `useListUrlState` binding that serialises `filters`, `page`, and `pageSize` into query params (`text`, `id`, `email`, `username`, `active`, `deleted`, `sort`).
-- **`rowActionError` / `reportRowActionError`** – `useBlockingError` instance shared by all destructive row actions; renders an `InlineErrorAlert` above the table on failure.
+- **`tableHeaders`** – computed `CoreDataTableHeader<User>[]`; the `image` and `actions` columns are `synthetic` (rendered via slots, not sorted by value).
+- **`handleDelete(userId, username)`** – soft-delete behind a confirm dialog; reloads the list afterwards because the store's optimistic `deleteOne` drops the row locally.
+- **`handleRestore(userId)`** – undo a soft delete; no confirmation; reloads the list.
+- **`handleManageAccess(item)`** – opens `UserAccessDialog`; on confirm sends only the changed fields via `updateUser`.
+- **`handleHardDelete(userId, username)`** – permanent delete behind a confirm dialog; no reload needed.
+- **`activeChoice` / `deletedChoice`** – `useAnyFilterChoice` models mapping the store's `null`/absent filter to the "All" select option.
+- **`syncUrl`** – `useListUrlState` keeps filters, page, and page-size in the query string for deep links and reloads.
+- **`sortBy`** – `useServerSort` bound to `filters.sort`; only columns matching the `UserSortItem` enum are sortable.
+- **`rowActionError` / `reportRowActionError` / `clearRowActionError`** – single `useBlockingError` instance shared by all row write actions; rendered as an `InlineErrorAlert` above the table.
+- **`search`** – store's `watchSearchUsers` action; failures toast via `notifyErrorMessages`.
 
 ## Relationships
 
-- **`@/modules/users/store`** – Consumes `useUsersStore` actions (`watchSearchUsers`, `updateUser`, `deleteUser`, `hardDeleteUser`, `restoreUser`) and reactive refs (`filters`, `pageItemList`, `pageCurrent`, `pageSize`, `pageTotal`, `loading`, `selectedUserId`).
-- **`@/ui/organisms/DataTable.vue`** – Renders the user rows; receives `tableHeaders`, `sortBy`, and slot content for the `image` and `actions` columns.
-- **`@/modules/users/components/UserAccessDialog.vue`** – Opened imperatively via `useUserAccessDialog`; its `request()` promise gates the `updateUser` call.
-- **`@/infrastructure/utils/errors.ts`** (`notifyErrorMessages`) – Toasts search-request failures.
-- **`@/infrastructure/utils/use-blocking-error.ts`** – Provides the blocking-error state for row actions.
-- **`src/infrastructure/utils/logger.ts`** and **`src/modules/payments/components/OrderReferenceSearch.vue`** are listed as graph neighbors but no direct import or call to either is visible in this file.
+- **`../store.ts`** – primary data source. Consumes actions (`watchSearchUsers`, `updateUser`, `deleteUser`, `hardDeleteUser`, `restoreUser`) and reactive state (`filters`, `pageItemList`, `selectedUserId`, `pageCurrent`, `pageSize`, `pageTotal`, `loading`) via `storeToRefs`.
+- **`../composables/use-user-access-dialog.ts`** – provides the dialog's open/target/options state and the promise-returning `request()` that `handleManageAccess` awaits before calling `updateUser`.
+- **`../components/UserAccessDialog.vue`** – rendered in the template; its visibility and content are driven by the composable above.
+- **`tests/users-list-view.spec.ts`** – the unit/integration test suite for this view.
 
 ## Notes
 
-- **`null` vs `undefined` in filter options (FA51):** Vuetify treats an `undefined` item value as "use the title string," which would POST the translated label instead of clearing the filter. Always use `null` for the "no filter" row.
-- **Soft-delete reloads the list:** The store's optimistic update removes the row locally, but the page calls `search(true)` afterwards so the row reappears correctly under "All" or "Deleted only" filters.
-- **Two error channels:** Search failures are ambient (toast via `notifyErrorMessages`); row-action failures are blocking (inline alert via `useBlockingError`). They are deliberately not merged.
-- **Row-action button size:** `useTouchFriendlySize` switches between `small` (desktop) and Vuetify's default (mobile) to meet WCAG touch-target guidance.
-- **`PATCH` discipline:** `handleManageAccess` sends only fields that changed; an unchanged `role` must never ride along in the same request (see `UserAccessDialog`'s own docs).
+- The "active" filter's "All" option uses `value: null`, **not** `undefined`. Vuetify treats an `undefined` item value as "render the title," which would post the translated label into the filter instead of sending no filter at all.
+- Row-action visibility is gated per-row by `item.actions` (server-provided permissions for *this* admin on *this* account). The session store is only consulted for the "Create user" button's `create:User` key.
+- `handleDelete` and `handleHardDelete` share one `useBlockingError` instance (both are confirm-dialog write actions). Search failures are handled separately as ambient toasts—see `docs/theory/request-flow.md`.
+- The file uses two `<script>` blocks: a plain block to set `name: 'UsersListPage'` (needed for `<KeepAlive>`/devtools) and a `<script setup>` block for logic.
+- The template section is truncated in the source snapshot shown here.

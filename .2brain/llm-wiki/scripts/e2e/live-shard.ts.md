@@ -1,7 +1,7 @@
 ---
 source: scripts/e2e/live-shard.ts
-sha256: f24ed068099986881a6ad4fd193333311346ecd5aa3a63d87d35119ec56f0fe7
-generated_at: 2026-10-02T11:34:41.739754+00:00
+sha256: 92e4112b4639317e7fd526e7706ff928ad71a12897c48bc32ff8926196dd3f02
+generated_at: 2026-10-17T00:00:23.937642+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,21 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Computes which spec files a single CI matrix job (shard) runs in the nightly live test suite. Because live tests cannot share a database across shards, each job needs a disjoint, balanced slice of specs; this file only decides the slices. It reuses the same balancing logic as the demo shards so all jobs finish at roughly the same time.
+Computes the spec-to-matrix-job assignment for the nightly "live" E2E run. Because live shards cannot share a database, each CI matrix job gets its own services and runs its slice sequentially; this file only decides which specs land in which slice. It reuses the same balancing logic as the demo shards so slices finish at roughly the same time.
 
 ## Key elements
 
-- **`liveShardFiles(files, durations, index, total)`** — the sole export. Given the full spec list, per-spec durations, a 1-based shard index, and the total shard count, returns the sorted spec paths assigned to that shard. Throws `RangeError` on invalid index/total. Delegates weighing to `weighSpecs` and partitioning to `balanceShards`; if no durations are known it falls back to uniform (all-1) weights.
+- **`liveShardSlices(files, durations, total)`** — Returns every slice as an array of sorted spec-path arrays. Deterministic for a given input, so all matrix jobs computing independently arrive at the same partition. Trailing slices are empty when `total` exceeds the spec count. Throws `RangeError` if `total` is not a positive integer.
+- **`liveShardFiles(files, durations, index, total)`** — Convenience wrapper: returns the single slice for a 1-based `index`. Delegates to `liveShardSlices` and picks `[index - 1]`. Throws `RangeError` on invalid `index`/`total`.
+- **Duration fallback** — A spec absent from `durations` is weighed at the mean; if *no* spec has a known duration, every spec is assigned weight 1.
 
 ## Relationships
 
-- **`scripts/e2e/shard-balancer.ts`** — provides `weighSpecs` and `balanceShards`, the two primitives `liveShardFiles` composes.
-- **`scripts/e2e/print-live-shard.ts`** — a script that calls `liveShardFiles` to print shard assignments for inspection.
-- **`tests/unit/scripts/e2e/live-shard.spec.ts`** — unit tests covering `liveShardFiles` (valid slices, edge cases, error paths).
+- **`scripts/e2e/shard-balancer.ts`** — Provides `weighSpecs` and `balanceShards`, the core weighting and partitioning primitives this file composes.
+- **`scripts/e2e/print-live-shard.ts`** — Sibling script that calls into the exports here to print the resulting shard assignments (e.g., for CI logging or manual inspection).
+- **`tests/unit/scripts/e2e/live-shard.spec.ts`** — Unit tests covering the slice computation, edge cases (empty durations, `total` > spec count, invalid indices).
 
 ## Notes
 
-- `index` is **1-based**, not 0-based — pass `1` for the first shard.
-- If `total` exceeds the number of specs, the function returns an empty array rather than throwing.
-- Output is deterministic: identical inputs always yield the same partition, so every matrix job independently computes the identical full split.
-- Uses `Array.prototype.toSorted` (non-mutating); requires Node ≥ 20.
+- Callers that need multiple slices should call `liveShardSlices` once and index into the result, rather than calling `liveShardFiles` per slice. This avoids a scenario where a durations file written between two calls produces inconsistent partitions.
+- `index` is **1-based**, not 0-based.
+- The function sorts spec paths with `.toSorted()` (non-mutating); the original `files` array is never reordered.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/use-countdown.spec.ts
-sha256: 5485368279ee5d93de4a601983991342c99710d6ed5605b572fb9987ceedff58
-generated_at: 2026-10-02T12:33:34.234194+00:00
+sha256: 89533246063f6f8bc304a7c26355007d9c4879a0af71b50eef7cf5c52a7ac614
+generated_at: 2026-10-17T00:28:10.265463+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for `useCountdownAnnouncement` (FA82), a screen-reader accessibility helper that announces countdown milestones (60s, 30s, 10s, expired) exactly once per threshold crossing rather than on every tick. The file explicitly does **not** test `useCountdown`'s own ticking logic; that is covered by `two-factor-store.spec.ts`.
+Unit tests for `useCountdownAnnouncement`, the screen-reader-friendly subset of the countdown composable. Where the store spec (`two-factor-store.spec.ts`) already exercises the raw ticking, this file verifies that announcements fire exactly once per threshold crossing (60s → 30s → 10s → "expired") and never on every individual tick of a multi-minute challenge.
 
 ## Key elements
 
-- **`message(seconds)` / `expiredMessage()`** – Minimal i18n-shaped callbacks passed into the composable so tests can assert on the announcement string without a real locale layer.
-- **`scope` (EffectScope)** – Created in `beforeEach`, stopped in `afterEach`; every `useCountdownAnnouncement` call is run inside it so reactive effects are torn down between tests.
+- **`message` / `expiredMessage`** – Minimal stand-ins for the i18n callbacks passed into the composable; they return fixed strings (`"expires in 60s"`, `"expired"`) so assertions stay readable.
+- **`scope: EffectScope`** – Per-test Vue effect scope created in `beforeEach` and stopped in `afterEach`, ensuring reactive watchers inside the composable are torn down between tests.
 - **`describe('useCountdownAnnouncement')`** – Six test cases covering:
-  - Silence when `secondsLeft` is above the highest threshold (300).
-  - The 60s band: announcement appears at 60 and *persists* at 45 (no re-fire on intermediate ticks).
-  - Sequential crossing of 60 → 30 → 10 in order, each announced once.
-  - Expired state at 0 and idempotency (staying at 0 doesn't flip back).
-  - Skipped-tick resilience: jumping from 65 straight to 25 still announces the 30s threshold.
-  - Immediate announcement when the initial value is already inside a band (e.g. starts at 30).
+  - No announcement above the highest threshold.
+  - 60s band: announced once, held for the remainder of the band.
+  - Sequential 60 → 30 → 10 crossings, each announced exactly once.
+  - "Expired" state at 0 and its stickiness.
+  - Threshold skip (e.g. 65 → 25): nearest *crossed* threshold is announced.
+  - Initial state already inside a band (starts at 30s): announces immediately.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It imports `useCountdownAnnouncement` from `@/modules/account/composables/use-countdown.ts` and standard Vitest/Vue test utilities, but no other project files are linked in the dependency graph.
+- **`src/modules/account/composables/use-countdown.ts`** – The sole production import. The test calls `useCountdownAnnouncement(secondsLeft, message, expiredMessage)` via `scope.run` and asserts on the returned `announcement` ref. No other module in the account area is touched here.
 
 ## Notes
 
-- The core invariant under test is **threshold-crossing semantics**, not tick-by-tick correctness. The composable must announce the *nearest threshold that has been crossed or reached*, not the exact current value.
-- The "skipped tick" test (65 → 25) guards against real-world stalls (GC pauses, backgrounded tabs) where the exact value 60 or 30 is never observed; the announcement must still fire for the most recent threshold passed.
-- The file references `two-factor-store.spec.ts` as the owner of `useCountdown` ticking tests — do not add ticking assertions here.
-- Tests use a `ref` for `secondsLeft` and mutate it directly; no Vue component rendering is involved, so `effectScope` (not `mount`) is the appropriate cleanup mechanism.
+- The "skip a tick" test (65 → 25) documents a real production concern: a GC pause or background-tab throttle can make `secondsLeft` jump over an exact threshold value. The composable must still announce the nearest *crossed* band rather than staying silent.
+- Tests drive `secondsLeft` manually (no fake timers), so timing precision is irrelevant; only the reactive comparison logic under test matters.
+- The module-level doc comment explicitly delegates raw-tick coverage to `two-factor-store.spec.ts`; don't duplicate ticking assertions here.

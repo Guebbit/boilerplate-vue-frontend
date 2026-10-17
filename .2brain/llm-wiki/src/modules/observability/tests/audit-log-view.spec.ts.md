@@ -1,7 +1,7 @@
 ---
 source: src/modules/observability/tests/audit-log-view.spec.ts
-sha256: 3e61383a1d51379b3c0ca2aa9fb84bca53a5fa25756f32fe0ebda025be860f70
-generated_at: 2026-10-02T15:18:47.978041+00:00
+sha256: 2ffeb4698e9e6e970d6fb760f89ebf1429a96c1114c5214e4aca467e363352ea
+generated_at: 2026-10-17T01:12:19.255151+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,24 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit test for `AuditLog.vue` that verifies the view reads the `target` query parameter off the URL and forwards it (or its absence) to `AdminAuditTab`. It proves that a "History" deep-link (`?target=o1`) and the plain `/audit` nav entry both resolve to the same page, scoped correctly. `AdminAuditTab` is fully stubbed; its data-fetching logic is covered by `admin-audit-tab.spec.ts`.
+Verifies that `AuditLog.vue` reads the `target` query parameter from the URL and forwards it as a prop to `AdminAuditTab`. Proves that a plain `/audit` nav link and a record-specific "History" link (e.g. `?target=o1`) both resolve to the same page scoped correctly. `AdminAuditTab` itself is stubbed; its fetching logic is covered in `admin-audit-tab.spec.ts`.
 
 ## Key elements
 
-- **`mountAuditLog()`** – helper that mounts `AuditLog` with a memory router, Vuetify, i18n, and stubs for `LayoutDefault` (passthrough slot) and `AdminAuditTab` (boolean stub).
-- **`router`** – `createMemoryHistory` router with a single `/:locale` route whose children come from `collectModuleRoutes(enabledModules)`. Tests use `router.push('/en/audit…')` before mounting.
-- **"with no target query param"** – pushes `/en/audit`, asserts `AdminAuditTab` receives `endpoint: 'shop'` and `target: undefined`.
-- **"with a target query param"** – pushes `/en/audit?target=o1`, asserts `AdminAuditTab` receives `target: 'o1'`.
-- **`beforeEach`** – calls `loadLocale('en')` to ensure i18n is ready.
+- **`router`** — A `createMemoryHistory` router whose route tree is `/:locale` → `RouterView` → `collectModuleRoutes(enabledModules)`, mirroring production routing without a real server.
+- **`mountAuditLog()`** — Mounts `AuditLog.vue` with the real router, Vuetify, and i18n plugins, while stubbing `AdminAuditTab` so only prop-passing is under test.
+- **`describe('with no target query param')`** — Navigates to `/en/audit`, asserts `target` prop is `undefined` and `endpoint` is `'shop'`.
+- **`describe('with a target query param')`** — Navigates to `/en/audit?target=o1`, asserts `target` prop equals `'o1'`.
+- **`wireModulesIntoCore()`** — Called once at module scope to register enabled modules with the kernel registry before routes are collected.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** – imports and calls `wireModulesIntoCore()` once at module load. This registers enabled modules into the core registry so that `collectModuleRoutes(enabledModules)` (used to build the test router) resolves to real route definitions.
+- **`src/modules/observability/views/AuditLog.vue`** — The component under test; this spec mounts it and inspects what props it emits to its child.
+- **`src/modules/observability/components/AdminAuditTab.vue`** — The child component; referenced for `getComponent()` assertions but stubbed out so its internal behavior is not exercised here.
+- **`tests/support/unit/wire-modules.ts`** — Provides `wireModulesIntoCore`, which registers enabled modules so `collectModuleRoutes` can build a realistic route tree.
 
 ## Notes
 
-- `AdminAuditTab` is stubbed (`stubs: { AdminAuditTab: true }`) but the test still retrieves it via `wrapper.getComponent(AdminAuditTab)` to inspect props. This works because the stub preserves the component reference for prop assertions.
-- The router is created with `createMemoryHistory`, not `createWebHistory`, so there is no real browser navigation; `router.push` must be `await`ed (via `.then()`) before mounting.
-- Route collection depends on the `wireModulesIntoCore()` side-effect running before `collectModuleRoutes` is evaluated — if that import or call is removed, routes will be empty and navigation will fail silently.
+- `AdminAuditTab` is stubbed (`stubs: { AdminAuditTab: true }`), so the spec only verifies the *contract* (prop name and value), not the tab's rendering or data fetching.
+- The route uses a `/:locale` prefix, so test URLs must include `/en/…` to match the real router shape.
+- `loadLocale('en')` in `beforeEach` ensures the i18n instance is populated before assertions run; omitting it would leave translation keys unresolved.

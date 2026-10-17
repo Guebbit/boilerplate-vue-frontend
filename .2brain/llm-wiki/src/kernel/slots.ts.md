@@ -1,7 +1,7 @@
 ---
 source: src/kernel/slots.ts
-sha256: cd361e54e2504745aae31d6b23ecc63bc5fc7de2b6132adf08790f418bf4cfad
-generated_at: 2026-10-02T12:07:57.878697+00:00
+sha256: 76ec3a750da02079e4a155cf1bbf275ed6150ba8e643566c6a927e9beea9d7cb
+generated_at: 2026-10-17T00:13:53.252652+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,18 +9,23 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Defines the slot-based extension-point mechanism that decouples contributing modules from the modules that render their components. A module **owns** a slot (a fixed place in its view); other modules **contribute** components to it via their manifest. The owner reads the slot and renders whatever arrived, so the owner never imports its contributors — the dependency runs contributor → owner.
+Defines the slot-based extension-point system: a module *owns* a named slot in one of its views, and other modules *contribute* components to it via their manifest. This inverts the dependency (contributor → owner) so that, e.g., a cart module can place "Add to cart" on the product page without `products` importing the cart.
 
 ## Key elements
 
-- **`SlotName`** — Closed union of every valid slot name (`'product-actions'`). Adding a new slot name is the only way to create a new extension point.
-- **`Slots`** — `Partial<Record<SlotName, Component[]>>`; the shape of the collected contributions map (slot name → ordered component array).
-- **`SLOTS_KEY`** — A `Symbol`-backed `InjectionKey<Slots>` used with Vue's `provide`/`inject`. The composition root provides the collected `Slots` under this key.
-- **`useSlot(name)`** — Composable that reads the injected `Slots` and returns `Component[]` for the given slot, falling back to an empty array when nothing was provided or contributed.
+- **`SlotName`** (type) — Closed union of the four slot names: `product-actions`, `product-create-extras`, `app-bar`, `payments-awaiting-transfer`. Each name's doc comment lists the props the owner passes to contributors.
+- **`Slots`** (type) — `Partial<Record<SlotName, Component[]>>`; the shape of the collected contributions (slot name → array of components, in module order).
+- **`SLOTS_KEY`** (const) — Vue `InjectionKey<Slots>`; the key under which the composition root provides the collected map.
+- **`useSlot(name)`** (const arrow) — Reads `SLOTS_KEY` via `inject` and returns the component array for `name`, defaulting to `[]` when nothing is provided or no module contributes.
+
+## Relationships
+
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- The kernel itself does **not** import Pinia or know what any slot's component does; it only supplies the injection key and the `useSlot` reader.
-- A slot name is added to `SlotName` only when a **second** module needs to contribute to it (see `docs/theory/layers.md`). Single-consumer cases should not create a named slot.
-- Component order within a slot reflects module order (as assembled by the composition root's `collectModuleSlots` call, which lives outside this file).
-- Each slot's owner documents the props its contributed components receive (e.g., `product-actions` passes `{ product }`). This contract is implicit and enforced by convention, not by a type in this file.
+- A slot only earns a name here when a *second* module needs one (see `docs/theory/layers.md`). Do not add speculative names.
+- The kernel (this file) intentionally has no knowledge of Pinia or of what a slot's components do; it only types and re-exports the injection key.
+- Contributors own their own visibility. Example: `app-bar` contributions are mounted for guests too, so each component guards its own rendering.
+- `product-create-extras` receives a `registerAfterCreate` callback (not a product field), which is how `inventory` injects its opening-stock step without being a product attribute.
+- `payments-awaiting-transfer` is filled by `orders` (which reads ORDERS), not by `payments`, preserving the contributor → owner direction.

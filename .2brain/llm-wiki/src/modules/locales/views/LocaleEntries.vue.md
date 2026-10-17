@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/views/LocaleEntries.vue
-sha256: 5776911b293354f2795635e47b25dbfd58a156d416f11dbf6330eb66ea441f61
-generated_at: 2026-10-02T15:16:50.094951+00:00
+sha256: da3d058b18ac8fde81a6e2267e6ee591c51ab00b6130a431d2217ce2fb35b487
+generated_at: 2026-10-17T01:07:16.531753+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,39 +9,33 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Route view for `/locales/:tag` that lists, searches, and edits one language's translation entries with pagination. Every successful write (add, inline edit, delete, import) triggers `refreshRunningLocale` so the currently-running app picks up the change without a reload.
+Route view for a single language's translation entries (reached via `/locales/:tag`). It drives a paginated, filterable table of flat key/value rows, supports inline value editing on blur, add-entry and bulk-import dialogs, and deletion. Every successful write also refreshes the currently running app's dictionary so the admin sees the change immediately without a page reload.
 
 ## Key elements
 
-- **`tag`** (computed) – the language code read from `route.params.tag`; drives all store calls.
-- **`capability`** (computed) – the manifest row for this language, shown in the page header.
-- **`tenantChoice`** (computed getter/setter) – maps the "every tenant" sentinel (`''`) to `undefined` in the store and back, so the API receives no filter when "all" is selected.
-- **`handleSearch`** – resets to page 1 and fires the store's cached search bound to `filters`.
-- **`handleAdd`** – delegates to `localesStore.addEntry`, then refreshes the list and running locale; on failure blocks `EntryFormDialog` open via `applyServerErrors` / `reportAddError`.
-- **`handleValueBlur`** – saves a single row's value if the draft differs from the stored value; shows a transient ✓ on the row rather than a toast.
-- **`handleDelete`** – asks for confirmation via `useDialogStore().confirm`, then calls `localesStore.removeEntry`; failure surfaces in the shared `rowActionError` alert above the table.
-- **`handleImport`** – executes a batch merge/replace through `localesStore.importEntries`, then refreshes the list, the manifest, and the running locale.
-- **`tableHeaders`** (computed) – localised column definitions for `DataTable`; the `actions` column is synthetic (rendered via slot).
-- **`useBlockingError` instances** – one per dialog (`addError`, `importError`) and one shared for row-level writes (`rowActionError`); stale messages are cleared on dialog open.
-- **`drafts` / `savedRows`** – local `Record<string, …>` maps that let a blur handler distinguish a real edit from a click-through and show per-row save feedback.
+- **`handleSearch`** – Applies the text and app filters, resets to page 1, and triggers the store's `watchSearchEntries`.
+- **`handleAdd(fields)`** – Writes one new entry via the store; on success closes `EntryFormDialog`, fires a toast, re-searches, and calls `refreshRunningLocale`. On failure delegates to the dialog's `applyServerErrors` or the local `addError` blocker.
+- **`handleValueBlur(entry)`** – Compares the `drafts` ref against the stored value; if changed, saves via `localesStore.editEntry`, flashes a transient check mark on the row (1.5 s), and refreshes the running locale.
+- **`handleDelete(entry)`** – Shows a confirm dialog, then removes the entry via the store, re-searches, and refreshes the running locale.
+- **`handleImport(payload)`** – Submits the import dialog's parsed rows (merge or replace mode) through the store; on success closes the dialog, toasts the result, re-searches, and refreshes the running locale.
+- **`tableHeaders`** (computed) – Localized column definitions for the `DataTable`; the `actions` column is `synthetic: true` (rendered via slot, not a row field).
+- **`appChoice` / `appFilterOptions`** – Computed pair that maps the "all apps" sentinel (`''`) to/from `undefined` in the store's `filters.app`.
+- **`rowActionSize`** – `useTouchFriendlySize()` result; yields `small` on desktop, default size on small viewports for WCAG touch targets.
+- **`drafts` / `savedRows`** (refs) – Per-row-id local state: `drafts` captures the in-progress value for blur comparison; `savedRows` marks rows whose save just landed for the ephemeral check icon.
+- **`addError`, `importError`, `rowActionError`** – Three independent `useBlockingError` instances that keep their respective dialogs/tables open and display the failure inline.
+- **Named-component block (`LocaleEntriesPage`)** – Separate `<script>` (non-setup) that sets the component name for `<KeepAlive>` and devtools, since `<script setup>` cannot.
 
 ## Relationships
 
-No direct imports of the listed graph neighbors are visible in this file. The component interacts with:
-
-- **`@/modules/locales/store.ts`** (`useLocalesStore`) – all reads and writes (search, add, edit, remove, import, fetch languages/tenants) flow through this Pinia store.
-- **`@/infrastructure/locale-overrides.ts`** (`refreshRunningLocale`) – called after every successful write to re-hydrate the live dictionary.
-- **`@/modules/locales/components/EntryFormDialog.vue`** and **`EntriesImportDialog.vue`** – child dialogs; this page owns their open/close state, feeds them success/failure, and reads their `applyServerErrors` method.
-- **`@/ui/organisms/DataTable.vue`** – renders the entry rows; this page supplies headers, row actions, and the blocking-error alert.
-- **`@/ui/molecules/ListPagination.vue`** – page navigation bound to `pageCurrent` / `entriesPageTotal`.
-- **`@/infrastructure/utils/errors.ts`** (`notifyErrorMessages`) – toast-level error reporting for search failures.
-- **`@/infrastructure/utils/use-blocking-error.ts`** – small composable backing each "stay-open" error state.
+- **`src/modules/locales/store.ts`** – Primary data source. All CRUD operations (`addEntry`, `editEntry`, `removeEntry`, `importEntries`) and the search machinery (`watchSearchEntries`, `fetchLanguages`, `fetchApps`) are consumed from `useLocalesStore`. Reactive state (`capabilities`, `apps`, `filters`, `pageItemList`, `pageCurrent`, `entriesPageTotal`, `loading`) is pulled via `storeToRefs`.
+- **`src/modules/locales/components/EntryFormDialog.vue`** – Rendered in the page; its `open` state is driven by `entryFormOpen`. On save the page calls `handleAdd` with the dialog's validated fields; on failure the page calls back into the dialog's `applyServerErrors` to map field-level errors.
+- **`src/modules/locales/components/EntriesImportDialog.vue`** – Rendered in the page; its `open` state is driven by `importOpen`. On confirm the page calls `handleImport` with the dialog's parsed payload; on failure the `importError` blocker keeps the dialog open.
+- **`src/modules/locales/dictionaries.ts`** – `expandEntries` is imported (used to shape entry data for display or downstream processing).
 
 ## Notes
 
-- **Keys are identity, not editable.** The key column is disabled; the API treats a key change as delete + add, so the UI simply does not offer the shortcut.
-- **"Every tenant" sentinel is `''`, not `undefined`.** Vuetify interprets a missing `value` as "use the title," which would have sent the label text to the API. The computed `tenantChoice` translates `''` ↔ `undefined` at the boundary.
-- **`filters.tag` is set synchronously on component init** (before any `watch` fires) so the store's search-cache key includes the tag on the very first request.
-- **Error-channel split:** ambient failures (search) → toast; blocking failures (add, import, inline edit, delete) → inline alert that keeps the dialog open or pins above the table. See the project's `docs/theory/request-flow.md` for the rationale.
-- **Per-row save feedback uses a 1.5 s checkmark**, not a toast, to avoid flooding the notification area during bulk inline edits.
-- **`downloadBlob`** is imported (from `@guebbit/js-toolkit`) and is used in the truncated portion for the export/download action visible via the `Download` icon.
+- **`filters.tag` is set synchronously before the first search fires.** The tag is injected into the store's `filters` object on mount and on every `tag` change (immediate), so the search cache key always includes it. Do not remove the initial assignment.
+- **The "all apps" sentinel is `''`, not `undefined`.** Vuetify treats a select item with no `value` as "use the title as the value," which would send the label string to the API. The computed `appChoice` translates between `''` (UI) and `undefined` (store).
+- **Keys are read-only in the table.** Changing a key is semantically a delete + add, which the API enforces; the UI disables the key cell to prevent the shortcut.
+- **Row-save feedback is a row-local check mark, not a toast.** A toast per edit would spam during bulk manual work; the `savedRows` map + 1.5 s timeout keeps feedback quiet.
+- **Three separate blocking-error states exist** (add, import, row-action) because each has a different visual anchor (dialog slot vs. inline alert above the table). They must not be merged into one.

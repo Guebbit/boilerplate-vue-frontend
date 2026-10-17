@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/tests/form-dialogs.spec.ts
-sha256: 2f37a56fcbaa9c3cdb3ea98335bdd91169d7f7596df5405a064e45cc02e2644d
-generated_at: 2026-10-02T15:15:09.444665+00:00
+sha256: bbd1e1cde9846ebdc64ca098f93fdf28ee170fe223e07a422f6a84c2501cde69
+generated_at: 2026-10-17T01:05:40.173725+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests verifying two behavioral contracts of the locale form dialogs (`EntryFormDialog`, `LanguageFormDialog`): the submit button is disabled while the parent's write is in flight (preventing duplicate submits), and a server 422 refusal that names a specific field is surfaced on that field via the dialog's `applyServerErrors` method.
+Unit tests for the two locale form dialogs (`EntryFormDialog`, `LanguageFormDialog`) that verify two parent-owned-write contracts: the submit button is disabled while a save is in flight, and a server refusal that names a specific field is surfaced on that field via the dialog's exposed `applyServerErrors` method.
 
 ## Key elements
 
-- **`mountEntryDialog(saving: boolean)`** — helper that mounts `EntryFormDialog` with a fixed tenant list and toggles the `saving` prop.
-- **`DUPLICATE_KEY`** — a canned 422 response object (with `errors[0].field = 'key'`) used to exercise `applyServerErrors`.
-- **`GLOBAL`** — shared Vitest global config: registers Vuetify + i18n plugins and stubs `VDialog` with a pass-through `<slot>` template so dialog content renders without an open state.
-- **`beforeEach`** — resets Pinia (`setActivePinia(createPinia())`) and loads the `'en'` locale.
-- **`describe('EntryFormDialog')`** — three specs: disabled-while-saving, enabled-when-not-saving, and field-level error surfacing.
-- **`describe('LanguageFormDialog')`** — one spec: disabled-while-saving.
+- **`DUPLICATE_KEY`** – Fixture object modelling a `422` response whose `errors[0].field` is `"key"`; used to exercise `applyServerErrors`.
+- **`GLOBAL`** – Shared `mount` options: real `vuetify` and `i18n` plugins, plus a `VDialog` stub (`<div><slot/></div>`) so dialog content renders regardless of open state.
+- **`beforeEach`** – Resets Pinia and loads the `'en'` locale before every test.
+- **`mountEntryDialog(saving)`** – Convenience wrapper that mounts `EntryFormDialog` open with a fixed `apps` prop and the `saving` flag.
+- **`describe('EntryFormDialog')`** – Three assertions: submit disabled while saving, submit enabled otherwise, and `applyServerErrors(DUPLICATE_KEY)` places the message on `[data-test=entry-key]`.
+- **`describe('LanguageFormDialog')`** – One assertion: submit disabled while `saving` is `true`.
 
 ## Relationships
 
-- **`tests/support/stub.ts`** — provides `asStub<T>()`, a type-assertion helper used to cast `wrapper.vm` so the test can call `applyServerErrors` without a full component type definition.
-- **`tests/support/unit/wire-modules.ts`** — provides `wireModulesIntoCore()`, called once at module top-level to register the module system so component imports resolve correctly under Vitest.
+- **`EntryFormDialog.vue`** – Primary subject; tests mount it and inspect its `[data-test=entry-save]` button and `[data-test=entry-key]` field, and call its exposed `applyServerErrors`.
+- **`LanguageFormDialog.vue`** – Secondary subject; tests mount it and inspect `[data-test=language-save]`.
+- **`tests/support/stub.ts`** – Provides `asStub<T>()`, used to type-cast `wrapper.vm` so the test can call `applyServerErrors` without a full component type.
+- **`tests/support/unit/wire-modules.ts`** – Provides `wireModulesIntoCore()`, called once at module scope to register module Pinia stores so the dialogs can read/write reactive state.
 
 ## Notes
 
-- The `VDialog` stub is a plain template stub (`<div><slot /></div>`), not a full Vuetify mock. This means tests only verify content rendering and prop-driven behavior, not dialog open/close transitions.
-- `asStub` is a deliberate escape hatch: the test reaches into the component instance directly rather than simulating a full save round-trip through the parent.
-- The `LanguageFormDialog` suite only covers the `saving`-disables-submit contract; the field-error path is exercised only for `EntryFormDialog`.
+- `VDialog` is stubbed to a plain slot-forwarding `div`; the real Vuetify dialog wrapper is never exercised.
+- `asStub` is a test-only cast—it does **not** validate that the method exists at runtime; a typo in the method name would fail with a runtime error, not a type error.
+- The `saving` prop is the sole signal for disabling submit; the dialogs do not manage their own async save, so no `vi.spyOn` on store actions is needed.

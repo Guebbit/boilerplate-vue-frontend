@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/profile-guest-consent-sync.spec.ts
-sha256: 9ff64d6731eb4e2993626617d4332808e5f3e31287a1d137bed352aaec333895
-generated_at: 2026-10-02T14:50:32.966609+00:00
+sha256: 1fddbd278086f3cbe153f919c8439bc0ec04423d630b93f140c30682d76256a6
+generated_at: 2026-10-17T00:25:33.219084+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec covering the login-time guest-consent sync (feature FA-D5): when a guest who answered the analytics consent banner authenticates into an account that has no `analyticsConsent` value of its own, the guest's choice is persisted via a single `PATCH /account` call. The spec exercises the real `useAnalyticsConsentStore` and `useProfileStore` logic while mocking only the HTTP transport layer.
+Tests the login-time consent-sync path: when a guest who already answered the analytics consent banner authenticates into an account that has **no** `analyticsConsent` field, the guest's choice is persisted via `PATCH /account` exactly once. Mocks only the HTTP transport; the guest choice flows through the real `useAnalyticsConsentStore`.
 
 ## Key elements
 
-- **`NEVER_ASKED_USER`** — minimal account fixture (`id`, `username`, `email`, `role`) with no `analyticsConsent` key; the one shape eligible to trigger a sync.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a function that routes on `METHOD url` into a `responses` record, parsing the stored fixture through `parseOrvalFixture`.
-- **`patchBodies()`** — helper that filters the recorded `orvalMutator` calls to `PATCH` requests and extracts their `data` payloads for assertions.
-- **`beforeEach`** — resets Pinia, clears mocks, deletes the `analyticsConsent` cookie (via `deleteCookie`), and seeds `responses` with default `GET /account`, `PATCH /account`, and `GET /account/abilities` fixtures.
-- **`describe('the guest-consent sync')`** — six cases: no-op when Umami unconfigured, no-op when guest never answered, no-op when account already has a preference, sync of a granted choice, sync of a denied choice, and exactly-once across repeated `fetchProfile(true)` calls.
+- **`NEVER_ASKED_USER`** – Fixture for an account shape that has no `analyticsConsent` key (the only shape that can trigger a sync).
+- **`responses`** – Per-test mutable map of `METHOD /url` → response body, read by the transport mock.
+- **`patchBodies()`** – Helper that filters `orvalMutator` mock calls to `PATCH` and returns their `data` payloads in order.
+- **`vi.mock('@/infrastructure/http')`** – Replaces `orvalMutator` with a function that resolves `parseOrvalFixture(method, url, responses[key])`.
+- **`beforeEach`** – Resets Pinia, clears mocks, deletes the `analyticsConsent` cookie via `deleteCookie`, and seeds default `GET /account`, `PATCH /account`, and `GET /account/abilities` responses.
+- **`afterEach`** – Calls `vi.unstubAllEnvs()` to clean up `VITE_UMAMI_*` / `VITE_FARO_*` stubs.
+- **6 `it` cases** – Cover: no analytics configured → no PATCH; guest never answered → no PATCH; account already has a preference → no PATCH; grant → PATCH `true`; deny → PATCH `false`; repeated `fetchProfile(true)` → PATCH fires only once.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — the sole mocked module; the test stubs `orvalMutator` so no real HTTP occurs.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level to register stores/dependencies in the test DI container before any `use*` call.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload in the orval response shape) and `parseOrvalFixture` (validates the raw fixture against the expected schema and returns the typed body) used by both the mock and the `beforeEach` seed.
+- **`src/modules/account/stores/profile.ts`** – System under test; `useProfileStore().fetchProfile(true)` is the trigger that initiates the consent-sync logic.
+- **`src/infrastructure/http/index.ts`** – Provides `orvalMutator`, the HTTP transport that is fully mocked here.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register test doubles with the app's dependency graph before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Supplies `orvalEnvelope` (wraps a payload in the orval response shape) and `parseOrvalFixture` (re-parses the envelope for the mocked transport).
 
 ## Notes
 
-- Cookie state is **not** reset automatically: jsdom retains `document.cookie` for the entire file, so `deleteCookie('analyticsConsent')` runs explicitly in `beforeEach` (same pattern as `session.spec.ts`).
-- `afterEach` calls `vi.unstubAllEnvs()` because several tests use `vi.stubEnv('VITE_UMAMI_WEBSITE_ID', …)`; omitting this would leak the stub into subsequent tests.
-- The "exactly once" guarantee is asserted by calling `fetchProfile(true)` twice back-to-back and checking `patchBodies().length === 1`—the store tracks that a sync has already occurred for the session.
+- The "never-asked" condition is specifically the **absence** of the `analyticsConsent` key on the user object, not an explicit `null`/`false`.
+- `document.cookie` persists across tests in jsdom, so `deleteCookie('analyticsConsent')` in `beforeEach` is required to simulate a fresh guest session.
+- `GET /account/abilities` must be provided in `responses` because `setViewer` (inside `fetchProfile`) unconditionally fetches it for every loaded profile.
+- The same transport-mocking pattern is shared with `profile.spec.ts`; the distinguishing factor here is that the consent store is **real**, not mocked.

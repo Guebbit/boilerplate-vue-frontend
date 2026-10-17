@@ -1,7 +1,7 @@
 ---
 source: src/modules/users/views/UserCreate.vue
-sha256: 9e73f1ea373bb5ea00f19ca4fd03b80a535eb63573014bfd054b50d61615c4e1
-generated_at: 2026-10-02T15:52:33.635537+00:00
+sha256: 37d6065e1c470ee2b805819127a82c3538a1046ee7d9ffd7f4e7973600edfdbe
+generated_at: 2026-10-17T01:49:39.293938+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,34 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Renders the user-creation form. It collects email, username, password (or a "send setup email" checkbox in its place), role, locale, active flag, and an optional avatar, validates the submission client-side via a Zod schema, and delegates the actual `POST` (multipart or JSON) to the users store.
+The user-creation form page. Collects email, username, role, locale, active-status, and an optional avatar upload, validates the input client-side with a Zod schema, then delegates to the users store which branches between multipart (avatar present) and JSON submission. There is intentionally no password field: the new user is emailed a self-service credential-setup link.
 
 ## Key elements
 
-- **`UserCreatePage`** (component name) — the SFC's identity for DevTools and the router.
-- **`UserCreateForm`** — local interface describing the form's bound fields; used as the generic parameter for `useStructureFormValidation`.
-- **`createSchema`** — Zod schema built by `usersSchema.pick({email,username}).extend({...}).superRefine(...)`. The `superRefine` enforces "password XOR sendSetupEmail" and, when a password *is* present, re-runs `usersPasswordSchema`'s strength checks so those rules stay declared in one place.
-- **`submitForm`** — top-level action: clears any prior blocking error, calls `handleSubmit` (from the shared composable) which in turn calls `createUser` from `useUsersStore`, tracks upload progress via `useAxiosUploadProgress`, toasts success, and navigates to `UserTarget`. API failures are mapped through `applyServerErrors`; unmapped errors are surfaced as an inline `InlineErrorAlert`.
-- **`localeOptions`** (computed) — maps `supportedLanguages` to `{value, title}` pairs, translated into the active UI locale.
-- **`useBlockingError`** hook — provides `submitError` / `reportSubmitError` / `clearSubmitError` so a failed create renders an inline alert next to the submit button instead of a dismissible toast.
+- **`UserCreatePage`** – Named component block (separate `<script>` block) so the SFC has a stable name for devtools / `<KeepAlive>`.
+- **`UserCreateForm`** – Interface describing the form shape: `email`, `username`, `role?`, `active?`, `locale?`, `imageUpload?`.
+- **`createSchema`** – Zod schema built from `usersSchema.pick({ email, username })` extended with `role`, `active`, `locale`, and `imageUpload` (from `imageUploadSchema`).
+- **`useStructureFormValidation<UserCreateForm>`** – Shared composable providing `form`, `formErrors`, `showErrors`, `isSubmitting`, `handleSubmit`, `applyServerErrors`. Revalidates on locale change.
+- **`useAxiosUploadProgress`** – Tracks multipart upload progress, surfaced to `FormImageUpload` via `uploadProgress`.
+- **`useBlockingError`** – Per-form inline error state (`submitError`, `reportSubmitError`, `clearSubmitError`) rendered by `InlineErrorAlert` beside the submit button, distinct from toast notifications.
+- **`submitForm`** – Clears prior inline errors, runs `handleSubmit`, tracks upload progress, calls `createUser` from the store, shows a success toast, and navigates to the new user's detail route (`UserTarget`). Unmapped API errors are reported via `reportSubmitError`.
+- **`localeOptions`** – Computed list of `supportedLanguages` mapped to `{ value, title }` pairs, localized with the current locale.
+- **`useRoleOptions`** – Provides `grantableRoles()` (server-authorized roles) and `roleOptions()` for the role `<v-select>`; the select is hidden entirely when the caller can assign no roles.
 
 ## Relationships
 
-- **`src/modules/users/store`** (`useUsersStore`) — provides `createUser`, which owns the multipart-vs-JSON branch and the HTTP call. This view only assembles the payload.
-- **`src/modules/users/schemas.ts`** — supplies `usersSchema` (email/username fields) and `usersPasswordSchema` (strength rules) that `createSchema` composes.
-- **`src/modules/users/domain`** — supplies `userRoleOptions`, the single source of role choices shared by every role select in the module.
-- **`src/infrastructure/utils/uploads.ts`** — supplies `imageUploadSchema` used for the avatar field's validation.
-- **`src/infrastructure/utils/use-blocking-error.ts`** — composable backing the inline submit-error display.
-- **`@guebbit/vue-toolkit`** — provides `useStructureFormValidation` (form state, submit, server-error mapping) and `useNotificationsStore` (toast dispatch).
-
-The listed graph neighbors `src/infrastructure/utils/logger.ts` and `src/modules/account/views/TwoFactorChallenge.vue` are **not imported or referenced** in this file; no direct interaction exists.
+- **`src/modules/users/schemas.ts`** – Imports `usersSchema` as the base for `createSchema` (picks `email` and `username` fields).
+- **`src/modules/users/store.ts`** – Imports `useUsersStore` to call `createUser` with the validated form payload and optional request options.
+- **`src/modules/users/composables/use-role-options.ts`** – Provides the server-driven role list for the select and the visibility guard (`grantableRoles().length > 0`).
+- **`src/modules/users/tests/user-create-view.spec.ts`** – Unit/integration test suite covering this view's form rendering, validation, and submission behavior.
 
 ## Notes
 
-- **Password is intentionally a plain `z.string().optional()`**, not `usersPasswordSchema` directly. The `superRefine` only applies strength rules when a password was actually typed *and* `sendSetupEmail` is off. This avoids a false "password required" error when the setup-email path is chosen.
-- On submit, `password` is coerced to `undefined` when `sendSetupEmail` is true, so an empty string is never sent to the API.
-- `formElement` is passed as a **getter** (`() => card.value?.formElement`) because the `<form>` lives inside `FormCard` and may not be mounted when the composable config is evaluated.
-- `revalidateOn: locale` causes schema messages (which use `translate()` thunks) to re-resolve when the UI language changes.
-- The post-success `router.push` is wrapped in `void` so a Vue Router `NavigationFailure` (e.g. duplicate navigation) does not reject the promise and get misread as a create failure.
-- `role` options come exclusively from `domain/roles.ts` (`userRoleOptions`); do not hard-code a second list here.
-- `localeOptions` picks up any language added via `GET /locales` at boot with no code change — same mechanism as `Profile.vue`'s language select.
+- The `formElement` option passed to `useStructureFormValidation` is a getter (`() => card.value?.formElement`) rather than a direct ref, so the `<form>` element is resolved lazily at submit time—avoids a race with `FormCard` still mounting. An ESLint disable comment acknowledges a TS-ESLint limitation with SFC `InstanceType` resolution.
+- `active` defaults to `true` in initial form state, mirroring the API's `CreateUserRequest.active` default; the switch therefore reflects "what an omitted value would do."
+- The role select is conditionally rendered (`v-if="grantableRoles().length > 0"`); when hidden, the server applies its own default role.
+- Navigation to the new user's page uses `void router.push(...)` so a `NavigationFailure` cannot convert a completed create into an error.
+- The file imports `logger.ts` is **not** used directly in this component; the dependency-graph edge likely reflects a transitive or shared-infrastructure link.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/users/tests/user-access-dialog.spec.ts
-sha256: 2fd10a7205ef36264b1b1ded0c4fb19141d059358ad49ae3d04335595db4d48f
-generated_at: 2026-10-02T15:48:55.659675+00:00
+sha256: ace311f70624587b0db7653522ad1fb474028d094a881c98d7761e2c40155139
+generated_at: 2026-10-17T01:48:04.849012+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for `UserAccessDialog.vue`. Validates the two-step picker → confirm flow, the `skipPicker` shortcut mode used by `UserEdit.vue`, the self-deactivation warning, and that the emitted `confirm` payload contains only the fields that actually changed (unchanged fields are `undefined`), ready to serve as a `PATCH` body.
+Unit tests for `UserAccessDialog.vue`. Validates the two-step picker → confirm flow, the `skipPicker` fast-path used by `UserEdit.vue`, the self-deactivation warning, the emitted payload shape (only changed fields, ready for a `PATCH` body), and which controls are enabled/disabled based on the target user's `actions` and the caller's `grantableRoles`.
 
 ## Key elements
 
-- **`mountDialog(props)`** — Mount helper that stubs Vuetify's `VDialog` as `<div><slot/></div>` so the dialog body renders regardless of open state, then flips `modelValue` to `true` to trigger the internal `watch(isOpen, …)` that seeds `selectedRole` / `selectedActive`.
-- **`beforeEach`** — Creates a fresh Pinia instance and loads the `en` locale.
-- **`wireModulesIntoCore()`** — Called once at module top-level (from `tests/support/unit/wire-modules.ts`) to register the module-level DI wiring before any test runs.
-- **Test cases** (under `describe('UserAccessDialog')`):
-  - Picker step renders and Continue stays disabled until a value changes.
-  - Changing only `active` and confirming emits `{ role: undefined, active: false }`.
-  - `skipPicker: true` + chosen values skips the picker step entirely (no Back button).
-  - Skip-picker confirm emits the caller-chosen role with `active: undefined` when unchanged.
-  - Cancel emits `cancel` and never emits `confirm`.
-  - Self-deactivation (target `id` matches `useSessionStore().viewer.id`) shows `[data-test=user-access-self-warning]`.
-  - Same deactivation on a different user shows no warning.
+- **`mountDialog(props)`** – Mounts the dialog with `modelValue: false`, then sets it to `true` to replicate the `watch(isOpen)` transition that seeds `selectedRole`/`selectedActive`. Stubs Vuetify's `VDialog` with a bare `<div><slot /></div>` so content renders in both states.
+- **`disabledOf(wrapper, test)`** – Helper that checks whether a Vuetify field behind a `data-test` attribute carries the `v-input--disabled` class.
+- **`beforeEach`** – Creates a fresh Pinia store, sets `grantableRoles` to `['customer','manager','admin']`, and loads the `en` locale.
+- **`describe('UserAccessDialog')`** – Core flow tests: picker starts disabled, confirm emits only changed fields, skip-picker mode omits the picker step and "back" button, cancel emits only `cancel`, self-deactivation warning appears only when the target is the signed-in viewer.
+- **`describe('UserAccessDialog — what the picker offers')`** – Matrix of `actions` (`update`, `ban`) and `grantableRoles` to verify which controls are enabled/disabled and what role options the select presents.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — Imports and calls `wireModulesIntoCore()` at the top of the module so that any store or service resolved through the app's module registry is available before the first test mounts the component.
-- **`@/modules/users/components/UserAccessDialog.vue`** — The component under test; all assertions target its rendered DOM and emitted events.
-- **`@/infrastructure/session.ts`** — `useSessionStore()` is used to set `viewer` for the self-deactivation warning tests.
-- **`@/modules/users/composables/use-user-access-dialog.ts`** — Source of the `UserAccessDialogTarget` and `UserAccessDialogRequestOptions` types that shape the `mountDialog` helper and the `options` prop.
+- **`src/modules/users/components/UserAccessDialog.vue`** – The component under test; mounted directly via `@vue/test-utils`.
+- **`src/modules/users/composables/use-user-access-dialog.ts`** – Imported for the `UserAccessDialogTarget` and `UserAccessDialogRequestOptions` types only (type-level dependency; the composable itself is not exercised).
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module top-level (before `beforeEach`) to register i18n translation modules with the core i18n instance that `UserAccessDialog.vue` consumes.
 
 ## Notes
 
-- `VDialog` is stubbed with a bare slot-forwarding div; the dialog's open/closed state is irrelevant to rendering. The real open transition is simulated by `setProps({ modelValue: true })`, which drives the same `watch` the production `useUserAccessDialog().request()` call would.
-- Element selectors use `data-test` attributes (`user-access-role`, `user-access-continue`, `user-access-confirm`, `user-access-cancel`, `user-access-active`, `user-access-back`, `user-access-self-warning`), not Vuetify class names — keep these in sync if the template changes.
-- The confirm payload contract: unchanged fields are present in the object with an `undefined` value (not omitted). This is what makes the object directly usable as a `PATCH` body where the backend ignores `undefined` keys.
-- The `skipPicker` mode has **no** Back button by design; a test explicitly asserts its absence.
+- The `VDialog` stub technique (render a bare slot wrapper) is the same pattern used in `entries-import-dialog.spec.ts`; it lets assertions target inner content without fighting Vuetify's teleported/overlay DOM.
+- `wireModulesIntoCore()` runs once at import time, not per-test — if a future test needs a different locale or module set, the call must be refactored.
+- The "moderator-like caller" test reaches into the rendered `VSelect` component instance to inspect its `items` prop, coupling the assertion to Vuetify's component name rather than a `data-test` attribute.
+- Self-warning tests mutate `useSessionStore().viewer` inside individual `it` blocks rather than in `beforeEach`, so each test is responsible for setting (or not setting) the viewer it needs.

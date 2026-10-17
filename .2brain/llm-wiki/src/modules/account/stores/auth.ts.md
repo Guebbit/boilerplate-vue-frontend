@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/stores/auth.ts
-sha256: 26c8bbecd9d232618f3b725e1a5521cd2be5f232f1d2dcfbd70742472ec4537a
-generated_at: 2026-10-02T14:46:48.325362+00:00
+sha256: e13a6b43c76cff0a451ccd9a6a06b596fe71afcad099bed4b194250b74bd0b35
+generated_at: 2026-10-17T00:18:48.601529+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,38 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store (Composition API) that owns the **session lifecycle**: login, signup, password reset, and the two logout variants. It wraps the `@api` client calls via `useStructureRestApi` and coordinates the session and profile stores after each successful transition. It deliberately does **not** hold the editable user record — that lives in `profile.ts`.
+Pinia store (Composition API) that owns the **session lifecycle**: login, signup, password reset, and the two logout paths. It wraps the generated REST calls from `@api` via `useStructureRestApi`, then coordinates the resulting state into the session store and profile store rather than holding user-editable data itself.
 
 ## Key elements
 
-- **`LoginOutcome`** — exported discriminated union (`{ kind: 'session' }` | `{ kind: 'mfa', challenge, expiresAt, methods, defaultMethod? }`). Call sites branch on `kind` rather than sniffing field presence.
-- **`useAuthStore`** — the Pinia store (`'accountAuth'`). Returns the seven actions below.
-- **`login(email, password, remember?, options?)`** — Calls `apiLogin`. On an `AuthTokens` payload, stores the access token in the session store and chains `useProfileStore().fetchProfile(true)`. On an `MfaChallenge` payload, returns the `mfa` outcome **without** touching the session store. Uses `'mfaRequired' in payload` (not optional-access) for the type guard.
-- **`signup(credentials, options?)`** — Calls `apiSignup` with an `Idempotency-Key` (settle-on-success, settle-with-error-on-failure). `username` defaults to `email`, `passwordConfirm` to `password`. `termsAccepted` is typed as `true` (API enum constraint). Does **not** store a token — the response sets cookies only.
-- **`setAvatarAfterSignup(imageUpload, options?)`** — Follow-up `PATCH /account` for the avatar picked during signup. Chains `session.refreshToken()` → `profile.fetchProfile(true)` → `profile.updateProfile({ imageUpload })`.
-- **`requestPasswordReset(email, options?)`** — Sends reset token to email.
-- **`confirmPasswordReset(token, password, passwordConfirm)`** — Completes the reset.
-- **`logout()`** — Ends the current session (`session.logout()`), then resets the profile store and re-syncs the analytics consent tracker to the guest answer.
-- **`logoutEverywhere()`** — Same local cleanup but calls `session.logoutAll()` to revoke every refresh token.
+- **`LoginOutcome`** (exported type) — discriminated union: `{ kind: 'session' }` or `{ kind: 'mfa', challenge, expiresAt, methods, defaultMethod }`. Call sites branch on `kind` instead of sniffing optional fields.
+- **`useAuthStore`** (exported, id `'accountAuth'`) — the store. Exposes:
+  - `login(email, password, remember?, options?)` — calls `apiLogin`; on a plain response adopts the session and loads the profile; on an MFA challenge resolves with the `mfa` variant without touching the session store.
+  - `signup(credentials, options?)` — calls `apiSignup` with an **idempotency key** (`useIdempotencyKey`) so a network retry never double-creates an account. Sets session cookies only.
+  - `setAvatarAfterSignup(imageUpload, options?)` — the follow-up `PATCH /account` for an avatar picked on the signup form; restores the session from cookies, fetches the profile, then updates it.
+  - `requestPasswordReset(email, options?)` — sends the reset token by email.
+  - `confirmPasswordReset(token, password, passwordConfirm)` — completes the reset.
+  - `logout()` — revokes **this** session; clears profile cache, unidentifies the observability user, re-syncs analytics consent.
+  - `logoutEverywhere()` — revokes **all** sessions for the account (compromised-credentials path); same local cleanup.
 
 ## Relationships
 
-- **`stores/profile.ts`** — `useProfileStore` is pulled in after a successful login (to fetch the record), in `setAvatarAfterSignup` (to mint the token, fetch the record, then patch the avatar), and on both logout paths (to `resetAll()` the cached record).
-- **`stores/two-factor.ts`** — The `mfa` branch of `login` returns a challenge that the caller hands to `useTwoFactorStore().submitLoginCode` for the second step. This store does not import or call `two-factor.ts` directly; the hand-off is at the view layer.
+- **`stores/profile.ts`** (`useProfileStore`) — imported and called directly: `fetchProfile(true)` after successful login/signup, `updateProfile` for the post-signup avatar, `resetAll()` on both logout paths.
+- **`@/infrastructure/session.ts`** (`useSessionStore`) — the session tokens/cookies are written via `adoptSession`, read via `restoreFromCookies`, and cleared via `logout` / `logoutAll`.
+- **`stores/two-factor.ts`** (`useTwoFactorStore`) — consumer of the `mfa` branch of `LoginOutcome`; `submitLoginCode` carries the `remember` tier forward to the second step.
+- **`views/Login.vue`** — calls `login()`, passing a solved `HumanCheck` token through `options` on anti-bot retry.
+- **`views/Signup.vue`** — calls `signup()` then `setAvatarAfterSignup()`, passing `onUploadProgress` via `options`.
+- **`views/PasswordResetRequest.vue`** — calls `requestPasswordReset()`, attaching a `HumanCheck` token through `options`.
+- **`views/PasswordResetConfirm.vue`** — calls `confirmPasswordReset()`.
+- **`components/ProfileSessions.vue`** — surfaces `logoutEverywhere()` from the sessions panel.
+- **`routes.ts`** — the router's restore guard mints the access token from cookies after signup.
+- **`tests/auth-*.spec.ts`**, **`tests/password-reset-request-view.spec.ts`**, **`tests/profile-account-consent.spec.ts`** — spec files exercising the store's actions and their side-effects on session/profile/consent stores.
 
 ## Notes
 
-- **`remember` mapping:** `true` → `RememberTier.medium` (≈ 30 days); `false` → `undefined`, which the API interprets as a browser-session cookie. On the 2FA path the tier rides along to the second step.
-- **Idempotency on signup:** `useIdempotencyKey()` reuses the same key across retries (network errors, 5xx) so a lost response never creates a duplicate account; a 4xx (e.g. "email taken") mints a fresh key for the next attempt.
-- **`fetchAny` null guard:** `login` explicitly throws if `fetchAny` resolves `undefined`. That path is only reachable via a cached (`key`) call, which `login` never makes — the throw is a safety net, not an expected branch.
-- **Token vs. cookies after signup:** Signup sets httpOnly session cookies but does **not** return an access token. Any follow-up call (e.g. `setAvatarAfterSignup`) must `session.refreshToken()` first.
-- **`options` param:** Forwarded to the `orvalMutator`. Used by views to attach a solved `HumanCheck` token (anti-bot retry) or `onUploadProgress`.
-- **httpOnly cookie:** The `jwt` cookie can only be cleared server-side; `isAuth` is the JS-accessible flag that `session.logout` clears.
+- **Signup ≠ token.** `apiSignup` sets httpOnly session cookies only; no access token is returned. The caller must either call `setAvatarAfterSignup` (which invokes `restoreFromCookies`) or rely on the router's restore guard to mint the token.
+- **`remember` is binary.** `true` maps to `RememberTier.medium` (≈ 30 days); `false`/omitted lets the API default to a browser-session cookie. There is no longer/shorter tier exposed here.
+- **MFA narrowing uses `in`.** The code checks `'mfaRequired' in payload` rather than a truthy optional read, because `AuthTokens` simply lacks that field. Don't "simplify" this to `payload.mfaRequired`.
+- **Idempotency key lifecycle.** `signupIdempotencyKey.withKey(options)` attaches the key; `settle()` or `settle(error)` releases it. A 4xx (e.g. "email taken") mints a fresh key for the next attempt; a network/5xx retry reuses the same key.
+- **httpOnly cookie.** The `jwt` cookie is httpOnly and can only be cleared server-side. `logout`/`logoutEverywhere` clear the JS-accessible `isAuth` flag and local state; the server-side revocation is implicit in the API call.
+- **Not here on purpose.** The editable profile record (name, avatar, consent, etc.) lives in `stores/profile.ts`. This store coordinates but does not own that data.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/views/Login.vue
-sha256: 034ba4909efb30e4620dc4ee9c102b303730418959dae736ac38ad3ed395acc9
-generated_at: 2026-10-02T12:36:24.057209+00:00
+sha256: 1978689cbf649f4ac733bdae575dbefa7d274c7a17f468c9b4b0cc56230aef44
+generated_at: 2026-10-17T00:29:51.142310+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,36 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The primary authentication entry point for the application. Renders an email/password form, validates it against a Zod schema derived from the shared `usersSchema`, and dispatches the result through one of three branches: a plain post-login redirect, a hand-off to the `TwoFactorChallenge` view, or an inline anti-bot (HumanCheck) challenge. Also surfaces available OAuth providers as top-level navigation links.
+The login page view. It presents an email/password form (plus an optional anti-bot challenge), authenticates via the auth store, and routes the visitor either to their post-login destination or to `TwoFactorChallenge` depending on whether the account has MFA armed.
 
 ## Key elements
 
-- **`submitForm`** — Orchestrates the login: clears prior blocking errors, runs Zod validation via `useStructureFormValidation`, calls `useAuthStore().login(…)` with the optional anti-bot token, then branches on the `LoginOutcome` kind (`mfa` → push `TwoFactorChallenge`; otherwise → `redirectAfterLogin`). Catches `ANTIBOT_VERIFICATION_FAILED` to toggle the HumanCheck widget; maps 422 field errors via `applyServerErrors`; maps unmapped 401s to the inline `loginError` alert.
-- **`loginSchema`** — `usersSchema.pick({ email }).extend({ password: z.string().min(8) })`. Messages are thunks so they pick up the active locale at parse time.
-- **`form` / `formErrors` / `handleSubmit` / `applyServerErrors`** — Supplied by `useStructureFormValidation` (`@guebbit/vue-toolkit`). `revalidateOn: locale` re-translates errors already rendered.
-- **`loginError` / `reportLoginError` / `clearLoginError`** — From `useBlockingError`; renders as `InlineErrorAlert` pinned below the submit button rather than in the toast queue.
-- **`humanCheck` (ref) + `requiresHumanCheck` (ref)** — Conditionally mounts `HumanCheck` when the server returns an anti-bot refusal; the solved token is read via `humanCheck.value?.token` on retry.
-- **`oauthProviders` (computed from store) + `continueTo` (computed)** — OAuth buttons render as `<a href>` links (real top-level navigation). `continueTo` forwards the same-origin `?continue=` query param into the OAuth start URL.
-- **`redirectAfterLogin`** — From `usePostLoginRedirect`; sends the user to their pre-login destination after a successful non-MFA auth.
-- **`showPassword`** — Toggles the password field between `type="password"` and `type="text"`.
+- **Component name block (`<script>` / `<script setup>` split)** — Declares `name: 'LoginPage'` in a plain `<script>` so devtools and `<KeepAlive>` can identify the SFC; `<script setup>` cannot set `name` itself.
+- **`loginSchema`** — Zod schema: `usersSchema.pick({ email })` extended with a password min-length rule. Error messages are thunks that resolve via `t()` at parse time.
+- **`useStructureFormValidation`** — Manages form state, per-field errors, submit lifecycle, and focus-on-first-invalid-field via `formElement`. Configured with `revalidateOn: locale` to re-translate in-flight error strings on locale switch.
+- **`useBlockingError`** — Inline, field-less error surface (e.g. a 401 that names no field) rendered as `InlineErrorAlert` below the submit button, distinct from per-field errors.
+- **`humanCheck` / `requiresHumanCheck`** — Conditional `HumanCheck` widget. Shown only when the server returns `ANTIBOT_VERIFICATION_FAILED`; its `.token` is passed to `withAntibotToken` on the next submit.
+- **`submitForm`** — Validates → calls `useAuthStore().login(email, password, remember, antibotToken)` → branches on `outcome.kind`:
+  - `'mfa'` → `useTwoFactorStore().beginLoginChallenge(...)` then `router.push(TwoFactorChallenge)`.
+  - default → `redirectAfterLogin()`.
+  - Catches: `ANTIBOT_VERIFICATION_FAILED` → reveals `HumanCheck`; other 4xx → `applyServerErrors` (field-mapped) or `reportLoginError` (unmapped).
+- **`showPassword`** — Toggles the password field between `text`/`password`; Eye/EyeOff icons swap accordingly.
+- **`OAuthButtons`** — Rendered below the form for social sign-in.
 
 ## Relationships
 
-- **`src/modules/account/views/TwoFactorChallenge.vue`** — When the auth store's `login()` resolves with `outcome.kind === 'mfa'`, this view pushes `routerLinkI18n({ name: 'TwoFactorChallenge', query: route.query })` and seeds the two-factor store via `useTwoFactorStore().beginLoginChallenge(outcome, remember)`. The visitor then completes the challenge on that page.
-- **`src/infrastructure/utils/logger.ts`** — Indirect (transitive) dependency, likely pulled in through `useAuthStore`, `useTwoFactorStore`, or the HTTP layer. No direct `import` of `logger.ts` appears in this file.
+- **`src/modules/account/stores/auth.ts`** — `useAuthStore().login(...)` performs the actual credential check and returns a `LoginOutcome` that drives the branch logic.
+- **`src/modules/account/stores/two-factor.ts`** — `useTwoFactorStore().beginLoginChallenge(outcome, remember)` stashes the MFA challenge state before the route change.
+- **`src/modules/account/views/TwoFactorChallenge.vue`** — Navigated to via `router.push` when `outcome.kind === 'mfa'`; consumes the state set by the two-factor store.
+- **`src/modules/account/composables/use-post-login-redirect.ts`** — `redirectAfterLogin()` sends the visitor to their pre-auth destination on a plain (non-MFA) login.
+- **`src/modules/account/components/OAuthButtons.vue`** — Rendered in the template for alternative sign-in; no runtime data flows between this view and it beyond presence.
+- **`src/modules/account/tests/login-view-i18n.spec.ts`** — Tests i18n key usage in this view.
+- **`src/modules/account/tests/oauth-continue.spec.ts`** — Exercises the OAuth-continue path that this view's `OAuthButtons` trigger.
 
 ## Notes
 
-- **OAuth links must be real `<a href>` elements.** A `RouterLink` or `@click` handler cannot initiate the top-level navigation the OAuth redirect flow requires; `v-btn`'s `href` prop is used for this reason.
-- **`remember` field mismatch.** The form binds a plain boolean; the API contract (`LoginRequest`) expects a tier string. The auth store performs the mapping — the form deliberately types its model as `Omit<LoginRequest, 'remember'> & { remember?: boolean }`.
-- **Anti-bot retry keeps the form filled.** On `ANTIBOT_VERIFICATION_FAILED` the form values are left in place so the visitor can solve the HumanCheck and re-submit without re-typing credentials.
-- **`void useOAuthProvidersStore().fetchProviders()`** is fire-and-forget; the store is documented as idempotent on re-mount, so a second visit does not re-fetch.
-- **ESLint disable on `humanCheck.value?.token`** — TypeScript-ESLint cannot resolve the SFC instance type of `HumanCheck` through `InstanceType<typeof …>`, so the unsafe-argument/unsafe-member-access rules are suppressed with an explanatory comment.
+- **`remember` type mismatch (intentional):** The form binds a plain boolean checkbox, but the API's `LoginRequest.remember` is a tier string. The auth store performs the mapping; the view's generic type `Omit<LoginRequest, 'remember'> & { remember?: boolean }` keeps both sides honest.
+- **`.then(() => undefined)` after the outcome branch:** `handleSubmit`'s contract resolves the handler's return value; discarding the `NavigationFailure` from `router.push` prevents an unhandled-rejection path.
+- **`revalidateOn: locale`:** Re-runs schema validation (and thus re-translates error messages) whenever the active locale changes — something the Zod schema shape alone cannot do since `formErrors` already holds resolved strings.
+- **ESLint disable on `withAntibotToken(humanCheck.value?.token)`:** TypeScript-ESLint cannot resolve the Vue SFC instance type from a template ref even though `HumanCheck.vue` exposes `token` via `defineExpose`; the disable is scoped to that single line.
+- **`novalidate` on `<form>`:** Disables browser-native validation so the toolkit's focus/error pipeline has sole control over invalid-field UX.

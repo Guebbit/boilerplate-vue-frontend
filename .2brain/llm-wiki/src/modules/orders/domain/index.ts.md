@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/domain/index.ts
-sha256: de2f8f89b6c56867ad0579670d93d47adb408c81c30b6c5cd130e5dce0dcca33
-generated_at: 2026-10-02T15:20:33.106074+00:00
+sha256: 11fe36eaf7b8b9f02407986458862cc0412cb3021a64bb80d92452c0808bb9d5
+generated_at: 2026-10-17T01:15:26.382899+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,19 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Barrel file that re-exports the public surface of the orders domain layer. It exists so consumers import from a single entry point (`./domain`) rather than reaching into individual files, and so the module's doc comment can state the layer's contract (pure rules, no Vue/Pinia/axios) in one place.
+Barrel file for the Orders domain layer. It re-exports the pure business-rule functions and types defined in sibling modules so that consumers (views, components, tests) can import from a single entry point. The domain layer is intentionally free of Vue, Pinia, axios, and any other tier — a constraint enforced by lint rules.
 
 ## Key elements
 
-- **`leftOutByReorder`** (re-exported function from `./reorder`) — the only value export; implements a domain rule related to reordering order lines.
-- **`ReorderedOrderLine`** (re-exported type from `./reorder`) — the type shape produced by the reorder operation.
+- **`leftOutByReorder`** (from `./reorder`) — computes which order lines are excluded by a reorder operation.
+- **`ReorderedOrderLine`** (type, from `./reorder`) — shape of a line affected by reordering.
+- **`canHardDelete`** (from `./hard-delete`) — determines whether an order is eligible for hard deletion.
+- **`HardDeletableOrder`** (type, from `./hard-delete`) — minimal order shape required by the deletion check.
+- **`describeTimelineEntry`** (from `./timeline`) — produces a human-readable description for a timeline entry.
+- **`isStaffOnly`** (from `./timeline`) — checks whether a timeline entry is restricted to staff.
+- **`TIMELINE_AUDIENCE`** (from `./timeline`) — constant enumerating the audience options.
+- **`TimelineAudience`, `TimelineLine`, `TimelineTools`** (types, from `./timeline`) — structural types for the timeline model.
+- **`exportRefusalOf`** (from `./export-refusal`) — produces a refusal descriptor when an export is not permitted.
+- **`ExportRefusal`** (type, from `./export-refusal`) — shape of an export-refusal result.
 
 ## Relationships
 
-- **`src/modules/orders/domain/reorder.ts`** — sole dependency. This file imports nothing from it at runtime beyond the two symbols above; all logic lives in `reorder.ts`.
+- **Re-exports** all symbols from `reorder.ts`, `hard-delete.ts`, `timeline.ts`, and `export-refusal.ts`. This file contains no logic of its own.
+- **Consumed by** `Order.vue`, `OrdersList.vue`, and `OrderTimeline.vue`, which import domain rules and types through this barrel.
+- **Tested via** `hard-delete-domain.spec.ts`, `reorder-domain.spec.ts`, and `timeline-domain.spec.ts`, which exercise the re-exported functions directly.
 
 ## Notes
 
-- The JSDoc `@module` tag and the tier-purity comment are the authoritative statement of what *belongs* in this layer. When adding new exports, ensure they carry no framework imports.
-- Because this is a re-export-only file, lint rules that enforce "no Vue/Pinia/axios in domain" are effectively guaranteed by the fact that the only real code lives in `reorder.ts`. Keep it that way.
-- The layer's design rationale is documented in `docs/theory/domain-layer.md` (referenced in the file header).
+- This is a pure re-export module — no side effects, no logic. Lint rules guarantee it (and its children) never import from the UI, state, or API tiers.
+- When adding a new domain rule, create a dedicated file in `domain/` and add its exports here to keep the public surface explicit.
+- `TIMELINE_AUDIENCE` is a value export (constant), not a type — import it as a value, not with `import type`.

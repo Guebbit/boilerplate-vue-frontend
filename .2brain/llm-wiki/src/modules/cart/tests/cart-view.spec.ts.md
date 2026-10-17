@@ -1,7 +1,7 @@
 ---
 source: src/modules/cart/tests/cart-view.spec.ts
-sha256: bc7439d84b2f50196502df5606a5924dbed85711970738e34707d99eccb0b9e4
-generated_at: 2026-10-02T15:00:36.554857+00:00
+sha256: cf3d9ea9ec55a39ba4b136eb8c5f6a6bf4b7697fa09df610332abf1a08617d00
+generated_at: 2026-10-17T00:38:57.004789+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,35 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec that mounts the real `Cart.vue` checkout screen against a real memory-history router and verifies each of the seven documented checkout refusals (from `docs/modules/cart-checkout.md`) produces a distinct, correctly-worded UI response rather than collapsing into a single generic toast. The store's network methods are stubbed so every case controls exactly one rejection.
+Integration-style spec that mounts the real `Cart.vue` page against a real memory-history router and verifies that each documented checkout refusal (CART_CHANGED, CART_TOTAL_CHANGED, CART_INSUFFICIENT_STOCK, etc.) produces its own distinct user-facing message rather than collapsing into a single generic toast. Also covers the order-button terms/privacy link placement and accessibility (axe-core).
 
 ## Key elements
 
-- **`mountCart()`** — Seeds `useCartStore` with the `A_CART` fixture, spies on `fetchCart`, `fetchProductsByIds`, `setShippingMethod`, `checkout`, and `clearCart` *before* mounting (see Notes), mounts `Cart.vue` with stubs for `ShippingSelector`, `AddressPicker`, `PaymentMethodSelector`, and `LayoutDefault`, flushes promises, and returns `{ wrapper, checkoutSpy, clearSpy, cart }`.
-- **`AddressPickerStub`** — Inline component emulating a shopper who leaves the pickers at defaults: shipping → `addr-1`; billing → `billing-1` (or `undefined` when "same as shipping" is on).
-- **`ShippingSelectorStub`** (defined inside `mountCart`) — Emits `pickup` + `requiresAddress: false` on mount purely to unblock the checkout button's `disabled` binding.
-- **`A_CART`** — Shared non-empty cart fixture (one line, two shipping options) every test starts from.
-- **`checkoutRejection(status, code, details?)`** — Factory returning a reject-envelope shape matching what `classifyCheckoutError` reads.
-- **`router`** — Built from `collectModuleRoutes(enabledModules)` with `createMemoryHistory`; scoped to `/​:locale` → `RouterView`.
-- **`vi.mock('@api')`** — Wraps the real `checkout` in `vi.fn(actual.checkout)` so it calls through unless a test overrides; other rejections are handled by spying on the store method instead.
-- **`vi.mock(keepalive)`** — Replaces `sendKeepalive` with a spy; tests assert what the page passes to it on `pagehide`.
-- **`describe('the checkout refusals')`** — Individual `it` blocks for `CART_CHANGED`, `CART_INSUFFICIENT_STOCK`, stale-banner cleanup, `CART_PRODUCT_UNAVAILABLE`, and (truncated) remaining cases.
+- **`mountCart(opts?)`** – Shared helper that seeds the store with `A_CART`, spies on `fetchCart`, `setShippingMethod`, `checkout`, and `clearCart` *before* mounting (because `Cart.vue` destructures them at setup), stubs `ShippingSelector`/`AddressPicker`/`PaymentMethodSelector`, and returns `{ wrapper, checkoutSpy, clearSpy, cart }`.
+- **`A_CART`** – A minimal valid `CartResponse` fixture (one product, two units, two shipping options) every case starts from.
+- **`checkoutRejection(status, code, details?)`** – Builds a reject-envelope object matching the shape `classifyCheckoutError` reads.
+- **`ShippingSelectorStub`** – A `defineComponent` that emits `update:modelValue: 'pickup'` and `update:requiresAddress: false` on mount, unblocking the checkout button without exercising real shipping selection.
+- **`vi.mock('@api')`** – Wraps the real `checkout` in a `vi.fn` that calls through; only the in-flight-guard test overrides it with a genuinely pending promise.
+- **`vi.mock('@/infrastructure/http/keepalive.ts')`** – Replaces `sendKeepalive` with a no-op spy.
+- **`beforeAll`** – Resolves and invokes the lazy-loaded order-page route component so no dynamic import is still pending at teardown.
+- **`afterAll`** – Calls `flushPromises()` then `vi.dynamicImportSettled()` to guarantee no in-flight import survives environment teardown.
+- **`describe('the order button')` / `describe('the checkout refusals')`** – The two test groups covering link placement and each individual error-code response.
 
 ## Relationships
 
-- **`tests/support/stub.ts`** — Exports `asStub`, used in `beforeEach` to create the minimal `SessionViewer` object for the session store.
-- **`tests/support/unit/wire-modules.ts`** — Exports `wireModulesIntoCore()`, called at module scope *before* the router is constructed so `collectModuleRoutes(enabledModules)` resolves to the fully wired route tree.
-- **`tests/support/unit/mounted-vm.ts`** — Exports `emitOn` and `nextRenderTick`, imported for event-emission and render-tick utilities (used in truncated portions of the file).
+- **`Cart.vue`** – The component under test; mounted here with real router, Pinia, Vuetify, and i18n plugins.
+- **`store.ts`** – `useCartStore` is seeded and spied on; the spec asserts its `fetchCart`, `checkout`, `clearCart`, and `setShippingMethod` call counts/messages.
+- **`domain/index.ts` / `domain/merge-report.ts`** – Provides the `MergeReportLine` type used to type the `mergeReport` field the helper accepts.
+- **`composables/use-checkout-draft.ts`** – `readCheckoutDraft` / `writeCheckoutDraft` are imported for draft-persistence assertions.
+- **`tests/support/stub.ts`** – `asStub` builds the minimal `SessionViewer` object in `beforeEach`.
+- **`tests/support/unit/mount-cart-page.ts`** – Supplies the shared `router` instance and `AddressPickerStub` component.
+- **`tests/support/unit/mounted-vm.ts`** – `emitOn` and `nextRenderTick` used for event emission and render-timing assertions.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` called at module scope to register feature modules with the app shell before any mount.
 
 ## Notes
 
-- **Spy-before-mount is mandatory.** `Cart.vue` destructures `checkout` (as `placeOrder`) and `clearCart` from the store at `setup` time. A spy installed *after* mount mutates the store's own property but does not reach the reference the component already captured. All cases must configure the spy returned by `mountCart()`, not re-spy the store.
-- **`@api` mock calls through by default.** `vi.fn(actual.checkout)` means the real implementation runs unless a test calls `mockRejectedValueOnce`. Only the in-flight-guard test (where `cart.loading` must genuinely be `true`) needs to intercept at this level.
-- **`ShippingSelectorStub` does not test shipping selection.** It exists solely to satisfy the `disabled` guard on the checkout button. The real `PUT /cart/shipping-method` round-trip is covered in `store.spec.ts`.
-- **`AddressPickerStub` is defined at file top level** (not inline in the `stubs` object) because TypeScript-ESLint cannot resolve `this.$emit` types when the `defineComponent` call is nested inside `mount()`'s contextual typing.
-- The file is truncated; the full suite covers seven refusal cases per the module doc.
+- **Spies must precede mount.** `Cart.vue` does `const { checkout: placeOrder } = useCartStore()` at setup. A spy installed after mount patches the store's own property but the component already holds a stale reference. All cases configure the spy returned by `mountCart`, never re-spy the store.
+- **`@api` mock calls through.** The wrapper is `vi.fn(actual.checkout)`, so unless a test explicitly sets `mockRejectedValueOnce` / `mockReturnValue`, the real API logic runs. Only the in-flight-guard test needs a controllable pending promise.
+- **`defineComponent` at top level, not inline in `stubs`.** TypeScript-ESLint cannot resolve `this.$emit` types when the component literal is nested inside `mount()`'s `stubs` object (contextual typing flows through).
+- **Shipping is stubbed, not exercised.** The `ShippingSelectorStub` emits a no-address method purely to unblock the checkout button; real `PUT /cart/shipping-method` behavior is covered in `store.spec.ts`.
+- **Pre-loading order routes in `beforeAll`.** Without it, a successful checkout navigation would start a first-time dynamic import of the orders module whose promise could still be pending when Vitest tears down the file's module registry.

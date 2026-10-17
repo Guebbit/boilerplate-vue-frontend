@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/views/LocalesList.vue
-sha256: f7b628575de151b87c1775d6e5b7c243187a45811414206f30f1953c86c57917
-generated_at: 2026-10-02T15:17:57.222433+00:00
+sha256: 8f44cd98e7ddf854ad0a900832743621fcd3769186358b50dc83446aa3943840
+generated_at: 2026-10-17T01:07:55.518653+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Route view for the "languages board" — a thin CRUD screen over the `LocaleCapability` manifest. It lists every language a deployment offers (both static and dynamic tiers), lets an admin create, edit, and delete languages, and toggles their active state. The component itself holds no data; all state and writes flow through the Pinia locales store.
+The admin-facing languages board: a thin CRUD view over the locales manifest that lists every `LocaleCapability` row (both tiers), lets the admin create, edit, activate/deactivate, and delete languages, and links out to the dictionary reader view.
 
 ## Key elements
 
-- **`openCreate` / `openEdit`** — Open the shared `LanguageFormDialog` in create or edit mode by setting the `editing` ref and `formOpen`.
-- **`handleSave`** — Routes to `localesStore.createLanguage` or `localesStore.editLanguage` depending on whether `editing` is set. On success, closes the dialog and fires a toast; on failure, delegates to the dialog's `applyServerErrors` (for field-level errors like duplicate tag) or falls back to `reportSaveError` (blocking alert).
-- **`handleDelete`** — Prompts a Vuetify confirm dialog (via `useDialogStore`) that names the tag and entry count. On acceptance, calls `deactivateThenDelete` (deactivates an active locale before deletion, reactivates on failure) and reports success/error through `addMessage` / `reportDeleteError`.
-- **`tableHeaders`** — Computed array of `CoreDataTableHeader<LocaleCapability>` defining the visible columns (tag, name, nativeName, direction, tenants, source, entryCount, revision, active, actions).
-- **`tenantKind`** — Looks up a tenant's kind from the store's `tenants` list for chip colouring; defaults to `'frontend'` before the registry resolves.
-- **`rowActionSize`** — Responsive button size from `useTouchFriendlySize` (small on desktop, larger on mobile for WCAG touch-target compliance).
-- **`onMounted`** — Kicks off `localesStore.fetchLanguages()` and `localesStore.fetchTenants()`.
+- **`tableHeaders`** (computed) — Column definitions for the `DataTable`; the last column (`actions`, `synthetic: true`) is rendered via a scoped slot rather than a row field.
+- **`openCreate` / `openEdit`** — Set `editing` (absent = create) and flip `formOpen` to open `LanguageFormDialog`.
+- **`handleSave(fields)`** — Routes to `localesStore.createLanguage` or `editLanguage`. On rejection, first tries the dialog's `applyServerErrors` (field-level, e.g. duplicate tag); unmapped errors fall through to the dialog-level `useBlockingError` alert.
+- **`handleDelete(language)`** — Opens a `useDialogStore().confirm` dialog (names the tag and entry count), then delegates to `deactivateThenDelete` which sequences deactivate → delete → reactivate-on-failure. Failures surface in a board-level `InlineErrorAlert` above the table.
+- **`appKind(id)`** — Resolves an app id to its `kind` for chip colouring; defaults to `'frontend'` until the apps registry has loaded.
+- **`rowActionSize`** — From `useTouchFriendlySize`; `small` on desktop, larger default below `sm` to meet WCAG touch-target size.
+- **Dual `useBlockingError` instances** — One scoped to the dialog (save failures keep the dialog open), one scoped to the board (delete failures show an alert above the table while the board remains interactive).
 
 ## Relationships
 
-- **`@/modules/locales/store.ts`** — Primary data source: reads `capabilities`, `tenants`, `defaultLocale`, `fallbackLocale`, `loading` via `storeToRefs`; calls `fetchLanguages`, `fetchTenants`, `createLanguage`, `editLanguage`, `removeLanguage`.
-- **`@/modules/locales/components/LanguageFormDialog.vue`** — Rendered in the template; invoked for its `applyServerErrors` method on save failure.
-- **`@/modules/locales/domain/deactivate-then-delete.ts`** — Orchestrates the deactivate → delete → (on failure) reactivate sequence before the delete is reported.
-- **`@/ui/organisms/DataTable.vue`** — The table rendering `capabilities` rows with per-column slots.
-- **`@/ui/molecules/InlineErrorAlert.vue`** — Displays `deleteError` above the table when a deletion fails.
-- **`@/infrastructure/utils/use-blocking-error.ts`** — Provides the `message` / `report` / `clear` triple used for both the save-blocking and delete-blocking alert states.
-- **`src/infrastructure/utils/logger.ts`** — No direct import or call is visible in this file's content; any interaction would be indirect (e.g., through the store or the `deactivateThenDelete` utility).
+- **`src/modules/locales/store.ts`** — Primary data source. Reads reactive refs (`capabilities`, `apps`, `defaultLocale`, `fallbackLocale`, `loading`) via `storeToRefs`; calls `fetchLanguages` / `fetchApps` on mount, and `createLanguage` / `editLanguage` / `removeLanguage` for all writes.
+- **`src/modules/locales/components/LanguageFormDialog.vue`** — Rendered inline; controlled by `formOpen` and `editing`. Receives `handleSave` as the submit handler; the page calls back into its `applyServerErrors` ref to map field-level server errors onto form inputs.
+- **`src/modules/locales/domain/deactivate-then-delete.ts`** — Called inside `handleDelete` to sequence the three-step deactivate → delete → (rollback) reactivate flow, passing the store's `editLanguage` and `removeLanguage` as the individual operation callbacks.
 
 ## Notes
 
-- **Static-only rows are intentionally non-editable.** A `LocaleCapability` whose source is `static` (deployed files with no dynamic DB record) renders its facts but exposes no action buttons. This is a deliberate "honest rendering," not a bug.
-- **`active` does not hide rows.** An inactive language still appears in the admin table with an enabled/disabled chip; `active` only gates visitor selection, not admin visibility.
-- **Error presentation is split by context.** Save failures block the dialog in place (dialog stays open); delete failures block the board via an `InlineErrorAlert` above the table. Toasts are used only for successful outcomes.
-- **The delete confirm dialog names the cost** (`tag` + `entryCount`) because deletion is irreversible and wipes all translated content for that language.
-- **Tenant chips use a visually-hidden `<span>` sibling** rather than `aria-label` or `v-tooltip` to satisfy axe accessibility rules (`aria-prohibited-attr`, screen-reader reachability).
+- Two `<script>` blocks: the non-`setup` block exists solely to set `name: 'LocalesListPage'` for `<KeepAlive>` / devtools, since `<script setup>` cannot declare a component name.
+- `static`-only rows (deployed files with no dynamic DB record) render facts but **no action buttons** — they cannot be edited or deleted through the admin routes.
+- The `active` flag does **not** hide a row from this list; it only controls whether a visitor can select the language. The admin always sees every row with its enabled/disabled chip.
+- `deactivateThenDelete` is the page's guard-rail: the API refuses to delete an active language, so this page deactivates first and reactivates if the subsequent delete fails.
+- The apps cell intentionally avoids `v-tooltip` (ARIA failures); it uses a visually-hidden sibling for the accessible description instead.

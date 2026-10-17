@@ -1,7 +1,7 @@
 ---
 source: src/modules/api-keys/views/ApiKeysList.vue
-sha256: 92398b59fdd79a337b1d8b27d087a7ce41be64f43507d5eac1efdb88e0dc21ac
-generated_at: 2026-10-02T14:56:20.148371+00:00
+sha256: bf473ca18de77afbba3f0b8d2635497ef1ad0079424741159902a29ca92b1bd1
+generated_at: 2026-10-17T00:33:17.397130+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-List view for machine-to-machine API credentials. Because `ListApiKeysParams` accepts only `page`/`pageSize`, the page has no filter form — just a paginated `DataTable`, a "Create" link, and a per-row revoke action.
+Renders the paginated list of machine-to-machine API credentials. Because `ListApiKeysParams` accepts only `page`/`pageSize` (no filter fields), the page is a plain `DataTable` + pagination with a per-row revoke button. Key status (Active / Revoked / Expired) is derived client-side rather than stored, and revoked rows remain visible in the list.
 
 ## Key elements
 
-- **`tableHeaders`** (computed) — localised column definitions (`name`, `publicPrefix`, `permissions`, `status`, `lastUsedAt`, `createdAt`, `expiresAt`, `revokedAt`, `actions`); re-evaluated on locale change.
-- **`statusOf(apiKey)`** — derives `'revoked' | 'expired' | 'active'` from `revokedAt` / `expiresAt`; priority: revoked > expired > active.
-- **`statusColor`** — maps the three status values to Vuetify tones (`success` / `warning` / `error`) for the status chip.
-- **`handleRevoke(apiKey)`** — opens a confirmation dialog, then calls `revokeCredential` from the api-keys store; success toasts, failure routes to the row-action error slot.
-- **`useBlockingError()`** — provides `rowActionError` / `reportRowActionError` / `clearRowActionError`; the message is rendered by an `InlineErrorAlert` above the table (the confirm dialog is already closed by the time the request resolves).
-- **`watchApiKeysSearch({ onError })`** — triggers the store fetch; search-level failures toast via `notifyErrorMessages` (a separate, ambient path from row-action errors).
-- **`useTouchFriendlySize()`** — returns `small` on desktop, Vuetify's default size below the `sm` breakpoint for WCAG-compliant tap targets on the revoke button.
+- **Named component block (`<script>`)** — declares `name: 'ApiKeysListPage'` for devtools / `<KeepAlive>`; required because `<script setup>` cannot set `name` itself.
+- **`tableHeaders` (computed)** — builds the localized `CoreDataTableHeader<ApiKey>[]` for the `DataTable`; re-evaluates on locale change. Includes two synthetic columns (`status`, `actions`) that read no row field directly.
+- **`statusOf(apiKey)`** — derives `'revoked' | 'expired' | 'active'` from `revokedAt` → `expiresAt` → fallback; `revokedAt` set always wins.
+- **`statusColor`** — maps each status to a Vuetify chip colour (`success` / `warning` / `error`).
+- **`handleRevoke(apiKey)`** — opens a `useDialogStore().confirm(...)` dialog; on accept calls `revokeCredential(id)`, toasts success via `addMessage`, or reports failure into the `useBlockingError` ref (rendered as an `InlineErrorAlert` above the table).
+- **`rowActionError` / `reportRowActionError` / `clearRowActionError`** — from `useBlockingError`; hosts the revoke-specific error separately from ambient search-failure toasts.
+- **`rowActionSize`** — from `useTouchFriendlySize`; returns `'small'` on desktop, Vuetify's default below `sm` to meet WCAG touch-target guidance.
+- **`watchApiKeysSearch({ onError })`** — kicks off the initial / reactive fetch bound to the store's pagination state; search failures toast via `notifyErrorMessages`.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but not directly imported in this file's visible code; any use is transitive (likely through the store or a shared composable).
+- **`src/modules/api-keys/store.ts`** — primary data source. The component pulls `pageItemList`, `pageCurrent`, `pageSize`, `pageTotal`, `loading` via `storeToRefs`, and calls the store actions `watchApiKeysSearch` and `revokeCredential`.
+- **`src/infrastructure/utils/logger.ts`** — transitive dependency (reached indirectly through `errors.ts` / `use-blocking-error.ts`); no direct import in this file.
 
 ## Notes
 
-- **Two error channels, deliberately distinct.** Search failures (ambient, table simply hasn't refreshed) toast via `notifyErrorMessages`. Revoke failures (a specific user action) surface as an `InlineErrorAlert` above the table because the confirm dialog has already dismissed. See `docs/theory/request-flow.md` for the rationale.
-- **Revoked rows are not removed.** They stay in the list with dimmed text (`opacity-60`) and a disabled revoke button, so users can still see the public prefix and metadata.
-- **Permission gating is client-side.** `session.can('create', 'ApiKey')` hides the Create button; `session.can('delete', 'ApiKey')` hides the Revoke button. A reader who cannot revoke should never see a button that would 403.
-- **The `actions` column header reads no row field** (`synthetic: true`); the cell is entirely the scoped slot rendered per item.
+- The component intentionally keeps two separate error channels: **search failures** toast globally (`notifyErrorMessages`) because the table simply hasn't refreshed, while **revoke failures** block the list in place via `InlineErrorAlert` (`rowActionError`). See `docs/theory/request-flow.md` for the rationale.
+- The revoke button is disabled when `loading` is true **or** the row's derived status is already `'revoked'`, and is hidden entirely unless `session.can('delete', 'ApiKey')` passes.
+- The "Create" button is gated on `session.can('create', 'ApiKey')` and navigates via `routerLinkI18n` to the `ApiKeyCreate` route.
+- All date cells use `formatDate` / `formatDateTime` from `@/infrastructure/utils/formatters.ts`; absent values render as `EMPTY_VALUE`.

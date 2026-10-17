@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/signup-antibot.spec.ts
-sha256: be40b170a6e71c548b13c5241eb69526bb216223a31d73eb7d1d5d68ad5c93ee
-generated_at: 2026-10-02T12:31:48.032734+00:00
+sha256: 22ae392012dbba8c5e0f4919fe018797dd2d27b837ed651435fd2267a8594de8
+generated_at: 2026-10-17T00:26:51.949556+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that the Signup view correctly wires a solved `HumanCheck` token onto the `POST /account/signup` request as the `x-antibot-challenge-token` header. The `HumanCheck` component itself is stubbed with a fixed token (its branching logic is covered in `tests/unit/ui/human-check.spec.ts`), and store-level forwarding is already proven in `auth-signup.spec.ts`; this spec isolates only the view-to-transport wiring.
+Proves the "rung 3" integration: the real `Signup.vue` view attaches a solved `HumanCheck` token as the `x-antibot-challenge-token` header on `POST /account/signup`. The test mounts the actual view (with Vuetify and i18n), stubs only the `HumanCheck` widget with a fixed token, and inspects the outgoing request to confirm the header is present. It deliberately does **not** test the token-generation logic (`human-check.spec.ts`) or store forwarding (`auth-signup.spec.ts`).
 
 ## Key elements
 
-- **`SOLVED_TOKEN`** — the fixed token string the stub emits; used as the expected header value.
-- **`HumanCheckStub`** — minimal component (`name: 'HumanCheck'`) whose `setup` exposes `token` as a `ref` to `SOLVED_TOKEN`; injected via Vue Test Utils `stubs`.
-- **`responses`** (module-level `Record<string, unknown>`) — canned HTTP bodies keyed by `"METHOD /path"`; re-populated in `beforeEach` for `GET /account/oauth/providers` and `POST /account/signup`.
-- **`calls()`** — inspects `orvalMutator` mock calls and merges `options.headers` with `config.headers` (mirroring the real mutator's spread order) so the assertion can see headers attached via the `options` argument.
-- **`signupRequest()`** — returns the merged `{ url, headers }` object for the last call to `/account/signup`, or `undefined`.
-- **`mountSignup()`** — mounts `Signup.vue` with Vuetify, i18n, a `LayoutDefault` stub, and the `HumanCheckStub`.
-- **`fillAndSubmit(wrapper)`** — fills email, both password fields, ticks the terms checkbox, triggers form submit, and flushes promises.
-- **`describe('Signup — the antibot header')`** — single `it` asserting the header value on the signup POST, then unmounts to cancel a 500 ms password-breach debounce.
+- **`HumanCheckStub`** — minimal component exposing `token = ref(SOLVED_TOKEN)`; replaces the real widget so the view sees an already-solved state.
+- **`SOLVED_TOKEN`** (`'solved-token-xyz'`) — the fixed token value asserted in the final header check.
+- **`responses`** — mutable record of canned HTTP fixtures keyed `` `${METHOD} ${url}` ``, consumed by the mocked `orvalMutator`.
+- **`calls()`** — helper that reconstructs each recorded `orvalMutator` invocation, merging `options.headers` and `config.headers` the same way the real transport does.
+- **`signupRequest()`** — finds the last call to `POST /account/signup` from `calls()`.
+- **`mountSignup()`** — mounts `Signup.vue` with Vuetify, i18n plugins, and the `HumanCheck` stub.
+- **`fillAndSubmit(wrapper)`** — sets email, both password fields, the terms checkbox, triggers form submit, and flushes promises.
+- **`VALID_PASSWORD`** — a password that satisfies the view's strength rules so the form is submittable.
+- **Single test** — asserts `signupRequest().headers['x-antibot-challenge-token']` equals `SOLVED_TOKEN`, then unmounts.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — mocked via `vi.mock('@/infrastructure/http')`; the test's `orvalMutator` mock delegates response lookup to `parseOrvalFixture` and the module's real `orvalMutator` is referenced only to read its mock call history through `vi.mocked(orvalMutator)`.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level to register the app's module graph so the real `Signup` view can resolve its dependencies under Vitest.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (to wrap canned bodies in the expected API envelope) and `parseOrvalFixture` (used inside the `orvalMutator` mock to validate/unwrap the canned response before resolving it).
+- **`src/modules/account/views/Signup.vue`** — the component under test; imported and mounted directly.
+- **`src/infrastructure/http/index.ts`** — mocked via `vi.mock('@/infrastructure/http')`; provides the `orvalMutator` that the view calls for all HTTP requests.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope to register DI/mocks before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `orvalEnvelope` (to build canned response bodies) and `parseOrvalFixture` (to wrap them into the shape `orvalMutator` returns).
 
 ## Notes
 
-- The `orvalMutator` mock only inspects `config` (url + method) to pick a canned response; it does **not** inspect headers. That's why `calls()` manually merges `options.headers` into the result — without that, a header attached exclusively through the `options` argument (which is how `withAntibotToken` attaches it) would be invisible to assertions.
-- The test explicitly calls `wrapper.unmount()` after its assertion. This cancels a 500 ms debounced password-breach request triggered by `fillAndSubmit`; without it, that request fires mid-way through a later spec and would require a fixture this spec doesn't otherwise need.
-- The `POST /account/signup` fixture must include a real `User` object under `data` (matching `auth-signup.spec.ts`); the default bodyless `orvalEnvelope()` shape is insufficient for the `SignupResponse` type the view consumes.
+- The antibot header travels in the **`options.headers`** argument of `orvalMutator`, not in `config.headers`. The `calls()` helper explicitly merges both to make it observable; a naive check of `config.headers` alone would miss it.
+- `vue-router` is fully mocked (`RouterLink`, `useRoute`, `useRouter`) so the page can mount without a real router instance.
+- The `wrapper.unmount()` at the end of the test is **load-bearing**: typing the password queues a 500 ms password-breach debounce. Unmounting cancels it; without that, the timer fires mid-way through a *later* spec and requests a fixture this spec doesn't carry.
+- `beforeEach` calls `loadLocale('en')` and returns its promise, ensuring the i18n locale is ready before assertions run.

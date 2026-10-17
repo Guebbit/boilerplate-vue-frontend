@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/tests/product-card.spec.ts
-sha256: cfb2f5d7c06a343092d7b5f95e68f339b011d66f2640318fefd6188d8ba5c21d
-generated_at: 2026-10-02T15:34:49.719105+00:00
+sha256: a2f38c0098a864d66cab5652d0d9757423eb7ed7551272177486fabf2c9fbaa5
+generated_at: 2026-10-17T01:30:09.289020+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for `ProductCard.vue`, verifying the shopper-facing contract: correct price and availability rendering, the title as the sole product-page link, contributed `product-actions` slot wiring, guest sign-in prompting, and the absence of staff controls.
+Vitest spec that verifies `ProductCard.vue` presents correct shopper-facing information (price, availability state, title link), renders contributed `product-actions` slots, distinguishes guest from signed-in users, and contains no staff controls.
 
 ## Key elements
 
-- **`router`** — a `createMemoryHistory` router built from `collectModuleRoutes(enabledModules)`; used so the title link resolves to the real `/en/products/:id` path rather than a stub.
-- **`SlotProbe`** — a minimal `defineComponent` that renders `product.id`; stands in for any contributed action to verify the card passes the product object through.
-- **`mountCard(product, contributions?)`** — mounts `ProductCard` with the real router, Vuetify, and i18n plugins, and injects `contributions` via the kernel `SLOTS_KEY` provide under the `'product-actions'` key.
-- **`beforeEach`** — resets Pinia, loads the `en` locale, and pushes the router to `/en/products` so `router.isReady()` resolves.
-- **`describe('ProductCard — what a shopper reads')`** — asserts price/currency text, out-of-stock vs in-stock (including `available: undefined` → in stock), single `<a>` linking to `/en/products/:id`, and no `row-edit`/`row-delete` elements.
-- **`describe('ProductCard — the contributed actions')`** — asserts slot contributions receive the product, a guest sees a login prompt, and a signed-in shopper does not.
+- **`router`** — A memory-history router built from `collectModuleRoutes(enabledModules)`, so the title link resolves to the real `/en/products/:id` path.
+- **`SlotProbe`** — A minimal test component that prints the product's `id`; used as a stand-in contribution in the `product-actions` slot.
+- **`mountCard(product, contributions?)`** — Helper that mounts `ProductCard` with the router, vuetify, i18n plugins and a manually provided `SLOTS_KEY` map containing the given slot components.
+- **`beforeEach`** — Resets Pinia, loads the `en` locale, and navigates the router to `/en/products` before each test.
+- **`describe("ProductCard — what a shopper reads")`** — Asserts price/currency display, availability text and `data-shelf` attribute (out-of-stock, off-sale, preorder, in-stock), that only the title is an `<a>` pointing to the product page, and that no `row-edit`/`row-delete` controls exist.
+- **`describe("ProductCard — the contributed actions")`** — Asserts slot contributions render and receive the product, a guest sees a sign-in prompt (`data-test=product-card-login`), and a signed-in shopper does not.
 
 ## Relationships
 
-- **`tests/support/unit/fixtures.ts`** — imports the `aProduct` factory to build product fixtures inline (e.g. `aProduct({ price: 120, currency: 'EUR' })`).
-- **`tests/support/unit/wire-modules.ts`** — imports `wireModulesIntoCore()`, called once at module top-level to register module slots into the kernel registry before any test runs.
+- **`ProductCard.vue`** (sibling component) — The component under test; all assertions target its rendered DOM via `data-test` attributes.
+- **`tests/support/unit/fixtures.ts`** — Supplies the `aProduct` factory used to build product objects with specific field overrides.
+- **`tests/support/unit/wire-modules.ts`** — Supplies `wireModulesIntoCore()`, called once at module scope to register product-module routes/slots into the kernel so the real router and slot system function in the test environment.
 
 ## Notes
 
-- `wireModulesIntoCore()` is invoked at import time, not inside a hook; it is a one-time side-effect that makes the slot registry available to the component under test.
-- Slot contributions are injected through the kernel `SLOTS_KEY` provide, not Vue's native `<slot>` mechanism — the test is exercising the app's own contribution protocol.
-- `available: undefined` is explicitly tested as equivalent to a positive count (both render "In stock"); a missing field is treated as "unconstrained," not zero.
-- The test uses the **real** app router (memory history + actual module routes), so the href assertion (`/en/products/p9`) depends on route definitions in the products module being correct.
+- `wireModulesIntoCore()` runs at **module import time**, not per-test — it is a one-time registration, not a per-test fixture.
+- The slot mechanism is exercised by injecting `SLOTS_KEY` through Vue's `provide` in the mount options rather than through the real slot registry, keeping the test isolated from other modules' contributions.
+- The `it.each([[3], [undefined]])` case on "in stock" explicitly confirms the `inStock` boolean (not the numeric `available` count) drives the displayed state.
+- The router uses `createMemoryHistory()`; the `beforeEach` must complete `router.isReady()` before any test asserts on link `href` values.

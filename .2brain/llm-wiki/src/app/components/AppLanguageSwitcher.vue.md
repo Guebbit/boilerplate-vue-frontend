@@ -1,7 +1,7 @@
 ---
 source: src/app/components/AppLanguageSwitcher.vue
-sha256: 4d621e682e6665f8b3a36923ebdd5edeac4a6122c42d5a1657904c693fa64a6c
-generated_at: 2026-10-02T11:43:07.086664+00:00
+sha256: ea5a2f09e762f81c891b17230467840c88b1b21666dafa21f7ecb8a5df4405f2
+generated_at: 2026-10-17T00:04:36.882006+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A language-switcher dropdown menu. It renders the list of supported locales, lets the user pick one, and then re-navigates the current route under the new `:locale` param. It deliberately does **not** load dictionaries or activate the locale itself—that work is delegated to the i18n runtime via the route param. This file owns only the routing side of the switch and the fire-and-forget persistence of the user's preference.
+Language-switcher menu in the app header. It renders a dropdown of supported locales and, on selection, re-enters the current route under the new `:locale` param. It deliberately owns only the routing side of a switch; dictionary loading and locale persistence are delegated to the i18n runtime and the session store respectively.
 
 ## Key elements
 
-- **`switchLanguage(newLocale)`** – Fires `useSessionStore().persistLocalePreference(newLocale)` without awaiting it, then `router.replace`s to the same route with the new `:locale` param (preserving existing params and query). On navigation failure it falls back to `router.push('/')`.
-- **`focusFirstItemOnOpen()`** – WAI-ARIA APG menu-button fallback: after the `v-menu` finishes opening (`@after-enter`), moves focus to the first `[role="menuitem"]` in the list if focus is still inside the activator.
-- **`menuOpen` (ref)** – Tracks the `v-menu` open state; gates the focus-move logic.
-- **`listElement` (ref)** – Template ref to the rendered `v-list`; used to scope the `querySelector` for the first menu item.
-- **`i18n` / `t` / `locale`** – Obtained from `useI18n()`. Note that `t` and `locale` are destructured but `te` is **not**—it is always called as `i18n.te(key)` to keep it bound to the instance.
-- **Template** – A Vuetify `v-menu` with a `v-btn` activator (shows the current locale code, e.g. "EN") and a `v-list` of `v-list-item` entries (one per `supportedLanguages` entry), each calling `switchLanguage`.
+- **`switchLanguage(newLocale: string)`** – Fire-and-forgets `useSessionStore().persistLocalePreference(newLocale)`, then `router.replace`-es to the same route with `params.locale` set to the new code (preserving existing params and query). Falls back to `router.push('/')` if the replace fails.
+- **`focusFirstItemOnOpen()`** – WAI-ARIA APG menu-button guard: after the `v-menu` finishes its enter transition, moves focus to the first `[role="menuitem"]` inside the list if focus is not already within it.
+- **`menuOpen` / `listElement`** – Reactive refs backing the `v-menu` open state and the `v-list` instance, used by the focus helper.
+- **Template** – A `v-menu` whose activator is a text button showing the current locale code (e.g. "EN") with a `Languages` icon; the list body iterates `supportedLanguages` as `role="menuitem"` rows, highlighting the active one with a `Check` icon.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It imports `supportedLanguages` from `@/i18n`, `languageLabel` from `@/i18n/language-label.ts`, and `useSessionStore` from `@/infrastructure/session.ts`, but none of those files list this component as a dependent in the tracked graph.
+The dependency graph records no neighbors for this file, but it imports:
+
+- `@/i18n` → `supportedLanguages` (the locale list to render)
+- `@/i18n/language-label.ts` → `languageLabel` (human-readable name per locale)
+- `@/infrastructure/session.ts` → `useSessionStore().persistLocalePreference` (remembering the choice for signed-in users)
+
+Comments reference `AppNavMenu.vue` as the source of the same focus-first-item pattern; the two components share no extracted helper.
 
 ## Notes
 
-- **Ordering is critical.** This component must *not* call `localeChoice` (or any dictionary-loading / locale-activating function) before the `router.replace`. The i18n runtime's route guard detects a language switch by comparing the incoming `:locale` param against the currently active locale. If the locale is activated first, the guard sees "no change" and skips cache invalidation—product pages would keep serving titles in the old language.
-- **`persistLocalePreference` is intentionally not awaited.** The page must render in the new language before the account endpoint resolves; a failed write must not roll back the switch. The session store handles the "is anyone signed in?" question internally.
-- **`te` binding gotcha.** `i18n.te` must be called as a property access (`i18n.te(key)`), never destructured. Destructuring produces an unbound method reference that throws at runtime.
-- **Duplicated a11y logic.** The `focusFirstItemOnOpen` guard is a copy of the one in `AppNavMenu.vue`; the two menus intentionally share no extracted composable.
-- **Accessibility specifics.** The activator's `aria-label` includes the visible locale code (WCAG 2.5.3 – Label in Name). List items use `role="menuitem"` + `aria-current` rather than a listbox/select pattern because picking an item is a one-shot action, not a selection.
+- **Do not call `i18n`'s locale setter before navigating.** The route guard detects a switch by comparing the incoming `:locale` param against the already-active locale. If this component activated the language first, the guard would see "no change" and skip re-fetching locale-sensitive data (e.g. a product page title).
+- **`persistLocalePreference` is intentionally not awaited** so the UI is already in the new language before the account API resolves; a failed write must not revert the switch.
+- **`te` is accessed as `i18n.te(key)`, not destructured**, to keep it bound to the i18n instance.
+- The focus-first-item logic is duplicated from `AppNavMenu.vue` by design — no shared menu-a11y component exists yet.
+- The activator's `aria-label` includes the visible locale code (WCAG 2.5.3: label-in-name) so voice-control users can say what they see.

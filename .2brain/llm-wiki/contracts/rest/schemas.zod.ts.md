@@ -1,7 +1,7 @@
 ---
 source: contracts/rest/schemas.zod.ts
-sha256: 372ceabbcddb676a098ca20803d34e4d2ec32008e86fb8b90202e431cff57a51
-generated_at: 2026-10-02T14:31:23.178643+00:00
+sha256: 9636bd37a04ba0747fd8f98ac29a9d3e6d2840881babaf239c5d593b18837796
+generated_at: 2026-10-16T23:55:16.766078+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,31 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Auto-generated (by orval v8.20.0) Zod schema definitions for the Ecommerce Demo API's REST contract. It provides runtime-validation schemas for every endpoint's request body, query/path params, and response shape so client and server code can type-check payloads without importing the full OpenAPI document. The file also carries the API's i18n / locale-management schema surface (locales, tenants, dictionaries).
+Auto-generated (orval v8.20.0) Zod schemas that validate the request and response shapes for the Boilerplate REST API's operational endpoints (health, liveness, readiness, `security.txt`) and its locale/internationalization surface (listing, creating, replacing languages; listing translation apps; fetching the API's own message dictionary). Exists so that server handlers and any client-side validation share a single, type-safe contract derived from the OpenAPI spec.
 
 ## Key elements
 
-- **`GetHealthResponse`** — Zod schema for `GET /health`; strict object with `success: true`, numeric `status`, `message`, and `data.status: 'ok'`.
-- **`GetLivezResponse`** — `zod.unknown()`, intentionally empty; liveness probe returns no structured body.
-- **`GetReadyzResponse`** — `zod.unknown()`, same empty-body convention for readiness.
-- **`GetSecurityTxtResponse`** — `zod.string()`; plain-text RFC 9116 body, not the JSON envelope.
-- **`GetLocalesResponse`** — Full manifest of supported languages (tag, name, nativeName, direction, active, tenants, source, entryCount, revision) plus `default` and `fallback` locale tags.
-- **`CreateLocaleBody`** — Request body for adding a dynamic-tier language (tag, name, nativeName, optional direction, `active` defaults to `true`).
-- **`CreateLocaleResponse`** — Echoes the created locale record with `id`, `baseLanguage`, `revision`, timestamps.
-- **`GetLocaleTenantsResponse`** — Lists all tenant keyspaces (id, label, kind: `frontend` | `backend`).
-- **`GetLocaleDictionaryParams` / `GetLocaleDictionaryResponse`** — Params and response for fetching the API's own (tier-1) dictionary for a locale; `messages` is a free-form `Record<string, unknown>`.
-- **`ReplaceLocaleParams` / `ReplaceLocaleBody` / `ReplaceLocaleResponse`** — Full-replace (PUT) semantics for a locale's editable fields; tag is immutable.
-- **`ReplaceLocaleParams` / `ReplaceLocaleBody` / `ReplaceLocaleResponse`** (truncated) — Partial-merge (PATCH) counterpart per RFC 7396.
-- **RegExp / Min / Max constants** — Named exports like `getLocalesResponseDataLocalesItemTagRegExp`, `getLocaleTenantsResponseDataTenantsItemIdMax`, etc., extracted so orval-generated client code can reference them independently of the schema objects.
+- **`GetHealthResponse`** — `zod.strictObject` for the public ping endpoint (`/health`); asserts `success: true`, a numeric `status`, a `message`, and `data.status === 'ok'`.
+- **`GetLivezResponse` / `GetReadyzResponse`** — Both `zod.unknown()`: the body is intentionally empty; meaning is carried by the HTTP status code alone.
+- **`GetSecurityTxtResponse`** — `zod.string()`: RFC 9116 plain-text body (not the JSON envelope).
+- **`GetLocalesResponse`** — Full locale manifest: array of locale objects (tag, name, nativeName, direction, active, apps, source, entryCount, revision) plus `default` and `fallback` locale tags.
+- **`CreateLocaleBody` / `CreateLocaleResponse`** — Request body (tag, name, nativeName, optional direction, active with default `true`) and the created-locale record (adds `id`, `baseLanguage`, `revision`, timestamps).
+- **`ListLocaleAppsResponse`** — Array of app descriptors (`id`, `label`, `kind: 'frontend' | 'backend'`) representing the keyspaces a deployment supports.
+- **`GetLocaleDictionaryParams` / `GetLocaleDictionaryResponse`** — Path-param schema for the locale tag and the tier-1 dictionary payload (`messages` as a flat `Record<string, unknown>`).
+- **`ReplaceLocaleParams`** — Path-param schema for the locale tag used in the PUT (replace) endpoint.
+- **Various `*Max`, `*RegExp`, `*Min`, `*Default` constants** — Extracted constraint values (length caps, BCP-47 tag regexes, app-id regexes, non-negative minimums) kept as named exports so other generated files or tests can reference them without re-parsing the schema.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It is a leaf in the dependency graph: it imports only `zod` and is imported by orval-generated client/server stubs.
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **Generated file** — the header states "Do not edit manually." All changes must be made in the OpenAPI spec and re-run through orval.
-- **Naming convention** — each validation helper is named `<endpoint><path-to-field><Constraint>` (e.g., `createLocaleBodyTagRegExp`, `getLocaleTenantsResponseDataTenantsItemIdMax`). This is an orval convention; do not rename when hand-editing downstream consumers.
-- **`zod.iso.datetime({ offset: true })`** — requires a Zod version with the `zod.iso` sub-module; older Zod installs will not resolve this.
-- **Truncated at source** — the file content available here is cut off mid-definition (the PATCH-merge locale endpoints). The full file continues with `MergeLocaleParams`, `MergeLocaleBody`, and likely further locale/entry endpoints.
-- **Locale tag regex** is reused across many schemas (`^[a-z]{2}(-[A-Za-z0-9]+)*$`); each schema gets its own named constant rather than a shared import, keeping generated code self-contained per endpoint.
+- **Do not edit manually.** The header marks it as orval-generated from OpenAPI spec v0.1.0; changes must go through the spec and a codegen run.
+- **Shared response envelope.** Every JSON endpoint (except `security.txt`) uses the same four-field wrapper: `{ success: true, status: number, message: string, data: … }`. The two `zod.unknown()` schemas (livez/readyz) deliberately opt out of the envelope.
+- **`Accept-Language` is global, not per-operation.** The doc block explicitly states the header is honoured by every endpoint but intentionally absent from individual operation parameters to avoid a redundant argument in every generated function.
+- **Locale tag format** is enforced by the regex `^[a-z]{2}(-[A-Za-z0-9]+)*$` (BCP-47) throughout; app ids use `^[a-z0-9][a-z0-9-]*$`.
+- **`zod.strictObject` is used everywhere**, meaning unknown keys in a payload will fail validation — no silent pass-through of extra fields.
+- **`zod.iso.datetime({ offset: true })`** is used for `createdAt`/`updatedAt`, indicating the project targets a Zod major version where the ISO module is namespaced under `zod.iso`.

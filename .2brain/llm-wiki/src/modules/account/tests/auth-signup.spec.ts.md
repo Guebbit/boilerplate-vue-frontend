@@ -1,35 +1,31 @@
 ---
 source: src/modules/account/tests/auth-signup.spec.ts
-sha256: 66e9a20db5ee626f91b9a1b8b0d8df80c52a71cea882b051224b6bb58279159d
-generated_at: 2026-10-02T12:21:35.033444+00:00
+sha256: dbe00783b393eab9d8f7c620661b2ecc949e87c9b32afeb3cf91e3f811540efe
+generated_at: 2026-10-17T00:21:14.408999+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/tests/auth-signup.spec.ts
 
 ## Purpose
-
-Unit tests that pin the exact HTTP requests produced by `useAuthStore().signup()` and its avatar follow-up (`setAvatarAfterSignup`). They assert request URL, method, body shape (JSON vs. multipart), and forwarded options, without mocking the generated API client itself.
+Unit tests for the auth store's `signup` action and the `setAvatarAfterSignup` follow-up. They pin the exact HTTP request (method, URL, body shape, encoding) each action produces against the generated API schemas, without mocking the `@api` client itself.
 
 ## Key elements
-
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a stub that records each axios config and resolves a parsed fixture via `parseOrvalFixture`.
-- **`lastRequest()`** — returns the axios config object from the most recent `orvalMutator` call.
-- **`lastRequestTo(method, url)`** — finds the most recent call matching a specific method + URL pair (needed because the avatar PATCH is followed by refetches).
-- **`avatarFormData()`** — extracts the PATCH `/account` body and asserts it is a `FormData` instance.
-- **`IMAGE()`** — factory returning a fresh `File` per call, used as the avatar upload payload.
-- **`CREDENTIALS`** — constant with all scalar signup fields, used by tests that are not about defaults.
-- **`describe('useAuthStore.signup')`** — the test block; each `it` exercises one request-contract assertion (JSON body fields, username defaulting, multipart avatar, upload-progress forwarding, store `$id` stability).
+- **`lastRequest()`** — Returns the axios config from the most recent `orvalMutator` call; throws if the mutator was never invoked.
+- **`lastRequestTo(method, url)`** — Finds the most recent call matching a specific method+URL pair (needed because the avatar PATCH is followed by refetches).
+- **`avatarFormData()`** — Extracts the body of the last `PATCH /account` call and asserts it is a `FormData` instance.
+- **`IMAGE()`** — Factory returning a fresh `File` object (`avatar.png`, `image/png`) for each test call.
+- **`CREDENTIALS`** — A fully-specified signup payload (email, password, username, passwordConfirm, termsAccepted) used by tests that are not about defaults.
+- **`describe('useAuthStore.signup')`** block — Six tests covering: JSON-only body, all scalar fields, username defaulting to email, avatar as a separate multipart `PATCH /account`, `onUploadProgress` forwarding, and the store's `$id` being `'accountAuth'`.
 
 ## Relationships
-
-- **`src/infrastructure/http/index.ts`** — the module under test's transport layer. Its `orvalMutator` export is the single spy; everything the test asserts is about the config object passed to it.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level to register the necessary module wiring so the Pinia store and its dependencies resolve in the unit-test environment.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `contractRequest` (validates a request body against an API schema), `orvalEnvelope` (wraps a minimal response), and `parseOrvalFixture` (selects the right fixture for a method+URL). All three are used by the mock and the assertions.
+- **`src/modules/account/stores/auth.ts`** — The unit under test; `useAuthStore` is the only export consumed.
+- **`src/infrastructure/http/index.ts`** — `orvalMutator` is imported and replaced via `vi.mock` with a single canned response; tests assert on the call arguments, not the resolved value.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope to register Pinia and other core modules before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Provides `parseOrvalFixture`, `orvalEnvelope` (used inside the mock factory) and `contractRequest` (used in assertions to validate request bodies against `@api/schemas.SignupBody`).
 
 ## Notes
-
-- The generated API client (`@api`) is deliberately **not** mocked. The multipart encoding that matters lives inside the generated client code, so only the transport (`orvalMutator`) is intercepted. This means the tests actually exercise the client's `FormData` construction.
-- Signup is strictly JSON — the API accepts no image from a stranger. The avatar is a separate follow-up `PATCH /account`. A store that still built multipart at signup would fail the `not.toBeInstanceOf(FormData)` assertion.
-- `lastRequestTo` uses `findLast` rather than `at(-1)` because refetches fire after the avatar PATCH; grabbing the absolute last call would give the wrong request.
-- The `$id` stability test (`'accountAuth'`) exists because no other assertion in the suite would detect a store-id rename (all tests reach the store through `useAuthStore()`).
+- The `@api` generated client is deliberately **not** mocked. Only the transport layer (`orvalMutator`) is intercepted, so multipart encoding and JSON serialization exercised in tests are the real ones produced by the generated client.
+- The mock always resolves with the same envelope (`{ id: 'u1', username: 'ada', email: 'ada@example.com'`); tests never assert on response content.
+- `vi.clearAllMocks()` runs in `beforeEach`, so the "last call" helpers are safe to use without cross-test contamination.
+- The store `$id` assertion (`'accountAuth'`) is a regression guard: Pinia devtools and any persistence plugin key on this string, and no other test would surface a rename.

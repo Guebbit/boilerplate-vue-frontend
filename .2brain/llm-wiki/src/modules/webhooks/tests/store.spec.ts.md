@@ -1,7 +1,7 @@
 ---
 source: src/modules/webhooks/tests/store.spec.ts
-sha256: 93bc38927a2a79269b21dcfc4996efc34342009bb0d7c1f7a33742cb99347912
-generated_at: 2026-10-02T15:55:55.766111+00:00
+sha256: beca11d0d22619cab834c7469b49174b37b9f34597290eec953c802ab5502d80
+generated_at: 2026-10-17T01:52:05.609826+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for the `useWebhooksStore` Pinia store. It mocks `orvalMutator` (the HTTP transport) to assert the exact requests each store action emits, and — uniquely in this file — verifies that the plaintext `secret` / `newSecret` fields returned by `createSubscription` and `rotateSecret` are handed to the caller but **never** retained in the store's cached state.
+Unit tests for the webhooks Pinia store (`useWebhooksStore`). The HTTP transport (`orvalMutator`) is fully mocked at the module boundary, so every assertion inspects the raw request the store's actions emit and/or the shape of the cached state they write. The file also contains the project's only tests that verify plaintext secrets (`secret`, `newSecret`) are returned to the caller but never persisted in store state.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http', …)`** – replaces `orvalMutator` with a configurable mock; by default returns a full `SUBSCRIPTION` record (or an empty envelope for bare subscription DELETEs).
-- **`lastRequest()` / `lastBody(schema)` / `lastParameters()`** – helpers that inspect the most recent `orvalMutator` call: URL, method, validated body, and query params.
-- **`respondWithItems(items)`** – overrides the mock to return a paginated envelope for list-type responses.
-- **`respondOnceWith(data)`** – one-shot override returning `data` verbatim; needed for create/rotate envelopes that carry `secret`/`newSecret` fields absent from the standard record fixture schema.
-- **`flush()`** – `flushPromises().then(() => nextTick())`; used by `watchSubscription` tests because the backfill fires via `void` (no chainable promise) and the cache write lands several microtask/macrotask turns later.
-- **`describe` blocks** – one per store action (`createSubscription`, `rotateSecret`, `removeSecret`, `updateSubscription`, `deleteSubscription`, `replayDelivery`, `watchSubscription`), each asserting route, method, body, and (where applicable) state-shape invariants.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a stub that resolves `parseOrvalFixture` envelopes. A bare `DELETE` (subscription) returns an empty envelope; all other calls (including secret-removal `DELETE`) return the full `SUBSCRIPTION` record.
+- **`SUBSCRIPTION`** — a fixed fixture object shaped like the API's subscription resource; used as the default mock payload.
+- **`lastRequest()`** — returns the config object (`url`, `method`, `data`, `params`) from the most recent `orvalMutator` call.
+- **`lastBody(schema)`** — extracts and validates the JSON body of the last call against a Zod schema via `contractRequest`.
+- **`lastParameters()`** — extracts the `params` field of the last call, cast through `asStub`.
+- **`respondWithItems(items)`** — re-points the mock to return a paginated envelope wrapping the given items (used for list/backfill scenarios).
+- **`respondOnceWith(data)`** — makes the next single mock call return `data` verbatim inside an `orvalEnvelope`; necessary for secret-bearing responses that the schema-based fixture helper cannot express.
+- **`flush()`** — chains `flushPromises()` then `nextTick()`; needed because `watchSubscription` fires its backfill with `void`, leaving no awaitable promise for the test to chain on.
+- **`describe` blocks** — one per store action: `createSubscription`, `rotateSecret`, `removeSecret`, `updateSubscription`, `deleteSubscription`, `replayDelivery`, `watchSubscription`. Each asserts URL, method, body, and (where relevant) post-call cache state.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** – the sole mocked module; `orvalMutator` is the seam through which every request is intercepted and inspected.
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called once at module top-level to register the store's DI dependencies before any test runs.
-- **`tests/support/stub.ts`** – provides `asStub`, used to safely cast the last request's `params` field.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – supplies `parseOrvalFixture`, `orvalEnvelope`, and `contractRequest`; the three building blocks for shaping mock responses and validating request bodies against API schemas.
+- **`src/modules/webhooks/store.ts`** — the unit under test; `useWebhooksStore` is the only import from here.
+- **`src/infrastructure/http/index.ts`** — mocked via `vi.mock`; `orvalMutator` is the sole symbol consumed, so the real HTTP client and its dependencies never load.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope to register the webhooks module with the shared core before any test runs.
+- **`tests/support/stub.ts`** — provides `asStub`, a type-narrowing helper used by `lastParameters`.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `contractRequest`, `orvalEnvelope`, and `parseOrvalFixture`, the shared helpers for building and validating orval-shaped HTTP fixtures.
 
 ## Notes
 
-- **Return-don't-await convention:** every `it` returns its promise chain instead of using `async/await`. Vitest treats a rejected returned promise as a test failure, so assertions inside `.then` are equally binding. This is a project-wide convention documented in `docs/tools/unit-testing.md`.
-- **`respondOnceWith` vs. the default mock:** the default mock routes through `parseOrvalFixture` → `orvalEnvelope(record)`, which validates against the *record* schema. Create and rotate responses carry extra fields (`secret`, `newSecret`) that only exist on the dedicated response schemas, so `respondOnceWith` bypasses that validation path.
-- **`flush()` is load-bearing for `watchSubscription`:** `nextTick` alone is insufficient because the cache write occurs behind the query layer, several turns after the request resolves. The backfill is fire-and-forget (`void`), leaving no promise to chain.
-- **Secret-removal DELETE is treated differently in the default mock:** a bare subscription `DELETE` returns an empty envelope, while a `DELETE` on `/secrets/…` returns the full record — mirroring the real API's asymmetric responses.
+- Tests **return** their promise chain instead of `await`-ing; vitest treats a rejected returned promise as a failure, so assertions inside `.then` are equally binding. This is a project-wide convention (see `docs/tools/unit-testing.md`).
+- `respondOnceWith` exists specifically because the secret fields (`secret`, `newSecret`) appear only on create/rotate response schemas and are not part of the single-record fixture schema that `orvalEnvelope` validates against; the verbatim path bypasses that limitation.
+- The `watchSubscription` tests use the `flush` helper rather than `await`ing a store call, because the backfill is fire-and-forget (`void`). A bare `nextTick` is insufficient—the cache write lands several microtask turns after the request resolves.
+- `beforeEach` calls `vi.clearAllMocks()` so `mock.calls.at(-1)` always refers to the current test's call.

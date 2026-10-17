@@ -1,7 +1,7 @@
 ---
 source: src/modules/observability/tests/admin-overview-tab.spec.ts
-sha256: fa85dcda75c27967532f566f75741bafdeba7bb75cbf296a516580359c376655
-generated_at: 2026-10-02T15:18:31.968768+00:00
+sha256: 04c2cf70b5f1b3d79cdbf995a4c9edd8328364d0245ac174fbc979b20b42ae40
+generated_at: 2026-10-17T01:12:09.159266+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit test suite (Vitest + Vue Test Utils) for the **parked-jobs / queues** card rendered inside `AdminOverviewTab.vue`. It was added as part of the CLEANUP_0917 work item and is intentionally scoped to that one section; every other KPI or section on the tab is out of scope.
+Scoped Vitest suite that verifies the **parked-jobs / queues card** on `AdminOverviewTab.vue`. The file's module docblock states explicitly that every other KPI and section on the tab is a pure function of props not exercised here, so this suite intentionally covers only the `queues` slice of the `ObservabilityHealth` payload.
 
 ## Key elements
 
-- **`aHealth(queues)`** — builds a minimal, fully-populated `ObservabilityHealth` object with only the `queues` array varied; all other fields (status, dependencies, jobs, timestamp, etc.) are fixed to stable defaults.
-- **`mountTab(health?)`** — mounts `AdminOverviewTab` with `loading: false` and the `vuetify` / `i18n` plugins. Accepts an optional health payload so the "no health yet" path can be exercised.
-- **`beforeEach(() => loadLocale('en'))`** — resets the i18n locale to English before every test.
-- **`describe('AdminOverviewTab — parked jobs')`** — three cases:
-  - empty `queues` array → zero `[data-test=parked-queue-row]` elements.
-  - `health` is `undefined` → zero rows (guards against a missing payload).
-  - two queues with distinct names and parked counts → two rows, each containing the queue name and its parked number.
+- **`aHealth(queues)`** – factory that returns a minimal `ObservabilityHealth` object with all fields fixed except the `queues` array, keeping tests focused.
+- **`mountTab(health?)`** – mounts `AdminOverviewTab` via `@vue/test-utils` with `vuetify` and `i18n` plugins; `loading` is always `false`.
+- **`beforeEach → loadLocale('en')`** – ensures the English locale is active before each test so i18n assertions are deterministic.
+- **`describe('AdminOverviewTab — parked jobs')`** – three cases:
+  - empty `queues` array → zero `[data-test=parked-queue-row]` elements (section hidden).
+  - `health` prop is `undefined` → same zero-row expectation.
+  - two named queues (`worker.email.send` parked 0, `worker.image.digest` parked 3) → exactly two rows, each showing its queue name and parked count.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module top-level (outside any `beforeEach`) to register shared Vue plugin modules (vuetify, i18n, etc.) into the app instance before any component is mounted.
+- **`src/modules/observability/components/AdminOverviewTab.vue`** – the SUT. The suite mounts it and asserts on its rendered DOM (queue rows, `data-test` hooks).
+- **`tests/support/unit/wire-modules.ts`** – provides `wireModulesIntoCore()`, called once at module top-level before any `describe` block to register stubs/modules that the component tree expects during unit tests.
 
 ## Notes
 
-- The docblock explicitly warns this suite covers **only** the `queues` section; do not assume it guards other cards on the tab.
-- DOM assertions use the `data-test=parked-queue-row` attribute selector, not a CSS class or ARIA role.
-- `wireModulesIntoCore()` runs at import time (module scope), so any test file that imports this spec inherits that side-effect without calling the helper itself.
+- The suite relies on `[data-test=parked-queue-row]` as the sole selector; renaming that attribute in the component will break these tests without any type-level signal.
+- `aHealth` hard-codes `status: 'ok'`, `environment: 'test'`, and a fixed `timestamp`. If the component branches on any of those fields, tests here will not reflect that path.
+- The module is side-effectful: `wireModulesIntoCore()` runs at import time, so test-ordering or parallelisation strategies that isolate module state may need to account for it.

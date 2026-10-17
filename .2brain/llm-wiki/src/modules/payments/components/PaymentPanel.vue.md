@@ -1,7 +1,7 @@
 ---
 source: src/modules/payments/components/PaymentPanel.vue
-sha256: 454faa8c38580c90f913c0b518068968f7cb1a57d87d4e988814713537edf5de
-generated_at: 2026-10-02T15:27:44.915717+00:00
+sha256: 122be224fd7c90e850166b80f0afaff7cbb2cd349819d2678bccfac45f815896
+generated_at: 2026-10-17T01:21:49.198311+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,34 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Order-page payment panel that renders a method picker and submit form while an order is payable, or the payment's current state (in-flight, processing, succeeded, refund-pending) once a payment record exists. All payment lifecycle logic (intent, confirm, sync) is delegated to the payments Pinia store; the component handles presentation, error classification, anti-bot challenge, and emits `paid` so the parent can re-read the order.
+The order-page payment panel: renders the card-payment form while the order is still payable, shows the payment's current state (in-flight, succeeded, refund-pending) afterwards, and delegates the intent → confirm → sync sequence to the payments Pinia store. It also surfaces the antibot human-challenge flow and the generic stock-hold deadline.
 
 ## Key elements
 
-- **`payment`** (computed) — guards the store's shared `payment` ref against a stale/mismatched `orderId` (FA24), returning `undefined` when they disagree.
-- **`payable`** (computed) — form visibility: reads `payment.actions.pay` when a payment exists, otherwise falls back to the `orderPayable` prop.
-- **`inFlight`** (computed) — true for `requires_action` or `processing`; the panel shows a "continue at provider" step instead of the form.
-- **`refundPending`** (computed) — B1b: non-card `succeeded` payment on a `cancelled` order, indicating an operator refund is still outstanding.
-- **`submitPayment()`** — calls `paymentsStore.payForOrder`; on success toasts + emits `paid`; on failure routes through `classifyPaymentError` (product-unavailable list, antibot challenge, or generic blocking error).
-- **`finishAtProvider()`** — calls `paymentsStore.finishAtProvider` to resolve an in-flight/processing payment.
-- **`announceIfSettled()`** — shared success path: `addMessage` toast + `emit('paid')`.
-- **`unavailableLines`** (ref) — holds `UnavailableOrderLine[]` when the server rejects with `ORDER_PRODUCT_UNAVAILABLE`.
-- **`useBlockingError`** destructure — single blocking-error state shared by both the pay and finish steps.
-- **`humanCheck` / `requiresHumanCheck`** — conditionally mounts the `HumanCheck` widget when the server signals a rung-3 anti-bot challenge; its token is forwarded via `withAntibotToken` on the next attempt.
-- **`watch(orderId, …, { immediate: true })`** — fetches the payment on mount and on `orderId` change without a component remount.
+- **Props** — `orderId`, `orderPayable`, `orderStatus`, `payBy`; drive the panel's visibility, deadline display, and B1b refund-pending detection.
+- **`payment` (computed)** — Guards the store's shared `payment` ref by matching `orderId`; discards stale records from a previous order's in-flight fetch.
+- **`payable` (computed)** — True while the payment's own `actions.pay` (or, before any intent, the order's `actions.pay`) is `true`; gates the card form.
+- **`inFlight` / `refundPending` (computed)** — Distinguish "bank challenge in progress" from "succeeded but cancelled, awaiting operator refund (B1b)."
+- **`submitPayment()`** — Calls `paymentsStore.payForOrder` with the chosen method ref and antibot token; on `ANTIBOT_VERIFICATION_FAILED` flips `requiresHumanCheck` to mount the `HumanCheck` widget inline.
+- **`finishAtProvider()`** — Reports the browser's return from the provider (challenge answered or re-check) via `paymentsStore.finishAtProvider`.
+- **`announceIfSettled()`** — Toasts success and emits `'paid'` so the parent reloads the order.
+- **`TestCardPicker` (lazy)** — `defineAsyncComponent` behind a build-time `HAS_TEST_CARDS` flag; dead-code-eliminated from production bundles.
+- **`watch(orderId)`** — Re-fetches the payment on route-param change without a remount (immediate: true covers initial mount).
+- **`onMounted`** — Fires `fetchMethods()` if the methods list is still empty.
 
 ## Relationships
 
-- **`src/modules/payments/store.ts`** — imported as `usePaymentsStore`; source of all payment state (`payment`, `loading`) and lifecycle actions (`fetchPaymentForOrder`, `payForOrder`, `finishAtProvider`). This is the component's sole data/action dependency.
-- **`src/modules/payments/index.ts`** — listed as a graph neighbor (likely re-exports this component or the store); no direct import visible in the truncated content.
-- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor; no direct import visible in the truncated content.
+- **`../store.ts`** — Primary data source: reads `payment`, `methods`, `loading` via `storeToRefs`; calls `payForOrder`, `finishAtProvider`, `fetchMethods`, `fetchPaymentForOrder`.
+- **`./PaymentStatusChip.vue`** — Rendered in the template to display the payment's lifecycle state.
+- **`./TestCardPicker.vue`** — Conditionally imported; only present in dev/e2e builds, supplies `paymentMethodRef`.
+- **`./TransferInstructionsPanel.vue`** — Shown when `payment.nextAction` exists (bank-transfer instructions) alongside the card form.
+- **`src/modules/payments/index.ts`** — Module barrel that re-exports this component for external consumers.
+- **`src/modules/payments/tests/payment-panel.spec.ts`** — Unit/integration tests covering the prop-driven state matrix and submit flow.
 
 ## Notes
 
-- The component intentionally contains **no card-number field**. A real provider tokenises inside its own iframe; this panel's method picker is a demo stand-in that produces the same kind of opaque reference.
-- The panel is **reused across orders** without remount (per `Order.vue`'s `watchOrder`), which is why the `payment` computed guard and the `orderId` watcher exist.
-- `refundPending` depends on the `orderStatus` prop; it only fires for non-card methods because card refunds are automatic, whereas manual (bank-transfer) refunds require operator confirmation.
-- The `payBy` deadline prop is shown generically for **all** payable orders (FA32c), not just bank-transfer; `TransferInstructionsPanel` adds its own transfer-specific wording on top.
-- `classifyPaymentError` is imported from `@/modules/payments/domain`, keeping the component free of error-code string matching.
+- **No card fields by design.** The live provider's widget (or the test picker in dev) mounts where the form body is; a card number never reaches this component or its API, keeping the app in the lighter PCI scope.
+- **Stale-payment guard is load-bearing.** The store's `payment` is a single shared ref; the `orderId` match in the computed is the only thing preventing a previous order's payment from rendering on the current one.
+- **`HAS_TEST_CARDS` is build-time constant.** `import.meta.env.DEV` or `VITE_TEST_CARDS === 'true'` is evaluated at compile time, so the dynamic import branch is eliminated in production — `pm_card_*` strings never ship.
+- **`orderStatus` prop is optional and only read for B1b.** The panel does not drive order status; it only checks `OrderStatus.cancelled` to explain why a succeeded manual payment shows as "refund pending."
+- **`HumanCheck` ref is typed with an eslint-disable.** TypeScript-ESLint cannot fully resolve the SFC instance type through `InstanceType<typeof HumanCheck>`; the `token` property is exposed via that component's `defineExpose`.

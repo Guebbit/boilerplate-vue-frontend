@@ -1,7 +1,7 @@
 ---
 source: src/app/components/AppAnalyticsConsentBanner.vue
-sha256: 37c78ebf94b20a4771fd7794eb60946a5029908f40c3c5290a7d2f25bc1f3a76
-generated_at: 2026-10-02T14:35:47.514567+00:00
+sha256: 796cddde8c71b7dad2e493251ac913fe4dadc47f9e01b03d4a038e3cb6929102
+generated_at: 2026-10-17T00:04:22.478793+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,23 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A guest-facing analytics consent banner pinned to the bottom edge of the viewport. It is shown only when Umami is configured **and** the visitor's consent choice is still `unknown` (or has been reopened via the footer's "Privacy choices" link). Accept or Decline persists the choice through the shared consent store, which the HTTP `onRequest` interceptor later reads to decide whether an anonymous request carries the `X-Analytics-Consent` header.
+A bottom-pinned consent banner for guest (non-authenticated) users. It appears while the analytics consent state is `unknown` or after the footer "Privacy choices" link re-opens it, and only when an analytics provider (Umami or Faro) is actually configured. Accept and Decline both write to the shared consent store, which the HTTP layer's `onRequest` interceptor later reads to decide whether to attach the `X-Analytics-Consent` header.
 
 ## Key elements
 
-- **Default SFC export** — no named functions or classes; the entire file is a single `<script setup>` component.
-- **`useAnalyticsConsentStore()`** (Pinia) — provides `promptOpen` (gates visibility) and the `grant()` / `deny()` actions called by the two buttons.
-- **`isAnalyticsConsentEnabled()`** — imported guard; returns false when Umami is not configured, hiding the banner entirely.
-- **`useI18n().t`** — all user-visible strings (`analytics-consent.*` keys) are pulled through vue-i18n.
-- **`v-alert` + `v-btn`** (Vuetify) — the visible UI; `data-test` attributes (`analytics-consent-banner`, `…-accept`, `…-decline`) are exposed for E2E selectors.
+- **`consent`** – the Pinia store (`useAnalyticsConsentStore`) read directly (no `storeToRefs`); the template only accesses `consent.promptOpen` for visibility and calls `consent.grant()` / `consent.deny()` on button click.
+- **`isAnalyticsConsentEnabled()`** – imported gate function; the banner renders only when this returns true *and* `consent.promptOpen` is true.
+- **`v-alert` (tonal, info)** – the visible banner surface; carries `role="region"`, an i18n `aria-label`, and the `data-test="analytics-consent-banner"` hook.
+- **Accept / Decline buttons** – both use `variant="tonal"` so neither is visually dominant (CNIL / EDPB taskforce requirement). Wired to `consent.grant()` and `consent.deny()` respectively; tagged `data-test="analytics-consent-accept"` / `-decline`.
+- **`t()`** – all user-facing strings resolved through `vue-i18n` under the `analytics-consent.*` key namespace.
 
 ## Relationships
 
-No dependency-graph neighbors are recorded. The component imports from `@/infrastructure/analytics-consent.ts` (store + feature flag) and is referenced conceptually by the app footer ("Privacy choices" link) and the HTTP interceptor, but those files are not tracked as graph neighbors here.
+No graph neighbors are listed for this file. The only import is `@/infrastructure/analytics-consent.ts`, from which it pulls `useAnalyticsConsentStore` and `isAnalyticsConsentEnabled`.
 
 ## Notes
 
-- **Fixed positioning, not in-flow.** The banner uses `position-fixed; bottom-0; z-index: 2000` with an opaque `bg-surface` wrapper. This is deliberate: an in-flow `v-alert` would slide under the fixed app bar, and the banner must appear wherever the visitor clicked the footer link.
-- **Direct store access, no `storeToRefs`.** The template reads `consent.promptOpen` reactively on its own; the author notes this is the only property read, so the extra wrapper is unnecessary.
-- **`rounded-0` on the alert** removes Vuetify's default corner radius so the banner reads as a full-width bar flush against the viewport edge.
+- **Fixed positioning, not in-flow:** the wrapper uses `position-fixed bottom-0` with an opaque `bg-surface` and `z-index: 2000`. A `v-alert` placed in normal flow would slide under the fixed app bar, and the banner must appear wherever the visitor clicked the footer link.
+- **Reads store state directly** rather than via `storeToRefs` because `promptOpen` is the only property consumed; the template's reactive access to Pinia state is sufficient.
+- **Dual visibility gate:** the `v-if` requires *both* `isAnalyticsConsentEnabled()` and `consent.promptOpen`. If no analytics provider is configured the banner never renders, regardless of consent state.
+- **Equal-weight buttons:** Accept and Decline intentionally share the same `variant` and `size` to avoid a dark pattern that would pressure the user toward acceptance.

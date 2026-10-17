@@ -1,7 +1,7 @@
 ---
 source: src/modules/api-keys/views/ApiKeyCreate.vue
-sha256: d5d1b1d279ef7fcaee6660f110264cdecd58947c0f4cffb910a9f9343f5279e3
-generated_at: 2026-10-02T14:55:44.218004+00:00
+sha256: 3bf21846a0fc24ed3dab743b52e71d3ec1df3199ebbe62da8b6ed96edfbe054e
+generated_at: 2026-10-17T00:33:04.192845+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The "mint" page for API keys. It presents a form (name, permissions, optional expiry), validates it, calls the store's `mintCredential` action, and—on success—displays the one-time secret in a modal before routing the visitor back to the key list. There is no dedicated detail page, so the flow is create → reveal → done → list.
+Single-page form for minting a new API key. Collects a name, a set of permissions, and an optional expiry; on success the one-time secret is displayed in a modal (there is no detail page to redirect to). On failure it maps permission-specific refusals to the combobox and surfaces anything else as a blocking inline alert.
 
 ## Key elements
 
-- **`submitForm`** – Orchestrates the submit flow: clears any prior in-place error, runs `handleSubmit` (from `useStructureFormValidation`), builds a `MintApiKeyRequest` (converting `datetime-local` to ISO), calls `mintCredential`, and on success sets `revealedSecret` to trigger the modal. On failure, delegates to `permissionsRefused` or `applyServerErrors`.
-- **`permissionsRefused(error)`** – Hand-parses `details.permissions` from the API error envelope to extract refused permission keys (a shape `applyServerErrors` cannot map generically). Returns a typed string array.
-- **`handleSecretDone`** – Fires a success toast, clears `revealedSecret`, and navigates to `ApiKeysList` (fire-and-forget so a `NavigationFailure` doesn't overwrite the success state).
-- **`revealedSecret` (ref)** – Holds the one-time secret exclusively in local component state; it is never persisted to the store.
-- **`useBlockingError`** – Provides an in-place `InlineErrorAlert` for mint refusals that don't map to a specific field, keeping the error visible rather than buried in a toast.
-- **`useReturnFocus`** – Returns keyboard focus to the trigger element when the reveal dialog closes.
-- **Template** – A `FormCard` wrapping `v-text-field` (name), `v-combobox` (permissions, multiple/chips/closable), `v-text-field` (expiry, `datetime-local`), an `InlineErrorAlert`, and a `v-dialog` + `SecretRevealModal` for the one-time secret.
+- **`submitForm`** – Validates via `useStructureFormValidation`, builds a `MintApiKeyRequest` (converting `expiresAt` from `datetime-local` to an ISO instant), calls `mintCredential`, and sets `revealedSecret` on success. On rejection it checks `permissionsRefused` before falling through to `applyServerErrors` / `reportSubmitError`.
+- **`permissionsRefused(error)`** – Extracts `details.permissions[]` from the first API error envelope; returns an empty array when the shape doesn't match. Used to render one localized message per refused key on the `v-combobox`.
+- **`revealedSecret`** – A local `ref<string | undefined>` that gates the `SecretRevealModal` v-dialog. Cleared on "Done" to dismiss the modal.
+- **`handleSecretDone`** – Fires a success toast, clears `revealedSecret`, and navigates to `ApiKeysList` (fire-and-forget; a `NavigationFailure` is intentionally swallowed so a completed mint is never turned into an error).
+- **`useBlockingError`** – Provides `submitError` / `reportSubmitError` / `clearSubmitError` for the in-place `InlineErrorAlert` beneath the form fields.
+- **`useReturnFocus`** – Restores focus to the trigger element when the reveal dialog closes.
+- **Named component (`ApiKeyCreatePage`)** – Declared in a separate `<script>` block to give the SFC a stable name for DevTools / `<KeepAlive>`.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** – No direct import or call visible in this file's source; no interaction to document.
-- **`src/modules/account/views/TwoFactorChallenge.vue`** – No direct import, prop passing, or event coupling visible in this file; no interaction to document.
-
-The real runtime dependencies (imports) are: `useApiKeysStore`, `apiKeyCreateSchema`, `FormCard`, `SecretRevealModal`, `InlineErrorAlert`, `getFirstApiError`, `useBlockingError`, `useReturnFocus`, and the `@guebbit/vue-toolkit` composables.
+- **`src/modules/api-keys/schemas.ts`** – Imports `apiKeyCreateSchema`, the Zod (or similar) schema that drives client-side field validation inside `useStructureFormValidation`.
+- **`src/modules/api-keys/store.ts`** – Imports `useApiKeysStore`; calls its `mintCredential` action to POST the new key and receive the one-time secret. The store does **not** cache the secret; it lives only in this component's local ref.
 
 ## Notes
 
-- The secret lives **only** in local component state. The store's `mintCredential` action deliberately does not cache it, so refreshing or navigating away permanently loses the key.
-- `permissionsRefused` exists because the backend's refusal payload uses `details.permissions` (a flat string array) rather than the top-level `field` shape that `applyServerErrors` expects. This is a deliberate workaround, not a duplication of validation logic.
-- `expiresAt` is sent as a full ISO 8601 instant (`toISOString()`), but the form binds a `datetime-local` input which carries no timezone. The browser's local offset is implicitly applied by `new Date(...)`.
-- The `formElement` getter in the `useStructureFormValidation` options carries an ESLint suppression because TypeScript-ESLint cannot resolve the template ref's exposed `formElement` property across SFCs.
-- `void router.push(...)` in `handleSecretDone` is intentional: a `NavigationFailure` (e.g., the user is already on the list) must not surface as an error toast after a successful mint.
+- The `expiresAt` field is a `datetime-local` input (no timezone). The code calls `new Date(form.expiresAt).toISOString()` before sending, which interprets the naive local string in the browser's timezone. This is a deliberate contract bridge, not a bug, but it means the stored instant depends on the user's local offset at submit time.
+- The `formElement` getter for `useStructureFormValidation` requires an eslint-disable because TypeScript-ESLint cannot resolve the Vue SFC instance type through the template ref. This is expected and will persist until the tooling improves.
+- Permission refusal errors are handled *before* the generic `applyServerErrors` path, so the combobox gets per-key messages rather than a single catch-all string. If the backend ever changes the error shape (e.g., moves `permissions` to a different key), `permissionsRefused` silently returns `[]` and the user falls through to the generic error path.
+- The component intentionally does **not** redirect to a detail page after creation (unlike the analogous webhook flow); it always returns to the list.

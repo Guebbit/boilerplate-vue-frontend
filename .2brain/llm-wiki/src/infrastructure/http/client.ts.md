@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/http/client.ts
-sha256: b83f7f1725a639d29bd3d85ce99c77d8ca0ba36fa46617231300ae9f64f62521
-generated_at: 2026-10-02T11:54:56.695813+00:00
+sha256: ac4cbc3415e28631a829d7731d9716703c8b14cc3b67d020c618fb558fb1c3d2
+generated_at: 2026-10-17T00:09:02.812601+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,19 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Defines and exports the single shared axios instance used by every HTTP client in the app. It is the leaf of the http tier: fully configured (headers, credentials, timeout, base URL) but carries no interceptors and imports nothing else from this application, guaranteeing that importing it can never create a circular dependency back into `index.ts`.
+Creates and exports a single shared axios instance that every API client in the app routes through. It sits at the leaf of the http tier and is intentionally free of app-level imports so it can be pulled in without triggering circular evaluation of `index.ts`.
 
 ## Key elements
 
-- **`instance`** (exported `const`) — the one axios instance created via `axiosClient.create`. Carries:
-  - Default `Accept` / `Content-Type` JSON headers.
-  - `withCredentials: true` so the httpOnly refresh cookie is sent on every request without JS ever reading the token.
-  - A `timeout` resolved from `runtimeValue('AXIOS_TIMEOUT')` → `VITE_AXIOS_TIMEOUT` → `10000` ms.
-  - A `baseURL` resolved from `runtimeValue('API_URL')` → `VITE_API_URL` → `''`.
+- **`instance`** (exported) — the sole axios instance. Configured with JSON headers, `withCredentials: true`, and a timeout read from `runtimeValue('AXIOS_TIMEOUT')` → `VITE_AXIOS_TIMEOUT` → `10000` ms. Its `baseURL` is set to whatever `readApiUrl()` returns at import time.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — imports `instance` from this file and attaches request/response interceptors (auth token injection, refresh orchestration) onto it before re-exporting the wired-up client to the rest of the app.
-- **`src/infrastructure/http/refresh.ts`** — operates against the same `instance`; the `withCredentials` flag set here is what lets the browser send the httpOnly refresh cookie that `refresh.ts` relies on.
-- **`src/infrastructure/http/step-up.ts`** — issues step-up (elevated-privilege) requests through `instance`, inheriting its base URL, headers, and timeout.
+- **`src/infrastructure/http/index.ts`** — The only consumer that *adds* behavior to this instance: it attaches request/response interceptors. This file stays inert so `index.ts` can import it without re-entering its own evaluation.
+- **`src/infrastructure/http/refresh.ts`** — The `withCredentials` flag here exists specifically so the httpOnly refresh cookie is sent on every request, enabling the refresh flow without the token ever being readable from JS.
 
 ## Notes
 
-- **Base URL is runtime-mutable in e2e.** The e2e shard runner overwrites `window.__APP_CONFIG.API_URL` before boot so each shard can point at its own demo backend without rebuilding the bundle. In production a running container's `config.js` takes the same path. Do not assume the compile-time `VITE_API_URL` is the value actually used.
-- **Leaf constraint is intentional.** Do not add imports of app code (services, stores, other http-tier files) into this module; doing so would re-enter `index.ts` mid-evaluation and break the initialization order.
-- **Timeout parsing uses `Number.parseInt`**, not `Number`. A value like `"10000abc"` will silently parse to `10000` rather than producing `NaN`.
+- **Base URL is runtime-injected.** `readApiUrl()` reads `window.__APP_CONFIG.API_URL` (set by the e2e shard runner in `tests/support/e2e/commands.ts`) or a container's `config.js`. A built bundle cannot bake in a fixed URL because each e2e shard owns its own demo backend.
+- **No interceptors live here.** If you need auth headers, error handling, or retry logic, look in `index.ts`—modifying this file will not affect runtime behavior beyond the defaults above.
+- **Timeout fallback chain:** `runtimeValue('AXIOS_TIMEOUT')` → `import.meta.env.VITE_AXIOS_TIMEOUT` → literal `'10000'`. All three are strings; `Number.parseInt` converts.

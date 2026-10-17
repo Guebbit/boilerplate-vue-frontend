@@ -1,7 +1,7 @@
 ---
 source: src/modules/returns/tests/return-request-form.spec.ts
-sha256: ef29c14ade7c90e80532bc9d35538ef9394e2851e99ae58f50312e6713cbc8b2
-generated_at: 2026-10-02T15:45:15.399849+00:00
+sha256: ab91990bcd3bc8bca0e79a6638d941809da5aafe96800251c608dff2e50baf66
+generated_at: 2026-10-17T01:38:25.026072+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for the `ReturnRequestForm` component. It verifies the form's UI contract: it stays collapsed until opened, lists only returnable lines with their remaining quantities, validates that at least one line is ticked with a valid reason and in-range quantity, submits only the ticked lines to the store, and handles server rejection. The store's `openReturn` is spied; real transport is covered by `store.spec.ts`.
+Unit test spec for the `ReturnRequestForm.vue` component. It verifies the form's user-facing contract: collapsed-until-opened state, per-line checkbox selection with quantity validation (never above remaining), mandatory reason, optional note trimming, partial-submission payload shape, server-error handling, and state reset on cancel. The store's `openReturn` action is always spied; actual transport is deferred to `store.spec.ts`.
 
 ## Key elements
 
-- **`LINES`** – Two-line fixture (Shirt ×3 ordered / 2 remaining, Mug ×1 / 1) passed as the `lines` prop.
-- **`mountForm()`** – Creates a fresh Pinia store, spies `openReturn` *before* mounting (the component destructures actions at `setup()`), then mounts with Vuetify + i18n plugins and `attachTo: document.body`. Returns `{ wrapper, store }`.
-- **`openForm(wrapper)`** – Clicks the `[data-test=return-request-open]` trigger.
-- **`pick(wrapper, productId)`** – Ticks a line's checkbox via its `input` element.
-- **`chooseReason(wrapper, reason)`** – Emits `update:modelValue` on the `VSelect` component (bypassing DOM interaction).
-- **`describe('ReturnRequestForm', …)`** – Eight cases covering: initial collapsed state, line/reason rendering, default quantity = remaining, empty-form rejection, over-quantity rejection, partial submission with trimmed note, blank-note omission, server-rejection display, and state reset on cancel.
+- **`LINES`** — static fixture: two returnable lines (p1 Shirt qty 2, p2 Mug qty 1) passed as the `lines` prop.
+- **`mountForm()`** — creates a fresh Pinia store, spies `openReturn` (mocked to resolve `aReturn()`), then mounts the component with Vuetify + i18n plugins and `attachTo: document.body`. Returns `{ wrapper, store }`.
+- **`openForm(wrapper)`** — clicks the `[data-test=return-request-open]` button.
+- **`pick(wrapper, productId)`** — checks the line's checkbox input.
+- **`chooseReason(wrapper, reason)`** — emits `update:modelValue` on the VSelect instance (via `emitOn`) to set the reason.
+- **`describe('ReturnRequestForm')`** — nine tests covering: initial collapsed state; note placeholder copy; line/reason rendering; default quantity = remaining; rejection with no tick/no reason; rejection for over-quantity; successful partial submit (payload + `opened` event + form removal); blank-note omission from payload; server-rejection error display; cancel resets form state.
 
 ## Relationships
 
-- **`tests/support/unit/fixtures.ts`** – Imports `aReturn()` to shape the mock resolved value of `openReturn`.
-- **`tests/support/unit/mounted-vm.ts`** – Imports `emitOn()` to programmatically set the Vuetify `VSelect` model value.
-- **`tests/support/unit/wire-modules.ts`** – Calls `wireModulesIntoCore()` at module scope to register shared module mocks before any test runs.
+- **`ReturnRequestForm.vue`** — the component under test; all assertions target its DOM and emitted events.
+- **`store.ts`** — provides `useReturnsStore`; its `openReturn` action is the single spy point for verifying submission payloads.
+- **`fixtures.ts`** — supplies the `aReturn()` factory used as the default `openReturn` mock return value.
+- **`mounted-vm.ts`** — supplies `emitOn`, used to set the VSelect model value without simulating click-through interactions.
+- **`wire-modules.ts`** — supplies `wireModulesIntoCore()`, called once at module scope before any test runs to make cross-module imports resolvable in the Vitest environment.
 
 ## Notes
 
-- The spy must be attached **before** `mount()` because the component destructures store actions during `setup()`; spying after mount would leave the real action bound.
-- `attachTo: document.body` is required for Vuetify's teleport/overlay behavior; omitting it can cause silent assertion failures on overlay content.
-- `chooseReason` avoids `.setValue()` on the VSelect input because Vuetify manages its internal model separately from the DOM value; `emitOn` is the reliable path.
-- The component emits an `'opened'` event (not a store side-effect) on success, and the tests assert on that event rather than a navigation or route change.
+- `openReturn` must be spied **before** `mount` because the component destructures store actions during `setup()`; spying after mount would leave a stale reference.
+- `wireModulesIntoCore()` is invoked at the top level of the module (outside `beforeEach`), so it runs once per test file load.
+- Reason selection bypasses Vuetify's option-click flow entirely (`emitOn` on `update:modelValue`), keeping tests decoupled from VSelect's internal DOM.
+- The spec explicitly documents its boundary: it asserts the *call shape* to the store, not HTTP behavior — that belongs to the store's own spec.

@@ -1,7 +1,7 @@
 ---
 source: scripts/testing/report-results.ts
-sha256: 215d57941e3a8c10af0c3a7d7edffe97686747e44fff572c4f7f550da6b32667
-generated_at: 2026-10-02T11:41:30.313603+00:00
+sha256: ba6bf04e717d14302aa557c39df86cdf070af3c27a7679d9571503127200ad00
+generated_at: 2026-10-17T00:03:57.844593+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-CLI script (invoked via `npm run test:report`) that reads a Jest/Vitest JSON test report and prints a human-readable summary: per-module pass/fail/duration table, slowest suites and tests, failure index, and optional per-module line coverage. It exists because the runner's raw log is flat and layer-shaped, while the codebase is organised by module — this script bridges that gap without altering how tests are run.
+CLI script (`npm run test:report`) that reads a runner's JSON test report (Jest `--json` or Vitest `json` reporter) and prints three things a raw log does not: which **module** owns each failure, a per-module cost table, and where the time went. It exists to give a module-shaped view of test results in a codebase that is organised around deletable modules but otherwise only exposes layer-shaped or flat tooling.
 
 ## Key elements
 
-- **`REPO_ROOT`** / **`DEFAULT_REPORT`** — Resolved from `process.cwd()`; report path defaults to `reports/test-report.json`, overridable via `argv[2]`.
-- **`bucketOf(file)`** — Maps a test-file path to a bucket label: `src/modules/<name>/` → the module name; `tests/<layer>/` → `(layer)`; `src/<area>/` → `(area)`; otherwise `(other)`.
-- **`SuiteResult` / `Report`** — Interfaces matching the common JSON shape both Jest `--json` and Vitest's `json` reporter emit (`testResults[]` → `assertionResults[]`).
-- **`readReport(file)`** — Loads and parses the JSON file; exits with code 2 and a helpful message if the file is missing.
-- **`readCoverage(file)`** — Minimal lcov.info parser (`SF:`, `LF:`, `LH:`) that aggregates line-hit counts per bucket. Returns `undefined` when `coverage/lcov.info` does not exist.
-- **`seconds(ms)`** — Formats milliseconds as e.g. `1.2s`.
-- **`SLOWEST`** (8) — Row cap for the "slowest suites" and "slowest tests" sections.
+- **`bucketOf(file)`** — Maps a test-file path to a bucket label via three regexes: `src/modules/<name>/` → module name; `tests/<layer>/` → `(layer)`; `src/<area>/` → `(area)`; else `(other)`.
+- **`readReport(file)`** — Reads and parses the JSON file; exits 2 with a hint if the file is missing.
+- **`Report` / `SuiteResult`** — Interfaces describing the subset of the Jest/Vitest JSON shape the script actually reads (`testResults[]` → `assertionResults[]`).
+- **Bucket aggregation loop** — Single pass over `testResults`, accumulating suites, tests, failures, and millisecond duration per bucket into a `Map<string, Bucket>`.
+- **Output sections** (all via `console.log`):
+  - Headline totals (tests, suites, passed/failed/pending, suite-time).
+  - Per-bucket table (modules first alphabetically, then layer buckets).
+  - `slowest suites` — top 8 by duration.
+  - `slowest tests` — top 8 individual assertions by duration.
+  - `failures` — every failed assertion with bucket, file, name, and first failure line (only printed when non-empty).
 
 ## Relationships
 
-No graph neighbors. The script is self-contained, depends only on `node:fs` and `node:path`, and is byte-identical across `boilerplate-node-backend` and `boilerplate-vue-frontend`.
+None — the dependency graph lists no neighbors. The script depends only on `node:fs`, `node:path`, and the JSON file on disk.
 
 ## Notes
 
-- **Shared by hand, not enforced.** This file is deliberately *not* listed in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`). Keep the two copies in sync manually with `diff`.
-- **`process.cwd()`, not `__dirname`.** Required so the same file works in both a CommonJS repo and an ESM repo. Only valid when invoked via `npm run` (package root as cwd).
-- **Sorting puts parenthesised layer labels after module names** (e.g. `(integration)` sorts below `account`). This is intentional — modules are the primary unit of interest.
-- **Coverage section is optional.** It appears only when `coverage/lcov.info` exists; a non-coverage run simply omits it. Per-file coverage floors remain the build gate in the runner configs.
-- **Exit code 2** (not 1) is used for the "report file not found" error, distinguishing an operational mistake from a test failure.
-- **Crashed suites** (no `startTime`/`endTime`) are treated as zero-duration rather than producing `NaN`.
+- **Shared script, no enforcement.** Byte-identical copies live in `boilerplate-node-backend` and `boilerplate-vue-frontend`. It is deliberately *not* in `SHARED_FILES`; keeping them in sync is a manual `diff` obligation.
+- **Always exits 0.** The script *reads* a report the runner already gated on; a non-zero exit here would duplicate or contradict that verdict.
+- **`process.cwd()` over `__dirname`/`import.meta.url`.** Required because the same file must run under both CommonJS and ESM. The trade-off is that the script must be launched from the package root (the only invocation path is `npm run …`).
+- **Suite time ≠ wall clock.** The headline "suite time" sums per-suite `endTime − startTime`, which is inflated by parallel workers.
+- **`SLOWEST = 8`** — both the slowest-suites and slowest-tests lists are capped at 8 rows.
+- **JSON, not JUnit, on purpose.** JSON needs no extra dependency on either runner and carries strictly more detail (per-assertion durations, ancestor titles, full messages). JUnit would only be added later if PR-line annotations become necessary.

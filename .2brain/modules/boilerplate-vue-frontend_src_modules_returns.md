@@ -6,78 +6,71 @@ tags:
 type: module
 module: src/modules/returns/
 files: 18
-updated: 2026-10-02T19:31:13.819018+00:00
+updated: 2026-10-17T02:55:24.029099+00:00
 ---
 
 # src/modules/returns/
 
 ## Purpose
 
-The Returns module implements the full product-returns and EU withdrawal flow: the customer-facing experience of opening a partial or full return (including the Art. 11a right-of-withdrawal), the staff-facing workflow of approving, declining, or receiving a returned shipment, and the domain logic that determines which order lines are still returnable. It encapsulates all of this behind a single public component so the order page never touches return internals.
+The returns module implements the full customer- and staff-facing workflow for order returns and EU right-of-withdrawal cancellations: opening a return, cancelling an unshipped remainder, and the staff lifecycle (approve, decline, receive). It owns its own routes, Pinia store, UI components, and response-contract schemas, and exposes a single public component (`WithdrawalPanel`) for embedding in the order detail page.
 
 ## Key parts
 
-- **Public surface** — `index.ts` re-exports only `WithdrawalPanel`, which composes the withdrawal button, the nested `ReturnRequestForm`, and the list of already-opened returns into one drop-in component for the order page.
-- **Components** — `ReturnRequestForm.vue` (line selection, quantity, reason, note → `POST /returns`), `ReturnStaffActions.vue` (server-driven approve / decline / receive panel), and `WithdrawalPanel.vue` (the parent that gates the withdrawal button via a `canWithdraw` prop and nests the form and history).
-- **Domain logic** — `returnable-lines.ts` is a pure, side-effect-free helper that computes which lines and how many units remain returnable on a given order; the server re-validates on submission.
-- **Store** — `store.ts` (Pinia) wires paginated search and by-id reads onto the shared `useStructureCrudApi` primitive and hand-implements the four lifecycle calls (`openReturn`, `approve`, `decline`, `receive`). All return UI reads and writes go through this single reactive store.
-- **Views** — `ReturnsList.vue` (paginated list) and `Return.vue` (single-return detail with status, lines, postage info, and staff actions).
-- **Routing & schemas** — `routes.ts`, `module.ts`, and `response-schemas.ts` define the module's route table, module registration, and typed response contracts.
-- **Tests** — Per-component Vitest specs (`return-request-form.spec.ts`, `return-staff-actions.spec.ts`, `withdrawal-panel.spec.ts`), a domain spec (`returnable-lines.spec.ts`), a store spec (`store.spec.ts`) that validates request bodies against API schemas, a routes spec, and an e2e accessibility sweep (`tests/e2e/a11y.cy.ts`).
+- **Components** (`components/`) — the interactive building blocks:
+  - `WithdrawalPanel.vue` — the "returns corner" on the order page; shows the withdrawal button, cancellable fulfillment orders, and return history, all server-gated.
+  - `CancelRemainderDialog.vue` — confirmation dialog for cancelling an unshipped remainder (used by both buyer and staff flows).
+  - `ReturnRequestForm.vue` — multi-line, multi-quantity return request form for non-withdrawal reasons.
+  - `ReturnStaffActions.vue` — approve / decline / receive controls rendered strictly from server-supplied `item.actions`.
+- **Views** (`views/`) — the two routed pages:
+  - `ReturnsList.vue` — paginated, filterable list (customer-scoped or staff-scoped, decided server-side).
+  - `Return.vue` — single-return detail with items, amounts, and staff actions.
+- **Store** (`store.ts`) — Pinia store wiring `useStructureCrudApi` for list/detail reads plus four hand-written state-transition actions (`open`, `approve`, `decline`, `receive`).
+- **Wiring & contracts** — `module.ts` (route/schema/locale registration), `routes.ts` (two auth-gated routes), `response-schemas.ts` (response-envelope schemas for contract validation), `index.ts` (public barrel exposing only `WithdrawalPanel`).
+- **Tests** (`tests/`) — unit specs per component and the store (with schema-validated request bodies), a route access-control guard, and an e2e a11y sweep.
 
 ## How it connects
 
-- **`src/infrastructure/`** — The Pinia store builds on the shared `useStructureCrudApi` primitive for list/search and by-id reads. The e2e a11y test registers its routes through the shared `sweepA11y` helper, plugging into the project's common accessibility-audit tooling.
-- **`scripts/e2e/`** — The `a11y.cy.ts` spec is picked up by the e2e runner scripts, so the returns pages are included in the project-wide accessibility sweep as part of CI.
-- **`/` (repository root)** — Standard project-level configuration (package scripts, Vitest/Cypress config, orval codegen for `response-schemas.ts`) that the module's test and build tooling depends on.
+- **`src/infrastructure/utils/`** — provides shared helpers the module relies on, notably `useStructureCrudApi` (paginated search + by-id read used in the store) and the `sweepA11y` e2e helper referenced by the accessibility test.
+- **`src/modules/account/views/`** — hosts the order-detail page into which `WithdrawalPanel` is embedded; the account views import the module's single public entry point from `index.ts` and never touch internal components or the store directly.
+- **Repository root (`/`)** — the app shell and module registry that `module.ts` plugs into, mounting the returns routes, locale loaders, and response-schema validation into the running application.
 
 ## Where to start
 
-1. **`index.ts`** — one file, one export. It tells you exactly what the rest of the codebase sees and forces you to read `WithdrawalPanel.vue` next.
-2. **`store.ts`** — once you know the public shape, the store shows every API call the module makes, what it caches, and how the four lifecycle mutations flow. Reading it alongside `returnable-lines.spec.ts` gives you both the data contract and the domain rules in about five minutes.
+Read `index.ts` first (a handful of lines) to see exactly what the module exposes to the rest of the app, then `store.ts` to understand the five data actions (`open`, `approve`, `decline`, `receive`, plus the inherited CRUD) and the caching behaviour. Together they define the module's public contract; the components and views are then straightforward consumers of that contract.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_src_modules_returns["src/modules/returns/"]
-    m_scripts["scripts/<br/>11 files"]
-    m_scripts_demo["scripts/demo/<br/>6 files"]
-    m_scripts_e2e["scripts/e2e/<br/>19 files"]
-    m_src_infrastructure["src/infrastructure/<br/>39 files"]
-    m_src_modules_account_views["src/modules/account/views/<br/>10 files"]
-    m_src_modules_cart["src/modules/cart/<br/>27 files"]
-    m_src_modules_payments["src/modules/payments/<br/>22 files"]
-    m_src_modules_returns --- m_scripts
-    m_src_modules_returns --- m_scripts_demo
-    m_src_modules_returns --- m_scripts_e2e
-    m_src_modules_returns --- m_src_infrastructure
+    m_src_infrastructure_utils["src/infrastructure/utils/<br/>15 files"]
+    m_src_modules_account_views["src/modules/account/views/<br/>12 files"]
+    m_src_modules_returns --- m_src_infrastructure_utils
     m_src_modules_returns --- m_src_modules_account_views
-    m_src_modules_returns --- m_src_modules_cart
-    m_src_modules_returns --- m_src_modules_payments
     style m_src_modules_returns stroke-width:3px
 ```
 
-[[boilerplate-vue-frontend_ROOT|/ (repository root)]] · [[boilerplate-vue-frontend_scripts|scripts/]] · [[boilerplate-vue-frontend_scripts_demo|scripts/demo/]] · [[boilerplate-vue-frontend_scripts_e2e|scripts/e2e/]] · [[boilerplate-vue-frontend_src_infrastructure|src/infrastructure/]] · [[boilerplate-vue-frontend_src_modules_account_views|src/modules/account/views/]] · [[boilerplate-vue-frontend_src_modules_cart|src/modules/cart/]] · [[boilerplate-vue-frontend_src_modules_payments|src/modules/payments/]]
+[[boilerplate-vue-frontend_ROOT|/ (repository root)]] · [[boilerplate-vue-frontend_src_infrastructure_utils|src/infrastructure/utils/]] · [[boilerplate-vue-frontend_src_modules_account_views|src/modules/account/views/]]
 
 ## Files
-- `src/modules/returns/components/ReturnRequestForm.vue` — Customer-facing form for opening a partial or full return with a reason other than withdrawal (defective, wrong item, other). It lets the customer pick which order lines to send back, set quantities, choose a reason, and attach an optional note, then dispatches `POST /returns` via the returns store.
-- `src/modules/returns/components/ReturnStaffActions.vue` — Renders the staff-facing action panel for a single return record (approve, decline, receive). Which of the three controls appear is driven entirely by the server-provided `item.actions` array; this component does not implement or mutate the return lifecycle itself — it collects optional form inputs, delegates the mutation to the returns store, and reports the outcome.
-- `src/modules/returns/components/WithdrawalPanel.vue` — Renders the returns section of an order page: the EU right-of-withdrawal button (Consumer Rights Directive Art. 11a), a return-request form for faulty/wrong goods or part-orders, and a list of withdrawals/returns already opened on the order. The withdrawal button's visibility is entirely server-driven (`canWithdraw` prop); this component never computes the withdrawal window itself.
-- `src/modules/returns/domain/returnable-lines.ts` — Pure domain logic that computes which order lines a customer can still return from a given order. It produces the "offer" shown in the returns form (which products, how many left), with no side effects. All results are re-validated server-side on `POST /returns`; this file only shapes what the UI presents.
+- `src/modules/returns/components/CancelRemainderDialog.vue` — A confirmation dialog that cancels the unshipped remainder of a single fulfillment order. It displays the server-computed refund amount (from `GET /returns/options`) and, on confirm, fires a `POST /returns` cancellation. Two callers reuse it: the buyer (as part of a withdrawal, no note) and staff (with a free-text note and a step-up key handled by the HTTP layer).
+- `src/modules/returns/components/ReturnRequestForm.vue` — Customer-facing form for opening a non-withdrawal return (defective goods, wrong item, or "other"). It lets the customer select which order lines to send back, how many of each, pick a reason, and add an optional note, then calls `POST /returns` via the returns store. The right of withdrawal is deliberately excluded from this component and lives in the sibling `WithdrawalPanel`.
+- `src/modules/returns/components/ReturnStaffActions.vue` — Renders the three staff actions available on a single return — **approve**, **decline** (with a mandatory reason), and **receive** (with an optional handling deduction). Which of the three are shown is driven entirely by the server-supplied `item.actions`; the component performs no lifecycle logic of its own, only validation, dispatch, and feedback.
+- `src/modules/returns/components/WithdrawalPanel.vue` — The "returns corner" of the order detail page. It surfaces the EU consumer-rights withdrawal button (Art. 11a), the list of still-cancellable fulfillment orders, the returnable lines, and the history of returns/withdrawals already opened — all driven by server-provided data from `GET /returns/options`. It deliberately counts nothing and never reads the withdrawal period itself; visibility and availability are entirely server-gated.
 - `src/modules/returns/index.ts` — Public barrel for the Returns module. It exposes the single public entry point (`WithdrawalPanel`) so the order page can import one component that encapsulates the entire returns flow (trigger button, confirmation step, and the list of previously opened returns) without leaking internal store or sub-component details to the outside.
-- `src/modules/returns/module.ts`
-- `src/modules/returns/response-schemas.ts`
-- `src/modules/returns/routes.ts`
-- `src/modules/returns/store.ts` — Pinia store for the returns module. It wires the module's paginated search and by-id reads onto the shared `useStructureCrudApi` primitive, and hand-writes the four lifecycle moves (`openReturn`, `approve`, `decline`, `receive`) that are endpoint calls rather than record edits. It exists so every return-related UI component talks to one reactive state with consistent caching and idempotency behavior.
+- `src/modules/returns/module.ts` — Module manifest for the **returns** feature. It registers the returns routes, navigation entry, response schemas, and locale loaders into the app's module registry so the framework can mount the feature. It is a pure wiring file — no business logic lives here.
+- `src/modules/returns/response-schemas.ts` — Declares the response-envelope schemas for every REST endpoint attributed to the `returns` domain. It exists as a thin registration point: by exposing a `ResponseSchemaRoute[]` constant, it lets the module-manifest mechanism enable or disable contract validation for all `returns` routes simply by including or removing this file.
+- `src/modules/returns/routes.ts` — Defines the Vue Router route table for the returns module. It exposes two routes—list and detail—that the app's module registry mounts. Both are auth-gated; the server (not the client) decides whether the list shows one customer's returns or all returns.
+- `src/modules/returns/store.ts` — Pinia store for the returns module. It wires `useStructureCrudApi` (paginated search + by-id read) and adds hand-written actions for the four "move" endpoints that are state transitions rather than plain record edits: open (which doubles as withdrawal), approve, decline, and receive.
+- `src/modules/returns/tests/cancel-remainder-dialog.spec.ts` — Unit-test spec for `CancelRemainderDialog.vue`. Verifies what the dialog renders (remainder lines, computed refund, conditional shipping note, staff-only note field) and what payload it dispatches to the store on confirm, including the error path where the server refuses the cancellation.
 - `src/modules/returns/tests/e2e/a11y.cy.ts` — Registers the accessibility-audit routes for the returns module with the shared `sweepA11y` helper. It sweeps the returns list and one seeded return detail page under the **admin** (signed-in) role, ensuring both pages are checked for a11y issues as part of the e2e suite.
-- `src/modules/returns/tests/return-request-form.spec.ts` — Vitest spec for the `ReturnRequestForm` component. It verifies the form's UI contract: it stays collapsed until opened, lists only returnable lines with their remaining quantities, validates that at least one line is ticked with a valid reason and in-range quantity, submits only the ticked lines to the store, and handles server rejection. The store's `openReturn` is spied; real transport is covered by `store.spec.ts`.
-- `src/modules/returns/tests/return-staff-actions.spec.ts` — Unit tests for the `ReturnStaffActions.vue` component. Verifies that the approve / decline / receive controls render only when `Return.actions` allows them, and that each interaction dispatches the correct store method with the expected arguments. Store methods are spied on; network transport is explicitly out of scope (delegated to `store.spec.ts`).
-- `src/modules/returns/tests/returnable-lines.spec.ts` — Unit tests for the returns-domain helpers `returnableLines` and `isReturnableOrderStatus`. They verify the arithmetic that determines which order lines (and how many units) a customer can still return, given prior return requests, and that only shipped/delivered orders qualify.
-- `src/modules/returns/tests/routes.spec.ts`
-- `src/modules/returns/tests/store.spec.ts` — Unit tests for the returns Pinia store (`useReturnsStore`) run against a mocked `orvalMutator` transport. They verify what each store action sends (body, headers, params), which outcome it reports to the caller, and that a server response **replaces** the cached record. Request bodies are additionally validated against the API contract's own schemas (`contractRequest`) so drift surfaces here instead of as a 422 in production.
-- `src/modules/returns/tests/withdrawal-panel.spec.ts` — Vitest unit tests for the `WithdrawalPanel` Vue component. Verifies the server-gated withdrawal button, its confirmation dialog flow, error reporting, and the nested `ReturnRequestForm` offering rules. Deliberately mocks the Pinia store's actions (transport is `store.spec.ts`'s responsibility) and the dialog store's `confirm` to isolate component logic.
-- `src/modules/returns/views/Return.vue` — Renders the single-return detail page (`ReturnTargetPage`), showing what came back, who pays postage, the current status, line items, and — for staff — the open actions. It is cache-first by route id but forces one re-read on arrival when the list-seeded cache row lacks an `actions` array.
-- `src/modules/returns/views/ReturnsList.vue`
+- `src/modules/returns/tests/return-request-form.spec.ts` — Unit test spec for the `ReturnRequestForm.vue` component. It verifies the form's user-facing contract: collapsed-until-opened state, per-line checkbox selection with quantity validation (never above remaining), mandatory reason, optional note trimming, partial-submission payload shape, server-error handling, and state reset on cancel. The store's `openReturn` action is always spied; actual transport is deferred to `store.spec.ts`.
+- `src/modules/returns/tests/return-staff-actions.spec.ts` — Vitest spec for `ReturnStaffActions.vue`. Verifies that the component renders staff action controls (approve, decline, receive) strictly from `Return.actions`, and that each control dispatches the correct payload to the store. Store methods are spied; network/transport concerns are deliberately left to `store.spec.ts`.
+- `src/modules/returns/tests/routes.spec.ts` — Guards the access-control contract of every returns route. A route that silently loses its `meta.access` would keep rendering but become publicly reachable, so this spec pins the expected value (`'auth'`) on each route and asserts no route-level `can` rule is present. It also acts as a closed-world check: any new route added to the module fails this file until the test is updated.
+- `src/modules/returns/tests/store.spec.ts` — Unit tests for the returns Pinia store against a mocked HTTP transport. Verifies what each store action sends (URL, method, body, headers), what it caches, and that a state-mutating call **replaces** the cached record with the server's answer. Request bodies are validated against the OpenAPI contract schemas (`@api/schemas`) so payload drift fails in CI rather than as a 422 in production.
+- `src/modules/returns/tests/withdrawal-panel.spec.ts` — Vitest spec for `WithdrawalPanel.vue`. Verifies the panel's three main responsibilities: rendering the withdrawal button only when the server permits it, requiring a confirmation dialog before calling the store, and reporting outcomes (success, refusal, or error). Also covers the embedded return-request form and the cancellation-of-unshipped flow.
+- `src/modules/returns/views/Return.vue` — Detail page for a single return. Displays the return's items, status, postage responsibility, refund/deduction amounts, and — for staff — the actions still available. Loads by route `id` using the returns store's cache, then forces one fresh read on mount to guarantee the `actions` list is present (list-seeded cache rows carry none).
+- `src/modules/returns/views/ReturnsList.vue` — The paginated returns list page. It renders a filter form (status, reason, page size), a card-per-return listing, and pagination controls. The same component serves both customers (who see only their own returns) and staff (who see all); the scoping decision is made server-side via the shared store query.
 
 ---
 [[boilerplate-vue-frontend_INDEX|← boilerplate-vue-frontend index]]

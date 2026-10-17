@@ -1,7 +1,7 @@
 ---
 source: scripts/contracts/generate-asyncapi-types.ts
-sha256: 8232ec1502fff1fda4436d3808531d7f0389bd01a3ead4c3044be388834df2dc
-generated_at: 2026-10-02T11:27:45.927911+00:00
+sha256: 4e93e323d9f205240e7f9e9ff95c8253c348a3130e9a42e502b2ab1b7fc35609
+generated_at: 2026-10-16T23:57:24.348531+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,33 +9,33 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-CLI script that reads `asyncapi.yaml` and emits a TypeScript file (`contracts/asyncapi.generated.ts`) containing realtime contract types: payload interfaces, message aliases, per-namespace channel constants, SSE event-name/payload maps, and fully inlined JSON Schema maps. The schema maps exist so `create-sse-client.ts` can validate SSE frames at runtime via Zod's `fromJSONSchema`. A `--check` flag enables a no-write, exit-on-mismatch mode for CI gating.
+Generates the frontend's realtime contract types (payload interfaces, channel constants, SSE event-name/payload maps, and inlined JSON Schema maps) from the bundled `asyncapi.yaml`. It exists so the frontend repo has a typed, build-time-checked view of every SSE channel its dashboard consumes, without hand-maintaining those types. This copy is the frontend half of a paired shared script; the backend copy diverges in output (queue-payload Zod validators vs. inlined JSON Schema for `create-sse-client.ts`).
 
 ## Key elements
 
-- **`resolveOutputPath()`** — Reads the required `--out` CLI argument; exits 1 if missing.
-- **`checkOnly`** — Boolean set when `--check` is present; suppresses file writes and exits 1 on mismatch.
-- **`toPascalCase(value)`** — Sanitizes an AsyncAPI name into a PascalCase identifier.
-- **`refToTypeName(reference)`** — Extracts the final segment of a `#/components/...` `$ref` and PascalCases it.
-- **`resolveMessagePayloadType(name, messages)`** — Resolves a message name to its *payload* schema type (not the message alias), returning `'unknown'` if undeclared.
-- **`collectChannelMessageEntries(channels, messages, select)`** — Filters channels by a predicate (data-driven, e.g. `x-transport`) and returns sorted `{channelName, messageType}` pairs.
-- **`inlineReferences(schema, schemas)`** — Recursively replaces every `$ref` with the inlined target schema.
-- **`renderPayloadSchemas(...)`** — Emits `export const <name>: Record<SseEventName, Record<string, unknown>>` with inlined JSON.
-- **`renderLiteralArray(exportName, values)`** — Emits a `readonly` string-array constant.
-- **`renderPayloadMap(interfaceName, entries)`** — Emits a `Record`-style interface mapping channel names to payload types.
-- **`toConstantKey(channelName, prefix)`** — Strips a namespace prefix and converts the remainder to SCREAMING_SNAKE.
-- **`renderChannelNamespace(namespace, channelNames)`** — Emits a per-namespace channel constant object and its union type.
-- **`AsyncApiDocument`, `AsyncApiChannel`, `AsyncApiMessage`, `JsonSchema`** — Local interfaces describing the expected shape of the YAML document.
-- **`@asyncapi/modelina`** (`TypeScriptGenerator`, `typeScriptDefaultModelNameConstraints`) — Used for generating the payload/alias interface blocks.
+- **`resolveOutputPath()`** – Reads the required `--out` CLI argument; exits 1 if missing. Resolves to an absolute path under the repo root.
+- **`checkOnly` flag** – When `--check` is passed, the script compares generated output against the existing file and exits 1 on mismatch without writing.
+- **`toPascalCase` / `refToTypeName`** – Naming helpers that convert AsyncAPI component names into TypeScript identifiers.
+- **`resolveMessagePayloadType(messageName, messages)`** – Resolves a message's `$ref` to the actual payload type name (not the possibly-deduped message alias). Returns `'unknown'` when the message is undeclared.
+- **`collectChannelMessageEntries(channels, messages, select)`** – Filters channels by a predicate (e.g. `x-transport === 'sse'`) and returns sorted `{channelName, messageType}` pairs.
+- **`inlineReferences(schema, schemas)`** – Recursively replaces every `$ref` with its target so the resulting JSON Schema is self-contained for `Zod.fromJSONSchema`.
+- **`renderPayloadSchemas`** – Emits a `Record<SseEventName, Record<string, unknown>>` constant of inlined JSON Schemas per SSE event.
+- **`renderLiteralArray`** – Emits a `readonly` literal string-array export (`as const`).
+- **`renderPayloadMap`** – Emits a typed event-name → payload-type interface.
+- **`toConstantKey`** – Converts a channel name (minus namespace prefix) to a `SCREAMING_SNAKE` key for the namespace constant object.
+- **`AsyncApiChannel` / `AsyncApiMessage` / `JsonSchema` / `AsyncApiDocument`** – Minimal structural interfaces describing the slice of AsyncAPI 3.0 this script reads.
+- **`x-transport`** – Vendor extension read from the channel; value `'sse'` marks a channel as SSE-pushed.
 
 ## Relationships
 
-No graph neighbors are tracked. The script's input is `asyncapi.yaml` (repo root) and its output is consumed by `create-sse-client.ts` (SSE frame validation via the inlined schema map).
+No graph neighbors are recorded. The script is a leaf in the dependency graph: it reads `asyncapi.yaml` and writes to a path supplied via `--out` (caller in this repo: `contracts/asyncapi.generated.ts`). The generated file is consumed by `create-sse-client.ts` (runtime SSE-frame validation via `Zod.fromJSONSchema`) and by other frontend modules that import the typed channel constants. The backend repo maintains a byte-diverged copy of this script that emits queue-payload Zod validators instead.
 
 ## Notes
 
-- **Shared with a backend repo.** The two copies diverged: this copy emits the inlined-JSON-Schema map; the backend copy emits queue-payload Zod validators instead. Any fix to the channel/message-naming machinery must be applied to **both** copies by hand until the generator is extracted into a shared package.
-- **Different input scope.** This repo generates from the *public subset* of the contract; the backend uses the full document. Only the backend output carries queue payloads.
-- **`x-transport` over name prefix.** SSE channels are identified by the `x-transport: sse` vendor extension on the channel, not by an `observability.` name prefix. A channel outside that namespace could share the prefix without being SSE.
-- **Loose typing on `renderPayloadSchemas`.** The return is typed `Record<string, unknown>` rather than `as const` to avoid `readonly` array types that JSON Schema consumers reject.
-- **`Object.hasOwn` guards.** Used deliberately (instead of nullish checks) to satisfy `no-unnecessary-condition` lint, because `Record<string, T>` makes index access look always-present to TypeScript even when a key may be absent at runtime.
+- **Paired-script drift is manual.** A fix to the channel/message-naming machinery must be mirrored in the backend copy by hand until the generator ships as a shared package.
+- **SSE detection is data-driven, not name-based.** Channels are selected by `x-transport: 'sse'`, not by a name prefix. Renaming a channel does not change which map it lands in.
+- **`Record<string, AsyncApiMessage>` is a lie.** Index access is typed as always-present, but callers pass names derived from `$ref` that may not exist in `components.messages`. The guard uses `Object.hasOwn` specifically to satisfy `no-unnecessary-condition`.
+- **`--out` is required** (no default), unlike the backend copy which hardcodes a path.
+- **ESM script.** Uses `import.meta.url` for `ROOT` resolution; runs via `tsx`.
+- **`renderPayloadSchemas` types the map loosely** (`Record<string, unknown>`) because `as const` would make arrays `readonly`, which JSON Schema consumers reject.
+- **`--check` is the CI gate** that prevents shipping types for a contract the repo no longer bundles.

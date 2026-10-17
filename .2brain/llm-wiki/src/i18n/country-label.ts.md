@@ -1,7 +1,7 @@
 ---
 source: src/i18n/country-label.ts
-sha256: a6bb1ef068bca8a4e9576a9cb6e8bdf546bf09e83e790a30193e06f21fd0ac86
-generated_at: 2026-10-02T11:52:50.241993+00:00
+sha256: a0fc0fd2b9d9dc7fb956cabd1bcff9f32a4114557ec532563dfe0ed36c786264
+generated_at: 2026-10-17T00:07:59.649985+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,20 +9,21 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Provides a single utility that turns an ISO 3166-1 alpha-2 country code into a human-readable name localized to the viewer's current language. It exists so the country `<select>` in `AddressFormDialog.vue` can display names in the viewer's language without pulling in a dedicated i18n dependency.
+Provides a localized display name for an ISO 3166-1 alpha-2 country code, rendered in the viewer's current language. It uses the browser's built-in `Intl.DisplayNames` API so the project can avoid a third-party dependency (`i18n-iso-countries`, which was rejected for not meeting the repo's 12-month maintenance-window requirement).
 
 ## Key elements
 
-- **`countryLabel(code: string, viewingLocale: string): string`** – The sole export. Resolves `code` (e.g. `"IT"`) to a localized region name via `Intl.DisplayNames` scoped to `viewingLocale`. Returns the bare code unchanged if resolution is impossible (malformed BCP-47 tag, unsupported engine, or missing data).
+- **`countryLabel(code: string, viewingLocale: string): string`** (the sole export) — Returns the country's localized name (e.g. `"Italy"` for `IT` in English). Falls back to the bare code string if `Intl.DisplayNames` cannot resolve it (malformed tag, missing CLDR data, or an engine without support).
 
 ## Relationships
 
-- Consumed by `AddressFormDialog.vue` to populate the country picker options (E12).
-- Mirrors the pattern in `language-label.ts` (`languageLabel`) for language select options.
-- No import/export graph neighbors in this repository.
+No formal dependency-graph neighbors. The doc comment references two related files:
+
+- **`language-label.ts`** — the analogous `languageLabel` function for language codes; `countryLabel` mirrors its pattern (same try/catch reasoning, same fallback strategy).
+- **`AddressFormDialog.vue`** — the UI consumer; calls `countryLabel` to populate the country `<select>` options.
 
 ## Notes
 
-- The `try`/`catch` is deliberate: `Intl.DisplayNames` has no non-throwing "can I resolve this?" API, so a malformed locale tag or a missing ICU data bundle will throw. The `eslint-disable` comment documents this; do not remove it.
-- `i18n-iso-countries` was explicitly rejected (see `DECISIONS_0925_2_SHOP_SCOPE.md`, E12) for not meeting the 12-month maintenance window—do not reintroduce it.
-- The function is pure and synchronous; it relies entirely on the runtime's built-in `Intl` data. If a target engine lacks full ICU data, the caller will silently receive the raw ISO code as the label.
+- The `try/catch` around `new Intl.DisplayNames(...)` is intentional and carries an `eslint-disable no-restricted-syntax` comment: `Intl.DisplayNames` has **no non-throwing pre-check** for malformed BCP-47 tags or unsupported engines, so catching is the only safe option.
+- The `?? code` inside the `try` block guards against `.of(code)` returning `undefined` (e.g. an unrecognized region code that the engine simply doesn't know).
+- `type: 'region'` is hardcoded; this function is not general-purpose for other `Intl.DisplayNames` types (language, script, etc.).

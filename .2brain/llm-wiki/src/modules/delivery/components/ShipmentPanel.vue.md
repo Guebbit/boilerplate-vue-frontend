@@ -1,7 +1,7 @@
 ---
 source: src/modules/delivery/components/ShipmentPanel.vue
-sha256: ff75ad39aec48e2222e7b48a70527161575dfd5e3c2055fad00f78fa2cb9812c
-generated_at: 2026-10-02T15:04:50.807783+00:00
+sha256: 51ea47c107a3f341b785780175a1548b9700daad25c21e045a8a895a2b16953f
+generated_at: 2026-10-17T00:47:01.413213+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vue 3 single-file component that renders the shipping corner of an order page. It displays one of five states (not started, digital awaiting fulfilment, not yet shippable, ready to ship, in transit/arrived) and exposes the write controls (start, fulfill, ship, deliver) for that single order. Every gate is read from the order's own `actions` props supplied by the parent — the component never re-derives permission or status locally.
+Renders the shipping section of the order detail page: lists the order's fulfillment orders (each delegated to `FulfillmentOrderCard`), shows a "arrives in N shipments" summary, and exposes the single order-level "Start fulfilment" action. All per-record actions (ship, arrive, override) live on the cards themselves; this panel never derives lifecycle rules.
 
 ## Key elements
 
-- **`defineProps`** — `orderId`, `shippingMethodId`, `canStart`, `canFulfill`, `canShip`, `canDeliver`, `override`. All boolean/array flags come straight from the server-rendered `actions` on the order object; the component trusts them verbatim.
-- **`emit('moved')`** — fired after any successful state transition so the parent (typically `Order.vue`) can re-fetch the order.
-- **`shipment` (computed)** — guards the shared store ref: only renders `rawShipment` when its `orderId` matches the current prop, discarding a stale response for a previously visited order (FA24).
-- **`trackingRequired` (computed)** — looks up `shippingMethodId` in the store's `methods` list and reads `tracked`; defaults to `false` when methods are unloaded or the order carries no method.
-- **`canOverrideShip` / `canOverrideDeliver` (computed)** — check whether the `override` array (server-provided `actions.override`) contains `shipped` / `delivered`, enabling the force controls.
-- **`markStarted`, `markFulfilled`, `markShipped`, `markDelivered`** — one function per transition. Each clears the local error, calls the corresponding store action, resets local form state (`trackingCode`, `force`, `forceReason`), pushes a toast, and emits `'moved'`.
-- **`useBlockingError`** — a single shared instance for both ship and deliver (they are never offered simultaneously). Surfaces 422/409/step-up failures inline via `InlineErrorAlert` rather than a toast.
-- **`watch(orderId, …, { immediate: true })`** — refetches the shipment on mount and on navigation to a different order without remount.
-- **`deliveryStore.fetchMethods()`** — called once at setup; the methods list is order-independent.
+- **Named component block (`export default { name: 'ShipmentPanel' }`)** — provides a stable name for devtools and `<KeepAlive>`, since `<script setup>` cannot declare one.
+- **Props** — `orderId` (required), `shippingMethodId` (lookup key for tracking-code requirement), `canStart` (order's own `actions.start` flag), `override` (allowed target statuses for forced ship/arrival).
+- **`fulfillmentOrders` / `shipments` (computed)** — filter the shared store lists by `orderId` to guard against stale data from a previous order's in-flight response.
+- **`arrivesInCount` (computed)** — calls `shipmentCount` from the domain layer; returns 0 unless the count is ≥ 2 (so the summary line hides for 0 or 1 shipments).
+- **`trackingRequired` (computed)** — resolves the order's frozen shipping method against the methods list; defaults to `false` when methods are still loading.
+- **`markStarted()`** — calls `deliveryStore.start()`, then re-fetches fulfillment, fires a toast, emits `moved`; on failure routes the error into `useBlockingError` for an in-place alert.
+- **`watch(orderId, …, { immediate: true })`** — fetches fulfillment on mount and on every `orderId` change (the component is reused across orders without a remount).
+- **`useBlockingError()`** — provides `panelError` / `reportPanelError` / `clearPanelError` for the inline `InlineErrorAlert`.
 
 ## Relationships
 
-- **`src/modules/delivery/store.ts`** — imported as `useDeliveryStore`; provides the shared `shipment` ref, `methods` list, `loading` flag, and the four write actions (`start`, `fulfill`, `ship`, `deliver`). This component is the primary consumer of that store.
+- **`../store.ts` (`useDeliveryStore`)** — primary data source. Reads `fulfillmentOrders`, `shipments`, `methods`, `loading` via `storeToRefs`; calls `start()`, `fetchFulfillmentForOrder()`, `fetchMethods()`.
+- **`./FulfillmentOrderCard.vue`** — rendered per fulfillment order; receives the record, its shipments, `trackingRequired`, `override`, and re-emits `moved`.
+- **`../domain/ship-lines.ts`** — imports `shipmentCount` for the summary count.
+- **`../index.ts`** — module barrel that re-exports this component to consumers outside the delivery module.
+- **`../tests/shipment-panel.spec.ts`** — unit/integration tests for this component.
 
 ## Notes
 
-- The component is **not** remounted when navigating between orders on the same route (see `Order.vue`'s `watchOrder`). The `shipment` computed guard and the `immediate` watch are the two mechanisms that prevent cross-order data bleed (FA24).
-- `loading` is a **single shared flag** for both ship and deliver. This is safe because the template never offers both buttons at the same time.
-- The tracking-code field is the **only** control that does not gate on `actions`; it reads `tracked` live from the methods list (a published fact, not a lifecycle rule).
-- `force` + `forceReason` are cleared on every successful submit. The deliver button is disabled while `force` is checked and `forceReason` is empty.
-- The `override` array is the single source of truth for which forced destinations are available; the server already excludes `cancelled` and any status the order has passed.
+- The store's lists are **shared across all open orders**. Because `Order.vue` reuses this component via a route-param watch (no remount), every computed that reads a store list must filter by the current `orderId`; a slow response for a previous order will otherwise render as the current one.
+- `fetchMethods()` is called unconditionally at setup because the methods list is order-independent and only needs to load once per session.
+- The dual `<script>` + `<script setup>` block is intentional and required by Vue to attach a component name; it is not a code smell.
+- `arrivesInCount` intentionally hides the line for a single shipment (returns 0), so the template's `v-if="arrivesInCount"` acts as both a truthiness and a "≥ 2" gate.

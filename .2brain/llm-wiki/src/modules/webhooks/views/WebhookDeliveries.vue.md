@@ -1,7 +1,7 @@
 ---
 source: src/modules/webhooks/views/WebhookDeliveries.vue
-sha256: e9be6c4aa683c5e37face4b5e5d4e8e688d9d0863dd4a2425622fc0f01aaa84f
-generated_at: 2026-10-02T15:58:18.061925+00:00
+sha256: c9af92401bbb399a497a6a76469f8b93018b0d2fca493bfa0ac174f4b7b64454
+generated_at: 2026-10-17T01:53:12.488061+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Route-level page component that renders the webhook delivery log. It binds the webhooks store's paginated search to the `WebhookDeliveriesFilters` child component, mirrors the active filter state (subscription, status, page) into the URL query string so filtered views are bookmarkable and shareable with support, and exposes a per-row "replay delivery" action.
+Route-level page component for the webhook delivery log. It wires the webhooks store's paginated search to the `WebhookDeliveriesFilters` child component and keeps the active filter state in the URL query string, making filtered views (e.g. "failed deliveries for subscription X") bookmarkable and shareable. It exists as a dedicated route rather than a tab so those deep links are stable (see `docs/modules/webhooks.md`).
 
 ## Key elements
 
-- **`handleSearch(filters)`** — Entry point called by the filter bar on every search. Writes the new filters and page into the store, syncs them to the query string via `syncToQuery`, and delegates to the store's `search` action.
-- **`handleReplay(id)`** — Triggers a single-delivery replay through the store, tracks in-flight ids in the local `replayingIds` set for per-row spinner UI, and reports success/failure as toasts.
-- **`useQuerySyncedFilters` (composable call)** — Parses the initial filter state (subscriptionId, status, page) from the URL query on load and provides `syncToQuery` to write changes back. Normalises types (casts status, clamps page ≥ 1).
-- **`watchDeliveriesSearch({ onError })`** — Store action wrapped with an error handler that dispatches toast messages via `notifyErrorMessages`.
-- **`onMounted → fetchAllSubscriptions()`** — Populates the store's subscription list so the filter bar's dropdown has options before the first search.
-- **`replayingIds` (reactive `Set<string>`)** — Tracks which delivery rows currently have a replay in flight, letting the child show a spinner on one row without freezing the table.
-- **Initial load block (end of `<script setup>`)** — Seeds store filter/page refs from the parsed URL query and fires the first `search()` call synchronously after mount.
+- **Named block (`<script>`)** — Declares `name: 'WebhookDeliveriesPage'` for devtools and `<KeepAlive>`; required because `<script setup>` cannot set a component name.
+- **`useQuerySyncedFilters`** — A composable that parses `subscriptionId`, `status`, and `page` from the URL on mount (`initialFilters`) and writes them back via `syncToQuery` after each search, keeping the route shareable.
+- **`watchDeliveriesSearch` (store action)** — Returns a `search()` function bound to the store's reactive filter/pagination state; failures are surfaced through `notifyErrorMessages`.
+- **`handleSearch(filters)`** — Entry point from the filter bar: writes filters and page into the store, syncs the URL, then triggers the search.
+- **`handleReplay(id)`** — Calls the store's `replayDelivery`, tracks in-flight ids in a local `replayingIds` Set (so only the affected row shows a spinner), and toasts the outcome.
+- **`fetchAllSubscriptions`** — Called once on mount to populate the subscription dropdown data in the store.
+- **Template** — Renders a single `<WebhookDeliveriesFilters>` child, passing deliveries, totals, pagination, subscriptions, replaying-ids, initial filters, and forwarding `@search` / `@replay` events.
 
 ## Relationships
 
-No direct import or runtime interaction with `src/infrastructure/utils/logger.ts` or `src/modules/payments/components/OrderReferenceSearch.vue` is present in this file's source. The error-reporting path uses `@/infrastructure/utils/errors.ts` (`notifyErrorMessages`) rather than the logger directly.
+- **`../store.ts` (useWebhooksStore)** — Primary data source. The page destructures reactive state (`subscriptionsList`, `deliveryFilters`, `deliveryPageCurrent`, `deliveryPageItemList`, `deliveriesPageTotal`, `deliveriesTotalItems`, `loadingDeliveries`) and actions (`fetchAllSubscriptions`, `watchDeliveriesSearch`, `replayDelivery`) from this Pinia store.
+- **`../components/WebhookDeliveriesFilters.vue`** — The sole child in the template. Receives all display data and emits `search` / `replay` events that the page handles.
+- **`../types.ts`** — Provides the `WebhookDeliveryFilters` type used to type the filter objects passed between the page, the store, and the child component.
 
 ## Notes
 
-- This is deliberately a **standalone route**, not a tab within the webhooks module, so that a filtered delivery view (e.g. "failed deliveries for subscription X") can be bookmarked or sent to support. Rationale is documented in `docs/modules/webhooks.md`.
-- `replayingIds` exists because the store's blanket `loadingDeliveries` flag would freeze the entire table during a single-row replay; the local set gives row-level granularity.
-- The `page` query param is omitted when it equals 1 (the default) to keep URLs clean.
-- `initialFilters` is read **once** from the URL at component creation; subsequent navigation updates go through `syncToQuery`, not by re-reading the query.
+- The page itself renders no table or list markup — all UI lives in `WebhookDeliveriesFilters`. This file is purely orchestration (store binding, URL sync, event handling).
+- `replayingIds` is local to the page, not the store, deliberately: the store's `loadingDeliveries` is a blanket flag that would freeze the whole table, whereas the Set lets only the replaying row show a spinner.
+- Initial load is synchronous at the end of `<script setup>`: it seeds `deliveryFilters` and `deliveryPageCurrent` from the URL, then calls `search()` without `await`. If a deep-link lands here, the first render will show loading state until that promise resolves.
+- `WebhookDeliveryStatus` is imported from `@types` (a project-level type alias), not from `../types.ts`.

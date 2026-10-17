@@ -1,7 +1,7 @@
 ---
 source: contracts/permission-actions.ts
-sha256: e0f9eb85c144b0cb37a1f45d3add915e3683715debaf8b4afa09750ddae8f181
-generated_at: 2026-10-02T11:18:49.537648+00:00
+sha256: 0ebfcaa58753c39aa62a858141a7aa177410b42fce2cfcf2a375ff87a509ea95
+generated_at: 2026-10-16T23:54:22.456472+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,19 +9,19 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Auto-generated TypeScript module that exports the canonical set of permission action strings and a corresponding union type. It is derived from the shared `authorization-keys.yaml` (`actions:` block) so that every consumer shares a single source of truth for valid actions.
+Generated contract file that defines the closed set of valid permission actions in the system. It exists as a single source of truth for TypeScript consumers (frontend, backend, tests) so that every action string used in permission checks is type-checked against the same list. Regenerate it rather than editing by hand.
 
 ## Key elements
 
-- **`PERMISSION_ACTIONS`** – A `readonly` tuple (`as const`) of the nine permitted action strings: `read`, `create`, `update`, `delete`, `checkout`, `sweep`, `override`, `start`, `receive`.
-- **`PermissionAction`** – A union type of the individual literal strings, derived from the tuple via `(typeof PERMISSION_ACTIONS)[number]`. Use this type wherever a single action value is expected.
+- **`PERMISSION_ACTIONS`** — A readonly `as const` array of 14 string literals: `read`, `create`, `update`, `delete`, `checkout`, `sweep`, `override`, `start`, `receive`, `ban`, `export`, `assign`, `display`, `admin`.
+- **`PermissionAction`** — Union type derived from the array via `(typeof PERMISSION_ACTIONS)[number]`. Use this type to annotate any parameter, return, or field that represents a single action.
 
 ## Relationships
 
-No graph neighbors are recorded for this file.
+None recorded in the dependency graph. This file is a leaf: it imports nothing and is intended to be imported by permission-related modules, API handlers, and frontend UI components.
 
 ## Notes
 
-- **Generated file** – Regenerate with `npm run gen:api`; do not edit by hand. The source of truth is `shared/authorization-keys.yaml`.
-- The array uses `as const`, so `PERMISSION_ACTIONS` is a literal readonly tuple rather than a mutable `string[]`. This is what allows `PermissionAction` to be a precise string-literal union instead of `string`.
-- New actions must be added in the YAML source and regenerated; adding them here directly will be overwritten.
+- **Do not edit manually.** The file header states it is produced by `npm run gen:api` from `shared/authorization-keys.yaml` (`actions:` key). If a new action is needed, add it to the YAML source and re-run the generator.
+- The `as const` + index-access pattern means the order in the array is meaningful for exhaustiveness checks but the union itself is order-independent.
+- The set mixes generic CRUD verbs with domain-specific verbs (e.g. `checkout`, `sweep`, `ban`). There is no hierarchical or grouping structure—treat it as a flat enumeration.

@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/http/envelope.ts
-sha256: 8aa88b0cbcd265ad2d92b95acfdb9c8a89a29f09d32e30c432586ec5bf820bcd
-generated_at: 2026-10-02T11:55:20.342349+00:00
+sha256: b88deb173f33e983d0b3a4645e25088c8a0ebdc470ebb5f534d5d645fe0f4cae
+generated_at: 2026-10-17T00:09:14.433035+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Type-guard readers for the two response envelopes the API uses: the `{ data }` success wrapper and the `{ errors: [...] }` rejection list. Everything is narrowed from `unknown` at the boundary — no declared type is trusted past the wire. Lives at the transport layer (not in a store) because the envelope shape is a property of the HTTP API, not of any particular domain.
+Type-guard readers for the two response envelopes the API uses: the `{ data }` success wrapper and the `{ errors: [...] }` rejection list. Every function starts from `unknown` and narrows structurally, so no declared type is trusted past the wire. It lives in the transport layer (not a store) because the envelope shape is a property of the HTTP boundary, shared by all endpoints.
 
 ## Key elements
 
-- **`ApiErrorItem`** (exported interface) — one entry in the rejection `errors` array; `code` and `details` are both `unknown` by design.
-- **`isObjectRecord`** (private) — narrows `unknown` to `Record<string, unknown>`; used as the first step of every guard below.
-- **`isWrappedResponse<T>`** (private) — type predicate that a value is a `{ data?: T }` object.
-- **`getTokenFromResponse`** (exported) — pulls `data.token` from a login/refresh response; returns `undefined` if absent.
-- **`getPayloadFromResponse<T>`** (exported) — unwraps both `{ data: T }` and bare `T` shapes into a single `T | undefined`.
-- **`getFirstApiError`** (exported) — safely reads `errors[0]` from a rejection value; returns `undefined` when the shape doesn't match (including empty arrays).
-- **`getRetryAfter`** (exported) — given a rejection value and a stable `ErrorCode`, returns `details.retryAfter` as a number, or `undefined` if the code doesn't match or the field is missing.
+- **`ApiErrorItem`** – Interface describing one entry in the rejection `errors` array. Both `code` and `details` are typed `unknown`; the caller is responsible for narrowing.
+- **`isObjectRecord(value)`** – Type guard: `true` when `value` is a non-null plain object. Used as the first narrowing step by every reader.
+- **`isWrappedResponse<T>(response)`** *(internal)* – Type guard: `true` when the value is an object carrying a `data` key. Not exported.
+- **`getTokenFromResponse(response?)`** – Extracts `data.token` (string) from a login/refresh response, or returns `undefined`.
+- **`getPayloadFromResponse<T>(response?)`** – Unwraps `{ data }` envelopes; also passes through a direct (unwrapped) payload. Returns `T | undefined`.
+- **`getFirstApiError(value)`** – Reads `errors[0]` off a rejection body. Returns an `ApiErrorItem` or `undefined`. Handles the case where the array is empty or the item is not an object.
+- **`getRetryAfter(value, code)`** – Given a rejection and a stable `ErrorCode` (e.g. `EMAIL_VERIFY_RESEND_TOO_SOON`), returns the server-supplied `details.retryAfter` seconds, or `undefined`.
 
 ## Relationships
 
-- **`src/infrastructure/http/antibot.ts`** — consumes `getFirstApiError` / `getRetryAfter` to detect rate-limit or cooldown refusals and drive countdown UI.
-- **`src/infrastructure/http/step-up.ts`** — consumes `getFirstApiError` to inspect rejection envelopes (e.g. `REAUTH_REQUIRED`) and decide whether to trigger a step-up flow.
+- **`src/infrastructure/http/antibot.ts`** – Same transport layer; expected consumer of `getRetryAfter` and `getFirstApiError` to surface rate-limit / cooldown responses.
+- **`src/infrastructure/http/step-up.ts`** – Same transport layer; expected consumer of the envelope readers to detect reauth/step-up rejections and extract payloads.
+- **`@api/error-codes`** (type-only import) – Provides the `ErrorCode` union used by `getRetryAfter` to match against `ApiErrorItem.code`.
 
 ## Notes
 
-- `ApiErrorItem.code` and `.details` are deliberately `unknown`, not `string` / `object`. Generated types assert the shape but never verify it; callers must re-narrow before use.
-- `getFirstApiError` handles the case where `errors` is an empty array (legal at the type level) — it returns `undefined` rather than throwing.
-- `getPayloadFromResponse` accepts both wrapped and direct payloads so callers don't need to branch on whether the endpoint uses the envelope.
-- The `eslint-disable` on `isWrappedResponse` is intentional: the generic parameter exists solely to name the caller's payload type in the narrowing predicate.
+- All public readers accept `unknown` (or `undefined`) as input and return `undefined` on any shape mismatch — callers must handle the absent-value case.
+- `isWrappedResponse` is intentionally **not** exported; consumers should go through the named helpers (`getPayloadFromResponse`, `getTokenFromResponse`) rather than re-implementing the check.
+- An empty `errors` array is valid at the type level, so `getFirstApiError` can legitimately return `undefined` even for a well-formed rejection body.
+- The file carries an explicit `// eslint-disable-next-line` on `isWrappedResponse` for the `no-unnecessary-type-parameters` rule — the type parameter exists to name the caller's payload in the predicate; don't remove it without replacing the narrowing.

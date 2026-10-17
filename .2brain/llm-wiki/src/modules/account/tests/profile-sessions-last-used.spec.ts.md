@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/profile-sessions-last-used.spec.ts
-sha256: 45b9933d73c015930a461072e5b9e1cbfad768d97be9bf7cb03008a720281796
-generated_at: 2026-10-02T12:29:50.727796+00:00
+sha256: 36ec095df692bd85683f1a62a3f97bd0432a99809dae908e8d437aa8212a06ea
+generated_at: 2026-10-17T00:25:56.881139+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Regression test ensuring the `ProfileSessions` component renders the `lastUsedAt` timestamp on each session row. It exists because the sessions panel previously omitted this field even though the API provided it, leaving users unable to tell which device was most recently active when deciding which to revoke.
+Render-focused unit tests for `ProfileSessions.vue` that verify the sessions panel correctly displays each session's last-used timestamp, sign-in start time, and (for `cookie`-mode sessions) the coarse device label. The file exists to guard the "pick the device to revoke" UX described in the component's header comment.
 
 ## Key elements
 
-- **`SESSION`** — A single fixture object (type `Session`) with `lastUsedAt` set, used as the sole entry in the mocked store.
-- **`vi.mock('@/modules/account/stores/sessions.ts', …)`** — Replaces the Pinia store with a plain object exposing `sessions: [SESSION]`, `fetchSessions`, and `revokeSession` (all no-ops).
-- **`vi.mock('pinia', …)`** — Patches `storeToRefs` to an identity function so the plain-object mock doesn't break destructuring inside the component.
-- **`vi.mock('@/modules/account/stores/auth.ts', …)`** — Stubs `useAuthStore` to provide a `logoutEverywhere` no-op.
-- **`describe('the sessions list')` / `it("renders each session's last-used time")`** — Mounts `ProfileSessions` with Pinia, a memory router, Vuetify, and i18n, then asserts the `.session-last-used` element's text contains "Last used".
+- **`SESSION`** — fixture for a non-current session (no `device` field).
+- **`SESSION_WITH_DEVICE`** — fixture for a `cookie`-mode session carrying `device: 'Firefox on Linux'`.
+- **`vi.mock('../stores/sessions.ts')`** — replaces the Pinia store with a plain object exposing the two fixtures plus no-op `fetchSessions`/`revokeSession`.
+- **`vi.mock('pinia')`** — patches `storeToRefs` to an identity pass-through (see Notes).
+- **`vi.mock('../stores/auth.ts')`** — stubs `logoutEverywhere` as a no-op.
+- **`router`** — memory-history router with an empty route table; only needed so `ProfileSessions` can mount without a real navigation target.
+- **`describe('the sessions list')`** — three assertions:
+  - `.session-last-used` text contains "Last used".
+  - `[data-test="session-started"]` text contains "Signed in".
+  - `[data-test="session-device"]` renders exactly one entry ("Firefox on Linux") for the device-carrying session.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — Imported as `wireModulesIntoCore` and invoked at module scope (before any `describe`/`it`) to register shared module aliases so the component under test resolves its imports correctly in the Vitest environment.
+- **`src/modules/account/components/ProfileSessions.vue`** — the component under test; mounted via `@vue/test-utils` with Pinia, a memory router, Vuetify, and the app i18n instance.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module scope to register test-support module shims before any test runs.
 
 ## Notes
 
-- The Pinia `storeToRefs` mock is an intentional identity pass-through: the mocked sessions store is a plain object, not a real Pinia store, so `storeToRefs` would otherwise return an empty refs object. The comment in the source calls this out explicitly.
-- The test is a read-only render assertion only — it does not exercise revocation, filtering, or reactive updates to `sessions`.
-- `loadLocale('en')` must be awaited before mounting; the i18n plugin resolves translations lazily, and the assertion depends on the English "Last used" string being available.
+- The `pinia` mock exists because the sessions store is replaced with a plain object; `storeToRefs` expects a real Pinia store and would throw otherwise. The identity shim is sufficient because the component only reads (never writes) through refs.
+- Each test calls `await loadLocale('en')` before mounting — the i18n plugin is not pre-loaded globally in this harness.
+- The tests are strictly read-only render assertions; no interactions (clicks, revokes) are exercised here.

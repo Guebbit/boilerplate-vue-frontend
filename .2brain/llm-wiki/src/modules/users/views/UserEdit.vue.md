@@ -1,34 +1,42 @@
 ---
 source: src/modules/users/views/UserEdit.vue
-sha256: 9d35215f343a3cc75635a2e75a639d65e79565ecd460e9da16913769e8a29663
-generated_at: 2026-10-02T15:53:20.735354+00:00
+sha256: 20c95e6056a329494016845ceeed77e3c77738efc5ed5022abacf764887c805a
+generated_at: 2026-10-17T01:49:56.368362+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/users/views/UserEdit.vue
 
 ## Purpose
-Admin-facing page for editing a single user record (email, username, password, role, active status, locale, phone, website, avatar). Built on the shared `useStructureFormValidation` composable, it diffs the form against the loaded record so the `PATCH` only carries changed fields, and gates role/active changes behind a `UserAccessDialog` confirmation step.
+
+Admin-facing page for editing a single user's profile (username, role, active status, locale, phone, website, avatar). It deliberately omits email and password fields—credentials are owner-only. Role and active-status changes require an explicit `UserAccessDialog` confirmation step before any `PATCH` is dispatched, and the request body only includes those fields when they actually differ from the loaded record.
 
 ## Key elements
-- **`UserEditForm`** (interface) — the form data model: `email`, `username`, `password`, `role`, `active`, `locale`, `phone`, `website`, `imageUpload`.
-- **`editSchema`** (Zod) — validation schema built by picking `email`/`username`/`phone`/`website` from the shared `usersSchema` and extending with `password` (preprocessed: `''` → `undefined`), `role`, `active`, `locale`, and `imageUpload`. Built once; i18n messages are thunks resolved at parse time.
-- **`useStructureFormValidation`** call — provides `form`, `formErrors`, `isSubmitting`, `handleSubmit`, `activateAutoHydrate`, `applyServerErrors`, and re-validates on locale change.
-- **`activateAutoHydrate`** — populates the form from `currentUser` once the record resolves. `role` defaults to `''`, `active` to `true`, and `password` to `''` so change-detection comparisons have a concrete baseline.
-- **`useUserAccessDialog`** — supplies `requestAccessConfirmation` (promise-returning) used in `submitForm` to gate role/active changes. Always called with `skipPicker: true` since values are already chosen in the form.
-- **`useStaleRecord`** — handles 412 responses; `reloadLatest` re-fetches the user with `{ forced: true }` to refresh the `ETag`.
-- **`useBlockingError`** — renders a persistent inline error next to the save button on API failure (as opposed to a transient toast).
-- **`submitForm`** — validates, optionally confirms via the access dialog, diffs form against the loaded record via `toRequestBody('UpdateUserByIdBody', …)`, sends `updateUser(id, { …body, imageUpload }, { requestOptions })` (multipart only when an avatar file is present), clears the local `File` on success, and toasts.
-- **`useAxiosUploadProgress`** — tracks avatar upload progress, surfaced through `FormImageUpload`.
-- **Hero / chips** — `heroTitle`, `heroDescription`, `userRole`, `userStatus` computed properties drive the page header and status chips.
-- **`localeOptions`** — maps `supportedLanguages` to `{ value, title }` for the locale `<select>`.
+
+- **`UserEditPage`** (named export) — stable component name for devtools and `<KeepAlive>`; required alongside `<script setup>` which cannot declare one.
+- **`UserEditForm`** (interface) — the editable data model: `username`, `role`, `active`, `locale`, `phone`, `website`, `imageUpload`.
+- **`editSchema`** (zod) — validation rules; reuses `usersSchema` fields for `username`/`phone`/`website` to stay in sync with the create form, adds optional `role`/`active`/`locale`, and an `imageUploadSchema` for the optional avatar file.
+- **`useStructureFormValidation`** — toolkit composable providing form state, validation, `handleSubmit`, `activateAutoHydrate`, and `applyServerErrors`.
+- **`activateAutoHydrate`** — maps `currentUser` from the store into the form; `role` and `active` default to `''`/`true` so change-detection compares against a concrete baseline.
+- **`rowActions`** (computed) — the server-issued `actions` array for this account; gates which controls are enabled (`update`, `ban`, etc.).
+- **`canEditRole`** (computed) — role select is shown only when `rowActions` includes `update`, the target is not the signed-in admin, and at least one grantable role exists.
+- **`submitForm`** — validates, then (if role or active changed) awaits `requestAccessConfirmation` from `UserAccessDialog`; on cancel the form is left untouched. The `PATCH` body includes `role`/`active` **only** when they differ, because the backend's `assertCanGrant` fires on any PATCH that names a role.
+- **`useBlockingError` / `useStaleRecord`** — in-place error display for failed saves and 412 (stale) responses; the latter re-fetches the record with `forced: true` and re-hydrates the form.
+- **`useAxiosUploadProgress`** — drives the progress indicator in `FormImageUpload` during multipart avatar saves.
 
 ## Relationships
-The three listed graph neighbors do not appear as direct imports or references in the visible portion of this file. The file's confirmed upstream dependencies are `@/modules/users/store` (`useUsersStore`), `@/modules/users/composables/use-user-access-dialog.ts`, `@/modules/users/schemas.ts`, `@/modules/users/domain`, `@/infrastructure/utils/forms.ts` (`toRequestBody`), `@/infrastructure/utils/use-stale-record.ts`, `@/infrastructure/utils/use-blocking-error.ts`, `@/infrastructure/utils/uploads.ts` (`imageUploadSchema`), and several `@/ui` and `@/i18n` modules.
+
+- **`useUsersStore`** (`store.ts`) — source of `currentUser`, `loading`, `watchUser`, `updateUser`, `fetchUser`; the form auto-hydrates from `currentUser` and saves via `updateUser`.
+- **`usersSchema`** (`schemas.ts`) — the shared zod schema; `editSchema` picks `username`, `phone`, `website` from it to avoid rule drift with the create form.
+- **`useRoleOptions`** (`use-role-options.ts`) — provides `grantableRoles()` and `roleOptions` for the role `<select>`.
+- **`useUserAccessDialog`** (`use-user-access-dialog.ts`) — supplies the `request`/`confirm`/`cancel` lifecycle for the role/active confirmation step; this page always passes `skipPicker: true`.
+- **`UserAccessDialog`** (`UserAccessDialog.vue`) — rendered as a dialog component; opened when `submitForm` detects a role or active change and the user confirms or cancels.
+- **`user-edit-view.spec.ts`** (tests) — unit/integration tests exercising this component's validation, submission, and access-dialog flow.
 
 ## Notes
-- **Empty ≠ send.** An empty `password` or `imageUpload` field means "leave unchanged"; the diff in `toRequestBody` omits them. Sending an unchanged `role` in the `PATCH` body would trigger the backend's `assertCanGrant` check and could reject a non-admin editor, so `submitForm` only includes `role`/`active` when they actually differ from the loaded record.
-- **Role is data, not an enum in the UI.** The role chip displays the raw string (`formatText`), not a translated "admin"/"user" pair, because deployments can add custom roles.
-- **Avatar file is cleared after save.** After a successful upload, `form.value.imageUpload` is set to `undefined` to prevent re-uploading the same bytes on a subsequent save.
-- **412 handling.** A stale-save (412) is surfaced through `useStaleRecord` → `useBlockingError`'s inline alert, with a "Reload latest" action that bypasses the store cache (`fetchUser(id, { forced: true })`).
-- **Component name** is `UserEditPage` (set in the options `<script>` block), not derived from the filename.
+
+- The `role` and `active` fields must never be included in the PATCH body when unchanged; doing so triggers the backend's grant check (`assertCanGrant`) and will reject editors who lack admin-grant keys.
+- An empty `imageUpload` field means "keep the existing avatar"; a non-empty value triggers a multipart upload.
+- The admin cannot change their own role—the select is hidden and the server would refuse it anyway.
+- `activateAutoHydrate` intentionally uses `?? ''` and `?? true` (not `?? undefined`) so that the change-detection comparisons in `submitForm` have a concrete baseline and don't always read as "unchanged".
+- The validation schema is built once at module level; its error messages are thunks resolved at parse time, so it tracks the active i18n locale without needing to be rebuilt.

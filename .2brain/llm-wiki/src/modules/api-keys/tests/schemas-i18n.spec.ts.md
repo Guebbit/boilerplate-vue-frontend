@@ -1,7 +1,7 @@
 ---
 source: src/modules/api-keys/tests/schemas-i18n.spec.ts
-sha256: fb4b66857473d5dd9b3cb720d3c72d6b6a2b2e40f7ddc23653cb6afc00152429
-generated_at: 2026-10-02T14:54:44.396127+00:00
+sha256: b2c149be849bc62fb0f650a02a7eed360be06b0021df509a1817cd3539f854ce
+generated_at: 2026-10-17T00:32:30.081336+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,23 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that `apiKeyCreateSchema`'s validation messages actually resolve to the correct strings in the api-keys locale dictionaries (`en.json`, `it.json`) under a real vue-i18n runtime. It complements the cross-cutting spec (`tests/cross-cutting/schemas-i18n.spec.ts`) that proves the *mechanism* of thunked Zod messages re-resolving at parse time; this spec proves *this module's* schema and dictionaries agree.
+Verifies that the api-keys module's Zod validation messages resolve to the correct localized strings from the real vue-i18n instance when the active locale changes. It complements the cross-cutting test (`tests/cross-cutting/schemas-i18n.spec.ts`) that proves the general thunked-message mechanism; this file proves that *this module's* schema and locale dictionaries actually agree.
 
 ## Key elements
 
-- **`setLocale(locale)`** — Switches the active locale via `loadLocale` and waits one `nextTick` so reactivity settles before assertions run.
-- **`messagesOf(schema, value)`** — Runs `schema.safeParse(value)` and returns the flat array of `issue.message` strings, or `[]` if no error.
-- **`describe('api-keys schema messages')`** — Four test cases asserting specific issue messages against the corresponding `en.json` / `it.json` values:
-  - Required-name message (checked in both English and Italian from the *same* schema object).
-  - Too-long-name message (name > 200 chars).
-  - Permissions-required message (Italian).
-  - Past-expiry message (`expiresAt` in the past).
+- **`setLocale(locale)`** — Helper that calls `loadLocale` and awaits `nextTick()`, ensuring the active locale is switched and reactivity settles before assertions run.
+- **`messagesOf(schema, value)`** — Calls `schema.safeParse(value)` and extracts the array of `issue.message` strings, returning `[]` when no error is present.
+- **`beforeAll` hook** — Calls `wireModulesIntoCore()` to register the api-keys module's translations with the shared i18n instance, then sets locale to `'en'`.
+- **`afterEach` hook** — Resets locale to `'en'` to prevent leakage between tests.
+- **Five test cases** covering: `name-required` (asserted in both EN and IT from the same schema object), `name-too-long`, `permissions-required`, `expires-at-required` + `expires-at-too-far`, and `expires-at-past`. Each asserts that the schema's issue message equals the corresponding key in the imported `en.json` or `it.json` dictionary.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` registers the api-keys locale namespace into the shared i18n core instance, mirroring what `src/main.ts` does at app startup. Required so that `loadLocale` can actually find the module's messages.
-- **`@/modules/api-keys/schemas`** — Source of `apiKeyCreateSchema`, the object under test.
-- **`../locales/en.json` / `../locales/it.json`** — Imported as expected-value fixtures; tests assert that schema messages match these exact strings.
+- **`src/modules/api-keys/schemas.ts`** — Source under test; provides `apiKeyCreateSchema`, whose thunked messages are exercised by every test case.
+- **`tests/support/unit/wire-modules.ts`** — Provides `wireModulesIntoCore()`, called in `beforeAll` to attach the api-keys module's locale bundles to the shared vue-i18n core (mirroring what `src/main.ts` does at app startup).
 
 ## Notes
 
-- Tests run against the **real** vue-i18n instance, not a mocked `t`. A mock would only confirm a key was looked up, not that the resolved string is in the correct language.
-- `afterEach` resets the locale to `'en'` to prevent cross-test contamination.
-- The required-name test switches to Italian *mid-test* and re-parses the same schema object, explicitly proving the message is not frozen at import time.
+- Uses the **real** vue-i18n instance (via `loadLocale`), not a mocked `t`. A mock would only confirm a key was looked up, which remains true even if the resolved string is frozen in the wrong language — the exact failure mode this test guards against.
+- The file deliberately lives alongside the domain (`src/modules/api-keys/tests/`) rather than in `tests/cross-cutting/`, per the convention in `docs/theory/modules.md`: mechanism is proven once in cross-cutting; correctness of a module's dictionaries is proven with the module.
+- Locale state is **global** to the i18n instance; the `afterEach` reset is essential because a test that switches to `'it'` would otherwise poison subsequent tests.

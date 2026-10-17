@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/password-reset-request-view.spec.ts
-sha256: 5e13a342c1076bac4610adfc5cc3c07aff8fd29c7735e868f8c9e805f761ee5d
-generated_at: 2026-10-02T12:26:49.917068+00:00
+sha256: a1d1df44ef0e568702b4de0751033ec40d668f09b67201afd6d87261f5ed05aa
+generated_at: 2026-10-17T00:23:50.771475+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for the `PasswordResetRequest.vue` view. Verifies that the "forgot password" form rejects invalid emails client-side, submits the typed address to the auth store, and routes API refusals to the correct place: field-named errors land on the email input, unnamed errors block the form in place.
+Vitest unit tests for the "forgot password" page (`PasswordResetRequest.vue`). Verifies four behaviors: client-side email validation blocks submission, a valid email reaches the auth store, a field-named API error renders under the input, and a non-field API error shows an inline banner. The real component, router, and Pinia store are used; only `requestPasswordReset` and `HumanCheck` are stubbed.
 
 ## Key elements
 
-- **`mountPage()`** — Spies on `useAuthStore().requestPasswordReset` *before* mounting (the view destructures at setup), then mounts the real component with the app router, Vuetify, i18n, and stubbed `LayoutDefault` / `HumanCheck`. Returns `{ wrapper, request }`.
-- **`submitEmail(wrapper, email)`** — Sets the value on the inner `<input>` of the `data-test=password-reset-email` Vuetify wrapper and triggers form submit, awaiting `flushPromises`.
-- **`emailMessage(wrapper)`** — Reads the `.v-messages` text under the email field; empty string means no field error.
-- **`router`** — A memory-history router built from `collectModuleRoutes(enabledModules)` so the page's back-to-login link and route guards exercise the real route table.
-- **`wireModulesIntoCore()`** (from `tests/support/unit/wire-modules.ts`) — Called at module scope to register enabled modules with the kernel registry before any route collection happens.
-- **Four test cases** — invalid email (no store call, field message shown); valid email (store called with address + `undefined` antibot token, no error banner); 422 with `details.field: 'email'` (message on field, no banner); 500 with no field (banner `data-test=password-reset-request-error` appears).
+- **`mountPage()`** – Spies `useAuthStore().requestPasswordReset` *before* mounting (the view destructures it in `<setup>`), then mounts the real component with the app router, Vuetify, and i18n. Returns `{ wrapper, request }`.
+- **`submitEmail(wrapper, email)`** – Sets the value on the inner `<input>` (the `data-test` attribute lands on Vuetify's wrapper) and triggers a form submit, then flushes promises.
+- **`emailMessage(wrapper)`** – Reads the `.v-messages` text under the email field; empty string when the field is valid.
+- **`describe('PasswordResetRequest')`** – Four test cases:
+  - Invalid email → `requestPasswordReset` not called, field message present.
+  - Valid email → called exactly once with `(email, undefined)` (antibot token is absent due to the HumanCheck stub); no error banner.
+  - 422 with `details.field: 'email'` → message appears under the input, no banner.
+  - 500 with no field → `[data-test=password-reset-request-error]` element exists.
+- **Router setup** – `createMemoryHistory` + `collectModuleRoutes(enabledModules)` under `/en/password-reset`, so the "back to login" link resolves through the real route table.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — Imported and invoked at module top-level (`wireModulesIntoCore()`) to seed the kernel registry so `collectModuleRoutes(enabledModules)` in the router setup resolves real route definitions.
-- **`contracts/rest/index.ts`** — The mocked rejection payloads in the 422/500 cases (`{ success, status, message, errors: [{ code, message, details }] }`) mirror the REST error-envelope contract; the test asserts the view's `onResponseReject` handler lifts `details.field` to the top-level `field` key that the contract defines.
+- **`src/modules/account/views/PasswordResetRequest.vue`** – The component under test; mounted directly.
+- **`src/modules/account/stores/auth.ts`** – `useAuthStore().requestPasswordReset` is the spied method; tests assert on its call args and mock its resolved/rejected values.
+- **`contracts/rest/index.ts`** – The mocked rejection shapes (`{ success, status, message, errors: [{ code, message, details: { field } }] }`) mirror the REST error contract; `onResponseReject` in the view lifts `details.field` to `field`.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register enabled-module routes into the kernel registry so `collectModuleRoutes` yields the account module's route.
 
 ## Notes
 
-- The spy must be attached **before** `mount()` because `PasswordResetRequest.vue` destructures `requestPasswordReset` in its `<script setup>` block; spying after mount would miss the binding.
-- `HumanCheck` is deliberately stubbed to a bare `<div />` so no real `GET /antibot/config` fires. Consequently the second argument to `requestPasswordReset` is always `undefined` here (the antibot token). The solved-token path is covered in `signup-antibot.spec.ts`.
-- `data-test` attributes land on Vuetify's wrapper element, not the native `<input>`; helpers must target `… input` to read/write the actual value.
+- **Spy ordering matters:** `vi.spyOn` must run before `mount()` because the view captures `requestPasswordReset` via destructuring in `<script setup>`. Swapping the order makes the spy a no-op.
+- **HumanCheck stub:** Replacing `HumanCheck` with a bare `<div />` prevents a real `GET /antibot/config` request. This also means the second argument to `requestPasswordReset` (`withAntibotToken`) is always `undefined` here; the token-present path is covered in `signup-antibot.spec.ts`.
+- **Vuetify selector quirk:** `data-test` attributes land on the Vuetify wrapper element, not the native `<input>`, so all queries target `'[data-test=…] input'` or `'[data-test=…] .v-messages'`.
+- **Locale must be loaded** in `beforeEach` (`loadLocale('en')`) before the router navigates, otherwise i18n messages are missing and field-error assertions are unreliable.

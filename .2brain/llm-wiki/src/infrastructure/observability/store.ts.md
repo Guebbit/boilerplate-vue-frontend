@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/observability/store.ts
-sha256: 0c8157d9938f2549c25122368d6fe2902a3962c197f2fa27e73e9e289c555252
-generated_at: 2026-10-02T14:40:34.375651+00:00
+sha256: a24495c71b65a9c2f51cc010c19db23e684e891008a2185086b59cdbaf9e291e
+generated_at: 2026-10-17T00:11:45.246743+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,31 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store that wraps two independently-lazy telemetry SDKs—Grafana Faro (errors, tracing, web-vitals) and Umami (pageview analytics)—behind a single store API. It centralises SDK initialisation, consent gating, and sensitive-URL redaction so any component, store, or router hook can call into observability without importing the SDKs directly.
+A Pinia store that provides a single, lazily-initialized API over two independent telemetry SDKs—Grafana Faro (errors, tracing, web-vitals) and Umami (product analytics). It exists to eliminate init-order problems between the two SDKs and to make telemetry calls available from components, other stores, and the router alike. Consent-gating logic (Faro measurement instrumentations, Umami script loading, opt-out persistence) is centralized here so the rest of the app never touches either SDK directly.
 
 ## Key elements
 
-- **`useObservabilityStore`** — The exported Pinia store (`defineStore('observability', …)`). Exposes `faroReady`, `umamiReady`, `initFaro()`, `initUmami()`, `captureException()`, `setUmamiConsent()`, and `setUmamiOptOut()`.
-- **`stripSensitiveUrlParts(url)`** — Exports a helper that removes query-string and fragment from a URL; returns the input unchanged if `new URL()` throws (relative/malformed input).
-- **`stripTokensFromTelemetry(item)`** — Exports a Faro `beforeSend` hook that redacts `?token=` params from `meta.page.url` and from OTel span attributes (`url.full` / `http.url`). Never drops an item.
-- **`ApiRejectEnvelope`** / **`asApiRejectEnvelope`** — Internal type-guard that narrows a caught value to the shape `http/interceptors.ts` rejects with (`success: false`, `status: number`, optional `errors`, `method`, `path`, etc.).
-- **`describeApiRejectError`** — Builds a human-readable, groupable error name (e.g. `HTTP 401 UNAUTHORIZED GET /account`) for Faro's error list.
-- **`setUmamiOptOut(disabled)`** — Toggles the `umami.disabled` key in `localStorage` so the Umami tracker script self-silences; swallows `SecurityError` from blocked storage.
-- **`UmamiTracker`** — Minimal declared interface for `window.umami.identify`; the app only calls `identify`, never `track`.
-- **`faroInitPromise`** — Module-level `Promise<boolean>` cached via `??=` so concurrent `initFaro()` calls share one initialisation; a cached rejection is cleared so a later call can retry.
+- **`stripSensitiveUrlParts(url: string): string`** — Exports a helper that removes the query string and hash from a URL string. Falls back to a regex split when `new URL()` throws (relative or malformed input).
+- **`stripTokensFromTelemetry(item: TransportItem): TransportItem`** — Exports a Faro `beforeSend` hook. Strips `#token=` fragments and query params from `meta.page.url` and from OTel span attributes (`url.full` / `http.url`) before any item leaves the browser. Never drops items.
+- **`useObservabilityStore`** — The Pinia store (`'observability'`). Exposes `faroReady`, `umamiReady` state, and methods:
+  - `initFaro()` — Dynamically imports Faro SDK + tracing, initialises with crash reports only (no session id). Idempotent via a shared promise; concurrent callers reuse one setup.
+  - `setFaroConsent(granted: boolean)` — Attaches/detaches measurement instrumentations (Web Vitals, Performance, Navigation) on the live Faro instance.
+  - `initUmami()` / `setUmamiConsent(granted: boolean)` — Injects or removes the Umami `<script>` tag; sets the `umami.disabled` localStorage key to silence the tracker.
+  - `captureException(error: unknown)` — Normalises the app's `ApiRejectEnvelope` into a descriptive name (e.g. `HTTP 401 UNAUTHORIZED GET /account`) before forwarding to Faro.
+- **`ApiRejectEnvelope`** — Narrowing interface for the standard API error shape (`success: false`, `status: number`, optional `errors`, `requestId`, `traceparent`, `method`, `path`).
+- **`UmamiTracker`** — Minimal declared shape of `window.umami` (only `identify` is used).
+- **`setUmamiOptOut(disabled: boolean)`** — Internal helper; writes/removes `umami.disabled` in `localStorage`, swallowing storage-block errors.
+- **`asApiRejectEnvelope` / `describeApiRejectError`** — Internal narrowing and naming helpers for `captureException`.
 
 ## Relationships
 
-*(No graph neighbours listed.)*
-
-The store imports from `@/infrastructure/observability/config.ts` (`readFaroConfig`, `readUmamiConfig`, `readUmamiRequireConsent`, `originToRegExp`) and `@/infrastructure/utils/logger.ts` (`logger`). It is consumed by `src/infrastructure/http/interceptors.ts` (which calls `captureException`) and by app-bootstrap code that calls `initFaro()` / `initUmami()`.
+No dependency-graph neighbors are recorded for this file. It imports `readFaroConfig`, `readUmamiConfig`, `readUmamiRequireConsent` from `@/infrastructure/observability/config.ts` and `logger` from `@/infrastructure/utils/logger.ts`. It is expected to be called by the app bootstrap, the router, and `analytics-consent.ts` (referenced in the module doc).
 
 ## Notes
 
-- **No `track()` / `trackEvent()` exists.** All server-side events are emitted by backend handlers; the frontend only sends pageviews (handled by the Umami script tag itself, including SPA route changes).
-- **Umami is consent-gated.** The script tag is injected only after `setUmamiConsent(true)`, unless `VITE_UMAMI_REQUIRE_CONSENT=false` in the build.
-- **Faro is a per-page singleton.** The `faro` handle is a plain `let` (non-reactive) inside the store setup closure; it is not exposed as state.
-- **`faroInitPromise` rejection handling.** The `.catch` resets the promise to `undefined` so a transient CDN failure doesn't permanently block re-initialisation within the same session.
-- **`stripSensitiveUrlParts` deliberately avoids `URL.canParse`.** The `try/catch` around `new URL()` is the only way to handle already-relative or malformed URLs without a throwing call (hence the eslint-disable).
-- **Token redaction is the only PII scrub.** One-time email tokens (`?token=…`) are the sole sensitive param; no other query params are stripped.
-- **`ignoreUrls`** in Faro config suppresses both spans and request events for matched URLs—see `FaroConfig.ignoreUrls` in the config module.
+- Both SDK packages (`@grafana/faro-web-sdk`, `@grafana/faro-web-tracing`, Umami script) are **dynamically imported / injected at runtime**—they are excluded from the critical entry bundle.
+- Before consent, Faro runs with **no session id** and only crash-reporting instrumentations; measurement instrumentations are added/removed via `setFaroConsent`. A consent granted before `initFaro` resolves is remembered and applied on boot.
+- `stripSensitiveUrlParts` intentionally tolerates unparseable URLs (returns the input unchanged) rather than throwing; this is a documented eslint-suppressed `try/catch` around `new URL`.
+- The Umami script self-manages PAGEVIEWS and SPA route tracking; this app sends **no** custom Umami events. The only custom analytics path is `trackBrowsing` in `analytics-consent.ts` through the backend relay.
+- `localStorage` access in `setUmamiOptOut` is wrapped in a try/catch because storage can be blocked (private browsing, user settings); a refusal is logged at debug level and ignored.
+- The store uses a setup-style `defineStore` with module-scoped (`let`) variables for the Faro instance and in-flight promise—these are deliberately **not** reactive refs since they are used imperatively.

@@ -72,10 +72,6 @@ concurrency:
 env:
     # Where the backend checkout lands, and what the frontend's scripts/pairing/paired-backend-path.ts resolves.
     BACKEND_PATH: .backend
-    # How the backend keeps people signed in. The backend reads the first name, the journeys the
-    # second (`cypress.config.ts`'s `sessionMode`); one input feeds both, so they cannot disagree.
-    NODE_SESSION_MODE: ${{ inputs.session-mode || 'jwt' }}
-    E2E_SESSION_MODE: ${{ inputs.session-mode || 'jwt' }}
     # What `cy.restore()` shells out to between specs. There is no default in the code — unset
     # means "do not reset" — so the pairing has to be spelled out here as it is in `.env-example`;
     # this is the Node twin's, the PHP one goes through composer. `{describeTo}` is where the
@@ -184,15 +180,20 @@ jobs:
                   # The nightly's slice count. The full live run is ~85-115 min sequential, so 4
                   # slices land at ~30 min each; raise it as journeys are added.
                   LIVE_SHARDS: '4'
+                  # A call or a dispatch names one mode and runs it alone. The schedule names none,
+                  # so the nightly runs every slice in BOTH: each mode is a different backend.
+                  SESSION_MODE: ${{ inputs.session-mode }}
               run: |
+                  if [ -n "$SESSION_MODE" ]; then modes="\"$SESSION_MODE\""; else modes='"jwt","cookie"'; fi
                   if [ -n "$GREP" ]; then
-                      echo 'matrix={"shard":[1],"total":[1]}' >> "$GITHUB_OUTPUT"
+                      echo "matrix={\"shard\":[1],\"total\":[1],\"session-mode\":[$modes]}" >> "$GITHUB_OUTPUT"
                       echo 'timeout=15' >> "$GITHUB_OUTPUT"
                   else
                       shards=$(seq -s, 1 "$LIVE_SHARDS")
-                      # The last entry is not a slice: `print-live-shard.ts` reads `antibot` as "the
-                      # antibot specs", and the backend step below boots with the provider on for it.
-                      echo "matrix={\"shard\":[$shards,\"antibot\"],\"total\":[$LIVE_SHARDS]}" >> "$GITHUB_OUTPUT"
+                      # The `include` entry is not a slice: `print-live-shard.ts` reads `antibot` as
+                      # "the antibot specs", and the backend step below boots with the provider on
+                      # for it. It is about the challenge, not the session, so it runs in jwt only.
+                      echo "matrix={\"shard\":[$shards],\"total\":[$LIVE_SHARDS],\"session-mode\":[$modes],\"include\":[{\"shard\":\"antibot\",\"total\":$LIVE_SHARDS,\"session-mode\":\"jwt\"}]}" >> "$GITHUB_OUTPUT"
                       echo 'timeout=45' >> "$GITHUB_OUTPUT"
                   fi
 
@@ -208,6 +209,12 @@ jobs:
             matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
         permissions:
             contents: read
+        env:
+            # How the backend keeps people signed in. The backend reads the first name, the journeys
+            # the second (`cypress.config.ts`'s `sessionMode`); one matrix value feeds both, so they
+            # cannot disagree, and `harness.cy.ts` asks the backend to confirm it.
+            NODE_SESSION_MODE: ${{ matrix.session-mode }}
+            E2E_SESSION_MODE: ${{ matrix.session-mode }}
 
         # The real infrastructure. This is the only workflow that needs it: every other suite runs
         # on mongodb-memory-server with no cache and no broker, so nothing else here talks to a
@@ -493,7 +500,7 @@ jobs:
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: backend-log-${{ matrix.shard }}
+                  name: backend-log-${{ matrix.shard }}-${{ matrix.session-mode }}
                   path: backend.log
                   retention-days: 14
                   if-no-files-found: warn
@@ -504,7 +511,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-screenshots-live-${{ matrix.shard }}
+                  name: cypress-screenshots-live-${{ matrix.shard }}-${{ matrix.session-mode }}
                   path: tests/e2e/screenshots
                   retention-days: 14
                   if-no-files-found: ignore
@@ -514,7 +521,7 @@ jobs:
               if: failure()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
-                  name: cypress-videos-live-${{ matrix.shard }}
+                  name: cypress-videos-live-${{ matrix.shard }}-${{ matrix.session-mode }}
                   path: tests/e2e/videos
                   retention-days: 14
                   if-no-files-found: ignore

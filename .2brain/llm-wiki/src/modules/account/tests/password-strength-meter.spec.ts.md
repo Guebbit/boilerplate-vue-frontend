@@ -1,25 +1,31 @@
 ---
 source: src/modules/account/tests/password-strength-meter.spec.ts
-sha256: 462de83c70190cebb8a14771fb0c9bdf3cac1ede4ce6a197094fed5bb866bc76
-generated_at: 2026-10-02T12:27:07.560401+00:00
+sha256: 65e7771931537622c177707731b56278f1dbf8c53bd71e42d2df03cbc1eec464
+generated_at: 2026-10-17T00:23:59.448080+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/tests/password-strength-meter.spec.ts
 
 ## Purpose
-Unit tests for `PasswordStrengthMeter.vue`. Verifies three behavioral contracts: the component renders nothing for an empty password, displays a bar + label when a strength score is present, and explicitly does **not** render a breach warning (that responsibility belongs to a separate component driven by `use-password-breach-check.ts`).
+
+Vitest unit test for `PasswordStrengthMeter.vue`. Verifies three contracts: the meter is absent for an empty password, it renders a bar + label once a score exists, and it **never** renders a breach warning (that responsibility belongs to a separate component).
 
 ## Key elements
-- **`score`** — a `ref<0|1|2|3|4|undefined>` that acts as the single control point for the mocked composable; each test sets `score.value` before mounting.
-- **`vi.mock('@/modules/account/composables/use-password-strength.ts', …)`** — hoisted mock that makes `usePasswordStrength()` always return `{ score }`, decoupling the component under test from real strength-scoring logic.
-- **`mountMeter(password: string)`** — thin wrapper around `@vue/test-utils` `mount` that injects the `i18n` and `vuetify` plugins, keeping the three test bodies focused on assertions.
-- **`describe('PasswordStrengthMeter', …)`** — three `it` blocks: empty-password renders nothing, score 4 renders bar + "Strong" label, and no `[data-test="password-breached-warning"]` element ever appears.
+
+- **`score`** — a `Ref<0|1|2|3|4|undefined>` shared across tests; serves as the controllable return value of the mocked composable.
+- **`vi.mock('../composables/use-password-strength.ts')`** — replaces `usePasswordStrength` so it returns `{ score }`, letting each test set `score.value` directly.
+- **`mountMeter(password)`** — helper that mounts the component with the `password` prop and global plugins (`i18n`, `vuetify`).
+- **`describe('PasswordStrengthMeter')`** — three `it` blocks asserting the behaviors listed above, using `[data-test]` attributes as selectors.
 
 ## Relationships
-- **`tests/support/unit/wire-modules.ts`** — imports `wireModulesIntoCore()` and calls it at module scope (before any test runs) so that the DI/module registry is available to the component and its transitive imports during mounting.
+
+- **`src/modules/account/components/PasswordStrengthMeter.vue`** — the component under test; imported and mounted in every case.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is invoked at module scope to register module-level wiring required by the component's transitive dependencies before any test runs.
+- **`../composables/use-password-strength.ts`** — mocked out; the real composable is never executed.
 
 ## Notes
-- The file's top-of-file comment is an intentional boundary declaration: breach warnings are a *sibling* component's job, not this meter's. The third test exists to guard against that boundary being silently crossed.
-- `score` is a plain `ref` (not a `computed`), so tests can freely reassign `.value` between cases without re-mocking.
-- `loadLocale('en')` is awaited inside the two tests that assert on rendered text; the third test skips it because it only checks for a selector's absence.
+
+- The file's top-level doc comment is a deliberate design guard: the password-breach hint is rendered by a *separate* component (from `use-password-breach-check.ts`), not duplicated inside this meter. The third test enforces this boundary.
+- Tests select via `data-test` attributes rather than class names, keeping the suite decoupled from styling changes.
+- `loadLocale('en')` is awaited before assertions that check rendered text, ensuring i18n strings are available.

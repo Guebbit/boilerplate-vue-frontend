@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/tests/order-view.spec.ts
-sha256: ba3731cd6a352b524a8a331ed34647c20276075dde11e47ac3c38d3cf9119cba
-generated_at: 2026-10-02T15:22:34.579811+00:00
+sha256: 8a1311b30a7f149bb7eb35d60eae97cfb242cb01e8b899f424238765e7611fe1
+generated_at: 2026-10-17T01:18:18.224083+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,31 +9,36 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec that mounts the real `Order.vue` detail page (with a memory-history router, Pinia, Vuetify, i18n) and asserts UI behavior around invoice buttons, credit-note listing/download, order-number display, payment-deadline prop passing, and the VAT summary block. It exists to lock down the order-detail view's contract against the catalogue and API layer without hitting a live server.
+Vitest spec for the `Order.vue` detail page. It mounts the real component against a memory-history router and asserts that each line's picture resolves live from `item.current` (never a frozen `item.product.imageUrl`), that invoice/credit-note buttons appear and behave correctly, and that the order number, timeline, payment deadline, and VAT summary render from the store's seeded data. `watchOrder` is stubbed so the store's own fetch never fires; the order is injected directly into the dictionary.
 
 ## Key elements
 
-- **`mountOrder(order)`** – Seeded-mount helper: spies `watchOrder` to return a `noopWatchHandle`, calls `store.addOrder` / sets `selectedOrderId`, then mounts `Order.vue` with stubs for `LayoutDefault`, `PaymentPanel`, `ShipmentPanel`, and `WithdrawalPanel`.
-- **`lineWith(current)`** – Builds a single order line with a fixed product and only the `current` field varying, so tests can isolate catalogue-resolution assertions.
-- **`BASE_ORDER`** – A fully populated `Omit<OrderType, 'items'>` fixture (status `pending`, all action flags `false`, no `orderNumber`, empty `taxSummary`).
-- **`invoicedOrder()`** – Convenience wrapper that flips `actions.invoice` to `true` (the only state that permits credit notes).
-- **`signIn(canReadAuditLog)`** – Populates `useSessionStore` with a token, viewer, and optional `audit.any.read` ability to gate the History link.
-- **`vi.mock('@api')`** – Partial mock: `reorder` is wrapped via `vi.fn(actual.reorder)` (passthrough unless overridden), while `listOrderCreditNotes` and `getOrderCreditNote` resolve canned values.
-- **`vi.mock('@guebbit/js-toolkit')`** – Stubs `downloadBlob` so PDF downloads are observable but never executed.
-- **`router`** – `createRouter` with `createMemoryHistory`, routes derived from `collectModuleRoutes(enabledModules)` under a `/:locale` parent.
-- **`beforeEach`** – Fresh Pinia, `loadLocale('en')`, and `router.push('/en/orders/o1')`.
+- **`mountOrder(order)`** – Seeds `useOrdersStore` (spies on `watchOrder` with `noopWatchHandle`, calls `addOrder`, sets `selectedOrderId`) and mounts `Order.vue` with router, Vuetify, i18n plugins. Stubs `PaymentPanel`, `ShipmentPanel`, `WithdrawalPanel`, and `OrderTimeline` so their own data-fetches don't run.
+- **`lineWith(current)`** – Builds a single order line with a fixed product and the given `current` value, for use as the only varying field across tests.
+- **`BASE_ORDER`** – Full order fixture (no `items`) with a default `actions` object where every flag is `false`.
+- **`invoicedOrder()`** – Returns `BASE_ORDER` with `actions.invoice = true`, the precondition for credit-note tests.
+- **`signInAsShopper()`** – Populates the session store (token, viewer, abilities) so the CART store's TanStack-tracked `loading` state is reachable.
+- **`vi.mock('@api', …)`** – Wraps `reorder` as `vi.fn(actual.reorder)` (pass-through by default; only the in-flight-guard test overrides). Mocks `listOrderCreditNotes` → empty list and `getOrderCreditNote` → a fake PDF blob.
+- **`vi.mock('@guebbit/js-toolkit', …)`** – Replaces `downloadBlob` with a spy.
+- **Router** – Built with `createMemoryHistory` and `collectModuleRoutes(enabledModules)` after `wireModulesIntoCore()` is called at module scope.
+- **`beforeEach`** – Resets Pinia, signs in as shopper, loads the `en` locale, and pushes `/en/orders/o1` so `router.isReady()` resolves.
+- **`describe` blocks** – Invoice buttons, credit notes (list, per-row download, server-error path), order number, timeline key, payment deadline, VAT summary.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register enabled modules into the kernel registry before the router is built.
-- **`tests/support/unit/mounted-vm.ts`** – Exports `nextRenderTick`, imported for use (in the truncated remainder) to await Vue's next paint cycle.
-- **`tests/support/unit/watch-handle.ts`** – Provides `noopWatchHandle`, the return value of the `watchOrder` spy, preventing the store from starting a real polling/watch loop.
-- **`tests/support/stub.ts`** – Exports `asStub`, imported here for casting/stubbing utilities (visible in the import list; used in the truncated portion).
-- **`contracts/rest/index.ts`** – The `@api` barrel that this spec partially mocks (`reorder`, `listOrderCreditNotes`, `getOrderCreditNote`); the real implementations back the `vi.fn(actual.…)` passthrough for `reorder`.
+| Neighbor | Interaction |
+|---|---|
+| `src/modules/orders/views/Order.vue` | The component under test; mounted directly by `mountOrder`. |
+| `src/modules/orders/store.ts` | `useOrdersStore` is imported; `watchOrder` is spied, `addOrder` and `selectedOrderId` are set to seed state. |
+| `contracts/rest/index.ts` | Resolved via the `@api` alias; `reorder`, `listOrderCreditNotes`, `getOrderCreditNote` are the mocked exports. |
+| `tests/support/stub.ts` | `asStub` is imported (helper for stubbing in test setup). |
+| `tests/support/unit/watch-handle.ts` | `noopWatchHandle` is returned from the `watchOrder` spy to suppress the real subscription. |
+| `tests/support/unit/mounted-vm.ts` | `nextRenderTick` is imported for render-timing assertions. |
+| `tests/support/unit/wire-modules.ts` | `wireModulesIntoCore()` is called once at module scope before the router is created. |
 
 ## Notes
 
-- `reorder` is intentionally a *passthrough* mock (`vi.fn(actual.reorder)`): it only becomes controllable in the in-flight-guard test. All other tests rely on the store's own mocked reads, not on `reorder`.
-- `PaymentPanel`, `ShipmentPanel`, and `WithdrawalPanel` are stubbed to `true` (or a slot-passthrough for `LayoutDefault`) because they fire their own data fetches on mount; the transport for those is not mocked here.
-- The file mirrors the structure of `products/tests/product-view.spec.ts` (noted in the module JSDoc) — expect the same mount/lifecycle conventions if you're adding a sibling module's view spec.
-- `downloadBlob` is asserted with `expect.any(Blob)` for the payload and an exact filename string — the filename encodes `order-{id}-credit-note-{number}.pdf`.
+- The `reorder` mock intentionally **wraps the real implementation** (`vi.fn(actual.reorder)`); every test that does not explicitly override it will call through to the actual API function. Only the in-flight-guard test replaces the implementation.
+- `wireModulesIntoCore()` runs at **module top-level**, not inside `beforeEach`, so it executes once per test-file import.
+- The four panel/timeline components are stubbed with `true` (render nothing) because they perform their own data fetches and no mocked transport is provided for them; the spec only verifies that `Order.vue` passes the correct props.
+- `signInAsShopper` is required in `beforeEach` because the CART store's `loading` flag is real TanStack Query state—nothing short of an actual in-flight request can flip it, and the reorder in-flight test depends on that.

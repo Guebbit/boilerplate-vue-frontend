@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/password-breach-hint.spec.ts
-sha256: c25cb8c94b002c0bb19fbbd4f633cdef3446ed9d6972bea1bebbe3abb23d34d4
-generated_at: 2026-10-02T12:26:01.543385+00:00
+sha256: 3397ffe3c1dece3f4d36ed84855f5dc261a46677c2d320fd3c7ec1a2788ecf08
+generated_at: 2026-10-17T00:23:28.038733+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,35 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that the `usePasswordBreachCheck` composable is correctly wired into the three live forms that display a breach warning (`ProfilePasswordChange`, `PasswordResetConfirm`, `Signup`). It proves the integration path—input change → debounced API call → advisory warning render/dismiss—without re-testing the composable's own debounce logic (pinned separately in `use-password-breach-check.spec.ts`).
+Wiring-level integration test that mounts the three real Vue forms (`ProfilePasswordChange`, `PasswordResetConfirm`, `Signup`) to prove `usePasswordBreachCheck` is correctly connected in each. It does **not** test the debounce logic in isolation (that lives in `use-password-breach-check.spec.ts`); it asserts that typing a password triggers the `POST /account/password/check` endpoint and that the `[data-test=password-breach-warning]` element appears and clears as expected.
 
 ## Key elements
 
-- **`responses`** (module-level `Record<string, unknown>`) — mutable map of HTTP endpoint keys (`"METHOD /path"`) to fixture payloads; overwritten per test case to control whether the breach check returns `breached: true/false`.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a stub that looks up `responses` by URL/method and wraps the result via `parseOrvalFixture`.
-- **`checkCallCount()`** — helper that filters the mocked `orvalMutator` call log to count how many times `POST /account/password/check` was hit.
-- **`mountPasswordChangeForm()` / `mountPasswordResetPage()` / `mountSignupPage()`** — thin `mount()` wrappers for the three components under test, each with the appropriate plugins (router, vuetify, i18n) and stubs (`LayoutDefault`, `RouterLink`, `HumanCheck`).
-- **`DELAY = 500`** — the debounce window advanced via `vi.advanceTimersByTimeAsync` after each keystroke burst.
-- **`describe` blocks** — one per form; each contains 1–3 `it` cases covering: warning appears on breach, burst-of-keystrokes collapses to one request, warning is advisory (never blocks submit), and warning clears when the password is changed to a non-breached value.
+- **`DELAY`** — constant (500 ms) used with `vi.advanceTimersByTimeAsync` to let the debounced call fire under fake timers.
+- **`router`** — memory-history Vue Router carrying the real module routes from `collectModuleRoutes(enabledModules)`; needed by the two page-level components.
+- **`responses`** — mutable `Record<string, unknown>` keyed by `"METHOD /path"`; each test overwrites entries before acting to control mock responses.
+- **`checkCallCount()`** — counts how many times the mocked `orvalMutator` was invoked for `/account/password/check`.
+- **`mountPasswordChangeForm()`** — mounts `ProfilePasswordChange` with Vuetify + i18n (no router needed).
+- **`mountPasswordResetPage()`** — mounts `PasswordResetConfirm` with router, Vuetify, i18n.
+- **`mountSignupPage()`** — mounts `Signup`; stubs `RouterLink` and `HumanCheck` to avoid app-level routes and antibot config.
+- **`describe('ProfilePasswordChange')`** — three tests: warning appears on breach, burst of keystrokes collapses to one request, submit is never blocked (advisory-only).
+- **`describe('PasswordResetConfirm')`** — warning appears on breach and clears once a clean value is typed.
+- **`describe('Signup')`** — warning appears on a breached candidate in the signup password field.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — the sole mocked dependency. The test replaces `orvalMutator` so no real HTTP occurs; every assertion about "the API was called" reads from that mock's call log.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is invoked once at module top-level to register the account module (routes, components) with the test kernel before any `mount` runs.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a bare payload into the API's standard response envelope) and `parseOrvalFixture` (unwraps it back), used both in the mock implementation and when seeding `responses`.
+| Neighbor | Interaction |
+|---|---|
+| `src/infrastructure/http/index.ts` | `orvalMutator` is the sole HTTP entry point; replaced entirely via `vi.mock` with a factory that routes on `METHOD url` and returns `parseOrvalFixture`-shaped envelopes. |
+| `src/modules/account/components/ProfilePasswordChange.vue` | Import and mount as the primary test subject in the first `describe` block. |
+| `src/modules/account/views/PasswordResetConfirm.vue` | Import and mount as the test subject in the second block; requires the shared `router` to resolve its route. |
+| `src/modules/account/views/Signup.vue` | Import and mount in the third block; `RouterLink` and `HumanCheck` are stubbed so the module-only router and antibot endpoint are never exercised. |
+| `tests/support/unit/wire-modules.ts` | `wireModulesIntoCore()` is called at module scope to register Pinia stores / module side-effects before any mount. |
+| `tests/unit/infrastructure/http/orval-fixture-schema.ts` | `orvalEnvelope` and `parseOrvalFixture` shape every mock response so the composable sees a realistic Orval envelope. |
 
 ## Notes
 
-- The test suite is **integration-level for wiring, unit-level for the HTTP boundary**: it mounts real Vue components with real Vuetify/i18n plugins but stubs every external I/O (`orvalMutator`, `RouterLink`, `HumanCheck`).
-- Fake timers are used exclusively; no real `setTimeout` ever elapses. The `DELAY` constant must stay in sync with the composable's debounce config.
-- `RouterLink` and `HumanCheck` are stubbed in the Signup mount because their own behaviour is covered by other specs; leaving them unstubbed would require mocking `GET /antibot/config` and app-level static routes that are irrelevant here.
-- The "advisory only" test intentionally uses a password that satisfies `usersPasswordSchema` composition rules so the form's own validation passes and the submit proceeds—proving the breach warning does not add a hard gate.
+- **Fake timers are mandatory here.** The debounce delay is a real `setTimeout`; awaiting it in real time would make the suite slow and flaky. Every test advances by exactly `DELAY` (500 ms) via `vi.advanceTimersByTimeAsync`.
+- **`responses` is intentionally mutable.** Tests set it in `beforeEach` to a safe default (`breached: false`) and then overwrite specific keys per-test. There is no per-test isolation of the object itself — `vi.clearAllMocks()` resets call counts but the object is reassigned each `beforeEach`.
+- **Advisory-only contract.** The `ProfilePasswordChange` "never blocks the submit" test is the key regression guard: even when `breached: true`, the `POST /account/password` mutation must still fire. If a future change turns the hint into a gate, this test will catch it.
+- **Mock key format is `"METHOD url"`** (e.g. `"POST /account/password/check"`). Adding a new endpoint to `responses` without matching this exact key will silently return `undefined` from `parseOrvalFixture`.

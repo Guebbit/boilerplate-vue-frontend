@@ -1,31 +1,26 @@
 ---
 source: scripts/pairing/check-spec-identity.ts
-sha256: f4d9445c0ea041d97d5bdb7af7452956e37c3d6ffd65d15170ff323ce708ad06
-generated_at: 2026-10-02T11:40:16.015401+00:00
+sha256: a86e6d51eab59312eec845ea79890fed73eb603e81737cec08c25b75dbd9ba09
+generated_at: 2026-10-17T00:03:31.736184+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # scripts/pairing/check-spec-identity.ts
 
 ## Purpose
-
-CLI entry point for the cross-repo contract check (`npm run check:spec-identity`). It locates the paired backend checkout, compares a set of shared contract files between the two repos, and reports whether they have forked. Serves as the gate for `npm run complete` (pre-commit) and is also invoked directly by `ci.yml`.
+CLI entry point (`npm run check:spec-identity`) that verifies the shared contract files in this repo are byte-identical to those in the paired backend repo. It exists to catch spec drift between the two halves of a paired-repo setup, and is wired into CI (`ci.yml`) and the pre-commit gate (`npm run complete`).
 
 ## Key elements
-
-- **`siblingRoot`** — Resolved once at module top via `resolveBackendPath()`; the path to the backend checkout to compare against.
-- **Missing-sibling branch** — If `existsSync(siblingRoot)` is false, the script checks `process.env.CI`: in CI it prints a diagnostic and exits **2**; locally it warns and exits **0** (skip).
-- **Comparison branch** — Calls `compareSharedFiles(siblingRoot)`, then `formatSharedFileProblems(comparisons, siblingRoot)`. Non-empty result → exit **1**; otherwise logs success and exits **0**.
-- **Exit-code contract** — `0` identical (or locally skipped), `1` specs have drifted, `2` sibling not found in an environment that should have one.
+- **Top-level script logic** — no exports. Resolves the sibling path, checks existence, runs the comparison, and exits with a code.
+- **Exit-code contract** — `0` identical or locally skipped; `1` files have forked or a shared file is missing on one side; `2` sibling checkout not found *and* `CI` is set (environment problem, not a contract problem).
+- **CI vs. local branching** — when the sibling directory is absent: locally it prints a hint and exits `0` (so the pre-commit gate stays usable for a half-cloned pair); under `CI` it exits `2` (the workflow should have checked the repo out).
+- **Comparison delegation** — calls `compareSharedFiles(siblingRoot)` for the actual diff and `formatSharedFileProblems(comparisons, siblingRoot)` for the human-readable failure report.
 
 ## Relationships
-
-- **`scripts/pairing/paired-backend-path.ts`** — Provides `resolveBackendPath()` (shell `BACKEND_PATH` → `.env` → default convention) and `DEFAULT_BACKEND_PATH` used in the skip message.
-- **`scripts/pairing/spec-identity.ts`** — Provides the actual comparison logic (`compareSharedFiles`, `formatSharedFileProblems`), the list of files to compare (`SHARED_FILES`), and the repo label for output (`THIS_REPO`).
+- **`scripts/pairing/paired-backend-path.ts`** — provides `resolveBackendPath()` (shell `BACKEND_PATH` → `.env` → sibling-directory convention) and `DEFAULT_BACKEND_PATH` (used in the "what to do" message). This file is the *consumer* of that resolution logic.
+- **`scripts/pairing/spec-identity.ts`** — provides the comparison engine: `compareSharedFiles`, `formatSharedFileProblems`, the `SHARED_FILES` list, and the `THIS_REPO` label. This file is a thin CLI wrapper around that module.
 
 ## Notes
-
-- Exit code **2** is deliberately separate from **1**: it signals an *environment* problem (sibling not checked out) rather than a *contract* drift, so callers can distinguish "misconfigured pipeline" from "specs forked".
-- A missing sibling is non-fatal locally (exit 0) so that `npm run complete` remains usable for developers who cloned only one half of the pair. In CI the same condition is fatal (exit 2) because `ci.yml` is expected to check out the sibling first.
-- The script reads `.env` itself (via `resolveBackendPath`) because `npm run` does not source `.env` into the shell environment.
-- All logic is top-level (no exported functions); the file is a pure entry point.
+- `npm run` does **not** load `.env`, so `resolveBackendPath()` reads it itself; don't assume `dotenv` has run.
+- Exit code `2` is deliberately separate from `1`: a standalone clone of the boilerplate should report "I can't see the other repo," not "your specs have drifted."
+- The local leniency (exit `0` on missing sibling) is a known trade-off: it means the check silently does nothing on a half-cloned machine. The only place that leniency is removed is CI, where `ci.yml` is expected to check out the sibling first.

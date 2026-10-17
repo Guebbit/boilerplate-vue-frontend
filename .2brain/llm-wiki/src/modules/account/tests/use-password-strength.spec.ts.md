@@ -1,29 +1,29 @@
 ---
 source: src/modules/account/tests/use-password-strength.spec.ts
-sha256: 795a4e2cd3bfaf55b89f90dddfa2afa3449764062cfea2a1823498ea77be66fc
-generated_at: 2026-10-02T12:34:20.860905+00:00
+sha256: 5e45849c2645ee0a8a3d1aedb0a9c9cc5effcfafb2abd2283eec1ea9744d119c
+generated_at: 2026-10-17T00:28:31.303902+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/tests/use-password-strength.spec.ts
 
 ## Purpose
-Vitest spec for the `usePasswordStrength` composable. Verifies that the composable delegates to zxcvbn for scoring, clears the score (without calling zxcvbn) when the password is emptied, and re-queries zxcvbn when the password value changes.
+
+Vitest spec that verifies `usePasswordStrength` correctly delegates scoring to zxcvbn, clears the score when the password is emptied, and re-scores on subsequent changes. It exists to lock in the composable's contract so the dynamic-import lazy-loading strategy and empty-string short-circuit remain intact.
 
 ## Key elements
-- **`check`** — `vi.fn()` standing in for the zxcvbn `check` method; every assertion about "zxcvbn was/wasn't called" reads from it.
-- **`vi.mock('@zxcvbn-ts/core')`** — replaces `ZxcvbnFactory` with a mock constructor whose instance exposes only `{ check }`. Uses a **named function** (not an arrow) because the real factory is invoked with `new`.
-- **`vi.mock('@zxcvbn-ts/language-common')` / `vi.mock('@zxcvbn-ts/language-en')`** — stub out the dictionary/adjacency/translation exports so no real dictionary data is loaded.
-- **`describe('usePasswordStrength')`** — three `it` blocks:
-  - *scores a non-empty password via zxcvbn* — sets a password on a `ref`, expects `score.value` to update and `check` to be called with that string.
-  - *clears the score for an empty password, without asking zxcvbn* — resets the ref to `''`, expects `score` to become `undefined` and `check` to have **not** been called again.
-  - *rescoring a changed password asks zxcvbn again with the new value* — changes the ref to a second value, expects a new `check` call and a different score.
+
+- **`check`** — A `vi.fn()` stub that stands in for zxcvbn's scoring function; each test sets a canned return value on it.
+- **`vi.mock('@zxcvbn-ts/core', …)`** — Replaces `ZxcvbnFactory` with a named-function mock (see Notes) that returns `{ check }`, so the test can assert call arguments.
+- **`vi.mock('@zxcvbn-ts/language-common', …)` / `vi.mock('@zxcvbn-ts/language-en', …)`** — Supply empty `dictionary` / `adjacencyGraphs` / `translations` objects to satisfy the composable's imports without loading real language data.
+- **`describe('usePasswordStrength')`** — Three `it` blocks covering: non-empty scoring, empty-password reset (asserting `check` is *not* called), and re-scoring after a value change.
 
 ## Relationships
-- **`@/modules/account/composables/use-password-strength.ts`** — the module under test; the spec imports `usePasswordStrength` and drives it with a Vue `ref`.
-- **`@zxcvbn-ts/core`, `@zxcvbn-ts/language-common`, `@zxcvbn-ts/language-en`** — mocked at the module level so no real zxcvbn logic executes.
+
+- **`src/modules/account/composables/use-password-strength.ts`** — The sole unit under test. The spec imports `usePasswordStrength` and exercises its returned `score` ref against a `ref` password input. All zxcvbn modules the composable imports are mocked away so the test runs without the real (dynamically-imported) scoring engine.
 
 ## Notes
-- All three tests use `vi.waitFor` for the score assertion, reflecting that the composable computes the score **asynchronously** (consistent with the dynamic-import-on-first-use strategy noted in the file header comment).
-- The mock factory must be a named `function` expression, not an arrow, because the composable (or its internal helper) constructs it with `new`. An arrow-function mock would throw a `TypeError` at runtime.
-- The empty-password test calls `check.mockClear()` *after* the initial score is settled, isolating the "no second call" assertion from the first scoring pass.
+
+- The `ZxcvbnFactory` mock is declared as a **named function** (`function zxcvbnFactoryMock()`), not an arrow, because the real export is invoked with `new`. An arrow-function mock would throw a `TypeError` at construction time.
+- Assertions use `vi.waitFor` rather than synchronous `expect` after setting `password.value`, indicating the composable updates `score` asynchronously (e.g. via a `watch` or microtask-scheduled dynamic import).
+- The empty-password test asserts `check` was **not** called, confirming the composable short-circuits before reaching zxcvbn — a behavior that would silently break if the short-circuit were removed.

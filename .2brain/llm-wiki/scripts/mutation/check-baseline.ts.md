@@ -1,35 +1,31 @@
 ---
 source: scripts/mutation/check-baseline.ts
-sha256: 1e64943f931e07486d11f7a770590ef37f9b285182218e868faec1d119492adb
-generated_at: 2026-10-02T11:39:33.979676+00:00
+sha256: 50af15ac4fa09d6d9f57f6d5fff52c8ab24e5bbdb38caa35bcf334bbdca7815a
+generated_at: 2026-10-17T00:02:54.476767+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # scripts/mutation/check-baseline.ts
 
 ## Purpose
-
-CLI entry point for the per-file mutation-coverage ratchet. It reads the latest Stryker JSON report and a stored baseline, then either **checks** (default) that no file has regressed, or **updates** the baseline (`--update`). It deliberately never invokes Stryker itself so the expensive test run and the cheap gate can be split across CI steps.
+CLI entry point for the per-file mutation ratchet. It reads the latest Stryker report (`reports/mutation/mutation.json`) and compares every file's mutation-coverage score against the committed `mutation-baseline.json`, exiting non-zero if any file regressed or has no baseline entry. With `--update` it records improvements and new files. It deliberately does **not** invoke Stryker, so a CI pipeline can split the expensive run and this cheap gate into separate steps.
 
 ## Key elements
-
-- **`--update` flag** (from `process.argv`) — switches the script from check-only to baseline-recording mode.
-- **`readReport` / `readBaseline`** — load the current Stryker report and the persisted baseline. A missing report triggers `exit 2`.
-- **`compareToBaseline`** — produces per-file verdicts: `held`, `improved`, `new`, `removed`, `regressed`.
-- **`missingFromReport`** — guards `--update` against a *partial* Stryker run (e.g. `--mutate 'some/file.ts'`) that would otherwise silently drop unmeasured files from the baseline.
-- **`nextBaseline`** — computes the next baseline state; always keeps the **higher** of old and new scores so a regressed file stays failing even after `--update`.
-- **`writeBaseline`** — persists the baseline to `MUTATION_BASELINE_PATH`.
-- **`formatRegressions` / `formatUnrecorded`** — build human-readable error blocks printed to `stderr` on failure.
-- **Exit codes** — `0` pass (or first-time recording), `1` regression / unrecorded file / partial-report guard, `2` no report found.
+- **`update`** – boolean derived from `process.argv.includes('--update')`; switches the script from check-only to check-and-record mode.
+- **`readReport()` / `readBaseline()` / `writeBaseline()`** – I/O helpers imported from `./baseline`; this file orchestrates but contains no format logic.
+- **`compareToBaseline(current, baseline)`** – returns a per-file array of `{ file, baseline, current, verdict }` where verdict is `'held' | 'improved' | 'new' | 'removed' | 'regressed'`.
+- **`missingFromReport(current, baseline)`** – lists baseline files absent from the current report; used to guard against partial runs.
+- **`nextBaseline(current, baseline)`** – computes the next baseline object, keeping the **higher** of baseline vs. current for each file (so a regression never lowers the bar).
+- **`formatRegressions` / `formatUnrecorded`** – produce human-readable failure text for the two failure categories.
+- **`MUTATION_BASELINE_PATH`** – constant for the committed baseline file path, used in log messages.
+- **Exit codes** – `0` pass, `1` regressed/unrecorded, `2` report file missing (usage error).
 
 ## Relationships
-
-- **`scripts/mutation/baseline.ts`** — sole import target. Supplies every function this CLI orchestrates (`compareToBaseline`, `readReport`, `readBaseline`, `writeBaseline`, `nextBaseline`, `missingFromReport`, formatters, and the `MUTATION_BASELINE_PATH` constant). This file contains no domain logic of its own; it is a thin argument-parsing / I/O / exit-code wrapper.
+- **`scripts/mutation/baseline.ts`** – sole dependency. All domain logic (report/baseline I/O, comparison, next-baseline computation, formatting) lives there. This file is a thin CLI shell that parses argv, calls those helpers in sequence, prints results, and sets the process exit code.
 
 ## Notes
-
-- **Partial-run guard is one-directional.** It only fires on `--update`; a plain check with a missing baseline entry reports the file as *unrecorded* (exit 1) rather than erasing data.
-- **Improved and removed files are always printed**, even on a passing run, so a green CI log is distinguishable from a check that silently does nothing.
-- **`--update` writes the baseline even when regressions exist**, but because `nextBaseline` keeps the higher score, regressed files remain failing until their coverage is restored.
-- A `new` (unrecorded) file **cannot pass** a plain check — it must be explicitly recorded with `--update` (referenced as FA125 in the source).
-- The shebang is `tsx`; the file is run directly via `npm run test:mutation:check` / `test:mutation:baseline` rather than compiled.
+- **Partial-run guard:** if `--update` is used and the report is missing files present in the baseline (e.g. a `--mutate 'src/x.ts'` scoped run), the script refuses to write and exits 1. This prevents accidentally erasing ratchet memory for unmeasured files.
+- **Visible movement on pass:** improved and removed files are always printed, even when the run exits 0, so a passing run looks different from a broken/no-op check.
+- **`new` verdict asymmetry:** on a plain check, a file with no baseline entry is a *failure* (exit 1); under `--update` it is recorded and the run still fails (exit 1) so the first recording is never silent.
+- **First run** (no baseline file exists) always succeeds and writes the initial baseline, regardless of scores.
+- **`--update` with regressions:** the baseline is still rewritten, but `nextBaseline` preserves the higher score for regressed files, so they remain failing until actually fixed.

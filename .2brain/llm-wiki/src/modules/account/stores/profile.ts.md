@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/stores/profile.ts
-sha256: 96e1e87b263a16c2c958f4179876637d42df864034c099d201e84b8cb1cb8b7e
-generated_at: 2026-10-02T14:47:31.616911+00:00
+sha256: 8f29a3f4ec7868c87dd337f10047da281dc4e676f8c9c938a04ccfded6963536
+generated_at: 2026-10-17T00:19:13.832738+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,36 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store (Composition API) that owns the visitor's own editable `User` record: fetching, updating (including avatar upload/removal), password change, email verification, and account deletion. It wraps the shared `useStructureRestApi` toolkit so every action reuses the same `selectedIdentifier` / `fetchTarget` / `updateTarget` primitives instead of duplicating request and cache logic per action. It is deliberately separate from the session store, which only holds the minimal `{ id, email, role, imageUrl, verified }` projection the shell and route guards need.
+Pinia store (Composition API) that owns the visitor's own editable `User` record and every self-service operation on it: fetch/update, avatar upload/removal, live password change, email verification and change, account export, and account deletion. It wraps `useStructureRestApi` so all actions share one cache/loading lifecycle rather than duplicating request logic per endpoint.
 
 ## Key elements
 
-- **`useProfileStore`** — the sole export; a `defineStore('accountProfile', …)` in setup/composition form.
-- **`avatarLoadingKey`** — maps a profile write to the correct `isLoading` bucket (`'avatar-upload'`, `'avatar-remove'`, or `undefined` for a plain field save).
-- **`publishViewer`** — pushes the freshly loaded/updated identity (id, email, role with `unverified` fallback, imageUrl, verified flag) into `useSessionStore` so guards never lag.
-- **`guestConsentSyncSettled`** — one-shot ref preventing a retry loop when syncing a guest's cookie-held analytics consent onto a newly authenticated account.
-- **`fetchProfile(forced?)`** — loads the account via `GET /account`, unwraps the envelope, sets `selectedIdentifier`, updates the observability store (Umami/Faro identify/unidentify based on `analyticsConsent`), calls `publishViewer`, then runs `syncGuestAnalyticsConsent` *outside* the `fetchTarget` callback to avoid re-entering its in-flight state.
-- **`ProfileWrite`** (type) — the accepted write shape; widens `imageUrl`, `locale`, `phone`, `website` to allow `null` (clear) even though the read-model `User` never holds them.
-- **`optimisticPatch`** — strips `null`-valued fields before merging into the local cache.
-- **`updateProfile`** — `PATCH /account` (merge semantics, not `PUT`). Sends a fixed allow-list of fields (`email`, `username`, `locale`, `phone`, `website`, `analyticsConsent`); routes to `multipart/form-data` when `imageUpload` is present. Rejects with `'invalid user'` if no identifier is selected.
-- **Account lifecycle actions** (imported from `@api`): `requestAccountDelete`, `confirmAccountDelete`, `changePassword`, `confirmEmailVerification`, `confirmEmailChange`, `cancelPendingEmailChange`, `exportAccountData`.
+- **`useProfileStore`** — the exported store (`accountProfile`). Exposes `fetchProfile`, `updateProfile`, `resetAll`, `changePassword`, `requestAccountDelete`, `confirmAccountDelete`, `cancelPendingEmailChange`, `resendPendingEmail`, `confirmEmailChange`, `undoEmailChange`, `requestAccountExport`, `downloadAccountExport`, `confirmEmailVerification`, and the `profile` / `isLoading` / `loading` refs.
+- **`publishViewer(user)`** — projects `{ id, email, role, imageUrl, verified }` into `useSessionStore` so shell guards and `isAuth` stay in sync after any identity-revealing call.
+- **`avatarLoadingKey(imageUpload?, imageUrl?)`** — returns `['avatar-upload']`, `['avatar-remove']`, or `undefined` to drive the correct `isLoading` bucket for the avatar actions.
+- **`guestConsentSyncSettled` (ref)** — one-shot guard that prevents `syncGuestAnalyticsConsent` from firing a second `PATCH /account` in the same session (avoids a re-entrant fetch loop).
+- **`optimisticPatch`** — strips `null` values from the write payload before merging into the local cache, so a "clear field" write doesn't store a `null` the read shape doesn't allow.
+- **`ProfileWrite` (type)** — widens `imageUrl`, `locale`, `phone`, `website` to accept `null` for the wire contract while the local `User` type stays non-null.
 
 ## Relationships
 
-- **`src/modules/account/stores/auth.ts`** (`useAuthStore`) — sibling store in the same domain. Auth owns establishing/tearing down the session; this store owns the profile data *within* that session. `publishViewer` writes the viewer projection into `useSessionStore` (infrastructure layer) so the two stay in sync. No direct import of `auth.ts` exists in this file.
-- **`src/modules/account/stores/two-factor.ts`** — listed as a graph neighbor but no direct import or call is visible in this file's content; the relationship is a shared account-domain sibling.
+- **`ProfileAvatar.vue`** — the only component that calls `updateProfile` with `imageUpload` (upload) or `imageUrl: null` (removal); passes `onUploadProgress` via the `options` parameter.
+- **`ProfilePasswordChange.vue`** — calls the store's `changePassword` action.
+- **`ProfileDeleteAccount.vue` / `AccountDeleteConfirm.vue`** — call `requestAccountDelete` then `confirmAccountDelete` on the store.
+- **`ProfileExportData.vue`** — calls `requestAccountExport` / `downloadAccountExport`.
+- **`use-post-login-redirect.ts`** — triggers `fetchProfile` after a successful login so the shell is populated before route guards evaluate.
+- **`auth.ts` (`useAuthStore`)** — handles session establishment/teardown; this store reads the session token for API calls but does not create or destroy sessions.
+- **`two-factor.ts`** — co-located account-security store; `changePassword` here may interact with the 2FA flow at the component level.
+- **`useSessionStore`** (via `publishViewer`) — the store writes the minimal viewer projection the shell and route guards consume.
+- **`useObservabilityStore` / `useAnalyticsConsentStore`** — `fetchProfile` and `updateProfile` set Umami/Faro consent and identify/unidentify the user based on `analyticsConsent`.
+- **Tests** — `profile.spec.ts`, `profile-avatar.spec.ts`, `profile-export-data.spec.ts`, `profile-account-consent.spec.ts`, `profile-guest-consent-sync.spec.ts`, `account-export-download-view.spec.ts`, `auth-session.spec.ts` cover the individual actions, the avatar loading-key logic, consent sync, and the auth-session boundary.
 
 ## Notes
 
-- **PATCH, not PUT, not `/users/{id}`** — the self-service endpoint is `PATCH /account`. Routing through the admin `PATCH /users/{id}` previously returned 403 to non-admins; that bug is documented in the `updateProfile` JSDoc.
-- **`imageUrl: null` vs `''`** — the API contract enforces `minLength: 1`, so an empty string is rejected with 422. Removal must send literal `null`.
-- **`Profile.vue` must not re-send `imageUrl`** — doing so would overwrite a concurrent avatar upload and orphan the file. Only `ProfileAvatar.vue` sets `imageUrl` or `imageUpload`.
-- **`syncGuestAnalyticsConsent` runs after `fetchTarget` settles** — intentionally outside the callback to avoid re-entering `fetchTarget`'s in-flight tracking (it may call back into `fetchProfile`).
-- **Role fallback is `'unverified'`**, not `'customer'` — matching the backend's resolution of an absent role.
-- **`analyticsConsent` is checked on every `fetchProfile`**, not cached, so toggling consent and immediately re-fetching correctly flips Umami identify/unidentify.
+- **PATCH, not PUT.** `updateProfile` hits `PATCH /account`; omitted fields are preserved. A `PUT` would clear them (RFC 9110 §9.3.4).
+- **Self-service endpoint.** The store uses `PATCH /account`, not `PATCH /users/{id}` (the latter is admin-guarded and 403'd non-admins).
+- **`imageUrl: null` vs `''`.** The wire contract enforces `minLength: 1`; sending `''` returns a 422. Always send `null` to clear.
+- **`imageUrl` / `imageUpload` are mutually exclusive in practice.** `Profile.vue`'s general form must send *neither* to avoid orphaning a concurrently-uploaded file.
+- **`guestConsentSyncSettled` is set before the sync request resolves.** A slow or partially-failed sync must not trigger a retry on the next `fetchProfile` in the same session.
+- **`syncGuestAnalyticsConsent` runs outside `fetchTarget`'s callback.** Nesting it inside would re-enter `fetchTarget`'s in-flight tracking, since it calls back into `fetchProfile` → `updateProfile`.
+- **`resetAll` also clears `useAnalyticsConsentStore`** — once the record is gone the consent banner falls back to the guest cookie.

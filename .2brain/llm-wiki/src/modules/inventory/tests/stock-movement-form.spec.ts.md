@@ -1,7 +1,7 @@
 ---
 source: src/modules/inventory/tests/stock-movement-form.spec.ts
-sha256: fd47ef85e7b2b6388facc26d828db250b8366ee7115597e6d1bef8041dcc18de
-generated_at: 2026-10-02T15:10:23.110643+00:00
+sha256: ac28cfce073dee27878cba6331dfceb1840b4d47be5ef87e32cd299ad6a1336a
+generated_at: 2026-10-17T01:01:42.138318+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest suite that mounts the real `StockMovementForm` component twice — once per `mode` prop (`receipt`, `adjust`) — to prove the two validation branches diverge as designed: receipt rejects non-positive and fractional quantities, adjust rejects zero and fractional deltas but passes a negative delta through signed.
+Vitest suite that proves the two `mode` branches of `StockMovementForm` enforce different amount schemas: receipt rejects non-positive and fractional quantities, while adjust rejects zero and fractional deltas but carries a negative delta through signed (not absolute). It mounts the real component twice (once per mode) to confirm the branches genuinely differ.
 
 ## Key elements
 
-- **`mountForm(mode)`** – Seeds one product (`p1`, "Widget") into the products store, then mounts `StockMovementForm` with Vuetify + i18n plugins and a `VAutocomplete` stub.
-- **`submitAmount(wrapper, amount, dataTestPrefix)`** – Shared helper that sets the product select, types the amount into the mode-specific input (`receipt-quantity` or `adjust-delta`), and triggers `form` submit. Returns a promise chain.
-- **`V_AUTOCOMPLETE_STUB`** – Minimal native-`<select>` component (one `<option>` for `p1`) that stands in for Vuetify's teleported `v-autocomplete`, keeping the product field fillable via `setValue`.
-- **`vi.mock('@api', …)`** – Partial mock that replaces `searchProducts` with an immediately-resolving empty result, preventing a lingering debounced network call after tests finish.
-- **`describe('the receipt form')`** – Two tests: non-positive quantity is refused (error text + `receive` not called); fractional quantity is refused.
-- **`describe('the adjustment form')`** – Three tests: zero delta refused; fractional delta refused; negative delta (`-3`) passed through to `inventory.adjust('p1', -3, undefined)`.
+- **`mountForm(mode)`** — Seeds one product (`p1`) into the products store, then mounts `StockMovementForm` with the given `mode` prop, Vuetify, i18n, and a `VAutocomplete` stub.
+- **`submitAmount(wrapper, amount, dataTestPrefix)`** — Shared helper: sets the product select, types the amount into the mode-specific input, and triggers form submit.
+- **`V_AUTOCOMPLETE_STUB`** — Minimal native `<select>` replacement for Vuetify's teleported `v-autocomplete`; keeps the product field fillable via `setValue` without overlay/debounce side-effects.
+- **`vi.mock('@api')`** — Replaces `searchProducts` with an immediate empty resolution so no pending timer outlives the test.
+- **`describe('the receipt form')`** — Two cases: non-positive quantity rejected (error text asserted, `receive` never called); fractional quantity rejected (`.int()` rule).
+- **`describe('the adjustment form')`** — Three cases: zero delta rejected; fractional delta rejected; negative delta (`-3`) passed to `adjust('p1', -3, undefined)`.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module top-level before any test runs, wiring test doubles into the app's module system so the component's internal imports resolve to controlled implementations.
+- **`StockMovementForm.vue`** — The component under test. Mounted with `props: { mode }` and queried via `data-test` attributes (`receipt-product`, `adjust-delta`, etc.).
+- **`store.ts` (inventory)** — `useInventoryStore().receive` and `.adjust` are spied/mocked to assert either they are *not* called (invalid input) or called with the correct signed argument (valid negative delta).
+- **`tests/support/unit/wire-modules.ts`** — Called once at module top (`wireModulesIntoCore()`) to register Pinia stores and other cross-module wiring before any test runs.
 
 ## Notes
 
-- All submit assertions use promise chains (`.then()`) rather than `await`; the `submitAmount` helper returns a `Promise`, and tests `.then()` off of it.
-- The `data-test` attribute names are mode-specific (`receipt-product` / `adjust-product`, `receipt-quantity` / `adjust-delta`); the helper branches on the prefix string to pick the correct amount input selector.
-- The negative-delta test additionally mocks `inventory.adjust` (so it resolves) and `products.fetchProducts` to avoid side-effect noise; the other tests rely on the schema rejecting before the store method is reached.
-- `beforeEach` creates a fresh Pinia and loads the `en` locale per test — the i18n setup is required because the component renders translated error strings that assertions match against.
+- The `VAutocomplete` stub exists solely because the real component teleports an overlay and fires a debounced `searchProducts` on mount — both irrelevant to schema validation. Removing the stub would make `setValue` unreliable and leak a timer.
+- Both modes share the `.int()` constraint; the test explicitly documents that fractions are rejected in *both* branches, not just receipt.
+- The negative-delta test also mocks `useProductsStore().fetchProducts` to avoid a real fetch triggered by the successful submit path.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/tests/product-edit-translations-link.spec.ts
-sha256: 9439e82b4a8cace4e44dbba1da45dfe1465c4fc642125469f237085b22a5c1a2
-generated_at: 2026-10-02T15:37:41.714883+00:00
+sha256: 415a67cc4582650d9b2fb9f8f1342a19065f5b0ba8ffc9c9148829379902ac38
+generated_at: 2026-10-17T01:32:34.507644+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Regression test for the LOCALES_OPTIONAL_0925 scenario: when the `locales` module is absent from the enabled module set, `ProductEdit.vue` must still render without throwing on the named-route lookup for `EntityTranslations`, and must simply omit the translations link. The test also confirms the link reappears when the route is present and the viewer has `read Translation` permission.
+Guards against a regression in `ProductEdit.vue` where the "translations" link assumed the `EntityTranslations` route always exists. Because the `locales` module is optional (enabled/disabled via `src/modules.ts`), a build without it has no such route; this spec proves the page still renders and simply omits the link, and that the link reappears when the route is present.
 
 ## Key elements
 
-- **`routerWithTranslations` / `routerWithoutTranslations`** – Two `vue-router` memory-history routers; the second is built from `collectModuleRoutes(modulesWithoutLocales)` to simulate a build that ships no `locales` routes.
-- **`modulesWithoutLocales`** – `enabledModules` filtered to exclude the `locales` module; drives the "route-missing" router.
-- **`signInWithTranslationsPermission()`** – Populates the Pinia session store with a token, viewer, and a CASL `MongoAbility` granting `read Translation`, so the test isolates route-existence from permission checks.
-- **`beforeEach` hook** – Resets `orvalMutator` and stubs `GET /locales` and `GET /products/p1/admin` responses via `orvalEnvelope` / `parseOrvalFixture`; also calls `loadLocale('en')`.
-- **`describe('…route gone')`** – Asserts `mount(ProductEdit, …)` does not throw and `[data-test=translations-link]` is absent.
-- **`describe('…route and permission')`** – Asserts the same selector *is* present when the route exists.
+- **`modulesWithoutLocales`** – `enabledModules` filtered to exclude `locales`; used to build a router that lacks the translations route.
+- **`routerWithTranslations` / `routerWithoutTranslations`** – Two `createRouter` instances (memory history) differing only in which module routes are registered under `/:locale`.
+- **`ADMIN_PRODUCT`** – Minimal product fixture (`id`, `title`, `price`, `currency`, `translations`) returned by the mocked HTTP layer.
+- **`signInWithTranslationsPermission()`** – Populates the Pinia session store with a token, viewer, and a CASL ability granting `read Translation`, isolating the route-existence assertion from the permission check.
+- **`beforeEach`** – Resets the `orvalMutator` mock to answer `/locales` (locale list) and `/products/p1/admin` (product record), then loads the `en` locale.
+- **`describe('…route gone…')`** – Mounts `ProductEdit` with `routerWithoutTranslations` and asserts `[data-test=translations-link]` is absent and no exception is thrown.
+- **`describe('…route and permission…')`** – Mounts with `routerWithTranslations` and asserts the link is present.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register module metadata (routes, store bindings) into the test runtime before any `describe` block runs.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – `orvalEnvelope` and `parseOrvalFixture` are used in the `beforeEach` mock to shape realistic API payloads for the `GET /locales` and `GET /products/p1/admin` responses, keeping the test's HTTP fixtures consistent with the generated Orval schema.
+- **`src/modules/products/views/ProductEdit.vue`** – The component under test; this spec mounts it and inspects the rendered translations link.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register test-time module wiring (stores, providers) before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Provides `orvalEnvelope` and `parseOrvalFixture`, used to shape realistic API response objects for the `orvalMutator` mock.
 
 ## Notes
 
-- The file mocks `@/infrastructure/http` wholesale (`vi.mock`) but still imports the real `orvalMutator` reference to type-cast the mock — the actual HTTP transport is never exercised.
-- Both routers use `createMemoryHistory` and a `/:locale` parent with `RouterView`; the product route is reached via `push('/en/products/p1/edit')` before mounting.
-- The test does **not** verify the absence of the link when the route is present but the permission is denied; that path is covered elsewhere.
+- The test asserts *both* that mounting doesn't throw **and** that the link element is absent. The throw was the original production bug (Vue's router resolves `:to` names at render time and throws on unknown names).
+- `signInWithTranslationsPermission` grants the CASL ability *in both* scenarios so that a missing link can only be explained by the missing route, not by a permission denial.
+- The `orvalMutator` mock is module-level (`vi.mock`) and manually reset per test; it intercepts two specific URLs and returns an empty envelope for anything else.

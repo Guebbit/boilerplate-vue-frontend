@@ -1,31 +1,42 @@
 ---
 source: src/app/components/ReauthDialog.vue
-sha256: 647ba57f5a9cc476948df9f7500ddba16ba97378c2d18d7fcd7fd74b52c725af
-generated_at: 2026-10-02T14:37:00.544355+00:00
+sha256: 7790bd501f8c5e3c60a4f7a362ad5d039d4a10b2009e8f153f6529d3a15892f1
+generated_at: 2026-10-17T00:05:50.100180+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/app/components/ReauthDialog.vue
 
 ## Purpose
-A step-up re-authentication prompt rendered as a Vuetify dialog. It is mounted once by `LayoutDefault.vue` alongside `<DialogHost />`, asks the server which authentication method the current account supports (password or mailed code), presents the appropriate form, and on success resolves the interceptor's parked requests via the session store. A failed attempt keeps the dialog open for retry.
+
+A step-up re-authentication dialog that prompts the user to prove their identity (password, mailed code, and optionally a second-factor OTP) when a session's interceptor detects the need for a fresh token. It is mounted once alongside `<DialogHost />` in `LayoutDefault.vue`, queries the server for the applicable method, renders the matching form, and resolves the interceptor's parked requests on success.
 
 ## Key elements
-- **`isOpen` (computed getter/setter)** — reads `reauthDialog.isOpen`; the setter calls `reauthDialog.rejectStepUp(new Error('REAUTH_CANCELLED'))` on any non-successful close (Escape, scrim, cancel button), rejecting all parked requests.
-- **`loadMethods()`** — calls `useSessionStore().reauthMethods()`, stores the result, and focuses the relevant field on the next tick.
-- **`submit()`** — builds a `ReauthRequest` from the active method and current input, calls `useSessionStore().reauth()`. On success resolves the step-up; on 422 shows a method-specific "wrong password/code" message; on other errors shows a generic message. Clears the input field in both failure cases.
-- **`sendCode()`** — calls `useSessionStore().sendReauthCode()`, starts the server-returned cooldown, focuses the code field. On 429 starts the cooldown from the error's `retryAfter`.
-- **`startCooldown(seconds)`** — sets a `setInterval` ticking `cooldown` down to zero; cleared on unmount and on re-open.
-- **`proof` (computed)** — derives the `ReauthRequest` object or `undefined` if the relevant field is empty; gates the submit button's `:disabled`.
-- **`method` / `noMethod` (computed)** — pick the first server-listed method or detect the empty-list dead-end.
-- **Watch on `reauthDialog.isOpen`** — resets all state (password, code, sent, methods, error, cooldown) and re-fetches methods every time the dialog opens, including on mount (`immediate: true`).
+
+- **`loadMethods()`** – Calls `useSessionStore().reauthMethods()`, stores the ordered list, and focuses the primary field on `nextTick`.
+- **`submit()`** – Builds the `ReauthRequest` via the `proof` computed, calls `useSessionStore().reauth()`, then either `resolveStepUp()` (success) or clears fields and shows an inline error. Distinguishes 422 (wrong credential) from other failures.
+- **`sendCode()`** – Requests a mailed code via `useSessionStore().sendReauthCode()`, starts the server-driven resend cooldown, and focuses the code field.
+- **`startCooldown(seconds)`** – Drives the `cooldown` ref with a `setInterval`; cleared at zero, on reopen, and on unmount.
+- **`proof`** (computed) – Returns a typed `ReauthRequest` or `undefined` while fields are empty; folds in the OTP when `otpRequired` is true.
+- **`isOpen`** (computed, get/set) – Getter proxies `reauthDialog.isOpen`; setter calls `reauthDialog.rejectStepUp(new Error('REAUTH_CANCELLED'))` on close-by-Escape/scrim/cancel.
+- **`otpRequired`** (computed) – True when the server's 401 challenge lists `otp` in `details.methods`.
+- **`noMethod`** (computed) – True when the server returns an empty method list (account with no usable method).
+- **Watch on `reauthDialog.isOpen`** – Resets all fields, clears errors, zeroes the cooldown, and re-invokes `loadMethods()` every time the dialog opens (immediate, so it also fires on mount if a prompt is already pending).
+- **`useReturnFocus`** – Restores focus to the originating control after the dialog closes.
+- **`useFullscreenDialog`** – Toggles Vuetify `fullscreen` on small viewports.
 
 ## Relationships
-- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but no direct import or call is present in this file; no observable interaction.
+
+- **`@/infrastructure/session.ts`** – Primary consumer: calls `reauthMethods()`, `reauth()`, `sendReauthCode()`, reads `reauthing`, and uses the `reauthSendRetryAfter` helper to seed the cooldown on a 429.
+- **`@/infrastructure/http/reauth-prompt.ts`** – Reads `isOpen`, `requiredMethods`; calls `resolveStepUp()` / `rejectStepUp()` to signal the interceptor.
+- **`@/infrastructure/utils/errors.ts`** – Uses `getErrorMessage()` for generic error display and `absentIs(error, 422)` to detect a wrong-credential response.
+- **`@/ui/composables/use-fullscreen-dialog.ts`** / **`use-return-focus.ts`** – UX helpers for responsive sizing and a11y focus management.
+- **`src/infrastructure/utils/logger.ts`** (graph neighbor) – No direct import or call is visible in this file's script section.
 
 ## Notes
-- Focus is applied manually via `nextTick` + `.focus()` rather than the `autofocus` attribute, because a11y lint flags `autofocus` on a dialog that may mount after first paint.
-- Closing the dialog by any means other than a successful `submit()` rejects the interceptor's parked requests outright — there is no deferred "try later" path.
-- The `immediate: true` flag on the `isOpen` watch covers the race where the component is created while a prompt is already open (e.g., hot-reload or late mount).
-- The `cooldown` interval is only cleared in `onUnmounted` and at the zero boundary; it is *not* cleared if the component is hidden without unmounting (the dialog's `v-if="reauthDialog.isOpen"` guard means the card is destroyed, but the interval ref lives in the component scope).
-- All user-facing strings go through `t()` with the `reauth-dialog.*` i18n namespace.
+
+- The dialog is **persistent** (`persistent` prop) so Escape/scrim still close it, but the close path explicitly rejects parked requests rather than silently dropping them.
+- On a wrong answer (422) the dialog stays open for a retry; on network/5xx it also stays open but surfaces the server's message so the user doesn't reflexively retype the same credential.
+- `autofocus` is deliberately avoided (a11y lint); focus is set imperatively via `nextTick` + `.focus()` on the field ref.
+- The cooldown timer (`ticker`) is a module-scoped `let`, cleared in three places: reaching zero, the reopen watcher, and `onUnmounted`. Forgetting any one leaks the interval.
+- When `otpRequired` is true and the attempt fails with 422, the code skips the generic "wrong password/code" translation and uses `getErrorMessage(error)` instead, because the 422 may refer to either proof.

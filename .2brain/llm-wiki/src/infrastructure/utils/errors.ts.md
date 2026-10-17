@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/utils/errors.ts
-sha256: d8396f476ed170920f6ff68565425ae79e28771539a6e8dc3aa2fcdca7c264c6
-generated_at: 2026-10-02T14:42:10.354529+00:00
+sha256: 946d960540d555e5c59ece057b717eb8e27151ec453f733bf4ca7cc5b56ec208
+generated_at: 2026-10-17T00:12:56.189390+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,31 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Shared, app-level error-classification and messaging helpers. It centralises "what message to show the user" (binding the toolkit's `extractErrorMessage` to the app's translated fallback), "what kind of failure happened" (transport vs. answered, retryable vs. final, absent vs. error), and the single toast + Faro-report call that ambient/background failures should make. Keeping all of this here ensures every call site speaks the same language and applies the same status-code semantics.
+Shared error-handling utilities for the app: extracting a user-facing message from an unknown rejection, classifying failures as transport-level vs. answered, and providing the `notifyErrorMessages` toast + Faro report pair used by ambient (background) failure sites.
 
 ## Key elements
 
-- **`firstApiMessage`** *(internal)* – Reads `errors[0].message` off the API reject envelope; returns the backend's own translated sentence or `undefined`.
-- **`getErrorMessage`** – Public. `firstApiMessage ?? extractErrorMessage(error, translate('api-errors.unknown'))`. The one place the generic "something went wrong" fallback is injected. Exported for `use-blocking-error.ts`.
-- **`isTransportFailure`** – `true` when the error is `null`, not an object, has no numeric `status`, or `status === 0` (the sentinel `onResponseReject` writes when no response ever arrived).
-- **`absentIs(error, ...statuses)`** – `true` when the API *answered* with one of the given "absence" statuses (e.g. 404 → "no resource"), as opposed to a transport failure or a genuine error.
-- **`rethrowUnlessAbsent(error, ...statuses)`** – If `absentIs` is false, rethrows the original error. Shared guard so stores can't accidentally swallow non-absence failures.
-- **`isRetryableFailure`** – `true` for transport failures and 5xx (safe to retry under the same idempotency key). 4xx is *not* retryable.
-- **`isPreconditionFailed`** – `true` for HTTP 412 (optimistic-lock / `If-Match` mismatch); caller must reload and reapply.
-- **`isRateLimited`** – `true` for HTTP 429.
-- **`notifyErrorMessages(addMessage, error)`** – Calls the caller's message sink with `getErrorMessage(error)`, then reports the raw error (stack intact) via `useObservabilityStore().captureException`. The ambient-failure path (toasts, background polls).
+- **`firstApiMessage`** *(internal)* — pulls `errors[0].message` out of the reject envelope; the backend's translated sentence, not the HTTP phrase.
+- **`getErrorMessage`** *(exported)* — best-effort user-facing string: `firstApiMessage` → toolkit `extractErrorMessage` → translated `"api-errors.unknown"` fallback. Shared with `useBlockingError`.
+- **`isTransportFailure`** *(exported)* — `true` when no HTTP response arrived (missing `status` or `status === 0`).
+- **`absentIs`** *(exported)* — `true` when the API answered with one of the caller-supplied "absence" statuses (e.g. 404).
+- **`isRetryableFailure`** *(exported)* — `true` for transport failures or 5xx; safe to retry under the same idempotency key.
+- **`rethrowUnlessAbsent`** *(exported)* — lets "absent" statuses pass, rethrows everything else; shared catch-block helper for stores.
+- **`notifyErrorMessages`** *(exported)* — calls a toast/message sink with `getErrorMessage`, then reports the raw error to Faro via the observability store.
+- **`isPreconditionFailed`** *(exported)* — `true` for HTTP 412 (record changed; caller must reload, not resend).
+- **`isRateLimited`** *(exported)* — `true` for HTTP 429.
 
 ## Relationships
 
-- **`@guebbit/js-toolkit`** – imports `extractErrorMessage`; this file supplies the translated fallback it would otherwise lack.
-- **`@/infrastructure/observability/store.ts`** – imports `useObservabilityStore` for the Faro `captureException` call in `notifyErrorMessages`.
-- **`@/i18n`** – imports `translate` to resolve the `api-errors.unknown` fallback string.
-- **`src/infrastructure/utils/use-blocking-error.ts`** – consumes `getErrorMessage` for the blocked-workflow path (inline alert instead of toast).
-- **`http/interceptors.ts`** – the producer of the reject envelope shape (`{ status, errors[] }`) that every function here parses.
+No graph neighbors are registered for this file.
 
 ## Notes
 
-- The reject envelope's **top-level `message` is only the HTTP phrase** ("Unprocessable Entity"). The human-readable sentence lives at `errors[0].message`. Reading the top-level field was the historical bug that made all unmapped refusals look identical.
-- `status: 0` is **not** a real HTTP code here; it is the sentinel `onResponseReject` writes exclusively when no response arrived. `isTransportFailure` treats it as transport failure; `absentIs` and the 4xx/5xx helpers exclude it.
-- `notifyErrorMessages` is for **ambient** failures (list refresh, background poll). **Blocked** workflows (save, delete, refund, lookup) use `use-blocking-error.ts` instead — same wording, same Faro report, rendered via `InlineErrorAlert` rather than a toast. `docs/theory/request-flow.md` documents which path a given call site should take.
-- `isRetryableFailure` encodes the B19 idempotency rule: 5xx and transport failures mean the server never acted, so reusing the same key is correct; 4xx means the server read and refused, so the next attempt is new and needs a fresh key.
+- **Two pairing sites, one wording.** `getErrorMessage` is the single source of the user-facing string. Ambient failures (list refresh, background poll) call `notifyErrorMessages` (toast + Faro). Blocked workflows (save, delete, refund, lookup) call `useBlockingError` (`src/infrastructure/utils/use-blocking-error.ts`), which renders the same string inline via `InlineErrorAlert` instead of toasting. See `docs/theory/request-flow.md` for which applies.
+- **`status === 0` is a sentinel.** `onResponseReject` in `http/interceptors.ts` writes `status: 0` exclusively when no response object arrived; it never uses that value for an answered request.
+- **Top-level `message` is not the user sentence.** The envelope's `message` is the HTTP phrase ("Unprocessable Entity"); the actionable text lives in `errors[0].message`. `firstApiMessage` targets the latter.
+- **Fallback string is app-owned.** The generic "something went wrong" is translated through the app's i18n (`@/i18n`) so tone and language stay out of the shared `@guebbit/js-toolkit` package.
+- **Retryability rule.** 5xx and transport failures are "no verdict" → same idempotency key is valid. 4xx is a final server decision → next attempt is a new one and needs a fresh key.

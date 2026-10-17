@@ -1,7 +1,7 @@
 ---
 source: contracts/rest/routes.ts
-sha256: 83432f08069864a1f4f39b7afb52abb79fc82bf09483b55c502cc0968391c80b
-generated_at: 2026-10-02T14:30:58.216404+00:00
+sha256: e620697712662a6b559c2e7c6679e6ba8b47904970eb20a0e9c42aae772a4b72
+generated_at: 2026-10-16T23:55:03.182333+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,21 +9,21 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Auto-generated lookup table of every REST operation declared in `openapi.yaml`. It maps each HTTP method + path pattern to the response-schema name, optional request-body schema name, and owning backend module. It exists so runtime components (e.g. `response-schema-map.ts`) can resolve concrete `@api/schemas` types without parsing the OpenAPI document at runtime.
+Auto-generated route table for the REST API contract. It is produced by `npm run gen:api` from `openapi.yaml` and provides a flat, typed list of every HTTP operation (method + path pattern) along with the schema names the backend must validate. It serves as the single source of truth the response-validation layer and schema-lookup machinery iterate over.
 
 ## Key elements
 
-- **`GeneratedRoute`** (interface) — Shape of one route row: `method` (HTTP verb), `pattern` (anchored `RegExp`), `schemaName` (response schema), `bodySchemaName` (request body schema, `undefined` for bodyless ops), `module` (backend `x-module` stamp, `undefined` for system endpoints like health/livez/security.txt).
-- **`ROUTES`** (const, `GeneratedRoute[]`) — Flat, ordered array covering every operation in the API (account, cart, orders, payments, products, inventory, feedback, locales, observability, api-keys, audit, antibot, delivery, and system endpoints). This is the single source the rest of the contract layer consumes.
+- **`GeneratedRoute` (interface)** — The shape of one route entry: `method`, `pattern` (anchored `RegExp`), `schemaName` (response schema in `@api/schemas`), `bodySchemaName` (request-body schema, `undefined` for GET/DELETE/etc.), and `module` (the backend `x-module` stamp; `undefined` for system endpoints like `/livez`, `/`, security.txt).
+- **`ROUTES` (const, `GeneratedRoute[]`)** — The full array of every declared operation. Ordered by path. Includes account, cart, inventory, delivery, notifications, locales, feedback, analytics, api-keys, audit, examples, and other modules.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It is a leaf export consumed by other modules (notably `src/infrastructure/http/response-schema-map.ts` per the inline JSDoc reference) but does not import from any sibling in this repo's dependency graph.
+No graph-level dependencies are tracked for this file. Its doc comments reference `src/infrastructure/http/response-schema-map.ts` (`ResponseSchemaRoute`) and the `@api/schemas` package, indicating those consumers resolve the `schemaName` / `bodySchemaName` strings against the real schema namespace at runtime.
 
 ## Notes
 
-- **Generated — do not edit.** The source of truth is `openapi.yaml`; regenerate with `npm run gen:api`. Hand edits will be overwritten.
-- `pattern` values are **anchored** (`^…$`) and contain no capture groups; they are meant for direct `RegExp.test(path)` matching.
-- `bodySchemaName` is `undefined` for all `GET`/`DELETE` routes (and a few `POST` routes like `POST /account/export`, `POST /account/logout`), indicating no request-body validation applies.
-- `module` is `undefined` only for system endpoints (`.well-known/security.txt`, `/`, `/livez`); every business endpoint carries a module tag that mirrors the backend service directory.
-- The array is long (100+ entries) and truncated in most views; search by `schemaName` or path fragment rather than reading top-to-bottom.
+- **Do not edit manually.** Any change belongs in `openapi.yaml`; regenerate with `npm run gen:api`.
+- `pattern` is a full-anchored `RegExp` (`^…$`), not a string path — matching is done via `.test()` or similar, not route-string comparison.
+- `module` is `undefined` for the handful of system/infrastructure endpoints (health, livez, security.txt) that no business module owns; consumers must treat it as optional.
+- `bodySchemaName` is `undefined` whenever the operation has no JSON request body (all GETs, DELETEs, and a few POSTs like token refresh).
+- The file is truncated in this view; the full array is longer than what is shown here.

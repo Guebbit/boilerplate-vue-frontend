@@ -1,7 +1,7 @@
 ---
 source: src/modules/delivery/tests/shipment-panel.spec.ts
-sha256: 822d714831df048911a4112c57b75c6040ce28cab83890f274aefa6fdeda046e
-generated_at: 2026-10-02T15:05:20.533780+00:00
+sha256: 3c8dc52c9c6ad54d8c0a8e78ea2ee0c68b72cbab972815aca308f068666657a6
+generated_at: 2026-10-17T00:49:47.663942+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit test suite for `ShipmentPanel.vue`, the ship/deliver action panel on the order page. It mounts the real component (with Vuetify and i18n) while stubbing the delivery store's fetch actions, then verifies which of the four template branches renders based on the `canStart`/`canFulfill`/`canShip`/`canDeliver`/`override` props (FA36/B3). It deliberately does **not** test the store's `start`/`ship`/`deliver` actions themselves (covered by `delivery/tests/store.spec.ts`) nor the server-side eligibility rules behind those props (covered by the `orders` suites).
+Vitest spec that exercises `ShipmentPanel.vue` in isolation: which fulfillment-order cards render for a given order, the "arrives in N shipments" summary line, the order-level "Start fulfilment" action (including its error path), and the re-fetch that fires when `orderId` changes without a remount. Store fetch calls are spied so the test stays scoped to the panel's own decision logic, not the store's or the cards' internals.
 
 ## Key elements
 
-- **`wireModulesIntoCore()`** — called at module top-level (from `tests/support/unit/wire-modules.ts`) to register module wiring before any test runs.
-- **`vi.mock('@api')`** — wraps `deliverOrder` in `vi.fn(actual.deliverOrder)` so it calls through to the real implementation by default; only the in-flight-guard test overrides it with a pending promise.
-- **`mountPanel(props)`** — local helper that (1) grabs the delivery store, (2) spies on `fetchMethods` and `fetchShipmentForOrder` *before* mounting, then (3) mounts `ShipmentPanel` with the given props and Vuetify/i18n plugins. Returns a `VueWrapper`.
-- **`beforeEach`** — resets Pinia (`setActivePinia(createPinia())`) and loads the `en` locale.
-- **`describe` blocks** — organised by template branch: *start-fulfilment door (Q6)*, *digital-fulfilment door*, *with no shipment yet*, *with a shipment already recorded*, and *re-checking the record belongs to this order (FA24)*.
-- **FA35 error-display tests** — verify that a 409/422 rejection from the store's action is surfaced via `[data-test=shipment-panel-error]` rather than swallowed.
-- **In-flight guard test** — uses a manually-constructed never-resolving promise as a one-time mock return for `deliverOrder`, then asserts the button becomes `disabled` while the call is pending.
-- **FA24 tests** — verify the panel re-fetches when `orderId` changes without a remount, and stops rendering a stale `shipment` from a previous order before the new fetch resolves.
+- **`mountPanel(props)`** – Mounts `ShipmentPanel` with Vuetify + i18n plugins, returning the wrapper and the live store. Spies `fetchMethods` and `fetchFulfillmentForOrder` *before* mounting so the panel's setup-time calls hit the mocks.
+- **`describe('what the panel lists')`** – Verifies the empty state, one card per fulfillment order with only its own shipments, and that records belonging to a *different* `orderId` are not rendered.
+- **`describe('"arrives in N shipments"')`** – Confirms the count line is hidden for a single shipment and shown with the correct text for two or more.
+- **`describe('the start-fulfilment door')`** – Checks the button's visibility (`canStart` prop), that clicking it calls `store.start(orderId)`, re-fetches, and emits `moved`; and that a rejected `start` renders the message into `[data-test=shipment-panel-error]` without emitting `moved`.
+- **`describe('following the order')`** – Asserts that changing the `orderId` prop triggers a new `fetchFulfillmentForOrder` call without remounting.
 
 ## Relationships
 
-- **`tests/support/unit/mounted-vm.ts`** — provides `nextRenderTick(wrapper)`, a helper that flushes Vue's render queue so assertions can observe post-click DOM updates (used throughout for async error and in-flight assertions).
-- **`tests/support/unit/wire-modules.ts`** — provides `wireModulesIntoCore()`, called once at module scope to register the delivery module (and its store) in the global wiring so `useDeliveryStore()` resolves correctly inside the mounted component.
+- **`src/modules/delivery/components/ShipmentPanel.vue`** – The component under test; mounted directly via `@vue/test-utils`.
+- **`src/modules/delivery/store.ts`** – `useDeliveryStore` is instantiated per test (fresh Pinia); its `fetchMethods`, `fetchFulfillmentForOrder`, and `start` methods are spied/mocked to keep the panel isolated.
+- **`tests/support/unit/fixtures.ts`** – Supplies `aFulfillmentOrder` and `aShipment` factory functions for seeding store state.
+- **`tests/support/unit/mounted-vm.ts`** – Provides `nextRenderTick`, the promise-based wait used after reactive state changes before asserting on the DOM.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register the delivery module in the app's plugin container before any test runs.
 
 ## Notes
 
-- Spies on `fetchMethods`/`fetchShipmentForOrder` must be attached **before** `mount()`, because `onMounted` captures the function reference at that instant; a spy attached afterward would never replace the stored reference.
-- The `deliverOrder` mock is intentionally a pass-through wrapper (`vi.fn(actual.deliverOrder)`). Every other test spies on the *store's* `deliver`/`ship`/`start`/`fulfill` actions, which never reach the API layer. Only the in-flight-guard test needs to control the API call directly, because the store's `loading` flag is real TanStack-tracked state that only a genuine in-flight request can set.
-- Element selection relies on `data-test` attributes (`mark-started`, `mark-fulfilled`, `mark-shipped`, `mark-delivered`, `force-ship-toggle`, `force-deliver-toggle`, `shipment-panel-error`) rather than selectors or text.
-- FA-prefixed identifiers (FA24, FA35, FA36, B3) are internal bug/feature tracking references for the specific regressions these tests guard against.
+- Spies are installed *before* `mount()` because the panel invokes the store's fetches during `setup`; spying afterwards would let the real calls race in.
+- Selectors are all `data-test` attributes, not class names, so they stay stable across UI refactors.
+- The spec deliberately does **not** test card-internal buttons (owned by `fulfillment-order-card.spec.ts`) or store internals (owned by `store.spec.ts`); the "arrives in N shipments" and "start fulfilment" cases are the boundary where the panel's own logic ends.
+- The "refuses to show a record left over from another order" test encodes a real invariant: the store's arrays are shared across orders, so the panel must filter by the current `orderId` rather than trusting the store's list unconditionally.

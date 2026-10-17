@@ -1,5 +1,5 @@
 ---
-generated_at: 2026-10-02T19:21:43.638356+00:00
+generated_at: 2026-10-17T02:49:24.391119+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -7,32 +7,45 @@ model: ollama:qwen3.8:27b
 
 ## What This Is
 
-A **Vue.js web application** branded as **Guebbit**. The repo contains the frontend SPA, its API contracts (REST + async messaging), build tooling, Docker packaging, a VitePress documentation site, and an extensive test suite (unit + Cypress E2E). Evidence points to features including account management (two-factor challenge), device sessions, payment webhooks, email messaging, and anti-bot checks.
+**Guebbit** is a Vue.js web application that includes e-commerce functionality (cart, payments via webhooks) and user account management (including two-factor authentication). It pairs a frontend with a well-defined API contract layer expressed in both **OpenAPI** (REST) and **AsyncAPI** (event-driven) specifications, from which TypeScript types and client code are generated.
 
-## Main Areas and How They Relate
+## Main Areas
 
-| Area | Key locations | Role |
+| Area | Location | Role |
 |---|---|---|
-| **Application frontend** | `src/modules/` (e.g. `account/`), `index.html` | Vue components & view logic, organised per feature module |
-| **API contracts (source of truth)** | `openapi.yaml`, `asyncapi.yaml`, `contracts/authorization-keys.yaml` | Define REST routes, async events, permissions, and error codes |
-| **Generated contracts** | `contracts/rest/*.ts`, `contracts/asyncapi.generated.ts` | TypeScript types/schemas (Zod) generated from the YAML specs via `orval` and `scripts/contracts/` |
-| **Infrastructure** | `src/infrastructure/http/`, `src/infrastructure/utils/` | HTTP client wiring, logging, shared utilities consumed across modules |
-| **Build & packaging** | `docker/`, `docker-compose*.yml`, `orval.config.ts`, `eslint.config.ts` | Dockerfile, entrypoint scripts (runtime-config & security.txt generation), lint, codegen |
-| **Testing** | `tests/unit/`, `tests/support/`, `cypress.config.ts` | Vue component unit tests; Cypress E2E with shared harness, steps, and stubs |
-| **Docs** | `docs/.vitepress/`, `SECURITY.md` | VitePress-based site for internal/external documentation |
-| **Automation scripts** | `scripts/contracts/`, `scripts/e2e/`, `scripts/docs/`, `scripts/demo/` | Contract generation/validation, E2E helpers (payment webhook, device session, mail), docs consistency checks |
+| **App source** | `src/` | Vue components, stores, and infrastructure (HTTP client, logger, etc.) |
+| **Modules** | `src/modules/` | Feature-scoped code (e.g. `account/`, `cart/`) with views, stores, and logic |
+| **Contracts** | `contracts/`, `openapi.yaml`, `asyncapi.yaml` | API specs, REST route tables, Zod schemas, permission actions, error codes, authorization keys |
+| **Codegen scripts** | `scripts/contracts/` | Generate TS types, route tables, operation modules, permission actions, and error codes from the specs |
+| **Client generation** | `orval.config.ts` | Produces typed HTTP clients from `openapi.yaml` |
+| **Tests** | `tests/` | Unit and E2E (Cypress) suites, with shared support/fixture/stub helpers |
+| **E2E tooling** | `scripts/e2e/` | Live-shard runs, payment-webhook mocks, device-session helpers, flaky-report collection |
+| **Demo tooling** | `scripts/demo/` | Scripts for running a stripped-down backend, measuring build size, and module surgery |
+| **Docs site** | `docs/` | VitePress-powered documentation |
+| **Infrastructure** | `docker/`, `docker-compose*.yml`, `docker/Dockerfile.production` | Container builds, entrypoint config generation (runtime config, `security.txt`) |
+| **Release / CI** | `release-please-config.json`, `eslint.config.ts`, `cypress.config.ts` | Conventional-commits release automation, lint, E2E runner config |
 
-**Data flow at a glance:**
-`openapi.yaml` / `asyncapi.yaml` → codegen (`orval`, `scripts/contracts/*`) → `contracts/*.ts` → consumed by `src/infrastructure/http/` and `src/modules/*` → tested by `tests/` → packaged via `docker/`.
+## How They Relate
+
+```
+openapi.yaml / asyncapi.yaml
+        │
+        ├──► scripts/contracts/generate-*  ──►  contracts/*.ts (types, routes, permissions)
+        │
+        ├──► orval  ──►  src/infrastructure/http/  (typed client)
+        │
+        └──►  src/modules/*  (Vue features consume the client & types)
+
+tests/  ──►  exercises  src/  and  contracts/  (unit + Cypress E2E)
+docker/ ──►  packages  src/  +  generated contracts  into a production image
+```
 
 ## Where to Start Reading
 
-1. **`README.md`** – project intent, setup commands, and high-level structure.
-2. **`CLAUDE.md`** – context notes aimed at AI assistants; useful for quick orientation.
-3. **`openapi.yaml`** – the full REST surface; read alongside `contracts/rest/routes.ts` for the generated view.
-4. **`src/infrastructure/http/index.ts`** – how the app talks to the API (most-connected infra file).
-5. **`src/modules/account/views/TwoFactorChallenge.vue`** – a representative feature module to see the component pattern.
-6. **`tests/support/e2e/steps.ts`** and **`tests/support/unit/wire-modules.ts`** – understand the test harness before writing or debugging tests.
-7. **`docker/Dockerfile.production`** + entrypoint scripts – how the app is built and booted in production.
-
-> **Tip:** The dependency graph shows `wire-modules.ts` (87 connections) and `logger.ts` (62) as the most central nodes. If a change ripples unexpectedly, check those files first.
+1. **`README.md`** – project purpose, quick-start, and links.
+2. **`CLAUDE.md`** – conventions and guidance written for AI/human collaborators.
+3. **`src/`** entry point → `src/infrastructure/http/index.ts` (HTTP layer) and the modules under `src/modules/` to see the app's features.
+4. **`openapi.yaml`** and **`asyncapi.yaml`** – the source-of-truth API surface.
+5. **`contracts/rest/routes.ts`** – generated route table for a quick map of REST endpoints.
+6. **`docker-compose.yml`** – how to run the full stack locally.
+7. **`INSTALL.md`** – local development setup steps.

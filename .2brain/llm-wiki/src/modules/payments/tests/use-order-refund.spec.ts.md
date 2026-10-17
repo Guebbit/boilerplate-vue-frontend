@@ -1,7 +1,7 @@
 ---
 source: src/modules/payments/tests/use-order-refund.spec.ts
-sha256: c083d9d2fd243946114e6d35a44a19d7b0e012e7e2886539a3c3dbc858f66153
-generated_at: 2026-10-02T15:32:06.820561+00:00
+sha256: 42dc2c24b3eebafce72a386a759adbf7a46e028e98fc35e67073ed0120fefa53
+generated_at: 2026-10-17T01:26:23.757998+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec for the `useOrderRefund` composable. It pins the contract that the composable makes **no client-side refund decision**: `canRefund` is a pure read-back of the server's `actions.refund` flag, so the control state follows whatever the API returns without any local status comparison.
+Vitest spec for the `useOrderRefund` composable. It pins the single behavioral contract of the payments refund control: `canRefund` is a pure read-back of the server's `actions.refund` field, so the button state is always driven by the API response rather than any client-side status logic.
 
 ## Key elements
 
-- **`payment(refund: boolean)`** — factory returning a minimal payment record; toggles `actions.refund`, `status`, and `amountRefunded` so tests can simulate "open" vs "already refunded" states.
-- **`responses`** — mutable record (`Record<string, unknown>`) of stubbed HTTP envelopes keyed by `"METHOD /path"`. Reset in `beforeEach`; the 404 test overwrites it with `{}`.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator`. Unknown keys reject with a 404-shaped plain-object envelope (matching the client's error-rejection contract); known keys resolve via `parseOrvalFixture`.
-- **`settled()`** — a single microtask flush (`Promise.resolve().then(() => undefined)`) that lets the composable's immediate-watcher fetch resolve before assertions read the result.
-- **`describe('useOrderRefund')`** — four cases:
-  1. `canRefund` is `true` when the server record has `actions.refund: true`.
-  2. After calling `refund()`, the refreshed record carries `refund: false`, so `canRefund` flips to `false`.
-  3. A 404 (no stub) means no payment exists → `canRefund` stays `false`.
-  4. `refund()` with an undefined order id returns `undefined` without issuing a request.
+- **`payment(refund: boolean)`** — factory that returns a full payment object with `actions.refund` set to the given flag; used as the fixture payload for both the initial fetch and the post-refund response.
+- **`responses`** — module-level `Record<string, unknown>` holding canned HTTP replies keyed by `"METHOD /url"`; each test overwrites it before acting.
+- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a stub that looks up `responses`; a missing key rejects with a 404-shaped envelope (not a `JS Error`), matching the store's `onResponseReject` contract.
+- **`settled()`** — a single-microtask flush (`Promise.resolve().then(…)`) that lets the composable's immediate watcher fetch resolve before assertions read `canRefund`.
+- **Test cases** (four):
+  - *offers the refund the server says is open* — `canRefund` is `true` when `actions.refund` is `true`.
+  - *withdraws the control once the money is back* — after calling `refund()`, the refreshed record carries `refund: false`, so `canRefund` flips to `false`.
+  - *offers nothing at all when the order has no payment* — clearing `responses` to `{}` triggers the 404 path; `canRefund` stays `false`.
+  - *does nothing without an order id rather than calling a broken url* — passing `ref(undefined)` as the order id short-circuits `refund()` to return `undefined`.
 
 ## Relationships
 
-- **`src/modules/payments/composables/use-order-refund.ts`** — the unit under test; imported as `useOrderRefund` and exercised with a `ref('o1')` (or `ref(undefined)`) order-id input.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module top-level to register DI providers so the composable's internal dependencies (Pinia store, HTTP client) resolve.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload into the Orval response envelope) and `parseOrvalFixture` (validates/parses a stub body), both used by the HTTP mock.
+- **`src/modules/payments/composables/use-order-refund.ts`** — system under test; imported as `useOrderRefund` and exercised directly in every test.
+- **`tests/support/unit/wire-modules.ts`** — imported as `wireModulesIntoCore`; called once at module top-level to register the Pinia store bindings the composable depends on.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload into the API response envelope) and `parseOrvalFixture` (normalizes the fixture into the shape the composable/store expects).
 
 ## Notes
 
-- The 404 rejection is a **plain object**, not an `Error` instance. An eslint-disable comment documents this as intentional: the API's error *envelope* is the client's rejection contract, and the store's `onResponseReject` reads `.status` off it.
-- Tests use `return` + `.then()` chains rather than `await`. This is a deliberate style choice (no top-level `async` in the `it` callbacks).
-- `settled()` is only a single microtask. That is sufficient here because the composable performs exactly one immediate-fetch; adding more awaits would be overkill.
-- The `responses` map is shared mutable state cleared per test via `vi.clearAllMocks()` in `beforeEach`; tests that need a different scenario (e.g. the 404 case) reassign it directly.
+- The 404 rejection is a **plain object**, not a `JS Error`. This mirrors the real API error envelope that the store's `onResponseReject` handler reads; the `eslint-disable` comment documents the intent.
+- `settled()` is a single microtask tick, not a timer wait. It is sufficient because the composable's immediate watcher performs an async fetch that resolves within the same microtask queue; no `setTimeout` or `vi.useFakeTimers` is needed.
+- `responses` is **mutated in place** by individual tests (e.g. the "no payment" test sets it to `{}`), so tests are not isolated by `beforeEach` reassignment alone — the `beforeEach` only resets to the default two-key map.

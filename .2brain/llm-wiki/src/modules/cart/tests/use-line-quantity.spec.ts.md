@@ -1,7 +1,7 @@
 ---
 source: src/modules/cart/tests/use-line-quantity.spec.ts
-sha256: 748211d80538d67d523a2969259de335d41fb4c45e12d26c576b209e32767b25
-generated_at: 2026-10-02T15:03:51.161589+00:00
+sha256: a71d60801013f98ec100084081a91996756879f5fabf3d02d04003da69146923
+generated_at: 2026-10-17T00:45:05.121882+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Test suite for the `useLineQuantity` composable. It validates the debounce that prevents a race where rapid stepper clicks fire multiple cart-update requests and the store ends up with whichever response arrives last. Every assertion is framed against that failure mode ("one request, for the final number") rather than against the debounce mechanism in isolation, and it also covers the two ways a naive debounce silently loses data: swallowing a click made during an in-flight request and cancelling a pending step on unmount.
+Vitest suite for the `useLineQuantity` composable. It verifies that the debounce protecting quantity-stepper API calls eliminates the original race (multiple in-flight requests where the last response wins) without introducing data loss, incorrect UI state, or broken checkout/unmount flows.
 
 ## Key elements
 
-- **`makeUpdate()`** — local factory returning a mock `update(productId, quantity)` that records calls and returns a deferred (never-auto-resolving) promise, plus `settleAll()` and `resolvers` so tests can hold a request in flight indefinitely.
-- **`DELAY` (400 ms)** — hardcoded to match the composable's debounce window; used with `vi.advanceTimersByTimeAsync`.
-- **`useLineQuantity(update, onError, delay)`** (under test, from `@/modules/cart/composables/use-line-quantity`) — returns an object exposing `stepQuantity`, `quantityOf`, `flushPending`, `forget`, `forgetAll`, `settle()`, and `sendPendingKeepalive(send)`.
-- **Five `describe` blocks** grouped by concern: the race it removes, visitor-visible feedback (immediate UI update, error rollback, quantity floor), data-loss failure modes of naive debouncing, FA34 checkout/clear coordination (`settle`, `forgetAll`), and page-leave keepalive (`sendPendingKeepalive`).
-- **`beforeEach` / `afterEach`** — toggles `vi.useFakeTimers()` / `vi.useRealTimers()` so no test ever waits a real 400 ms.
+- **`makeUpdate()`** — local factory returning a `vi.fn` that pushes each call into a `calls` array and returns a deferred (never-auto-resolving) Promise. Provides `settleAll()` and a raw `resolvers` array so individual in-flight requests can be resolved selectively.
+- **`DELAY = 400`** — the debounce window in milliseconds, passed to every `useLineQuantity` call.
+- **`describe('useLineQuantity — the race it removes')`** — asserts a single request carrying the final quantity, per-line independence, and no send before the window closes.
+- **`describe('useLineQuantity — what the visitor sees')`** — covers immediate local quantity update, store hand-back after the API settles, error reporting via the `onError` callback, and the floor of 1 (zero is a removal, not a step).
+- **`describe('useLineQuantity — the ways a debounce loses data')`** — verifies clicks made while a request is in flight are not swallowed, `flushPending()` fires the pending step synchronously, and `forget()` prevents a queued step from resurrecting a removed line.
+- **`describe('useLineQuantity — checkout and clear must not race a pending step')`** — exercises `settle()` (flush-then-await, immediate resolve when idle, rejection on failure) and `forgetAll()`.
+- **`describe('useLineQuantity — a step still in its debounce when the page goes away')`** — tests `sendPendingKeepalive(send)`: sends each outstanding line once via the provided sender, suppresses the original timer, and is a no-op when nothing is pending.
 
 ## Relationships
 
-- **`tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`** — listed as a graph neighbor; no direct import or functional interaction is visible in this file's source. The relationship is likely at the test-glob / project-config level (the globs spec enumerates spec file paths) rather than a code-level dependency.
+- **`src/modules/cart/composables/use-line-quantity.ts`** — the sole SUT. The spec imports `useLineQuantity` and exercises every public method it exposes (`stepQuantity`, `quantityOf`, `flushPending`, `forget`, `forgetAll`, `settle`, `sendPendingKeepalive`).
+- **`src/modules/cart/tests/guest-cart.property.spec.ts`** — sibling spec in the same test directory; no shared imports or helpers. Co-located for the cart module's test suite.
+- **`tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`** — referenced only by the dependency graph (likely a glob-validation script that enumerates spec files). No runtime interaction with this file.
 
 ## Notes
 
-- All tests rely on **fake timers**; the 400 ms delay is the subject under test, and real-time waiting would make the suite both slow and flaky (the exact reason debounces often go untested).
-- The composable's public surface is inferred from usage: `stepQuantity(productId, quantity, delta)`, `quantityOf(productId, quantity)`, `flushPending()`, `forget(productId)`, `forgetAll()`, `settle(): Promise<void>`, `sendPendingKeepalive(send)`.
-- `settle()` is the contract checkout/clear use: it flushes the pending step synchronously (the request leaves immediately) **and** awaits its resolution before the promise settles. `flushPending()` alone only fires the request without waiting.
-- `forget(productId)` / `forgetAll()` must suppress any queued step so a removed line cannot be resurrected by a timer that fires after removal.
-- The "floor" rule: `stepQuantity` will never drive a line's quantity below 1; zero is a removal and is a different API call entirely.
-- `sendPendingKeepalive` is a one-shot fire-and-forget: after it hands outstanding steps to the keepalive sender, the internal timers are cancelled so the normal `update` path never fires for those steps.
+- **Fake timers are mandatory.** Every test calls `vi.useFakeTimers()` in `beforeEach` and restores real timers in `afterEach`. The 400 ms debounce window is the subject under test; real-time waits would make the suite both slow and flaky.
+- **Assertions target the race, not the debounce.** The file header explicitly states each assertion is written against the *failure mode the debounce fixes* (e.g., "one request, for the final number"), not against debounce mechanics in isolation.
+- **Deferred promises, not resolved mocks.** `makeUpdate` returns Promises that never resolve on their own. Tests must explicitly call `settleAll()` or individual `resolvers[i]()` to simulate the server responding, which lets them interleave in-flight state with subsequent user actions.
+- **`settle()` vs `flushPending()`.** `flushPending` only fires the pending request synchronously; `settle` additionally awaits its resolution (or rejection). Tests distinguish these to guard against a regression where checkout would proceed before the API has acknowledged the change.
+- **`sendPendingKeepalive` suppresses the timer.** After invoking it, advancing timers past `DELAY * 2` must *not* produce a second call to `update`. This is the guard against double-sending on page-hide.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/stores/addresses.ts
-sha256: 3ee49c8c56e57f3b65a32d4a81fc4696647c40357b006c27587e8a3525e19fcb
-generated_at: 2026-10-02T12:16:52.646236+00:00
+sha256: 67c51f0594b3b842e0db4b5eb80d2de15065eacdee9f9be0cd51ac612edcff58
+generated_at: 2026-10-17T00:18:29.372559+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store (Composition API) managing the visitor's address book. Every mutation (add, update, set-default, remove) re-fetches the entire book rather than patching a single entry, because the invariant that must hold after any write — exactly one default — is a list-level property that can shift a *different* row than the one the API responds with.
+Pinia store (Composition API) that owns the visitor's address-book state and all write actions against the address endpoints. It exists because the "exactly one default" invariant is a property of the whole list: any write that changes which entry is the default mutates a *different* row than the one the API responds with, so the store re-reads the full book after every mutation rather than patching a single entry locally.
 
 ## Key elements
 
-- **`useAddressesStore`** — the exported store (`'accountAddresses'`). Returns `addresses`, `loading`, and four actions plus `fetchAddresses`.
-- **`addresses`** — `ref<Address[]>`; whole-list state, the single source of truth for rendering.
-- **`fetchAny` / `loading`** — from `useStructureRestApi<Address, string>`; every action routes through `fetchAny` so the loading flag stays up for the full write-then-read sequence without flickering.
-- **`readAddressesResponse(data: AddressesEnvelope)`** — unwraps the generated envelope via `getPayloadFromResponse` and replaces `addresses`. Typed against `AddressesEnvelope` so a contract break is a compile error, not a runtime cast.
-- **`fetchAddresses()`** — initial load; calls `apiGetAddresses` inside `fetchAny`.
-- **`reloadBook()`** — internal re-fetch after a write; called *inside* the write's `fetchAny` so `loading` spans both steps.
-- **`addAddress(address)`** — POST then reload; the first entry becomes default server-side, demoting the previous holder (a different row).
-- **`updateAddress(addressId, changes)`** — PATCH (AUDIT_0924 D17d) then reload.
-- **`setDefaultAddress(addressId)`** — PUT `{addressId}/default` (idempotent) then reload; the demoted holder is another row.
-- **`removeAddress(addressId)`** — DELETE; the response carries the updated book directly (server promotes the oldest survivor to default if the removed entry was default).
+- **`useAddressesStore`** — the store itself (`defineStore('accountAddresses', …)`). Exposes `addresses`, `loading`, and the five actions below.
+- **`addresses: Ref<Address[]>`** — whole-list state; the single source of truth for rendering.
+- **`fetchAddresses()`** — initial load; calls `apiListAddresses` and populates `addresses`.
+- **`reloadBook()`** — internal re-read after a write; returns the updated list. Called inside the same `fetchAny` as the write so `loading` stays up and doesn't flicker.
+- **`addAddress(address: AddressInput)`** — POST new entry, then reload. Server-side, the first entry auto-becomes default; `default: true` demotes the previous holder.
+- **`updateAddress(addressId, changes)`** — PATCH one entry, then reload.
+- **`setDefaultAddress(addressId)`** — `PUT …/default` (idempotent), then reload because the demoted holder is another row.
+- **`removeAddress(addressId)`** — DELETE; reads the response payload directly (the delete endpoint returns the updated book) rather than issuing a second GET.
+- **`readAddressesResponse(data: AddressesEnvelope)`** — typed helper that extracts `payload.addresses` via `getPayloadFromResponse`; typed against the generated envelope so a contract drift is a compile error.
 
 ## Relationships
 
-- **`src/modules/account/components/AddressPicker.vue`** — consumer of this store; reads `addresses` and `loading`, and calls the store's actions to create, edit, re-order (set default), and delete entries.
+- **`ProfileAddresses.vue`** — sole consumer that renders the store; the store is explicitly scoped to this page's lifecycle.
+- **`AddressFormDialog.vue`** — calls `addAddress` / `updateAddress` when the user submits a new or edited entry.
+- **`AddressPicker.vue`** — reads `addresses` from the store to present the selectable list.
+- **`addresses.spec.ts`** — unit tests for the store's actions and state transitions.
+- **`address-picker.spec.ts`** / **`profile-addresses-view.spec.ts`** — component tests that exercise the store in rendered context.
 
 ## Notes
 
-- The store is deliberately scoped to the profile page context, not the session. Do not import it into a global layout or a separate editable-record view.
-- `removeAddress` is the only action that reads the response payload directly (`readAddressesResponse(data)`); all other actions discard the single-entry response and call `reloadBook()`. This asymmetry is intentional: the delete endpoint returns the updated book, while the others return only the mutated row.
-- `setDefaultAddress` is idempotent per the API contract; calling it with the already-default ID is a safe no-op (still triggers a reload).
-- The `resourceKey` (`'accountAddresses'`) must match any external query-cache invalidation keys that reference this slice.
+- **No local patching.** Every write (add, update, setDefault) is followed by a full re-fetch. `removeAddress` is the one exception: it trusts the delete response payload instead of issuing a second GET, but the net effect is identical (whole-list replacement).
+- **`loading` covers write + read together.** Because `reloadBook` runs inside the same `fetchAny` callback as the mutation, the loading indicator never drops between the write completing and the re-read finishing.
+- **Typed envelope, not `unknown`.** `readAddressesResponse` is typed against `AddressesEnvelope` / `AddressesResponse`, so if the API contract changes the call site fails at compile time rather than silently producing `undefined`.
+- **Scoped, not global.** The store is tied to the profile page (`ProfileAddresses.vue`), not to a session or a single editable record. Do not lift it into a broader layout without re-evaluating the scoping rationale in the JSDoc.

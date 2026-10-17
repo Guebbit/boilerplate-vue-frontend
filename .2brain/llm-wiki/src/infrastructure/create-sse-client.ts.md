@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/create-sse-client.ts
-sha256: a3c3daf244895e414365b656393366eaea4d7a7d527b2df8911688bb695ed748
-generated_at: 2026-10-02T11:54:25.193758+00:00
+sha256: c0531fc21ccb554a94bf7c733433ee888bb8c039c2da34a60ab5349efdc3516e
+generated_at: 2026-10-17T00:08:54.755822+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Provides a typed, one-connection SSE client on top of the browser's `EventSource`. It opens a single persistent stream, registers one listener per declared event name, JSON-parses each incoming frame, and (when `VITE_VALIDATE_RESPONSES` is on) validates the payload against the AsyncAPI-derived Zod schema before forwarding it to the caller. It is the SSE counterpart to `orvalMutator`'s response validation.
+Provides a typed, auto-reconnecting Server-Sent Events client that wraps the browser's `EventSource`. It JSON-parses each frame, optionally validates payloads against AsyncAPI-derived Zod schemas (behind the same `VITE_VALIDATE_RESPONSES` gate as REST), and transparently reopens the stream after the browser gives up on a connection (e.g. 401/429/503 on reconnect).
 
 ## Key elements
 
-- **`createSseClient(url, eventNames, callbacks?)`** — Main export. Opens an `EventSource` with `withCredentials: true`, attaches `open`/`error` handlers, and registers a per-event listener that parses and (optionally) validates each frame. Returns an `SseClient` handle.
-- **`SseClientCallbacks`** (interface) — Optional `onOpen`, `onError`, and a generic `onEvent` callback whose `TEventName` parameter narrows the payload to the correct contract type.
-- **`SseClient`** (interface) — The handle returned by `createSseClient`; exposes `close()` to tear down the connection.
-- **`parseJsonData(rawData)`** (private) — Safe `JSON.parse`; returns `undefined` on failure so callers can distinguish a bad frame from a legitimate `null`/`0`/`false`/`""` payload.
-- **`payloadSchemas` / `payloadSchemaFor(eventName)`** (private) — Lazily builds and caches one Zod schema per event name via `zod.fromJSONSchema` from the generated `SSE_EVENT_PAYLOAD_SCHEMAS` map. A build with validation off never pays for the conversion.
-- **`passesContract(eventName, payload)`** (private) — Gates a parsed frame on the Zod schema when validation is enabled; logs mismatched fields via `logger.error` and drops the frame.
+- **`SseClientCallbacks<TEventName>`** — Callback interface (`onOpen`, `onError`, `onEvent`). The generic `TEventName` narrows the payload type on `onEvent`.
+- **`SseClient`** — Handle with a single `close()` method that tears down the source and cancels any pending reopen.
+- **`createSseClient(url, eventNames, callbacks)`** — Main export. Opens an `EventSource` with `withCredentials: true`, registers one `addEventListener` per event name, and returns the `SseClient` handle.
+- **`parseJsonData`** — Safe `JSON.parse`; returns `undefined` on malformed input so callers can skip bad frames.
+- **`payloadSchemas` / `payloadSchemaFor`** — Lazy, cached `Map<SseEventName, ZodType>`. Schemas are built on first use via `zod.fromJSONSchema` from the generated `SSE_EVENT_PAYLOAD_SCHEMAS`.
+- **`passesContract`** — Validates a parsed payload against its event's schema. In production (report-only) mismatches are logged but forwarded; in dev/test they are dropped.
+- **`REOPEN_DELAYS_MS`** — Backoff schedule (1 s → 30 s, capped) for reopening after the browser closes the source permanently.
 
 ## Relationships
 
-No graph neighbors are listed. The file's runtime dependencies are internal:
+No graph-neighbor files are documented for this module. It imports:
 
-- **`@/infrastructure/http/validate.ts`** — `shouldValidateResponses()` controls the validation gate.
-- **`@/infrastructure/utils/logger.ts`** — `logger` used for contract-failure diagnostics.
-- **`@types`** — `SSE_EVENT_PAYLOAD_SCHEMAS` (generated from `asyncapi.yaml` via `npm run gen:asyncapi`), plus the `SseEventName` / `SseEventPayload` type maps that drive both the listener registration loop and the Zod validation.
+- `SSE_EVENT_PAYLOAD_SCHEMAS`, `SseEventName`, `SseEventPayload` from `@types` (generated from `asyncapi.yaml`).
+- `isReportOnly`, `shouldValidateResponses` from `@/infrastructure/http/validate.ts` (shared REST/SSE validation gate).
+- `logger` from `@/infrastructure/utils/logger.ts`.
 
 ## Notes
 
-- **`undefined` is the parse-failure sentinel.** `parseJsonData` deliberately returns `undefined` (not `null`) on bad JSON so that legitimate payloads of `null`, `0`, `false`, or `""` still flow through. Callers check `payload === undefined`, not a truthiness test.
-- **Validation is additive, not blocking.** When `VITE_VALIDATE_RESPONSES` is off, every well-formed JSON frame is forwarded unchanged. When on, a frame that fails the Zod schema is *dropped and logged*—there is no rejection path back to the server because the listener is fire-and-forget.
-- **Schemas are whole, no `$ref`.** The generated JSON Schemas carry no references, so `zod.fromJSONSchema` can import each one independently without a registry.
-- **`withCredentials: true`** is hard-coded; the SSE connection relies on the auth cookie and cannot switch to a token header.
+- `undefined` is the sentinel for "JSON parse failed"; `null`, `0`, `false`, `""` are all legitimate payloads and must not be dropped.
+- Reconnection logic only triggers when `readyState === 2` (CLOSED). While the browser is still in CONNECTING state it retries on its own—this module does not interfere.
+- `withCredentials: true` is unconditional; the backend authenticates SSE via the session cookie, so removing it will break auth.
+- Contract validation is **additive-tolerant in production**: a new optional field on the backend will not silence a deployed frontend (mirrors the REST `orvalMutator` behavior).
+- Zod schemas are built lazily per event name, so a build with validation off never pays the JSON-Schema→Zod conversion cost.

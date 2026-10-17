@@ -88,8 +88,12 @@ describe('while an order is being placed', () => {
         // A step inside its debounce window while the request is out.
         await page.wrapper.get('[data-test=cart-increase]').trigger('click');
         order.resolve(answered(anOrder({ id: 'o1' })));
-        await flushPromises();
-        // The router leaves the page for the order's own: the page is unmounted, which flushes.
+        // The router leaves for the order's page, whose lazy chunk must finish loading before the
+        // spec ends or it lands on a torn-down environment.
+        await vi.waitFor(() => {
+            expect(router.currentRoute.value.params.id).toBe('o1');
+        });
+        // The page is unmounted, which flushes.
         page.wrapper.unmount();
         await flushPromises();
 

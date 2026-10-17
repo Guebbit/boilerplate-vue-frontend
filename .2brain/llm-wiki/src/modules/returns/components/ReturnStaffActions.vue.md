@@ -1,7 +1,7 @@
 ---
 source: src/modules/returns/components/ReturnStaffActions.vue
-sha256: eea4e253335a399362c9fc89bee93f543f5aa20a488628bec01a08ebc5738130
-generated_at: 2026-10-02T15:43:01.504413+00:00
+sha256: 8be189197f9c2515a3ac939911dffe4883339f558bbbe690bb8d69bb3a3cc1ef
+generated_at: 2026-10-17T01:37:06.167483+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Renders the staff-facing action panel for a single return record (approve, decline, receive). Which of the three controls appear is driven entirely by the server-provided `item.actions` array; this component does not implement or mutate the return lifecycle itself — it collects optional form inputs, delegates the mutation to the returns store, and reports the outcome.
+Renders the three staff actions available on a single return — **approve**, **decline** (with a mandatory reason), and **receive** (with an optional handling deduction). Which of the three are shown is driven entirely by the server-supplied `item.actions`; the component performs no lifecycle logic of its own, only validation, dispatch, and feedback.
 
 ## Key elements
 
-- **`handleApprove`** — Calls `approve(item.id)` from the store. No form; a single button click.
-- **`submitDecline`** — Validates a required `reason` (1–500 chars, via Zod) then calls `decline(item.id, reason)`.
-- **`submitReceive`** — Validates an optional `handlingDeduction` (empty string = none, otherwise ≥ 0) then calls `receive(item.id, { handlingDeduction })` (omits the field when empty).
-- **`run(move, successKey, applyFieldErrors?)`** — Shared executor: clears prior blocking error, fires the store action, toasts success, emits `changed`, or routes errors to the form's field-level validator (falling back to the shared `InlineErrorAlert`).
-- **`useBlockingError()`** (`moveError` / `reportMoveError` / `clearMoveError`) — Single reactive slot for un-mapped server errors (409 lost-race, 422 refused amount); rendered by `<InlineErrorAlert>`.
-- **`useStructureFormValidation`** (×2) — Provides reactive form state, Zod-backed error messages, `showFormErrors` gating, and `applyServerErrors` for per-field 422 mapping. Re-validates on locale change.
-- **`loading`** (from `storeToRefs(useReturnsStore())`) — Disables every button while any move is in flight to prevent double-submission.
-- **Emits `changed`** — Signals the parent page to re-fetch / refresh derived data (order statuses, money).
+- **`handleApprove`** — calls `approve(item.id)` from the returns store via the shared `run` helper.
+- **`submitDecline`** — validates a `reason` string (1–500 chars, trimmed) through `useStructureFormValidation`, then calls `decline(item.id, reason)`.
+- **`submitReceive`** — validates an optional `handlingDeduction` (empty or non-negative number), converts it, and calls `receive(item.id, { handlingDeduction })` (or `undefined` when empty).
+- **`run(move, success, applyFieldErrors?)`** — single execution path for all three moves: clears prior error, toasts on success, emits `changed`, or routes the failure through `applyFieldErrors` / `reportMoveError` (in-place `InlineErrorAlert`).
+- **`declineSchema` / `receiveSchema`** — Zod schemas consumed by `useStructureFormValidation`; both re-validate on `locale` change.
+- **`loading`** (from `storeToRefs(useReturnsStore())`) — disables every button while any move is in flight to prevent races.
+- **`moveError`** — shared blocking-error state displayed in the `InlineErrorAlert` at the bottom of the component.
 
 ## Relationships
 
-- **`src/modules/returns/store.ts`** — Imports `useReturnsStore` for the `approve` / `decline` / `receive` action creators and the shared `loading` flag. All server mutations pass through this store; the component never calls an API directly.
-- **`src/infrastructure/utils/logger.ts`** — Not imported here directly; available transitively via the returns store's action layer.
+- **`src/modules/returns/store.ts`** — Source of the three store actions (`approve`, `decline`, `receive`) and the reactive `loading` flag. All server calls go through this store; the component holds no HTTP logic.
+- **`src/modules/returns/views/Return.vue`** — Parent view that supplies the `item: Return` prop and listens for the `changed` emit to re-fetch or refresh surrounding order/financial data.
+- **`src/modules/returns/tests/return-staff-actions.spec.ts`** — Dedicated unit/integration spec covering the three flows, validation gating, and error surfacing.
 
 ## Notes
 
-- The component is **stateless with respect to the return lifecycle**: it reads `item.actions` to decide what to render and trusts the store to transition the record. After a successful move it emits `changed` and expects the parent to refresh `item`.
-- `handlingDeduction` is validated as a *string* (the raw input) with a `refine` that accepts `''` or a non-negative number; it is only converted to a number at the point of the store call.
-- Both forms use `novalidate` and rely on the custom Vuetify + Zod pipeline rather than native HTML validation; `invalidFieldSelector` targets Vuetify's internal markup.
-- The `data-test` attributes (`return-approve`, `return-decline-reason`, `return-receive-deduction`, `return-move-error`, etc.) are the stable selectors for e2e tests.
+- The component uses a **named default export block** (`{ name: 'ReturnStaffActions' }`) alongside `<script setup>`, which is required for `<KeepAlive>` / devtools identification since `script setup` cannot declare `name` itself.
+- `handlingDeduction` is intentionally a **string** in the form state (matching a plain `<input type="number">`); it is only converted to `Number` at the `run` call site. Empty string means "no deduction."
+- Error routing: when a form is present, `applyServerErrors` is tried first; only unmapped errors fall through to the generic `InlineErrorAlert`. Moves without a form (approve) go straight to the blocking alert.
+- The `data-test` attributes on every interactive element are the contract for the e2e/unit test suite.

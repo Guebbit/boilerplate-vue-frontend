@@ -1,31 +1,34 @@
 ---
 source: src/modules/payments/components/OrderReferenceSearch.vue
-sha256: 152bbbf472fbce1d6f44a56640eda809cd3329ecf845b86e2cc370a35d876712
-generated_at: 2026-10-02T15:26:49.747110+00:00
+sha256: 448586c23feb26c782e0590c2925ca72a44b0f51ba829247880879108fa1ac1e
+generated_at: 2026-10-17T01:21:10.967618+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/payments/components/OrderReferenceSearch.vue
 
 ## Purpose
-A self-contained search form that lets an operator paste a bank-statement RF creditor reference and resolve it to the corresponding order. It lives in the `payments` module because the lookup lives in the payments store, but it is deliberately host-agnostic: it emits the found `Order` and never navigates, so any parent that can act on the result can mount it.
+
+A self-contained search card that lets an operator paste an RF (creditor) reference from a bank statement and resolve it to the order it settles. It emits the found `Order` to its host rather than navigating, so it can be mounted in any context without requiring an `orders` module or route. Gated behind the `create:Payment` permission.
 
 ## Key elements
-- **`search()`** – Trims the typed reference, calls `paymentsStore.findOrderByReference(typed)`, then either clears the input and emits `found` with the order, or sets a blocking error (miss or failure). No-ops if the field is blank or a search is already in flight.
-- **`emit('found', order)`** – The sole output channel. The host (e.g. `OrdersList.vue`) decides what "found" means (navigate, open dialog, etc.). This component names no route.
-- **`useBlockingError()`** – Provides `searchError`, `searchErrorType`, `reportSearchError`, `warnSearchNotFound`, and `clearSearchError`. Both a "not found" result and a thrown error set a blocking state rendered inline via `InlineErrorAlert`; they differ only in tone and whether the error is reported to Faro.
-- **`reference` (ref)** – The typed input value; cleared on a successful match.
-- **`paymentsStore`** – Imported from `../store.ts`; used for the `loading` guard and the `findOrderByReference` call.
-- **Template** – A Vuetify `v-card` wrapping a `v-text-field` (Enter key triggers search), a submit `v-btn`, and a full-width `InlineErrorAlert`. All elements carry `data-test` attributes prefixed `order-reference-search`.
+
+- **`search()`** — Trims the typed reference, no-ops if blank or a search is already in-flight, calls `paymentsStore.findOrderByReference(typed)`. On a hit it clears the field and emits `found` with the order; on a miss or thrown error it populates the local blocking-error state.
+- **`useBlockingError()`** (from `@/infrastructure/utils/use-blocking-error.ts`) — Provides `searchError`, `searchErrorType`, `reportSearchError`, `warnSearchNotFound`, and `clearSearchError`. Both "not found" (warning tone, reported to Faro) and hard failures (error tone) block the search in place.
+- **`emit('found', order)`** — The sole outbound signal; the host decides what to do with the order. This component names no route.
+- **`paymentsStore.loading`** — Read to disable the submit button and short-circuit concurrent searches.
+- **`InlineErrorAlert`** — Renders the blocking error/warning inline in the card instead of using a toast.
 
 ## Relationships
-- **`src/modules/payments/store.ts`** – Source of `findOrderByReference()` and the `loading` flag that gates re-submission.
-- **`src/modules/orders/views/OrdersList.vue`** – Primary host: listens for the `found` event and performs the navigation to the order's edit route, since this component has no route knowledge.
-- **`src/modules/payments/index.ts`** – Module entry point that registers/publishes this component for cross-module mounting.
-- **`src/infrastructure/utils/logger.ts`** – Reached indirectly through `useBlockingError`'s `report` path when a real (non-miss) failure occurs.
+
+- **`src/modules/payments/store.ts`** — Imports `usePaymentsStore`; calls `findOrderByReference(reference)` and reads `.loading`.
+- **`src/modules/orders/views/OrdersList.vue`** — Primary documented host: listens for the `found` event and navigates to the order's edit page. `OrderReferenceSearch` deliberately avoids that navigation itself.
+- **`src/modules/payments/index.ts`** — Module barrel that publishes this component so hosts outside the payments module can mount it.
+- **`src/modules/payments/tests/order-reference-search.spec.ts`** — Unit/spec coverage for this component's search, emit, and error paths.
 
 ## Notes
-- The component is gated by the `payments.any.create` permission (the same key that gates recording a payment), not by any `orders` permission.
-- `payments` declares no `MODULE_EDGES` reach into `orders` (FA86); this component is designed to be mounted by hosts that may not have the `orders` module at all. The emit-based contract is the workaround.
-- Both a "reference not found" result and a thrown error are treated as *blocking* failures for the search UX (inline alert, no toast), per the project's request-flow convention (`docs/theory/request-flow.md`). They differ only in alert tone and whether a Faro report is sent.
-- The input's `@update:model-value` clears any existing error, so editing the field immediately dismisses the inline alert.
+
+- Dual `<script>` blocks: the non-setup block exists only to set `name: 'OrderReferenceSearch'` for DevTools and `<KeepAlive>`; `<script setup>` cannot declare a name on its own.
+- The component never imports from the `orders` module. The module docs explicitly state `payments` declares no `MODULE_EDGES` reach into `orders` — the emit-then-let-host-act pattern is the enforcement mechanism.
+- Both a "no match" and a network/500 failure prevent the search from completing; the only difference is tone (`warn` vs. `report`) and whether Faro is notified. This is intentional per `docs/theory/request-flow.md`.
+- Typing in the input (`@update:model-value`) clears any prior blocking error, so a stale message never lingers while the operator corrects a typo.

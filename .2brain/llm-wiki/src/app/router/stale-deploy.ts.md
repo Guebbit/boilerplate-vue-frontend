@@ -1,7 +1,7 @@
 ---
 source: src/app/router/stale-deploy.ts
-sha256: 8e9a56831ea110834f3c5955600de336a6fb1229bc82849f04d939ef82d09bde
-generated_at: 2026-10-02T11:49:22.821915+00:00
+sha256: 9bad05eb8acea7710319ac86dd4f42c3f063068a91c201eb5b077face18b04df
+generated_at: 2026-10-17T00:07:05.534983+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,15 +9,16 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Recovers from a stale deployed build: when a newer deploy replaces the asset manifest, an already-open tab's next lazily-imported route chunk 404s. Vite surfaces this as a `vite:preloadError` event on `globalThis`. This module intercepts that event and, on the next router error, performs a single full-page reload to the failed route. A `sessionStorage` guard ensures the reload happens at most once per tab session, so a genuinely broken build still reaches the error page rather than reloading in a loop.
+Recovery mechanism for a specific Vite SPA failure mode: an open tab whose asset manifest was replaced by a newer deploy, causing its next lazy route-chunk fetch to 404. Vite surfaces this as a `vite:preloadError` global event. This file intercepts that event, flags it, and lets `router.onError` perform a single full-page reload to the failed navigation's target. A `sessionStorage` guard ensures the reload happens at most once per tab session, so a genuinely broken build still lands on the error page instead of looping.
 
 ## Key elements
 
-- **`RELOADED_ONCE_KEY`** (`'app:stale-deploy-reloaded'`) — `sessionStorage` key that marks "this tab already retried." Chosen over a module-level boolean because `sessionStorage` survives the full page reload that the first attempt performs.
-- **`sawPreloadError`** — module-level flag set by the preload-error listener and consumed (then cleared) by `recoverFromStaleDeploy`. Exists as shared mutable state because the two functions are triggered by different events (browser event vs. router error) with no common caller to thread data through.
-- **`PreloadErrorSource`** (interface) — minimal structural shape for anything that can receive a `vite:preloadError` listener. Deliberately narrow so test fixtures need only implement this one method instead of satisfying the full `WindowEventMap`.
-- **`registerStaleDeployRecovery(target)`** — attaches a `vite:preloadError` listener to `target`. Calls `event.preventDefault()` (suppresses Vite's default rethrow into an unhandled rejection) and sets `sawPreloadError = true`.
-- **`recoverFromStaleDeploy(fullPath, navigate, storage)`** — returns `true` and performs a one-time reload if (a) a preload error was seen since last check, and (b) the session has not already retried. Returns `false` otherwise, letting the caller fall through to its generic error-page redirect.
+- **`RELOADED_ONCE_KEY`** — `sessionStorage` key (`'app:stale-deploy-reloaded'`) that marks "this tab already retried." Survives the reload because `sessionStorage` is not cleared by a page load.
+- **`sawPreloadError`** (module-level `let`) — Transient flag set by the preload-error listener and consumed (then cleared) by `recoverFromStaleDeploy`. Exists because the two call sites are triggered by different events with no shared caller to pass data through.
+- **`PreloadErrorSource`** (exported interface) — Minimal structural type (`addEventListener` for `'vite:preloadError'`) so tests can supply a plain-object stub without pulling in the full DOM `WindowEventMap`.
+- **`registerStaleDeployRecovery(target)`** — Attaches a `'vite:preloadError'` listener that calls `event.preventDefault()` (suppressing Vite's default unhandled-rejection rethrow) and sets `sawPreloadError = true`.
+- **`recoverFromStaleDeploy(fullPath, navigate, storage)`** — The one-shot guard + action. Returns `true` if a reload was performed (caller should skip the generic error-page redirect). Returns `false` if the flag wasn't set or the tab already retried.
+- **`clearStaleDeployMark(storage)`** — Removes the `sessionStorage` key after a route has actually loaded, re-arming the retry so a tab left open across *two* deploys can recover both times.
 
 ## Relationships
 
@@ -25,8 +26,7 @@ No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **`sessionStorage`, not `localStorage`.** Per-tab scope means one tab's retry doesn't block another tab's, and the value naturally clears when the tab closes. A full page load does *not* clear `sessionStorage`, which is precisely why it (not a module flag) survives the reload.
-- **`preventDefault()` on the preload error** matters: without it Vite rethrows the same failure as an unhandled rejection, double-reporting an error that `router.onError` already handles with the correct target path.
-- **Reload uses `navigate(fullPath)`** (production: `location.assign`) rather than `location.reload()`, so the retry lands on the route the visitor was actually heading to, not whatever URL the tab is currently showing.
-- **`recoverFromStaleDeploy` clears `sawPreloadError` unconditionally on read**, even if it then returns `false`. This prevents a stale `true` from a prior navigation from accidentally triggering a reload on an unrelated later error.
-- **Testing surface:** pass a `PreloadErrorSource` stub, a spy for `navigate`, and a `Pick<Storage, 'getItem' | 'setItem'>` stub. No DOM or browser APIs required.
+- **Why `sessionStorage`, not a module flag:** A module-level `boolean` would be reset by the very page reload it's meant to survive. `sessionStorage` persists across a reload within the same tab but is scoped per-tab, which matches the failure's scope.
+- **`sawPreloadError` is consumed-then-cleared:** `recoverFromStaleDeploy` reads and immediately resets the flag so a stale event from a *previous* navigation cannot trigger a reload for an unrelated error.
+- **`clearStaleDeployMark` must be called on successful route load.** If it's forgotten, the tab gets only one recovery for its entire lifetime, even after a subsequent successful navigation.
+- **`navigate` and `storage` are injected** (not imported) to keep the module side-effect-free for tests; production callers pass `location.assign` and `sessionStorage`.

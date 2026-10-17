@@ -1,7 +1,7 @@
 ---
 source: scripts/e2e/run-shards.ts
-sha256: e64f171e09a219c6f0862c15a0106f31b0f9923e0915de2b88a4a29309583feb
-generated_at: 2026-10-02T11:36:41.285654+00:00
+sha256: cd597a173d52024b1200f043c281bb36d9b11ab8d0f77ed2ce7888ce4c2f396e
+generated_at: 2026-10-17T00:01:17.008327+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,42 +9,41 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The worker behind `npm run test:e2e`. It schedules Cypress functional and antibot specs across a configurable number of parallel shards (default 4) against a single `vite preview` build, each shard paired with its own in-memory demo backend. It exists to cut wall-clock from ~13 min sequential to the longest single spec, while preserving per-shard data isolation that would be unsafe under the live profile.
+Entry-point script (run via `tsx`) that fans out the Cypress e2e suite into N parallel shards against a single **built** preview server, booting one isolated demo backend per shard. It exists to cut wall-clock from ~13 min to ~2.5 min on a 16-core machine without relying on Cypress Cloud, while guaranteeing shard isolation (own in-memory DB, own webhook sink) and refusing to run under the live profile where that isolation is impossible.
 
 ## Key elements
 
-- **`REPO_ROOT`** — resolved via `import.meta.dirname` two levels up; all globs and paths anchor here.
-- **`positiveInteger`** — parses an env value to a positive int or returns `undefined`.
-- **`shardCount`** — `E2E_SHARDS` env, defaulting to 4.
-- **`specs`** — `globSync(FUNCTIONAL_SPEC_GLOBS)` results, normalised to posix separators and sorted for stable shard assignment.
-- **`durations`** — merged map preferring `readSpecDurations()` (auto-appended by `after:spec`) over the hand-written `SECONDS` table; specs in neither are left out so `weighSpecs` schedules them at the mean.
-- **`weighSpecs` / `balanceShards`** (from `shard-balancer.ts`) — LPT assignment of weighted specs onto the least-loaded shard.
-- **`antibotSpecs` / `active`** — antibot-globbed specs form one dedicated shard (requires the human-challenge provider env); combined into the final shard list.
-- **`SHARD_STAGGER_MS` (4000)** — inter-shard spawn delay that lets the first `cypress run` populate the webpack/vite cache before others read it, avoiding a truncated-bundle race observed on cold runs.
-- **`LOG_DIR`** — `reports/e2e/`; failing shards' full stdout/stderr are written here for CI artifact upload.
-- **`DEMO_PORT_BASE` (3101)** — shard *N* listens on `3101 + N`.
-- **`backendEnvironmentFor`** — builds per-shard env: `NODE_WEBHOOK_DEMO_SINK_URL` from `webhook-sink.ts`, plus `ANTIBOT_BACKEND_ENV` for the antibot shard.
-- **`bootDemoBackends`** — resolves the demo command via `resolveBackendDemoCommand()`, enforces `resolveBackendDemoShardLimit()`, boots backends in parallel, waits for `GET /` 200, and returns a cleanup callback that kills all children on any exit path.
-- **Live-profile guard** — if `CYPRESS_liveProfile === 'true'`, prints an explanatory error and exits 2 before doing any work.
-- **Empty-spec guard** — if the glob matches zero files, exits 2 with a diagnostic rather than letting four empty shards "pass".
+- **Shard count** — read from `E2E_SHARDS` env var, defaults to 4.
+- **Spec discovery** — `globSync(FUNCTIONAL_SPEC_GLOBS)` relative to `REPO_ROOT`; POSIX-normalised and sorted for stable assignment. Fails loudly (exit 2) if zero specs match.
+- **Duration weighting** — merges `readSpecDurations()` (recorded per-run) with the `SECONDS` fallback table from `shard-balancer.ts`; specs with no data in either are excluded so `weighSpecs` assigns them the mean.
+- **Balancing** — `balanceShards(weighted, shardCount)` performs LPT (longest-first onto least-loaded).
+- **Antibot shard** — specs matching `ANTIBOT_SPEC_GLOBS` are appended as a single extra shard carrying `ANTIBOT_BACKEND_ENV`; absent when no spec matches.
+- **`bootDemoBackends(count, antibotIndex)`** — spawns one demo backend per shard on ports `3101+index`, waits for `GET /` → 200, returns a cleanup function that kills every child. Enforces `BACKEND_DEMO_SHARD_LIMIT` when the paired backend pre-provisions a fixed DB set.
+- **`SHARD_STAGGER_MS` (4000 ms)** — each shard's `cypress run` is delayed by `index × 4 s` so the first process warms Cypress's bundle cache before the others read it, preventing cold-cache truncation failures.
+- **Live-profile guard** — exits 2 immediately if `CYPRESS_liveProfile === 'true'` because all shards would share one real Mongo.
+- **`.env` loading** — `process.loadEnvFile()` in a try/catch; CI (no `.env`) is the normal case.
+- **Log directory** — failing shards dump full output to `reports/e2e/` for CI upload.
 
 ## Relationships
 
-- **`cypress-spec-globs.ts`** — source of `FUNCTIONAL_SPEC_GLOBS` and `ANTIBOT_SPEC_GLOBS`; the only place the glob patterns are defined.
-- **`shard-balancer.ts`** — provides `weighSpecs`, `balanceShards`, and the `SECONDS` fallback table; all LPT logic lives there.
-- **`spec-durations.ts`** — `readSpecDurations()` supplies the measured per-spec durations that override the static table.
-- **`webhook-sink.ts`** — `SHARD_SINK_PORT_BASE` and `sinkUrlForPort` give each shard's backend the URL of that shard's own sink listener.
-- **`antibot-backend.ts`** — `ANTIBOT_BACKEND_ENV` carries the extra env vars the antibot shard's backend needs.
-- **`paired-backend-path.ts`** — `resolveBackendDemoCommand()` and `resolveBackendDemoShardLimit()` determine *how* to boot and *how many* shards the paired backend supports.
-- **`scratch-directory.ts`** — `createDemoScratchDirectory` / `removeDemoScratchDirectory` provide per-shard temp directories (e.g., for uploaded fixtures) that are cleaned up after the run.
-- **`flaky-report.ts`** — `resetFlakyReport` is called at start; `printFlakyReport` is called at end to summarise which specs flaked across shards.
-- **`tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`** — unit-tests the glob patterns consumed by this file; a regression there would change what this script schedules.
+| Neighbor | Interaction |
+|---|---|
+| `scripts/pairing/paired-backend-path.ts` | Provides `resolveBackendDemoCommand` (the actual `npm run demo` / `composer demo` invocation) and `resolveBackendDemoShardLimit` (max pre-provisioned DBs). |
+| `scripts/demo/scratch-directory.ts` | Provides `createDemoScratchDirectory` / `removeDemoScratchDirectory` used to give each backend an isolated temp working directory. |
+| `scripts/e2e/cypress-spec-globs.ts` | Supplies `FUNCTIONAL_SPEC_GLOBS` and `ANTIBOT_SPEC_GLOBS` that drive spec discovery. |
+| `scripts/e2e/shard-balancer.ts` | Supplies `weighSpecs`, `balanceShards`, and the `SECONDS` fallback duration table. |
+| `scripts/e2e/spec-durations.ts` | Supplies `readSpecDurations()` — the per-run recorded durations that override the static table. |
+| `scripts/e2e/webhook-sink.ts` | Supplies `SHARD_SINK_PORT_BASE` and `sinkUrlForPort` so each backend's env points at its shard's own sink listener. |
+| `scripts/e2e/antibot-backend.ts` | Supplies `ANTIBOT_BACKEND_ENV` (challenge-provider flags) injected only into the antibot shard's backend. |
+| `scripts/e2e/flaky-report.ts` | Supplies `resetFlakyReport` (called before the run) and `printFlakyReport` (called after) to aggregate flaky counts across shards. |
+| `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts` | Unit-tests the glob constants this script depends on; a regression there silently breaks spec discovery here. |
 
 ## Notes
 
-- **BUILT bundle, not dev server.** The file header documents measured failures (2/3 runs failing on a dev server vs. 4/4 green on a build) caused by on-demand route compilation competing with Cypress timeouts. Do not swap `vite preview` back to `vite dev`.
-- **Glob keying is full relative path, not basename.** Multiple modules ship an `a11y.cy.ts`; a basename key would assign the same duration to all of them (FA126).
-- **No specs ≠ empty suite.** The script treats zero matches as a path-resolution bug and exits 2, preventing a silent green gate.
-- **Stagger is cold-cache-only.** The 4 s delay is essentially free on warm runs but prevents a `Unexpected end of input` / `cy.restore is not a function` class of failure on the first sharded run after a support-file edit.
-- **Orphaned backends are a real risk.** `bootDemoBackends` returns a cleanup function that must be called on every exit path; a leaked child holds its port and surfaces next run as a confusing `EADDRINUSE`.
-- **Live profile is hard-refused, not just discouraged.** The guard checks `CYPRESS_liveProfile` before any work; the live suite is expected to run sequentially via `npm run test:e2e:live`.
+- **Must target a built bundle, not a dev server.** `vite preview` serves static files; `vite dev` compiles on first request, and concurrent browsers land in the compile queue inside Cypress timeouts, surfacing as random flakes. The file header records the measurement (4/4 green in 153 s built vs. 2 failures in 2-of-3 runs on dev).
+- **Keying specs by full relative path, not basename.** Every module ships its own `a11y.cy.ts`; a basename key would look up the same duration for all of them.
+- **The zero-spec guard is intentional and loud.** An empty glob match (e.g. `REPO_ROOT` resolving one level too shallow) would otherwise produce four "green" shards with zero tests. The script exits 2 rather than letting the gate pass.
+- **Stagger is a cache-warmth fix, not a rate-limit.** It only costs time on a cold cache (first sharded run after a support-file edit) and is free on warm runs. Removing it reintroduces `Unexpected end of input` / `cy.restore is not a function` failures.
+- **The live profile is a hard refusal, not a warning.** `test:e2e:live` is deliberately sequential; this script will not shard it under any env combination.
+- **`process.loadEnvFile()` is Node ≥ 20.12.** The `catch` swallows the error so CI checkouts without a `.env` file don't crash.
+- **Port allocation:** backends on `3101+index`, webhook sinks on `SHARD_SINK_PORT_BASE+index`. An orphaned backend holding its port will cause `EADDRINUSE` on the *next* run; the cleanup function returned by `bootDemoBackends` must be called on every exit path.

@@ -18,20 +18,20 @@ _Canonical 2brain context source for AI editors._
 - **"How do I run / build / test / deploy this?"** → `.2brain/EXECUTION.md`.
 - **Anything else, or you don't know which file** → `2brain query <repo-path> "question"`.
 
-Artifacts describe commit `771668817ce4b5dbebe38f9d0cf319fde399ae6a`. Before relying on a wiki page, check its source: `git diff --quiet 771668817ce4b5dbebe38f9d0cf319fde399ae6a -- <file>` (and `git status` for uncommitted edits). Changed → prefer the source for that file and say so. Unchanged → trust the page.
+Artifacts describe commit `ab5880dd0c5077f37cbcdf73f57e457077ae28b5`. Before relying on a wiki page, check its source: `git diff --quiet ab5880dd0c5077f37cbcdf73f57e457077ae28b5 -- <file>` (and `git status` for uncommitted edits). Changed → prefer the source for that file and say so. Unchanged → trust the page.
 
 ## Most-used code
 Change these with care — widely depended on:
-- `orvalMutator()` (249 edges)
-- `error()` (105 edges)
-- `wireModulesIntoCore()` (88 edges)
-- `orvalEnvelope()` (61 edges)
+- `orvalMutator()` (310 edges)
+- `wireModulesIntoCore()` (150 edges)
+- `error()` (128 edges)
+- `orvalEnvelope()` (85 edges)
+- `parseOrvalFixture()` (76 edges)
+- `asStub()` (62 edges)
 - `scripts` (58 edges)
-- `parseOrvalFixture()` (57 edges)
-- `asStub()` (42 edges)
-- `contractRequest()` (30 edges)
-- `Chainable` (26 edges)
-- `handleSubmit()` (24 edges)
+- `contractRequest()` (35 edges)
+- `addToCartFromStorefront()` (29 edges)
+- `handleSubmit()` (27 edges)
 
 ## Cross-cutting flows
 - Contract-First Generation Pipeline
@@ -50,8 +50,8 @@ Change these with care — widely depended on:
 ## Index Metadata
 - Provider: `ollama`
 - Model: `qwen3.8:27b`
-- Index revision: `c856d1af0938ae9d1f9b6d26a675a0bdedf659e14b5953d8523d13726a6165d3`
-- Indexed chunks: `2390`
+- Index revision: `837dfc9b636c7ed170ec1e41179c4a2bcb8514542ca3b8f2eaced3c836ffee3e`
+- Indexed chunks: `4940`
 - Memory entries: `0`
 
 ## Query

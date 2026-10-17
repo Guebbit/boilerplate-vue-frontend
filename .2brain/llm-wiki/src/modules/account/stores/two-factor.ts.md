@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/stores/two-factor.ts
-sha256: f19dd4f717f38ba238bb8f7ca1fa2bd65b04f451057901267359c7c02570a17f
-generated_at: 2026-10-02T14:48:05.573079+00:00
+sha256: fa16601a92f5ef3a24c6199dca738a183c12d5fbf30d6b1ddb72e22eda23c1d7
+generated_at: 2026-10-17T00:19:49.733162+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,34 +9,40 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store (Composition API) that centralises every 2FA surface for a single account: the armed/available-method status, the enrollment machine (setup → confirm → backup codes), and the login-time challenge (send code → submit code). It exists as one store rather than three because the enrollment and status endpoints share the same `GET /account/2fa` resource, and the login challenge reuses the same server-driven resend cooldown as enrollment's "send me a code" step.
+A single Pinia store (Composition API, id `accountTwoFactor`) that owns all client-side 2FA state and actions: the account's armed/available methods, the enrollment machine (setup → confirm → backup codes), and the login-time challenge (send code → submit code). The shared `resendAfter` cooldown lives here so both the login challenge and the enrollment "send me a code" step read the same server-driven number.
 
 ## Key elements
 
-- **`useTwoFactorStore`** — the exported Pinia store (`'accountTwoFactor'`). Composition-API form; all state is plain `ref`s, actions re-read from the server rather than patching local state.
-- **`LoginChallenge`** (interface) — the shape handed off by `useAuthStore().login()`'s `mfa` branch: `challenge`, `expiresAt`, `methods`, `defaultMethod`, and the form-originated `remember` flag. Both `challenge` and `remember` are absent for OAuth-originated logins.
-- **`status` / `challenge` / `delivery` / `resendAvailableAt`** — the four core refs. `status` is `undefined` until first fetch; `challenge` is `undefined` outside the login step.
-- **`secondsUntilResend`** — derived from `useCountdown(resendAvailableAt)`; the live ticking countdown.
-- **`trackDelivery(delivery)`** — records a fresh `TwoFactorDelivery` and (re)starts the cooldown clock.
-- **`applyResendCooldown(promise)`** — `.catch` wrapper that reads `retryAfter` from a `TWO_FACTOR_RESEND_TOO_SOON` 429, seeds `resendAvailableAt`, then rethrows. Applied to `setupMethod` and `sendLoginCode` (the two calls the cooldown can be answered to).
-- **`fetchStatus()`** — loads the account's 2FA status (armed methods, addable methods, remaining backup codes).
-- **`setupMethod(method, code?)`** — begins or restarts enrollment of one method. Returns the setup payload (TOTP `secret`/`otpauthUri` for device methods). Caller must hold the secret locally.
-- **`sendMethodCode(method)`** — mails a code for an *armed* delivered method (proof-of-possession for a change operation).
-- **`confirmMethod(method, code)`** — arms the pending method; refetches status so `status` is never stale.
-- **`removeMethod(method, code)`** — drops one armed method; refetches status.
-- **`disableAll(code)`** — drops every armed method and all backup codes; refetches status.
-- **`regenerateBackupCodes(code)`** *(truncated in listing)* — mints a fresh set of ten backup codes.
-- **`sendLoginCode` / `submitLoginCode`** *(truncated in listing)* — the login-time challenge send and submit actions.
+- **`useTwoFactorStore`** – exported store. Uses `useStructureRestApi` from `@guebbit/vue-toolkit` for the `loading` / `fetchAny` plumbing.
+- **`LoginChallenge`** (interface) – shape of the login-time challenge plus the `remember` flag the login form carried in. Both `challenge` and `remember` are absent for OAuth-originated challenges.
+- **`status`** / **`challenge`** / **`delivery`** / **`resendAvailableAt`** – the four reactive refs backing the store.
+- **`secondsUntilResend`** – countdown exposed via `useCountdown(resendAvailableAt)`.
+- **`trackDelivery`** – records a delivery and (re)starts the resend cooldown.
+- **`applyResendCooldown`** – wraps a promise; on a `TWO_FACTOR_RESEND_TOO_SOON` 429 it starts the cooldown from the `retryAfter` header *before* rethrowing.
+- **`fetchStatus`** – `GET /account/2fa`; populates `status`.
+- **`setupMethod(method, code?)`** – begins or restarts enrollment; calls `trackDelivery` when the response carries delivery fields.
+- **`sendMethodCode(method)`** – sends a code to an armed delivered method.
+- **`confirmMethod(method, code)`** – arms the pending method, then re-fetches status.
+- **`removeMethod(method, code)`** / **`disableAll(code)`** – remove one or all armed methods, then re-fetch status.
+- **`regenerateBackupCodes`** (truncated in source) – mints a fresh backup-code set.
 
 ## Relationships
 
-- **`src/modules/account/composables/use-countdown.ts`** — imported as `useCountdown`; provides the ticking `secondsLeft` ref that drives `secondsUntilResend`. The store only sets the target timestamp (`resendAvailableAt`); the composable handles the interval.
-- **`src/modules/account/stores/auth.ts`** — the `LoginOutcome` type is imported for the `mfa` branch handoff. In practice `useAuthStore().login()` writes its `mfa` result into this store's `challenge` ref before the view renders the code-entry step.
-- **`src/modules/account/stores/profile.ts`** — `useProfileStore` is imported (presumably to read the account identity or refresh profile state after a 2FA status change).
+- **`stores/auth.ts`** – imports the `LoginOutcome` type; `useAuthStore().login()`'s `mfa` branch is the upstream that populates `challenge`.
+- **`composables/use-countdown.ts`** – provides the `secondsUntilResend` countdown primitive.
+- **`stores/profile.ts`** – imported as `useProfileStore` (used for account context).
+- **`views/Login.vue`** – the form whose `remember` choice is carried into `LoginChallenge` before the challenge step begins.
+- **`views/OAuthCallback.vue`** – origin of the `beginOAuthChallenge` path where `challenge` and `remember` are both absent.
+- **`views/TwoFactorChallenge.vue`** – consumes `challenge`, `secondsUntilResend`, and the send/submit actions during login.
+- **`components/TwoFactorEnroll.vue`** – calls `setupMethod` / `confirmMethod`; holds the TOTP secret and one-time backup codes in component-local refs rather than in this store.
+- **`tests/two-factor-store.spec.ts`** – unit tests for the store.
+- **`tests/two-factor-challenge-view.spec.ts`** – tests the login-challenge view against this store.
 
 ## Notes
 
-- **All writes use `forced: true`** on the `fetchAny` key. The toolkit caches keyed reads for an hour; without `forced` a second setup/remove/regenerate in one page-load would resolve from cache and never hit the API.
-- **Secrets never live in the store.** The TOTP `secret`/`otpauthUri` from `setupMethod` and the one-time backup codes from `confirmMethod` are returned to the caller (`TwoFactorEnroll.vue`), which keeps them in a component-local `ref`. This mirrors the existing `api-keys`/`webhooks` convention.
-- **Cooldown is always server-authoritative.** `resendAfter` comes from the API response or the 429's `Retry-After`; the client never invents its own delay. The only client-side logic is `Date.now() + seconds * 1000` to produce a wall-clock target for `useCountdown`.
-- **Single-store rationale is documented inline:** enrollment, status, and login-challenge share the same underlying resource and cooldown, so splitting them would duplicate the `resendAfter` plumbing.
+- **Every write action passes `{ forced: true }`** to `fetchAny`. Without it the toolkit's one-hour keyed cache would serve a stale response on a second setup/remove/regenerate within the same page load.
+- **Secrets never live in the store.** The TOTP `secret`/`otpauthUri` from `setupMethod` and the one-time backup codes from `confirmMethod` are returned to the caller, which parks them in a component-local ref (same idiom used by `api-keys` and `webhooks`).
+- **The resend cooldown is always server-sourced** — either the `resendAfter` field in the response or the `retryAfter` on a 429. It is never a client-invented constant.
+- **`confirmMethod` re-fetches status** after confirming so `status` always reflects the server's post-arm state.
+- **OAuth challenges carry no `challenge` string and no `remember` flag**; the token travels in an httpOnly cookie read by the backend, so this store's login-challenge fields are both `undefined` in that flow.
+- One store by design: status, enrollment, and login challenge all touch the same `GET /account/2fa` and share the resend cooldown, so splitting them into three stores would duplicate state.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/users/views/User.vue
-sha256: 254257656ace3748c0dbad76850b81e4f1e5af0bdae07b5b0daf23cafe6fd3fd
-generated_at: 2026-10-02T15:51:52.638831+00:00
+sha256: d697414ae0cb289b72219a6dfe31050eba8986f6fc881140ca794a9768b715e8
+generated_at: 2026-10-17T01:49:25.354384+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Read-only user detail page (`UserTargetPage`). Resolves a single user from the route `id`, renders their identity fields, role chip, and status chip, and exposes two admin actions: a 2FA recovery button (no-proof path) and a `UserAccessDialog` shortcut for changing role/active status without the full edit form.
+Read-only user detail page that loads a single user by route `id`, renders their profile fields (username, email, role, status, timestamps), and offers a lightweight "Manage access" dialog for changing role/active status without navigating to the full edit form. All mutable controls are gated by the server-provided `actions` object on the user record.
 
 ## Key elements
 
-- **`heroTitle` / `heroDescription` / `userRole` / `userStatus`** — Computed display values with graceful fallbacks (route id, empty-value glyph, i18n strings) while the user is loading or absent.
-- **`auditLogTo`** — Computed `RouteLocationRaw | undefined` that links to the audit log for this user. Returns `undefined` (hiding the History button) when the `admin` module / `AuditLog` route is not present in the build.
-- **`watchUser(() => id, { onError: onMissingRecord })`** — Fetches (or re-fetches) the user whenever the route param changes; 404/403 is handled by `useMissingRecord`.
-- **`handleManageAccess`** — Opens `UserAccessDialog`, awaits confirmation, then calls `updateUser` with only the changed fields. Failures are reported via a local `useBlockingError` instance (`accessError`).
-- **`handleDisableTwoFactor`** — Shows a `v-dialog` confirmation (error-colored), then calls `adminDisableTwoFactor(id)`. Failures are reported via a separate `useBlockingError` instance (`disableTwoFactorError`) and rendered inline via `InlineErrorAlert`.
-- **`useBlockingError` (two instances)** — One for the access-dialog action, one for the 2FA button. Each keeps its error local to the button rather than toasting, per the project's request-flow convention.
-- **Template** — Uses `ItemDetailLayout` with `#hero`, `#stats`, `#aside`, and `#actions` slots; `CardMaterialStat`, `ItemDetailField`, `CardDetail`, `CardInfo`, and `ItemDetailHero` as building blocks; lucide icons for labels.
+- **Component name `UserTargetPage`** — declared in a separate `<script>` block to satisfy `<KeepAlive>` / devtools naming.
+- **`heroTitle` / `heroDescription` / `userRole` / `userStatus`** — computed properties that drive the hero section and stat cards, falling back to the route `id` or i18n defaults while loading.
+- **`auditLogTo` (computed)** — resolves the audit-log route via `linkIfRouted`; returns `undefined` when the `admin` module is absent, hiding the History button.
+- **`watchUser(() => id, { onError: onMissingRecord })`** — re-fetches the user whenever the route param changes; 404/403 are handled by `useMissingRecord` (redirects to an error page).
+- **`handleManageAccess()`** — orchestrates the full access-change flow: opens `UserAccessDialog`, awaits the confirmed result, then calls `updateUser` from the Pinia store and toasts success/failure via `useNotificationsStore`.
+- **`useBlockingError`** — local inline error state for the access-change button (shown via `InlineErrorAlert`).
+- **`useUserAccessDialog`** — provides `isOpen`, `target`, `options`, `request`, `confirm`, `cancel` for the dialog lifecycle.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — Graph neighbor (transitive dependency, likely reached through the users store or a utility imported above). No direct `import` of logger in this file; it is not invoked explicitly here.
+- **`src/modules/users/store.ts`** — `useUsersStore` supplies `watchUser`, `updateUser`, and `currentUser`; this view is the primary consumer for single-user reads and the access PATCH.
+- **`src/modules/users/composables/use-user-access-dialog.ts`** — encapsulates dialog open/close state, picker options, and the promise-based `request()` that `handleManageAccess` awaits.
+- **`src/modules/users/components/UserAccessDialog.vue`** — rendered in the template (truncated portion); receives `target`/`options` from the composable and emits the confirmed patch payload.
+- **`src/modules/users/tests/user-target-view.spec.ts`** — unit tests for this component's rendering and interaction logic.
+- **`src/modules/users/tests/user-view.spec.ts`** — additional view-level tests covering this page.
 
 ## Notes
 
-- **Role is never translated.** `userRole` renders the raw `role` string. Roles are deployment-defined data; only server-side rules constrain them, so the UI must not hard-code a "admin / user" pair.
-- **2FA disable is a deliberate security exception.** No authenticator code or backup code is requested. The confirmation dialog must explicitly state this, and every call is audited server-side. Do not add a "verify first" step here.
-- **Dual gate on the History link.** `auditLogTo` checks route existence (build-time module boundary), while the button's `v-if` also checks `session.can('read', 'AuditLog')` (per-visitor permission). Both must pass for the link to render.
-- **Component name ≠ file name.** The exported component is `UserTargetPage`; the file is `User.vue`. Search for `UserTargetPage` when tracing templates or stories.
-- **`updateUser` receives only changed fields.** `UserAccessDialog`'s result is filtered before the PATCH so an unchanged `role` never rides along (prevents unintended audit-log noise).
+- **Two-script-block pattern:** the component `name` must live in a plain `<script>` because `<script setup>` cannot set it; this is required for `<KeepAlive>` caching and devtools.
+- **Permission model is two-tiered:** the History button is hidden unless *both* the route exists in the build (`linkIfRouted` returns non-undefined) *and* the session grants `read:AuditLog`. The edit/access buttons rely solely on the row-level `actions` object — the backend is the authority on what this caller may do to this account.
+- **No password or 2FA controls** appear here by design: credentials are owner-only, so a staff-facing detail view deliberately omits them.
+- **`role` is rendered as raw data** (not a fixed admin/standard pair) because deployments can define arbitrary roles; only the rules engine interprets permissions.
+- **`MODULE_EDGES` coupling:** the audit-log route is *not* a declared edge of the `users` module, so the link is guarded at runtime rather than imported statically.

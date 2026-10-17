@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/tests/override-status.spec.ts
-sha256: 7a017163ca53d9d61e479e181fe91e8ea78e4050dfd9a8dc2a6c03e66e09a7b6
-generated_at: 2026-10-02T15:23:27.169459+00:00
+sha256: 78d4da493e40de196edfe4523878a0e0b3aff84ca0d431a2b826902e0503e2e2
+generated_at: 2026-10-17T01:18:50.686680+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vitest spec that verifies the `overrideStatus` store action (the operator's manual correction endpoint, `POST /orders/:id/status-override`) sends the correct request body and replaces the cached order record. It mocks `orvalMutator` at the transport level so assertions can inspect the raw body rather than relying on side-effects.
+Vitest spec for the `overrideStatus` store action. It mocks `orvalMutator` at the transport layer (same pattern as `cancel.spec.ts`) so assertions can inspect the raw request body and verify two things: that `to` and `reason` reach the body unchanged, and that the server's corrected record **replaces** the cached one rather than merging into it.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a stub that records every request into `sent[]` and resolves the response from the `responses` map keyed by `"METHOD url"`.
-- **`responses`** — canned response bodies; in `beforeEach` it is seeded with `'POST /orders/o1/status-override' → orvalEnvelope(ORDER)`.
-- **`sent`** — array of `{ url, method, data? }` capturing every outgoing request for body-level assertions.
-- **`ORDER`** — fixture order built via `anOrder({ status: 'shipped' })`, representing the corrected record the mock returns.
-- **`describe('overrideStatus')`** — two tests:
-  - *sends the target status and reason in the body* — asserts `sent[0].data` matches the `schemas.OverrideOrderStatusBody` contract with `to` and `reason` unchanged.
-  - *replaces the cached record with the corrected one* — asserts `store.orders.o1.status` equals `'shipped'` after the action resolves.
+- **`overrideStatus` (describe block)** — two focused test cases:
+  - *"sends the target status and reason in the body"* — asserts `sent[0].data` against the `OverrideOrderStatusBody` schema via `contractRequest`.
+  - *"replaces the cached record with the corrected one"* — asserts `store.orders.o1?.status` equals the returned status after the call.
+- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a spy that records every request into `sent[]` and resolves with a canned response looked up from the `responses` map (`POST /orders/o1/status-override`).
+- **`ORDER`** — a single fixture order built with `anOrder({ status: 'shipped' })`; used as the canned response payload.
+- **`responses` / `sent`** — module-level lets reset in `beforeEach`; `responses` holds METHOD+URL-keyed bodies, `sent` accumulates all outgoing request configs for body assertions.
+- **`wireModulesIntoCore()`** — called once at module top-level (not per-test) to register DI bindings before Pinia is activated.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — calls `wireModulesIntoCore()` at module top-level so the orders store's internal module wiring is available without a full app boot.
-- **`tests/support/unit/fixtures.ts`** — imports the `anOrder` factory to build the fixture order with a specific status.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — imports `orvalEnvelope` (wrap a payload in the expected Orval response shape), `parseOrvalFixture` (unwrap/match a raw response for the mutator stub), and `contractRequest` (validate a captured body against an API schema).
+- **`src/modules/orders/store.ts`** — the unit under test; imports `useOrdersStore` and exercises its `overrideStatus(id, to, reason)` action.
+- **`tests/support/unit/fixtures.ts`** — supplies the `anOrder` factory used to build the `ORDER` fixture.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` bootstraps the DI container so the store can resolve its dependencies in a unit-test context.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wrap payload in the API envelope shape), `parseOrvalFixture` (unparse the mock response), and `contractRequest` (validate a captured body against an Orval-generated schema).
 
 ## Notes
 
-- The spec follows the same transport-mock pattern as `cancel.spec.ts`; the differentiator is that it pins **body contents** (`to`, `reason`) rather than just the URL.
-- The endpoint is a dedicated `POST …/status-override` route, not the former `PUT /orders/:id` patch — this file tests the new correction path.
-- `beforeEach` resets `sent`, `responses`, and Pinia state; `vi.clearAllMocks()` is called after Pinia reset to avoid ordering surprises with the `orvalMutator` mock.
+- The endpoint is `POST /orders/:id/status-override` — a dedicated route that replaced the former `PUT /orders/:id` path for `shipped`/`delivered` corrections. The URL in the `responses` key must stay in sync with whatever the store issues.
+- `wireModulesIntoCore()` runs once at import time; `beforeEach` only resets Pinia and the `sent`/`responses` arrays. Do not move the wiring call inside `beforeEach` or duplicate registrations will occur.
+- The body assertion uses `contractRequest(schemas.OverrideOrderStatusBody, …)`, meaning the shape is validated against the generated API schema, not hand-written expected objects.

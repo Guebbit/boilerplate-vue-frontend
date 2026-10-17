@@ -1,28 +1,27 @@
 ---
 source: src/modules/cart/routes.ts
-sha256: 1fc6f364ad029474a647b8a588f9aa83d3bf966df35b041b762923d344dd5719
-generated_at: 2026-10-02T14:59:00.959738+00:00
+sha256: 6071461316cae2043597cce9e491f3f7abf5014000a5c5cbccc0d325c291dfed
+generated_at: 2026-10-17T00:36:44.933405+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/cart/routes.ts
 
 ## Purpose
-Declares the cart module's single Vue Router route record. The array is consumed by the module registry (`module.ts`) and merged into the app-level router under the module's registered base path.
+Declares the cart module's route table (a single `/cart` route) that the module registry merges into the app router. The route is accessible to guests and to signed-in users who hold the `update` permission on `Cart`, lazy-loading the `CartEntry.vue` view.
 
 ## Key elements
-- **`default` export** — an array of one `RouteRecordRaw` object (validated via `satisfies RouteRecordRaw[]`):
-  - `path: 'cart'` — the sub-path appended after the module's base.
-  - `name: 'Cart'` — the named-route identifier used for programmatic navigation.
-  - `meta.access: 'auth'` — signals the router guard that an authenticated session is required.
+- **`default` export** — an array satisfying `RouteRecordRaw[]` containing one route record:
+  - `path: 'cart'`, `name: 'Cart'`
+  - `meta.access: 'open'` — page is visible to unauthenticated visitors.
+  - `meta.can: ['update', 'Cart']` — signed-in users must pass this permission check; staff who lack the permission are excluded.
   - `meta.title: 'cart-page.page-title'` — i18n key for the page title.
-  - `component` — lazy-imports `@/modules/cart/views/Cart.vue` for code-splitting.
+  - `component` — dynamic `import('./views/CartEntry.vue')`.
 
 ## Relationships
-- **`src/modules/cart/module.ts`** — imports this default export and registers it with the app router (the JSDoc references "merged into the app router by the module registry").
-- **`src/modules/cart/tests/routes.spec.ts`** — unit-tests the shape/values of the exported route record(s).
+- **`src/modules/cart/module.ts`** — The module registry in this file consumes the default-exported route array and registers it under the cart module's mounted path in the app router.
+- **`src/modules/cart/tests/routes.spec.ts`** — Test suite that asserts the shape and meta of the exported route record(s).
 
 ## Notes
-- The route is the **only** entry in the array; there are no child or nested routes here.
-- `satisfies` (not `as`) is used, so the literal type is preserved for downstream consumers while still being checked against `RouteRecordRaw[]`.
-- The `title` in `meta` is an i18n key, not a plain string — ensure the key `cart-page.page-title` exists in the locale files or the UI will render the raw key.
+- `access: 'open'` does **not** mean the route is unrestricted for signed-in users; `can` is still evaluated for them. Only guests bypass the permission check entirely.
+- The route path is relative (`'cart'`), not absolute. It resolves against whatever base path the module registry assigns.

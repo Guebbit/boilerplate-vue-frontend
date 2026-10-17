@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/composables/use-translated-entity-form.ts
-sha256: 600b379b692565fdb8ea8abba29bc87a62ddc99b6bce2d678482f22a50a57859
-generated_at: 2026-10-02T15:33:25.413702+00:00
+sha256: 46c9ad3046fe00591ef5e231669e0bde10cc64c316491c86440435cc8c383e11
+generated_at: 2026-10-17T01:27:46.568476+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,38 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Shared composable that powers the multi-language translation form used by both `ProductCreate.vue` and `ProductEdit.vue`. It wires the `@guebbit/vue-toolkit` form-validation state, the language-tab open/close lifecycle, per-tab error badges, and the post-submit failure pipeline, so the two views only supply their differing fields, request, and whether a 412 is possible.
+Extracts the shared form logic between `ProductCreate.vue` and `ProductEdit.vue`: toolkit-backed validation state, one language tab per entry in `form.translations`, per-tab error badges, and the shared tail of a failed submit. The views keep only what differs — surrounding fields, the actual HTTP request, and whether a 412 can occur.
 
 ## Key elements
 
-- **`TranslatedForm`** – minimal interface requiring a `translations: ProductTranslationsWrite` property; the single form field this composable reads/writes.
-- **`TranslatedEntityFormOptions<TForm>`** – generic options bag: initial values, Zod schema, form element ref, fallback locale ref, optional `seedFallback` flag, optional `stored()` callback (server-held translations for tab-restore), optional `onStale` handler, and required `reportSubmitError`.
-- **`useTranslatedEntityForm<TForm>(options)`** – the sole runtime export. Returns the toolkit's `form`/`showFormErrors`/`applyServerErrors`, plus:
-  - `openTags` – reactive list of open locale tabs (fallback first), *derived* from `form.translations` via `useTranslationTabOrder`.
-  - `activeTab` – the currently displayed tab; set once on first appearance, never moved by later tab changes.
-  - `tabErrorCounts` – per-locale Zod error counts for tab badges; re-computed by re-parsing the schema whenever `showFormErrors` or the form mutates.
-  - `handleAddLocale(tag)` – opens a tab (blank or restored from `stored()`).
-  - `handleRemoveLocale(tag)` – closes a tab; sets the entry to `null` (PATCH delete signal) if server-stored, otherwise deletes the key.
-  - `handleSubmitFailure(error)` – ordered failure pipeline: `onStale` → server tab-badge merge → `applyServerErrors` with `reportSubmitError` fallback.
-- **`blankTranslation()`** – internal helper returning `{ title: '', description: '' }`.
+- **`TranslatedForm`** – Minimal interface requiring a `translations: ProductTranslationsWrite` field.
+- **`TranslatedEntityFormOptions<TForm>`** – Options bag: initial values, Zod schema, form-element ref, fallback-locale ref, and optional `seedFallback`, `stored`, `onStale`, `reportSubmitError` callbacks.
+- **`useTranslatedEntityForm(options)`** – The exported composable. Returns the toolkit's full validation handle spread in, plus `openTags`, `activeTab`, `tabErrorCounts`, `handleAddLocale`, `handleRemoveLocale`, and `handleSubmitFailure`.
+- **`blankTranslation()`** – Internal factory returning `{ title: '', description: '' }` for a freshly opened tab.
 
 ## Relationships
 
-The listed graph neighbor `src/infrastructure/utils/logger.ts` has no direct import or call in this file; no interaction to document.
-
-The composable does depend on (not listed as neighbors but visible in imports):
-
-- `useTranslationTabOrder` – produces the ordered `openTags` list.
-- `translationTabErrorCountsFromZodError` / `translationTabErrorCountsFromServerError` – map Zod or server errors into per-locale badge counts.
-- `VUETIFY_INVALID_FIELD_SELECTOR` – passed to the toolkit for scroll-to-invalid.
-- `useStructureFormValidation` (from `@guebbit/vue-toolkit`) – core form state, submit, and revalidation.
+- **`translation-tab-errors.ts`** (same directory) – Supplies `translationTabErrorCountsFromZodError` and `translationTabErrorCountsFromServerError` to populate `tabErrorCounts` from client validation and server 422 responses respectively.
+- **`ProductCreate.vue`** – Consumer. Passes `seedFallback: true`, no `stored`, and an `onStale` that is a no-op (412 impossible on create).
+- **`ProductEdit.vue`** – Consumer. Passes `seedFallback: false`, a `stored` getter reflecting server-held locales, and an `onStale` that detects and handles 412.
+- **`use-translated-entity-form.spec.ts`** – Unit test for this composable.
 
 ## Notes
 
-- **`translations` shape is the write body's shape**: an object upserts a locale, `null` signals deletion on submit, an absent key is left untouched. This is not a separate UI model.
-- **`openTags` is derived, not stored**: it re-computes from `form.translations` on every change, so a `resetForm()` or programmatic mutation can never desync the tab bar from the data.
-- **`seedFallback` is add-only**: once the fallback tab exists it is never re-checked or removed; the invariant "a product must have a fallback translation" is enforced structurally.
-- **`activeTab` uses `??=`**: the first tab to appear "claims" the view; adding or removing other tabs does not switch the user's focus.
-- **Tab badges re-parse the full schema** (`options.schema.safeParse`) rather than reusing the toolkit's `formErrors`, because the toolkit collapses all `translations.*` issues into a single bucket (see `translation-tab-errors.ts`).
-- **The fallback tab is never closable** — enforced by the `TranslationTabs` UI component, not by this composable; `handleRemoveLocale` is never called for it.
-- **`onStale` returning `true` short-circuits** the entire failure pipeline, preventing both badge updates and `reportSubmitError`.
+- `translations` mirrors the write-body shape: an object upserts a locale, `null` marks it for deletion on submit, an absent key leaves it untouched.
+- `openTags` is **derived** from `form.translations` (via `useTranslationTabOrder`), not stored separately, so `resetForm()` cannot desync the tab bar.
+- `activeTab` is set once (the first tab to appear) and is never moved by subsequent data changes — only by explicit `handleAddLocale`/`handleRemoveLocale`.
+- The fallback tab is never closable; that guard lives in the `TranslationTabs` UI component, not here.
+- `seedFallback` is add-only and idempotent: it inserts a blank entry for the fallback tag the first time the tag becomes known, then never runs again.
+- The `tabErrorCounts` watch uses `deep: true` because edits to a nested translation mutate `form.value` in place.
+- In `handleSubmitFailure`, a server 422's per-locale errors are **merged** into existing `tabErrorCounts` (not replaced), while the `onStale` callback, when it returns `true`, short-circuits the remaining error-handling path entirely.

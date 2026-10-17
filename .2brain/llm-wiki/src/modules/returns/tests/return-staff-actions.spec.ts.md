@@ -1,36 +1,37 @@
 ---
 source: src/modules/returns/tests/return-staff-actions.spec.ts
-sha256: c05a382200b385e10be4bf39939690d4d92a4679d457003b662c5f8f4e067185
-generated_at: 2026-10-02T15:45:34.730864+00:00
+sha256: c62bf79f21d93b90934a0fa469aa0d4b735eee8171bf0f6022e94d351ecaf1b4
+generated_at: 2026-10-17T01:38:39.342697+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/returns/tests/return-staff-actions.spec.ts
 
 ## Purpose
-
-Unit tests for the `ReturnStaffActions.vue` component. Verifies that the approve / decline / receive controls render only when `Return.actions` allows them, and that each interaction dispatches the correct store method with the expected arguments. Store methods are spied on; network transport is explicitly out of scope (delegated to `store.spec.ts`).
+Vitest spec for `ReturnStaffActions.vue`. Verifies that the component renders staff action controls (approve, decline, receive) strictly from `Return.actions`, and that each control dispatches the correct payload to the store. Store methods are spied; network/transport concerns are deliberately left to `store.spec.ts`.
 
 ## Key elements
-
-- **`mountActions(item: Return)`** – Local helper that creates a Pinia-backed `useReturnsStore()`, spies on `approve` / `decline` / `receive` (mocked to resolve `aReturn()`), mounts `ReturnStaffActions` with Vuetify + i18n plugins, and returns `{ wrapper, store }`.
-- **`beforeEach`** – Resets Pinia (`setActivePinia(createPinia())`) and loads the `'en'` locale before every test.
-- **`describe('ReturnStaffActions')`** – Seven `it` blocks covering:
-  - No controls rendered when all three actions are `false`.
-  - Clicking approve calls `store.approve('r1')` and emits `'changed'`.
-  - Submitting the decline form with an empty reason does **not** call `store.decline`.
-  - Declining with a filled reason calls `store.decline('r1', 'Worn')`.
-  - Receiving with no deduction calls `store.receive('r1', undefined)`.
-  - Receiving with a deduction parses the input to a number (`4.5`).
-  - A rejected store promise suppresses the `'changed'` emit and surfaces a `[data-test=return-move-error]` element.
+- **`mountActions(item: Return)`** — Test-scoped mount helper. Creates a fresh Pinia instance, spies on `store.approve` / `store.decline` / `store.receive` (each resolving with `aReturn()`), then mounts `ReturnStaffActions` with Vuetify + i18n. Returns `{ wrapper, store }` for assertions.
+- **`beforeEach`** — Resets Pinia (`setActivePinia(createPinia())`) and loads the `'en'` locale.
+- **`describe('ReturnStaffActions')`** — Nine tests covering:
+  - No action controls rendered when all `actions` flags are absent.
+  - Approve: clicks fire `store.approve('r1')` and emit `'changed'`.
+  - Decline validation: submitting without a reason does **not** call `store.decline`.
+  - Decline with reason: calls `store.decline('r1', 'Worn')`.
+  - Receive (no deduction): calls `store.receive('r1', undefined)`.
+  - Receive (with deduction): parses `'4.5'` → `{ handlingDeduction: 4.5 }`.
+  - Server rejection (approve): no `'changed'` emit; `[data-test=return-move-error]` appears.
+  - General error display (decline / receive rejection with a plain `Error`).
+  - Field-level 422 error: message lands on the specific input (`return-receive-deduction`), general error slot is absent.
 
 ## Relationships
-
-- **`tests/support/unit/fixtures.ts`** – Supplies the `aReturn()` factory, used both as the mock-resolved value for store spies and as the prop payload (`item`) passed to the component under test.
-- **`tests/support/unit/wire-modules.ts`** – Supplies `wireModulesIntoCore()`, invoked once at module top-level (outside `beforeEach`) to register shared test infrastructure before any test runs.
+- **`src/modules/returns/components/ReturnStaffActions.vue`** — The SUT. Mounted, queried by `data-test` attributes, and asserted on for DOM state and emitted events.
+- **`src/modules/returns/store.ts`** — Source of `useReturnsStore`. Its three action methods are spied to capture call arguments; no real HTTP is exercised here.
+- **`tests/support/unit/fixtures.ts`** — Provides the `aReturn()` factory (default id `'r1'`, overridable `status` / `actions`) used to build the `item` prop.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module load (top-level, outside `beforeEach`) to register module aliases so relative imports inside the component resolve under Vitest.
 
 ## Notes
-
-- `wireModulesIntoCore()` is called at **module scope**, not inside `beforeEach`; it runs exactly once when the file is imported by the Vitest runner.
-- Selectors are `data-test` attributes (`return-approve`, `return-decline-form`, `return-receive-form`, `return-decline-reason`, `return-receive-deduction`, `return-move-error`); the component must keep these stable or the suite breaks.
-- The scope boundary is stated in the file header: this spec asserts *what* the store is called with; it does not verify HTTP payloads or error-retry logic.
+- The file's header comment is the contract: **store calls are spied; transport belongs to `store.spec.ts`**. Don't add network mocks here.
+- `wireModulesIntoCore()` runs at import time, not per-test. If it mutates global state, ordering matters when this file runs alongside other specs in the same worker.
+- The 422 error test uses a specific response shape (`success`, `status`, `errors[].field` / `errors[].details.field`). The component maps `field` to the matching input's error slot; if the API error contract changes, this test is the first to break.
+- Element selectors rely entirely on `data-test` attributes, not on Vuetify class names — safe against UI-library version bumps.

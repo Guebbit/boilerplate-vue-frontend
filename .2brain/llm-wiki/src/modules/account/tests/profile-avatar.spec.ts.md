@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/profile-avatar.spec.ts
-sha256: 973d677c3b71a8687976c586179116af15e6f69f2074aaac8556ef5e4c650c83
-generated_at: 2026-10-02T12:28:39.186788+00:00
+sha256: d1e8214cc903b72839a705b4310252d6e15010d52fca04da67a7c2b04a70c4ae
+generated_at: 2026-10-17T00:24:57.631446+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests covering the avatar-specific branches of `useProfileStore().updateProfile`: the multipart `imageUpload` path, the plain-JSON `imageUrl: null` removal path, and the per-path loading flags (`uploadingAvatar`, `removingAvatar`) that the two avatar buttons depend on. It is deliberately split out from `profile.spec.ts` so that the picture logic is tested in isolation.
+Unit tests for the avatar-specific branches of `updateProfile` in the profile store: multipart file upload, `onUploadProgress` forwarding, the plain-JSON `imageUrl: null` removal path, and the per-path loading flags (`uploadingAvatar` / `removingAvatar`). Split out from `profile.spec.ts` because it covers only the picture concern.
 
 ## Key elements
 
-- **`wireModulesIntoCore()`** — called at module top level to register the test DI graph before any store is instantiated.
-- **`orvalMutator` mock** — replaces `@/infrastructure/http` with a `vi.fn` that routes on `METHOD /url` and returns a parsed fixture from the `responses` map.
-- **`responses`** (reset in `beforeEach`) — the HTTP fixtures for `GET /account`, `GET /account/abilities`, and `PATCH /account`.
-- **`calls()`** — helper that extracts every recorded `orvalMutator` call config (url, method, headers, data) for assertion.
-- **`gateNextCall()`** — swaps in a one-shot `mockImplementationOnce` that suspends the next transport call on a deferred promise; returns a `release()` function so tests can assert mid-flight loading state.
-- **`describe` blocks** — three groups: "an imageUpload switches the call to multipart", "removing the picture", and "each avatar path owns its loading key".
+- **Mock of `@/infrastructure/http`** — replaces `orvalMutator` with a stub that looks up a canned response from the `responses` map (keyed `METHOD /url`) and wraps it through `parseOrvalFixture`.
+- **`responses`** — module-level `Record<string, unknown>` that each test configures before acting; defaults are set in `beforeEach` for `GET /account`, `GET /account/abilities`, and `PATCH /account`.
+- **`calls()`** — extracts every `orvalMutator` invocation's config object (url, method, headers, data) for assertion.
+- **`gateNextCall()`** — replaces the next `orvalMutator` call with a promise that resolves only when the returned release function is invoked, allowing tests to assert loading-flag state while the request is still in flight.
+- **`describe` blocks** — three groups: multipart upload switching, `imageUrl: null` removal, and per-path loading-key isolation.
+- **`USER`** — the signed-in user fixture the store starts from.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — the sole module under test at the transport layer; the file mocks `orvalMutator` from this entry point to intercept every outgoing HTTP call.
-- **`tests/support/unit/wire-modules.ts`** — provides `wireModulesIntoCore`, which binds the mocked transport into the DI container the Pinia store resolves against.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `parseOrvalFixture` (used inside the mock to shape responses), `orvalEnvelope` (to wrap fixture payloads), and `contractRequest` (to validate a request body against `@api/schemas`).
-- **`tests/unit/ui/human-check.spec.ts`** — no direct import or runtime interaction visible in this file.
+- **`src/modules/account/stores/profile.ts`** — the SUT; `useProfileStore` and its `updateProfile` / `fetchProfile` actions are exercised, and its `uploadingAvatar`, `removingAvatar`, and `loading` flags are asserted.
+- **`src/infrastructure/http/index.ts`** — `orvalMutator` is the single transport seam the entire test mocks; no real HTTP occurs.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top to wire the DI container before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wrap a payload in the API envelope), `parseOrvalFixture` (the mock's response parser), and `contractRequest` (validate a request body against the orval schema before asserting shape).
 
 ## Notes
 
-- **PATCH, not PUT.** The fixture keys and assertions use `PATCH /account`; a comment references ticket AUDIT_0924 D17d.
-- **Multipart cannot carry `null`.** When `updateProfile` receives both `imageUpload` and a nullable field (e.g. `phone: null`), the store issues a second plain-JSON PATCH for the clear. Tests assert exactly two PATCH calls in that scenario.
-- **`imageUrl: ''` is contract-invalid.** The schema enforces `minLength: 1`; only `null` is a valid "remove" value.
-- **Loading flags are async to observe.** The composable cancels in-flight queries before raising its flag, so tests use `vi.waitFor` rather than a synchronous check after the call.
-- **Split rationale.** The file header explicitly notes that `profile.spec.ts` covers all other fields of the same action; this file exists solely for the picture.
+- **Two-PATCH "clear" path:** when `imageUpload` and a nullable field (e.g. `phone: null`) are passed together, the store emits *two* `PATCH /account` calls — one `FormData` (multipart) for the file, one JSON for the nulls. Multipart cannot carry a `null`, so this split is mandatory.
+- **`PATCH`, not `PUT`:** the store sends only the fields it was given; the mock expects `PATCH /account`.
+- **`vi.waitFor` for loading flags:** the composable cancels in-flight queries before raising the loading flag, so the flag is set on a later microtask. Synchronous assertions immediately after calling `updateProfile` will not see `true`.
+- **`imageUrl` absence in FormData:** the multipart test explicitly asserts `(patch.data as FormData).has('imageUrl')` is `false` — the old field is dropped, not sent as an empty string.
+- **Empty-string vs. `null`:** the contract's `minLength: 1` on `imageUrl` rejects `''` with a 422; `null` is the only "remove" value.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/tests/product-edit-locale-race.spec.ts
-sha256: 8cafa59b9b09c08964553f6136fd11f00b3af65d50ad6e27a67b87f7ae937d77
-generated_at: 2026-10-02T15:36:13.229978+00:00
+sha256: 3ffb86b6634c4091a632b34c06bf0be405c6f4a89f392cc9b7d880c7529e221a
+generated_at: 2026-10-17T01:31:22.274485+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Regression test for a render-crash race in `ProductEdit.vue`: when `GET /locales` resolves before `GET /products/{id}/admin`, the component's `openTags` logic previously opened the fallback tab while `form.translations` was still empty, causing a `Cannot read properties of undefined (reading 'title')` error inside Vue's reactivity flush. The test drives the two HTTP responses on independent schedules to verify the tab stays closed until the admin record actually arrives.
+Reproduces a fetch-ordering race in `ProductEdit.vue`: the page's independent `fetchActiveLocales()` (`GET /locales`) answering before `loadAdminProduct()` (`GET /products/{id}/admin`). Verifies the tab bar does not open a translation tab until the admin record (and its `form.translations` entry) actually arrives, preventing a render crash from accessing a missing `form.translations[tag]!.title`.
 
 ## Key elements
 
-- **`deferred<T>()`** — Local helper that returns a `{ promise, resolve }` pair, letting the test resolve each endpoint's promise on its own schedule (one for `/locales`, one for `/products/p1/admin`).
-- **`beforeEach`** — Activates a fresh Pinia, loads the `en` locale, and pushes the router to `/en/products/p1/edit` so the component mounts in a real-route context.
-- **`describe('the edit form under a locales-before-admin-record race')` / `it(...)`** — The single test case. Resolves the locales deferred first, asserts no tab is open and no render error occurred, then resolves the admin deferred and asserts the tab opens with the correct title.
-- **`global.config.errorHandler`** (in mount options) — Catches render errors thrown from Vue's internal reactivity flush, which `@vue/test-utils` does *not* surface as rejected promises. Collected into `renderErrors` and asserted to stay empty.
-- **`vi.mock('@/infrastructure/http')`** — Replaces `orvalMutator` with a `vi.fn()` whose implementation routes by `config.url`, returning the respective deferred promise.
-- **`router`** — A real `vue-router` instance (memory history) scoped to `collectModuleRoutes(enabledModules)`, matching the pattern in `product-view.spec.ts`. No auth guards are attached.
+- **`deferred<T>()`** — Local helper returning `{ promise, resolve }` so the test controls exactly when each endpoint's promise settles.
+- **`LOCALES_RESPONSE` / `ADMIN_RESPONSE`** — Inline fixture payloads (one active locale `en`; one product row with an `en` translation) shaped to match the orval API contracts.
+- **`router`** — `createRouter` with `createMemoryHistory`, scoped to `collectModuleRoutes(enabledModules)`. No guards attached; allows navigating to the admin edit route without an auth session.
+- **`wireModulesIntoCore()`** — Called at module level to register module routes/stores into the Pinia + router graph before tests run.
+- **`vi.mock('@/infrastructure/http')`** — Replaces `orvalMutator` with a hand-driven mock that returns the deferred promises per URL, giving the spec per-endpoint scheduling control.
+- **The single `it` block** — Resolves the locales promise first, asserts no tab/field rendered and no render errors; then resolves the admin promise and asserts the tab and title field appear correctly.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** → `wireModulesIntoCore()` is called at module top-level to register the enabled modules with the kernel registry before the router or component references them.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** → `orvalEnvelope` wraps raw payloads in the API's standard envelope shape; `parseOrvalFixture` validates and returns a typed response object, ensuring the mock responses match the real HTTP contract.
+- **`src/modules/products/views/ProductEdit.vue`** — The component under test. The spec mounts it and exercises its tab-opening logic under the specific fetch ordering.
+- **`tests/support/unit/wire-modules.ts`** — Provides `wireModulesIntoCore()`, which registers enabled modules' stores and routes so the router and Pinia instance see the same wiring the real app uses.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Supplies `orvalEnvelope` (wraps a payload in the orval success-envelope shape) and `parseOrvalFixture` (validates the fixture against the generated schema before returning it), ensuring mocked responses are contractually valid.
 
 ## Notes
 
-- The `errorHandler` mount option is **load-bearing**: without it, the exact bug this test guards against is invisible (the error fires inside Vue's flush, not on the spec's call stack, so it never rejects a promise the test can `.catch`). Removing it would silently disable the regression guard.
-- The test resolves locales *before* flushing, then asserts the tab is absent *before* resolving admin — the ordering is the entire point of the test.
-- `LayoutDefault` is stubbed to a pass-through `<slot />`; the real layout is not needed and would pull in unrelated dependencies.
-- The `orvalMutator` mock's fallback branch (`Promise.resolve(orvalEnvelope())`) handles any incidental extra requests (e.g., i18n lookups) so they don't hang the test.
+- The bug this spec guards against is **invisible** to `@vue/test-utils` without `global.config.errorHandler`: the throw occurs inside Vue's own reactivity flush, not in the spec's call stack, so it never surfaces as a rejected promise. The handler collects errors into a local array that the assertions check.
+- The `orvalMutator` mock is deliberately **hand-driven** (one deferred per endpoint) rather than using the automatic sequence mock pattern seen in `products/store.spec.ts`, because the test needs to interleave resolutions in a specific order.
+- Mirrors the real-router mount pattern from `product-view.spec.ts` (same `collectModuleRoutes` + `enabledModules` template).

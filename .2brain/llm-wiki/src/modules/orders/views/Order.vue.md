@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/views/Order.vue
-sha256: 2bc2e62f8f50d5dc74441219ec98a2b3508b65ff14cdfe7ce322ef5f4f527b4a
-generated_at: 2026-10-02T15:25:04.138933+00:00
+sha256: 5654257061d37090f7e3c3bbd72ef8525d89c2d90eaab14a3e9e3ea8ee978c9b
+generated_at: 2026-10-17T01:20:10.809421+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,32 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Order detail page shared by both customer and operator roles. Loads a single order by route id, force-re-fetches the record when the cached copy is missing the server-provided `actions` object, and renders the payment, transfer-instructions, shipment, and returns panels as self-contained cross-module components. It also exposes the cancel, reorder, and invoice (download/view) actions directly in the UI.
+Single-order detail page (SFC) shared by customer and operator roles. Loads one order by route id from the orders store, gates action buttons on server-provided `actions` flags, and composes the payment, withdrawal, and shipment panels alongside a timeline. Exists as the top-level view for the `/orders/:id` route.
 
 ## Key elements
 
-- **`handleCancel`** – Opens a confirmation dialog, calls `cancelOrder(id)` from the orders store, reports success as a toast or blocks the button in place via `useBlockingError`.
-- **`handleReorder`** – Calls `reorder(order.id)` on the cart store, diffs the returned cart against the original items with `leftOutByReorder`, toasts a warning naming skipped products, then navigates to the Cart route.
-- **`cancellable` / `invoiceAvailable`** (computed) – Read `currentOrder.actions.cancel` / `.invoice` straight from the server payload rather than re-deriving status rules locally, so the button visibility stays in lockstep with API lifecycle rules.
-- **`orderCurrency`** (computed) – Returns the order's own frozen `currency` field; falls back to `shopCurrency` only for orders that predate the field.
-- **`withInvoice(action)`** – Single fetch of the invoice PDF; the caller (`downloadInvoice` or a new-tab view) receives the `Blob` and renders it its own way. Both buttons share one `invoiceLoading` flag and one `useBlockingError` state.
-- **`auditLogTo`** (computed) – Resolves a route link to `AuditLog` parameterised with the order id; returns `undefined` (hiding the button) on builds where the `admin` module is not part of `MODULE_EDGES`.
-- **`shippingAddressText` / `billingAddressText`** (computed) – Flatten the order's frozen address objects into a single display line via the `addressLine` helper.
-- **`heroTitle` / `heroDescription` / `orderStatus`** (computed) – Feed the `ItemDetailHero` organism with the order id, notes/email, and a translated status label.
-- **`reorderLoading`** – Pulled from the cart store's own `fetchAny` loading ref (distinct from the orders-store `loading`) to guard the reorder button against double-clicks.
+- **`OrderTargetPage`** (default-export name block) — gives the SFC a stable component name for devtools and `<KeepAlive>`, since `<script setup>` cannot declare one.
+- **`handleCancel`** — confirms via a dialog, calls `cancelOrder(id)` from the store, reports success/failure; failure blocks the cancel button in place via `useBlockingError`.
+- **`handleReorder`** — calls `reorder(id)` on the cart store, diffs items with `leftOutByReorder` to report skipped products, navigates to the Cart route.
+- **`withInvoice(action)`** — single shared fetch of the invoice PDF blob; passes the blob to a caller-supplied action (download vs. view). Shared `invoiceLoading` ref and `invoiceError` block both buttons.
+- **`cancellable` / `invoiceAvailable`** (computed) — read `actions.cancel` / `actions.invoice` straight from the server response; deliberately **not** re-derived locally so a lifecycle change on the API cannot desync the button state.
+- **`orderCurrency`** (computed) — frozen per-order currency; falls back to `shopCurrency` only while no order is loaded.
+- **`timelineRefreshKey`** (computed) — pipe-joined snapshot of status fields + `updatedAt`; passed as a `:key` so `OrderTimeline` re-renders on any state change.
+- **`auditLogTo`** (computed) — resolves an `AuditLog` route link, returning `undefined` (button hidden) on builds where the admin module is absent.
+- **`addressLine`** — formats a frozen address object into a single readable string; used for both shipping and billing display.
+- **`useBlockingError`** instances — dedicated per-action (`cancelError`, `reorderError`, `invoiceError`) so a failure blocks its own button rather than joining a shared toast.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** – Listed as a graph neighbor (likely reached indirectly through one of the toolkit or store imports). No direct import or call is visible in this file's source.
+- **`src/modules/orders/store.ts`** — primary data source. Pulls `currentOrder`, `loading`, `watchOrder`, `fetchOrder`, `fetchInvoice`, `fetchCreditNotes`, `fetchCreditNote`, and `cancelOrder` via `useOrdersStore()` / `storeToRefs`.
+- **`src/modules/orders/components/OrderTimeline.vue`** — rendered as a child; receives `timelineRefreshKey` as a `:key` to force re-read on state change.
+- **`src/modules/orders/composables/use-order-actions-refetch.ts`** — imported composable; forces a detail re-fetch when the cached order record is missing its `actions` object.
+- **`src/modules/orders/domain/index.ts`** — re-exports `leftOutByReorder` (originating from `domain/reorder.ts`), used in `handleReorder` to diff order items against the cart result.
+- **`src/modules/orders/tests/order-view.spec.ts`** — unit test suite that exercises this component's rendering and action handlers.
 
 ## Notes
 
-- **Server-authoritative action gates.** `cancellable` and `invoiceAvailable` deliberately read the API's `actions` booleans instead of mirroring status-transition rules in the client. The comments flag this as a deliberate anti-drift measure: a rule that changes server-side would otherwise leave a button offering an action the API rejects.
-- **Two independent loading flags for reorder.** The reorder button watches the *cart* store's `loading` ref, not the *orders* store's `loading`, because `reorder` runs under the cart's `fetchAny`. Using the wrong flag lets a double-click fire the request twice (tracked as FA39).
-- **Frozen currency (FA37).** All price formatting on the page uses `orderCurrency`, never the shop-wide default. The `shopCurrency` fallback exists only for orders created before `Order.currency` was introduced.
-- **Audit-log link is optional (FA86).** Because `admin` is not declared in this module's `MODULE_EDGES`, the link is resolved through `linkIfRouted` with an `undefined` fallback rather than importing the route statically. A `session.can('read','AuditLog')` check sits alongside it as a second, per-visitor gate.
-- **Per-button error isolation.** Cancel, reorder, and invoice each get their own `useBlockingError` instance so a failure in one action renders an inline `InlineErrorAlert` next to that specific control instead of piling into the global toast queue.
+- The named-component `<script>` block is **required** alongside `<script setup>`; removing it breaks devtools identification and `<KeepAlive>` cache matching.
+- `reorderLoading` comes from the **cart** store (`useCartStore`), not the orders store. The reorder button must disable on this flag, not the orders `loading`, or a double-click fires the request twice.
+- The audit-log link guard (`linkIfRouted` returning `undefined`) is intentional: `admin` is not declared in this module's `MODULE_EDGES`, so it must be treated as optional at build time. The `session.can('read','AuditLog')` check is a separate, per-visitor permission gate.
+- All monetary display uses `orderCurrency`, never the live `shopCurrency`; mixing them would show prices in the wrong currency for historical orders.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/profile-avatar-panel.spec.ts
-sha256: 365585f15d41e2a7c7980956b2c2b8735a2fb3a08061ada0498c9c85d920a296
-generated_at: 2026-10-02T12:28:16.331300+00:00
+sha256: 4189c40adb71bd9ed54938b8f192ada534378e5d037d51d9d01fa2fb522a2071
+generated_at: 2026-10-17T00:24:43.158764+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit test for the `ProfileAvatar.vue` component's remove-button visibility. It verifies that the remove control is rendered only when the account record carries an `imageUrl`, and is absent when it does not.
+Unit tests for the remove-button behavior in `ProfileAvatar.vue`: the button is rendered only when the account currently has a picture (`imageUrl` present) and is hidden when it does not. Exists to pin down that conditional visibility contract.
 
 ## Key elements
 
-- **`profile`** (module-level `Ref`) — the single piece of state the mocked store exposes; each test sets `profile.value` before mounting.
-- **`vi.mock('@/modules/account/stores/profile.ts', …)`** — replaces the real Pinia store with a plain object returning `profile`, two `ref(false)` loading flags, and a `vi.fn()` `updateProfile`. Avoids needing a transport to seed data.
-- **`mountPanel(imageUrl?)`** — helper that assigns `profile.value` and mounts `ProfileAvatar` with `vuetify` + `i18n` plugins.
-- **`describe('ProfileAvatar — the remove button')`** — two `it` blocks asserting the `[data-test=profile-avatar-remove]` element exists / is absent.
+- **`profile`** – Module-level `ref` holding `{ imageUrl?: string } | undefined`; mutated before each mount to simulate different account states.
+- **`vi.mock('../stores/profile.ts', …)`** – Replaces the real profile store with a plain object exposing `profile`, `uploadingAvatar`, `removingAvatar`, and a no-op `updateProfile`, avoiding any transport dependency.
+- **`mountPanel(imageUrl?)`** – Helper that sets `profile.value` and mounts `ProfileAvatar` with the Vuetify and i18n plugins. Returns the `VueWrapper`.
+- **`describe('ProfileAvatar — the remove button')`** – Two `it` blocks asserting the `[data-test=profile-avatar-remove]` element is present when `imageUrl` is set and absent when it is not.
 
 ## Relationships
 
-- **`ProfileAvatar.vue`** (`@/modules/account/components/ProfileAvatar.vue`) — the component under test; the spec mounts it and asserts on its rendered DOM.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module top-level to wire mocked module registrations into the test runtime before any component mount.
-- **`@/i18n`** and **`@/ui/vuetify`** — provided as global plugins so the component's locale strings and Vuetify directives resolve during mount.
-- **`@/modules/account/stores/profile.ts`** — fully replaced by the `vi.mock` factory; the real store is never loaded.
+- **`src/modules/account/components/ProfileAvatar.vue`** – The SUT; this spec mounts it directly and queries its DOM.
+- **`tests/support/unit/wire-modules.ts`** – Provides `wireModulesIntoCore()`, called at module scope to ensure shared module aliases resolve in the Vitest environment.
 
 ## Notes
 
-- The mock factory references the module-level `profile` ref. This works because Vitest hoists the `vi.mock` call but defers factory execution until the mocked module is first imported (during `mount`), at which point `profile` is already initialised. Do not move `profile` into the factory without also adjusting the test bodies.
-- `setActivePinia(createPinia())` runs in `beforeEach` even though the mock bypasses Pinia entirely; it satisfies any transitive `useProfileStore()` call that might still touch the Pinia context. Remove it only if the mock contract changes.
-- Tests target the `data-test=profile-avatar-remove` attribute, not a CSS class or role — the selector is the contract between this spec and the component template.
+- The mock is declared at module scope (top-level `vi.mock`), so it applies before any import is resolved; the real store is never instantiated.
+- Element queries use `data-test` attributes, not class names, so refactors that rename classes won't break these tests.
+- `profile` is a shared mutable ref; tests rely on `mountPanel` resetting it before each mount rather than a `beforeEach` reset.

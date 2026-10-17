@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/routes.spec.ts
-sha256: c595005d63f039b92cb33483cb3179bb31b4c2c734fa13a98891d996f9643212
-generated_at: 2026-10-02T12:31:04.006797+00:00
+sha256: a4c2cd545ff76615a6f5aeeca1c6b507d03a5f636cfb17f376d378ee740de219
+generated_at: 2026-10-17T00:26:28.866085+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,21 +9,21 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pins the `meta.access` value declared on every account route by asserting them directly against the module's route records (no resolved router needed). Its job is to guarantee that a route which silently loses `meta.access` is caught immediately, since that would make it indistinguishable from a public route.
+Vitest spec that pins the `meta.access` value declared on every account route by reading the module's raw route records directly (no locale prefix, no resolved router). It guarantees two things: each named route carries the expected access level, and no new route has been added without an explicit access decision.
 
 ## Key elements
 
-- **`byName(name)`** — local helper that looks up a route in the imported `routes` array by its `name` field.
-- **`'account route access' > '%s declares access: %s'`** — parameterized (`it.each`) test asserting the exact `meta.access` value for all 11 named routes. Values are hard-coded (`'guest'`, `'auth'`, or `undefined`) rather than derived, so a missing or changed declaration fails the test.
-- **`'account route access' > 'declares no route this file does not know about'`** — exhaustive guard: compares the sorted list of all route names in `routes` against the hard-coded list above. Catches any new route added without an explicit access decision.
+- **`byName(name)`** — Helper that looks up a route in the imported `routes` array by its `name` property.
+- **`it.each` table (13 rows)** — Asserts `meta.access` for each route: `'guest'` (Login, Signup, TwoFactorChallenge, PasswordResetRequest, PasswordResetConfirm), `'auth'` (AccountExportDownload, Profile), or `undefined` (AccountDeleteConfirm, VerifyEmailConfirm, EmailChangeConfirm, EmailChangeUndo, OAuthCallback, Logout).
+- **`'declares no route this file does not know about'`** — Compares the sorted list of all route names in the module against the hard-coded list above; fails if a new route is added without a corresponding entry.
 
 ## Relationships
 
-- **`src/modules/account/routes.ts`** — sole import. Provides the `routes` array (`RouteRecordRaw[]`) that this spec reads. The test intentionally inspects the raw records *before* any router resolution, so no other app infrastructure is involved.
+- **`src/modules/account/routes.ts`** — Direct import; the sole source under test. This spec reads its exported `routes` array (an `RouteRecordRaw[]`) and asserts on each record's `name` and `meta.access`. No other module is touched.
 
 ## Notes
 
-- Routes expected to have `undefined` access (AccountDeleteConfirm, VerifyEmailConfirm, EmailChangeConfirm, OAuthCallback, Logout) are deliberately public; `undefined` is a meaningful, expected value here, not an oversight.
-- This spec complements (not duplicates) a separate router-level spec: this file proves the declarations *exist*; the router spec proves enforcement is *attached*.
-- Colocation with the module is intentional (see `docs/theory/modules.md`): the test is a fact about this domain, not a global integration check.
-- The hard-coded expected list is repeated in two places (the `it.each` table and the exhaustive-name assertion). Both must be updated together when a route is added or removed.
+- This spec and the router-level spec are complementary: this file proves the declarations are *present*; the router spec proves enforcement is *wired up*. Neither subsumes the other.
+- `undefined` in the access column is intentional (route is public), not a missing assertion — the test explicitly asserts `.toBe(undefined)`.
+- The "no unknown route" guard means adding a route to `routes.ts` requires a matching row in both the `it.each` table **and** the hard-coded name list, or the test fails.
+- Per the module doc comment, the test deliberately avoids a resolved router instance so it needs neither a locale prefix nor the rest of the app to boot.

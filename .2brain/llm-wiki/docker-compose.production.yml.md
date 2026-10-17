@@ -1,7 +1,7 @@
 ---
 source: docker-compose.production.yml
-sha256: cc0da6b74d65713ab522c67b6180645b98efbf791ed28ab44fffa45d9f32434c
-generated_at: 2026-10-02T14:32:16.182447+00:00
+sha256: 56b3ad2320110ba4e8e699081d3e6b960efa7111a4494974b9ead20713804147
+generated_at: 2026-10-16T23:55:50.053103+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Defines the production deployment stack for the frontend: a single nginx container that serves the static Vite bundle. It is the counterpart to `docker-compose.yml` (development), replacing the bind-mounted dev server with a built image. It is intentionally the *only* frontend-side deployment artifact—no API service lives here.
+Production deployment stack for the frontend. Unlike `docker-compose.yml` (which bind-mounts the working tree and runs the Vite dev server), this file builds the static bundle into a single nginx-based image and serves it. It exists so a deploy command is one `docker compose up` invocation rather than a hand-rolled build-and-serve pipeline.
 
 ## Key elements
 
-- **`services.frontend`** — the sole service. Builds `docker/Dockerfile.production`, maps `127.0.0.1:${FRONTEND_PORT:-8080}:80`, and restarts unless stopped.
-- **Build arg `VITE_APP_BASE_URL`** — the *only* value baked into assets at build time. Changing it requires a rebuild.
-- **Runtime environment vars** — all other `VITE_*` settings are written to `/config.js` at container start by `docker/docker-entrypoint.d/`, so changing them only needs `up -d`.
-- **`VITE_API_URL`** — required (Compose `:?` syntax); the container refuses to start without it.
-- **Optional integrations** — Faro telemetry (`VITE_FARO_*`), Umami analytics (`VITE_UMAMI_*`), and `security.txt` (`VITE_SECURITY_*`). An unset value disables the integration entirely.
-- **`VITE_APP_LOG_LEVEL`** — defaults to `warn` in production (vs. the dev default) to keep the browser console quiet.
+- **`frontend` service** — the only service defined. Builds from `docker/Dockerfile.production` with the repo root as context.
+- **`VITE_APP_BASE_URL` (build arg)** — the *only* value baked into asset URLs at build time. Changing it requires a rebuild.
+- **Runtime `environment:` block** — every other setting is injected at container start via `docker/docker-entrypoint.d/` writing `/config.js`. Changing any of these is a restart, not a rebuild.
+- **`VITE_API_URL` (required)** — uses the `:?` interpolation form; the container refuses to start if it is unset.
+- **Optional runtime vars** — API SSE endpoint, locales, log level (defaults to `warn`), Axios timeout, max upload size, cart stock-poll interval, Faro/Umami telemetry (each disabled entirely when unset), and `security.txt` fields.
+- **Port binding** — `127.0.0.1:8080:80` (loopback only). TLS termination is expected from a reverse proxy in front.
+- **`restart: unless-stopped`** — standard production restart policy.
 
 ## Relationships
 
-- **`docker-compose.yml`** — the development counterpart. Same frontend, but bind-mounts the working tree and runs the Vite dev server instead of building an image.
-- **`docker/Dockerfile.production`** — the Dockerfile this file builds against. Contains the long-form rationale for the one-build-arg / many-runtime-args split.
-- **`index.html`** — the entry point of the static bundle that nginx ultimately serves; the `VITE_APP_BASE_URL` build arg determines the base path under which it (and its assets) are reachable.
-- **`SECURITY.md`** — the `VITE_SECURITY_CONTACT` / `VITE_SECURITY_EXPIRES` / `VITE_SECURITY_POLICY_URL` variables gate publication of `/.well-known/security.txt` per the policy described there.
-- **`README.md`** — documents the two-command workflow (`up -d --build`, `logs -f frontend`) and points to this file as the production entry point.
+- **`docker-compose.yml`** — the development counterpart. Same project root, different image strategy (dev server vs. built bundle). The header comment explicitly contrasts the two.
+- **`docker/Dockerfile.production`** — the Dockerfile consumed by the `build:` directive. The long note at its top documents the one-image/configured-at-start model this compose file relies on.
+- **`index.html`** — the entry point of the static bundle this stack builds and serves through nginx.
+- **`SECURITY.md`** — the `VITE_SECURITY_*` variables published here feed the `/.well-known/security.txt` page; the loopback-only port binding and TLS-at-proxy guidance align with the repository's security posture.
+- **`README.md`** — documents the `docker compose -f docker-compose.production.yml up -d --build` workflow shown in this file's header.
 
 ## Notes
 
-- **Loopback port binding is deliberate.** TLS termination belongs to a reverse proxy in front of this container because the API sets authentication cookies that must not traverse plain HTTP.
-- **No API service by design.** Frontend and API deploy independently from separate repositories. Declaring the API here would create hidden version coupling. For a local rehearsal, bring up the API's own compose file first, then build this one with `VITE_API_URL=http://localhost:3000`.
-- **`.env` file** beside this compose file is picked up automatically by Compose interpolation; no `env_file:` directive is needed.
-- **`VITE_API_SSE` defaults to empty string**, not `undefined`—verify the frontend treats `""` as "SSE disabled" if you rely on that.
+- **API is deliberately absent.** The API lives in a separate repo with its own compose file. Wiring it in here would make one repo "own" the other's deployment and hide version skew. The only link is `VITE_API_URL` plus the OpenAPI contract.
+- **Rehearsal order matters.** To test locally, bring up the API's compose file *first*, then build this one with `VITE_API_URL=http://localhost:3000`. The two-command sequence mirrors a real deploy.
+- **`.env` placement.** Compose interpolates a `.env` file found beside this compose file; alternatively export the variables in the shell. No `.env` is committed.
+- **Telemetry vars default to empty, not a sentinel.** An unset Faro or Umami value disables that integration entirely rather than pointing it at a null endpoint.

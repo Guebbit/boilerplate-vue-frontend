@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/tests/orders-list-view.spec.ts
-sha256: 3673f951e943cee6a4ddb020e61f8489c1f196ce0a58c77425d4a616b939a404
-generated_at: 2026-10-02T15:23:09.016810+00:00
+sha256: deefef398a87b3ba388f9ee3aa8e8f43ef14530efa9057e8409024d0f4723c28
+generated_at: 2026-10-17T01:18:38.555159+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,34 +9,43 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Page-level integration test for the `OrdersList` view. It verifies the *mount decisions* the page makes (what is rendered and for whom) and a small set of page-owned behaviors (soft-delete restore action, filter visibility by role, server-side header sorting, order-number display). It deliberately does **not** test the internals of `OrderReferenceSearch` or the store's fetch logic, which are covered in their own suites.
+Page-level integration tests for `OrdersList.vue`. The suite verifies what the page *decides* to render and wire up—permission-gated actions, row-level buttons (Restore / Delete / Hard-Delete), filter visibility by scope, and the server-side sort contract—without re-testing the internal logic of child components (e.g. `OrderReferenceSearch` is stubbed by name). It exists so regressions in the page's conditional rendering and ability checks are caught at the page boundary rather than buried in component unit tests.
 
 ## Key elements
 
-- **`wireModulesIntoCore()`** (called at module scope) — wires the enabled modules' stores into the Pinia app before any test runs.
-- **`vi.mock('@api')`** — mocks only `searchOrders` from the API barrel; every other `@api` export passes through via `importOriginal`.
-- **`mountList()`** — mounts `OrdersList` with `OrderReferenceSearch` stubbed by name and `watchSearchOrders` replaced by a no-op stub. Returns the Vue Test Utils wrapper.
-- **`signInAsPaymentRecorder()` / `signInAsOrderDeleter()` / `signInAsOrderEditor()`** — set up a fake session with a single ability key (`create Payment`, `delete Order`, `update Order`) to drive permission-gated assertions.
-- **`order(id, deletedAt?)`** — builds a full contract `Order` object from `anOrder` for use in mocked API responses.
-- **`mountWithRows()`** — mounts the list with a *real* `searchOrders` response (one row) so that header-click sorting can be observed against the store and the API call.
-- **`headOf(wrapper, title)`** — locates a `<th>` by visible text for sort-click tests.
-- **Five `describe` blocks** — RF-reference lookup mount & emit→navigate, soft-deleted row restore, filter visibility (customer vs staff), server-side header sorting, and the order-number/id fallback column.
+- **`wireModulesIntoCore()`** – module-level side-effect call that populates the registry so `collectModuleRoutes` and store wiring work.
+- **`vi.mock('@guebbit/js-toolkit')`** – replaces `downloadBlob` with a no-op spy to avoid real file downloads.
+- **`vi.mock('@api')`** – replaces `searchOrders` with a controllable `vi.fn()`; only the soft-delete and filter suites actually resolve it, the lookup suite stubs the component out entirely.
+- **`router`** – a memory-history Vue Router scoped to `enabledModules` routes, prefixed with `/:locale`.
+- **`signInAsPaymentRecorder`** – sets session abilities to `[['create','Payment']]`, the gate for showing `OrderReferenceSearch`.
+- **`signInAsOrderDeleter`** – sets `[['delete','Order']]`, the gate for row action buttons.
+- **`signInReadingOrders(pinnedToOwner)`** – sets a read rule either pinned to `userId: 'u1'` (customer) or wide (staff) to test filter visibility.
+- **`order(id, deletedAt?)`** – builds a full contract-shape order fixture via `anOrder` with the fields every table column needs.
+- **`mountList(scope)`** – mounts `OrdersList` with `watchSearchOrders` spied out and `OrderReferenceSearch` stubbed as an empty `<div />`; accepts `'mine'` or `'all'` scope.
+- **`mountWithRows()`** – mounts the page with `searchOrders` resolving one fixture row, for header-sort assertions.
+- **`headOf(wrapper, title)`** – locates a `<th>` cell by its visible text.
+- **Describe blocks:**
+  - *RF-reference lookup* – mount visibility by ability + scope; navigation to `/orders/:id/edit` on `found` emit.
+  - *Soft-deleted row* – Restore button appears in place of Delete; calls `store.restoreOrder(id)`.
+  - *Permanent-delete action* – `row-hard-delete` shown only on cancelled + unpaid rows.
+  - *Filter visibility* – User-ID lookup and transfer-queue filter hidden for customers; shown on staff page for wide-read viewers.
+  - *Header sorting* (truncated) – API-sortable columns trigger a new `searchOrders` with `filters.sort`; non-sortable columns stay inert.
 
 ## Relationships
 
-| Neighbor | Interaction |
-|---|---|
-| `contracts/rest/index.ts` | Source of the `searchOrders` function imported from `@api`; mocked at the top of the file so individual suites can control its return value. |
-| `tests/support/stub.ts` | Provides `asStub<T>()`, used to type-safe-wrplain objects as call-return stubs (`watchSearchOrders`, `searchOrders`). |
-| `tests/support/unit/fixtures.ts` | Provides `anOrder()`, the base factory for realistic order fixtures in both the emit test and the soft-delete/sort/order-number suites. |
-| `tests/support/unit/mounted-vm.ts` | Provides `emitOn()` to fire a `found` event on the stubbed `OrderReferenceSearch` without re-implementing DOM dispatch. |
-| `tests/support/unit/wire-modules.ts` | Provides `wireModulesIntoCore()`, called once at module scope to register module stores before tests execute. |
-| `tests/unit/infrastructure/http/orval-fixture-schema.ts` | Provides `contractResponse(schemas.SearchOrdersResponse, …)` to build API responses that match the generated Orval schema shape. |
+- **`src/modules/orders/views/OrdersList.vue`** – the component under test; mounted directly with `mount()`.
+- **`src/modules/orders/store.ts`** – `useOrdersStore` is imported for spying (`watchSearchOrders`, `restoreOrder`) and asserting store-level effects.
+- **`contracts/rest/index.ts`** – provides `searchOrders` (mocked), `downloadBlob` (mocked), and the `schemas` namespace used by `contractResponse`.
+- **`tests/support/stub.ts`** – `asStub<T>()` wraps plain objects so their shape satisfies the return type of the spied function.
+- **`tests/support/unit/fixtures.ts`** – `anOrder()` factory used to build order payloads with sensible defaults.
+- **`tests/support/unit/mounted-vm.ts`** – `emitOn()` triggers a named event on a found child component (used for the `found` emit test).
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` registers module stores/routes so the real app wiring is active.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – `contractResponse(schema, body)` builds a properly-shaped API response object from a generated schema, ensuring the mock matches the contract.
 
 ## Notes
 
-- **Stub-by-name, not barrel-mock.** `OrderReferenceSearch` is registered as a named stub (`{ name: 'OrderReferenceSearch', template: '<div />' }`) so the test asserts the *page's decision to render it*, not its behavior. This also prevents its setup from firing a real HTTP call.
-- **Two mounting strategies coexist.** `mountList()` stubs the table fetch (`watchSearchOrders`) and is used for mount/permission/filter assertions. The soft-delete, sorting, and order-number suites instead mock `searchOrders` at the `@api` level and let the real store run, because those assertions depend on the rendered table rows.
-- **FA86 / FA38 comments** reference acceptance criteria: FA86 documents that `OrderReferenceSearch` emits rather than navigates (no `MODULE_EDGES` into `orders`), and FA38 documents that customer-facing filters exclude staff-only lookups and the transfer queue.
-- **Router is real (memory history)** but scoped to `collectModuleRoutes(enabledModules)`, so the navigation assertion in the emit test exercises actual route resolution.
-- The `beforeEach` pushes `/en/orders` and awaits `router.isReady()`; tests that assert navigation must use `vi.waitFor` rather than a single `flushPromises` tick.
+- `OrderReferenceSearch` is **stubbed by component name** (`stubs: { OrderReferenceSearch: {...} }`) rather than mocked through the `@api` barrel. This is deliberate: the test asserts *that the page renders it*, not *what it does*, and it prevents the child's own setup from firing a real HTTP call.
+- The lookup suite does **not** test the search field or the navigation logic inside `OrderReferenceSearch`—those live in `payments/tests/order-reference-search.spec.ts`. Here, `emitOn(..., 'found', ...)` simulates the child's output and the page's own `router.push` is what's asserted.
+- `mountList` spies out `watchSearchOrders` entirely; only the soft-delete and filter suites call the real (mocked) `searchOrders` so the table renders rows.
+- The permanent-delete eligibility rule (cancelled **and** unpaid) is an API-level constraint; the test encodes it as a rendering assertion, not as a store-method call.
+- `wireModulesIntoCore()` runs once at module import time; it is not inside `beforeEach`, so it is a one-shot side-effect for the whole file.

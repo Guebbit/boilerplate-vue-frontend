@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/tests/store.spec.ts
-sha256: e6ef8b224a8b2a8b0972de5ef29beed1a9738facfe4b4977ee449f7efdc0b8a0
-generated_at: 2026-10-02T15:15:35.138271+00:00
+sha256: 658710f9c618f26468053a396608c9405e8d14e3e73f646593b90d52106b4dda
+generated_at: 2026-10-17T01:06:11.378480+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for the locales Pinia store. Rather than asserting on rendered UI, the suite mocks the `orvalMutator` HTTP transport and asserts on the exact `METHOD path` sequence the store issues plus the shape of bodies it sends. This pins transport-level contracts (URLs, HTTP verbs, body fields) without a network layer.
+Unit-test suite for the locales Pinia store. It replaces the HTTP layer (`orvalMutator`) with a table-driven mock keyed by `METHOD path`, then asserts both the returned state and the exact sequence of URLs the store requested. The pattern mirrors the inventory spec: pin *what* the store calls and *in what order*, not *how* the transport works.
 
 ## Key elements
 
-- **`responses` (module-level `Record<string, unknown>`)** — Canned envelope bodies keyed by `METHOD path` (e.g. `'POST /locales'`, `'DELETE /locales/es'`). Reset in `beforeEach` via `vi.resetAllMocks()`, then repopulated.
-- **`vi.mock('@/infrastructure/http')`** — Replaces `orvalMutator` with a spy that looks up `responses[\`${method} ${url}\`]` and feeds it through `parseOrvalFixture`, returning a resolved Promise.
-- **`requestedUrls()`** — Helper that maps `orvalMutator.mock.calls` into an ordered array of `"METHOD url"` strings for sequential-assertion style tests.
-- **`CAPABILITY` / `LANGUAGE` / `ENTRY` (const fixtures)** — Representative rows for the merged manifest, the dynamic-tier language record, and a stored entry, used as expected values in assertions.
-- **`describe('fetchLanguages')`** — Verifies the store stores capabilities, default, and fallback from a `GET /locales` response.
-- **`describe('language writes')`** — Pins that create/edit/remove each perform the write *then* a `GET /locales` refetch; edit omits `tag` from the body (not editable).
-- **`describe('entry writes')`** — Covers `addEntry`, `editEntry` (key excluded from body), `importEntries` routing merge→PATCH vs replace→PUT, and that tenant appears in the path once, not per-row.
-- **`describe('fetchAllEntries')`** — Swaps the mock implementation to serve two pages sequentially, asserting the store pages to completion.
-- **`describe('entry search and removal')`** — Tests `watchSearchEntries().search()` including the `?? ''` empty-tag arm producing `GET /locales//entries`, and `removeEntry`.
-- **`describe('fetchApiDictionary')`** — Verifies flattening of a nested message tree into dotted keys, and that a 404 yields an empty `{}`.
+- **`responses` (module-level `Record<string, unknown>`)** — the single source of canned fixtures per `METHOD path`; reset in `beforeEach` so each test starts clean.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a stub that looks up `responses` and wraps the result via `parseOrvalFixture`.
+- **`requestedUrls()`** — helper that extracts the ordered list of `METHOD path` strings from the mock's call log; used in nearly every assertion.
+- **`CAPABILITY`, `LANGUAGE`, `ENTRY`** — representative fixture rows for the merged manifest, the dynamic-tier language record, and a stored entry respectively.
+- **`describe` blocks** — cover `fetchLanguages`, language CRUD (create/edit/remove), entry writes (add/edit/import-merge/import-replace), `fetchAllEntries` (pagination), entry search & removal, and `fetchApiDictionary`.
+- **`contractRequest(schemas.…, call.data)`** — validates that request bodies conform to the generated API schemas (e.g. `UpdateLocaleBody`, `UpdateLocaleEntryBody`, `MergeLocaleEntriesBody`).
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — The sole module under mock; the test asserts every HTTP call the store makes through `orvalMutator` originates from here.
-- **`tests/support/unit/wire-modules.ts`** — Called once at module scope (`wireModulesIntoCore()`) to register store modules with the core so `useLocalesStore()` resolves in the test runtime.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Supplies `orvalEnvelope` (wrap payloads in the API's response envelope), `parseOrvalFixture` (normalize a canned body into the mutator's return shape), and `contractRequest` (validate a request body against a generated schema and return the relevant subset).
+- **`src/modules/locales/store.ts`** — the unit under test; `useLocalesStore` is imported and exercised in every `it`.
+- **`src/infrastructure/http/index.ts`** — `orvalMutator` is the sole mock target; no real HTTP is performed.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level to register test doubles in the DI container before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `parseOrvalFixture` (unwrap the transport envelope), `orvalEnvelope` (wrap a payload in the expected shape), and `contractRequest` (schema-assert a request body).
 
 ## Notes
 
-- `vi.resetAllMocks()` (not `clearAllMocks`) is used in `beforeEach` because the pagination test swaps the mock implementation; reset restores the original table-driven mock for subsequent tests.
-- `DELETE /locales/es` and `DELETE /locales/es/entries/:id` are intentionally bodyless per the real API contract — the envelope has no `data` key.
-- The `editLanguage` and `editEntry` tests extract `call.data` from the mock and run it through `contractRequest` to assert the exact serialized body, guarding against accidental extra fields (e.g. `tag` leaking into the edit body).
-- The empty-tag search test (`GET /locales//entries`) documents a known quirk: when `filters.tag` is unset, the URL contains a double slash. This is the `?? ''` fallback arm, not a bug to fix here.
+- `beforeEach` uses `vi.resetAllMocks()` (not `clearAllMocks`) specifically so the paging test—which swaps `mockImplementation`—restores the table-driven stub for subsequent tests.
+- The `DELETE /locales/es` fixture is intentionally bodyless (`orvalEnvelope()` with no payload), matching the real API contract.
+- The empty-tag search test (`GET /locales//entries`) pins the `?? ''` fallback branch in the store's URL construction; the double-slash is expected, not a bug.
+- `importEntries` routes to `PATCH` for merge and `PUT` for replace; the tests assert the *method* carries the delete semantics rather than a separate DELETE call.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/oauth-continue.spec.ts
-sha256: 53dbabb28f1330a70e930ae51fb980af218be5b56d9be3d2ec007d829d5a7ef1
-generated_at: 2026-10-02T12:25:14.800201+00:00
+sha256: 478167fc83667339d2da0a659e2b15cfb0dbc8231f62f5916571245c33f934c3
+generated_at: 2026-10-17T00:22:51.436357+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,28 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that `Login.vue` and `Signup.vue` forward the page's own `?continue=` query parameter onto every OAuth provider button's `href`, and that the parameter is safely omitted for open-redirect or type-mismatch inputs. It is the view-level counterpart to `oauth.spec.ts`, which pins the `oauthStartUrl` encoding logic in isolation.
+Verifies that `Login.vue` and `Signup.vue` forward the page's `?continue=` query parameter onto every OAuth button's `href`, while always including the active `?locale=`. Also asserts that the views **reject** unsafe `continue` values (protocol-relative URLs, array/repeated params) rather than passing them through. Complements `oauth.spec.ts`, which pins the `oauthStartUrl` function's own encoding logic in isolation.
 
 ## Key elements
 
-- **`mountView(View)`** — mounts a `Login` or `Signup` component with Pinia, Vuetify, i18n plugins, stubs `LayoutDefault` and `HumanCheck`, then awaits the provider fetch so the OAuth buttons are rendered.
-- **`currentQuery`** — module-level mutable object consumed by the `vue-router` mock's `useRoute` return; tests mutate it to simulate different `?continue=` values.
-- **`RESPONSES`** — maps `GET /account/oauth/providers` to a fixture (`providers: ['google']`) consumed by the `orvalMutator` mock so the provider list renders.
-- **`describe.each` over `['Login', Login]` and `['Signup', Signup']`** — parameterises the same five assertions across both views:
-  - same-origin `?continue=` is forwarded (URL-encoded)
-  - `?locale=` reflects the active i18n locale
-  - `?continue=` is absent when the page query has none
-  - protocol-relative values (`//evil.example`) are dropped
-  - array values (repeated query params) are dropped
+- **`RESPONSES`** – A `Record<string, unknown>` mapping one canned mock response (`GET /account/oauth/providers` → a single `google` provider) so the OAuth button actually renders.
+- **`orvalMutator` mock** – Intercepts all HTTP calls made through the real `@/infrastructure/http` module and resolves them from `RESPONSES` via `parseOrvalFixture`, keeping the provider-fetch path realistic.
+- **`vue-router` mock** – Replaces `RouterLink`, `useRoute`, and `useRouter`. Exposes a module-level `let currentQuery` that each test mutates to simulate different route queries.
+- **`mountView(View)`** – Helper that mounts `Login` or `Signup` with Pinia, Vuetify, i18n plugins and a `HumanCheck` stub, then `flushPromises()` so the provider fetch settles before assertions.
+- **`beforeEach`** – Resets `currentQuery`, clears the `orvalMutator` mock, zeroes `instance.defaults.baseURL`, and loads the `en` locale.
+- **`describe.each` block** – Parameterizes the same five assertions over both `Login` and `Signup`:
+  1. Same-origin `?continue=` is forwarded (URL-encoded).
+  2. Active language appears as `?locale=` even without a `continue` target.
+  3. `?continue=` is omitted when absent.
+  4. Protocol-relative `continue` (`//evil.example`) is dropped.
+  5. Array-valued `continue` (repeated query param) is dropped.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — calls `wireModulesIntoCore()` once at module scope so module-level side-effects (e.g. global composables) are registered before any test runs.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload in the API's standard envelope) and `parseOrvalFixture` (decodes the envelope into the shape the app expects), used together to build the mocked `GET /account/oauth/providers` response.
+- **`src/modules/account/views/Login.vue`** and **`src/modules/account/views/Signup.vue`** – The two SUTs; the suite mounts each and inspects the rendered `[data-test=oauth-google]` anchor's `href`.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module scope to register the necessary module wiring so the views can resolve their dependencies under Vitest.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Supplies `orvalEnvelope` (wraps a payload in the expected Orval response envelope) and `parseOrvalFixture` (validates/normalises the canned response) used inside the `orvalMutator` mock.
 
 ## Notes
 
-- The `orvalMutator` mock is scoped to this file (`vi.mock`); it does **not** intercept real HTTP but replaces the function the views call to fetch providers.
-- `instance.defaults.baseURL` is reset to `''` in `beforeEach` to prevent leakage from other test files that set a base URL.
-- The `HumanCheck` stub exists solely because `Signup` renders a human-check widget that issues its own config fetch on mount; it is irrelevant to the OAuth assertions (same pattern as `password-reset-request-view.spec.ts`).
-- Security-relevant assertions: the suite explicitly confirms that `?continue=` is **not** forwarded for protocol-relative URLs or non-string values, guarding against open-redirect via the OAuth redirect URL.
+- The `currentQuery` variable is **mutated in-place** by each test before calling `mountView`; the mocked `useRoute` reads it lazily at mount time. This avoids re-mocking `vue-router` per test but means tests are order-sensitive if they forget to reset (the `beforeEach` handles that).
+- The `instance.defaults.baseURL = ''` reset in `beforeEach` guards against a prior test suite (or a different `baseURL` set by Orval) leaking into the assertion strings.
+- Security assertions (cases 4 & 5) confirm the *view* drops the value, not just the `oauthStartUrl` helper — i.e. the guard is exercised end-to-end through the rendered DOM.

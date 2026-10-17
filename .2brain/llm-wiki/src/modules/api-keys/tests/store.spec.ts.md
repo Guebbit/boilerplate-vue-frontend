@@ -1,7 +1,7 @@
 ---
 source: src/modules/api-keys/tests/store.spec.ts
-sha256: 82ca22042ce121cbc76186ec7bfddcbc726c6588b91380fdba4bbc6693b62e64
-generated_at: 2026-10-02T14:55:13.633146+00:00
+sha256: 8ceb07315533e171be5747d69cb7b26092b71afa2f0089a940f6534fade220d7
+generated_at: 2026-10-17T00:32:51.868058+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for the `useApiKeysStore` Pinia store. The tests mock `orvalMutator` at the transport layer and assert on the raw request config (URL, method, body) plus the store's in-memory state after each action. They cover three store actions — `mintCredential`, `revokeCredential`, and `search` — with particular focus on secret-handling invariants that have no equivalent elsewhere in the codebase.
+Unit tests for the `useApiKeysStore` Pinia store. The file mocks `orvalMutator` at the transport level to assert on the raw HTTP requests the store's actions produce, and to verify store-specific invariants (e.g. the plaintext mint secret is returned to the caller but never persisted in cached state). Structurally mirrors `webhooks/tests/store.spec.ts`.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http', …)`** — Replaces `orvalMutator` with a `vi.fn` that resolves a fixture shaped by method (DELETE → empty envelope; everything else → the shared `API_KEY` record plus a default `secret` field).
-- **`lastRequest()`** — Returns the config object passed to `orvalMutator` on its most recent call (throws if never called).
-- **`lastBody(schema)`** — Extracts the JSON body from the last request and validates it against a supplied Zod schema via `contractRequest`.
-- **`respondOnceWith(data)`** — Installs a one-shot `mockImplementationOnce` so a single call returns an arbitrary payload; used for mint responses that carry a `secret` field the default fixture cannot express.
-- **`describe('mintCredential')`** — Four tests verifying the POST target/body, that the plaintext secret is returned to the caller, that it is *not* persisted in `store.apiKeys`, and that the credential row (minus secret) *is* cached.
-- **`describe('revokeCredential')`** — Three tests verifying the DELETE target, that the cached row is patched with `revokedAt` without a refetch, and that no ghost record is created for an unknown id.
-- **`describe('search')`** — One test installing a list-shaped mock and asserting `watchApiKeysSearch().search()` hits `GET /api-keys` and populates `apiKeysList`.
+- **`API_KEY`** – Static fixture object (id, name, publicPrefix, permissions, timestamps) used as the default mock response payload.
+- **`vi.mock('@/infrastructure/http', …)`** – Replaces `orvalMutator` with a `vi.fn` that resolves a `parseOrvalFixture`-wrapped envelope by default; DELETE calls get a bodyless envelope, everything else gets `{ ...API_KEY, secret: 'sk_a1b2c3d4_default' }`.
+- **`lastRequest()`** – Reads the most recent `orvalMutator` call args (url, method, data, params) for assertions.
+- **`lastBody(schema: ZodType)`** – Extracts the last request body and validates it against a Zod schema via `contractRequest`.
+- **`respondOnceWith(data)`** – Installs a one-shot `mockImplementationOnce` so a single call returns an arbitrary envelope (used for the secret-carrying mint response that the default fixture can't express).
+- **`describe('useApiKeysStore')`** – Top-level suite; `beforeEach` resets Pinia and clears all mocks.
+  - **`mintCredential`** – Asserts POST to `/api-keys`, correct body, secret returned to caller, secret absent from `store.apiKeys`, and non-secret fields cached.
+  - **`revokeCredential`** – Asserts DELETE to `/api-keys/:id`, `revokedAt` patched into the cached row without refetch, and no ghost record created for unknown ids.
+  - **`search`** – Installs a list-shaped mock, calls `watchApiKeysSearch().search()`, asserts GET to `/api-keys` and `apiKeysList` populated.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — Source of `orvalMutator`, the single transport function the store calls. Fully mocked here; the mock's default implementation and the `respondOnceWith` helper are the only ways the store sees a response.
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level (before any test) to register the store and its dependencies with the test-side DI container.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Supplies `parseOrvalFixture`, `orvalEnvelope`, and `contractRequest`. The first two build/unwrap the wire-format response envelope; `contractRequest` validates an outgoing request body against a Zod schema from `@api/schemas`.
+- **`src/modules/api-keys/store.ts`** – The SUT; `useApiKeysStore` is imported and exercised in every test.
+- **`src/infrastructure/http/index.ts`** – Source of `orvalMutator`, which is the sole transport mock target.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called once at module top level to wire DI before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Provides `contractRequest`, `orvalEnvelope`, and `parseOrvalFixture` used to build/validate mock payloads and request bodies against Zod schemas.
+- **`@api/schemas`** – Zod schemas (`MintApiKeyBody`, etc.) imported for body-contract assertions.
 
 ## Notes
 
-- Tests **return** their promise chain instead of `await`-ing. Vitest fails a test whose returned promise rejects, so assertions inside `.then` are equally binding. This convention is documented in `docs/tools/unit-testing.md`.
-- The default `orvalMutator` mock always includes `secret: 'sk_a1b2c3d4_default'` in non-DELETE responses. The `respondOnceWith` helper exists specifically because the mint response schema *does* include `secret` while the list schema does not — the two cannot share one fixture shape.
-- The `revokeCredential` "patches cached row" test seeds the store via `store.addApiKeyRecord(…)` directly (simulating a prior list load) rather than calling `search` first, keeping the test isolated to the patch logic.
-- The file's module docblock notes it mirrors `webhooks/tests/store.spec.ts` in structure; the only divergences are the mint-secret invariants and the hand-patched revoke row.
+- Tests **return** their promise chain (`.then(…)` / bare arrow returning the chain) instead of `await`ing; a rejected returned promise fails the vitest test. See `docs/tools/unit-testing.md`.
+- The default `orvalMutator` mock only makes sense for POST (mint) and DELETE (revoke). Every GET/search test overwrites the implementation with a list-shaped envelope before calling.
+- `revokeCredential` tests seed the cache via `store.addApiKeyRecord` (simulating a prior list load) rather than calling `search` first, to isolate the patch-in-place behavior.
+- The `secret` field exists only in the mint response schema, not in the list/key-record schema — hence the need for `respondOnceWith` in the mint tests.

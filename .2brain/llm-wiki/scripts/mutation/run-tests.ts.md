@@ -1,7 +1,7 @@
 ---
 source: scripts/mutation/run-tests.ts
-sha256: 72674bde7c6ccab660794b84dc9c2ccbd2b4c191e9a4dd7d048477cab9139b6a
-generated_at: 2026-10-02T11:39:58.393634+00:00
+sha256: 8db5a2abad15c09952c0cf6d3bceb4afb2dcf2e15c26e766ccd133a3303b906c
+generated_at: 2026-10-17T00:03:22.183803+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A CLI wrapper around `npx stryker run` that handles three concerns a static `stryker.config.json` cannot: sourcing machine-specific settings (`concurrency`, per-worker heap) from `.env`, clearing Stryker's sandbox directory before the run, and aborting the run early when it detects an OOM-restart loop. It exists so a developer's laptop and a CI runner can disagree on resource usage without either editing a tracked file.
+A thin wrapper around `npx stryker run` that adds three capabilities a JSON config cannot provide: resolving concurrency and heap from the local machine (via `.env`), clearing Stryker's `.stryker-tmp/` sandbox before starting (so a killed run doesn't leave a duplicate project copy), and aborting the run if the worker OOM-restart loop is detected.
 
 ## Key elements
 
-- **`REPO_ROOT`** — Resolved via `import.meta.dirname` + `../..`; the `cwd` passed to the spawned Stryker process.
-- **`SANDBOX_ROOT`** — `.stryker-tmp/` at the repo root; removed with `rm(..., { recursive: true, force: true })` before each run to avoid accumulating orphaned project copies after killed runs.
-- **`STRYKER_WORKER_PEAK_MB_ESTIMATE`** (2500) / **`OS_RESERVE_MB`** (2048) — Constants used by `resolveConcurrency` to cap workers by available RAM.
-- **`OOM_LIMIT`** (6) / **`OOM_WINDOW_MS`** (10 min) — Thresholds that distinguish a survivable restart from a non-converging loop.
-- **`positiveInteger(value)`** — Parses an env-var string to a positive integer or `undefined`.
-- **`resolveConcurrency()`** — Returns `STRYKER_CONCURRENCY` if set; otherwise the minimum of `logical CPUs − 1` and `free RAM / peak estimate`, floored at 1.
-- **`main()`** — Cleans the sandbox, spawns `npx stryker run` with `stdio: ['inherit', 'pipe', 'inherit']`, forwards stdout chunks to the terminal while counting `"ran out of memory"` occurrences, and sends `SIGTERM` when the OOM threshold is crossed.
+- **`REPO_ROOT` / `SANDBOX_ROOT`** — Resolved via `import.meta.dirname` (two `..` up from `scripts/mutation/`). `SANDBOX_ROOT` is `.stryker-tmp/`, which is `rm`-ed at the start of every run.
+- **`STRYKER_WORKER_PEAK_MB_ESTIMATE` (2500)** — A rough ceiling on per-worker RSS used only to derive a RAM-based concurrency cap. An estimate, not a measurement; the doc comment explains how to re-measure.
+- **`OS_RESERVE_MB` (2048)** — RAM left unallocated for the OS/editor when computing the concurrency cap.
+- **`OOM_LIMIT` (6) / `OOM_WINDOW_MS` (10 min)** — Threshold for the OOM-loop guard: 6+ "ran out of memory" restarts within 10 minutes triggers a `SIGTERM`.
+- **`resolveConcurrency()`** — Returns `STRYKER_CONCURRENCY` from env if set; otherwise `min(cpuCount - 1, freeRAM / peakMB)`, floored at 1.
+- **`positiveInteger(value)`** — Small parser that returns `undefined` for unset, empty, or non-positive-integer strings.
+- **`main()`** — Clears the sandbox, spawns `npx stryker run …`, pipes stdout (counting OOM lines while forwarding bytes unchanged), and mirrors the child's exit code.
+- **CLI passthrough** — `process.argv.slice(2)` is forwarded to Stryker. An explicit `--concurrency` flag in passthrough suppresses the auto-computed one.
+- **`childEnvironment`** — Appends `--max-old-space-size=<heapMb>` to `NODE_OPTIONS` when `STRYKER_WORKER_HEAP_MB` is set.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It is a leaf script: it spawns an external process (`npx stryker`) and reads only `node:child_process`, `node:fs/promises`, `node:os`, and `node:path`.
+No graph neighbors are listed for this file. It is a leaf script invoked via `npm run test:mutation` and read by no other module.
 
 ## Notes
 
-- The shebang is `#!/usr/bin/env tsx`; the file is a TypeScript script executed directly, not compiled.
-- `process.loadEnvFile()` is called in a bare `try/catch` because CI checkouts have no `.env` — the catch is intentional and silent.
-- CLI passthrough args (everything after the script name) are forwarded verbatim. A `--concurrency` flag on the CLI suppresses the auto-computed value entirely.
-- The OOM counter is a simple substring count of `"ran out of memory"` across all stdout chunks; it does not parse structured output.
-- A parallel wrapper exists in the backend project at the same relative path (`scripts/mutation/run-tests.ts`); it cleans a different scratch root and carries a CommonJS `__dirname` fallback, but the shape and intent are identical.
-- `STRYKER_WORKER_PEAK_MB_ESTIMATE` is explicitly an estimate, not a measurement. The comment advises re-measuring with a single-file, single-concurrency run if OOM restarts ever appear in this repo.
+- **Two-level `..` for repo root.** The file lives at `scripts/mutation/`, so one `..` lands in `scripts/`, not the repo root. Getting this wrong makes Stryker run against a directory with no config.
+- **`process.loadEnvFile()` is best-effort.** Wrapped in `try/catch` because CI checkouts have no `.env`; that is the expected case, not an error.
+- **Concurrency precedence:** CLI flag > `STRYKER_CONCURRENCY` env > computed from CPU/RAM. The committed `concurrency` in `stryker.config.json` is effectively ignored when this script is the entry point.
+- **OOM guard is preventive, not reactive to this repo.** The doc comment notes this repo's Vitest/esbuild pipeline has not triggered the loop; the guard exists because the property that keeps it true is a configuration choice, not a guarantee.
+- **Heap flag is containment, not a fix.** `--max-old-space-size` makes a leak fail faster; it does not prevent the leak. Left unset, Node derives its own limit from total system RAM.
+- **Stdout is piped, not inherited.** This is required so the OOM line can be counted, but every chunk is written back to `process.stdout` unchanged, so the terminal experience is identical to a bare `stryker run`.

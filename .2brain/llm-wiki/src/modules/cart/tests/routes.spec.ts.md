@@ -1,7 +1,7 @@
 ---
 source: src/modules/cart/tests/routes.spec.ts
-sha256: b1f926d3ae58c1cd3af35732042593ff3b299d23cd8ca1f3a32651e7dbd03643
-generated_at: 2026-10-02T15:02:36.069846+00:00
+sha256: 3cca500e9e6f45882350fafca6250946b4937b95633634f31ad6c37b70b5fd4d
+generated_at: 2026-10-17T00:42:23.241071+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that every cart route explicitly declares a `meta.access` value. This matters because a route that silently loses its access declaration becomes indistinguishable from a public one and no other test in the suite would flag the regression. This spec proves the declarations exist; the router spec (elsewhere) proves enforcement is wired up.
+Verifies that the cart module's route records carry the access declarations the domain expects. It exists because a route that silently loses its `meta.access` is indistinguishable from a public one—no other test in the suite would flag it. Asserting literal expected values (rather than deriving them from the records) makes that failure visible.
 
 ## Key elements
 
-- **`byName(name)`** — helper that looks up a `RouteRecordRaw` by its `name` in the imported routes array.
-- **`it.each([['Cart', 'auth']])`** — parametrized assertion that each listed route exists and carries the expected `meta.access` value. Expected values are hardcoded, not read back from the record, to avoid circular logic.
-- **"declares no route this file does not know about"** — asserts the full set of route names equals exactly `['Cart']`. Catches a new route added without an access decision being recorded here.
-- **`routes` import** from `../routes` — the single data source under test; the spec reads the raw array, not a resolved router instance.
+- **`byName(name)`** — helper that looks up a `RouteRecordRaw` from the imported `routes` array by its `name`.
+- **`'Cart' declares access: 'open'`** (via `it.each`) — confirms the `Cart` route exists and its `meta.access` is exactly `'open'`.
+- **`'needs the key that lets a role shop'`** — confirms `meta.can` is `['update', 'Cart']`, meaning signed-in visitors must hold the `update` permission on `Cart`.
+- **`'declares no route this file does not know about'`** — asserts the full set of route names is `['Cart']`; a new route added to the module will fail here until this spec is updated.
 
 ## Relationships
 
-- **`src/modules/cart/routes.ts`** — sole dependency. The test imports the default-exported route array and asserts on its records' `name` and `meta.access` fields. No other module is involved.
+- **`src/modules/cart/routes.ts`** — the sole production dependency. The test imports its default export (`routes`, an array of `RouteRecordRaw`) and inspects each record's `name`, `meta.access`, and `meta.can` directly. It does not instantiate a router or resolve paths, so no app context, locale prefix, or middleware is involved.
 
 ## Notes
 
-- Expected access values are written out explicitly rather than derived from the records being tested. This is intentional: deriving the expectation from the same source would make the test tautological.
-- The spec operates on the raw route array, so it needs neither a locale prefix nor the rest of the app context.
-- The "no unknown routes" test acts as a completeness gate: adding a route to `routes.ts` without adding a row to the `it.each` table (or updating the expected name list) will fail this test.
-- Lives in the cart module's test directory rather than a platform-level spec because it asserts domain-specific facts; moving it would couple an unrelated spec to the cart domain.
+- Access values are hard-coded literals, not read from the records. This is deliberate: if a route's `meta.access` is removed, `expect(...).toBe('open')` fails on `undefined` rather than silently matching a derived value.
+- The "no unknown routes" test is a completeness guard, not a behavior test. Adding a second cart route (e.g. a checkout sub-route) requires a new line in this spec; forgetting to do so fails the suite.
+- `open` (not `auth`) is the expected access because guests own a browser-local cart until sign-in merges it. The `meta.can` key is only enforced on signed-in visitors, so guests are not blocked.
+- The module is colocated with the cart domain (not a platform-wide spec) so deleting the cart module cannot leave a dangling reference in a shared test. See `docs/theory/modules.md`.

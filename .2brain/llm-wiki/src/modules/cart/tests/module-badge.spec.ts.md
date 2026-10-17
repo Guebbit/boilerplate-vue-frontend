@@ -1,7 +1,7 @@
 ---
 source: src/modules/cart/tests/module-badge.spec.ts
-sha256: 6a6ed57ca16c01c16b06bd6ca0dfd93104db8ceeb87f4abcdb948244b3f066e6
-generated_at: 2026-10-02T15:02:18.466441+00:00
+sha256: 577cfc026ecdd2e7df583f89b246148d6ca8ffa8af106b43e5a69afbb33e2425
+generated_at: 2026-10-17T00:42:04.744554+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Tests the cart badge's session watch (defined in `cart/module.ts`): verifying that the checkout draft is cleared when a signed-in visitor logs out, and that it survives a page reload (which momentarily drops the session before restoring it).
+Vitest spec for the cart badge's session watch (defined in `module.ts`). It verifies two behavioral contracts: (1) the checkout draft is destroyed when a signed-in user logs out, but survives a page-reload sequence (signed-out → session restored); and (2) the badge calls `seedAfterSignIn` only when the session actually holds the `update Cart` tenant ability.
 
 ## Key elements
 
-- **`wireBadge`** — helper that grabs `cartModule.navigation[0].badge` and runs it inside a fresh `effectScope`, mirroring how the app shell wires it up.
-- **`signIn`** — helper that sets a stub `SessionViewer` and a fake `accessToken` on the session store.
-- **`beforeEach`** — resets `sessionStorage`, creates a fresh Pinia, and mocks `useCartStore().fetchSummary`.
-- **Test: "drops the checkout draft when the signed-in visitor logs out"** — signs in, wires the badge, writes a draft, then clears `accessToken`; asserts the draft is wiped to `{ notes: '' }`.
-- **Test: "keeps the draft through a reload, which starts signed out and is restored a moment later"** — writes a draft first (session not yet set), wires the badge, then signs in; asserts the draft is intact after `nextTick`.
+- **`wireBadge`** — Invokes the first navigation entry's `badge()` setup from `cartModule` inside a dedicated `effectScope`, mirroring how the shell wires it.
+- **`signIn`** — Populates the Pinia session store with a stub viewer (`id: 'u1'`), an access token, and the `['update', 'Cart']` tenant ability.
+- **Test: "drops the checkout draft…"** — Signs in, wires the badge, writes a draft, then clears `accessToken`; asserts the draft is reset to `{ notes: '' }` after `nextTick`.
+- **Test: "keeps the draft through a reload…"** — Writes a draft *before* wiring the badge, then signs in (simulating restore); asserts the draft is unchanged.
+- **Test: "seeds for a session that may shop"** — Confirms `seedAfterSignIn` is called exactly once when the ability is present.
+- **Test: "never seeds for a session that holds no cart key"** — Clears all abilities; asserts `seedAfterSignIn` is never called.
 
 ## Relationships
 
-- **`tests/support/stub.ts`** — imports `asStub` to construct a minimal `SessionViewer` object for the `signIn` helper, avoiding the need for a real session payload.
+- **`src/modules/cart/module.ts`** — Imports `cartModule` to reach `navigation[0].badge`, the SUT.
+- **`src/modules/cart/store.ts`** — Imports `useCartStore` solely to spy on `seedAfterSignIn` and assert call counts.
+- **`src/modules/cart/composables/use-checkout-draft.ts`** — Imports `readCheckoutDraft` / `writeCheckoutDraft` to set up and verify draft state in `sessionStorage`.
+- **`tests/support/stub.ts`** — Imports `asStub<SessionViewer>` to build the minimal session viewer fixture.
 
 ## Notes
 
-- The badge setup is invoked via `effectScope().run(...)` so its reactive effects are scoped and will be torn down when the scope is GC'd; the tests rely on this to avoid leaking watchers between cases.
-- The reload scenario is simulated by calling `writeCheckoutDraft` *before* `signIn` (i.e., before the badge's effect fires), so the badge's "session went null" path is never triggered. The test asserts the draft is *not* wiped in that ordering.
-- `sessionStorage` is cleared in `beforeEach` because the checkout draft is persisted there via `use-checkout-draft.ts`.
+- All assertions run after `nextTick()` because the badge's watch callback is a Vue reactive effect; synchronous checks would miss the update.
+- `seedAfterSignIn` is mocked in `beforeEach` **and** re-mocked inside individual tests; the per-test mock is the one whose call-count is asserted (the `beforeEach` mock is a safety net to prevent real network calls).
+- The "reload" test deliberately writes the draft *before* `wireBadge()` so the badge's watch sees a signed-out state first, matching the real page-load sequence.
+- The ability gate is specifically `tenant: [['update', 'Cart']]`; any other tenant ability list (including an empty array) must suppress seeding.

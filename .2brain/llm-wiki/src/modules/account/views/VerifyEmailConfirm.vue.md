@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/views/VerifyEmailConfirm.vue
-sha256: 616170532ec7112dde7a5865c5bdd4fde6ec43025dca740e4663c3b42d1e7b5f
-generated_at: 2026-10-02T12:40:15.859008+00:00
+sha256: 24b548498560ba00a5f59eb69c099af9897a722fa06a79eccbc057f372d0ccd4
+generated_at: 2026-10-17T00:31:37.639824+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,24 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Public, unauthenticated page that confirms an email address using a one-time token delivered by link. The token in the query string is the sole credential; the page requires an explicit button press (not an auto-fire on mount) so that mail-client prefetching or link-scanning cannot consume the token before the user intends to.
+Public, unauthenticated confirm page that spends a one-time email-verification token delivered by email. The token is the credential (the visitor may not be signed in), and the page requires an explicit button press—rather than auto-firing on mount—so that a mail-client prefetch of the link cannot consume the token before the human arrives.
 
 ## Key elements
 
-- **`VerifyEmailConfirmForm`** – interface defining the single field (`token`) that the form validates.
-- **`form` / `formErrors` / `showFormErrors` / `isSubmitting` / `handleSubmit`** – destructured from `useStructureFormValidation` (from `@guebbit/vue-toolkit`); the Zod schema requires a non-empty token string.
-- **`confirmEmailVerification`** – action from `useProfileStore` that spends the token server-side.
-- **`submitForm`** – clears any prior blocking error, runs the validated submit, shows a success toast on completion, and navigates to the `Home` route via `routerLinkI18n`.
-- **`useClearQueryOnMount(route, router)`** – strips the `token` query param from the URL and history immediately after mount so it does not propagate to analytics (Umami, Faro) or linger in browser history.
-- **`useBlockingError()`** – surfaces a token-specific failure (spent/unknown) as an inline alert (`InlineErrorAlert`) next to the submit button rather than a generic toast.
-- **`InlineErrorAlert`** – template component rendering the blocking error.
+- **Component name block** (`<script>` without setup) — sets `name: 'VerifyEmailConfirmPage'` for devtools / `<KeepAlive>`; required because `<script setup>` cannot declare a name.
+- **`submitForm()`** — clears any prior blocking error, calls `confirmEmailVerification(token)` via the profile store, pushes a success toast and navigates to Home on success, or routes the error into the inline `confirmError` alert on failure.
+- **`useStructureFormValidation`** — wraps the single `token` field with a Zod schema (non-empty string), revalidates on locale change, and focuses the first invalid Vuetify field on submit.
+- **`useLinkTokenCleanup(route, router)`** — strips the token from the URL (query/fragment) after mount so it stops propagating into analytics (Umami, Faro) and browser history.
+- **`useBlockingError`** — provides `confirmError` / `confirmErrorType` for the inline `InlineErrorAlert` shown directly below the submit button when the token is spent or unknown.
+- **Template** — a single Vuetify card containing a text field (`form.token`), a submit button with loading/disabled state, and the inline error alert.
 
 ## Relationships
 
-- **`src/modules/account/views/TwoFactorChallenge.vue`** – sibling confirm page (password-reset / 2FA). This file's comments explicitly mirror its conventions: public-by-design (no auth required), submit-button-gated to prevent token/scanner spend, and the same "swallow `router.push` result" note. No code import; the relationship is a shared pattern and copy-paste lineage.
-- **`src/infrastructure/utils/logger.ts`** – listed as a graph neighbor but not directly imported or invoked in this file; any logging is delegated to `useProfileStore` or the toolkit internally.
+- **`src/modules/account/stores/profile.ts`** — imports `useProfileStore` and calls its `confirmEmailVerification(token)` action to validate and consume the token server-side.
 
 ## Notes
 
-- The token is read from `route.query.token` at setup time and seeded into the form; after mount the query param is cleared, so a page refresh will present an empty token field.
-- `handleSubmit` returns a Promise; the `.then(() => undefined)` chain intentionally discards the router's resolved value so that a navigation failure is handled by the router's own `onError`, not caught here as a form error.
-- The `revalidateOn: locale` option means switching locale mid-session re-runs validation messages (e.g., the "token required" error string).
-- `data-test` attributes (`verify-token`, `verify-submit`, `verify-email-confirm-error`) are the stable selectors for E2E tests.
+- The page is intentionally **public**: no auth guard, no session check. The token in the link is the sole credential.
+- The `.then(() => undefined)` after `router.push` is deliberate—navigation-failure reporting belongs to the router's own `onError`, not to this form's error channel.
+- A failed confirmation (spent/unknown token) is surfaced as an **inline** alert next the button, not a toast, because no specific form field is at fault.
+- The component must be reachable at the route name implied by `VerifyEmailConfirmPage`; it is expected to be wrapped in `<KeepAlive>` or referenced by name in devtools.

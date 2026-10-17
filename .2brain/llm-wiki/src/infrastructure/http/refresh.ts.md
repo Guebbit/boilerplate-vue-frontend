@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/http/refresh.ts
-sha256: 7d9682ab6c806326f015a5299a33b3ec94c3e07e864fdb5aed33f78ba63eb7ec
-generated_at: 2026-10-02T11:57:51.439665+00:00
+sha256: 22669dd58fa1432a1f1a9f6966662827d8317c73a9353ba4f215bd6d37bdff03
+generated_at: 2026-10-17T00:10:23.730226+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Axios response-error interceptor that, on a 401 response (excluding auth-credential endpoints), calls the session's `refreshToken` exactly once and replays the original request with the new token. It is deliberately thin: all token-renewal, epoch-guarding, and session-teardown logic lives in `session.ts`; this module only decides *when* to call it and how to handle the result.
+Response-error interceptor that implements the refresh-and-retry flow: on a 401 (excluding auth endpoints), it calls `session.refreshToken()` once and replays the original request. In `cookie` mode there is no refresh endpoint, so a 401 immediately ends the session instead.
 
 ## Key elements
 
-- **`REFRESH_EXCLUDED_PATHS`** – `Set<string>` of pathnames (login, signup, reset, 2FA) where a 401 is a genuine credential failure and must never trigger refresh-and-replay.
-- **`shouldSkipRefresh(url)`** – Returns `true` when the URL's pathname (via `toPathname`) is in the excluded set.
-- **`onResponseRejectWithRefresh(error)`** *(exported)* – The interceptor entry point. If the error is a 401, the request hasn't already been replayed (`_refreshed` is falsy), and the URL isn't excluded, it calls `refreshToken()` and, on success, re-issues the request through `instance.request` with `_refreshed: true`. On any non-401, a failed/tokenless refresh, or an already-replayed request, it delegates to `onResponseReject`.
+- **`REFRESH_EXCLUDED_PATHS`** — Set of pathnames (`/account/login`, `/account/signup`, `/account/reset`, `/account/reset-confirm`, `/account/login/2fa`, `/account/login/2fa/send`) where a 401 is a genuine credential failure and must not trigger a refresh.
+- **`shouldSkipRefresh(url)`** — Returns `true` if the URL's pathname (via `toPathname`) is in the excluded set.
+- **`isIdleRefusal(error)`** — Detects a 401 whose body carries `ERROR_CODES.SESSION_IDLE`, meaning the server ended the session for inactivity.
+- **`endCookieSession(error)`** — In cookie mode: signals expiration on the session store (if a session exists) and delegates to `onResponseReject`.
+- **`onResponseRejectWithRefresh(error)`** *(exported)* — The main interceptor. Order of checks:
+  1. Idle refusal → `session.signalIdle()` + reject.
+  2. 401 + not already refreshed (`_refreshed`) + not excluded → in token mode, call `session.refreshToken()` and replay via `instance.request` with `_refreshed: true`; in cookie mode, call `endCookieSession`.
+  3. Fallback → `onResponseReject(error)`.
 
 ## Relationships
 
-- **`client.ts`** – Imports the shared Axios `instance` to issue the replayed request.
-- **`interceptors.ts`** – Falls through to `onResponseReject` for every case that is *not* a qualifying 401 refresh (non-401 errors, excluded paths, already-replayed requests, failed refresh).
-- **`url.ts`** – Uses `toPathname` to normalize absolute or relative URLs before the exclusion check.
-- **`types.ts`** – Consumes `AxiosRequestConfigWithRetry` (adds the `_refreshed` flag) and the response-error type aliases.
-- **`step-up.ts`** – No direct import, but shares the request-config flag convention: `_refreshed` (this module) and `_steppedUp` (step-up module) are independent guards, allowing a request to be refreshed once *and* stepped up once.
-- **`session.ts`** *(imported, outside the listed neighbors)* – Provides `useSessionStore().refreshToken`; the sole owner of token-renewal, stale-result epoch checks, and session teardown.
+- **`client.ts`** — Imports `instance` (the Axios instance) to replay the original request after a successful refresh.
+- **`interceptors.ts`** — Imports `onResponseReject` as the terminal rejection path when refresh is not possible or fails.
+- **`step-up.ts`** — Shares the `_steppedUp` guard convention; a request may be refreshed once *and* stepped up once (mutually independent guards).
+- **`types.ts`** — Imports `AxiosRequestConfigWithRetry`, `AxiosResponseErrorBody`, `AxiosResponseErrorData` for typing the error and replay config.
+- **`url.ts`** — Imports `toPathname` to normalize URLs before matching against the excluded set.
+- **`infrastructure/session.ts`** — Uses `useSessionStore()` for `mode`, `hasSession`, `signalExpired`, `signalIdle`, and `refreshToken`.
 
 ## Notes
 
-- **`_refreshed` is a one-shot loop guard**, not a general "already retried" flag. It does not suppress a subsequent step-up; the two guards are orthogonal.
-- **2FA endpoints are excluded** because a wrong or expired code returns 401 by design. Without the exclusion, a visitor holding a stale-but-valid refresh cookie would get a silent token refresh and request replay instead of the expected "wrong code" error.
-- This file never calls `clearSession` or performs the refresh HTTP call itself—those are responsibilities of `session.ts`. If the refresh returns no token, this module simply delegates to `onResponseReject` and lets the normal error path (which may end the session) take over.
+- The `_refreshed` flag is the single-retry loop guard; it does **not** block a step-up (that has its own `_steppedUp` guard). A request can be refreshed once and stepped up once in sequence.
+- `refreshToken` (in `session.ts`) is single-flight and epoch-guarded against stale results after `clearSession`; this module only decides *when* to call it and how to handle the returned token.
+- In `cookie` mode `POST /account/refresh` is a 404, so the code short-circuits to `endCookieSession` rather than attempting a refresh.
+- The 2FA endpoints are explicitly excluded because a wrong/expired 2FA code returns 401 as a normal business outcome; without exclusion a visitor with a stale refresh cookie would get a silent replay instead of "wrong code".

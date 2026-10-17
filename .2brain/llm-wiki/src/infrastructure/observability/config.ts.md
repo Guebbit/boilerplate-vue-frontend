@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/observability/config.ts
-sha256: 30cd94d0ae70b6531b137c8c25292f6b613bc52ae09168476484c8696ab7f857
-generated_at: 2026-10-02T14:40:10.298479+00:00
+sha256: 497087be244403de7455ed18c88e4ac10fa9113c00ea297dbc9d857a96327451
+generated_at: 2026-10-17T00:11:32.272915+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pure environment-variable readers for the two telemetry back-ends (Grafana Faro and Umami analytics). Each reader returns `undefined` when its primary variable is unset, serving as the single opt-in switch the store checks — no configuration, no telemetry code runs at runtime.
+Reads `VITE_FARO_*` and `VITE_UMAMI_*` environment variables into typed config objects for the two telemetry backends (Grafana Faro tracing, Umami analytics). Each backend is entirely opt-in: if its required variable is unset, the reader returns `undefined`, which is the single switch `store.ts` checks to decide whether to initialize that backend.
 
 ## Key elements
 
-- **`FaroConfig`** — interface for the Grafana Faro SDK init payload (url, appName, appVersion, environment, apiOrigin, ignoreUrls).
-- **`UmamiConfig`** — interface for the Umami tracker injection (src URL, websiteId).
-- **`readFaroConfig(): FaroConfig | undefined`** — reads `VITE_FARO_*` vars (via `runtimeValue` then `import.meta.env`). Returns `undefined` if `FARO_URL` is blank. Fills optional fields with defaults (`'frontend'`, `__APP_VERSION__`, build mode, `http://localhost:3000`). Sets `ignoreUrls` to exclude its own collector endpoint and the Umami origin.
-- **`readUmamiConfig(): UmamiConfig | undefined`** — reads `VITE_UMAMI_*` vars. Returns `undefined` if `UMAMI_WEBSITE_ID` is blank (analytics fully disabled). `src` defaults to the local Umami dev server.
-- **`readUmamiRequireConsent(): boolean`** — reads `UMAMI_REQUIRE_CONSENT`. Opt-out: defaults to `true`; only an explicit string `"false"` disables the consent gate.
-- **`originToRegExp(origin: string): RegExp`** — escapes regex metacharacters in an origin string and returns a start-anchored pattern (`^…`).
-- **`umamiOriginPattern(): RegExp[]`** (private) — extracts the origin from the configured Umami `src` via a non-throwing regex match; returns `[]` when analytics is off or the origin is unrecognisable.
+- **`FaroConfig`** (interface) — Fields passed into `initializeFaro()`: collector `url`, `appName`, `appVersion`, `environment`, `propagateTo` (anchored Regexps for cross-origin trace-header propagation), `ignoreUrls` (strings matched by exact equality or Regexps for broader patterns).
+- **`UmamiConfig`** (interface) — `src` (tracker script URL) and `websiteId`; both are required or analytics is disabled.
+- **`originToRegExp(origin)`** — Escapes regex metacharacters and anchors the result at `^`, producing a start-of-URL match.
+- **`readUmamiConfig()`** — Returns `UmamiConfig | undefined`. Falls back from `runtimeValue()` to `import.meta.env.VITE_UMAMI_*`; both `websiteId` and `src` must be non-blank.
+- **`readUmamiRequireConsent()`** — Returns `false` only when the env value is exactly `"false"` (case-insensitive); everything else, including unset, yields `true`.
+- **`readFaroConfig()`** — Returns `FaroConfig | undefined`. Requires `FARO_URL`; fills `appName`, `appVersion`, `environment` with sensible defaults. Composes `propagateTo` from the HTTP client's API URL and `ignoreUrls` from the collector URL plus the Umami origin pattern.
+- **`umamiOriginPattern()`** *(private)* — Extracts the origin from Umami's `src` via regex (avoids `new URL()` throwing on malformed input); shaped as `RegExp[]` so it spreads into `ignoreUrls` uniformly.
+- **`propagationTargets(apiUrl)`** *(private)* — Returns `[originToRegExp(apiUrl)]` for a cross-origin API, `[]` for same-origin (OpenTelemetry handles that by default).
 
 ## Relationships
 
-- **`@/infrastructure/runtime-config`** (`runtimeValue`) — sole import. All readers check `runtimeValue(key)` first, falling back to `import.meta.env.VITE_{key}`, giving runtime overrides priority over build-time values.
-- **`store.ts`** (caller, per module doc-comment) — consumes the `undefined` return values as the on/off switch for initialising Faro / injecting the Umami script.
+- **Imports** `readApiUrl` and `runtimeValue` from `@/infrastructure/runtime-config` — the former supplies the API base URL for span-linking, the latter provides runtime-injected overrides ahead of build-time `import.meta.env` values.
+- **Consumed by** `store.ts` (referenced in the module docblock), which gates Faro and Umami initialization on whether these readers return `undefined`.
 
 ## Notes
 
-- **`ignoreUrls` semantics differ by type:** a `string` entry is compared for *exact* equality with the request URL (not a prefix). Anything covering multiple paths must be a `RegExp`. This is why the Umami origin uses `originToRegExp` while the Faro collector URL is a plain string.
-- **Consent is opt-out.** `readUmamiRequireConsent` returns `true` for any value other than the literal string `"false"`, including empty/unset. This mirrors the backend's `NODE_ANALYTICS_REQUIRE_CONSENT`.
-- **`umamiOriginPattern` deliberately avoids `new URL()`** to prevent a malformed `VITE_UMAMI_SRC` from throwing and taking Faro initialisation down with it.
-- **`__APP_VERSION__`** is a Vite `define` global, not an import — it's replaced at build time.
-- **API origin for trace stitching** reuses `VITE_API_URL` / `runtimeValue('API_URL')`, so FE→BE W3C `traceparent` propagation piggybacks on the existing API endpoint config rather than introducing a separate variable.
+- `ignoreUrls` string entries are **exact-equality** matches, not prefixes. Anything covering multiple paths (e.g. Umami's `/api/send` beacon) must be a `RegExp`.
+- `readFaroConfig` intentionally adds the Umami origin to `ignoreUrls` so the analytics beacon doesn't generate a root trace in Tempo — a trace produced by reporting is a trace about nothing.
+- `propagateTo` reuses the HTTP client's API URL (via `readApiUrl()`) so the backend can *link* its spans to the browser's without joining the trace.
+- `__APP_VERSION__` is a Vite/webpack compile-time define; it's the last fallback for `appVersion`.
+- All env reads follow the same two-layer pattern: `runtimeValue(name) ?? import.meta.env.VITE_NAME?.trim()`, giving runtime-injected values precedence over build-time env.

@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/runtime-config.ts
-sha256: 02fcc390eeed68e06ac76daa9097fceab67943dfccc6ff816253621d5eec2eee
-generated_at: 2026-10-02T14:40:49.270334+00:00
+sha256: fc191585c85a6232d3895192d6cf55063b295fb4208ecb05ab9fdb0d492232ed
+generated_at: 2026-10-17T00:11:53.395128+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,20 +9,20 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Single read-point for values a running container may override after the image is built. In Docker, `config.js` (generated at container start by `docker/docker-entrypoint.d/`, wired in via `docker/nginx.conf`) sets `window.__APP_CONFIG` before the bundle loads. In dev, unit tests, and `vite preview` that script never runs, so every read falls through to `import.meta.env.VITE_*` at the call site. There is no central config object — the fallback is always inline at the consumer.
+Single reader for deployment values a running container may override at start time. Reads from `window.__APP_CONFIG` (populated by a `config.js` generated at container start) and falls back to `import.meta.env.VITE_*` build-time defaults. Dev, unit tests, and `vite preview` never receive `config.js`, so they always hit the fallback — same code path, no central config object.
 
 ## Key elements
 
-- **`RuntimeConfig`** (interface) — whitelist of deployment-overridable keys (API URLs, app identity, locale, logging, upload limits, Faro/Umami telemetry, etc.). All values are non-secret and already ship in the compiled bundle.
-- **`runtimeValue(name)`** (function) — reads `globalThis.__APP_CONFIG[name]`, trims the result, and returns `string | undefined`. Returns `undefined` (never `''`) when the key is absent, `config.js` never loaded, or the value is blank. Call sites chain `|| import.meta.env.VITE_X` as their fallback.
+- **`RuntimeConfig` (interface)** — Whitelist of overridable keys (`API_URL`, `FARO_*`, `UMAMI_*`, locale/log/upload settings, etc.). All values ship to the browser in the compiled bundle; none are or will be secrets.
+- **`runtimeValue(name)`** — Reads one key from `__APP_CONFIG`, trims it, and returns `string | undefined`. Blank or missing values yield `undefined` (never `''`).
+- **`readApiUrl()`** — Convenience wrapper returning `string`. Falls through `runtimeValue('API_URL')` → `import.meta.env.VITE_API_URL` → `''`. An empty result means the API is served from the page's own origin.
 
 ## Relationships
 
-No graph-neighbor files are recorded for this module. Its only runtime dependency is the external `config.js` script injected by the Docker entrypoint (see `docker/nginx.conf`); it does not import or export any other project module.
+No graph neighbors recorded.
 
 ## Notes
 
-- `runtimeValue` uses `||`, **not** `??`. An empty string from a blank `.env` `VITE_*` line is indistinguishable from unset and must resolve to `undefined` so the `||` fallback fires. Do not "fix" this to `??` without understanding the blank-string contract.
-- Call sites must always supply their own `import.meta.env.VITE_*` default: `runtimeValue('API_URL') || import.meta.env.VITE_API_URL`. Omitting the fallback means the value is simply `undefined` in non-Docker environments.
-- All `RuntimeConfig` fields are optional (`?`). A partial `__APP_CONFIG` object is valid; only the keys present are readable.
-- Nothing in this file is secret or will ever be secret — the values are already embedded in the shipped bundle. Do not use it for credentials or tokens.
+- `runtimeValue` deliberately uses `||` rather than `??`: a blank `VITE_*` line in `.env` resolves to `''`, which must be treated as *unset*. Call sites chain `|| import.meta.env.VITE_X` safely because unset values are `undefined`, not `''`.
+- The `__APP_CONFIG` object is injected by `docker/nginx.conf` / `docker/docker-entrypoint.d/` before the app bundle loads; it is **not** part of the Vite build.
+- Every value in `RuntimeConfig` is non-secret by design — if a value must never reach the browser, it does not belong in this interface.

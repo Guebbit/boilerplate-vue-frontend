@@ -1,7 +1,7 @@
 ---
 source: scripts/pairing/spec-identity.ts
-sha256: b3b6ba9c6893b432654eab8ad1855a48fe646d8fcbb19c505f808ba4217fff56
-generated_at: 2026-10-02T11:41:08.330783+00:00
+sha256: 6274f238db8f8f09d3398df6c3aec63befb4a0b42eafcdfaef3527efd1053a73
+generated_at: 2026-10-17T00:03:47.439837+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Defines the cross-repo contract identity check: a canonical list of files that must be byte-identical between this frontend and its paired backend, plus the fingerprinting and comparison logic to detect a silent fork. A forked spec is still a valid spec, so neither CI catches it on its own — this module is the explicit gate.
+Defines the cross-repo contract identity check: a canonical list of files that must remain identical between this frontend repo and whichever backend it is paired with, plus the comparison and reporting machinery to detect a silent fork. A one-line spec edit in one checkout produces a still-valid-but-divergent spec that neither CI suite flags; this file makes the drift visible.
 
 ## Key elements
 
-- **`RepoRole` / `THIS_REPO` / `siblingRole`** — Typing for which side of the pair a checkout is; `THIS_REPO` is always `'frontend'`.
-- **`SharedFile`** — Interface holding the *backend* and *frontend* path for one shared file (they can differ, e.g. `asyncapi.public.yaml` → `asyncapi.yaml`).
-- **`SHARED_FILES`** — The `readonly` list of exactly three shared contracts (`openapi.yaml`, `asyncapi.yaml`, `contracts/authorization-keys.yaml`). Membership rule: produced in the backend, copied here. Convenience-identical files and repo-internal generated outputs are deliberately excluded.
-- **`SpecComparisonStatus` / `SpecComparison`** — Result shape per file: `match`, `drift`, `missing-here`, `missing-there`, with optional fingerprints.
-- **`hashFile`** — Raw SHA-256 hex of a file's bytes.
-- **`normalise`** *(internal)* — Recursively sorts object keys, preserves array order, strips trailing newlines from strings. Mirrors the backend's `SharedContract::normalise()`.
-- **`fingerprint`** — Identity hash for a path. For `.yaml`/`.yml`: parse → normalise → `JSON.stringify` → SHA-256. For everything else: raw `hashFile`. Exists because the two backends serialise YAML differently.
-- **`compareSharedFiles(siblingRoot, here?, role?)`** — Main entry point. Returns a `SpecComparison` per shared file; never throws on a missing file (reports `missing-here`/`missing-there` instead).
-- **`sharedFileProblems`** — Filters to entries whose status is not `'match'`.
-- **`formatSharedFileProblems`** — Renders a human-readable multi-line message (file paths, fingerprints, remediation commands). Returns `''` when clean.
+- **`SHARED_FILES`** — `readonly SharedFile[]`; the authoritative list of files that must be byte-identical across both checkouts (openapi, asyncapi public subset, authorization-keys, TLS certs for the webhook sink). Every entry is *produced* in the backend and copied here.
+- **`RepoRole` / `THIS_REPO` / `siblingRole()`** — small role-abstraction so the same code can run from either side of the pair.
+- **`fingerprint(filePath)`** — identity hash. For `.yaml`/`.yml` it parses, normalises (sorted keys, preserved array order, trailing-newline stripped), then sha256s the JSON form. For everything else it falls through to a raw `sha256` byte hash. This is the one piece the backend twin does not need.
+- **`normalise(value)`** *(internal)* — recursively sorts object keys, leaves arrays in place, trims trailing newlines from strings. Mirrors the backend's `SharedContract::normalise()`.
+- **`hashFile(filePath)`** — raw sha256 of file bytes (used for non-YAML files).
+- **`compareSharedFiles(siblingRoot, here?, role?)`** — walks `SHARED_FILES`, returns a `SpecComparison` per entry. Never throws on a missing file; absent files are reported as `missing-here` / `missing-there` status.
+- **`sharedFileProblems(comparisons)`** — filters out `match` entries.
+- **`formatSharedFileProblems(comparisons, siblingRoot)`** — renders a human-readable report (file pair, fingerprints, status); returns `''` when clean so callers can branch on truthiness.
 
 ## Relationships
 
-- **`scripts/pairing/check-spec-identity.ts`** — The CLI/script runner that calls `compareSharedFiles` and `formatSharedFileProblems` to gate a CI step or local check.
-- **`tests/unit/scripts/pairing/spec-identity.spec.ts`** — Unit tests covering the fingerprinting normalisation, comparison statuses, and message formatting.
+- **`scripts/pairing/check-spec-identity.ts`** — the CLI/gate script that imports `compareSharedFiles` and `formatSharedFileProblems` to produce a pass/fail result for CI.
+- **`tests/unit/scripts/pairing/spec-identity.spec.ts`** — unit tests exercising `fingerprint`, `normalise`, `compareSharedFiles`, and `formatSharedFileProblems`.
 
 ## Notes
 
-- **Never edit a frontend-side copy of a shared file.** Every entry in `SHARED_FILES` is an *output* of the backend's bundling step. Editing it here will be silently reverted on the next `sync:frontend`, and the diff will look like the backend broke something.
-- **`fingerprint` is the one piece the backend does not replicate.** This repo can pair with *either* backend (selected via `BACKEND_PATH` in `.env`), and the two backends do not serialise YAML identically (redocly vs. `symfony/yaml`). The parse-normalise-hash path is the only way to compare across both.
-- **Array order is meaningful** (`security`, `enum`, path `parameters`); only *object* key order is normalised away. A blanket sort would produce false positives.
-- **SHA-256, not MD5:** the hex digest appears in failure messages that get pasted into issues and commit messages; avoiding a deprecated-algorithm discussion on every occurrence.
-- **Trailing newline vs. trailing space:** a trailing `\n` is stripped (it reflects the YAML chomping indicator `|` vs `|-`), a trailing space is not (it is content).
+- **YAML vs. raw-byte hashing:** The Node and PHP backend twins serialise YAML differently (quoting, line-wrapping). A raw byte hash would flag a true sync as drifted. Hence `fingerprint` parses YAML first. Non-YAML files are hashed raw.
+- **Membership rule:** Only files *produced in the backend and copied here* qualify. Convenience-shared files (`spectral.yaml`, shared scripts), convention-identical files (favicons, `.prettierrc`), and regenerable artifacts (generated types, API client collections) are deliberately **excluded** — a fork in those either doesn't break silently or has no single-source-of-truth to answer "which side is right."
+- **`asyncapi.public.yaml`** is the sole entry whose filename differs between repos (it lands as `asyncapi.yaml` here). All other entries share the same relative path on both sides.
+- **`normalise` preserves array order** — `security`, `enum`, and path `parameters` are order-significant; sorting them would call two different documents identical.
+- **sha256 over md5** is a deliberate choice: checksums printed in failure messages get pasted into issues and commit messages, and a deprecated digest invites questions every time.

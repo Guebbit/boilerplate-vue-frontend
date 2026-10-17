@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/stores/sessions.ts
-sha256: 2445f8f3733b13960f6f5a14502bb34d30e0a2aac0dccae8623d2e2e9188d758
-generated_at: 2026-10-02T12:18:35.826661+00:00
+sha256: 6d3e37369a4e1b7ad8a92a717e56f97200c2987cc4f649f588bbdbf3ec5e9cd1
+generated_at: 2026-10-17T00:19:28.792572+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia store (Composition API) that manages the visitor's device-session list — which refresh tokens are currently active and allows revoking a single session. It uses a plain `ref<Session[]>` rather than the toolkit's record structure because a session has no detail page and the list is always read whole.
+Pinia store (Composition API) that loads and revokes the visitor's device-session list. It wraps the session REST endpoints so the UI can ask "who else is signed in?" and "log out that one device" without touching the API layer directly.
 
 ## Key elements
 
-- **`useAccountSessionsStore`** — the exported Pinia store (`defineStore('accountSessions', …)`), the only public export.
-- **`sessions: ref<Session[]>`** — the live session list; one entry per refresh token, the current one flagged.
-- **`loading`** — boolean flag from `useStructureRestApi`, indicates in-flight fetch.
-- **`fetchSessions()`** — calls `apiGetSessions`, unwraps the envelope via `getPayloadFromResponse`, assigns `sessions.value`.
-- **`revokeSession(sessionId: string)`** — calls `apiRevokeSession(sessionId)` (a handle, never a token value), then immediately re-fetches the list.
-- **`fetchAny`** — the toolkit's REST wrapper; every action routes through it for consistent loading/error handling.
+- **`useAccountSessionsStore`** — the store export; registers under the Pinia id `'accountSessions'`.
+- **`sessions`** — `ref<Session[]>`; the live list (one entry per refresh token, current session flagged). A plain ref, not the toolkit's record structure, because a session has no detail page and the list is only ever read whole.
+- **`loading`** — reactive flag exposed by `useStructureRestApi`; true while `fetchSessions` or `revokeSession` is in flight.
+- **`fetchSessions()`** — calls `listSessions`, extracts the `sessions` array from the response envelope via `getPayloadFromResponse`, assigns it to `sessions`, and returns it.
+- **`revokeSession(sessionId, { current })`** — calls `revokeSession` on the API. After a successful revocation it reloads the list *unless* `current` is `true` (i.e. the caller is revoking their own session, in which case the server has already cleared cookies and a follow-up read would 401).
 
 ## Relationships
 
-- **`useStructureRestApi`** (`@guebbit/vue-toolkit`) — supplies `loading` and `fetchAny`; the store's only interaction with the toolkit layer.
-- **`apiGetSessions` / `apiRevokeSession`** (`@api`) — the HTTP calls the store delegates to.
-- **`getPayloadFromResponse`** (`@/infrastructure/http/envelope.ts`) — unwraps the standard response envelope before reading the `.sessions` array.
-- **`queryClient`** (`@/infrastructure/query-client.ts`) — passed into `useStructureRestApi` so the toolkit can coordinate cache invalidation.
-- **`Session`** (`@types`) — the shape of each list entry.
-- **`stores/auth.ts`** — owns `logoutEverywhere` (revoke-all); this store deliberately does *not* call it.
+- **`ProfileSessions.vue`** — the sole consumer; it renders the session list and the per-row "end" button. The store is scoped to this component by design.
+- **`sessions.spec.ts`** — unit-test suite covering the store's fetch and revoke behaviors.
+- **`ProfilePasswordChange.vue`** — adjacent component in the same feature area; graph-related but no direct import of this store is visible in the file under test.
 
 ## Notes
 
-- `sessionId` passed to `revokeSession` is an opaque handle returned by the API, **not** a raw token. Never log or persist it as if it were a credential.
-- `revokeSession` always re-fetches after revocation; the store has no local mutation path, so the list is always server-authoritative.
-- The store is scoped to `ProfileSessions.vue`; no other component is expected to consume it.
-- Because the list is a plain ref (not the toolkit's keyed-record structure), there is no per-item loading state — only the single `loading` flag.
+- Ending *all* sessions at once is **not** this store's job — that lives in `stores/auth.ts` as `logoutEverywhere`. This store only revokes one session at a time.
+- `revokeSession`'s `sessionId` argument is an opaque handle returned by `fetchSessions`; it is never a raw token value.
+- The `current` flag on `revokeSession` is the only path that skips the post-revocation reload. Callers must pass it explicitly when the user is logging out their own active tab.
+- The toolkit's record-based structure (individual item refs, etc.) is intentionally **not** used here; the `useStructureRestApi` call only contributes `loading` and the `fetchAny` wrapper for consistent error/loading handling.

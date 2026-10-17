@@ -1,31 +1,27 @@
 ---
 source: src/modules/account/tests/oauth.spec.ts
-sha256: 973b3d5e5759d8263193ad44d37fe1b7d5d4c8f4ee826385c7113771cdef0039
-generated_at: 2026-10-02T12:25:37.594492+00:00
+sha256: ebce773a687ea9cdc63ff10909f6dd35ec4470379bdce5469093a9e7a535ab14
+generated_at: 2026-10-17T00:23:12.052331+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/tests/oauth.spec.ts
 
 ## Purpose
-
-Unit tests for the OAuth provider Pinia store (`useOAuthProvidersStore`) and its two pure URL/label helpers (`oauthStartUrl`, `providerLabel`). Only the HTTP transport is mocked; responses are keyed by `"METHOD /path"` in a module-level map, mirroring the pattern in `sessions.spec.ts`.
+Unit tests for the OAuth provider store (`useOAuthProvidersStore`) and its two pure helpers (`oauthStartUrl`, `providerLabel`). Only the HTTP transport is mocked; responses are keyed by request URL using the same pattern as `sessions.spec.ts`.
 
 ## Key elements
-
-- **`responses`** – module-level `Record<string, unknown>` mapping request keys to fixture payloads (or an `Error` instance to simulate failure). Reset in `beforeEach`.
-- **`vi.mock('@/infrastructure/http')`** – replaces `orvalMutator` with a lookup into `responses`; non-`Error` values are passed through `parseOrvalFixture` before resolving.
-- **`describe('providerLabel')`** – verifies display-name overrides (e.g. `github` → `GitHub`) and the generic capitalize fallback.
-- **`describe('oauthStartUrl')`** – verifies the constructed start-login URL, including `?continue=` and `?locale=` query parameters, and the same-origin fallback when `baseURL` is absent. Pins `instance.defaults.baseURL` per case.
-- **`describe('useOAuthProvidersStore')`** – covers `fetchProviders`: initial load, no-op caching on repeat call, empty-payload defence (missing `providers` field), and transient-failure retryability (error is not cached permanently).
+- **`providerLabel` tests** — verifies the override map (e.g. `github` → `GitHub`) and the bare-capitalization fallback for unknown providers.
+- **`oauthStartUrl` tests** — pins the backend base URL, then asserts the constructed URL for the start-login route, the optional `?continue=` query param, the optional `?locale=` param, and their combined ordering.
+- **`useOAuthProvidersStore` tests** — covers `fetchProviders`: initial load, cache-on-second-call, empty-payload defence (bypasses `parseOrvalFixture` intentionally), and retryable failure (error resolves to `[]` without caching the empty result).
+- **Transport mock (`vi.mock('@/infrastructure/http')`)** — replaces `orvalMutator` with a URL-keyed responder; a `responses` record is reset in `beforeEach`.
 
 ## Relationships
-
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is invoked at the top of the module (before any test) to register test-only module bindings in the core module graph.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – provides `orvalEnvelope` (wraps a payload in the standard API envelope) and `parseOrvalFixture` (deserialises a raw fixture into the transport's expected shape). Both are consumed inside the mock and in fixture setup.
+- **`src/modules/account/stores/oauth.ts`** — the module under test; exports `useOAuthProvidersStore`, `oauthStartUrl`, and `providerLabel`.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module load so the store's dependency-injection context is wired before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload in the API's standard envelope) and `parseOrvalFixture` (validates the envelope shape the mocked transport returns).
 
 ## Notes
-
-- The "payload with no list" case uses `mockImplementationOnce` to **bypass** `parseOrvalFixture` deliberately, because the real API contract requires `providers` and that exact payload would never arrive through the normal parse path. The test isolates the store's own defensive check.
-- `oauthStartUrl` tests pin `instance.defaults.baseURL` to a literal value rather than reading `VITE_API_URL`, so the suite is deterministic even on a runner with no `.env`.
-- The transient-failure test asserts `orvalMutator` is called a **second** time after the error, confirming the store does not latch onto the empty result.
+- `instance.defaults.baseURL` is pinned to `https://api.example.test` in `beforeEach` and restored in `afterEach` rather than reading `VITE_API_URL`, so the tests run on a CI runner with no `.env` file.
+- The "no providers" store test deliberately feeds a raw `{ data: {} }` payload via `mockImplementationOnce`, bypassing `parseOrvalFixture`, to exercise the store's own defence against a missing list — mirroring the pattern in `addresses.spec.ts`.
+- A failed `fetchProviders` call resolves to `[]` but does **not** cache that result; a subsequent call re-issues the request (verified via `toHaveBeenCalledTimes(2)`).

@@ -1,33 +1,32 @@
 ---
 source: src/modules/webhooks/tests/webhook-create-view.spec.ts
-sha256: 319e0600cb87933e4a8fbeee765a34ff30e4a577b38ce891a5acf4aa690da37f
-generated_at: 2026-10-02T15:56:29.179982+00:00
+sha256: b56c2dd8726bb2f5867aaba76b688d0b62ab23e4cce90a60cbe50b2bd6715485
+generated_at: 2026-10-17T01:52:18.618218+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/webhooks/tests/webhook-create-view.spec.ts
 
 ## Purpose
-
-Component test suite for the `WebhookCreate` view. It verifies the form's client-side validation (rejecting non-URL values), the exact payload passed to the store on submit, the one-time secret-reveal modal flow before the visitor leaves the page, navigation to the new subscription detail on "Done", and in-place error display when the store rejects. Store actions are spied directly on the Pinia store; the HTTP layer beneath them has its own dedicated suite.
+Integration-level Vitest suite that mounts the real `WebhookCreate` page against a real memory-history router and a real Pinia store (with HTTP calls spied). It verifies: client-side validation before submit, the exact payload shape sent to the store, the one-time secret reveal flow (including the confirm-saved gate), post-create navigation, and inline error handling on API rejection.
 
 ## Key elements
-
-- **`V_SELECT_STUB`** – Minimal `<select multiple>` replacement for Vuetify's `VSelect`; emits `update:modelValue` with a fixed event list, isolating the page under test from Vuetify's teleported-menu behaviour.
-- **`CREATED`** – Typed fixture (`WebhookSubscriptionCreated`) standing in for the API's create response, including the `secret` field. Typing it against the generated contract means any new required field breaks compilation here.
-- **`mountPage()`** – Spies `fetchEventCatalogue` and `createSubscription` on the store *before* mounting (the view destructures actions at `setup`), then mounts `WebhookCreate` with the real router, Vuetify, i18n, and stubs. Returns the wrapper and the create spy.
-- **`fillAndSubmit(wrapper, url)`** – Chains `setValue` on the URL and description inputs, triggers the select change, submits the form, and flushes promises.
-- **Router** – Real `createMemoryHistory` router seeded with `collectModuleRoutes(enabledModules)` so `Done` navigates through the actual route table rather than a mock.
-- **`describe('WebhookCreate')`** – Five cases: invalid-URL rejection; exact-payload + secret-still-on-page; empty-description omission (validated via `contractRequest`); secret-acknowledge → navigate to detail; API rejection → inline error, no navigation.
+- **`router`** — A `createMemoryHistory` router whose children come from `collectModuleRoutes(enabledModules)`, so `Done` navigation is exercised against real module routes.
+- **`V_SELECT_STUB`** — Replaces Vuetify's `VSelect` with a plain `<select multiple>` that emits a fixed `['order.paid']` value, avoiding Vuetify's teleported-menu complexity.
+- **`CREATED`** — A `WebhookSubscriptionCreated`-typed fixture (subscription + `secret`) used as the mock store response; compilation fails if the generated contract adds required fields.
+- **`mountPage()`** — Creates a fresh Pinia store, spies on `fetchEventCatalogue` and `createSubscription` *before* mounting (the view destructures them in `setup`), then mounts `WebhookCreate` with router, vuetify, i18n, and the `VSelect` stub. Returns `{ wrapper, create }`.
+- **`fillAndSubmit(wrapper, url)`** — Chains `setValue` on URL and description inputs, triggers the `<select>` change, submits the form, and flushes promises.
+- **Five test cases** covering: invalid URL rejection (no store call, `.v-messages` shown); valid submit (exact payload, secret visible, still on create route); empty-description omission (validated via `contractRequest` against the generated schema); post-create navigation (confirm-saved → `Done` → `/en/webhooks/subscriptions/sub-1`); and API error (inline error element, no navigation).
 
 ## Relationships
-
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module top-level, registering enabled modules into the app's kernel so `collectModuleRoutes` and the router reflect the real module graph.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – `contractRequest` is used in the "omits description" test to assert the outgoing body conforms to the generated `CreateWebhookSubscriptionBody` schema, catching accidental inclusion of disallowed fields.
+- **`src/modules/webhooks/views/WebhookCreate.vue`** — The component under test; mounted directly.
+- **`src/modules/webhooks/store.ts`** — `useWebhooksStore` is instantiated and its `fetchEventCatalogue` / `createSubscription` methods are spied to isolate the HTTP layer.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope so the kernel registry knows which modules are enabled for `collectModuleRoutes`.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — `contractRequest(schemas.CreateWebhookSubscriptionBody, body)` validates that the actual payload conforms to the generated API schema (used in the "omits description" test).
 
 ## Notes
-
-- **Spies before mount.** `WebhookCreate` destructures store actions inside `setup()`, so `vi.spyOn` must run before `mount()`. Setting them up in `beforeEach` after mount would be a no-op.
-- **Teleported DOM.** The secret-reveal modal is rendered into `<body>` by Vuetify, so assertions in the "acknowledge secret" and "secret shown" tests query `document.body.querySelector` rather than the `wrapper` scope.
-- **Description is non-nullable, not nullable.** The generated schema rejects both `''` and `null` for `description`; the test therefore asserts the key is *absent* from the JSON body, not set to empty/null.
-- **`VSelect` stub hard-codes `['order.paid']`.** The suite does not test Vuetify's multi-select UX; the stub emits that single value so the page's payload assertion stays deterministic.
+- Spies must be attached **before** `mount` because the view destructures store actions in its `setup` block; spying after mount would not intercept calls.
+- The secret-reveal modal and its confirm input are **teleported to `<body>`** (Vuetify behavior), so assertions use `document.body.querySelector` rather than `wrapper.find`.
+- The `Done` button remains disabled until the "confirm saved" checkbox is checked — the test explicitly clicks it before proceeding.
+- Empty description must be **absent from the payload entirely** (neither `""` nor `null`), because the generated `CreateWebhookSubscriptionBody` type does not permit a nullable description.
+- `attachTo: document.body` is required so teleported elements (Vuetify modal, select dropdown) are reachable in the DOM.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/composables/use-dictionary-aggregation.ts
-sha256: 68f206bbf3e73f1ba85bc95d528153525a037f92bd532d7ac1672f3327e42b63
-generated_at: 2026-10-02T15:12:57.748076+00:00
+sha256: 01e28df67435926fcc8417e226691c6c5d49be609dfa328973b69d8303bd9636
+generated_at: 2026-10-17T01:03:25.623513+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,33 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Provides the dictionary board's single read model for per-cell state. It merges three sources — stored locale entries, the API's deployed baseline, and this build's bundled baseline — plus page-local pending keys, into a unified set of lookups (`entryAt`, `baselineAt`, `cellState`) so that the board and the cell editor never read the raw sources directly.
+Composable that builds and owns the dictionary board's read model. It merges three data sources (stored entries, the API's deployed baseline, the bundled baseline) plus locally-added pending keys into a single per-cell lookup surface, so the board view and the cell editor always ask one place "what is this cell?" instead of reading the raw sources independently.
 
 ## Key elements
 
-- **`useDictionaryAggregation(tenant: Ref<string>)`** — the sole export. A Vue composable parameterized by the active tenant ID. Returns the full set of computeds, refs, and helpers listed below.
-- **`tenantKind`** (computed) — resolves the tenant's `LocaleTenantKind` from the registry; defaults to `frontend` if not found.
-- **`hasBaseline`** (computed) — whether the current tenant has a readable baseline (own bundle or API files).
-- **`languages`** (computed) — writable language columns; excludes `static`-only languages that have no entries collection.
-- **`entriesByTag`**, **`apiBaselines`**, **`appBaselines`**, **`pendingKeys`** (refs) — the four raw data holders, populated by `loadLanguage`.
-- **`entriesIndex`** (computed) — per-language `Map<key, LocaleEntry>` filtered to the shown tenant.
-- **`baselines`** (computed) — selects the appropriate baseline source (app or API) based on tenant.
-- **`entryAt(tag, key)` / `baselineAt(tag, key)` / `isMissing(tag, key)` / `cellState(tag, key)`** — cell-level queries returning the entry, baseline text, missing flag, or a `'entry' | 'baseline' | 'missing'` state respectively.
-- **`allKeys`** (computed) — sorted union of all entry keys, baseline keys, and pending keys across languages.
-- **`missingByTag`** (computed) — per-language count of missing keys, for header badges.
-- **`loadBoard()`** — fetches tenants + languages, then all writable language columns in parallel.
-- **`loadLanguage(tag)`** — fetches entries, API baseline, and bundled baseline for one language and writes them into the local refs.
-- **`afterWrite(tag)`** — post-mutation refresh: reload the language column, re-fetch the manifest counts, and push the running locale override.
-- **`addPendingKey(key)` / `resetPendingKeys()`** — manage the page-local set of keys added in the UI but not yet backed by an entry.
+- **`useDictionaryAggregation(app: Ref<string>)`** — the sole export; receives a reactive app-id ref and returns the full board API.
+- **`appKind` / `hasBaseline`** — computed flags that decide which baseline (bundled vs. API) is visible for the selected app.
+- **`languages`** — writable language columns (excludes `static`-only entries that have no writable record).
+- **`entriesIndex`** — per-language `Map<key, LocaleEntry>` filtered to the current app.
+- **`baselines`** — the appropriate baseline record (bundled or API) for the current app, or `{}` if neither applies.
+- **`entryAt` / `baselineAt` / `isMissing` / `cellState`** — per-cell lookup helpers; `cellState` returns `'entry' | 'baseline' | 'missing'` for display styling.
+- **`allKeys`** — sorted union of all entry keys, baseline keys, and pending keys across every language.
+- **`missingByTag`** — per-language count of keys with no entry and no baseline.
+- **`loadBoard`** — fetches apps + languages, then every writable language's column in parallel; surfaces errors via the notifications store.
+- **`loadLanguage(tag)`** — refetches one language's entries and both baselines.
+- **`afterWrite(tag)`** — post-mutation refresh: reloads the column, refreshes manifest counts, and calls `refreshRunningLocale`.
+- **`addPendingKey` / `resetPendingKeys`** — tracks keys added on the page but not yet saved; reset on app switch.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — reached indirectly through `@/infrastructure/utils/errors.ts`: `loadBoard`'s `.catch` calls `notifyErrorMessages(addMessage, error)`, which is the error-surface path that the logger underpins.
+- **`src/modules/locales/store.ts`** — Primary data source. The composable calls `fetchApps`, `fetchLanguages`, `fetchAllEntries`, `fetchApiDictionary`, `fetchBundledDictionary`, and reads `ownApp` from the locales Pinia store. All board data flows through this store.
+- **`src/modules/locales/views/LocalesDictionary.vue`** — Consumer. The dictionary board view calls `useDictionaryAggregation` and renders using the returned computed values and lookup functions.
+- **`src/modules/locales/tests/use-dictionary-aggregation.spec.ts`** — Unit test suite covering the composable's aggregation logic, cell-state derivation, and load/refresh cycles.
 
 ## Notes
 
-- The `tenant` ref is owned by the **caller**, not by this composable. Switching tenants is a page-level action (resets current page, drafts) and must be coordinated outside this module.
-- `pendingKeys` is intentionally ephemeral and tenant-scoped: call `resetPendingKeys()` on every tenant switch so stale keys from a previous board don't leak into the new one.
-- `loadLanguage` populates all three sources for a tag in a single `Promise.all`; partial failure leaves the previous value for that tag intact (the refs are only overwritten on full success).
-- `entriesIndex` re-filters the full `entriesByTag` on every tenant change; entries for *other* tenants remain in the ref but are invisible through the index until the tenant ref changes.
+- `app` is a `Ref` owned by the caller; the composable does **not** reset pagination, drafts, or other page-level state on app switch — the caller must call `resetPendingKeys()` and handle any additional teardown.
+- `hasBaseline` is `false` for a frontend app that isn't the running build *and* isn't a backend app; in that case `baselines` resolves to `{}` and every cell can only be `'entry'` or `'missing'`.
+- `pendingKeys` is intentionally unsorted and append-only; ordering is handled by `allKeys`'s `.toSorted()`.
+- `afterWrite` calls `refreshRunningLocale` (from `@/infrastructure/locale-overrides`), which is a side-effect beyond data loading — callers should be aware it may trigger a hot-reload of the running locale.
+- Error handling is centralized in `loadBoard`'s `.catch`; individual `loadLanguage` calls do not catch errors, so an unhandled rejection there will propagate to the caller.

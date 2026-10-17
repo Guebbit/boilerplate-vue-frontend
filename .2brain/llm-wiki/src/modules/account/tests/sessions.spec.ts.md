@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/sessions.spec.ts
-sha256: 5f1cb39ceb11bdd4738482d46e0436cdb6dc373df12f1dbb26daef99b534ba0e
-generated_at: 2026-10-02T12:31:22.811478+00:00
+sha256: 52c6dc18327bd2194b34e2365f1d12a95b915c6ad54e015e8154e09bef4a7c2f
+generated_at: 2026-10-17T00:26:38.737683+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for `useAccountSessionsStore` — verifying that listing sessions and revoking a single entry behave correctly. Only the HTTP transport is mocked; responses are keyed by request URL (same pattern as `profile.spec.ts`).
+Unit tests for the device-sessions Pinia store (`useAccountSessionsStore`). Verifies that `revokeSession` triggers a list refetch (unless the revoked session is the caller's own), and that a payload missing the `sessions` key degrades to an empty list. Mocks only the HTTP transport, keying canned responses by `METHOD URL` — the same pattern as `profile.spec.ts`.
 
 ## Key elements
 
-- **`responses`** – mutable `Record<string, unknown>` holding mock bodies keyed by `"METHOD /path"`; re-seeded in every `beforeEach`.
-- **`vi.mock('@/infrastructure/http')`** – replaces `orvalMutator` with a stub that looks up `responses` by `METHOD URL` and runs the result through `parseOrvalFixture`.
-- **`requestedUrls()`** – extracts the ordered list of URLs from `orvalMutator`'s call history.
-- **`beforeEach`** – resets Pinia, clears all mocks, and seeds default fixtures (one session `s1` for GET, empty envelope for DELETE).
-- **`"revokeSession reloads the list it changed"`** – asserts the store issues `GET → DELETE → GET` in sequence and that the post-revoke list reflects the server response.
-- **`"a sessions payload without the list reads as no sessions"`** – feeds a bare `{ data: {} }` envelope (bypassing `parseOrvalFixture` via `mockImplementationOnce`) to confirm the store treats a missing `sessions` field as an empty array.
+- **`responses` (module-level `Record<string, unknown>`)** — maps `"GET /account/sessions"` / `"DELETE /account/sessions/s1"` to fixture payloads; reset in `beforeEach`.
+- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a spy that looks up `responses` by uppercased method + URL and runs the result through `parseOrvalFixture`.
+- **`requestedUrls()`** — helper that extracts the ordered list of request URLs from `orvalMutator` mock calls, used to assert call sequencing.
+- **`beforeEach`** — resets Pinia, clears mocks, and restores the default `responses` map.
+- **Test: "revokeSession reloads the list it changed"** — asserts three consecutive requests (GET → DELETE → GET) and that the store still holds the seeded session.
+- **Test: "revokeSession of the caller's own session does not reload"** — passes `{ current: true }`; asserts only two requests (no trailing GET).
+- **Test: "a sessions payload without the list reads as no sessions"** — uses `mockImplementationOnce` to bypass `parseOrvalFixture` and return a raw `data: {}` envelope, pinning the store's own fallback to `[]`.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** – mocked wholesale; the test's sole external I/O boundary is `orvalMutator` imported from this module.
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called once at module scope to register test doubles before the store can be instantiated.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – provides `orvalEnvelope` (builds a standard success envelope) and `parseOrvalFixture` (validates a fixture against the orval-generated schema) used by the mock transport.
+- **`src/modules/account/stores/sessions.ts`** — system under test; imports `useAccountSessionsStore`.
+- **`src/infrastructure/http/index.ts`** — mocked at module level; the real `orvalMutator` is never executed.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at the top to register the module graph before any test runs.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload in the API envelope) and `parseOrvalFixture` (validates/normalises the mocked response).
 
 ## Notes
 
-- The second test **intentionally bypasses** `parseOrvalFixture` via `mockImplementationOnce` to pin the store's own defensive handling of a `sessions`-less payload. The comment clarifies that the real API contract makes that shape impossible, so this exercises the store's guard, not the schema.
-- Mock responses are keyed as a single string (`"GET /account/sessions"`, `"DELETE /account/sessions/s1"`); when adding new endpoints, follow the same `METHOD /path` convention.
+- The "missing list" test intentionally **bypasses** `parseOrvalFixture` via `mockImplementationOnce` because the real API contract marks `sessions` as required; the goal is to pin the store's own defensive default, not the schema layer.
+- Response keys are the literal `"METHOD /path"` string (e.g. `"GET /account/sessions"`); if the store's URL construction changes, the mock will silently return `undefined` rather than throwing.
+- The file follows the same transport-only-mocking convention as `profile.spec.ts` and `addresses.spec.ts`; new session-store tests should extend this file rather than spin up a separate one.

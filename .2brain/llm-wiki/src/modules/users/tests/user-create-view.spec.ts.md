@@ -1,7 +1,7 @@
 ---
 source: src/modules/users/tests/user-create-view.spec.ts
-sha256: 90a3810c43185aa20ee7c6238c20dc870b84088948de3649a1f7dbed8c0cebf5
-generated_at: 2026-10-02T15:49:20.754458+00:00
+sha256: 1f60e968038fb2492cf75111dc3873e9dab014eea574b4193ac96f8a71ecdbe9
+generated_at: 2026-10-17T01:48:17.683777+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Integration-level test suite for the `UserCreate` admin page. It mounts the real component against a real (memory-history) router and verifies: client-side validation refusal, the exact payload dispatched to the store, post-creation navigation, in-place blocking on API rejection, submit-button locking during in-flight requests, and field-level error placement vs. the banner. `createUser` is spied at the Pinia store so no network call is made.
+Unit-test suite for the admin **UserCreate** view. It mounts the real page against a real memory-history router and a spied `createUser` store action, then asserts the full behavioral contract: client-side validation, the exact outgoing payload, post-success navigation, error handling (both field-level and form-level), role-permission gating, and submit-button locking during an in-flight request.
 
 ## Key elements
 
-- **`router`** – A `createRouter` instance with `createMemoryHistory`, carrying the real module routes (via `collectModuleRoutes(enabledModules)`). Success navigation is exercised for real.
-- **`mountPage()`** – Spies `useUsersStore().createUser` *before* calling `mount(UserCreate, …)`, then returns `{ wrapper, create }`. The spy timing matters because the view destructures the action during `setup()`.
-- **`fillAndSubmit(wrapper, fields)`** – Chained `.then()` helper that sets the three required inputs (email, username, password) and triggers a form submit, followed by `flushPromises`.
-- **`GOOD_PASSWORD`** – Constant (`'Str0ng-Enough-Pass!'`) that satisfies the shared password-composition rule.
-- **`beforeEach`** – Resets Pinia, loads the `en` locale, pushes `/en/users/create` on the router, and awaits `router.isReady()`.
-- **Seven `it` blocks** covering: invalid email → no send; happy-path payload + navigation to `/en/users/u-new`; missing password + no setup-email → client-side refusal; setup-email checked → blank password accepted; API 500 → banner shown, stay on page; in-flight → submit button `disabled`; API 422 with `field: 'email'` → message on that field, not the banner.
+- **`mountPage()`** — Spies on `useUsersStore().createUser` *before* mounting `UserCreate`, then returns `{ wrapper, create }`. The spy-must-precede-mount ordering matters because the view destructures the action during `setup()`.
+- **`fillAndSubmit(wrapper, fields)`** — Locates the `input` inside `[data-test=user-email]` / `[data-test=user-username]` wrappers, sets values, triggers `form` submit, and flushes promises.
+- **Router (module-level)** — A `createMemoryHistory` router whose single `/:locale` route wraps `RouterView` over `collectModuleRoutes(enabledModules)`, so a successful create actually navigates.
+- **`beforeEach`** — Resets Pinia, seeds `useSessionStore().grantableRoles`, loads the `en` locale, and pushes `/en/users/create` + `router.isReady()`.
+- **`describe('UserCreate')`** — Twelve `it` blocks covering: active-switch default, active toggle in payload, email validation, exact-payload + navigation, absence of password/setup-email fields, API refusal (500), submit-button disable while in flight, field-level 422 error routing, role-options filtering, and hidden role field for zero-role callers.
 
 ## Relationships
 
-- **`tests/support/unit/fixtures.ts`** – Provides the `aUser` factory used to shape the mock resolved value in the happy-path and setup-email tests.
-- **`tests/support/unit/wire-modules.ts`** – Exposes `wireModulesIntoCore()`, called at module top-level so that `collectModuleRoutes(enabledModules)` and the router see fully-registered module routes before the suite runs.
+- **`src/modules/users/views/UserCreate.vue`** — The component under test; imported and mounted directly.
+- **`src/modules/users/store.ts`** — `useUsersStore()` is called to obtain the store instance whose `createUser` action is spied/mocked in every test.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is invoked at module top-level before any test runs, ensuring the module registry is populated for `collectModuleRoutes`.
+- **`tests/support/unit/fixtures.ts`** — Provides the `aUser` factory used to shape mock resolved values for `createUser`.
 
 ## Notes
 
-- The spy must be attached **before** `mount`; the view destructures `createUser` once at setup, so a later spy would not intercept the reference.
-- Vuetify places `data-test` on the wrapper element, not the native `<input>`. All selectors use the `[data-test=…] input` pattern to reach the value-bearing element.
-- The success-navigation assertion uses `vi.waitFor` with a throwing guard inside, because a single `flushPromises` may not be enough for the router to commit the navigation.
-- The FA52 test documents a Vuetify 4.1.5 regression where `:loading` alone did not disable the button; `FormCard` now also binds `:disabled="loading"`, and this test locks that behaviour in.
-- The U2 test encodes a backend contract (422 when neither `password` nor `sendSetupEmail: true` is present) as a *client-side* requirement: the form must refuse before the round-trip.
+- The spy **must** be created before `mount()`; the view destructures `createUser` in its `setup()` and will not see a spy attached afterward.
+- `data-test` attributes land on Vuetify's outer wrapper element, not the native `<input>`. All interactions therefore target `[data-test=…] input`.
+- The "disables submit while in flight" test documents a Vuetify 4.1.5 regression where `:loading` alone did not prevent a second click; `FormCard` now also binds `:disabled="loading"`.
+- The role-options test asserts the exact `items` array shape including the empty-value "No staff role (customer)" entry, which is a UI convention rather than a server field.
+- The suite relies on a real router for navigation assertions; it does not mock `vue-router`. This means `router.currentRoute` reflects the post-redirect URL after a successful create.

@@ -1,7 +1,7 @@
 ---
 source: contracts/asyncapi.generated.ts
-sha256: 9a5ba8ef559c7670e2fafd5d7a2e30225b95e818586caabf449bfb5b0cc5e173
-generated_at: 2026-10-02T11:18:09.694932+00:00
+sha256: cf452f8d8a62e8124496e188b838efe342925f55bfb2790fd8a0e451a6cbb073
+generated_at: 2026-10-16T23:54:02.826844+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,24 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Auto-generated TypeScript types, channel-name constants, and SSE payload schemas derived from the project's `asyncapi.yaml` spec. It exists so that event producers, consumers, and the real-time SSE layer share a single source of truth for channel identifiers and payload shapes without hand-maintaining them.
+Auto-generated TypeScript type definitions and constants for all AsyncAPI event channels in the project. It is the single source of truth for event names, payload shapes, and channel identifiers, produced from `asyncapi.yaml` by `npm run gen:asyncapi`. It exists so that producers, consumers, and the SSE layer all agree on wire formats without hand-maintained duplication.
 
 ## Key elements
 
-- **Event envelope interfaces** (`OrderCreatedEnvelope`, `PaymentSucceededEnvelope`, `ReturnRequestedEnvelope`, etc.) — each carries a discriminant `type` literal, a `timestamp`, and a domain-specific `data` payload.
-- **Domain payload interfaces** (`OrderIdPayload`, `PaymentEventPayload`, `ReturnClosedPayload`, etc.) — the concrete data objects nested inside envelopes.
-- **Event type aliases** (`OrderCreatedEvent`, `PaymentFailedEvent`, `HeartbeatEvent`, …) — one-line aliases that map a logical event name to its envelope/payload interface for ergonomic imports.
-- **Channel-name constants** (`OBSERVABILITY_CHANNELS`, `ORDER_CHANNELS`, `PAYMENT_CHANNELS`, `RETURN_CHANNELS`) — `as const` objects holding the canonical channel strings from the AsyncAPI spec.
-- **Channel union types** (`ObservabilityChannel`, `OrderChannel`, `PaymentChannel`, `ReturnChannel`) — `typeof`-derived unions of the values in the corresponding constants object.
-- **`ObservabilityMetricsPayload`** and its sub-interfaces (`MemoryUsage`, `HttpMetrics`, `RealtimeMetrics`) — the shared shape used by all three observability channels.
-- **SSE definitions** — `REALTIME_SSE_EVENT_NAMES` (const tuple), `SseEventName` (union), `SseEventPayloadMap` (channel→payload mapping), `SseEventPayload<T>` (generic accessor), and `SSE_EVENT_PAYLOAD_SCHEMAS` (JSON-Schema objects per SSE event for runtime validation).
+- **Event envelope interfaces** (`OrderCreatedEnvelope`, `ShipmentShippedEnvelope`, `PaymentSucceededEnvelope`, `ReturnRequestedEnvelope`, etc.) — each pairs a `type` discriminator (string literal), a `timestamp`, and a `data` payload.
+- **Payload interfaces** — concrete shapes for each event body: `OrderIdPayload`, `ShipmentPayload`, `PaymentEventPayload`, `PaymentRefundedPayload`, `ReturnRequestedPayload`, `NotificationCreatedPayload` (union of five notification sub-types), `ObservabilityMetricsPayload`, `NotificationsDeletedPayload`, `NotificationsReadPayload`.
+- **Event type aliases** (`OrderCreatedEvent`, `PaymentSucceededEvent`, …) — map each event name to its envelope type for ergonomic imports.
+- **Channel constants** — `as const` objects per namespace: `OBSERVABILITY_CHANNELS`, `ORDER_CHANNELS`, `SHIPMENT_CHANNELS`, `PAYMENT_CHANNELS`, `RETURN_CHANNELS`, `EXAMPLE_CHANNELS`, `NOTIFICATIONS_CHANNELS`, each with a companion union type (e.g. `OrderChannel`).
+- **SSE infrastructure** — `REALTIME_SSE_EVENT_NAMES` (tuple of the six SSE-delivered channels), `SseEventName`, `SseEventPayloadMap` (channel → payload interface), generic `SseEventPayload<T>`, and `SSE_EVENT_PAYLOAD_SCHEMAS` (JSON-Schema objects for client-side validation).
 
 ## Relationships
 
-- **`src/types/index.ts`** — downstream consumer; re-exports or imports the interfaces, channel constants, and SSE types defined here to provide a unified type surface to the rest of the codebase.
+- **`src/types/index.ts`** — re-exports or references these generated types so the rest of the codebase imports event/channel definitions from a single barrel path rather than reaching into `contracts/` directly.
 
 ## Notes
 
-- **Do not edit manually.** All content is produced by `npm run gen:asyncapi` from `asyncapi.yaml`. To change types or channels, edit the YAML spec and regenerate.
-- Event type aliases (e.g. `OrderCreatedEvent`) are plain `type` aliases to their envelope interface—there is no additional runtime value.
-- The SSE layer currently covers **only** the `observability.*` namespace. Order, payment, and return channels are typed here for messaging/event-bus consumers but are not part of the SSE event map.
-- `SSE_EVENT_PAYLOAD_SCHEMAS` duplicates the TypeScript interfaces as JSON-Schema objects; they are intended for runtime validation (e.g. `ajv`) rather than compile-time use.
-- Channel-name strings (e.g. `'order.created'`) are the canonical identifiers from the AsyncAPI spec and must match exactly across producers and consumers.
+- **Do not edit manually.** Any changes must be made in `asyncapi.yaml` and committed by re-running `npm run gen:asyncapi`.
+- Interfaces use quoted single-letter keys (e.g. `'timestamp'`) and the `AnonymousSchemaNN` naming pattern; these artifacts come from the AsyncAPI generator and the `@typescript-eslint/naming-convention` rule is disabled for the file.
+- `SSE_EVENT_PAYLOAD_SCHEMAS` embeds JSON-Schema objects as `Record<string, unknown>`; it is intended for runtime/client-side validation, not type-checking.
+- The `notifications.created` payload uses a `oneOf` union of five concrete notification types; consumers must narrow on the `code` field.
+- The `example.` namespace appears to be a placeholder/scaffolding channel.

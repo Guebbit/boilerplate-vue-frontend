@@ -1,30 +1,35 @@
 ---
 source: src/modules/account/components/ProfileAvatar.vue
-sha256: a75e25c4ceaaa2718de2802ab8d157b03e1ff2e58125c63a5d32bf63d340ea0f
-generated_at: 2026-10-02T12:10:38.893126+00:00
+sha256: 9213ec137f573d56a9f8fae4ca8fcc73ccc1131d3b262b56b626120d9b0f4b41
+generated_at: 2026-10-17T00:15:38.612013+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/components/ProfileAvatar.vue
 
 ## Purpose
-Self-contained panel for the account profile's avatar image. It handles both uploading a new picture and removing the existing one, acting immediately on selection (no separate save step) — unlike the details form that sits below it in the profile page.
+
+The profile-picture panel for the account page. It lets the visitor upload a new avatar or remove the current one, each action committed immediately to the profile store (no separate "save" step, since the avatar is not part of the details form below it). It owns client-side file validation, upload progress display, a confirmation dialog for removal, and in-place error reporting.
 
 ## Key elements
-- **`watch(pickedFile, …)`** — Upload pipeline: resets local state, validates the file synchronously against `imageUploadSchema`, then fires `updateProfile({ imageUpload: file })` via `trackUpload` (axios progress-aware). Clears `pickedFile` in `.finally()` so the picker never shows a stale selection.
-- **`handleRemove()`** — Opens a confirmation dialog (`useDialogStore().confirm`), then calls `updateProfile({ imageUrl: null })`. Success toasts; failure feeds the shared blocking error.
-- **`busy` (computed)** — `uploadingAvatar || removingAvatar`; disables both the picker and the remove button to prevent concurrent `PATCH /account` calls.
-- **`useBlockingError()` (single instance)** — Shared `message` / `report` / `clear` triple for both upload and remove failures, rendered as `InlineErrorAlert` next to the picker.
-- **`useAxiosUploadProgress()`** — Exposes `progress` and `trackUpload` so `FormImageUpload` can display a percentage while the multipart request is in flight.
-- **`errorMessage` (ref)** — Synchronous client-side validation message (e.g. wrong type, oversized) shown by `FormImageUpload`; distinct from the async `avatarError`.
-- **`imageUploadSchema.safeParse(file)`** — Reuses the same Zod schema `Signup.vue` applies, but against a single file rather than a full form.
+
+- **`pickedFile` (ref\<File\>)** – tracks the file selected in `FormImageUpload`; cleared to `undefined` in `.finally()` after upload settles so the picker never shows a stale selection.
+- **`errorMessage` (ref\<string\>)** – synchronous client-side validation message from `imageUploadSchema.safeParse`, shown on the picker.
+- **`busy` (computed)** – true while `uploadingAvatar` or `removingAvatar` is active; disables both the picker and the remove button to prevent a second concurrent `PATCH /account`.
+- **`useBlockingError()` instance** (`avatarError` / `reportAvatarError` / `clearAvatarError`) – shared failure state rendered by `InlineErrorAlert`; upload and remove both report here since they target the same field.
+- **`watch(pickedFile, …)`** – validates the picked file, then calls `trackUpload(file, opts => updateProfile({ imageUpload: file }, opts))` to start the multipart upload with progress tracking.
+- **`handleRemove()`** – opens a confirm dialog (`useDialogStore`), then calls `updateProfile({ imageUrl: null })`.
+- **Template** – `FormImageUpload` (picker + current image + progress), a conditionally-rendered `v-btn` for removal, and `InlineErrorAlert` for blocking errors.
 
 ## Relationships
-- **`src/infrastructure/utils/logger.ts`** — Connected through the `@/infrastructure/utils/` layer (`use-blocking-error.ts`, `uploads.ts`). This component does not import `logger.ts` directly; logging (if any) happens inside those shared utilities.
+
+- **`src/modules/account/stores/profile.ts`** – Consumes `updateProfile` (both upload and remove), and reads `profile`, `uploadingAvatar`, `removingAvatar` via `storeToRefs`. All avatar mutations flow through this single store action.
+- **`src/modules/account/views/Profile.vue`** – Parent view that renders this component as the avatar section of the profile page.
+- **`src/modules/account/tests/profile-avatar-panel.spec.ts`** – Unit/integration tests exercising the upload, validation, and remove flows of this component.
 
 ## Notes
-- **`imageUrl: null` is the remove signal.** `undefined` means "field not sent" and leaves the stored image untouched; `''` is rejected by the backend's `minLength: 1` with a 422. Never use either of those for removal.
-- **One blocking-error instance for two actions.** Upload and remove both mutate the same `imageUrl` field, so they share a single `useBlockingError()` and a single `InlineErrorAlert` slot. Don't split them without a UI redesign.
-- **Client-side validation is UX-only.** `imageUploadSchema.safeParse` gates the message, not the security boundary — the backend's upload limiter and image pipeline are the real gate.
-- **`pickedFile` reset is unconditional.** The `.finally()` in the upload watcher clears the ref whether the request succeeded or failed, so the picker always reflects the record's actual state.
-- **Mirrors `modules/users/store.ts`**'s `{ imageUpload, …rest }` split, one call site further down the stack.
+
+- **Remove sends `imageUrl: null`, not `''` or `undefined`.** The API contract uses `null` to mean "delete the stored image"; `undefined` means "field not sent" (no-op), and `''` is rejected by the schema's `minLength: 1` with a 422.
+- **Client-side validation is UX, not security.** `imageUploadSchema` gives an immediate friendly message; the backend's upload limiter and image pipeline are the authoritative gate.
+- **Single blocking-error instance by design.** Because upload and remove target the same one picture field, they share one `useBlockingError` so there is exactly one error slot in the layout.
+- **Dual `<script>` blocks.** The non-setup block exists solely to set the component `name` for devtools and `<KeepAlive>`; `<script setup>` cannot declare `name` itself.

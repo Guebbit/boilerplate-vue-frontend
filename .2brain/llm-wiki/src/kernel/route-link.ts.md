@@ -1,7 +1,7 @@
 ---
 source: src/kernel/route-link.ts
-sha256: 0d78894044655065316985ed5f29e87c75dcdb5c18e1578a08d150f3b18ed015
-generated_at: 2026-10-02T12:07:43.263129+00:00
+sha256: 128fb8611739e68ab07a1a4179e0e061382bd430ee7b1abdf8d86681576d8207
+generated_at: 2026-10-17T00:13:45.030415+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,18 +9,18 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Provides a guard (`linkIfRouted`) that a module uses to build a route location to a *sibling* module's route by name, safely returning `undefined` when that route is not registered in the current build. It exists because a name-based reach to a sibling's route is invisible to the `MODULE_EDGES` dependency graph, so `vue-router` would throw on an unresolved name without this check. It lives in `kernel` (not `src/app`) so any module can import it without coupling to this app's own route definitions.
+Provides a module-system-generic guard (`linkIfRouted`) that lets a module resolve a *sibling* module's route by name only when the current build actually ships that route. Because this cross-module reach is invisible to `MODULE_EDGES`, it is not covered by the normal dependency-review process; `linkIfRouted` calls `router.hasRoute` so an unresolved name yields `undefined` instead of triggering vue-router's throw. It lives in `kernel` (not `src/app`) because it depends only on the module system's `hasRoute` contract, and the ESLint module-boundary rules allow a module to import from `kernel` but not from `src/app`.
 
 ## Key elements
 
-- **`linkIfRouted`** (exported) — Takes a `router` (only `hasRoute` is required), a route `name`, and optional `params`/`query`. Returns a `{ name, params?, query? }` location object if the route resolves, or `undefined` if it does not. Params and query are omitted from the result when the route is absent, since there is nothing to link to.
+- **`linkIfRouted`** *(exported const)* — Accepts a `{ hasRoute }` router, a route `name`, optional `parameters`, and optional `query`. Returns `{ name, params?, query? }` when the route resolves, or `undefined` when it does not. Omitted `parameters`/`query` are left off the result object (not set to `undefined`) via conditional spread.
 
 ## Relationships
 
-No graph neighbors are recorded for this file.
+No dependency-graph neighbors are recorded for this file.
 
 ## Notes
 
-- The `router` parameter is intentionally typed as the minimal structural interface `{ hasRoute: (name: string) => boolean }`, not a full `Router`. Callers can pass any object exposing `hasRoute`.
-- Routes declared via `MODULE_EDGES` do **not** need this guard — that coupling is already reviewed and visible in the graph. `linkIfRouted` is specifically for the name-based sibling-reach pattern that `MODULE_EDGES` cannot express.
-- The caller is responsible for handling the `undefined` case (e.g., hide a link or fall back to a known route like `Home`). This function makes no such decision itself.
+- Intended specifically for *unreviewed* cross-module links. A route that is already a declared `MODULE_EDGES` edge (e.g. `cart` → `products`) does **not** need this guard; the coupling is reviewed, and a missing route there is a deliberate deployment choice.
+- Callers are expected to handle the `undefined` return themselves (e.g. hide the link, or fall back to a route like `Home`). This function deliberately does not decide what "nowhere to go" means.
+- The `router` parameter is typed structurally (`{ hasRoute: (name: string) => boolean }`) rather than as a full `Router` instance, keeping the file's dependency surface minimal.

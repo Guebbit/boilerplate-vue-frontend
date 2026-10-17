@@ -1,7 +1,7 @@
 ---
 source: src/modules/webhooks/tests/webhook-edit-view.spec.ts
-sha256: 628c7c2eaa344e4d39f8b9669fb30ea700fab07ad835b9b441b12d4c43b60ecc
-generated_at: 2026-10-02T15:57:12.030816+00:00
+sha256: 385b4b18e6871558fda2023b1519c5dc79b8eadf3bfd347698088bc054e10743
+generated_at: 2026-10-17T01:52:37.438368+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies the `description`-field contract on the WebhookEdit page: clearing the field must produce `null` in the update payload (per the "empty string is invalid, `null` clears" rule), and leaving it untouched must omit the key entirely. Mounts the real Vue component against a real memory-history router and Pinia store rather than a shallow stub.
+Integration-style unit test for the `WebhookEdit.vue` page. It verifies the PATCH body the form emits: a cleared `description` must serialize to `null` (not `""`), and an untouched field must be omitted entirely. Hydration is seeded directly into the Pinia store cache because the API has no per-ID `GET` endpoint for this page.
 
 ## Key elements
 
-- **`V_SELECT_STUB`** – Minimal stand-in for Vuetify's `VSelect`; emits a fixed `['order.paid']` on change (same pattern as `webhook-create-view.spec.ts`).
-- **`SUBSCRIPTION`** – Fixture `WebhookSubscription` record (`sub-1`) carrying a non-empty `description: 'Orders feed'` for the "clear it" test.
-- **`router`** – Memory-history router whose child routes come from `collectModuleRoutes(enabledModules)`, giving the page a real route-param (`:id`) resolution.
-- **`mountPage()`** – Seeds the store cache via `store.addSubscriptionRecord`, spies on `updateSubscription` and `fetchEventCatalogue`, mounts `WebhookEdit` with the router/vuetify/i18n plugins and stubs, returns `{ wrapper, update }`.
-- **Two `it` blocks** – One asserts a cleared description yields `{ description: null }`; the other asserts an untouched form yields `{}`.
+- **`router`** — a real `vue-router` instance using `createMemoryHistory`, with routes collected via `collectModuleRoutes(enabledModules)`. Pushed to `/en/webhooks/subscriptions/sub-1/edit` before each test.
+- **`V_SELECT_STUB`** — minimal Vuetify `v-select` replacement that always emits `['order.paid']`, avoiding Vuetify rendering in tests.
+- **`SUBSCRIPTION`** — the single fixture record (`id: 'sub-1'`, `description: 'Orders feed'`) used by every test.
+- **`mountPage()`** — seeds the store cache with `SUBSCRIPTION`, spies on `updateSubscription` and `fetchEventCatalogue`, then mounts `WebhookEdit` with Pinia, i18n, Vuetify, and the memory router.
+- **`describe('WebhookEdit')`** — two cases:
+  - *"sends null for a description the visitor cleared, never the empty string"* — sets the description input to `''`, submits, asserts the PATCH body equals `{ description: null }`.
+  - *"leaves the description out when the field was left alone"* — submits without touching the field, asserts the PATCH body equals `{}`.
+- Both assertions pipe the payload through **`contractRequest(schemas.UpdateWebhookSubscriptionBody, …)`** to validate shape against the OpenAPI-generated schema.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** (`wireModulesIntoCore`) – Called once at module top-level so the kernel registry is populated before `collectModuleRoutes(enabledModules)` can resolve the webhooks module's routes.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** (`contractRequest`) – Validates the spied `updateSubscription` payload against the `UpdateWebhookSubscriptionBody` API schema, then asserts the resulting object shape.
+- **`src/modules/webhooks/views/WebhookEdit.vue`** — the component under test; mounted directly with its real template and form logic.
+- **`src/modules/webhooks/store.ts`** — provides `useWebhooksStore`; tests spy on `updateSubscription` and `fetchEventCatalogue`, and seed `addSubscriptionRecord` to simulate a prior list-fetch cache.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module scope so that `collectModuleRoutes` can resolve the webhooks module's route registration.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — supplies `contractRequest`, which strips unknown keys and validates the object against the `UpdateWebhookSubscriptionBody` schema before the `.toEqual` assertion.
 
 ## Notes
 
-- There is no `GET …/subscriptions/{id}` endpoint; the page hydrates from the store's cache. The test seeds that cache by hand (`addSubscriptionRecord`), mirroring what a prior list load would leave behind.
-- `contractRequest` is used instead of a plain `toEqual` so the assertion is anchored to the generated API contract, not a hand-written expected object.
-- `beforeEach` resets `document.body` and pushes the real URL (`/en/webhooks/subscriptions/sub-1/edit`) before waiting on `router.isReady()`, ensuring the route param is populated before the component reads it.
+- The file doc-comment references "subscription-edit" and `subscriptions/{id}`; the actual route path is `/en/webhooks/subscriptions/:id/edit`. The naming reflects a shared "subscription" domain concept across webhook endpoints.
+- There is intentionally **no mock of the router** — the test exercises real route resolution (`/en/webhooks/subscriptions/sub-1/edit`) so that parameter extraction (`id` prop) is covered.
+- `loadLocale('en')` must resolve before `router.push` in `beforeEach`; the `.then` chain guards against i18n timing issues.
+- The test file sits in `src/modules/webhooks/tests/` rather than a top-level `tests/` tree, co-locating with the feature it covers.

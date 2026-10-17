@@ -20,7 +20,7 @@ Both tiers share one definition of the services, the sibling checkout and the se
 flowchart LR
     Push["push / PR"] --> Demo["test:e2e\nevery journey, demo profile, 4 shards"]
     Push --> Smoke["test-e2e-live\ngrep: @smoke\n1 job, 15 min"]
-    Cron["03:15 UTC nightly"] --> Full["e2e-live.yml, grep empty\nevery test, 4 matrix jobs\n45 min each"]
+    Cron["03:15 UTC nightly"] --> Full["e2e-live.yml, grep empty\nevery test, 4 slices x 2 session modes\n45 min each"]
 ```
 
 A test joins the smoke tier by carrying the tag; a test with no tag runs nightly:
@@ -32,16 +32,16 @@ describe('Checkout', { tags: '@smoke' }, () => { … }); // every test inside
 
 Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/develop/npm/grep), registered in `tests/support/e2e/e2e.ts` and `cypress.config.ts`. Tags, not file names: `@smoke` works in any file layout and keeps each spec's recorded run time. The catalogue in [Tests](../reference/tests.md#the-journey-catalogue) says which tier each journey is in.
 
-| Tier     | Runs               | Grep     | Jobs                                                        | Budget per job |
-| -------- | ------------------ | -------- | ----------------------------------------------------------- | -------------- |
-| Per push | the `@smoke` tests | `@smoke` | 1                                                           | 15 min         |
-| Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job), plus the antibot entry | 45 min         |
+| Tier     | Runs               | Grep     | Jobs                                                                         | Budget per job |
+| -------- | ------------------ | -------- | ---------------------------------------------------------------------------- | -------------- |
+| Per push | the `@smoke` tests | `@smoke` | 1                                                                            | 15 min         |
+| Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job) per session mode, plus the antibot entry | 45 min         |
 
 - **The `grep` input** (`workflow_call` and `workflow_dispatch`) takes any `@cypress/grep` expression: space is OR, `+` is AND, `-` is NOT. Run `grep: '@smoke'` by hand from the Actions tab to reproduce the push tier. It reaches Cypress as `E2E_GREP_TAGS`, which `cypress.config.ts` puts in `expose.grepTags`. (v7 reads `expose`, not `env`: a `CYPRESS_grepTags` variable is silently ignored.)
 - **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards, and `npm run test:e2e:live:spec` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
 - **An empty tier warns, it does not fail.** If no spec carries the tag, the run ends with a warning annotation ("No spec carries @smoke") rather than Cypress's "no spec files were found". Until the first `@smoke` journey lands, the push tier therefore runs nothing: it is green and says so.
 - **By hand**, `E2E_GREP_TAGS=@smoke npm run test:e2e:live` runs the smoke tier locally.
-- **The `session-mode` input** (`jwt`, the default, or `cookie`) sets the backend's `NODE_SESSION_MODE` and the journeys' `E2E_SESSION_MODE` together, so both always agree. By hand, export both before the recipe below. Journeys about one mode's own machinery skip themselves in the other (`skipUnlessSessionMode`).
+- **The `session-mode` input** (`jwt`, the default, or `cookie`) sets the backend's `NODE_SESSION_MODE` and the journeys' `E2E_SESSION_MODE` together, so both always agree. The schedule passes no input, so the nightly runs every slice once per mode (the antibot entry stays `jwt`: it is about the challenge, not the session); the push tier stays `jwt`, since the demo run already covers both modes on every push. By hand, export both before the recipe below, e.g. `NODE_SESSION_MODE=cookie` for the backend and `E2E_SESSION_MODE=cookie` for `npm run test:e2e:live`; `harness.cy.ts` fails if the two disagree. Journeys about one mode's own machinery skip themselves in the other (`skipUnlessSessionMode`).
 
 ### The antibot run
 

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/addresses.spec.ts
-sha256: e3d0b3635c8d6ab16fae7c6d4b4c26231eca00e45dd8cce2b8bbd21625764f86
-generated_at: 2026-10-02T12:20:12.838184+00:00
+sha256: d43e6c85c54b4ca7890e4744906d21cdb44b800d48d667a4f325ec3a40cc9841
+generated_at: 2026-10-17T00:20:34.237886+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,33 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for the `useAddressesStore` Pinia store. Only the HTTP transport (`orvalMutator`) is mocked so the store's own fetch-after-write orchestration runs for real. Every case pins the same invariant: the local list is **replaced** by the full book response, never patched with the single row a write returns, and exactly one default always exists.
+Unit tests for the `useAddressesStore` (address-book Pinia store). The only external boundary mocked is the HTTP transport (`orvalMutator`); the store's own fetch-after-write logic executes for real. Every test pins the same invariant: after a mutation the store **replaces** its local list with the full book returned by the server rather than locally patching a single row, and exactly one entry is flagged as default.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http', …)`** – replaces `orvalMutator` with a `vi.fn` that resolves to schema-validated fixtures by default.
-- **`respondWithBook(addresses, written?)`** – reconfigures the mocked transport so GET/DELETE return the full book and write methods (POST/PATCH/PUT) return the single `written` entry; both are passed through `parseOrvalFixture` for schema validation.
-- **`lastRequest()`** – returns the axios config (url, method, data) of the most recent transport call.
-- **`requestLog()`** – returns an ordered array of `METHOD url` strings for every call made.
-- **`describe('useAddressesStore', …)`** – the test suite covering: initial empty state, fetch, add (POST→GET), update (PATCH→GET), set-default (PUT→GET), delete (DELETE→reload), and a malformed payload fallback.
+- **`respondWithBook(addresses, written?)`** – Configures the `orvalMutator` mock so GET/DELETE calls return the whole book and POST/PATCH/PUT calls return the single written entry. All responses are validated against their operation schema via `parseOrvalFixture`.
+- **`lastRequest()`** – Returns the axios config (`url`, `method`, `data`) of the most recent `orvalMutator` call.
+- **`requestLog()`** – Returns an ordered list of `"METHOD /path"` strings for every call made so far; used to assert the exact call sequence (e.g. `PATCH` then `GET`).
+- **`HOME` / `WORK`** – Two fixture address objects (one default, one not) used across all cases.
+- **Test cases** (seven `it` blocks):
+  - Store starts empty before any fetch.
+  - `fetchAddresses` issues `GET /account/addresses` and stores the result.
+  - `addAddress` issues `POST` then `GET` (reload), not a local insert.
+  - `updateAddress` issues `PATCH /account/addresses/:id` then `GET`.
+  - `setDefaultAddress` issues `PUT /account/addresses/:id/default` then `GET`.
+  - `removeAddress` issues `DELETE /account/addresses/:id`; the promoted default comes from the server response, not a local guess.
+  - A book-less payload (`data: {}`) is coerced to `[]` by the store's `?? []` guard (intentionally bypasses `parseOrvalFixture` to test the store's own defence).
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** – the source of `orvalMutator`, which is the single dependency mocked in this file. The store under test calls it; the mock intercepts those calls.
-- **`tests/support/unit/wire-modules.ts`** – provides `wireModulesIntoCore()`, called at module top-level to register test stubs so the store can resolve its dependencies without a full app bootstrap.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – provides `orvalEnvelope` (wraps a payload in the API's standard envelope) and `parseOrvalFixture` (validates a response against the operation's schema), both used by every mock implementation in this file.
+- **`src/modules/account/stores/addresses.ts`** – The system under test; `useAddressesStore` is imported and exercised in every case.
+- **`src/infrastructure/http/index.ts`** – Exports `orvalMutator`, which is replaced by a `vi.fn` mock via `vi.mock('@/infrastructure/http', …)`. No real network I/O occurs.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module top level to register the necessary module wiring before the mock takes effect.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Provides `orvalEnvelope` (wraps a payload in the standard `{ success, status, message, data }` shape) and `parseOrvalFixture` (asserts the payload conforms to the operation's Orval-generated schema before returning it).
 
 ## Notes
 
-- **Fetch-after-write is the contract under test.** Every write action (add, update, setDefault, remove) must be followed by a `GET /account/addresses`; the tests assert the exact `requestLog()` sequence to catch a store that skips the reload.
-- **`removeAddress` is the highest-risk path.** The server promotes a new default on deletion; a store that merely splices the row locally would render a book with no default until the next fetch. The test explicitly sets up the promoted book after the DELETE.
-- **The "book-less payload" test bypasses `parseOrvalFixture` on purpose.** It feeds a raw `{ data: {} }` response to pin the store's own `?? []` guard, since that shape is impossible under the real schema but could appear in a regression.
-- **`respondWithBook` distinguishes by method, not URL.** GET and DELETE always get the full `addresses` array; all other methods get the single `written` entry. This mirrors the API contract where list endpoints return the book and row-mutation endpoints return the row.
+- The mock's default implementation (before `respondWithBook` is called in a specific test) resolves an **empty book** (`addresses: []`); tests that need data must call `respondWithBook` explicitly.
+- `vi.clearAllMocks()` runs in `beforeEach`, so `mock.calls` history does not leak between tests. A fresh Pinia instance is also created each time.
+- The last test (book-less payload) **deliberately bypasses** `parseOrvalFixture` because a missing `addresses` key is schema-impossible in the real contract; the point is to pin the store's `?? []` guard in isolation.
+- The `input` for `addAddress` strips `id` and `default` from the fixture (`const { id: _id, default: _default, ...input } = WORK`) to mimic what the API expects on creation.

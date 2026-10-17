@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/e2e/auth.cy.ts
-sha256: 795398673a771d4d550fc13e4229dce483215ccdbc64dbec9e0c6d65b485f69a
-generated_at: 2026-10-02T12:22:41.818726+00:00
+sha256: 5ba5ac5707d813110f12c2ec9735e71434d017b02bb7bb92b95742902a6c054a
+generated_at: 2026-10-17T00:21:38.912593+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,24 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Cypress end-to-end suite covering the full authentication surface: login (form, validation, success, remember-me cookie lifetime), signup (validation, unverified-role entry), route guards (`/cart`, `/orders`, `/admin`, `/users`), logout, in-tab user switching, and a live-profile-only session-refresh test that exercises the cross-origin (`:8085 → :3000`) refresh path.
+Cypress end-to-end spec covering the full authentication lifecycle: login form (render, validation, success, "remember me" cookie expiry), signup (render, password mismatch, successful unverified signup), route-guard redirects for `/cart`, `/orders`, `/admin`, `/users`, `/login`, logout, cross-account user switching without a page reload, and a live-profile-only session-refresh test that exercises the `:8085 → :3000` cross-origin cookie boundary after a forced 401.
 
 ## Key elements
 
-- **`describe('Login')`** – verifies form rendering, email/password validation errors, successful login + redirect, and two cookie-lifetime cases: unchecked "remember me" yields a session cookie (no `expiry`), checked yields a long-lived cookie. Reads the httpOnly `jwt` cookie directly via `cy.getCookie`.
-- **`describe('Signup')`** – form rendering, password-mismatch error, successful signup that lands the user on `#home-page` with a `[data-test=verify-banner]` (unverified is a role, not a blocking gate).
-- **`describe('Route guards')`** – unauthenticated users are bounced to `/login` from `/cart`, `/orders`, `/users`; authenticated non-admins are bounced away from `/admin` and `/users`; authenticated users are redirected off the login page; session survives `cy.reload()`.
-- **`describe('Logout')`** – logout redirects to home; `cy.switchUser('user')` (admin → user) is verified in the *same* tab by planting a `window.__switchUserMarker` before the switch and asserting it still exists after, plus checking admin/user menu elements.
-- **`describe('Live session refresh (live profile only)')`** – gated by `cy.skipUnlessLive()`. Intercepts `POST {apiUrl}/orders/search` to force a one-time 401, then asserts the app's interceptor calls `GET {apiUrl}/account/refresh` and retries the search successfully, proving the refresh cookie crossed the origin boundary.
-- **`beforeEach` (top-level)** – visits `/en` and calls `cy.restore()` to reset app state between suites.
+- **`describe('Authentication')`** – top-level suite; `beforeEach` visits `/en` and calls `cy.restore()`.
+- **`describe('Login')`** – six tests: form rendering, invalid-email validation, empty-form validation, successful login + redirect, session-cookie expiry (no `expiry` = browser-session), and "remember me" producing a multi-day `expiry` on the `__Host-session` cookie.
+- **`describe('Signup')`** – three tests: form rendering, password-mismatch error, and successful signup landing on the home page with a `[data-test=verify-banner]` (unverified is a role, not a blocking state).
+- **`describe('Route guards')`** – seven tests verifying: `/cart` is public (guest cart visible, no redirect), `/orders` and `/users` redirect unauthenticated users to `/login`, an authenticated user is bounced off `/login`, a non-admin is bounced off `/admin` and `/users` to the home page, and auth survives `cy.reload()`.
+- **`describe('Logout')`** – two tests: standard logout redirect to home, and `cy.switchUser('user')` after `cy.loginAs('admin')` proving the same `window` persists (via a planted `__switchUserMarker`) and that admin-only UI (`[data-test=admin-menu]`) is replaced by user UI (`[data-test=user-menu]`).
+- **`describe('Live session refresh (live profile only)')`** – one `function`-scoped test (needs `this.skip()` for Mocha). Gated by `cy.skipUnlessLive()` and `skipUnlessSessionMode(this, 'jwt')`. Intercepts `POST {apiUrl}/orders/search` to reply 401 once, then asserts the retry succeeds (200), that at least two `POST /account/refresh` calls were made, and that the app does not bounce to `/login`.
 
 ## Relationships
 
-- **`tests/support/e2e/scenario.ts`** — provides `seedAccount(role)` which returns pre-seeded credentials (`{ email, password, … }`) for named roles (`'admin'`, `'user'`). Every test that needs real login data calls this rather than hardcoding values.
+- **`tests/support/e2e/scenario.ts`** – imports `seedAccount`, which returns pre-seeded credential objects (`.email`, `.password`) used in the Login tests.
+- **`tests/support/e2e/harness.ts`** – imports `skipUnlessSessionMode`, called with Mocha's `this` context and the mode string `'jwt'` to skip the live-refresh test in `cookie` mode.
 
 ## Notes
 
-- All custom commands (`cy.loginAs`, `cy.switchUser`, `cy.restore`, `cy.skipUnlessLive`) are defined in the Cypress support layer, not in this file.
-- The live-refresh test pins intercepts to `cy.env(['apiUrl'])` to avoid accidentally matching the app's own document routes (e.g. `GET /en/orders`).
-- The "remember me" tests deliberately inspect the `jwt` cookie's `expiry` property rather than any readable flag, because the cookie is httpOnly and only Cypress (not in-page JS) can read it.
-- The switchUser test's `__switchUserMarker` is a same-technique marker as used in `resilience.cy.ts` to detect unintended full page loads.
+- The live-refresh test uses a plain `function` (not an arrow) so it can call `this.skip()` via `skipUnlessSessionMode`. Arrow functions would lose the Mocha test context.
+- `seedAccount('admin')` and `seedAccount('user')` are the canonical fixture sources; the Signup test hard-codes `newuser@example.com` because it creates a *new* account.
+- The "remember me" test asserts on `__Host-session` (httpOnly) rather than a readable `isAuth` flag, because Cypress reads httpOnly cookies but page scripts cannot.
+- The forced-401 intercept is pinned to `${apiUrl}/orders/search` (not a bare glob) to avoid accidentally matching the app's own `/en/orders` document route.
+- The `switchUser` test's window-marker technique (plant a flag, perform the switch, assert the flag survived) is the same pattern used in `resilience.cy.ts` to detect cross-reload state leakage.
+- All route-guard tests clear cookies first (`cy.clearCookies()`) or use `cy.loginAs` to set a known identity before navigating.

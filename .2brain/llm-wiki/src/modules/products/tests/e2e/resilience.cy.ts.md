@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/tests/e2e/resilience.cy.ts
-sha256: cc67bc81c8da6b6bc7cb54e3cb83d6c640ca89fe55bed2f9955f980a52ed9312
-generated_at: 2026-10-02T15:34:02.757459+00:00
+sha256: cd11dc1f41d2a720c6ba885cc7e9e9c81dc77e136a756f8c8567cbd5feab56e2
+generated_at: 2026-10-17T01:29:38.616783+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Product-catalogue share of the application's resilience e2e sweep. Validates that the list, detail, empty-state, and pagination UIs degrade gracefully (no overflow, no blank renders) regardless of what the dataset actually contains, including the intentionally sparse `barebones` record. Extracted from the central `tests/e2e/specs/resilience.cy.ts` under ticket FA122.
+Catalogue-specific slice of the site-wide resilience sweep (extracted from the central `tests/e2e/specs/resilience.cy.ts`). It verifies that the products list and detail pages render gracefully under edge conditions — a sparse record, an empty search result, and pagination state — without asserting on exact titles or counts, so the specs stay green while still catching layout breaks, uncaught exceptions, or viewport overflow.
 
 ## Key elements
 
-- **`DEFAULT_PAGE_SIZE`** (const, 10) – mirrors `ProductsList.vue`'s first entry in `pageSizeOptions`; used as the threshold for the pagination-visibility check.
-- **`describe('the catalogue renders whatever the dataset holds')`** – two specs: (1) public list route is healthy and at least one card renders; (2) as admin, every row's detail page opens, the `#product-target` element exists, and no horizontal overflow occurs. Hrefs are collected upfront to avoid N→2N round-trips.
-- **`describe('lists tolerate being empty')`** – types a non-matching query into the filter, submits, and asserts `[data-test=products-empty]` appears while no `product-card` remains; also checks no overflow.
-- **`describe('pagination agrees with the rows actually rendered')`** – as admin, reads the rendered row count and asserts `.v-pagination` exists *iff* rows ≥ `DEFAULT_PAGE_SIZE`. Written as a screen-agreement rather than a fixed expectation so it tracks dataset growth.
-- **`beforeEach` (all blocks)** – `cy.visit('/en')` then `cy.restore()` to reset seeded state.
+- **`DEFAULT_PAGE_SIZE`** (const, `10`) — mirrors the default in `ProductsList.vue`'s `pageSizeOptions`; used to decide whether pagination should be visible.
+- **`describe('the catalogue renders whatever the dataset holds')`**
+  - *serves the public list quietly and inside the viewport* — hits `/en/products` as a guest, expects at least one `product-card`.
+  - *opens a detail page for every product an admin can see, including the sparse one* — logs in as admin, collects all `row-view` hrefs upfront, then visits each one asserting `#product-target` exists and no horizontal overflow. Covers the `barebones` product (all optional fields at schema defaults).
+- **`describe('lists tolerate being empty')`**
+  - *renders an empty catalogue rather than breaking when a search matches nothing* — types a non-existent string into the filter, submits, expects `[data-test=products-empty]` present and no `product-card`.
+- **`describe('pagination agrees with the rows actually rendered')`**
+  - *shows the pagination control only when the catalogue does not fit on one page* — as admin, reads rendered row count; if ≥ `DEFAULT_PAGE_SIZE` expects `.v-pagination` to exist, otherwise to be absent. Uses server-reported `pageTotal` (via vue-toolkit's `useStructureCrudApi`) rather than a local count.
 
 ## Relationships
 
-- **`tests/support/e2e/resilience.ts`** – provides the two shared helpers this file calls: `assertRouteIsHealthy(route, selector)` (verifies a route responds with the expected root element) and `assertNoHorizontalOverflow()` (checks `document.documentElement.scrollWidth ≤ clientWidth`). This file contains no test-specific setup beyond those two imports.
+- **`tests/support/e2e/resilience.ts`** — imports `assertRouteIsHealthy` (verifies a route returns 200 and a target selector is present) and `assertNoHorizontalOverflow` (checks no element exceeds the viewport width). Both helpers are called throughout the three `describe` blocks.
 
 ## Notes
 
-- Assertions deliberately avoid pinning exact titles, counts, or field values; the goal is "doesn't crash / doesn't overflow," not "shows the right data." A broken image or a `TypeError` in a console would still let value-based specs pass.
-- The pagination spec relies on the server-reported `totalItems` (stored by vue-toolkit's `useStructureCrudApi`) rather than a local row count; a local-only count would make the "pagination must exist" branch unreachable. The comment references a bug this test caught before that fix landed.
-- The `barebones` product (no description, categories, or tags) is only visible in the **admin** list (it carries inactive/soft-deleted rows), which is why spec 2 logs in as admin rather than using the guest grid.
-- Timeout of `10_000` ms is applied to the initial `[data-test=list-row]` query to absorb slow admin-table hydration; other queries use the default.
+- Every `beforeEach` calls `cy.restore()` after visiting `/en`, resetting the seed dataset so tests are deterministic regardless of execution order.
+- The admin detail-loop test deliberately collects all hrefs first, then visits each in sequence (N page loads instead of 2N), because the admin list is the only view containing inactive, soft-deleted, and the `barebones` rows.
+- The pagination assertion is written as a conditional agreement between two on-screen elements rather than a fixed expectation, so it remains meaningful as the demo catalogue grows. The comment notes this test caught a real bug where a local-only row count always took the "not exist" branch.
+- The empty-search test notes the demo dataset intentionally always has rows, so the empty state is only reachable through a user action (a non-matching search).

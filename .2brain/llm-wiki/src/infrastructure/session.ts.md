@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/session.ts
-sha256: 652a551c011d9b4b665dc354ffb44cc6a18627b4becd81c14363d77f26dcc0d2
-generated_at: 2026-10-02T14:41:34.398094+00:00
+sha256: 662db1dd4b300964d90036e430cd1ec87ddb2d40e7372c9d46f5d4ed7094987b
+generated_at: 2026-10-17T00:12:10.365559+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,36 +9,33 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Pinia setup-store that owns the app's authentication state: an in-memory access token, a minimal viewer projection (`id`, `email`, `role`, avatar URLs, `verified`), and two CASL ability scopes (`tenant`, `platform`). It exists so that `isAuth` requires **both** token and viewer, preventing a restored-but-unidentified session from being treated as authenticated, and so that route guards and the shell have a single source of truth for "who is signed in" without importing the full `User` domain object.
+Pinia store that gates the entire app: it tracks whether a session is held (in-memory JWT in `jwt` mode, or an HttpOnly-cookie flag in `cookie` mode), holds a minimal viewer projection, and manages the CASL abilities every screen checks. It exists so route guards, the app shell, and cross-tab logout all read one source of truth for "who is signed in and what may they see."
 
 ## Key elements
 
-- **`useSessionStore`** — the store (Pinia setup pattern). Exposes:
-  - `accessToken` (`ref<string>`) — in-memory; the refresh token stays in an httpOnly cookie.
-  - `viewer` (`ref<SessionViewer>`) — minimal user projection for shell/guards.
-  - `isAuth` (`computed`) — `Boolean(accessToken && viewer)`; never either alone.
-  - `sessionEpoch` (`ref<number>`) — bumped on `clearSession`; stale refresh continuations are dropped.
-  - `expiredSignal` (`ref<number>`) — bumped only on a definitive 401/403 from the refresh endpoint; watched by `LayoutDefault.vue` for toast + redirect.
-  - Two CASL `MongoAbility` instances (`tenant`, `platform`) built from `GET /account/abilities`; empty by default (least-privilege).
-  - Actions: `login`, `logout`, `logoutAll`, `loadViewer`, `refreshToken`, `clearSession`, reauth helpers, `requestEmailVerification`.
-- **`SessionViewer`** (interface) — `{ id, email, role, imageUrl?, thumbnailUrl?, verified? }`. Deliberately narrower than the domain `User`.
-- **`PermissionAction`** (type re-export) — concrete actions a screen may check; generated from the backend's `shared/authorization-keys.yaml`.
-- **`isDefinitiveAuthFailure(error)`** — true only for 401/403 from the refresh endpoint; network errors and 5xx do **not** count.
-- **`unpackAbilityRules(packed)`** — converts the API's packed wire format into CASL `RawRuleOf<MongoAbility>[]` via a single named cast through `PackRule`.
+- **`useSessionStore`** — the Pinia store. Exposes `accessToken`, `viewer`, `mode`, `cookieSession`, `hasSession`, `isAuth`, and a `clearSession`/epoch mechanism to invalidate in-flight refreshes.
+- **`isAuth` (computed)** — `hasSession && viewer`. A restored-but-unidentified session is *not* authenticated.
+- **`hasSession` (computed)** — `Boolean(accessToken) || cookieSession`.
+- **`mode` (ref)** — `jwt` | `cookie`, loaded once from `GET /account/session-config`. `undefined` until then; consumers treat it as `jwt`.
+- **`SessionViewer` (interface)** — minimal projection: `id`, `email`, `role?`, `imageUrl?`, `thumbnailUrl?`, `verified?`. Not the domain `User`.
+- **`PermissionAction` (type re-export)** — the closed set of concrete actions screens may query. `manage` is deliberately absent.
+- **`unpackAbilityRules`** — converts the server's packed rule array into `RawRuleOf<MongoAbility>[]` for `createMongoAbility`.
+- **`isDefinitiveAuthFailure`** — true when a refresh-endpoint rejection is 401 or 403 (vs. network/5xx).
+- **`writeCookie` / `clearCookie` / `setCookie`** — centralized cookie writers. `setCookie` calls the prototype descriptor to bypass instance shadowing; `writeCookie` bakes in `path=/`, `SameSite=Lax`, and a conditional `; Secure`.
+- **`sessionChannel`** — `BroadcastChannel('session')` for cross-tab logout; `undefined` when the API is unavailable.
 - **`emailVerifyResendRetryAfter` / `reauthSendRetryAfter`** — extract the `Retry-After` seconds from a 429 rejection for their respective endpoints.
-- **`writeCookie` / `clearCookie` / `setCookie`** — write JS-readable cookies (`isAuth`, `rememberMe`) through the prototype descriptor; always set `path=/`, `SameSite=Lax`, and conditionally `; Secure`.
-- **`sessionChannel`** — `BroadcastChannel('session')` for cross-tab logout; `undefined` where unsupported.
 
 ## Relationships
 
-No formal graph neighbors are tracked for this file. It imports from `@api` (auth/account/reauth endpoints), `@/infrastructure/http/envelope.ts` (response-envelope helpers), `@/infrastructure/http/etag.ts` (`clearEtags`), `@casl/ability`, `@guebbit/js-toolkit` (`getCookie`), and `@types`. It is consumed by route guards, the app shell (`LayoutDefault.vue`), and the account menu.
+No graph neighbors are recorded for this file. It imports API client functions, CASL, Vue/Pinia reactivity primitives, and internal http helpers (`envelope`, `etag`, `logger`), but those edges are not surfaced in the provided dependency graph.
 
 ## Notes
 
-- `isAuth` is a computed over **two** refs; a token without a viewer (or vice-versa) is **not** authenticated. This is the core invariant of the file.
-- CASL abilities are **rendering hints only** — the server re-evaluates every request. An empty ability (pre-fetch or post-failure) greys out UI rather than opening it.
-- `sessionEpoch` is the guard against a race: a `refreshToken` call that resolves *after* `clearSession` sees a mismatched epoch and discards its result.
-- `expiredSignal` fires only for definitive 401/403 from refresh, **not** for explicit `logout`/`logoutAll`, so a deliberate sign-out does not trigger the "session expired" toast.
-- Cookie writes go through `Object.getOwnPropertyDescriptor(Document.prototype, 'cookie').set` to avoid being shadowed by test doubles or libraries that reassign `document.cookie`.
-- `secureAttribute()` checks `location.protocol` at runtime (not a build flag) so the local HTTP dev server doesn't get silently dropped `Secure` cookies.
-- The `PackedRules → PackRule` cast in `unpackAbilityRules` is the single place the file trusts the wire contract over the compiler; it is intentional and named.
+- **`isAuth` is conjunctive by design.** A session without a viewer (restored but not yet identified) must *not* read as authenticated; this is the single most important invariant in the file.
+- **`role` is a rendering hint, not an authorization token.** It drives route-guard rendering; the server re-evaluates permissions on every request.
+- **`verified` is optional.** Every real projection sets it, but the type allows omission so that unrelated test fixtures don't need `verified: true`. `!viewer.verified` treats missing as unverified (fail-safe direction).
+- **`setCookie` deliberately bypasses the instance descriptor.** If a library or test double shadows `document.cookie` on the instance, the prototype setter still works.
+- **`Secure` is scheme-driven, not build-mode-driven.** `location.protocol === 'https:'` is the check; a blanket `Secure` would silently drop the cookie on a plain-HTTP dev server.
+- **`unpackAbilityRules` contains one named cast.** OpenAPI/JSON Schema cannot express CASL's discriminated tuple, so the generated `PackedRules` type is `unknown[][]`. The cast to `PackRule<RawRuleOf<MongoAbility>>[]` is the single trusted seam.
+- **Cross-tab logout degrades silently.** If `BroadcastChannel` is unavailable (older browsers, some test runners), `sessionChannel` is `undefined` and no retry or polyfill is attempted.
+- **The store uses a `ref` epoch (bumped by `clearSession`)** so a refresh that started before a clear does not act on its result once it lands.

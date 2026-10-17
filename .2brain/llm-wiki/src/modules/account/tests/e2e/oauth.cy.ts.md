@@ -1,36 +1,33 @@
 ---
 source: src/modules/account/tests/e2e/oauth.cy.ts
-sha256: 4ad865c30cbeed2d027493328e8ec995b89a2461750e947e587bf18e8fd6edc5
-generated_at: 2026-10-02T12:23:06.493920+00:00
+sha256: 60a3072d88bc9ee4e6eff9413b180441750de11a04c208ba537fd15b988a6073
+generated_at: 2026-10-17T00:21:49.556788+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/tests/e2e/oauth.cy.ts
 
 ## Purpose
-
-Cypress e2e suite for the OAuth login buttons, exercising the full redirect chain (BE start route → BE callback → cookie set → FE `/oauth/callback`) via the backend's `fake` provider. Real Google/GitHub flows can't run in CI; `fake` skips the consent screen but still round-trips the genuine `state` cookie, making the redirect path authentic. All tests are gated to demo mode.
+Cypress e2e suite that exercises the OAuth login button against the backend's `fake` provider (demo-mode only). Because real Google/GitHub redirects cannot complete in CI, the `fake` provider substitutes the consent screen while still round-tripping the genuine `state` cookie, letting tests validate the full redirect chain: BE start → BE callback → cookies → FE `/oauth/callback`.
 
 ## Key elements
-
-- **`signUpUnverified(password: string)`** — Local helper. Registers `oauth.demo@example.com` with the given password via the signup form, signs in (confirming session cookies are set), then logs out. Leaves the address *unverified*; serves as the starting state for the takeover and link tests.
-- **`describe('Social login (OAuth)')`** — Suite containing four `it` blocks, each preceded by `cy.skipUnlessDemo()`:
-  - *New visitor signs in…* — Clicks `[data-test=oauth-fake]`, asserts redirect to `#home-page`, user menu present, and profile shows the email with no verify banner.
-  - *Refuses to link onto an account that never proved the address* — Sets up an unverified squatter account, then asserts the OAuth callback lands on `error=account_unverified` and the original password still works with a verify banner still present.
-  - *Links to an existing password account once… proved the email* — Verifies via a mail-delivered token as a guest, then confirms the provider links onto the *same* account (same email, no verify banner, original password still valid).
-  - *Challenges a linked provider login when the account has 2FA armed* — Enrolls email 2FA on a provider-created account, then asserts a second OAuth login hits the 2FA challenge page and completes only after the mailed code is submitted.
+- **`signUpUnverified(password)`** — Helper that registers `oauth.demo@example.com` with a given password via the signup form, signs in (verifying the session), then logs out. Leaves the email unverified; used as the pre-state for the link-refusal and link-success tests.
+- **`describe('Social login (OAuth)')`** — Suite containing four test cases (all gated behind `cy.skipUnlessDemo()`):
+  - *New visitor signs in via fake provider* — asserts landing on home with a pre-verified identity, no verify banner.
+  - *Refuses to link onto an unproven account* — pre-seeds a squatter account, then asserts the callback returns `error=account_unverified` and the original password still works (account untouched).
+  - *Links to a verified password account* — proves the email via the signup token link, then asserts OAuth links to the same account (no duplicate) and the original password still opens it.
+  - *Challenges linked-provider login when 2FA is armed* — enrolls email 2FA on a provider-created account, then asserts a second OAuth login hits the two-factor challenge page and completes after submitting the mailed code.
+- **`beforeEach`** — Restores app state (`cy.restore()`) and revisits `/en` before each test.
 
 ## Relationships
-
-No graph-neighbor files are registered for this module. At runtime it depends on:
-
-- **Backend `fake` OAuth provider** (gated by `isDemoMode()`): start route, callback handler, and the `loginOrCreateFromOAuth` create/link logic.
-- **Frontend routes:** `/en/login`, `/en/signup`, `/en/profile`, `/en/verify-email/confirm`, `/en/login/2fa`, and the `#oauth-callback-page` element.
-- **Custom Cypress commands** (defined elsewhere in the e2e support layer): `cy.restore()`, `cy.skipUnlessDemo()`, `cy.emailTo()`, `cy.enrollEmailTwoFactor()`, `cy.typeMailedTwoFactorCode()`.
+No dependency-graph neighbors recorded for this file. It interacts at runtime with:
+- The backend `fake` OAuth provider (gated by `isDemoMode()`).
+- Custom Cypress commands defined elsewhere: `cy.skipUnlessDemo()`, `cy.emailTo()`, `cy.enrollEmailTwoFactor()`, `cy.typeMailedTwoFactorCode()`.
+- Front-end pages/elements referenced by selectors: `#oauth-callback-page`, `#home-page`, `#two-factor-challenge-page`, `[data-test=oauth-fake]`, `[data-test=verify-banner]`, `[data-test=user-menu]`.
 
 ## Notes
-
-- **Demo-only:** Every test calls `cy.skipUnlessDemo()`; the `fake` provider is unreachable in production or non-demo builds. The file will silently skip in those environments.
-- **`cy.restore()` in `beforeEach`:** Resets DB/seed state between tests; paired with a fresh `cy.visit('/en')` to re-establish session.
-- **No explicit imports:** The file relies entirely on global `cy` and the custom commands registered via the Cypress support file—there are no module-level imports or exports.
-- **Test 4 is a regression guard** (referenced as "1b" in the comment): it ensures the OAuth callback cannot mint a session that bypasses an armed second factor.
+- Every test calls `cy.skipUnlessDemo()` — the entire suite is a no-op outside demo mode.
+- The `beforeEach` calls `cy.restore()` then `cy.visit('/en')`; the first `cy.visit('/en')` at the top of the block is redundant (likely a leftover) but harmless.
+- The account-takeover refusal test is the security-critical case: it pins the invariant that a provider's attestation alone must never link onto an email the account owner has not proven.
+- `signUpUnverified` leaves the user **logged out**; the verify-link test intentionally consumes the token as a guest to mirror a "mailbox on another device" flow.
+- The 2FA test depends on `cy.enrollEmailTwoFactor` and `cy.typeMailedTwoFactorCode` being registered in the test support setup.

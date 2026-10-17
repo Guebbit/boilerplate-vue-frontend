@@ -1,35 +1,39 @@
 ---
 source: src/modules/products/tests/store.spec.ts
-sha256: ec2b5972572b89c81244be94fd9039c1492ab941e46e8e66a9a825f1a2014f54
-generated_at: 2026-10-02T15:39:52.125699+00:00
+sha256: 7094e4815804299555acdee19a11fbfbda16bff88c33b2d5e7c01f8c70334744
+generated_at: 2026-10-17T01:34:33.884962+00:00
 model: ollama:qwen3.8:27b
 ---
 
-# src/modules/products/products/tests/store.spec.ts
+# src/modules/products/tests/store.spec.ts
 
 ## Purpose
 
-Unit tests for the products Pinia store's own decision logic — specifically the JSON-vs-multipart branch on create/update, how `translations` is encoded in each mode, and how the cache scopes by active language. The CRUD wrappers around `@guebbit/vue-toolkit` are intentionally untested; only the repo-specific encoding and branching is covered.
+Unit tests for `useProductsStore` that verify the store's own decision logic: whether a create/update call serialises as JSON or multipart, how `translations` is encoded in each case, and how the cache is scoped by active language. The CRUD wrappers over `@guebbit/vue-toolkit` are intentionally not exercised; instead the transport (`orvalMutator`) is mocked at the wire boundary so the real generated-client `FormData` encoding runs, catching regressions in array-field repetition and unset-optional handling that TypeScript cannot express.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http', …)`** — Replaces `orvalMutator` with a stub that returns shape-appropriate envelopes (empty body for DELETE, a product record otherwise). The generated client and `@api` are *not* mocked; the real client runs against this transport stub.
-- **`lastRequest()` / `lastFormData()` / `lastBody()`** — Helpers that pull the most recent axios config handed to `orvalMutator`, narrowing the body to `FormData` or a plain object as needed.
-- **`respondWithItems(items)`** — Re-stubs the transport to return a paginated `orvalEnvelope` (with `meta.totalPages`) for read-path tests.
-- **`PRODUCT` / `TRANSLATIONS`** — Seed fixtures for optimistic-update and encoding assertions.
-- **`describe('createProduct', …)`** — Asserts: JSON `POST /products` without image; multipart with image; `translations` JSON-encoded into a single FormData part; `Blob` (not only `File`) accepted for `imageUpload`; `categories`/`tags` sent as repeated fields (not indexed keys); unset optionals omitted rather than serialized as `"undefined"`; `onUploadProgress` forwarded to the transport.
-- **`describe('updateProduct', …)`** — Asserts `PATCH` (merge semantics); multipart when image present; the VAT edge case where `taxClass: null` is sent as a *second*, separate JSON `PATCH` because a multipart part cannot carry `null`.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a `vi.fn` that answers with a parsed orval envelope (DELETE → empty envelope; all other methods → a single product). Each test can override via `respondWithItems`.
+- **`lastRequest()` / `lastFormData()`** — read the most recent `orvalMutator` call; `lastFormData` additionally asserts the body is a `FormData` instance.
+- **`respondWithItems(items)`** — re-points the mock to return a paginated envelope (`meta.totalPages` etc.) for list/read tests.
+- **`lastBody()`** — shorthand for the JSON `data` of the latest request (used for `POST /products/search`).
+- **`productReads()`** — counts how many `GET /products/p1` calls the transport has received (cache-hit / invalidation assertions).
+- **`PRODUCT`** — fully-populated product used as optimistic-update seed state.
+- **`TRANSLATIONS`** — minimal valid `{ en: { title } }` map for encoding assertions.
+- **`describe('createProduct', …)`** — covers JSON POST, multipart POST, `translations` as a JSON-string field, `Blob` (not `File`) survival, repeated `categories`/`tags` keys, omission of `undefined` optionals, and `onUploadProgress` forwarding.
+- **`describe('updateProduct', …)`** — covers PATCH-JSON, PATCH-multipart, and the split-request case where `taxClass: null` is sent as a second JSON PATCH alongside the multipart upload (since a multipart part cannot carry `null`).
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — Source of `orvalMutator`, the single transport function the tests mock. All request-shape assertions read from this mock's call log.
-- **`tests/support/stub.ts`** — Provides `asStub<T>`, a type-narrowing cast used by `lastBody()`.
-- **`tests/support/unit/wire-modules.ts`** — Provides `wireModulesIntoCore()`, called once at module level to register Pinia and i18n so the store can be instantiated outside a component tree.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Provides `parseOrvalFixture`, `orvalEnvelope`, and `contractRequest`. The first two shape mock responses; `contractRequest` validates a request body against the generated OpenAPI schema before asserting individual fields.
+- **`src/modules/products/store.ts`** — the system under test; `useProductsStore` is imported and driven in every `it`.
+- **`src/infrastructure/http/index.ts`** — its `orvalMutator` export is the single mock seam; all HTTP assertions go through its call arguments rather than through a fetch/axios stub.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `parseOrvalFixture` (shapes mock responses to match the real envelope), `orvalEnvelope` (builds the envelope object), and `contractRequest` (validates a request body against the generated schema before asserting).
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module scope to attach the product module to the i18n/core wiring that `store.ts` expects.
+- **`tests/support/stub.ts`** — `asStub` is a type-narrowing helper used in `lastBody()` to cast the untyped `data` field.
 
 ## Notes
 
-- Tests **return** their promise chain (`it('…', () => store.method().then(…))`) rather than `await`-ing inside. This keeps the assertion binding identical to a top-level `await` while avoiding Vitest's unhandled-rejection window.
-- The mock's default resolution inspects `config.method` to choose between an empty envelope (DELETE) and a product-shaped body. If a new HTTP method is added to the store, the mock must be extended or it will silently resolve with the wrong shape.
-- `contractRequest(schemas.X, body)` is the gate: it validates against the generated API schema *before* the field-level `expect`, so a contract drift fails here rather than as a confusing field mismatch.
-- The "repeated fields, not indexed keys" test (`formData.getAll('categories')`) exists because axios `toFormData` and other encoders produce `categories[0]`/`categories[1]` keys that the backend does not parse — a silent data-loss regression.
+- **No `@api` mock.** The generated client and its `toFormData`-style encoder run for real; only `orvalMutator` (the last hop before the network) is intercepted. This is deliberate — it is the only way to catch `Blob`-vs-`File` drops and array-encoding bugs that the type system cannot see.
+- **`.then()` chains, not `await`.** Each `it` returns its promise chain so that assertions inside `.then` are still bound to the test's lifecycle. This is a Vitest convention here, not a mistake.
+- **`taxClass: null` + image upload** is a two-request operation (multipart upload + a follow-up JSON PATCH to clear the field). Tests assert on `mock.calls.slice(-2)` to inspect both.
+- **`meta.totalPages`** must be present in paginated mock responses because `store.ts` reads `meta.totalPages` into `pageTotal`; omitting it would silently break pagination tests without a type error.

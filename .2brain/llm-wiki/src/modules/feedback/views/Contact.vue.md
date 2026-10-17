@@ -1,7 +1,7 @@
 ---
 source: src/modules/feedback/views/Contact.vue
-sha256: 748f2eb51f992cdf5b71918858bfb4f3805ea62855ab5cff9b231c291a6a037e
-generated_at: 2026-10-02T15:07:51.440242+00:00
+sha256: 950bc5d4f07534732992fbd4748bf70a1a3b0d9cc1e8a565fa9de8565e467ab8
+generated_at: 2026-10-17T00:56:50.097927+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Public contact form available without authentication. It collects name, email, subject, and message from a visitor, validates them client-side against a Zod schema, and submits the payload through the feedback store. Anti-bot protection is layered via a hidden honeypot field and a `HumanCheck` challenge token attached to every request.
+Public contact form for unauthenticated visitors. Validates input client-side with a Zod schema, attaches an antibot token, and submits through the feedback store. On success it resets itself in place; on failure it blocks the submit button with an inline error alert.
 
 ## Key elements
 
-- **`ContactForm` interface** — shape of the form state; includes the `website` honeypot field (never shown to the user).
-- **`useStructureFormValidation<ContactForm>(…)`** — creates reactive `form`, `formErrors`, `handleSubmit`, `resetForm`, and `applyServerErrors` from a Zod schema; revalidates on locale change and targets Vuetify's invalid-field selector for scroll/focus.
-- **`submitForm()`** — top-level submit handler: clears any prior blocking error → calls `submitContact` with the antibot token → on success, toasts and resets the form in place; on failure, maps server errors or escalates to the blocking-error slot.
-- **`useBlockingError()`** — dedicated inline error state (`submitError`, `report`, `clear`) surfaced through `InlineErrorAlert` beneath the submit button.
-- **`humanCheck` (template ref to `HumanCheck`)** — provides the `.token` consumed by `withAntibotToken` on every submission.
-- **Honeypot `<input name="website">`** — positioned off-screen, removed from the accessibility tree (`aria-hidden`, `tabindex="-1"`), and marked `autocomplete="off"`; a non-empty value is treated as spam by the backend.
-- **Zod schema** — `email` must be valid, `subject` and `message` have minimum lengths, `name`/`website` are optional; all error messages are i18n-keyed.
+- **Named component block (`ContactPage`)** — provides a stable `name` for devtools / `<KeepAlive>` since `<script setup>` cannot declare one.
+- **`ContactForm` interface** — shape of the form state: `name`, `email`, `subject`, `message`, and the honeypot field `website`.
+- **`useStructureFormValidation<ContactForm>`** — wires up form state, Zod validation (email format, subject ≥ 1 char, message ≥ 10 chars), error display, and locale-triggered revalidation. `website` is intentionally left unvalidated.
+- **`useBlockingError`** — local blocked-state for the submit button; exposes `submitError` (displayed via `InlineErrorAlert`) and `reportSubmitError` / `clearSubmitError`.
+- **`submitForm`** — orchestrates the submit: clears prior error → calls `useFeedbackStore().submitContact` with `withAntibotToken(humanCheck.token)` → on success shows a toast and resets; on failure maps server errors or falls back to the blocking error.
+- **`HumanCheck` (template ref `humanCheck`)** — antibot challenge widget; its `token` is attached unconditionally to every submission because the backend always requires it.
+- **Honeypot input (`website`)** — visually removed from the page (`aria-hidden`, `tabindex="-1"`, off-screen) so real users never interact with it; a non-empty value on the server side flags the message as spam.
+- **`useNotificationsStore().addMessage`** — dispatches success / "fix errors" toasts.
 
 ## Relationships
 
-No direct import or reference to `src/infrastructure/utils/logger.ts` or `src/modules/account/views/TwoFactorChallenge.vue` is present in this file. They appear as graph neighbours likely through shared transitive dependencies (e.g., the Vue toolkit or feedback store) rather than a direct call.
+- **`src/modules/feedback/store.ts`** — imports `useFeedbackStore`; the form's only external data flow is `submitContact(payload, antibotToken)` which POSTs to the feedback inbox. No other store actions are used here.
 
 ## Notes
 
-- The `website` honeypot is deliberately **not validated** by the Zod schema (marked `optional` with no constraint) — the backend alone decides whether a filled value indicates spam. The form only passes the value through unmodified.
-- `name` and `website` are sent as `undefined` (not `""`) when blank (`form.value.x || undefined`), while `email`, `subject`, and `message` fall back to empty strings.
-- `revalidateOn: locale` ensures that switching language re-runs validation so inline error messages update without the user re-triggering submit.
-- The `HumanCheck` token is attached **unconditionally** on every submit (not only after a first refusal) because the backend endpoint is always gated by `humanChallengeGate`.
-- An eslint-disable comment suppresses `@typescript-eslint/no-unsafe-argument` / `no-unsafe-member-access` on the `humanCheck.value?.token` access — TS-ESLint cannot fully resolve the SFC instance type exposed via `defineExpose`.
+- The honeypot field is deliberately **not** validated or shown to the user; it is carried through verbatim so the backend can use its value as a spam signal. Do not add a Zod constraint or an error message for `website`.
+- `HumanCheck`'s token is attached on **every** submit, not just after a first refusal, because the backend endpoint is always gated.
+- An eslint-disable comment suppresses `no-unsafe-argument` / `no-unsafe-member-access` on the `humanCheck.value?.token` access; this is a known limitation of TypeScript-ESLint with Vue SFC template refs.
+- Revalidation is keyed on `locale` so switching language re-runs Zod error messages in the new language without a manual trigger.
+- The `name` field is optional in the schema and in the submitted payload (`form.value.name || undefined`); only `email`, `subject`, and `message` are required.

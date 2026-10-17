@@ -1,7 +1,7 @@
 ---
 source: scripts/e2e/antibot-backend.ts
-sha256: 018e364b1880b99d0d991dc9c6afd1e0b8ecafc820742e383452e08d1a5de780
-generated_at: 2026-10-02T11:33:09.476177+00:00
+sha256: 8c07c0e842838c630c8d1fdb06e0c55462c88786e8a9cff121cf1d66dfb120b6
+generated_at: 2026-10-16T23:59:59.704940+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,23 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Shared configuration module that defines how the demo backend is booted with the altcha antibot provider enabled. It exists so that every entry point (shard runner, single-process backend, CI workflow) boots an identical antibot-enabled backend from one source of truth.
+Defines the shared configuration for booting the demo backend with its antibot (human-challenge) provider enabled. The provider is self-hosted `altcha` (proof-of-work), so no external vendor or network is needed. A single env record and a CLI flag keep the three entry points that need this backend in sync.
 
 ## Key elements
 
-- **`ANTIBOT_BACKEND_ENV`** – `Readonly<Record<string, string>>` with the three `NODE_ANTIBOT_*` variables: provider set to `altcha`, a fixed (non-sensitive) secret, and a PBKDF2 cost of `1000` (far below the 100 000 default) to keep test solves in milliseconds.
-- **`ANTIBOT_FLAG`** – The CLI flag string `'--antibot'` that `run-backend.ts` looks for.
-- **`wantsAntibotBackend(argv)`** – Small helper that returns `true` when `ANTIBOT_FLAG` appears in the argument list.
+- **`ANTIBOT_BACKEND_ENV`** — `Readonly<Record<string, string>>` of four `NODE_*` variables: sets `altcha` as the provider, pins a fixed throwaway secret, lowers PBKDF2 cost to 1000 (fast solves), and caps `NODE_AUTH_RATE_LIMIT_MAX` at 6 so the login check engages after the third wrong password.
+- **`ANTIBOT_FLAG`** — the string `'--antibot'`; the CLI argument that triggers the antibot backend.
+- **`wantsAntibotBackend(argv)`** — returns `true` if `ANTIBOT_FLAG` appears in the given argument array.
 
 ## Relationships
 
-- **`scripts/demo/run-backend.ts`** – Imports `ANTIBOT_FLAG` / `wantsAntibotBackend` to decide whether to merge `ANTIBOT_BACKEND_ENV` into the process env before boot.
-- **`scripts/e2e/run-shards.ts`** – Consumes `ANTIBOT_BACKEND_ENV` when launching the demo shard in antibot mode.
-- **`github/workflows/e2e-live.yml`** – The live workflow's antibot matrix entry relies on the same env/flag contract defined here.
-- **`tests/unit/scripts/e2e/antibot-backend.spec.ts`** – Unit-tests the exports of this file (flag constant, argv check, env shape).
+- **`scripts/e2e/run-shards.ts`** — imports `ANTIBOT_BACKEND_ENV` to boot the demo shard with the antibot provider active.
+- **`scripts/demo/run-backend.ts`** — imports `ANTIBOT_FLAG` and `wantsAntibotBackend` so `backend:demo --antibot` applies the env.
+- **`github/workflows/e2e-live.yml`** — the live workflow's antibot matrix entry applies the same env values (or falls back to its own rate-limit for other scenarios).
+- **`tests/unit/scripts/e2e/antibot-backend.spec.ts`** — unit-tests the exports of this file.
 
 ## Notes
 
-- The altcha secret (`e2e-not-a-secret-altcha-key`) is intentionally a throwaway value; the backend runs on loopback for demo/testing only. Do not treat it as a real credential.
-- Cost `1000` is chosen specifically so e2e specs solve the challenge in milliseconds; raising it will slow every antibot test.
-- The env keys follow the `NODE_ANTIBOT_*` naming convention documented under "Anti-automation — rung 4" in `.env-example`.
+- The altcha secret is intentionally a throwaway string; the backend runs on loopback only and guards nothing.
+- `NODE_AUTH_RATE_LIMIT_MAX: '6'` is not an altcha variable — it controls the backend's per-account login budget. The check engages at half (3 failed attempts), which is how a test journey trips it. Other e2e runs raise this limit far higher so the login check stays dormant.
+- Cost is 1000 iterations (vs. the 100 000 default) specifically so a test spec can solve the challenge in milliseconds.

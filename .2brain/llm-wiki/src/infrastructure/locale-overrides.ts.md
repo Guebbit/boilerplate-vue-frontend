@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/locale-overrides.ts
-sha256: 4863915c906336fa2aebf0e4fb92ad6d5df8341f8b8f891cf0f78c16afb5710c
-generated_at: 2026-10-02T12:00:15.009558+00:00
+sha256: 1762e9dffe5049065f0e88a50d6b1e0391b33aa8ec28face9e51fdd8803ee1e8
+generated_at: 2026-10-17T00:11:16.528190+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Fetch layer for the runtime (database-backed) half of the locale dictionaries. It retrieves the API's language manifest and per-locale override messages, then merges them over the offline-bundled JSON files so that edited translations appear without a rebuild. Lives here rather than in `@/i18n` because it depends on the app-specific OpenAPI client (`@api`), which the extractable runtime module must not import.
+Fetch layer for the runtime (database-backed) half of the i18n dictionaries: the API's locale manifest and per-locale edited overrides. Every function resolves to a safe default rather than rejecting, so the offline-bundled `src/locales/*.json` files remain the guaranteed rendering floor. It lives in the app (not `@/i18n`) because it calls `@api`, the app-specific OpenAPI client that the extractable i18n tier must not depend on.
 
 ## Key elements
 
-- **`localeTenant()`** – Resolves the frontend tenant id from `runtimeValue('LOCALE_TENANT')`, then `VITE_LOCALE_TENANT`, falling back to `'demo-fe'`.
-- **`fetchRemoteLocales()`** – Calls `getLocales` with a 1500 ms boot-read timeout. Returns the API's language tags (those with at least one tenant) and side-records each tag's `direction` and `nativeName` into the `localeDirections` / `localeNativeNames` maps from `@/i18n`. Resolves to `[]` on any error.
-- **`fetchLocaleOverrides(locale)`** – Calls `getLocaleMessages` for the given tag and tenant. Returns `response.data.messages` or `{}` on error/404.
-- **`mergeRemoteLocales()`** – Discovers API languages not already in `supportedLanguages` and pushes them into that exported array in place (so existing importers see the update). Returns only the newly added tags.
-- **`withLocaleOverrides(locale, ownMessages)`** – Fetches overrides for `locale` and merges them over `ownMessages` via `mergeDictionaries`. This is the per-language dictionary builder used at startup.
-- **`refreshRunningLocale(locale)`** – After an edit in the translation admin, re-derives the full dictionary from the bundled file + fresh overrides and calls `updateLocale` so the running app reflects the change without a full navigation. Resolves to `undefined` on any failure.
-
-All exported functions **resolve, never reject** — the offline-bundled files are the guaranteed floor.
+- **`localeApp()`** — Resolves the app id used in API calls (`VITE_LOCALE_APP` env → `'demo-fe'` fallback).
+- **`fetchRemoteLocales()`** — Fetches the API's locale manifest (1.5 s timeout, boot-blocking). Filters to languages with at least one app, records each language's `direction` and `nativeName` into the mutable `localeDirections` / `localeNativeNames` maps, and returns the tag list. Resolves `[]` on any error.
+- **`fetchLocaleOverrides(locale)`** — Fetches edited overrides for one locale via `GET /locales/{locale}/messages`. Treats 404 as "nothing edited." Resolves `{}` on any error.
+- **`mergeRemoteLocales()`** — Adds API-discovered languages to the exported `supportedLanguages` array **in place** (mutates rather than reassigns so all existing importers see the update). Returns only the newly added tags.
+- **`withLocaleOverrides(locale, ownMessages)`** — Fetches overrides for a locale and merges them on top of the bundled dictionary via `mergeDictionaries`.
+- **`refreshRunningLocale(locale)`** — Post-write refresh: re-derives the dictionary from the bundled file + fresh overrides (not from current registered state, so a just-deleted override correctly falls back to the bundled default), then calls `updateLocale`. Resolves `void` regardless of outcome.
+- **`BOOT_READ_TIMEOUT_MS`** (1 500 ms) — Shorter-than-default budget for the boot-blocking manifest read.
 
 ## Relationships
 
-- **`src/modules/demo/tests/guards.spec.ts`** – Tests the guard behaviors of this module (e.g., that `fetchRemoteLocales` and `fetchLocaleOverrides` resolve to safe defaults when the API is unreachable, and that `refreshRunningLocale` never propagates a rejection to the caller).
-- **`@/i18n`** – Provides `supportedLanguages`, `localeDirections`, `localeNativeNames`, `mergeDictionaries`, `loadBundledDictionary`, and `updateLocale`; this module mutates the former three and composes the rest.
-- **`@/infrastructure/runtime-config`** – Supplies `runtimeValue` for the tenant lookup.
-- **`@api`** – The generated OpenAPI client (`getLocales`, `getLocaleMessages`); this is the reason the file cannot live in the extractable runtime package.
+- **`@api`** (`getLocales`, `getLocaleMessages`) — Generated OpenAPI client; the only reason this file cannot live in `@/i18n`.
+- **`@/i18n`** — Imports `loadBundledDictionary`, `localeDirections`, `localeNativeNames`, `mergeDictionaries`, `supportedLanguages`, `updateLocale`, and the `TranslationDictionaries` type. Writes direction/native-name data into the mutable maps; pushes into the exported `supportedLanguages` array.
+- **`@/infrastructure/runtime-config`** — Imports `runtimeValue` for the `LOCALE_APP` lookup (env-independent accessor).
 
 ## Notes
 
-- `fetchRemoteLocales` uses a **1500 ms timeout** (`BOOT_READ_TIMEOUT_MS`) because `main.ts` awaits it before mount; the client's default is 10 s.
-- `mergeRemoteLocales` **mutates** `supportedLanguages` in place (`.push`) rather than returning a new array, because a dozen call sites hold a direct reference.
-- Frontend and backend tenant lists are **deliberately not cross-checked**: a language can be bundled for the UI without the API supporting it, and vice-versa. No validation or warning is emitted.
-- `refreshRunningLocale` re-reads the bundled file each time (via `loadBundledDictionary`) instead of merging onto the currently registered dictionary, so a deleted override correctly falls back to the bundled default.
-- The API's own tenant-level overrides are layered server-side and never sent to this client; merging them here would conflate keyspace ownership (see `docs/theory/layers.md`).
+- **Never rejects.** Every exported promise resolves (to `[]`, `{}`, or `void`) on failure. A slow, stale, or absent API must not block a locale switch or turn a saved edit into an error toast.
+- **Mutation of `supportedLanguages`.** `mergeRemoteLocales` pushes into the shared array rather than returning a new one; importers hold a reference to the same array, so they see the update without re-importing.
+- **`refreshRunningLocale` re-derives from the bundle.** It deliberately does not merge overrides onto the *currently registered* dictionary, because a deleted override must fall back to the bundled default.
+- **Frontend vs. backend app languages are intentionally not cross-checked.** A language can appear in the UI switcher without the API supporting it (or vice versa); that inconsistency is considered a human editorial decision.
+- **The API's own dictionary is NOT fetched here.** The API resolves its keys server-side and ships finished text; its overrides never leave the backend.

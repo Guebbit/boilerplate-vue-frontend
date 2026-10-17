@@ -1,7 +1,7 @@
 ---
 source: src/modules/payments/tests/e2e/order-reference-search.cy.ts
-sha256: b4b1cd7134832396550a10f8d22580ec1bd0e957104513b8d41559dabac932df
-generated_at: 2026-10-02T15:30:22.027501+00:00
+sha256: 56614a8b52b21d9555861a5dec7e4c9e8a15d156f7ab42ea51a52547673ac2bf
+generated_at: 2026-10-17T01:24:18.663892+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,23 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Cypress e2e spec that walks the full RF-reference lookup loop: a customer checks out via bank transfer (the only method that freezes an RF reference onto the order), then an admin pastes that reference into the orders-list search box and is taken directly to the order's edit page. A second case verifies that an unmatched reference produces an inline error rather than a navigation or toast.
+End-to-end test for the admin's RF-reference lookup. It verifies the full happy-path (customer buys with bank transfer → admin pastes the displayed RF reference into the orders search → lands on the order's edit page) and the negative path (a non-matching reference produces an inline error without navigating away).
 
 ## Key elements
 
-- **`describe('Order reference search')`** — suite; `beforeEach` visits `/en` and calls `cy.restore()`.
-- **`it('finds the order a pasted RF reference pays')`** — happy path. Buys a physical product with `pickup` + `bank_transfer`, reads the displayed RF text (grouped in 4s), logs out, logs in as admin, types the reference into `[data-test=order-reference-search-input] input`, submits, and asserts the URL matches `/orders/<24-hex>/edit` with `#order-edit-page` and `[data-test=record-offline-payment-form]` visible.
-- **`it('blocks the search in place, not with a toast, for a reference nothing matches')`** — error path. Types a fabricated RF, submits, asserts the URL stays on `/orders` (no `/edit`), and that `[data-test=order-reference-search-error]` contains "No order matches this reference."
-- **`seedAccount('user').email`** — used only to assert the user's email is absent after logout.
+- **`describe('Order reference search')`** — top-level suite; calls `cy.restore()` in `beforeEach` to reset DB state.
+- **`it('finds the order a pasted RF reference pays')`** — Happy path. Walks: product page → add to cart → cart → select `pickup` shipping + `bank_transfer` payment → checkout → order page. Reads the reference from `[data-test=transfer-reference]`, logs out, logs in as admin, pastes the reference into `[data-test=order-reference-search-input]`, and asserts the URL matches `/orders/<24-hex>/edit` with the `record-offline-payment-form` present.
+- **`it('blocks the search in place…')`** — Negative path. Types a fake RF string into the same search input, clicks submit, and asserts the URL stays on `/orders` (no `/edit` redirect) and the inline `[data-test=order-reference-search-error]` contains "No order matches this reference."
+- **`seedAccount` (import)** — Used solely to fetch the user's email and confirm the user is logged out before switching to admin.
 
 ## Relationships
 
-- **`tests/support/e2e/scenario.ts`** — imports `seedAccount` to resolve the test user's email for the post-logout assertion. No other symbols are imported from this file.
+- **`tests/support/e2e/scenario.ts`** — Provides `seedAccount(name)` which returns account details (here only `.email` is read) to verify the prior user session has been fully cleared.
 
 ## Notes
 
-- Product selection filters on `product.rich` (a physical, shippable item). Digital-only products reject shipping outright (error E16), so `.first()` on the general product list is not safe for this flow.
-- `pickup` is chosen as the shipping method because it requires no address, which unblocks the checkout button on the payment-method step alone.
-- The RF is read via `.invoke('text')` from the rendered panel (spaces included). The API tolerates those spaces, so the test exercises the same paste a human would perform rather than an exact-value round-trip.
-- The search input lives inside a wrapper: the selector is `[data-test=order-reference-search-input] input` (child `input`), not the `data-test` element itself.
-- `cy.loginAs` and `cy.restore` are custom commands (not shown in this file) expected to be registered in the broader Cypress support layer.
+- The RF reference is read **as displayed** (space-grouped in fours). The test deliberately exercises the "paste" path the customer would use; the API is expected to tolerate the spaces, so this is not a raw-hex round-trip.
+- The product is filtered by `product.rich` to guarantee a **physical, shippable** item — digital-only products reject a shipping method, which would break the checkout flow.
+- Shipping method is `pickup` specifically because it requires no address, letting the checkout button enable without filling in a form.
+- Checkout lands directly on the new order's page (`#order-target`), not a confirmation/redirect page — the test relies on this to read the reference in the same page context.
+- The search input selector is a **compound** (`[data-test=order-reference-search-input] input`), implying the `data-test` attribute is on a wrapper element, not the `<input>` itself.

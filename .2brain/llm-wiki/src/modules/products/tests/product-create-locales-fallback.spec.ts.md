@@ -1,7 +1,7 @@
 ---
 source: src/modules/products/tests/product-create-locales-fallback.spec.ts
-sha256: f145974819d2b47c9b27ca159ba9aa6bc30dac8dc682df5fbe5c1684877a1efd
-generated_at: 2026-10-02T15:35:30.492015+00:00
+sha256: bf44a9a24c5a602d669815590a4b421a79c5abe9825616b786208d9c51c5e489
+generated_at: 2026-10-17T01:30:44.360659+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,24 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that the `ProductCreate` form still renders (on a single fallback-language tab) when `GET /locales` fails, rather than hanging on the skeleton loader that appears while locale data is unresolved. Part of the LOCALES_OPTIONAL_0925 epic (step 6b).
+Verifies that `ProductCreate` still renders a usable form (one fallback-language tab) when `GET /locales` fails, instead of being stuck on the Vuetify skeleton loader shown while `openTags` is empty. It guards against a regression where a missing or unreachable `locales` endpoint would leave the create page in a perpetual loading state.
 
 ## Key elements
 
-- **`wireModulesIntoCore()`** — imported from `tests/support/unit/wire-modules.ts`; registers enabled modules with the kernel registry before tests run.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a controllable mock so the test can dictate which API calls fail.
-- **Router (memory history)** — built from `collectModuleRoutes(enabledModules)` under a `/:locale` parent route, giving the component a real route context (`/en/products/new`).
-- **`beforeEach`** — resets the Pinia store, configures `orvalMutator` to *reject* `/locales` (simulating 404) and resolve every other URL with `{ data: {} }`, then loads locale `'en'` and navigates.
-- **`mountCreate()`** — mounts `ProductCreate` with `router`, `vuetify`, `i18n`, and a pass-through `LayoutDefault` stub.
-- **Single assertion block** — after `flushPromises`, asserts `.v-skeleton-loader` is absent and `[data-test=translation-tab-en]` is present.
+- **`mountCreate`** — thin wrapper that mounts `ProductCreate` with the shared router, Vuetify, and i18n plugins.
+- **`router`** (module-level) — a `createMemoryHistory` router wired to the real module routes via `collectModuleRoutes(enabledModules)`, giving the test an authentic routing context.
+- **`beforeEach`** — resets the `orvalMutator` mock so `GET /locales` rejects (simulating 404) while all other requests resolve with `{ data: {} }`; activates a fresh Pinia store; loads the `'en'` locale; navigates to `/en/products/new`.
+- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a controllable function so the test can dictate per-URL responses.
+- **`describe('ProductCreate — GET /locales unavailable')`** — single assertion pair: `.v-skeleton-loader` is absent and `[data-test=translation-tab-en]` is present.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — provides `wireModulesIntoCore()`, which the spec calls at module scope to register `enabledModules` with the kernel registry so `collectModuleRoutes` can produce the correct route tree for the in-memory router.
+- **`src/modules/products/views/ProductCreate.vue`** — the component under test; imported and mounted directly. The test asserts on its rendered DOM (skeleton class, `data-test` tab attribute).
+- **`tests/support/unit/wire-modules.ts`** — provides `wireModulesIntoCore()`, called once at module load to register enabled modules into the kernel registry so `collectModuleRoutes` can build the real route table.
 
 ## Notes
 
-- The `orvalMutator` mock is intentionally broad: every URL *except* `/locales` resolves successfully with an empty `{ data: {} }` body. This isolates the failure to the locales call only.
-- The test relies on `flushPromises` (not `waitFor`) to let the rejected `/locales` promise settle; missing this would cause the skeleton assertion to be evaluated too early.
-- The `LayoutDefault` stub is a bare `<slot />` wrapper — if the real layout renders navigation or other async content, it is excluded from this test's DOM.
+- `wireModulesIntoCore()` runs **before** the `router` constant is evaluated; reordering these two imports would silently produce an empty route list.
+- The mock is surgical: only the `/locales` URL is rejected; every other `orvalMutator` call resolves with an empty `{ data: {} }` payload, so unrelated requests in the form don't error.
+- The fallback tab is identified by the `data-test="translation-tab-en"` attribute — a Vuetify-specific `.v-skeleton-loader` class is used for the negative assertion, coupling the test to that Vuetify class name.
+- Uses a **real** memory-history router (not a stub), so route guards and `RouterView` nesting behave as in production; this is intentional to catch issues that a fake router would hide.

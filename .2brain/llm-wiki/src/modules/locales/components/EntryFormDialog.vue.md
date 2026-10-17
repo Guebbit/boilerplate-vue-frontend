@@ -1,7 +1,7 @@
 ---
 source: src/modules/locales/components/EntryFormDialog.vue
-sha256: c713708adc429a3a3a3c9035829544a025664092d0b95e77b03b03ee9d238aeb
-generated_at: 2026-10-02T15:12:07.829582+00:00
+sha256: e1bd72aae2ea655f5cdbe60dbd7d55d7a6cb61795a0eecc84397c2a553177bf6
+generated_at: 2026-10-17T01:02:56.616372+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,27 +9,30 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A modal dialog for **adding** a single locale entry (tenant + key + value). It collects and schema-validates the three fields, then emits the clean result upward; all persistence, error display, and store access live in the parent. Editing existing entries happens inline in the table and never passes through this component.
+A reusable "add one locale entry" dialog that validates a three-field form (app, key, value) against `localesEntrySchema` and emits the validated fields upward. It owns no store access, performs no persistence, and renders no save-failure UI itself — all of that is delegated to the parent via the `error` slot and the exposed `applyServerErrors` method.
 
 ## Key elements
 
-- **`props`** — `tenants` (registry list for the tenant select), `initialTenant` (pre-select from the page filter), `saving` (disables submit while the parent's write is in flight to prevent double-send).
-- **`isOpen` (defineModel)** — two-way `v-model` boolean controlling dialog visibility; the dialog neither declares the prop nor re-emits `update:modelValue` manually.
-- **`emit('save', { tenant, key, value })`** — the sole outward communication; the parent handles the API call and any resulting errors.
-- **`useStructureFormValidation`** — validates against `localesEntrySchema` (from `@/modules/locales/schemas.ts`); re-validates on `locale` change; exposes `handleSubmit`, `formErrors`, `showFormErrors`, `setForm`, `applyServerErrors`.
-- **`watch(isOpen)`** — resets all three fields to defaults on every open so a reused dialog instance never leaks stale values.
-- **`defineExpose({ applyServerErrors })`** — lets the parent push a server-rejected field (e.g. duplicate key) onto the matching form field after this form already validated clean.
-- **`<slot name="error" />`** — the parent renders its own `InlineErrorAlert` (or equivalent) here, above the buttons, because this dialog has no opinion on what a blocked save looks like.
-- **Composables** — `useFullscreenDialog` (mobile), `useReturnFocus` (restore focus on close), `useId` (accessible `aria-labelledby`).
+- **`isOpen` (v-model)** — two-way binding controlling dialog visibility; the parent toggles it.
+- **Props** — `apps` (available apps from the API registry), `initialApp` (preselected app), `saving` (disables the submit button while a write is in flight to prevent double-submit).
+- **`emit('save')`** — fires the validated `{ app, key, value }` tuple upward; the parent performs the actual write.
+- **`useStructureFormValidation`** — provides `form`, `formErrors`, `showFormErrors`, `handleSubmit`, `setForm`, and `applyServerErrors`; validation is re-run when the i18n `locale` changes.
+- **`watch(isOpen)`** — on every open, resets the form to `{ app: defaultApp, key: '', value: '' }` so a reused single instance never leaks stale values.
+- **`appOptions` (computed)** — maps `apps` into Vuetify select items (`value`/`title`).
+- **`handleSave`** — calls `handleSubmit`, which either validates-and-emits or displays field errors and a toast.
+- **`defineExpose({ applyServerErrors })`** — lets the parent project a server-side refusal (e.g. duplicate key) onto a specific field inside the dialog.
+- **Slot `error`** — reserved space above the buttons where the parent renders its own `InlineErrorAlert` for save failures the form cannot detect locally.
+- **`useFullscreenDialog` / `useReturnFocus` / `useId`** — responsive fullscreen on small screens, focus restoration on close, and an accessible `aria-labelledby` title id.
 
 ## Relationships
 
-- **`src/modules/account/views/TwoFactorChallenge.vue`** — listed as a graph neighbor; no direct import, shared state, or event link is visible in this file's source. The connection is most likely indirect (e.g. both mounted under the same parent view or route), but no interaction can be confirmed from this component alone.
+- **`src/modules/locales/schemas.ts`** — source of `localesEntrySchema`, the Zod schema this dialog validates against.
+- **`src/modules/locales/views/LocaleEntries.vue`** — the parent view that renders this dialog, supplies `apps`/`initialApp`/`saving`, listens for `save`, fills the `error` slot, and calls the exposed `applyServerErrors`.
+- **`src/modules/locales/tests/form-dialogs.spec.ts`** — component tests covering open/reset, validation, emit, and server-error projection for this dialog.
 
 ## Notes
 
-- The save button is **never disabled for invalidity** — clicking it triggers `handleSubmit`, which surfaces the field errors and fires a "fix the errors" toast. Disabling it would hide *why* the form is wrong.
-- `saving` is the only condition that disables the button, guarding against Enter-key or double-click duplicate writes.
-- The dialog is a **single reusable instance** on the page; the `watch(isOpen)` reset (not a mount hook) is what guarantees clean state across opens.
-- `data-test` attributes (`entry-form`, `entry-tenant`, `entry-key`, `entry-value`, `entry-save`) are present for E2E selectors.
-- `VUETIFY_INVALID_FIELD_SELECTOR` is passed into the validator so it can scroll/focus the first invalid Vuetify field automatically.
+- The dialog is a **single instance** the parent reuses across the page; the reset happens on the `isOpen` watcher (open → reset), not on `mounted`. Do not assume a fresh mount per open.
+- The submit button is **never disabled on validation state**. An unpressable button explains nothing; instead, `handleSubmit` surfaces inline field errors and a toast. It is only disabled while `saving` is true.
+- This component handles **addition only**. Editing an existing entry's value happens inline in the table; the key is immutable. No "edit" mode exists here.
+- `applyServerErrors` is the contract for server-side rejections: the parent calls it with a field→message map, and the dialog displays those messages on the matching field without re-validating locally.

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/components/ProfileExportData.vue
-sha256: 10446baa63a41d2694fc762694e2ffd0618241f3380500362a1ad2911d76d0a7
-generated_at: 2026-10-02T12:11:17.567184+00:00
+sha256: 4f8e10d8e642437e1d98a759270d7cb620f3b6fa25436d3d0e1aa6c09d156972
+generated_at: 2026-10-17T00:16:10.960708+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Self-service GDPR data export widget: a single "Export my data" button that fetches the user's account data from the server and triggers a browser download of a pretty-printed JSON file. It is intentionally minimal — no confirmation dialog (the action is non-destructive), no in-UI rendering of the data, and no manual re-authentication handling (the step-up interceptor covers that transparently).
+A single-button GDPR self-service export trigger. Clicking it asks the API to build the visitor's data export in the background; the server then emails a download link. The component only confirms the request was accepted (or shows an inline error on failure). It is deliberately simpler than its `ProfileDeleteAccount` sibling: no confirm dialog, no re-auth UI (the step-up interceptor handles that transparently).
 
 ## Key elements
 
-- **`handleExport`** — clears any prior inline error, calls `exportAccountData()`, then either downloads the result via `downloadBlob` (filename: `account-export-<YYYY-MM-DD>.json`) or routes the failure into the inline error state.
-- **`useBlockingError`** instance — exposes `exportError` (message), `reportExportError` (setter), and `clearExportError` (reset) for the inline `InlineErrorAlert` next to the button.
-- **`useProfileStore().exportAccountData`** — the store action responsible for the actual server round-trip.
-- **Template** — a `v-card` wrapping a `v-btn` (trigger) and an `InlineErrorAlert` (failure display). Carries `data-test="profile-export-data"` / `data-test="profile-export-data-error"` hooks for E2E tests.
+- **`name: 'ProfileExportData'`** — explicit component name (required because `<script setup>` cannot declare one; used by devtools and `<KeepAlive>`).
+- **`useProfileStore().requestAccountExport()`** — the store action that fires the export request.
+- **`requested` (`ref<boolean>`)** — flips to `true` on success to show the "link is on its way" alert.
+- **`useBlockingError()`** — local blocked-state hook; exposes `message`, `report`, and `clear` for the inline error display next to the button (replaces a toast; see `docs/theory/request-flow.md`).
+- **`handleExport()`** — click handler: clears prior error, resets `requested`, calls the store action, sets `requested = true` on resolve, or reports the error on reject.
+- **Template** — `v-card` containing a `v-btn` (the trigger), a `v-alert` (success, shown when `requested`), and `InlineErrorAlert` (failure). All carry `data-test` attributes for the spec file.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** (graph neighbor) — not imported directly here; reached indirectly through `useBlockingError` / the step-up interceptor that `reportExportError` and the auth challenge flow rely on for structured logging of failures.
+- **`src/modules/account/stores/profile.ts`** — imported via `useProfileStore`; supplies the `requestAccountExport` action this component calls.
+- **`src/modules/account/views/Profile.vue`** — parent view that renders this component within the account/profile page layout.
+- **`src/modules/account/tests/profile-export-data.spec.ts`** — dedicated unit/integration spec; targets the `data-test` hooks (`profile-export-data`, `profile-export-data-requested`, `profile-export-data-error`).
+- **`src/infrastructure/utils/logger.ts`** — not imported directly here; likely consumed transitively by `useBlockingError` or the profile store for error reporting.
 
 ## Notes
 
-- No confirm dialog on purpose: exporting is non-destructive, unlike the sibling `ProfileDeleteAccount` component which does prompt.
-- The download filename date comes from the **server-provided** `data.exportedAt` field (first 10 chars), not from `Date.now()` on the client.
-- On failure the user sees an inline alert beside the button rather than a toast — see `docs/theory/request-flow.md` for the rationale.
-- Re-authentication is handled entirely by the step-up interceptor; this component never touches credentials or session tokens.
+- No confirmation dialog by design: the action is non-destructive, so a `v-dialog` / confirm step is intentionally omitted.
+- No re-auth logic lives in this component. The server rejects stale sessions; the global step-up interceptor intercepts and prompts the user. This component simply surfaces success or failure.
+- Error display is **inline** (via `InlineErrorAlert`), not a toast. This is a project-wide convention for blocked actions — see `docs/theory/request-flow.md`.
+- The actual exported data never reaches the client. The API assembles it server-side and emails a link to `views/AccountExportDownload.vue`.

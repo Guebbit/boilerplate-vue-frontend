@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/components/TwoFactorEnroll.vue
-sha256: 129e1af3bfc65c500d48ea5bc9825cd5c880dcd89c919c5c080f089a21fe6951
-generated_at: 2026-10-02T14:46:12.861909+00:00
+sha256: 29d783f9114caaf814d6b664dd3ea0df29ca72a3409bf519b7a345f6d245a731
+generated_at: 2026-10-17T00:17:21.362132+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,31 +9,31 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Single-method 2FA enrollment card. On mount it requests a setup payload (or receives one via `initialSetup`), then renders one of two halves — a QR code + manual secret for a device method, or a "code sent to …" prompt with a resend button for a delivered method — plus a shared code-entry field. It is fully method-agnostic: the only branch point is the boolean `delivers` flag from the server.
+Renders the enrollment card for a single second-factor method (TOTP device or delivered code such as email). It branches only on `setup.delivers`: a QR code + manual-entry secret for device methods, a "code sent to…" prompt with resend for delivered methods, plus a code input field in both cases. It is method-agnostic — no logic inspects the `method` string.
 
 ## Key elements
 
-- **`defineProps`** — `method: string` (wire name) and optional `initialSetup?: TwoFactorSetup` (pre-held setup for the code-proved / replace case).
-- **`defineEmits`** — `close(backupCodes?: string[])`; fires on both success and abandon. `backupCodes` is present only when this enrollment armed the *first* factor.
-- **`setup` (local `ref`)** — holds the `TwoFactorSetup` response *outside the store* because it carries the TOTP secret / `otpauthUri`.
-- **`closeAndClear()`** — emits `close` and calls `twoFactor.abandonSetup()` to stop the store's resend `setInterval` and refresh server status.
-- **`onMounted`** — either assigns `initialSetup` or calls `twoFactor.setupMethod(method)`; failures here toast and close the dialog.
-- **`qrCodeDataUrl` + `watch`** — generates the QR data-URL client-side from `otpauthUri` via the `qrcode` library; no server-rendered image is ever fetched.
-- **`useExpiryCountdown` / `useCountdownAnnouncement`** — drives the visible countdown number and the separate screen-reader announcement (60 / 30 / 10 s / expired only, per FA82).
-- **`code` (ref)** — the user-typed verification code.
-- **`useBlockingError` (shared instance)** — one `codeError` / `reportCodeError` / `clearCodeError` triple shared by both resend and confirm, since both act on the same code field.
-- **`handleResend`** — re-calls `twoFactor.setupMethod(method)`; on failure reports inline via the shared blocking error.
-- **`handleConfirm`** — calls `twoFactor.confirmMethod(method, code)`; on success emits `close` with optional `backupCodes`; on failure reports inline.
-- **Template** — Vuetify `v-card` with conditional QR/secret vs. delivery-info sections, a `novalidate` form with a `v-text-field`, an `InlineErrorAlert`, and cancel / confirm action buttons.
+- **Props** — `method` (wire name of the factor) and `initialSetup?` (a `TwoFactorSetup` the parent already holds for the code-proved / replace case; when absent the card calls `setupMethod` on mount).
+- **`emit('close', backupCodes?)`** — signals the parent to close the dialog; carries one-time backup codes only when this armed the *first* factor.
+- **`closeAndClear()`** — emits `close` *and* calls `twoFactor.abandonSetup()` to tear down the resend `setInterval` and re-sync server state (a replace disarms before the new code is proved).
+- **`onMounted`** — either adopts `initialSetup` or fires `twoFactor.setupMethod(method)`; a failure here toasts and closes the dialog (no card to hold an inline alert).
+- **`qrCodeDataUrl`** + `watch` on `setup.otpauthUri` — regenerates a client-side QR data-URL whenever the URI changes (`immediate: true` covers the mount case).
+- **`useExpiryCountdown` / `useCountdownAnnouncement`** — countdown for the delivered code's `expiresAt`; the announcement speaks only at 60/30/10 s and expired, never every tick.
+- **`useBlockingError`** — single shared instance for the code field; both `handleResend` and `handleConfirm` report into it instead of toasting, since neither closes the dialog on failure.
+- **`handleResend`** — calls `setupMethod(method)` again (same call as the initial send).
+- **`handleConfirm`** — calls `confirmMethod(method, code)`, then emits `close` with `result?.backupCodes`.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** (listed graph neighbor) — no direct import or reference is visible in this file's source; interaction, if any, is transitive through `errors.ts` or `use-blocking-error.ts`.
+- **`src/modules/account/stores/two-factor.ts`** — primary data source; reads `delivery`, `secondsUntilResend`, `sendingCode`, `confirmingCode` via `storeToRefs`, and calls `setupMethod`, `confirmMethod`, `abandonSetup`.
+- **`src/modules/account/composables/use-countdown.ts`** — provides `useExpiryCountdown` (visible ticking number) and `useCountdownAnnouncement` (screen-reader-safe 60/30/10/expired speech).
+- **`src/modules/account/components/ProfileTwoFactor.vue`** — parent; renders this card inside its enrollment dialog, supplies `method` / `initialSetup`, and handles the `close` emit (including the backup-codes hand-off).
+- **`src/modules/account/tests/two-factor-enroll-countdown.spec.ts`** — exercises the countdown / expiry display logic in isolation.
 
 ## Notes
 
-- **Secrets never touch the store.** The `TwoFactorSetup` payload (TOTP secret, `otpauthUri`) lives only in the local `setup` ref for the dialog's lifetime. Same idiom as `api-keys` / `webhooks`.
-- **Error presentation is context-dependent.** Mount-time `setup` failure → toast (dialog closes, no place for an inline alert). Resend / confirm failure → inline `InlineErrorAlert` via the shared `useBlockingError`. See `docs/theory/request-flow.md`.
-- **Resend countdown cleanup.** `closeAndClear` must call `abandonSetup()`; otherwise the store's `setInterval` for the resend timer keeps ticking for the rest of the session.
-- **Accessibility (FA82).** The visible ticking seconds number is deliberately *not* a live region. The paired `role="status"` sr-only paragraph announces only at 60 / 30 / 10 s and on expiry to avoid flooding screen readers.
-- **`initialSetup` prop** exists for the "code-proved" enrollment path (replacing an existing method or adding a second factor), where the parent has already started the setup and a wrong code must stay in the prompt rather than close the dialog.
+- **Secrets stay local.** The `setup` ref (TOTP secret, `otpauthUri`) lives only in component state for the dialog's lifetime — never in the Pinia store. Backup codes follow the same "never park a secret in a store" idiom: they are emitted out and discarded.
+- **QR is generated client-side** (`qrcode` library). Generating it server-side would transmit the secret over the wire a second time.
+- **Dual `<script>` blocks.** The separate Options-API block exists solely to set `name: 'TwoFactorEnroll'` for `<KeepAlive>` and DevTools; `<script setup>` cannot declare a name.
+- **Accessibility split.** The visible countdown `<p>` is intentionally *not* a live region (re-rendering `role="status"` every second floods screen readers). A separate `sr-only` `role="status"` paragraph carries the throttled announcement.
+- **`initialSetup` prop** exists for the code-proved flow (replace or second method) where the parent already called `setupMethod` and must keep a wrong code in the prompt that asked for it rather than closing the dialog.

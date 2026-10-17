@@ -1,32 +1,29 @@
 ---
 source: src/modules/account/views/EmailChangeConfirm.vue
-sha256: 3d317a2ca302a2ceb10fbcea15fcae36989c4df2b4a7b4029f9dc34de0d0c10b
-generated_at: 2026-10-02T12:35:44.804806+00:00
+sha256: 35d3be0f1d4ff846239323848109ab50a5fbe7268bd58145c60b1cd98851be88
+generated_at: 2026-10-17T00:29:20.906073+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # src/modules/account/views/EmailChangeConfirm.vue
 
 ## Purpose
-
-Public confirmation page reached by clicking the email-change link (token delivered in the URL query). It presents the prefilled one-time token with a submit button — deliberately not auto-firing on mount — so that a mail-client prefetch or link scanner cannot spend the token before the user actually arrives. On success it navigates to Home; on failure it surfaces an inline blocking error.
+Public confirm page for an email-change request. The one-time token arrives via the emailed link (prefilled into the form); the visitor clicks **Submit** to spend it. A deliberate submit-button (rather than an auto-fire on mount) prevents mail scanners that prefetch the link from consuming the token before a human acts.
 
 ## Key elements
-
-- **`EmailChangeConfirmForm`** — single-field interface (`token?: string`), prefilled from `route.query.token`.
-- **`useStructureFormValidation`** (from `@guebbit/vue-toolkit`) — Zod-validated form handling; revalidates on locale change; focuses the first invalid Vuetify field on failed submit.
-- **`useClearQueryOnMount`** — strips the token from the URL immediately after mount so it doesn't leak into pageview analytics (Umami, Faro) or browser history.
-- **`useBlockingError`** — local error slot for failures that don't map to a specific form field (spent/unknown token); rendered via `<InlineErrorAlert>` next to the submit button.
-- **`submitForm`** — clears any prior blocking error, calls `confirmEmailChange(token)` from the profile store; on success toasts and routes to `Home`; on failure feeds the error into the blocking-error slot. The trailing `.then(() => undefined)` discards `router.push`'s navigation promise so a failed navigation isn't misreported as a form error.
-- **Template** — Vuetify card with a single `v-text-field` (token), a block `v-btn` (submit, loading/disabled while in flight), and the `InlineErrorAlert`.
+- **`EmailChangeConfirmForm`** — interface holding the single `token` field.
+- **`useStructureFormValidation`** (vue-toolkit) — wraps a Zod schema (`token: z.string().min(1)`), manages `form`, `formErrors`, `isSubmitting`, and `handleSubmit`; revalidates on locale change and focuses the first invalid Vuetify field.
+- **`readLinkToken(route)`** — extracts the token from the route (query/params) and seeds the form.
+- **`useLinkTokenCleanup(route, router)`** — strips the token from the URL after mount so it does not linger in history, pageviews, or observability payloads (Umami, Faro).
+- **`useBlockingError`** — local reactive error surface (`confirmError`, `confirmErrorType`) for token-level failures (spent/unknown) that don't map to a single form field. Rendered via `<InlineErrorAlert>`.
+- **`submitForm`** — clears prior blocking error, calls `confirmEmailChange(token)` from the profile store; on success fires a toast and navigates to the `Home` route (i18n-aware link). On failure routes the error into `reportConfirmError`.
+- **`EmailChangeConfirmPage`** (default export) — stable component name for devtools / `<KeepAlive>`, required alongside `<script setup>`.
 
 ## Relationships
-
-No direct import of the listed graph neighbors (`logger.ts`, `TwoFactorChallenge.vue`) is visible in this file. The code follows the same structural pattern as the verify-email confirm page (referenced in comments) and relies on `useProfileStore.confirmEmailChange` for the API call.
+- **`src/modules/account/stores/profile.ts`** — imports `useProfileStore` and calls its `confirmEmailChange` action, which performs the actual token redemption against the server.
 
 ## Notes
-
-- The token is the **only** credential; there is no secondary secret. The "submit button rather than mount-time fire" design is the sole defense against link-scanner token spending.
-- `useClearQueryOnMount` runs unconditionally on mount, before the user can interact — the token is intentionally short-lived in the URL.
-- The `then(() => undefined)` after `router.push` is a deliberate swallow: a navigation failure is the router's own `onError` concern, not this form's. Same convention as the verify-email confirm page.
-- The form has no other fields; the token is read-only in practice (prefilled from the link), but the `v-text-field` still allows manual editing before submit.
+- This page is structurally a mirror of the verify-email confirm page; the two prove different token types (`EMAIL_CHANGE_TOKEN_TYPE` vs. the verify type) and can never validate each other's tokens.
+- `useBlockingError` is used instead of a form-field error because a spent/unknown token is a whole-request failure with no attributable field.
+- The trailing `.then(() => undefined)` on `router.push` intentionally swallows the navigation result so a failed push is the router's own `onError` responsibility, not this form's.
+- `VUETIFY_INVALID_FIELD_SELECTOR` is passed as the `invalidFieldSelector` so the toolkit can auto-focus the first invalid Vuetify field on submit.

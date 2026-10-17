@@ -1,7 +1,7 @@
 ---
 source: docker/Dockerfile.production
-sha256: 18c27c838b77e6278cf6e24139e910fc7ec7f90e797be04176dab19aec2fd96c
-generated_at: 2026-10-02T11:22:11.289325+00:00
+sha256: 5ee620eb19138ba31109c933314e4af4058589fb6dcd0200ac5e5f4be068e9fa
+generated_at: 2026-10-16T23:56:04.683735+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,27 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Multi-stage Dockerfile that produces the production frontend image: a Vite-bundled static site served by nginx. It is the deployment counterpart to `docker/Dockerfile` (dev), which runs the Vite dev server. The key design goal is a single image that can be promoted across environments with configuration supplied at container start rather than at build time.
+Production Dockerfile for the frontend. Builds a static asset bundle with Vite (Stage 1, Node) and ships a minimal nginx image (Stage 2) that serves those files. The counterpart `docker/Dockerfile` is a development image that runs the Vite dev server with hot reload; this file is the deployable half. The design goal is a single image promoted across staging → production, where a config change requires only a restart, not a rebuild.
 
 ## Key elements
 
-- **Stage 1 — `build` (node:24-alpine):** Installs dependencies, copies source, runs `npm run build` (which is `run-p type-check-only build-only`, so `vue-tsc` gates the image build). Only build-time value is `ARG VITE_APP_BASE_URL` (baked into asset URLs by Vite). After bundling, explicitly deletes `dist/**/*.map` files before the runtime stage.
-- **Stage 2 — `runtime` (nginx:1-alpine):** Copies only `dist/` into `/usr/share/nginx/html`, plus `docker/nginx.conf` (SPA fallback, cache headers, security headers) and two entrypoint scripts. No Node, no source.
-- **`40-generate-runtime-config.sh`** (copied to `/docker-entrypoint.d/`): Runs before nginx starts; writes `/config.js` from the container's own environment variables (API URL, telemetry, locale, log level, etc.).
-- **`41-generate-security-txt.sh`**: Writes `/.well-known/security.txt` only if the operator opts in via environment.
-- **`EXPOSE 80` / `CMD ["nginx", "-g", "daemon off;"]`**: nginx master binds port 80 as root, workers drop privileges. Foreground process keeps the container alive.
-- **`HEALTHCHECK`**: `wget --spider http://127.0.0.1/` every 30 s.
+- **Stage 1 (`build`, `node:24-alpine`)** — Installs dependencies with `npm ci` (`.npmrc` included for `legacy-peer-deps`), then runs `npm run build` which invokes `vue-tsc` type-check *and* the Vite bundle in parallel; a type error aborts the build. `VITE_APP_BASE_URL` is the sole `ARG`, baked into asset URLs at bundle time. Source maps (Vite `sourcemap: 'hidden'`) are explicitly deleted from `dist/` after the build.
+- **Stage 2 (`runtime`, `nginx:1-alpine`)** — Copies only `dist/` into nginx's web root. No Node, no source, no build tooling.
+- **`docker/nginx.conf`** — SPA fallback, cache policy, security headers. Kept in-repo (not a heredoc) so it is diffable and lintable.
+- **`docker/docker-entrypoint.d/40-generate-runtime-config.sh`** — Sourced by the nginx base image before startup; writes `/config.js` from the container's own environment variables (API origin, telemetry, locale, log level, upload/timeout limits). The app reads it via `src/infrastructure/runtime-config.ts` (`runtimeValue('API_URL') ?? import.meta.env.VITE_API_URL ?? ''`).
+- **`docker/docker-entrypoint.d/41-generate-security-txt.sh`** — Writes `/.well-known/security.txt` only when the operator opts in.
+- **`HEALTHCHECK`** — `wget --spider http://127.0.0.1/` every 30 s; verifies nginx is answering and `index.html` is present.
+- **`CMD ["nginx", "-g", "daemon off;"]`** — Foreground nginx so the container tracks the server's lifetime.
 
 ## Relationships
 
-- **`github/workflows/release.yml`** — The comments note the release workflow performs its own `npm run build` (independent of this image) to extract and publish source maps alongside a GitHub Release *before* this image is built. The `find … -delete` step here is a second safety net so no `.map` file survives into the shipped image.
-- **`github/workflows/image-scan.yml`** — Consumes the image this Dockerfile produces for vulnerability scanning (image-scan workflow).
+- **`github/workflows/image-scan.yml`** — Scans the image produced by this Dockerfile (or the dev image) for vulnerabilities as part of CI.
+- **`github/workflows/release.yml`** — Builds this image for release publication. Notably, it pulls its own copy of the `.map` files from a separate `npm run build` run *before* the image is built, to attach them to the GitHub Release asset; the image itself ships without maps.
 
 ## Notes
 
-- **Source maps:** `vite.config.ts` sets `build.sourcemap: 'hidden'` (FA97), meaning maps are emitted but not referenced by chunks. There is **no** nginx rule blocking `.map` requests; protection relies solely on the `find … -delete` step. Do not remove that step without adding a server-side deny rule.
-- **`VITE_APP_BASE_URL` is the only build arg.** Every other `VITE_*` value is injected at runtime via `config.js` → `runtimeValue()` in `src/infrastructure/runtime-config.ts`. Changing it requires a rebuild; changing the others requires only a restart.
-- **Type-check gate:** Vitest does not type-check. A green test suite does not prove the code compiles. The `vue-tsc` step inside `npm run build` is the only compilation gate in the image pipeline.
-- **Port 80 / no `USER nginx`:** Deliberately omitted. Switching to the `nginx` user breaks the root-bind needed for port 80. Acceptable because these containers sit behind a proxy.
-- **`.npmrc` copied alongside manifests:** Its `legacy-peer-deps` flag is part of how the lockfile was resolved; omitting it causes `npm ci` to fail on optional peer deps (e.g. search-insights).
+- **One build-time variable, everything else at runtime.** `VITE_APP_BASE_URL` is the only `ARG` because Vite rewrites every emitted asset URL with it. All other deployment values (API origin, telemetry, locale, log level, upload/timeout limits) are injected via the entrypoint scripts at container start, making a single image reusable across environments.
+- **Source maps are deleted, not blocked.** The build stage runs `find dist -name '*.map' -type f -delete` before copying into the runtime stage. There is no nginx rule to deny `.map` requests; the deletion is the only guard. The release workflow extracts its own maps beforehand.
+- **No `USER nginx`.** The alpine nginx base image runs workers as the unprivileged `nginx` user, but the master process must bind port 80 as root. Switching to `USER nginx` would fail the bind. This is acceptable because the containers are not externally reachable without a proxy.
+- **Type-checking is the build gate.** Vitest does not type-check (see `vitest.config.ts`), so a green test suite is not evidence the code compiles. The `npm run build` step (`run-p type-check-only build-only`) is the only place a type error can stop a production image from being produced.
+- **`.npmrc` must accompany the manifests.** Without its `legacy-peer-deps` setting, `npm ci` treats optional peer deps (e.g. `search-insights`) as missing from the lockfile.

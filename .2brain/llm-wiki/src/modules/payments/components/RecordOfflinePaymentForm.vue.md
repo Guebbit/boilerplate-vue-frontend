@@ -1,7 +1,7 @@
 ---
 source: src/modules/payments/components/RecordOfflinePaymentForm.vue
-sha256: 9cf4095a252f2c1bf16e4d9a785bf3359e416bb44fd17686c14f1bf187a885a1
-generated_at: 2026-10-02T15:28:21.764801+00:00
+sha256: 8d8fd1cadba7180a935a651b56a5e7fd0b01f16718bee4ec5c824683efc15e19
+generated_at: 2026-10-17T01:22:28.488089+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,29 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A Vuetify form that lets an operator record a payment received outside the card checkout (cash at the counter, phone transfer, etc.). It owns field state and client-side validation only; the actual API write is delegated to the `useRecordOfflinePayment` composable. On success it emits `recorded` so the parent page can reload the order.
+Operator-facing form for recording a payment that arrived outside the card checkout (cash, transfer, etc.). It owns the field state, client-side validation, and submit flow; the actual API write is delegated to a composable. On success it emits `recorded` so the parent can reload the order, since the server-side status change (`pending → paid`) is invisible to this component.
 
 ## Key elements
 
-- **`props.orderId: string`** — the order this form settles. The caller is responsible for only rendering the form while the order is still payable.
-- **`emit('recorded')`** — single event fired after a successful write; the parent uses it to refetch order state.
-- **`methods`** — `Object.values(RecordOfflinePaymentRequestMethod)`; note `card` is intentionally absent from this enum (card is the customer's own checkout path).
-- **`schema` (zod)** — validates `method` (required enum), `reference` (≤ 120 chars, optional), `receivedAt` (optional date string).
-- **`useStructureFormValidation`** — wires native form validity, per-field error display, revalidation on locale change, and an "on invalid" toast.
-- **`useBlockingError`** — local blocked-state for server-level refusals that don't map to a specific field (e.g. order no longer payable, card charge still in flight). Surfaced via `<InlineErrorAlert>`.
-- **`submitForm`** — validates, clears any prior blocking error, calls `recordOfflinePayment`, then either toasts success + resets fields + emits `recorded`, or routes errors to `applyServerErrors` (field-level) or `reportRecordError` (unmapped → blocking).
-- **`receivedAt` conversion** — the date input yields `YYYY-MM-DD`; at submit time it is converted to a full ISO timestamp (`new Date(\`${receivedAt}T00:00\`).toISOString()`) to satisfy the API contract. If empty, it is omitted so the server defaults to "now."
-- **`loading` (from payments store)** — shared flag that disables the submit button while any payments-store write is in flight.
+- **Props:** `orderId: string` — the order to pay. The caller only renders this form while the order is still payable.
+- **Emits:** `recorded` — fires after a successful write; the parent uses it to refresh the order view.
+- **`schema`** (Zod) — validates three fields: `method` (enum of offline methods), `reference` (optional, ≤ 120 chars), `receivedAt` (optional date string).
+- **`useStructureFormValidation`** — wires the schema to a Vuetify form, manages `formErrors`, `showFormErrors`, `handleSubmit`, and `applyServerErrors`. Re-validates on locale change.
+- **`useRecordOfflinePayment(computed(() => props.orderId))`** — the single API call the form performs.
+- **`useBlockingError`** — catches server refusals that don't map to a specific field (e.g. 409 "card charge in flight") and surfaces them as a full-width `InlineErrorAlert`.
+- **`submitForm`** — orchestrates validation → clear blocking error → call composable → on success: toast, clear `reference`/`receivedAt`, emit `recorded`; on failure: `applyServerErrors` with `onUnmapped` falling back to the blocking error.
+- **Template** — a `<form>` with a `v-select` (method), two `v-text-field`s (reference, date), a submit `v-btn` disabled while `loading`, and an `InlineErrorAlert`.
 
 ## Relationships
 
-- **`src/modules/payments/composables/use-record-offline-payment.ts`** — Provides `recordOfflinePayment`, the sole API call this form makes. The composable receives the `orderId` via a computed ref, so it tracks prop changes.
-- **`src/modules/payments/store.ts`** — Source of the shared `loading` ref (via `storeToRefs`), keeping this form's submit button in sync with any other concurrent payment write in the panel.
+- **`src/modules/payments/composables/use-record-offline-payment.ts`** — imported as `useRecordOfflinePayment`; provides the `recordOfflinePayment` function that performs the actual settlement write.
+- **`src/modules/payments/store.ts`** — imported as `usePaymentsStore`; the form reads `loading` via `storeToRefs` to disable the submit button during the in-flight request.
+- **`src/modules/payments/tests/record-offline-payment-form.spec.ts`** — the unit-test spec covering this component's validation, submit, and error paths.
 
 ## Notes
 
-- The component does **not** guard against double-submission beyond the `loading` flag and the `useBlockingError` gate; a 409 (card charge already in flight) is expected to arrive as a server message and be surfaced as a blocking alert, not prevented client-side.
-- `reference` is trimmed to `undefined` when empty so the field is omitted from the request body entirely.
-- All visible text goes through `t(...)`; the form revalidates when `locale` changes (passed to `useStructureFormValidation` via `revalidateOn`).
-- `data-test` attributes on every field and the submit button exist for E2E test targeting — do not rename.
-- The `<form>` element uses `novalidate` because validation is handled by the zod schema + `useStructureFormValidation`, not by native HTML constraints.
+- The top-level `<script>` block exists solely to declare `name: 'RecordOfflinePaymentForm'` so `<KeepAlive>` and devtools can identify the component; `<script setup>` cannot set a name on its own.
+- `receivedAt` is a bare `YYYY-MM-DD` from the HTML date input. At submit time it is appended with `T00:00` and converted to an ISO 8601 timestamp to satisfy the API contract, which expects a full date-time.
+- `card` is deliberately absent from `methods` — that path belongs to the customer's own checkout, not the operator's offline form.
+- This component does **not** gate on order status. If the API rejects the write (e.g. a concurrent card charge), the server message is surfaced verbatim via `useBlockingError`; the operator retries or navigates away.
+- `reference` and `receivedAt` are both optional; empty values are sent as `undefined` so the API can apply its own defaults.

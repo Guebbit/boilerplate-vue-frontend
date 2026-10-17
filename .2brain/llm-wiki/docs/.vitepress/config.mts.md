@@ -1,7 +1,7 @@
 ---
 source: docs/.vitepress/config.mts
-sha256: 5059c4583796f1aa6d18c255d198dc28e3ee19d34bc4069f7c2c844e6f589cef
-generated_at: 2026-10-02T11:22:56.913540+00:00
+sha256: af8394005d0060e5fea1e3a38977dad717451774a5cabc4cbbfd7dde7ecc50ab
+generated_at: 2026-10-16T23:56:26.214677+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,25 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-VitePress configuration file for the project's documentation site. It defines the site title, navigation, sidebar structure, local search, Mermaid diagram styling, and social links that render the `docs/` directory as a browsable website.
+VitePress site configuration that defines the documentation site's identity, navigation structure, sidebar hierarchy, and Mermaid diagram styling. It exists as the single source of truth for how the project's docs are presented, so adding a new page or section only requires editing this file and the corresponding Markdown file.
 
 ## Key elements
 
-- **`withMermaid(defineConfig(...))`** — Wraps the standard VitePress config to enable Mermaid diagram rendering (from `vitepress-plugin-mermaid`).
-- **`title` / `description`** — Sets the site name to "Boilerplate Vue Frontend" and a one-line description.
-- **`themeConfig.search`** — Enables VitePress's built-in local search (no external provider).
-- **`themeConfig.nav`** — Top-level navigation bar with 7 entries: Home, Getting Started, Theory, Modules, Tools, API, Files.
-- **`themeConfig.sidebar`** — Per-section sidebar trees for `/theory/`, `/modules/`, `/tools/`, `/reference/`, and `/api/`. Each tree uses collapsible groups (`collapsed: false`) with nested items (e.g. `cart → checkout flow`, `locales → Runtime overrides`).
+- **`withMermaid(defineConfig(...))`** — Wraps the standard VitePress config with the Mermaid plugin, enabling `mermaid` code blocks in any doc page.
+- **`title` / `description`** — Site identity: "Boilerplate Vue Frontend" with an ADHD-friendly docs tagline.
+- **`themeConfig.search`** — Enables local (client-side) full-text search.
+- **`themeConfig.nav`** — Top-level navigation: Home, Getting Started, Theory, Modules, Tools, API, Files.
+- **`themeConfig.sidebar`** — Per-section sidebar trees for `/theory/`, `/modules/`, `/tools/`, `/reference/`, and `/api/`. Organized into collapsible groups (core, supporting, generic under Modules; Setup, Framework, Observability, Testing & Mocking under Tools).
 - **`themeConfig.socialLinks`** — Single GitHub link to `Guebbit/boilerplate-vue-frontend`.
-- **`mermaid`** — Plugin options: `neutral` theme, `useMaxWidth`, `htmlLabels`, flowchart spacing overrides, and a custom `themeVariables` palette (purple/blue/cyan accent colors on light backgrounds).
+- **`mermaid`** — Theme `neutral`, `useMaxWidth`, `htmlLabels`, custom flowchart spacing, and a custom color palette (purple/blue/cyan accent scheme) for diagram rendering.
 
 ## Relationships
 
-No dependency-graph neighbors are recorded for this file. It is a leaf configuration consumed by the VitePress build tooling.
+No dependency-graph neighbors were recorded for this file. It is a leaf configuration consumed only by the VitePress build toolchain (`vitepress` and `vitepress-plugin-mermaid` are the only imports).
 
 ## Notes
 
-- Adding a new doc page requires registering its link in the appropriate `sidebar` entry; the page will 404 in the sidebar otherwise (though direct URL access still works).
-- Sidebar groups use `collapsed: false` — items are expanded by default on first load.
-- The Mermaid `themeVariables` override VitePress's default diagram colors; change them here if the docs theme shifts.
-- The `withMermaid` wrapper is the **outermost** call; any new plugin wrapper must be composed around or inside it depending on plugin requirements.
+- The sidebar entries must match the actual `.md` file paths (minus extension) under `docs/`. A missing file produces a 404 in the built site but no build error.
+- The `/modules/` sidebar has a cross-link: the `example` item points to an anchor in `/theory/modules#adding-and-deleting-a-domain` rather than a dedicated module page—intentional, as `example` is a template rather than a shipped module.
+- Mermaid `themeVariables` override the `neutral` theme's default colors; the purple (`#7c3aed`), blue (`#2563eb`), and cyan (`#0891b2`) border colors are the visual signature of diagrams throughout the docs.
+- The file uses `.mts` (ESM TypeScript) so it can use `import` syntax without a `type: "module"` flag in the nearest `package.json`.

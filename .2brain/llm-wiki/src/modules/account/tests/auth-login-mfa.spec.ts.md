@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/auth-login-mfa.spec.ts
-sha256: e406fd3fe4ff1ff05b46fcf6629b7a57652d393a3a89da4f439edfa62739ca40
-generated_at: 2026-10-02T12:20:39.445960+00:00
+sha256: e939b46717211546c80b9772d12ee0b52081712be907cd1e09697c710cca7d8b
+generated_at: 2026-10-17T00:20:49.448308+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,26 +9,28 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Unit tests for the `mfa` branch of `useAuthStore().login()`. Verifies that when the login endpoint returns an MFA challenge, the store resolves with the challenge payload and does **not** write to the session store or fetch the profile — the regression this narrowing was introduced to fix (storing `undefined` as a token, causing 401s that locked out every 2FA account). The companion file `auth-session.spec.ts` covers the plain `session` branch; this file only asserts the two are kept apart.
+Unit tests for the **MFA branch** of `useAuthStore().login()`. The critical contract under test: when the server responds with a `mfaRequired` challenge, the Promise must resolve with the challenge payload and must **not** write anything into the session store or trigger a profile fetch. A single minimal session-branch test is included only as a contrast assertion; the full session flow lives in `auth-session.spec.ts`.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http')`** – replaces `orvalMutator` with a stub that looks up responses in a module-level `responses` map keyed by `"METHOD /url"`.
-- **`wireModulesIntoCore()`** – called once at module scope to register test module wiring so the store can resolve its dependencies.
-- **`MFA_CHALLENGE`** – fixture object describing an MFA-required response (challenge token, expiry, delivery methods).
-- **`requestedUrls()`** – helper that extracts the `url` field from each recorded `orvalMutator` call, used to assert no extra HTTP requests were made.
-- **`describe('login — the mfa branch')`** – three tests: (1) resolves with `{ kind: 'mfa', … }` echoing the challenge, (2) only hits `/account/login` (no profile fetch), (3) session store remains in its initial unauthenticated state.
-- **`describe('login — the session branch')`** – single smoke test confirming a plain login still resolves `{ kind: 'session' }` and sets `session.isAuth` to `true`.
-- **`beforeEach`** – resets Pinia, clears mocks, and pre-populates `responses` with default fixtures for `/account/abilities`, `/account/login` (token), and `/account` (profile).
+- **`responses`** (module-level `Record<string, unknown>`) — mutable bag of canned HTTP responses keyed by `"METHOD /url"`. Each test sets its specific key before invoking `login()`.
+- **`requestedUrls()`** — reads `vi.mocked(orvalMutator).mock.calls` and returns the URL of every transport call in order. Used to assert no extra requests were made.
+- **`MFA_CHALLENGE`** — canned fixture mirroring a real 2FA response (challenge token, expiry, email method).
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a function that looks up `responses` by method+URL and wraps the raw body via `parseOrvalFixture`.
+- **`beforeEach`** — resets Pinia, clears mocks, and seeds the three default endpoints every login spec needs (`/account/abilities`, `POST /account/login`, `GET /account`).
+- **`describe('login — the mfa branch')`** — three tests: (1) resolves with the full challenge object, (2) only `/account/login` was called (no profile fetch), (3) session store remains completely unauthed.
+- **`describe('login — the session branch')`** — one test confirming `kind: 'session'` resolution and `isAuth === true`.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** – the module under mock. `orvalMutator` is the sole HTTP entry point the auth store calls; this spec stubs it so no real network I/O occurs and responses are controlled per-test.
-- **`tests/support/unit/wire-modules.ts`** – provides `wireModulesIntoCore()`, which must run before any test so the DI/module graph is available to the Pinia stores.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – provides `orvalEnvelope()` (builds a typed API response envelope around a payload) and `parseOrvalFixture()` (deserializes the envelope back into a plain object), both used to keep fixture construction and the mock's return value consistent.
+- **`src/modules/account/stores/auth.ts`** — the system under test; `useAuthStore().login(email, password)` is the only production code exercised.
+- **`src/infrastructure/http/index.ts`** — the sole import mocked. `orvalMutator` is spied on to both supply responses and verify call order/count.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called once at module scope to register the stores so Pinia can resolve them outside a component tree.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — provides `orvalEnvelope` (wraps a payload in the project's standard `{ data, meta }` shape) and `parseOrvalFixture` (extracts the payload back out inside the mock).
 
 ## Notes
 
-- The `responses` map is mutated per-test (e.g., swapping in `MFA_CHALLENGE`) rather than parameterised via a helper; tests override `responses['POST /account/login']` inline.
-- The session-branch test here is intentionally minimal (one assertion pair) — its full contract lives in `auth-session.spec.ts`. This file only guards the *boundary* between the two branches.
-- `orvalMutator` is mocked with a factory that inspects `config.method` and `config.url` at call time, so the same mock serves both the auth store's login call and the session store's abilities/profile calls without needing separate interceptors.
+- The mock is registered **once at import time**; tests mutate `responses` rather than re-mocking, so ordering of the `beforeEach` reset matters.
+- `useSessionStore` is imported from `@/infrastructure/session.ts` (not in the listed graph neighbors) purely for read-only assertions that the store was *not* touched.
+- The file deliberately does **not** test MFA code entry (submitting the challenge code back); that is a separate flow owned elsewhere.
+- The session-branch test is intentionally thin — it exists only to confirm the discriminated union shape (`kind: 'session'` vs. `kind: 'mfa'`) so regressions in the `if/else` are caught here, not in the full session spec.

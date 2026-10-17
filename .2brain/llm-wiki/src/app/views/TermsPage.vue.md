@@ -1,7 +1,7 @@
 ---
 source: src/app/views/TermsPage.vue
-sha256: 5dd167edc80e3f443fc13d0c539bf2e4f75c18686a910d57a549c89b363aa3eb
-generated_at: 2026-10-02T11:51:59.919761+00:00
+sha256: 796051a44d7c701f4db044c3df3dbe16b1672bf955a26be1862370862493a0d3
+generated_at: 2026-10-17T00:07:34.978509+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,22 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Dedicated terms-of-service page. It exists as its own component (rather than reusing a shared paragraph renderer) because legal copy requires its own structural elements—headings, lists, numbered clauses—that a generic renderer does not support. All visible text is currently Lorem Ipsum placeholder, to be replaced before launch.
+Dedicated terms-of-service page component. It exists as its own view rather than reusing a shared paragraph renderer because legal copy requires specific structure (headings, lists, numbered clauses) that the generic renderer does not support.
 
 ## Key elements
 
-- **`paragraphs` (computed)** — Resolves the i18n key `static-pages.terms.paragraphs` into an array of translated strings via `staticPageParagraphs(tm, rt, …)`. Rendered one-per-`<p>` in the template.
-- **`tm` / `rt`** — Destructured from `useI18n()` (vue-i18n composer API). Passed into `staticPageParagraphs` for pluralization and runtime interpolation.
-- **`StaticPageLinks`** — Navigation component rendered at the bottom of the card; receives `current="terms"` so it can highlight the active link.
-- **`staticPageParagraphs`** (imported from `@/app/utils/static-pages.ts`) — Utility that reads a nested i18n key and returns the paragraph array.
+- **Component name (`'TermsPage'`)** — declared in the non-setup `<script>` block so `<KeepAlive>` and devtools can identify it; `<script setup>` cannot set `name` itself.
+- **`paragraphs` (computed)** — resolves the i18n key `static-pages.terms.paragraphs` via the `staticPageParagraphs` helper, returning an array of paragraph strings.
+- **`tm` / `rt`** — destructured from `useI18n()`; passed into the `staticPageParagraphs` utility to perform translation at render time.
+- **`StaticPageLinks`** — imported component rendered below the prose; receives `current="terms"` to highlight the active link.
+- **Template** — renders paragraphs inside a `v-card` (max-width `2xl`, centered) with a `v-for` loop, followed by the links block. Root element carries `id="static-page-terms"`.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. Its runtime dependencies (`StaticPageLinks`, `staticPageParagraphs`, `vue-i18n`) are leaf imports with no further edges listed.
+No graph neighbors are recorded for this file. It does import `@/app/components/StaticPageLinks.vue` and `@/app/utils/static-pages.ts` at runtime, but neither appears in the dependency-graph neighbor list.
 
 ## Notes
 
-- The `eslint-disable-next-line @typescript-eslint/unbound-method` on the `tm`/`rt` destructuring is intentional; vue-i18n's documented pattern. Do not "fix" it.
-- All user-facing text is placeholder. Before launch, replace the Lorem Ipsum under `static-pages.terms.paragraphs` in the i18n locale files—no code change to this component is needed.
-- The outer `#static-page-terms` div is the page-level anchor; navigation or scroll-spy logic may target it.
-- Card is constrained to `max-w-2xl` and centered (`mx-auto`); do not stretch it to full width without a design review.
+- Paragraph content is currently **placeholder Lorem Ipsum** under the i18n key `static-pages.terms.paragraphs`; real legal copy is expected before launch.
+- The `eslint-disable-next-line` for `@typescript-eslint/unbound-method` on the `useI18n()` destructure is intentional and matches vue-i18n's documented usage pattern.
+- Two `<script>` blocks are required: the plain block solely to expose `name`; the `setup` block for all logic. Removing either breaks devtools identity or the component body.

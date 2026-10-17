@@ -1,7 +1,7 @@
 ---
 source: src/modules/users/tests/user-edit-view.spec.ts
-sha256: 6a229af230f8063719cfb63bd85113219d2cc362c6e34f4d52cc0bdd00927506
-generated_at: 2026-10-02T15:49:59.065581+00:00
+sha256: a601f8f305ad6880f67c4fa1ca09af51160213214697ea2bc98d9270cdd3bc3e
+generated_at: 2026-10-17T01:48:35.432872+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,36 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Mounts the real `UserEdit` view against a memory-history router and a mocked `orvalMutator` transport to verify two contract-level behaviours: (1) a PATCH body contains **only** the fields that actually changed (no unchanged `role`/`active` riding along to re-trigger the backend's grant check), and (2) role or active changes are gated behind the `UserAccessDialog` confirmation before any request is sent. The spec also validates PATCH bodies against the real `UpdateUserByIdBody` strictObject schema to catch stray keys or invalid empty-string defaults (regression FA123).
+Vitest spec that mounts the real `UserEdit.vue` admin page against a memory-history router to verify the PATCH body sent on save: that unchanged `role`/`active` are excluded (preventing a spurious backend grant-check re-run), that the `UserAccessDialog` confirm gate fires only on role/active changes, and that a 412 response is handled. `UserAccessDialog` itself is stubbed; its internal behaviour belongs to `user-access-dialog.spec.ts`.
 
 ## Key elements
 
-- **`mountPage()`** – Mounts `UserEdit` with `{ id: 'u1' }`, the app router, Vuetify, i18n, and stubs for `LayoutDefault` and `UserAccessDialog`.
-- **`mockTransport()`** – Configures the `orvalMutator` mock: GET → `loadedUser` envelope, PATCH → bare success envelope.
-- **`lastPatchBody()`** – Pulls the `data` payload from the most recent PATCH call on the mock.
-- **`userReads()`** – Counts GET calls to `/users/u1` (used by the 412 re-fetch scenario).
-- **`submitRefused()` / `mockRefusedPatch()`** – Helpers for the 412 group; make every PATCH reject with a `PRECONDITION_FAILED` envelope.
-- **`LOADED_USER` / `USER_WITH_CONTACT`** – Fixture records built via `aUser()`; the second has phone/website/locale set so the "clear to null" cases have something to clear.
-- **`PRECONDITION_FAILED`** – The structured 412 rejection object matching the API's error-envelope contract.
-- **`describe('UserEdit')`** – Six tests covering: clean-field save, omission of unset optional fields, clearing phone/website/locale to `null`, role change via dialog confirm, and dialog cancel sending nothing.
-- **`describe('UserEdit — a save answered 412')`** – Verifies the UI warns on a 412 and re-fetches the record.
+- **`wireModulesIntoCore()`** — called at module top level to register module routes/stores before the router is built.
+- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a `vi.fn()` so every HTTP call is interceptable.
+- **`router`** — real `createRouter` + `createMemoryHistory`, routes built via `collectModuleRoutes(enabledModules)`; scoped to the `/:locale` parent.
+- **`LOADED_USER` / `USER_WITH_CONTACT`** — fixture records built with the `aUser` factory; the latter adds phone/website/locale for "clearing" tests.
+- **`mockTransport()`** — configures `orvalMutator` to answer GET with the loaded user and PATCH with a bare success envelope, parsed through `parseOrvalFixture`.
+- **`lastPatchBody()`** — extracts the `data` payload of the last PATCH call from mock call history.
+- **`mountPage()`** — mounts `UserEdit` with `props: { id: 'u1' }`, plugins (router, vuetify, i18n), and `stubs: { UserAccessDialog: true }`.
+- **`beforeEach`** — fresh Pinia, cleared mocks, `grantableRoles` seeded on the session store, locale loaded, router pushed to `/en/users/u1/edit`.
+- **`describe('UserEdit')`** — six cases covering: minimal-diff PATCH, omitted empty contact fields (the 422 regression), null on cleared phone/website/locale, role-change dialog flow, and cancelled-dialog no-op.
+- **`describe('UserEdit — a save answered 412')`** — exercises the 412 rejection path (truncated in source).
+- **`userReads()`** — counts GET calls to `/users/u1` to assert read次数.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** – `orvalMutator` is the single network seam; the spec mocks this module (`vi.mock('@/infrastructure/http')`) so no real HTTP occurs.
-- **`tests/support/unit/fixtures.ts`** – Supplies the `aUser()` factory used to build `LOADED_USER` and `USER_WITH_CONTACT`.
-- **`tests/support/unit/mounted-vm.ts`** – Provides `emitOn()` (to drive Vuetify `VSelect` and the dialog's `confirm`/`cancel` events) and `nextRenderTick()` for Vue reactivity settling.
-- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called at module top-level so `collectModuleRoutes(enabledModules)` resolves real routes for the memory router.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Provides `contractRequest` (validates a body against an Orval/Zod schema, rejecting stray keys), `orvalEnvelope` (wraps data in the API's success envelope), and `parseOrvalFixture` (dispatches by method+URL).
+- **`src/modules/users/views/UserEdit.vue`** — the component under test; imported and mounted directly.
+- **`src/modules/users/components/UserAccessDialog.vue`** — imported for `findComponent` assertions but stubbed via `stubs: { UserAccessDialog: true }`; only its props/emits are inspected.
+- **`src/infrastructure/http/index.ts`** — its `orvalMutator` export is the single mock target for all HTTP interactions.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` registers module routes and stores so the memory router resolves real paths.
+- **`tests/support/unit/mounted-vm.ts`** — `emitOn` and `nextRenderTick` drive Vuetify `VSelect` values and flush renders.
+- **`tests/support/unit/fixtures.ts`** — `aUser` factory builds the test records.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — `contractRequest` validates PATCH bodies against the Zod `strictObject` schemas; `orvalEnvelope` / `parseOrvalFixture` shape mock responses.
 
 ## Notes
 
-- `UserAccessDialog` is **stubbed** (`stubs: { UserAccessDialog: true }`); its internal picker/confirm logic is covered by `user-access-dialog.spec.ts`. This spec only asserts that the dialog *opens* with the right props and that the form reacts to `confirm`/`cancel` events.
-- Vuetify `VSelect` components are driven via `emitOn(select, 'update:modelValue', …)` rather than `wrapper.setValue()`, because the component does not respond to native `<input>` events.
-- The FA123 regression this file guards: the form's initial values default empty optional fields to `''`, which would pass a loose `toMatchObject` assertion but fail the real endpoint's `minLength`/pattern rules (HTTP 422). `contractRequest` against the strictObject schema is the assertion that catches this.
-- `wireModulesIntoCore()` is a module-level side effect (runs once per test file), not a per-test setup.
-- The router is built with `createMemoryHistory` scoped to `collectModuleRoutes(enabledModules)`, so only enabled modules' routes exist; tests push to `/en/users/u1/edit`.
+- **Vuetify `VSelect` quirk:** native `setValue()` won't update the component model; the tests use `emitOn(select, 'update:modelValue', …)` + `nextRenderTick` instead.
+- **`contractRequest` as assertion:** tests assert the PATCH body *against the real Zod schema* (`schemas.UpdateUserByIdBody`), not just against hand-picked keys. This catches stray keys (strict object) and field-level constraints (minLength, pattern) that a plain `toMatchObject` would miss.
+- **`wireModulesIntoCore()` is a module-level side effect** (no `beforeAll`); it runs once at import time.
+- **`UserAccessDialog` is stubbed**, so the spec only verifies that the parent opens it with the right `target`/`options` props and listens for `confirm`/`cancel`—it never exercises the dialog's own picker UI.
+- The 412 test suite is present but its body is truncated in the source shown here; assume additional assertions beyond the visible portion.

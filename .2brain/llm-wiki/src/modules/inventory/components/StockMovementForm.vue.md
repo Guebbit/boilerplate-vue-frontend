@@ -1,7 +1,7 @@
 ---
 source: src/modules/inventory/components/StockMovementForm.vue
-sha256: b7bd81af0608e9f430106605ba91340788873f30d85a6d23bc94563bfb861c21
-generated_at: 2026-10-02T15:09:29.385894+00:00
+sha256: b865a3d3f50f8b4bb631997529dfa64c2e979d03f5272be34f43064756274ab6
+generated_at: 2026-10-17T00:58:32.348823+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,29 +9,32 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-A reusable stock-movement form that handles both receipts (adding units) and adjustments (signed deltas, including shrinkage). It is instantiated **twice** — once per mode — rather than as a single form with a runtime sign toggle, so a mis-click cannot silently convert a delivery into a correction (or vice versa).
+A single SFC that handles both stock **receipts** (positive deliveries) and stock **adjustments** (signed deltas, typically shrinkage). It is instantiated twice by its parent with a `mode` prop (`'receipt' | 'adjust'`) rather than using a runtime sign toggle, so a mis-click cannot convert one counter-write into the other. Validation, field state, and submit gating are delegated to `useStructureFormValidation` with a Zod schema that branches on the mode.
 
 ## Key elements
 
-- **`props.mode` (`'receipt' | 'adjust'`)** — Selects which domain write the form performs and which validation rules apply. Drives nearly every branch in the component.
-- **`schema` (computed Zod object)** — Branches on `isReceipt`: receipts require `amount ≥ 1`; adjustments require `amount ≠ 0` (any non-zero integer). `productId` is a non-empty string; `note` is a free-text string.
-- **`useStructureFormValidation`** (from `@guebbit/vue-toolkit`) — Owns reactive field state, per-field errors, revalidation on locale change, native-form validity wiring via `formElement`, and the `handleSubmit` / `applyServerErrors` cycle.
-- **`useProductPicker` / `useProductPickerPin`** (local composable) — Server-side product search (`POST /products/search`) for the `v-autocomplete`; the pin keeps the currently selected product resolvable even after a subsequent search narrows the list.
-- **`useBlockingError`** (local composable) — Renders an un-mapped server error (notably the 409 "would leave fewer units than are already reserved") inline next to the submit button via `InlineErrorAlert`, rather than pushing it into the toast queue.
-- **`submitForm`** — Calls `inventoryStore.receive` or `inventoryStore.adjust`, reports the resulting stock level via a toast, clears the note field, and refreshes `productsStore.fetchProducts()` so the catalogue's cached counters stay in sync.
-- **`useInventoryStore` / `useProductsStore`** — Pinia stores; the former owns the actual API writes and the shared `loading` flag, the latter is refreshed after a successful write.
+- **`mode` prop** (`'receipt' | 'adjust'`) — selects which Zod schema branch and which `inventoryStore` action (`receive` vs. `adjust`) the form drives.
+- **`isReceipt`** (computed) — convenience boolean used throughout the template and submit logic.
+- **`schema`** (computed Zod object) — validates `productId`, `amount` (strictly ≥ 1 for receipts; non-zero integer for adjustments), and optional `note`. Error messages are i18n-resolved.
+- **`form` / `formErrors` / `handleSubmit` / `applyServerErrors`** — returned from `useStructureFormValidation`; own the reactive field state, server-error mapping, and submit gating. Seeded defaults: `amount` is `10` for receipts, `-1` for adjustments.
+- **`productQuery` / `productOptions` / `pinProduct`** — from `useProductPicker`; drive the server-side (`POST /products/search`) product autocomplete rather than a local cache.
+- **`useProductPickerPin`** — keeps the currently selected product resolvable in `productOptions` across subsequent searches.
+- **`submitForm`** — validates, then calls `inventoryStore.receive` or `inventoryStore.adjust`; on success refreshes `productsStore.fetchProducts()` and toasts the new available count; on failure maps field-level errors via `applyServerErrors` and catches unmapped 409s into `submitError`.
+- **`submitError` / `reportSubmitError` / `clearSubmitError`** — from `useBlockingError`; surfaces the adjustment 409 (stock would drop below reserved) as an inline `InlineErrorAlert` instead of a toast.
+- **`VUETIFY_INVALID_FIELD_SELECTOR`** — passed to `useStructureFormValidation` so it can scroll/focus the first invalid Vuetify field.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — No direct import or interaction is visible in this file.
-- **`src/modules/account/views/TwoFactorChallenge.vue`** — No direct import or interaction is visible in this file.
-
-Neither listed neighbor is imported or referenced here; the dependency-graph link is likely transitive (e.g., shared infrastructure or a common parent view).
+- **`src/modules/inventory/store.ts`** — `useInventoryStore` provides `receive()`, `adjust()`, and the `loading` flag bound to the submit button.
+- **`src/modules/inventory/composables/use-product-picker.ts`** — supplies `useProductPicker` (server-search autocomplete state) and `useProductPickerPin` (pinning the selected product across re-searches).
+- **`src/modules/inventory/views/InventoryLedger.vue`** — parent view that instantiates this component twice (once per mode) and passes the `mode` prop.
+- **`src/modules/inventory/tests/stock-movement-form.spec.ts`** — unit/integration tests for this component.
+- **`src/infrastructure/utils/logger.ts`** and **`src/modules/account/views/TwoFactorChallenge.vue`** — listed as graph neighbors but no direct interaction is visible in this file.
 
 ## Notes
 
-- The component's `<script>` block (non-setup) exists solely to declare `name: 'StockMovementForm'` for DevTools / `<keep-alive>` matching; all logic lives in `<script setup>`.
-- The product picker deliberately uses `POST /products/search` (paginated, server-filtered) instead of the products store's `listProducts()`, which only holds the first page (ticket FE_PARITY_0924 B2). The `v-autocomplete` sets `no-filter` to disable Vuetify's client-side item filtering since the server already handles it.
-- On adjustment, the 409 response is the "interesting" failure: the server's message already names the fix (cancel reserved orders), so `reportSubmitError` passes it through verbatim into the inline `InlineErrorAlert` rather than the toast.
-- `note` is sent as `undefined` (omitted) when empty, not as an empty string.
-- `data-test` attributes are mode-prefixed (`receipt-*` vs `adjust-*`) so E2E selectors work against both instances unambiguously.
+- The component declares its `name` in a separate **Options-API `<script>` block** alongside `<script setup>`, because `<script setup>` cannot set `name`. This is required for `<KeepAlive>` / devtools identification.
+- Product search is intentionally **server-side** (`POST /products/search` via `useProductPicker`), not the products store's `listProducts()` which only caches the first page.
+- The adjustment 409 is treated specially: the server's message (e.g. "cancel orders to free stock") is surfaced **verbatim** in the inline `InlineErrorAlert` rather than being re-translated or pushed to the toast queue.
+- After a successful write, `productsStore.fetchProducts()` is called to synchronise the catalogue's local copy of stock counters — the picker itself does not cache counters.
+- `note` is optional in the Zod schema but is stripped (`|| undefined`) before the store call, so the API never receives an empty-string note.

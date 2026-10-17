@@ -1,7 +1,7 @@
 ---
 source: src/infrastructure/analytics-consent.ts
-sha256: 6d1842ba2d5394f1048581857c3bf6cf8cf22283b574f169421464eab20c8820
-generated_at: 2026-10-02T14:39:00.794734+00:00
+sha256: b08d8c6ec92d827bc2210ca481f14d695c84d1c6c959505a66d50a06eb2ae224
+generated_at: 2026-10-17T00:08:41.032165+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,30 +9,38 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Manages the guest-facing analytics consent choice (unknown / granted / denied) for FA-D5. Persists the answer in a first-party cookie (same mechanism as `session.ts`), exposes a Pinia store the consent banner reads and writes, and gates the Umami tracker so it only loads after an explicit grant.
+Manages the visitor's analytics consent (unknown / granted / denied) and gates all analytics side-effects (Umami loading, Faro instrumentation, backend browsing events) on that answer. Persists the guest's choice in a first-party cookie via `@guebbit/js-toolkit`, mirrors the convention used by `session.ts` for `isAuth`/`rememberMe`. When a signed-in account holds its own answer (`accountChoice`), that answer overrides the guest cookie and the profile store (not this module) persists it.
 
 ## Key elements
 
-- **`AnalyticsConsentChoice`** — union type `'unknown' | 'granted' | 'denied'`; the only valid values stored in the cookie.
-- **`isAnalyticsConsentEnabled()`** — returns `true` iff `readUmamiConfig()` yields a value; when `false` the banner, footer link, and `X-Analytics-Consent` header are all suppressed.
-- **`readStoredChoice()` / `writeStoredChoice()`** (private) — cookie I/O helpers; reads default to `'unknown'` for any unrecognized value; writes set `Secure` (HTTPS only), `SameSite=Lax`, `path=/`, 365-day expiry.
-- **`useAnalyticsConsentStore`** — Pinia store exposing:
-  - `choice` — reactive current value, seeded from the cookie on creation.
-  - `promptOpen` (computed) — `true` while `choice` is `'unknown'` or the banner was reopened.
-  - `grant()` / `deny()` — set the choice, close the banner, persist, and call `syncTracker()`.
-  - `reopen()` — flips `reopened` so an already-answered visitor can change their mind (GDPR Art. 7(3)).
-  - `syncTracker()` — delegates to `useObservabilityStore().setUmamiConsent(granted?)` to load or silence Umami.
+- **`AnalyticsConsentChoice`** (type export) — the three-state vocabulary: `'unknown' | 'granted' | 'denied'`.
+- **`isAnalyticsConsentEnabled()`** (export) — returns `true` when either Umami or Faro has a configured URL/ID; when `false` the banner, footer link, and `X-Analytics-Consent` header are all suppressed.
+- **`useAnalyticsConsentStore`** (Pinia store, export) — the single source of truth for consent state:
+  - `choice` — guest answer restored from the cookie on boot.
+  - `accountChoice` — boolean pushed in by the profile store; outranks `choice` when defined.
+  - `effective` (computed) — the answer that actually applies right now.
+  - `promptOpen` (computed) — whether the banner is visible (unanswered **or** reopened).
+  - `grant()` / `deny()` — record the answer (cookie for guests, account for signed-in users) and call `syncTracker`.
+  - `reopen()` — re-shows the banner for a consent change (GDPR Art. 7(3) withdrawal path).
+  - `syncTracker()` — propagates the effective answer to `useObservabilityStore` (Umami + Faro).
+  - `trackBrowsing(event)` — fires a backend `createAnalyticsEvent` call; no-ops unless consent is enabled **and** granted; failures are logged and dropped.
+  - `setAccountChoice(value)` — called by the profile store to push/clear the account's answer.
+- **`COOKIE_NAME` / `COOKIE_DAYS`** (module-private) — `'analyticsConsent'`, 365-day lifetime.
+- **`readStoredChoice` / `writeStoredChoice`** (module-private) — thin wrappers over `getCookie`/`setCookie`; the write sets `path: '/'`, `sameSite: 'Lax'`, and `secure` only over HTTPS.
 
 ## Relationships
 
-- Imports `getCookie` / `setCookie` from `@guebbit/js-toolkit` (already a project dependency; no new package added).
-- Reads Umami configuration via `readUmamiConfig()` from `@/infrastructure/observability/config.ts`.
-- Pushes the consent decision to `useObservabilityStore` (`@/infrastructure/observability/store.ts`) through `setUmamiConsent()`.
-- Downstream consumers (not imported here): the consent banner component, the footer "privacy choices" link, and `http/interceptors.ts` (reads `isAnalyticsConsentEnabled` and the stored choice for the `X-Analytics-Consent` header).
+No graph neighbours are registered. At runtime the store interacts with:
+
+- `useObservabilityStore` (`@/infrastructure/observability/store.ts`) — `syncTracker` pushes Umami/Faro consent flags.
+- `useSessionStore` (`@/infrastructure/session.ts`) — `recordGuestChoice` checks `isAuth` to decide whether to skip the cookie write.
+- `readUmamiConfig` / `readFaroConfig` (`@/infrastructure/observability/config.ts`) — consulted by `isAnalyticsConsentEnabled`.
+- `createAnalyticsEvent` (`@api`) — invoked by `trackBrowsing`.
 
 ## Notes
 
-- The cookie is deliberately *not* in `localStorage`; it follows the same first-party-cookie convention as `session.ts` so both are subject to the same browser cookie policies and the `Secure` flag.
-- `writeStoredChoice` only accepts `'granted'` or `'denied'` (`Exclude<…, 'unknown'>`); `unknown` is a read-only default and is never written.
-- `syncTracker` must be called at boot, after every answer, and after logout (the account's own choice no longer applies to the guest). The file does not call it at boot itself — the caller (app bootstrap / a composable) is responsible.
-- Cookie name is the hardcoded string `'analyticsConsent'`; there is no environment override.
+- **Guest vs. account split is asymmetric.** While signed in (or `accountChoice` is defined), `recordGuestChoice` bails out without writing the cookie; the profile store is expected to persist the answer instead. The guest cookie is only ever written for truly anonymous visitors.
+- **`syncTracker` is not called automatically.** `grant`/`deny` call it, but a logout must also call it so the account's answer stops applying. Callers outside this store must remember to invoke it after state changes that affect `effective`.
+- **`trackBrowsing` is fire-and-forget.** A rejected promise is logged at `debug` level and swallowed — a failed page-view send never surfaces to the visitor.
+- **Cookie `secure` is conditional.** It follows `location.protocol`, so on plain-HTTP dev environments the cookie is sent unencrypted. Intentional, matching `session.ts`.
+- **`reopened` is the only escape hatch** for a visitor who already answered. The banner re-opens, `promptOpen` stays true, and the next `grant`/`deny` overwrites the previous answer.

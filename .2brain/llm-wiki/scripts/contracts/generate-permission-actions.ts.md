@@ -1,7 +1,7 @@
 ---
 source: scripts/contracts/generate-permission-actions.ts
-sha256: b62e96e604bd5fcd61e8f6791efe6150503aaac699dc868e53147ca75b03f3ee
-generated_at: 2026-10-02T11:28:46.943896+00:00
+sha256: 794f26c374990a4ef984f798954c549faab44654e6840bb187c72d4da35c4f49
+generated_at: 2026-10-16T23:57:56.180638+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,24 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-CLI script (run via `tsx`) that reads the `actions:` block from an `authorization-keys.yaml` file and generates a TypeScript module containing both a runtime array and a derived union type of permission actions. It exists so that frontend and backend repos can produce identical permission-action type definitions from a shared YAML source, keeping the vocabulary in sync.
+Generates a TypeScript `permission-actions` module (a runtime array plus a derived union type) from the `actions:` section of an `authorization-keys.yaml` file. It exists to keep the permission-action vocabulary in code in lockstep with the YAML source of truth, and is byte-identical across the paired frontend and backend repos.
 
 ## Key elements
 
-- **`requiredPath(flag)`** – Parses a `--flag <value>` pair from `process.argv`, resolves the value to an absolute path relative to the repo root, or exits with an error if missing.
-- **`INPUT` / `OUTPUT`** – Module-level constants resolved via `requiredPath('--in')` and `requiredPath('--out')`.
-- **`checkOnly`** – Boolean flag (`--check`) that switches the script into a compare-and-report mode instead of writing.
-- **Main flow** – Reads the YAML, calls `readPermissionActions` → `renderPermissionActions`, then either writes the result to `OUTPUT` or (in `--check` mode) diffs against the existing file and exits 1 on mismatch.
+- **`ROOT`** — Repo root computed via `import.meta.url` (the script runs as ESM under `tsx`).
+- **`requiredPath(flag)`** — Reads a required `--flag <value>` from `process.argv`, resolves it against `ROOT`, or prints an error and exits 1.
+- **`INPUT` / `OUTPUT`** — The resolved paths for `--in` (YAML source) and `--out` (generated module).
+- **`output`** — The full generated-file text, produced by `renderPermissionActions(readPermissionActions(readFileSync(INPUT)))`.
+- **Final `writeOrCheck(OUTPUT, output, INPUT)` call** — Writes the file, or under `--check` diffs against the on-disk copy and exits 1 on mismatch without writing.
 
 ## Relationships
 
-- **`scripts/contracts/permission-actions-render.ts`** – Imports `readPermissionActions` (parses the YAML text into an action list) and `renderPermissionActions` (serializes the list into the generated TypeScript source). All YAML parsing and code-generation logic lives in that neighbor; this file is purely the CLI orchestration layer.
+- **`scripts/contracts/generated-file.ts`** — Provides `writeOrCheck`, the shared write-or-diff-check primitive used by every generator in this directory.
+- **`scripts/contracts/permission-actions-render.ts`** — Provides `readPermissionActions` (parses the YAML and extracts the `actions:` list) and `renderPermissionActions` (serialises the result into the generated TypeScript module text).
 
 ## Notes
 
-- **Byte-identical across repos.** The same file ships in both the backend and frontend repos. The backend points `--in` at `shared/authorization-keys.yaml`; the frontend points at the copy synced into `contracts/authorization-keys.yaml`. The generated output path differs per repo but the script content must stay identical.
-- **`--check` is the CI contract.** All generator scripts in this directory follow the same pattern: with `--check`, write nothing, exit 1 on drift, and suggest `npm run gen:api` as the fix.
-- **ESM context.** The script uses `import.meta.url` (not `__dirname`) to compute `ROOT`; it must be invoked through a `tsx` loader that supports ESM.
-- **No YAML parser imported here.** Parsing is delegated entirely to `permission-actions-render`; this file only handles I/O and CLI concerns.
+- Byte-identical in both repos of the pair; the only difference between runs is the `--in` path (backend reads `shared/authorization-keys.yaml`, frontend reads `contracts/authorization-keys.yaml`).
+- `--check` mode performs a read-only comparison; it is the standard CI guard for all generators in this directory.
+- The script is invoked via `tsx` (shebang `#!/usr/bin/env tsx`), so `__dirname` is unavailable — `import.meta.url` is used instead.
+- Usage contract: `tsx scripts/contracts/generate-permission-actions.ts --in <yaml> --out <path> [--check]`.

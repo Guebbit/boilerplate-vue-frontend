@@ -1,37 +1,39 @@
 ---
 source: package.json
-sha256: 45dc5240b97c38d964315f216458c3615f64d462ab935c04ea79e5ee223cc1e4
-generated_at: 2026-10-02T14:33:30.778080+00:00
+sha256: ed35363edef275c0b1f0b149d9e3de139caf73b72131964ca4e892dc988615d6
+generated_at: 2026-10-16T23:57:10.874570+00:00
 model: ollama:qwen3.8:27b
 ---
 
 # package.json
 
 ## Purpose
-Manifest for the `boilerplate-vue-frontend` project (v2.1.0, private, AGPL-3.0). Defines the dependency set, all npm scripts (dev, build, test, lint, contract generation, container orchestration, docs), and engine/tooling constraints. Serves as the single entry point for every task in the repo.
+Project manifest for **boilerplate-vue-frontend** (v3.0.0, private, ESM). It declares the runtime and development dependency sets, pins the Node/npm engine requirements, defines the full task surface (dev, build, test, lint, codegen, docs, container orchestration), and whitelists which packages may execute install scripts.
 
 ## Key elements
-- **`scripts`** — ~60 named tasks grouped by concern:
-  - *Dev/build:* `dev`, `build` (type-check + `vite build`), `preview`, `build:e2e` (sets validation env flags).
-  - *Testing:* `test:unit` / `test:unit:coverage` (Vitest), `test:e2e*` variants (Cypress; serial, antibot, visual, live, dev), `test:mutation` (Stryker), `test:report`.
-  - *Lint/format:* `lint`, `lint:fix`, `lint:openapi` (Spectral), `lint:asyncapi`, `prettier:check` / `prettier:fix`.
-  - *Contract generation & checks:* `gen:api` (Orval → Zod schemas, operation modules, error codes, route table), `gen:asyncapi`, `gen:permission-actions`, `regenerate`, and corresponding `check:*` scripts.
-  - *Quality gates:* `complete` (full), `complete:light` (skips e2e), `complete:fix`, `complete:gates`, `complete:manual`.
-  - *Container/docs:* `compose*` (podman/docker), `docs:dev/build/preview` (VitePress).
-- **`dependencies`** — Runtime: Vue 3, Vuetify 4, Pinia, Vue Router, TanStack Query, Zod, axios, Tailwind CSS 4, i18n, CASL, zxcvbn, altcha, Grafana Faro (observability).
-- **`devDependencies`** — Build/test tooling: Vite 7, TypeScript 5.9, Vitest 4, Cypress 15, Stryker, Orval, AsyncAPI parser/modelina, ESLint 9 + Vue/TS/unicorn/boundaries plugins, Prettier, Husky, start-server-and-test, MSW, fast-check, pixelmatch/pngjs (visual diffs), VitePress.
-- **`type: "module"`** — ESM throughout.
-- **`engines`** — Requires Node `^24`.
-- **`allowScripts`** — Whitelist of packages permitted to run postinstall/lifecycle scripts (cypress, esbuild, msw, vue-demi, etc.); `@scarf/scarf` explicitly denied.
+- **`type: "module"`** – All source and config files are treated as ES modules by Node and bundlers.
+- **`scripts`** – The operational surface:
+  - *Dev/build*: `dev` (Vite dev server), `build` (type-check + `vite build`), `preview`, `build:e2e` (build with validation flags into `dist-e2e`).
+  - *Testing*: `test:unit` (Vitest), `test:e2e` (build → preview → Cypress shard runner), `test:e2e:serial` / `:antibot` / `:visual` / `:live` (targeted Cypress variants), `test:mutation` (Stryker), `test:unit:ci` (JSON reporter).
+  - *Quality gates*: `lint` (ESLint, zero-warn), `prettier:check`, `lint:openapi` (Spectral), `lint:asyncapi`, `check:spec-identity`, `check:docs-references`, `check:asyncapi-types`, `check:route-table`, `check:permission-actions`.
+  - *Codegen*: `gen:api` (Orval → Zod schemas, operation modules, error codes, route table), `gen:asyncapi` (Modelina → `asyncapi.generated.ts`), `gen:permission-actions` (YAML → TS), `regenerate` (all three + Prettier).
+  - *Aggregates*: `complete` (full gate pipeline), `complete:light` (skips E2E), `complete:gates`, `complete:fix`.
+  - *Docs*: `docs:dev` / `:build` / `:preview` (VitePress in `docs/`).
+  - *Containers*: `compose*` scripts wrap `podman compose` (overridable via `CONTAINER_ENGINE`).
+  - *Misc*: `prepare` (Husky), `update:all` (npm-check-updates).
+- **`dependencies`** – Vue 3, Vuetify 4, Pinia, Vue Router, TanStack Query, Zod v4, Axios, CASL, Altcha (bot-proofing), Grafana Faro (observability), Tailwind CSS 4, Vue-i18n, Mermaid, Lucide icons, `@guebbit/vue-toolkit`.
+- **`devDependencies`** – Vite 7, Vitest 4, Cypress 15, Stryker Mutator, ESLint 9 (+ Vue/unicorn/boundaries/a11y plugins), Prettier, Orval, AsyncAPI (parser + Modelina), VitePress, TypeScript 5.9, `start-server-and-test`, `msw`, `fast-check`, `axe-core`.
+- **`engines`** – Requires Node `^24` and npm `>=11.16.0`.
+- **`allowScripts`** – Explicit opt-in list of packages permitted to run postinstall/preinstall scripts (supply-chain hardening); `@scarf/scarf` is explicitly denied.
 
 ## Relationships
-No graph neighbors were provided.
+No graph neighbors were provided; this file is the root manifest and is referenced by tooling (Husky, CI, IDEs) rather than imported by source modules.
 
 ## Notes
-- `build` runs `vue-tsc --build --force` in parallel with `vite build` via `npm-run-all2`; a type error fails the build.
-- `build:e2e` builds into `dist-e2e` with `VITE_VALIDATE_RESPONSES=true` and `VITE_VALIDATE_REQUESTS=true`, enabling runtime contract validation only in e2e.
-- The `complete` / `complete:light` scripts are the canonical CI gates; `complete:light` swaps full tests for `type-check-only` + `test:unit` and omits the full `build` step.
-- E2E specs are split by glob: `*.antibot.cy.ts`, `*.visual.cy.ts`, and everything else. The `test:e2e:dev` script opens the interactive Cypress runner against a live dev server.
-- `gen:api` is a multi-step pipeline (Orval → strip descriptions → operation modules → error codes → route table); run `regenerate` to redo all three contract sources in one shot.
-- `allowScripts` is a pnpm-style field; if the project is installed with plain npm, these entries are inert.
-- `compose` defaults to `podman` but honours the `CONTAINER_ENGINE` env var.
+- `private: true` prevents accidental `npm publish`; the package is consumed as a local project only.
+- The `build` script runs `type-check-only` and `build-only` in parallel via `npm-run-all2` (`run-p`), so a type error blocks the build.
+- E2E scripts follow a fixed pipeline: `build:e2e` → `vite preview` on port **8085** (strictPort) → Cypress. The `:live` variants add `CYPRESS_liveProfile=true` and target Chromium.
+- `gen:api` is a chained pipeline (Orval → strip descriptions → generate operation modules → error codes → route table); running a single step out of order will produce inconsistent `contracts/rest/` artifacts. Always use `regenerate` or the individual `check:*` scripts to verify.
+- The `compose` scripts default to **Podman**; set `CONTAINER_ENGINE` (e.g. `docker`) to override.
+- `allowScripts` is an npm ≥ 11 feature; older npm versions ignore it, so supply-chain protection depends on the pinned npm version.
+- The `prepare` script installs Husky hooks; in CI or restricted environments this may fail silently if `.git/` is absent.

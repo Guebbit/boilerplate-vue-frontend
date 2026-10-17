@@ -1,7 +1,7 @@
 ---
 source: src/modules/orders/views/OrdersList.vue
-sha256: eca5790e61c7a936d18a1b116671b3a3d6514aba944e005bc0ef3bdfaccd5407
-generated_at: 2026-10-02T15:26:11.520737+00:00
+sha256: c6452b197339ab7306cb092f7a158f2eaa086669e46a7db26ad9be0eb43b89cd
+generated_at: 2026-10-17T01:20:42.029363+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,32 +9,32 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-The paginated order list page. It wires the orders Pinia store's server-side search, filter, sort, and pagination state to a `DataTable` with per-row actions (view, edit, soft-delete, hard-delete, restore), gated on the signed-in role. It also hosts the payments module's `OrderReferenceSearch` widget so an operator can jump to a specific order by reference without leaving the list.
+A dual-scope Vue SFC that renders the paginated, filterable orders table. Scope `mine` (default) shows only the signed-in viewer's orders on the account page; scope `all` adds staff-only controls (search-by-id/user/product/email, date-range pickers, transfer queue, deleted filter) on the `/sales/orders` page. It wires the orders store's reactive filters and pagination into a `DataTable` with per-row view/edit/delete/hard-delete actions gated on role.
 
 ## Key elements
 
-- **`handleReferenceFound`** — receives the order from `OrderReferenceSearch`'s `@found` event and navigates to the `OrderEdit` route (the component itself names no route; this page owns the navigation).
-- **`tableHeaders`** (computed) — localised column definitions for id, status, totalPrice, createdAt, and a synthetic `actions` column rendered via the table's slot.
-- **`STATUS_COLORS`** — a `satisfies Record<OrderStatus, string>` map enforcing that every status gets an explicit Vuetify color; a new enum member fails compilation if unlisted.
-- **`statusOptions` / `statusChoice`** — the status `<select>` model. The "any" row uses `null` (not `undefined`) so Vuetify posts an empty filter rather than the translated label (FA51).
-- **`deletedChoice`** — same `useAnyFilterChoice` pattern for the soft-deleted toggle.
-- **`awaitingTransferOnly`** — a single computed boolean that reads/writes two filter fields (`status === 'pending'` + `paymentMethod === 'bank_transfer'`) simultaneously.
-- **`isStaff`** (computed) — `session.can('update', 'Order')`; hides id/user/product/email/transfer search fields from customers.
-- **`rowActionSize`** — `useTouchFriendlySize()` returns `small` on desktop, Vuetify default below `sm` for WCAG tap-target compliance.
-- **`handleDelete` / `handleHardDelete`** — both gate on `useDialogStore().confirm(…)` before calling the store action; failures are surfaced via the shared `useBlockingError` instance.
-- **`handleRestore`** — no confirm dialog; restores then re-runs `search(true)` because the active filter may no longer match.
-- **`syncUrl` / `useListSearch` / `useServerSort`** — keep filters, page, page-size, and sort in the URL so deep links and reloads restore the exact view.
-- **`rowActionError`** (`useBlockingError`) — one shared blocking alert above the table for any failed write action (delete, hard-delete, restore).
+- **`props.scope`** (`'mine' | 'all'`, default `'mine'`) — determines which controls render and how the owner filter is pinned.
+- **`pinOwner()`** — called once at setup; forces `filters.userId` to the viewer's id in `mine` scope, or clears a stale owner in `all` scope unless the URL explicitly asked for one.
+- **`tableHeaders`** (computed) — localized column definitions for `DataTable`, including two synthetic columns (`payment`, `actions`) rendered via slots.
+- **`STATUS_COLORS` / `statusColor()`** — maps every `OrderStatus` member to a Vuetify theme color; `satisfies Record<OrderStatus, string>` makes a missing status a compile error.
+- **Filter selects** (`statusChoice`, `fulfillmentChoice`, `paymentStatusChoice`, `returnStatusChoice`, `deletedChoice`) — each pairs a `useAnyFilterChoice` composable with an options array whose "any" row uses `value: null` (not `undefined`) to avoid Vuetify treating the title as the model value.
+- **`syncUrl`** — from `useListUrlState`; serializes filters, page, pageSize, and sort into route query params for deep-linking and reload persistence. Conditionally includes `userId` only in `all` scope.
+- **`handleReferenceFound(order)`** — handler for `OrderReferenceSearch`'s `@found` event; navigates to `OrderEdit` by id.
+- **Row actions** (view, edit, delete, hard-delete, restore, export CSV) — pulled from `useOrdersStore` and gated on `session` role and the domain helpers `canHardDelete` / `exportRefusalOf`.
+- **Component name block** (`OrdersListPage`) — required alongside `<script setup>` so `<KeepAlive>` and devtools can identify the SFC.
 
 ## Relationships
 
-- **`src/modules/payments/components/OrderReferenceSearch.vue`** — imported via `@/modules/payments` and rendered at the top of the page (staff/`create Payment` role only). The page supplies the `@found` handler; the component performs the lookup and emits the resolved `Order`.
-- **`src/infrastructure/utils/logger.ts`** — appears in the dependency graph but no direct import is visible in this file; likely reached transitively through `notifyErrorMessages` or another utility.
+- **`../store.ts` (`useOrdersStore`)** — source of all reactive state (`filters`, `ordersList`, `pageCurrent`, `pageSize`, `loading`, `selectedOrderId`) and actions (`watchSearchOrders`, `deleteOrder`, `hardDeleteOrder`, `restoreOrder`, `exportOrdersCsv`). The view is a thin presentation layer over this store.
+- **`../domain/index.ts`** — barrel re-export consumed as `canHardDelete` and `exportRefusalOf`, used to gate the hard-delete row action and the CSV export button.
+- **`../domain/hard-delete.ts`** — provides `canHardDelete`, which determines whether the hard-delete button is visible for a given row.
+- **`../domain/export-refusal.ts`** — provides `exportRefusalOf`, which decides whether the CSV export is refused for the current selection.
+- **`@/modules/payments` → `OrderReferenceSearch.vue`** — mounted as a child component in the staff filter area; its `@found` event is the sole trigger for `handleReferenceFound`.
+- **`src/modules/orders/tests/orders-list-view.spec.ts`** — unit/integration spec for this SFC.
 
 ## Notes
 
-- The "any" filter row intentionally uses `value: null`, not `undefined`. Vuetify's `v-select` treats an `undefined` item value as "use the label text as the model value," which would post the translated string into the filter (FA51).
-- `awaitingTransferOnly` writes `undefined` (not `null`) when clearing both underlying filters — the store serialises `undefined` as "no filter" while `null` could be ambiguous in the query string.
-- Row-action errors and search errors are deliberately separated: search failures toast (ambient, table still shows stale data) while write-action failures block the table via `InlineErrorAlert`. Rationale lives in `docs/theory/request-flow.md`.
-- `handleRestore` deliberately omits a confirm dialog: the action is non-destructive and one delete away, so friction is unnecessary.
-- The component's `name` option (`OrdersListPage`) is declared in a separate non-setup `<script>` block so it is available to `<keep-alive>` / devtools without a runtime export.
+- The "any" filter option uses `value: null` rather than `undefined` because Vuetify interprets an `undefined` item value as "use the label string as the model value," which would post the translated text as a filter parameter.
+- `pinOwner()` runs **synchronously at setup**, before the first search fires. Reordering it after `watchSearchOrders` would cause a stale owner to leak into the initial request.
+- The `mine` scope never exposes `userId` in the URL query (`useListUrlState` params are conditional on `isStaff`), so a customer's deep link cannot be forged to another account.
+- `rowActionSize` switches from `small` to Vuetify's default below the `sm` breakpoint to meet WCAG touch-target sizing.

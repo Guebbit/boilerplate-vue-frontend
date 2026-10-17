@@ -1,7 +1,7 @@
 ---
 source: src/modules/returns/views/Return.vue
-sha256: b082547a99b38223844142f6781541b656682efd2656ad5e5a207806b137c366
-generated_at: 2026-10-02T15:46:59.492003+00:00
+sha256: f77a12389186806720af8a62f6c0e8a24da0c0db7f99c139beed4107bd3e85a1
+generated_at: 2026-10-17T01:39:27.311767+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Renders the single-return detail page (`ReturnTargetPage`), showing what came back, who pays postage, the current status, line items, and — for staff — the open actions. It is cache-first by route id but forces one re-read on arrival when the list-seeded cache row lacks an `actions` array.
+Detail page for a single return. Displays the return's items, status, postage responsibility, refund/deduction amounts, and — for staff — the actions still available. Loads by route `id` using the returns store's cache, then forces one fresh read on mount to guarantee the `actions` list is present (list-seeded cache rows carry none).
 
 ## Key elements
 
-- **`defineProps<{ id?: string }>`** – The return id from the route; drives all data loading.
-- **`watchReturn(() => id, { onError: onMissingRecord })`** – Selects and fetches the return from the Pinia store whenever the route id changes; routes 404/403 to the Error page via `useMissingRecord`.
-- **`refresh()`** – Forces a cache-busting re-fetch (`fetchReturn(id, { forced: true })`); called once in `onMounted` and again from `ReturnStaffActions`' `changed` event.
-- **`orderTo`** (computed) – Builds the router link to the parent order, guarded with `linkIfRouted` so builds without the `orders` module simply omit it.
-- **Template sections** – `ItemDetailHero` (reason, note, id), a `CardDetail` grid (status chip, postage, created/received dates, refund, handling deduction, decline reason, itemised lines), and an `#actions` slot with `ReturnStaffActions`, an optional order link, and a back-to-list button.
+- **Named component block** — sets `name: 'ReturnTargetPage'` so devtools and `<KeepAlive>` can identify the SFC (not possible inside `<script setup>` alone).
+- **`id` prop** — optional route parameter identifying the return.
+- **`watchReturn`** (from store) — selects the return in the store whenever `id` changes; routes 404/403 to `onMissingRecord`.
+- **`fetchReturn`** (from store) — performs a forced (cache-bypassing) read for a given id.
+- **`refresh`** — wraps `fetchReturn` with error handling; called in `onMounted` and as the handler for `ReturnStaffActions`' `changed` event.
+- **`orderTo`** (computed) — resolves a link to the parent order via `linkIfRouted`; yields `undefined` (hiding the link) if the orders module is absent.
+- **Template** — `ItemDetailLayout` with a hero (reason, note, id), a `CardDetail` grid of fields (status chip, postage, created/received dates, refund, deduction, decline reason, line items), and an actions slot containing `ReturnStaffActions` plus back-to-order / back-to-list buttons.
 
 ## Relationships
 
-No graph neighbors are recorded for this file.
+- **`src/modules/returns/store.ts`** — Source of `watchReturn`, `fetchReturn`, and the reactive `currentReturn` reference. This view is the primary consumer of that store's read path.
+- **`src/modules/returns/components/ReturnStaffActions.vue`** — Rendered in the actions slot when a return is loaded. Receives the full `currentReturn` as `item`; emits `changed`, which this view handles by calling `refresh()`.
 
 ## Notes
 
-- The component is intentionally minimal in its `<script>` (just `name`); all logic lives in `<script setup>`.
-- `linkIfRouted` exists because the `OrderTarget` route name is a runtime dependency invisible to `MODULE_EDGES`; without the guard the link would crash on builds that exclude the orders module.
-- `formatCurrency` receives `currentReturn.currency` (per-return currency) rather than a global locale currency — important when a return spans a different currency than the shopper's default.
-- `data-test` attributes are present on status, refund, deduction, decline-reason, and each return line for e2e targeting.
+- The forced read on mount is intentional: the returns list seeds the Pinia cache with rows that have no `actions` array, so without it staff would see no actionable buttons on first arrival.
+- The `orderTo` link is a *soft* cross-module dependency — it uses a route name (`'OrderTarget'`) that the build-time `MODULE_EDGES` graph cannot resolve, hence the runtime `linkIfRouted` guard rather than a static import.
+- All user-visible strings go through `useI18n().t`; date/currency formatting uses shared helpers from `@/infrastructure/utils/formatters.ts`.
+- `data-test` attributes are present on every conditionally-rendered field to support e2e selectors.

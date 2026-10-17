@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/password-change-sessions-refresh.spec.ts
-sha256: c845216260102c7923a4fb3ce5897e114786d5c236fadf7d910d55d4f4e16391
-generated_at: 2026-10-02T12:26:25.182283+00:00
+sha256: 6d1b00cc13e8905391abe1de5c4db56623976f76020b284179eb28f1abd79789
+generated_at: 2026-10-17T00:23:37.883086+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,23 +9,26 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that a successful password change triggers a refetch of the device-sessions list. The server-side `postPasswordChange` endpoint revokes all other sessions, so the UI must re-query after the change; without this refetch the sessions panel would display stale entries until the next page visit.
+Verifies that the `ProfilePasswordChange` form triggers a device-sessions refetch after a successful password change. Because the backend (`postPasswordChange`) revokes all other sessions server-side, the UI must proactively refetch rather than showing stale session data until the user's next navigation.
 
 ## Key elements
 
-- **`changePassword` / `fetchSessions`** – `vi.fn()` mocks injected via `vi.mock` of the profile and sessions Pinia stores respectively.
-- **`mountForm()`** – Mounts `ProfilePasswordChange.vue` with Pinia, Vuetify, and i18n plugins.
-- **`submitValidChange()`** – Simulates a full user flow: toggles the form open, fills current/new/confirm password fields via `data-test` selectors, triggers `submit.prevent`, and awaits a tick.
-- **`flushAll()`** – Yields one macrotask tick (`setTimeout 0`) to let the debounced breach check and the async submit chain settle.
-- **`describe('a successful password change')`** – Single test asserting that `changePassword` receives the expected args and `fetchSessions` is called exactly once.
+- **`changePassword`** — `vi.fn` stub for `useProfileStore().changePassword`; resolves to simulate a successful backend call.
+- **`fetchSessions`** — `vi.fn` stub for `useAccountSessionsStore().fetchSessions`; the assertion target.
+- **`NEW_PASSWORD`** (`'Passw0rd!'`) — a password that passes the form's validation rules.
+- **`mountForm()`** — mounts `ProfilePasswordChange` with a real Pinia instance, the app's Vuetify, and i18n.
+- **`submitValidChange()`** — end-to-end form interaction: opens the panel via `data-test="toggle-change-password"`, fills all three inputs, and submits the form.
+- **`flushAll()`** — single `setTimeout(…, 0)` tick to let the debounced breach-check and the submit promise chain settle.
+- **`describe('a successful password change')`** — one test asserting that `changePassword` receives the three expected arguments and `fetchSessions` is called exactly once.
 
 ## Relationships
 
-The listed neighbor `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts` is not imported or referenced by this file; the graph connection is likely structural (shared test-directory conventions) rather than a runtime dependency. No direct interaction exists in the source.
+- **`src/modules/account/components/ProfilePasswordChange.vue`** — the SUT; imported and mounted directly. The test interacts with its DOM (`data-test` attributes) and its store calls (mocked).
+- **`tests/unit/scripts/e2e/cypress-spec-globs.spec.ts`** — listed as a graph neighbor (likely a glob-pattern or CI inclusion match); no runtime import or call exists in this file.
 
 ## Notes
 
-- Both stores are mocked as plain objects returning a single function, not as real Pinia stores. This keeps the test focused on the component's side-effect (calling `fetchSessions`) rather than store internals.
-- `loadLocale('en')` is called inside the test body rather than a `beforeEach`; add new tests in the same `describe` block and replicate that call.
-- Selectors rely on `data-test` attributes defined in `ProfilePasswordChange.vue`; renaming those attributes will break this spec.
-- `flushAll` is intentionally minimal (one tick). If the submit chain gains additional microtask or timer steps, this helper may need to be extended.
+- Both Pinia stores (`../stores/profile.ts`, `../stores/sessions.ts`) are replaced with `vi.mock` at module level; the real stores never execute.
+- `loadLocale('en')` must be awaited before the first test or i18n translations will be missing during mount.
+- `flushAll` is deliberately a single 0 ms tick, not `vi.useFakeTimers` + `advanceTimersByTime`; the only async work expected is the debounced password-breach check and the submit promise chain.
+- The test exercises the *happy path* only; no failure, validation-error, or concurrent-submission cases are covered here.

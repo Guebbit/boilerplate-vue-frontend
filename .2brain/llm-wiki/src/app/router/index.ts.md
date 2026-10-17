@@ -1,7 +1,7 @@
 ---
 source: src/app/router/index.ts
-sha256: bf8f9079cd1a6a17883259da3913a62fd1cf41a364e15a98fc53454dff626e71
-generated_at: 2026-10-02T14:38:31.842846+00:00
+sha256: adb636259544564c5a8e6a9c60efc477565152116c01a143626c893864252aad
+generated_at: 2026-10-17T00:06:46.576237+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,38 +9,41 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Creates the application's Vue Router instance. It assembles locale-prefixed routes (`/:locale/...`), merges domain routes contributed by enabled modules through the kernel registry, and wires up global navigation guards (auth session restore, `meta.access` enforcement, i18n locale sync), scroll behavior, tab-title/a11y announcement, and a stale-deploy recovery path. This file names no domain route itself; all domain routes arrive via `collectModuleRoutes(enabledModules)`.
+The application's central router. It assembles all routes—shell-owned pages and module-contributed domain routes collected via the kernel registry—under a `/:locale` prefix, configures global navigation guards (session restore, access enforcement, locale sync), scroll behavior, error handling, and post-navigation side effects (tab title, a11y announcement, focus management). No domain name is hard-coded here; adding or removing a domain only touches `src/modules.ts`.
 
 ## Key elements
 
-- **`shellChildRoutes: RouteRecordRaw[]`** — The app's own static routes: `Home`, `About`, `FAQ`, `Terms`, `Privacy`, and the `Error` shell (`/error/:status/:message?`). Owned by the shell, not a module.
-- **`moduleRoutes`** — Result of `collectModuleRoutes(enabledModules)`; every domain route enters the router through this single call.
-- **`assertUniqueRoutes([...shellChildRoutes, ...moduleRoutes])`** — Runs at import time (before `createRouter`); throws if two routes share a name or path, whether the collision is between modules or between a module and a shell route.
-- **`localeLessRedirects`** — Generated redirects for first-segment paths that lack a locale prefix (e.g. `/products` → `/:locale/products`). Declared ahead of `/:locale` so they take precedence over the locale param.
-- **`router`** — The `createRouter` instance. Uses `createWebHistory(import.meta.env.BASE_URL)`. Route tree: `/` redirect → `/oauth/callback` redirect → `localeLessRedirects` → `/:locale` (nested-layout pattern with `LayoutDefault`) → top-level 404 catch-all.
-- **`scrollBehavior`** — Restores `savedPosition` on back/forward, scrolls to anchor if present, stays put on query-only changes, otherwise scrolls to top. Uses `'auto'` when `prefers-reduced-motion: reduce` is set.
-- **`readLocaleParameter`** — Safely extracts `:locale` from `params` (guards against `string[]` from repeated params).
-- **`router.onError`** — Reports the error to the observability store, handles stale-deploy chunk reload, and redirects to a meaningful route using the `to` argument (not `router.currentRoute`, since the navigation was aborted).
-- **`registerStaleDeployRecovery(globalThis)`** — Called at module load so the recovery mechanism is armed before the first lazy import can fail.
+- **`shellChildRoutes: RouteRecordRaw[]`** — The shop's own routes: Home, About, FAQ, Terms, Privacy, and a parameterised Error shell. Declared here (not in a module) because they describe the shop, not a domain.
+- **`moduleRoutes`** — Result of `collectModuleRoutes(enabledModules)` from the kernel registry. Every domain route enters the app through this single call.
+- **`assertUniqueRoutes([...])`** — Called at import time (before `createRouter`) to fail the build if any two routes—shell vs. shell, module vs. module, or shell vs. module—collide on name or path.
+- **`localeLessRedirects`** — Auto-generated redirects for every known first-segment path (`/products`, `/orders`, etc.) that re-prefix the default locale, so a bare path doesn't get misread as a locale code.
+- **`router` (created via `createRouter`)** — The exported router instance. Notable route structure:
+  - `/` → redirect to Home with default locale.
+  - `/oauth/callback` → redirect to `oauthCallbackLocation`, the one entry point that must exist outside `/:locale`.
+  - `/:locale` → nested `LayoutDefault` wrapper → shell + module children → `:catchAll` 404.
+  - Top-level `/:catchAll` → 404 for paths that don't match any known segment.
+- **`scrollBehavior`** — Restores `savedPosition` on back/forward, scrolls to anchor hash, skips scroll on same-path query changes, otherwise scrolls to top. Respects `prefers-reduced-motion`.
+- **`readLocaleParameter`** — Safely extracts the `:locale` param (guards against `string[]` from repeated params).
+- **`router.onError`** — Reports the error to the observability store, handles stale-deploy recovery (reload-once), and redirects to a meaningful error route.
+- **`registerStaleDeployRecovery(globalThis)`** — Registered at module load so the recovery hook is armed before the first lazy chunk import can fail.
 
 ## Relationships
 
-No graph neighbors are listed. Key dependencies visible in imports:
-
-- `@/kernel/registry` (`collectModuleRoutes`, `assertUniqueRoutes`) — sole entry point for domain routes.
-- `@/modules` (`enabledModules`) — determines which modules contribute routes.
-- `@/app/guards/authentications.ts` (`tryRestoreAuth`, `enforceRouteAccess`) — global `beforeEach` guards.
-- `@/app/guards/locale-choice` (`localeChoice`) — locale resolution guard.
-- `@/app/router/oauth-callback.ts`, `@/app/router/navigation.ts` — redirect targets.
-- `@/app/router/announcer.ts` — `afterEach` a11y focus/announcement.
-- `@/app/router/stale-deploy.ts` — stale chunk recovery logic.
-- `@/i18n` (`getDefaultLocale`, `translate`) — locale defaults and tab-title translation.
+- **`@/kernel/registry`** — Provides `collectModuleRoutes` and `assertUniqueRoutes`; the sole channel through which module routes enter the app.
+- **`@/modules`** — Exports `enabledModules`, the list fed into the registry collector.
+- **`@/app/guards/locale-choice`**, **`@/app/guards/authentications.ts`** — Navigation guard logic for locale and auth.
+- **`@/i18n`** — `getDefaultLocale` and `translate` for locale resolution and title lookup.
+- **`@/app/router/oauth-callback.ts`**, **`@/app/router/navigation.ts`**, **`@/app/router/announcer.ts`**, **`@/app/router/stale-deploy.ts`** — Focused router-adjacent utilities consumed here.
+- **`@/infrastructure/observability/store.ts`** — `useObservabilityStore().captureException` in the error handler.
+- **`@/app/utils/static-pages.ts`**, **`@/app/utils/branding.ts`** — `staticPageRouteName` and `brandName` for naming and tab-title suffix.
+- **`@/infrastructure/utils/use-link-token.ts`** — `isAnchorHash` in `scrollBehavior`.
+- **`@/app/utils/error-messages.ts`** — Error message helpers used in the error handler.
 
 ## Notes
 
-- `createWebHistory` receives `import.meta.env.BASE_URL` (Vite's path), **not** `VITE_APP_BASE_URL` directly — vue-router would interpret the latter as a full origin.
-- The `/oauth/callback` route sits outside `/:locale` because the backend's `NODE_FRONTEND_URL` names an origin, not a locale-prefixed path.
-- The empty-path child under `/:locale` renders `LayoutDefault.vue` (which contains its own `<RouterView>`); all page components are its grandchildren. This is the nested-layout pattern that mounts the shell layout once per locale context rather than per page.
-- `localeLessRedirects` are only generated for segments the app actually serves (filters out `''` and param paths like `:id`), so `/nonsense` still falls through to the unsupported-locale / 404 path.
-- The `onError` redirect target uses the `to` parameter, not `router.currentRoute`, because the failed navigation was never committed — `currentRoute` still points at the page being left.
-- `appName` is sourced from `brandName()` (an env-driven value) so derived projects can rename the browser tab without editing this file.
+- `assertUniqueRoutes` runs at **import time**, not at router-creation time, so a collision is a build/lint failure rather than a runtime surprise.
+- The `LayoutDefault` wrapper at `path: ''` under `/:locale` is the documented vue-router nested-layout pattern; it is lazy-imported to keep the nav, banners, and dialog hosts out of the entry chunk (enforced by `entry-chunk-budget.spec.ts`).
+- `scrollBehavior` returns `false` (not a scroll target) when `to.path === from.path`, preserving viewport on query-only navigations like re-filtering a list.
+- The `/oauth/callback` route exists **outside** `/:locale` because the backend's `NODE_FRONTEND_URL` is an origin without a locale segment; this is the only such entry point besides the root `/` redirect.
+- `router.onError` captures the error before any redirect; the `to` parameter (not `router.currentRoute`) is used for the redirect target because the failed navigation never committed.
+- `appName` is derived from `brandName()` (an env value) so a derived project can rebrand the tab suffix without editing the router.

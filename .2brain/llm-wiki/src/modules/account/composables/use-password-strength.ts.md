@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/composables/use-password-strength.ts
-sha256: 0022e050a704772ce32e5610601c88ac118c73b2c29aee1373f5c6c966e8432b
-generated_at: 2026-10-02T12:15:02.389820+00:00
+sha256: 206371deea17bd7f849537099274f65db9cd44a20dbd8edece1eabdad0802fee
+generated_at: 2026-10-17T00:17:43.957116+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,21 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Vue composable that scores a password field's strength locally via zxcvbn on every keystroke. It is strictly advisory (never blocks form submission) and is kept as a separate composable from the breach-check so a page that only needs one doesn't load the other's dependencies.
+Provides a reactive, client-side password strength score (0–4) using zxcvbn, scored locally on every keystroke. It is deliberately separate from the breach-check composable so that pages needing only one feature never load the other's dependencies. The score is strictly advisory and must never gate form submission.
 
 ## Key elements
 
-- **`usePasswordStrength(password: Ref<string>)`** — Exported composable. Accepts a reactive password ref, watches it (immediately), and returns `{ score: Ref<0|1|2|3|4 | undefined> }`. Score is `undefined` while the chunk is loading or the field is empty.
-- **`loadZxcvbn()`** — Module-private. Dynamically imports `@zxcvbn-ts/core`, `language-common`, and `language-en`, instantiates a `ZxcvbnFactory`, and caches the resulting promise in a module-level variable so all fields on the page share one build. On rejection it resets the cache to `undefined` so the next call retries.
-- **`zxcvbnPromise`** — Module-level cache (`Promise<ZxcvbnFactory> | undefined`).
+- **`loadZxcvbn()`** (internal) — Resolves a single shared `ZxcvbnFactory` instance on first call. Uses dynamic `import()` for `@zxcvbn-ts/core`, `language-common`, and `language-en` so Vite emits a separate lazy-loaded chunk. Caches the promise in a module-level `zxcvbnPromise`; on rejection it resets to `undefined` so the next keystroke retries.
+- **`usePasswordStrength(password: Ref<string>)`** (exported) — Watches the given password ref (`immediate: true`). For a non-empty candidate, fire-and-forget loads zxcvbn, calls `.check(candidate).score`, and writes to a reactive `score` ref (typed `0|1|2|3|4 | undefined`). Guards against stale writes by comparing `password.value === candidate` before assigning. Returns `{ score }`.
 
 ## Relationships
 
-No graph neighbors. The file's own header documents a deliberate separation from the sibling `use-password-breach-check.ts`: this composable never touches the network, and the breach check never loads zxcvbn's dictionaries, so each page pays for only what it uses.
+- **`PasswordStrengthMeter.vue`** — Consumes the reactive `score` returned by `usePasswordStrength` to render the visual strength meter in the account/password UI.
+- **`use-password-strength.spec.ts`** — Unit tests for the composable (score transitions, empty-field reset, failure resilience, stale-keystroke guard).
 
 ## Notes
 
-- **Code-splitting is intentional.** The `import()` calls cause Vite to emit zxcvbn as a separate chunk; a signup page shouldn't load it until a password field is actually focused.
-- **Advisory contract.** Components consuming `score` must never treat it as a gate. The real validation gate is the schema plus server-side checks.
-- **Race guard.** After the chunk resolves, the `.then` re-checks `password.value === candidate` to discard a stale result if the user has already typed more or cleared the field.
-- **Transient-failure tolerance.** A failed chunk load (e.g. offline) simply leaves `score` at `undefined` — no error surfaces to the user, and the next keystroke retries the load.
-- **Fire-and-forget.** The promise chain is `void`-prefixed; the composable never throws to the caller.
+- The score is advisory only; the composable's JSDoc explicitly warns consumers must not block submission on it.
+- `score` is `undefined` for an empty field *and* until the zxcvbn chunk has resolved — consumers should treat `undefined` as "no data" rather than "weak."
+- The zxcvbn instance is a module-level singleton; all password fields on any page share one build. This also means a transient network failure (offline) silently leaves the meter blank rather than crashing.
+- The `catch(() => undefined)` inside the watch callback swallows chunk-load errors by design — there is no retry loop, just "next keystroke retries via the reset promise."

@@ -1,7 +1,7 @@
 ---
 source: src/modules/account/tests/two-factor-enroll-countdown.spec.ts
-sha256: fedaea2dd3361213752400f56d71c924c0753900ec30df242f25e53a622242e2
-generated_at: 2026-10-02T12:32:31.338918+00:00
+sha256: 81f6a6a1f06abd04bfa803776326b244ff5536781f2966c4aed3dc6f2fe3cf25
+generated_at: 2026-10-17T00:27:29.277776+00:00
 model: ollama:qwen3.8:27b
 ---
 
@@ -9,22 +9,25 @@ model: ollama:qwen3.8:27b
 
 ## Purpose
 
-Verifies that `TwoFactorEnroll.vue` (accessibility fix FA82) keeps the visible countdown text outside any live region while providing a separate `role="status"` element for screen-reader announcements. It is the enroll-side counterpart to `two-factor-challenge-view.spec.ts`; the shared announcement logic itself is covered by `use-countdown.spec.ts`.
+Component-level accessibility test for `TwoFactorEnroll.vue`. It verifies that the visible countdown ticker (the "expires in …" paragraph) is kept **outside** any ARIA live region, while a dedicated `[role=status]` element exists to announce state changes. This complements `two-factor-challenge-view.spec.ts` (same pattern for the login challenge view) and `use-countdown.spec.ts` (unit-level proof of the shared announcement logic).
 
 ## Key elements
 
-- **`mountEnroll()`** — Builds the mock response map (a single `POST /account/2fa/methods/email/setup` fixture), activates a fresh Pinia instance, and mounts `TwoFactorEnroll` with `props: { method: 'email' }`, attaching to `document.body` so live-region queries work.
-- **`vi.mock('@/infrastructure/http')`** — Replaces `orvalMutator` with a stub that looks up `responses` by `"METHOD URL"` key and resolves the value through `parseOrvalFixture`, so the component receives a shaped envelope.
-- **The single `it` block** — After two `flushPromises` cycles, asserts that a `p.opacity-70` element without a `role` attribute exists and contains "expires in", *and* that a separate `[role=status]` element also exists. This is a structural/ARIA assertion, not a behavioral countdown test.
-- **`beforeEach` / `afterEach`** — Clears `document.body.innerHTML` and loads the `'en'` locale before/after each test.
+- **`mountEnroll()`** – Helper that pre-sets a canned `POST /account/2fa/methods/email/setup` response (via the `responses` record) and mounts `TwoFactorEnroll` with the `email` method prop, Vuetify, and i18n plugins attached to `document.body`.
+- **`responses` (module-level `Record<string, unknown>`)** – Lookup keyed by `"METHOD /url"` that the mocked `orvalMutator` consults on every call. Each test (or the helper) overwrites it before acting.
+- **`vi.mock('@/infrastructure/http', …)`** – Replaces `orvalMutator` with a stub that returns `parseOrvalFixture(method, url, responses[key])`, so no real HTTP or Orval-generated client is exercised.
+- **`describe('TwoFactorEnroll — the delivered code countdown')` / single `it`** – Asserts that `p.opacity-70:not([role])` exists and contains "expires in", and that a separate `[role=status]` element is present.
+- **`beforeEach` / `afterEach`** – Clears `document.body` and loads the `en` locale (restored after each test).
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top level to register the app's module graph in the test environment before any mounts occur.
-- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** — Provides `orvalEnvelope` (to build the raw fixture object) and `parseOrvalFixture` (to wrap it in the same envelope shape the real HTTP layer would deliver), ensuring the mock response matches production response structure.
+- **`src/modules/account/components/TwoFactorEnroll.vue`** – The SUT; mounted directly with `method: 'email'`.
+- **`tests/support/unit/wire-modules.ts`** – `wireModulesIntoCore()` is called once at module scope so that Vuetify/other plugin registrations resolve correctly before mounting.
+- **`tests/unit/infrastructure/http/orval-fixture-schema.ts`** – Supplies `orvalEnvelope` (builds a standard response envelope) and `parseOrvalFixture` (validates/normalises the canned body) used inside the HTTP mock.
 
 ## Notes
 
-- The test asserts DOM structure only (element existence + a substring); it does **not** verify that the live region actually announces text, that the countdown decrements, or that the visible text updates over time. Those concerns belong to `use-countdown.spec.ts`.
-- The `responses` record is reassigned inside `mountEnroll()` rather than in `beforeEach`, which is safe here because the component mounts only once per test, but it means adding a second mount call would silently overwrite the fixture map.
-- The file's JSDoc header explicitly cross-references two sibling specs to make clear which layer each one owns, preventing redundant coverage.
+- The test uses a `flushPromises().then(…)` promise chain rather than `async/await`; keep that pattern if extending the file.
+- `attachTo: document.body` is required for Vuetify's DOM queries; omitting it will cause `wrapper.find` to miss rendered content.
+- The mock is keyed by a `"METHOD /url"` string (e.g. `"POST /account/2fa/methods/email/setup"`). Adding a new endpoint test means adding a matching key to `responses` before the action under test.
+- This spec intentionally does **not** test the countdown tick interval or the composable's announcement text — those are covered by `use-countdown.spec.ts`. Only the DOM separation (visual text vs. live region) is asserted here.
