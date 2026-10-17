@@ -90,9 +90,13 @@ const {
 );
 
 /**
- * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ * The signed-in viewer's session, read by the leave guard to tell a forced sign-out from a choice.
  */
 const session = useSessionStore();
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
 const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
