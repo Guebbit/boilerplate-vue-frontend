@@ -4,6 +4,7 @@
  * message answered with a server fault keeps it listed and shows the alert, and a retry works.
  */
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
+import { SearchFeedbackRequestsResponse } from '../../../../../contracts/rest/schemas.zod';
 
 actionTable('feedback', [
     {
@@ -33,5 +34,20 @@ actionTable('feedback', [
         alert: 'feedback-row-action-error',
         message: 'The delete failed',
         listed: '[data-test=feedback-item]'
+    },
+    {
+        name: 'an inbox with no messages shows its empty state',
+        persona: 'admin',
+        route: '/en/feedback',
+        intercept: { method: 'POST', url: '**/feedback/search', operation: '/feedback/search' },
+        kind: 'empty',
+        emptyBody: {
+            success: true,
+            status: 200,
+            message: 'OK',
+            data: { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }
+        },
+        emptySchema: SearchFeedbackRequestsResponse,
+        empty: { copy: '.v-empty-state', rows: '[data-test=feedback-item]' }
     }
 ]);
