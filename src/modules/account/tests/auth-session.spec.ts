@@ -322,6 +322,25 @@ describe('the password reset flow', () => {
             }));
 });
 
+describe('a reset opened in a tab that is still signed in', () => {
+    it('drops this tab’s session: the server ended it with every other one', () => {
+        const auth = useAuthStore();
+
+        return auth
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() =>
+                auth.confirmPasswordReset('reset-token', 'Hunter3!hunter3', 'Hunter3!hunter3')
+            )
+            .then(() => {
+                const session = useSessionStore();
+
+                expect(session.accessToken).toBeUndefined();
+                expect(session.viewer).toBeUndefined();
+                expect(session.isAuth).toBe(false);
+            });
+    });
+});
+
 describe('logoutEverywhere', () => {
     it('calls logout-all — the compromised-credentials button', () => {
         const auth = useAuthStore();
