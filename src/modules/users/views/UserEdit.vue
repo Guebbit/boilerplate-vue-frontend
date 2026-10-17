@@ -16,7 +16,7 @@ export default {
  * multipart only when a new avatar is attached. There is no email and no password field: a
  * credential is its owner's alone, changed through their own account, never by staff.
  *
- * Each control follows the row's `actions` — the server's answer, key and rank together: with no
+ * Each control follows the row's `actions` — the server's answer, permission and role protection together: with no
  * `update` the profile fields and the role are disabled, with no `ban` the active switch is, and
  * one's own role is never offered (the server refuses it).
  *

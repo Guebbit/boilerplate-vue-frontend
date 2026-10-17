@@ -7,9 +7,9 @@
  * then edits phone, website and avatar, and meets the stale-record guard when someone else saved
  * first.
  *
- * `warehouse` because the admin may only grant what it holds itself, and holds every warehouse
- * key; a moderator would be refused most roles (JB12). The address is the story's own: no seed
- * knows it, so it is logged into through the form, not `cy.loginAs`.
+ * `warehouse` because only a role manager grants a role, and the admin is the one that holds
+ * `assign:Role` (OP19 walks the moderator and support being refused). The address is the story's
+ * own: no seed knows it, so it is logged into through the form, not `cy.loginAs`.
  */
 import { mailedLinkUrl, expectMailTemplate } from '../../../support/e2e/commands';
 import { adminMenuLinks, signInWith } from '../../../support/e2e/steps';
