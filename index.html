@@ -72,12 +72,14 @@
             </div>
         </div>
         <!--
-          Written fresh by `docker/docker-entrypoint.d/` at every container start — absent in dev,
-          unit tests and `vite preview`, where it 404s harmlessly and
-          `src/infrastructure/runtime-config.ts`'s reader falls back to `import.meta.env`. Must
-          load before the app bundle below.
+          Written fresh by `docker/docker-entrypoint.d/` at every container start. Absent in dev,
+          unit tests and `vite preview`, where the request falls back to this page: one console
+          error, otherwise harmless, and `src/infrastructure/runtime-config.ts` reads
+          `import.meta.env` instead. Must load before the app bundle below.
+          The base placeholder below anchors it to the app's base, not to the page: a relative `./config.js`
+          would resolve to `/en/products/config.js` on a cold deep link.
         -->
-        <script src="./config.js"></script>
+        <script src="%BASE_URL%config.js"></script>
         <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
