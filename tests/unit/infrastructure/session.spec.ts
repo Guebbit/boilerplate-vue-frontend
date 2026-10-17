@@ -530,6 +530,82 @@ describe('logout waits out an in-flight refresh', () => {
     });
 });
 
+/** An abilities answer granting exactly the given tenant rules. */
+const rules = (tenant: string[][]) =>
+    contractResponse(schemas.GetMyAbilitiesResponse, {
+        platform: [],
+        tenant,
+        version: 1,
+        subjects: ['Product'],
+        grantableRoles: []
+    });
+
+describe('reloadAbilities', () => {
+    it('replaces the rules and bumps the signal, so a taken-away right disappears', () => {
+        getMyAbilitiesMock.mockResolvedValue(rules([['delete', 'Product']]));
+        const store = signedIn();
+
+        return vi
+            .waitFor(() => expect(store.can('delete', 'Product')).toBe(true))
+            .then(() => {
+                getMyAbilitiesMock.mockResolvedValue(rules([]));
+                return store.reloadAbilities();
+            })
+            .then(() => {
+                expect(store.can('delete', 'Product')).toBe(false);
+                expect(store.abilitiesSignal).toBe(1);
+            });
+    });
+
+    it('keeps the rules it has when the read fails', () => {
+        getMyAbilitiesMock.mockResolvedValue(rules([['delete', 'Product']]));
+        const store = signedIn();
+
+        return vi
+            .waitFor(() => expect(store.can('delete', 'Product')).toBe(true))
+            .then(() => {
+                getMyAbilitiesMock.mockRejectedValue(new Error('offline'));
+                return store.reloadAbilities();
+            })
+            .then(() => {
+                expect(store.can('delete', 'Product')).toBe(true);
+                expect(store.abilitiesSignal).toBe(0);
+            });
+    });
+
+    it('shares one read between callers arriving together, and asks nothing for a guest', () => {
+        const guest = useSessionStore();
+        return guest
+            .reloadAbilities()
+            .then(() => {
+                expect(getMyAbilitiesMock).not.toHaveBeenCalled();
+                const store = signedIn();
+                return vi.waitFor(() => expect(store.viewer).toBeDefined()).then(() => store);
+            })
+            .then((store) => {
+                getMyAbilitiesMock.mockClear();
+                return Promise.all([store.reloadAbilities(), store.reloadAbilities()]);
+            })
+            .then(() => {
+                expect(getMyAbilitiesMock).toHaveBeenCalledOnce();
+            });
+    });
+
+    it('is also run after a token refresh', () => {
+        refreshTokenMock.mockResolvedValue({ data: { token: 'renewed' } });
+        const store = signedIn();
+
+        // Joins the read `signedIn` already started, so the count below starts clean.
+        return store
+            .reloadAbilities()
+            .then(() => {
+                getMyAbilitiesMock.mockClear();
+                return store.refreshToken();
+            })
+            .then(() => vi.waitFor(() => expect(getMyAbilitiesMock).toHaveBeenCalledOnce()));
+    });
+});
+
 describe('clearSession', () => {
     afterEach(() => {
         vi.restoreAllMocks();

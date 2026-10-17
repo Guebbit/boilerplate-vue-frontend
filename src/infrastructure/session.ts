@@ -478,6 +478,45 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
+     * Bumped each time {@link reloadAbilities} lands new rules. `LayoutDefault.vue` watches it to
+     * re-check the page on screen against them; the first load with a viewer does not bump it
+     * (the route guard has not even run yet).
+     */
+    const abilitiesSignal = ref(0);
+
+    /**
+     * The one abilities read in flight, or `undefined` between reads — single-flight, so a burst
+     * of 403s costs one `GET /account/abilities`.
+     */
+    let abilitiesInFlight: Promise<void> | undefined;
+
+    /**
+     * Re-reads the rules the server enforces for the current token, without touching the viewer.
+     * Called when the rules may have moved under a live session: after a 403 (a role was taken
+     * away) and after a token refresh. It changes rendering only; the server stays the authority.
+     *
+     * Fails quietly and keeps the rules it already has: a read that cannot land must not grey out
+     * a menu the visitor is still entitled to. A read issued with no viewer is skipped.
+     *
+     * @param announce - Whether a landed read bumps {@link abilitiesSignal}. `setViewer` passes
+     *  `false`: the rules it loads are the first ones, not a change.
+     * @returns A promise resolving once the read has settled. Never rejects.
+     */
+    const reloadAbilities = (announce = true): Promise<void> => {
+        if (!viewer.value) return Promise.resolve();
+        abilitiesInFlight ??= apiGetMyAbilities()
+            .then((answer) => {
+                setAbilities(getPayloadFromResponse<Abilities>(answer));
+                if (announce) abilitiesSignal.value += 1;
+            })
+            .catch(() => undefined)
+            .finally(() => {
+                abilitiesInFlight = undefined;
+            });
+        return abilitiesInFlight;
+    };
+
+    /**
      * Records who the token belongs to, and asks the server what they may do.
      *
      * The two travel together on purpose: a viewer without rules is a shell that hides every
@@ -503,13 +542,8 @@ export const useSessionStore = defineStore('session', () => {
             return Promise.resolve();
         }
 
-        return apiGetMyAbilities()
-            .then((answer) => {
-                setAbilities(getPayloadFromResponse<Abilities>(answer));
-            })
-            .catch(() => undefined);
+        return reloadAbilities(false);
     };
-
     /**
      * The one refresh attempt in flight, or `undefined` between attempts — single-flight (several
      * requests failing with 401 in the same tick must share one `POST /account/refresh`, not fire
@@ -544,7 +578,12 @@ export const useSessionStore = defineStore('session', () => {
             } as AxiosRequestConfigWithRetry)
                 .then((data) => {
                     const token = getTokenFromResponse(data);
-                    if (epochAtStart === sessionEpoch.value) setAccessToken(token);
+                    if (epochAtStart === sessionEpoch.value) {
+                        setAccessToken(token);
+                        // The rules may have moved while the old token lived; the first restore
+                        // has no viewer yet and reads them with `loadViewer` instead.
+                        void reloadAbilities();
+                    }
                     return token;
                 })
                 .catch((error: AxiosError) => {
@@ -874,6 +913,8 @@ export const useSessionStore = defineStore('session', () => {
         adoptSession,
         loadSessionMode,
         setViewer,
+        abilitiesSignal,
+        reloadAbilities,
         refreshToken,
         restoreFromCookies,
         loadViewer,

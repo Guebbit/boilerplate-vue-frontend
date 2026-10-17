@@ -160,7 +160,7 @@ export const tryRestoreAuth = (): Promise<void> => {
                 // empty until the viewer is known, so a guard can never admit someone whose rules
                 // it has not read. `!store.viewer` is what makes this a FIRST-navigation cost: once
                 // known, the viewer is refreshed on login, on a token refresh and on a 403 (see
-                // `interceptors.ts`), never on every route change.
+                // `http/refresh.ts` and `session.reloadAbilities`), never on every route change.
                 if (store.hasSession && !store.viewer) return store.loadViewer();
             })
             // Discard the payload so the guard resolves to void (NavigationGuardReturn)
