@@ -950,3 +950,43 @@ describe('session modes', () => {
         });
     });
 });
+
+/** The other person's account id: a valid object id, as the contract requires. */
+const SECOND_PERSON = '65e1a0000000000000000e99';
+
+describe('a sign-in in another tab', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('is broadcast by a login, and by nothing that keeps the same person', () => {
+        const postMessage = vi.spyOn(BroadcastChannel.prototype, 'postMessage');
+        const store = useSessionStore();
+        store.mode = 'jwt';
+
+        store.adoptSession({ data: { token: 'one' } });
+        expect(postMessage).not.toHaveBeenCalledWith({ type: 'login' });
+
+        store.adoptSession({ data: { token: 'two' } }, false);
+        expect(postMessage).toHaveBeenCalledWith({ type: 'login' });
+    });
+
+    it('replaces the person this tab was acting as', () => {
+        getSessionConfigMock.mockResolvedValue({ data: { mode: 'jwt' } });
+        refreshTokenMock.mockResolvedValue({ data: { token: 'second-persons' } });
+        getAccountMock.mockResolvedValue(
+            contractResponse(
+                schemas.GetAccountResponse,
+                aUser({ id: SECOND_PERSON, role: 'customer' })
+            )
+        );
+        const store = signedIn();
+        const channel = new BroadcastChannel('session');
+
+        channel.postMessage({ type: 'login' });
+
+        return vi
+            .waitFor(() => expect(store.viewer?.id).toBe(SECOND_PERSON))
+            .finally(() => channel.close());
+    });
+});

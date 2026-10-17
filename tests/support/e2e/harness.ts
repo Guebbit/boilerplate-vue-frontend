@@ -223,7 +223,7 @@ export const signatureVerifies = (
  *
  * A `BroadcastChannel` never hears its own posts and the app's instance is module-private, so
  * the second tab is a second channel object on the same name in the same page. The `session`
- * channel carries `logout` and `activity` today (`src/infrastructure/session.ts`).
+ * channel carries `login`, `logout` and `activity` (`src/infrastructure/session.ts`).
  */
 export const otherTab = {
     /**
@@ -245,8 +245,8 @@ export const otherTab = {
      * Signs in as `role` the way a second tab would — a login whose cookies land in the browser's
      * own jar, which this page shares — then announces it with a `login` message.
      *
-     * The app reads no `login` message yet, so the page learns of it only once it is built; until
-     * then a journey asserts what the cookie alone changes.
+     * The app answers a `login` message by re-reading the shared session, so the page changes
+     * person without a reload.
      *
      * @param role - which seeded account
      */
