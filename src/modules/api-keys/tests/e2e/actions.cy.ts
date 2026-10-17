@@ -26,5 +26,26 @@ actionTable('api-keys', [
         kind: 'form',
         alert: 'api-key-create-error',
         message: 'The mint failed'
+    },
+    {
+        name: 'a failed revoke keeps the key listed and shows the alert, and a retry succeeds',
+        persona: 'admin',
+        route: () =>
+            cy
+                .apiAs('admin', 'POST', '/api-keys', {
+                    name: `fault-${String(Date.now())}`,
+                    permissions: ['display:Product'],
+                    expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString()
+                })
+                .then(() => '/en/api-keys'),
+        trigger: () => {
+            cy.get('[data-test=row-revoke]').first().click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+        },
+        intercept: { method: 'DELETE', url: '**/api-keys/*', operation: '/api-keys/{id}' },
+        kind: 'row',
+        alert: 'api-keys-list-row-action-error',
+        message: 'The revoke failed',
+        listed: '[data-test=list-row]'
     }
 ]);
