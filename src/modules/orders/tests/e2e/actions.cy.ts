@@ -129,5 +129,37 @@ actionTable('orders', [
         alert: 'order-cancel-error',
         message: 'The cancel failed',
         listed: '[data-test=order-cancel]'
+    },
+    {
+        name: 'a failed export keeps the list and shows the alert, and a retry succeeds',
+        persona: 'admin',
+        route: '/en/sales/orders',
+        trigger: () => {
+            cy.get('[data-test=orders-export]').click();
+        },
+        intercept: { method: 'GET', url: '**/orders/export*', operation: '/orders/export' },
+        kind: 'row',
+        alert: 'orders-export-error',
+        // A CSV answer is read as text, so the page shows its generic sentence for a 500, not the
+        // envelope's message.
+        message: 'Something went wrong on our side. Please try again.',
+        listed: '[data-test=list-row]'
+    },
+    {
+        name: 'a failed buy-again keeps the order and its button, and a retry succeeds',
+        persona: 'user',
+        route: () => cy.subjectId('order.paid').then((id) => `/en/orders/${id}`),
+        trigger: () => {
+            cy.get('[data-test=order-reorder]').click();
+        },
+        intercept: {
+            method: 'POST',
+            url: '**/cart/reorder/*',
+            operation: '/cart/reorder/{orderId}'
+        },
+        kind: 'row',
+        alert: 'order-reorder-error',
+        message: 'The reorder failed',
+        listed: '[data-test=order-reorder]'
     }
 ]);

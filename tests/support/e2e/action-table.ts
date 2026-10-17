@@ -69,6 +69,12 @@ export interface ActionRow {
     alert?: string;
     /** `data-test` selector of the control the trigger presses, checked enabled again after the failure. */
     control?: string;
+    /**
+     * Why typed values are not compared after the failure, for a form whose controls rewrite their
+     * own text on blur (an autocomplete clears its search box once a value is chosen). The value
+     * itself is kept; only the raw `input` text differs. Say what does it.
+     */
+    valuesNotCompared?: string;
     /** For `dialog`: the selector that must still exist after the failure. */
     dialog?: string;
     /** For `row`: the selector of the row that must still be listed. */
@@ -188,7 +194,7 @@ const expectFailureHandled = (row: ActionRow, before: { href: string; values: st
         .should('be.visible')
         .and('contain.text', row.message ?? row.code ?? DEFAULT_CODE);
     cy.location('href').should('equal', before.href);
-    typedValues().should('deep.equal', before.values);
+    if (row.valuesNotCompared === undefined) typedValues().should('deep.equal', before.values);
     if (row.dialog) cy.get(row.dialog).should('exist');
     if (row.listed) cy.get(row.listed).should('exist');
     if (row.control) cy.get(row.control).should('not.be.disabled');

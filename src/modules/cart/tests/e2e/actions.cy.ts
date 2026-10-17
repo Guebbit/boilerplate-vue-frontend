@@ -30,5 +30,22 @@ actionTable('cart', [
         alert: 'cart-line-action-error',
         message: 'The removal failed',
         listed: '[data-test=cart-item]'
+    },
+    {
+        name: 'a failed add to cart keeps the button and shows the alert, and a retry succeeds',
+        persona: 'user',
+        route: () =>
+            cy
+                .apiAs('user', 'DELETE', '/cart/all')
+                .then(() => cy.subjectId('product.inStock'))
+                .then((id) => `/en/products/${id}`),
+        trigger: () => {
+            cy.get('[data-test=add-to-cart]').click();
+        },
+        intercept: { method: 'POST', url: '**/cart', operation: '/cart' },
+        kind: 'row',
+        alert: 'add-to-cart-error',
+        message: 'The add failed',
+        listed: '[data-test=add-to-cart]'
     }
 ]);

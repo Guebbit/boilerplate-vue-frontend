@@ -61,5 +61,23 @@ actionTable('example', [
         alert: 'examples-list-row-action-error',
         message: 'The delete failed',
         listed: '[data-test=list-row]'
+    },
+    {
+        name: 'a failed delete from the detail page keeps the example and its button, and a retry succeeds',
+        persona: 'user',
+        route: `/en/examples/${CUSTOMER_PUBLISHED}`,
+        trigger: () => {
+            cy.get('[data-test=example-delete]').click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+        },
+        intercept: {
+            method: 'DELETE',
+            url: `**/examples/${CUSTOMER_PUBLISHED}`,
+            operation: '/examples/{id}'
+        },
+        kind: 'row',
+        alert: 'example-target-delete-error',
+        message: 'The delete failed',
+        listed: '[data-test=example-delete]'
     }
 ]);
