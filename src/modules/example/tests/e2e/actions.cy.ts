@@ -47,5 +47,19 @@ actionTable('example', [
         alert: 'example-edit-form-error',
         message: 'The save failed',
         control: '[data-test=example-submit]'
+    },
+    {
+        name: 'a failed delete keeps the row listed and shows the alert, and a retry succeeds',
+        persona: 'user',
+        route: '/en/examples',
+        trigger: () => {
+            cy.get('[data-test=row-delete]').first().click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+        },
+        intercept: { method: 'DELETE', url: '**/examples/*', operation: '/examples/{id}' },
+        kind: 'row',
+        alert: 'examples-list-row-action-error',
+        message: 'The delete failed',
+        listed: '[data-test=list-row]'
     }
 ]);

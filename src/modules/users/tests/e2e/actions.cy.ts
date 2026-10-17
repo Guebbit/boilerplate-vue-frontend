@@ -50,5 +50,19 @@ actionTable('users', [
         kind: 'form',
         alert: 'user-edit-submit-error',
         message: 'The save failed'
+    },
+    {
+        name: 'a failed delete keeps the row listed and shows the alert, and a retry succeeds',
+        persona: 'admin',
+        route: '/en/users',
+        trigger: () => {
+            cy.get('[data-test=row-delete]').first().click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+        },
+        intercept: { method: 'DELETE', url: '**/users/*', operation: '/users/{id}' },
+        kind: 'row',
+        alert: 'users-list-row-action-error',
+        message: 'The delete failed',
+        listed: '[data-test=list-row]'
     }
 ]);

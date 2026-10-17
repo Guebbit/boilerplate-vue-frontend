@@ -57,5 +57,26 @@ actionTable('webhooks', [
         kind: 'form',
         alert: 'webhook-edit-form-error',
         message: 'The save failed'
+    },
+    {
+        name: 'a failed delete keeps the row listed and shows the alert, and a retry succeeds',
+        persona: 'admin',
+        route: () =>
+            sinkEndpoint(`/hook-${unique()}`)
+                .then((url) => cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }))
+                .then(() => '/en/webhooks/subscriptions'),
+        trigger: () => {
+            cy.get('[data-test=row-delete]').first().click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+        },
+        intercept: {
+            method: 'DELETE',
+            url: '**/webhooks/subscriptions/*',
+            operation: '/webhooks/subscriptions/{id}'
+        },
+        kind: 'row',
+        alert: 'webhooks-list-row-action-error',
+        message: 'The delete failed',
+        listed: '[data-test=list-row]'
     }
 ]);
