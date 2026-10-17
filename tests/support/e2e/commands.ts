@@ -266,6 +266,8 @@ declare global {
     }
 }
 
+export { byTemplate, inLocale } from '../../../scripts/e2e/mail-filters';
+
 /** Which of an address's emails a spec means — see `emailTo`'s `matches`. */
 export type MailFilter = (email: MailedEmail) => boolean;
 
@@ -274,6 +276,7 @@ export interface DemoOutboxEmail {
     to: string;
     subject: string;
     template: string;
+    locale?: string;
     token?: string;
     lines?: string[];
     attachments?: string[];
