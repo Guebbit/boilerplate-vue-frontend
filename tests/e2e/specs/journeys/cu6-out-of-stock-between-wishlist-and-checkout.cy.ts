@@ -59,6 +59,9 @@ describe('CU6 · Out of stock between wishlist and checkout', () => {
         cy.subjectProduct('product.barebones').then(({ title }) => {
             cy.visit('/en/wishlist');
             cy.contains('[data-test=wishlist-item]', title)
+                .find('[data-test=wishlist-line-availability]')
+                .should('have.attr', 'data-availability', 'out_of_stock');
+            cy.contains('[data-test=wishlist-item]', title)
                 .find('[data-test=wishlist-move-to-cart]')
                 .click();
             cy.contains('[data-test=wishlist-item]', title).should('not.exist');

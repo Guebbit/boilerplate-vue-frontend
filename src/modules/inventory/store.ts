@@ -8,7 +8,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
+import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import {
     adjustStock,
     listInventoryLevels,
@@ -67,16 +67,17 @@ export const useInventoryStore = defineStore('inventory', () => {
     });
 
     /**
-     * `Idempotency-Key` for a receipt: a retry after a network error or a 5xx resends the SAME key,
-     * so the API replays the first answer instead of counting the delivery twice.
+     * `Idempotency-Key`s for a receipt, one per product: a retry after a lost connection resends
+     * the SAME key, so the API replays the first answer instead of counting the delivery twice. A
+     * fault spends the key, and the stock level is re-read before the next attempt.
      */
-    const receiptIdempotencyKey = useIdempotencyKey();
+    const receiptIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key` for an adjustment, for the same reason: a delta applied twice is a wrong
-     * stock count.
+     * `Idempotency-Key`s for an adjustment, one per product, for the same reason: a delta applied
+     * twice is a wrong stock count.
      */
-    const adjustmentIdempotencyKey = useIdempotencyKey();
+    const adjustmentIdempotencyKeys = useIdempotencyKeys();
 
     /**
      * The latest movements, as last fetched.
@@ -191,18 +192,20 @@ export const useInventoryStore = defineStore('inventory', () => {
      * @param note - The supplier, the delivery note number — whatever belongs on the row.
      * @returns A promise resolving with the counters after the delivery.
      */
-    const receive = (productId: string, quantity: number, note?: string) =>
-        fetchAny(() =>
-            receiveStock({ productId, quantity, note }, receiptIdempotencyKey.withKey())
+    const receive = (productId: string, quantity: number, note?: string) => {
+        const keeper = receiptIdempotencyKeys.forSubject(productId);
+        return fetchAny(() =>
+            receiveStock({ productId, quantity, note }, keeper.withKey())
                 .then((response) => {
-                    receiptIdempotencyKey.settle();
+                    keeper.settle();
                     return reloadAfterWrite(response.data);
                 })
                 .catch((error: unknown) => {
-                    receiptIdempotencyKey.settle(error);
+                    keeper.settle(error);
                     throw error;
                 })
         );
+    };
 
     /**
      * Corrects the count after a stocktake, then reloads what it changed.
@@ -212,18 +215,20 @@ export const useInventoryStore = defineStore('inventory', () => {
      * @param note - Why. An unexplained correction is the thing an audit is looking for.
      * @returns A promise resolving with the counters after the correction.
      */
-    const adjust = (productId: string, delta: number, note?: string) =>
-        fetchAny(() =>
-            adjustStock({ productId, delta, note }, adjustmentIdempotencyKey.withKey())
+    const adjust = (productId: string, delta: number, note?: string) => {
+        const keeper = adjustmentIdempotencyKeys.forSubject(productId);
+        return fetchAny(() =>
+            adjustStock({ productId, delta, note }, keeper.withKey())
                 .then((response) => {
-                    adjustmentIdempotencyKey.settle();
+                    keeper.settle();
                     return reloadAfterWrite(response.data);
                 })
                 .catch((error: unknown) => {
-                    adjustmentIdempotencyKey.settle(error);
+                    keeper.settle(error);
                     throw error;
                 })
         );
+    };
 
     /**
      * Expires every stale reservation, then reloads both views — released holds moved `reserved`.

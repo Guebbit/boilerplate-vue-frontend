@@ -2,7 +2,7 @@
  * `scripts/e2e/mail-filters.ts` — which email a spec means, on a profile that may not say.
  */
 import { describe, expect, it } from 'vitest';
-import { byTemplate, inLocale } from '../../../../scripts/e2e/mail-filters';
+import { byTemplate, inLocale, mailAbout } from '../../../../scripts/e2e/mail-filters';
 
 describe('byTemplate', () => {
     it('keeps the named template and drops the others', () => {
@@ -34,5 +34,23 @@ describe('inLocale', () => {
 
     it('matches a recordless email when no subject fallback is given', () => {
         expect(inLocale('it')({ to: 'a@b.c', subject: 'Your order' })).toBe(true);
+    });
+});
+
+describe('mailAbout', () => {
+    const matches = mailAbout('order was cancelled', 'ORD-17');
+
+    it('wants the subject fragment and the order number together', () => {
+        expect(
+            matches({ to: 'a@b.c', subject: 'Your order was cancelled', lines: ['number: ORD-17'] })
+        ).toBe(true);
+        expect(matches({ to: 'a@b.c', subject: 'Your order was cancelled ORD-17' })).toBe(true);
+    });
+
+    it('refuses the right subject about another order, and the right order under another subject', () => {
+        expect(
+            matches({ to: 'a@b.c', subject: 'Your order was cancelled', lines: ['number: ORD-18'] })
+        ).toBe(false);
+        expect(matches({ to: 'a@b.c', subject: 'Your refund ORD-17' })).toBe(false);
     });
 });

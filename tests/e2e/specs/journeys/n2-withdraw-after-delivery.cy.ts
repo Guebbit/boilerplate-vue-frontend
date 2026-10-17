@@ -13,8 +13,13 @@
  * cannot pass. The subject is `order.withdrawal-open`: delivered a day back by standard shipping,
  * inside the window whatever period the deployment offers (`order.delivered` is weeks past it).
  */
-import { centsOf, eventually, idFromLocation, orderNumberShown } from '../../../support/e2e/steps';
-import { mailMentions } from '../../../../scripts/e2e/mail-message';
+import {
+    centsOf,
+    eventually,
+    idFromLocation,
+    orderMailTo,
+    orderNumberShown
+} from '../../../support/e2e/steps';
 
 /** What the warehouse keeps back for handling damage, in cents. */
 const DEDUCTION_CENTS = 300;
@@ -130,10 +135,14 @@ describe('N2 · Withdraw after delivery', () => {
             cy.get('[data-test=order-credit-note-row]').should('have.length', 1);
             idFromLocation().should('equal', orderId);
             orderNumberShown().then((number) => {
-                cy.accountOf('user').then(({ email }) => {
-                    cy.emailTo(email, (mail) => mailMentions(mail, number));
-                });
+                cy.apiAs<{ orderNumber: string }>('user', 'GET', `/orders/${orderId}`).should(
+                    (order) => expect(order?.orderNumber).to.equal(number)
+                );
             });
+
+            cy.step('the customer is mailed the acknowledgement, then the refund of the return');
+            orderMailTo('user', orderId, 'We received your withdrawal');
+            orderMailTo('user', orderId, 'Your return was refunded');
         });
     });
 });

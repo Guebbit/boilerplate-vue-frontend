@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import { cents } from '../../../scripts/e2e/cents';
+import { mailAbout } from '../../../scripts/e2e/mail-filters';
 import type { MailedEmail } from '../../../scripts/e2e/mail-message';
 import type { E2ERole } from './scenario';
 import { requestAsDevice, type Device, type DeviceResponse } from './harness';
@@ -302,6 +303,30 @@ export const eventually = <T>(
         // eslint-disable-next-line cypress/no-unnecessary-waiting -- the consequence has no event the browser can wait on
         return cy.wait(500).then(() => eventually(read, isDone, attemptsLeft - 1));
     });
+
+/**
+ * Waits for the mail a customer got about one order, and yields it: the subject carries
+ * `subject` and the body names the order's number. Which template sent it is not asked, since a
+ * sender can move between modules.
+ *
+ * @param role - whose inbox
+ * @param orderId - the order the mail is about
+ * @param subject - a fragment of the subject, in the language of the mail
+ */
+export const orderMailTo = (
+    role: E2ERole,
+    orderId: string,
+    subject: string
+): Cypress.Chainable<MailedEmail> =>
+    cy
+        .apiAs<{ orderNumber: string }>(role, 'GET', `/orders/${orderId}`)
+        .then((order) =>
+            cy
+                .accountOf(role)
+                .then(({ email }) =>
+                    cy.emailTo(email, mailAbout(subject, String(order?.orderNumber)))
+                )
+        );
 
 /**
  * Whether a mail carries a confirmation link other than `known` — how the spec tells the second

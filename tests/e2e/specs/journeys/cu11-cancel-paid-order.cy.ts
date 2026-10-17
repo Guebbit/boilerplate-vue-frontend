@@ -5,11 +5,10 @@
  * not yet dispatched. The cancellation asks once, and then three things follow from it: the card is
  * refunded whole, the units go back on the shelf, and a credit note is issued against the invoice.
  *
- * There is no cancellation mail to assert: a customer's own cancel sends none (only the system's
- * expiries do — `orders/services/cancel.ts`). The order is the seeded `order.paid`, so the story
- * spends no card budget; paying is N1's and CU1's business.
+ * The buyer is mailed twice: the cancellation, and the refund that follows it. The order is the
+ * seeded `order.paid`, so the story spends no card budget; paying is N1's and CU1's business.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, orderMailTo } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -96,6 +95,10 @@ describe('CU11 · I cancel a paid order and get my money back', () => {
                 });
                 cy.reload();
                 cy.get('[data-test=payment-status]').should('contain.text', 'Refunded');
+
+                cy.step('the buyer is mailed the cancellation and the refund');
+                orderMailTo('user', orderId, 'Your order was cancelled');
+                orderMailTo('user', orderId, 'Your refund has been issued');
 
                 cy.step('the units are back on the shelf');
                 cy.apiAs<{ available: number }>('admin', 'GET', `/products/${productId}`).should(

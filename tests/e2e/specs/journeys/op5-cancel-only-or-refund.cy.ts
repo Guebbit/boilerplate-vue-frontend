@@ -12,7 +12,7 @@
  * Two seeded paid orders, one for each branch. Stock is read as the admin sees it, off the API,
  * beside the shelf before and after.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, orderMailTo } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -131,6 +131,14 @@ describe('OP5 · Cancel only versus cancel and refund', () => {
                         ).should((notes) => {
                             expect(notes).to.have.length(1);
                         });
+
+                    cy.step(
+                        'the customer is mailed each cancellation, and each refund when it came'
+                    );
+                    for (const orderId of [keptId, refundedId])
+                        orderMailTo('user', orderId, 'Your order was cancelled');
+                    for (const orderId of [keptId, refundedId])
+                        orderMailTo('user', orderId, 'Your refund has been issued');
 
                     cy.step('both cancellations put their units back on the shelf');
                     cy.apiAs<ProductLike>('admin', 'GET', `/products/${productId}`).should(
