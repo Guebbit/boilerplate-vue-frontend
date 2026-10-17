@@ -15,7 +15,7 @@
  *
  * @param role - the seeded persona to sign in as
  */
-const signIn = (role: 'user' | 'warehouse') => {
+const signIn = (role: 'user' | 'manager') => {
     cy.accountOf(role).then(({ email, password }) => {
         cy.get('[type=email]').should('not.be.disabled').clear();
         cy.get('[type=email]').type(email);
@@ -90,7 +90,7 @@ describe('FR9 · I was sent a link, but I am not logged in', () => {
             cy.restore();
             cy.visit(staffLink);
             cy.get('#login-page').should('exist');
-            signIn('warehouse');
+            signIn('manager');
             cy.location('pathname').should('equal', staffLink);
         });
     });

@@ -7,7 +7,7 @@
  */
 
 /** The price typed and not saved. */
-const TYPED_PRICE = '41.5';
+const TYPED_PRICE = '41.50';
 
 /** Clicks the visible `about` link in the app bar: a router navigation, not a page load. */
 const clickAboutLink = () => {
