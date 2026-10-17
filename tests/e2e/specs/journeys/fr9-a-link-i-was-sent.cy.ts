@@ -10,6 +10,21 @@
  * about whether it exists; the page says so through the shell's Error page.
  */
 
+/**
+ * Fills the login form on the page it is shown and submits it.
+ *
+ * @param role - the seeded persona to sign in as
+ */
+const signIn = (role: 'user' | 'warehouse') => {
+    cy.accountOf(role).then(({ email, password }) => {
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').type(email);
+        cy.get('[type=password]').clear();
+        cy.get('[type=password]').type(password);
+        cy.get('form').submit();
+    });
+};
+
 describe('FR9 · I was sent a link, but I am not logged in', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -55,5 +70,28 @@ describe('FR9 · I was sent a link, but I am not logged in', () => {
         });
         cy.get('#error-page').should('exist');
         cy.get('#return-target').should('not.exist');
+    });
+
+    it('a staff link sent to a customer turns back with a notice, and to the right staff opens', () => {
+        cy.subjectId('order.paid').then((orderId) => {
+            const staffLink = `/en/orders/${orderId}/edit`;
+            cy.step('a guest opens a staff link and is asked to log in');
+            cy.visit(staffLink);
+            cy.get('#login-page').should('exist');
+            cy.location('search').should('include', 'continue=');
+
+            cy.step('a customer signing in is turned back to Home with a notice, with no loop');
+            signIn('user');
+            cy.get('#home-page').should('exist');
+            cy.location('pathname').should('equal', '/en');
+            cy.get('.v-alert').should('exist');
+
+            cy.step('the same link, opened by a guest who is staff, lands on the edit page');
+            cy.restore();
+            cy.visit(staffLink);
+            cy.get('#login-page').should('exist');
+            signIn('warehouse');
+            cy.location('pathname').should('equal', staffLink);
+        });
     });
 });
