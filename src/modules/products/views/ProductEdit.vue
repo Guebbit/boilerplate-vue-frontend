@@ -23,6 +23,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useProductsStore } from '../store';
 import { productsSchema } from '../schemas.ts';
 import { useActiveLocales } from '../composables/use-active-locales.ts';
@@ -258,7 +259,7 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
  * Auto-hydrate the form from the fetched admin record once it resolves.
  */
 activateAutoHydrate(
-    computed(() =>
+    holdWhileSubmitting(isSubmitting, () =>
         adminProduct.value
             ? {
                   price: adminProduct.value.price,

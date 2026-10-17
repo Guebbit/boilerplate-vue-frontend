@@ -23,6 +23,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useWebhooksStore } from '../store';
 import { webhookEditSchema } from '../schemas.ts';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
@@ -114,7 +115,7 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  * Auto-hydrate the form from the fetched record once it resolves.
  */
 activateAutoHydrate(
-    computed(() =>
+    holdWhileSubmitting(isSubmitting, () =>
         currentSubscription.value
             ? {
                   url: currentSubscription.value.url,

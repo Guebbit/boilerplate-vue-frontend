@@ -31,6 +31,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
@@ -162,7 +163,7 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
  * instead of two `undefined`s that would always look equal.
  */
 activateAutoHydrate(
-    computed(() =>
+    holdWhileSubmitting(isSubmitting, () =>
         currentUser.value
             ? {
                   username: currentUser.value.username,

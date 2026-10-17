@@ -23,6 +23,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
@@ -317,7 +318,9 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  * Auto-hydrate the form from the fetched record once it resolves.
  */
 activateAutoHydrate(
-    computed(() => (currentOrder.value ? { email: currentOrder.value.email } : undefined))
+    holdWhileSubmitting(isSubmitting, () =>
+        currentOrder.value ? { email: currentOrder.value.email } : undefined
+    )
 );
 
 /**

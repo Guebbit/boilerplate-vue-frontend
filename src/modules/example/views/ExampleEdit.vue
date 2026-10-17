@@ -23,6 +23,7 @@ import { Calendar, Clock, Hash, NotebookPen, Pencil } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useExampleStore } from '../store';
 import { exampleEditSchema } from '../schemas.ts';
 import { EXAMPLE_STATUSES } from '../domain';
@@ -117,7 +118,7 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  * Fills the form from the record once it is there, and again when the record changes under it.
  */
 activateAutoHydrate(
-    computed(() =>
+    holdWhileSubmitting(isSubmitting, () =>
         currentExample.value
             ? {
                   title: currentExample.value.title,
