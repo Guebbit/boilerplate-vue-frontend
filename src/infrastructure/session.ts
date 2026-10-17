@@ -35,6 +35,7 @@ import {
     getRetryAfter
 } from '@/infrastructure/http/envelope.ts';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
+import { asPassive } from '@/infrastructure/http/passive.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
@@ -504,7 +505,7 @@ export const useSessionStore = defineStore('session', () => {
      */
     const reloadAbilities = (announce = true): Promise<void> => {
         if (!viewer.value) return Promise.resolve();
-        abilitiesInFlight ??= apiGetMyAbilities()
+        abilitiesInFlight ??= apiGetMyAbilities(asPassive())
             .then((answer) => {
                 setAbilities(getPayloadFromResponse<Abilities>(answer));
                 if (announce) abilitiesSignal.value += 1;
@@ -573,9 +574,9 @@ export const useSessionStore = defineStore('session', () => {
             // Captured before the request goes out, not read again after: this attempt answers
             // for the session as it was when it started, not as it is when the response lands.
             const epochAtStart = sessionEpoch.value;
-            refreshInFlight = apiRefreshToken({
-                _refreshed: true
-            } as AxiosRequestConfigWithRetry)
+            refreshInFlight = apiRefreshToken(
+                asPassive({ _refreshed: true } as AxiosRequestConfigWithRetry)
+            )
                 .then((data) => {
                     const token = getTokenFromResponse(data);
                     if (epochAtStart === sessionEpoch.value) {

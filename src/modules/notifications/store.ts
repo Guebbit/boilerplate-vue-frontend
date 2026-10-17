@@ -33,6 +33,7 @@ import { i18n, translate } from '@/i18n';
 import { notifyErrorMessages, rethrowUnlessAbsent } from '@/infrastructure/utils/errors.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { asPassive } from '@/infrastructure/http/passive.ts';
 import { describeNotification, notificationOrderId } from './domain';
 import type { InboxItem } from './types';
 
@@ -272,7 +273,7 @@ export const useInboxStore = defineStore('inbox', () => {
         const claim = readTickets.take();
         const guard: ReadGuard = { pushed: new Set(), deleted: new Set(), deletedAll: false };
         readsInFlight.add(guard);
-        return listNotifications()
+        return listNotifications(asPassive())
             .then(({ data }) => {
                 if (claim()) applyRead(data.items, guard);
             })

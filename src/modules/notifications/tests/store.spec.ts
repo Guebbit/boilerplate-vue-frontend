@@ -114,6 +114,21 @@ afterEach(() => {
 });
 
 describe('sync', () => {
+    it('reads the inbox as a passive request: syncing is not the person acting', () => {
+        serverHolds([]);
+
+        return useInboxStore()
+            .sync()
+            .then(() => {
+                const [, options] = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.find(
+                        ([config]) => (config as { url: string }).url === '/notifications'
+                    )!;
+                expect(options).toMatchObject({ headers: { 'X-Session-Passive': 'true' } });
+            });
+    });
+
     it("adds every row as a persistent message, newest first, in the reader's language", () => {
         serverHolds([
             row('n1', { createdAt: '2026-10-04T09:00:00.000Z' }),
