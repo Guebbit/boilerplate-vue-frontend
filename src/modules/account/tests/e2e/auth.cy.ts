@@ -52,7 +52,7 @@ describe('Authentication', () => {
 
         /*
          * The session cookie's expiry is the one observable effect of "remember me": unchecked,
-         * it is a browser-session cookie (no `expiry` at all); checked, it lasts days. It is
+         * it is a browser-session cookie (no `expiry` at all); checked, it lasts 30 days. It is
          * `__Host-session` in both session modes — the refresh token in one, the session id in
          * the other — rather than the readable `isAuth` twin: Cypress reads httpOnly cookies, a
          * page script could not.
@@ -66,17 +66,23 @@ describe('Authentication', () => {
             cy.getCookie('__Host-session').should('exist').and('not.have.property', 'expiry');
         });
 
-        it('remember me keeps the session for days', () => {
+        it('remember me keeps the session for 30 days', () => {
             cy.get('[type=email]').should('not.be.disabled').type(seedAccount('admin').email);
             cy.get('[type=password]').should('not.be.disabled').type(seedAccount('admin').password);
             cy.get('[type=checkbox]').check({ force: true });
             cy.get('form').submit();
             cy.get('#home-page').should('exist');
 
+            // The `long` tier (30 days, ASVS 4.0.3 V3.3.2), give or take an hour of test latency.
+            const thirtyDays = 30 * 24 * 60 * 60;
             cy.getCookie('__Host-session')
                 .should('exist')
                 .its('expiry')
-                .should('be.greaterThan', Date.now() / 1000 + 24 * 60 * 60);
+                .should(
+                    'be.within',
+                    Date.now() / 1000 + thirtyDays - 3600,
+                    Date.now() / 1000 + thirtyDays + 3600
+                );
         });
     });
 

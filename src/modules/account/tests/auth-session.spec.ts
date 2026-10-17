@@ -134,7 +134,7 @@ describe('login', () => {
             });
     });
 
-    it('maps the remember checkbox to the medium tier, and sends no tier otherwise', () =>
+    it('maps the remember checkbox to the long tier, and sends no tier otherwise', () =>
         useAuthStore()
             .login('ada@example.com', 'hunter2hunter2', true)
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
@@ -146,7 +146,7 @@ describe('login', () => {
                     )
                     .map((call) => (call[0] as { data: unknown }).data);
                 expect(bodies).toEqual([
-                    { email: 'ada@example.com', password: 'hunter2hunter2', remember: 'medium' },
+                    { email: 'ada@example.com', password: 'hunter2hunter2', remember: 'long' },
                     { email: 'ada@example.com', password: 'hunter2hunter2', remember: undefined }
                 ]);
             }));

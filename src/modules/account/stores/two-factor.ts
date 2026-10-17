@@ -402,7 +402,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                 code,
                 // The password step set no cookie, so the box's value is sent again here: the
                 // backend sizes the session cookie from THIS request. Absent for OAuth logins.
-                remember: remember ? RememberTier.medium : undefined
+                remember: remember ? RememberTier.long : undefined
             }).then((data) => {
                 useSessionStore().adoptSession(data, remember);
                 return useProfileStore()
