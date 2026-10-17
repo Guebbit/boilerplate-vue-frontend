@@ -22,6 +22,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { exclusiveRunner } from '@/infrastructure/http/single-flight.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useOrdersStore } from '../store.ts';
@@ -205,6 +206,12 @@ const {
 } = useBlockingError();
 
 /**
+ * The gate the three money actions share: these requests carry no `Idempotency-Key`, so a second
+ * press while one runs must join it, not reach the server as a second cancel that comes back 409.
+ */
+const runExclusive = exclusiveRunner();
+
+/**
  * Cancels the order, with or without returning the money. The order re-read is the store's own
  * `updateTarget` write; the payment is a sibling record the order's cache entry knows nothing
  * about, so it needs its own re-read here — otherwise "Refund only" stays enabled on a payment
@@ -213,7 +220,15 @@ const {
  * @param withRefund - Whether the money goes back with the cancellation.
  * @returns A promise resolving once the order and its payment are re-read.
  */
-const runCancel = (withRefund: boolean) => {
+const runCancel = (withRefund: boolean) => runExclusive(() => cancelOnce(withRefund));
+
+/**
+ * The cancel itself, behind {@link runCancel}'s gate.
+ *
+ * @param withRefund - Whether the money goes back with the cancellation.
+ * @returns A promise resolving once the order and its payment are re-read.
+ */
+const cancelOnce = (withRefund: boolean) => {
     if (!id) return Promise.resolve();
     clearActionsError();
     return cancelOrder(id, withRefund)
@@ -258,7 +273,14 @@ const refundAmountInvalid = computed(() => Number.isNaN(refundAmount.value));
  *
  * @returns A promise resolving once the payment is re-read, which is what greys the control out.
  */
-const runRefund = () => {
+const runRefund = () => runExclusive(refundOnce);
+
+/**
+ * The refund itself, behind {@link runRefund}'s gate.
+ *
+ * @returns A promise resolving once the refund and the re-read are done.
+ */
+const refundOnce = () => {
     clearActionsError();
     return refund(refundAmount.value)
         .then(() => {
