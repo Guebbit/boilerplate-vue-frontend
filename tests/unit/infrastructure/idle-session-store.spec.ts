@@ -31,6 +31,36 @@ beforeEach(() => {
     vi.mocked(orvalMutator).mockClear();
 });
 
+/** How many times the touch was asked. */
+const touchesAsked = () =>
+    vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.url === '/account/session/touch')
+        .length;
+
+describe('the idle clock, asked when the viewer is set', () => {
+    it('is read once per signed-in stretch, not at every viewer load', async () => {
+        touchAnswer = orvalEnvelope({ lastActiveAt: '2026-10-14T10:00:00.000Z' });
+        const session = useSessionStore();
+        const viewer = { id: 'u1', email: 'a@example.com' };
+
+        await session.setViewer(viewer);
+        await session.setViewer(viewer);
+
+        expect(touchesAsked()).toBe(1);
+    });
+
+    it('is asked again after the session ended', async () => {
+        touchAnswer = orvalEnvelope({ lastActiveAt: '2026-10-14T10:00:00.000Z' });
+        const session = useSessionStore();
+        const viewer = { id: 'u1', email: 'a@example.com' };
+
+        await session.setViewer(viewer);
+        session.clearSession();
+        await session.setViewer(viewer);
+
+        expect(touchesAsked()).toBe(2);
+    });
+});
+
 describe('the idle clock', () => {
     it('is read from the server on a touch, in this client’s own milliseconds', async () => {
         touchAnswer = orvalEnvelope({

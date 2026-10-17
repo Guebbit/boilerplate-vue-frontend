@@ -92,7 +92,8 @@ describe('login', () => {
                 expect(requestedUrls()).toEqual([
                     '/account/login',
                     '/account',
-                    '/account/abilities'
+                    '/account/abilities',
+                    '/account/session/touch'
                 ]);
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
@@ -114,7 +115,8 @@ describe('login', () => {
                 expect(requestedUrls()).toEqual([
                     '/account/login',
                     '/account',
-                    '/account/abilities'
+                    '/account/abilities',
+                    '/account/session/touch'
                 ]);
             });
     });
