@@ -53,6 +53,31 @@ A backend with a human-challenge provider asks every signup and login to solve i
 
 `tests/e2e/specs/harness.antibot.cy.ts` proves the provider really is on, so a mis-wired run cannot pass by testing the provider-off branch.
 
+## The action table
+
+`actionTable(module, rows)` (`tests/support/e2e/action-table.ts`) runs one control per row, answered with a failure or an empty list. Rows sit in `src/modules/<m>/tests/e2e/actions.cy.ts`, so `demo:remove` takes them with the module. The jwt leg only: a stubbed answer never reaches the session layer.
+
+```mermaid
+flowchart LR
+    R["row"] --> D{"declaredStatuses<br/>lists the status?"}
+    D -->|no| X["fail: spec drift"]
+    D -->|yes| S["stub rejectEnvelope"]
+    S --> T["trigger"]
+    T --> A["alert, URL, typed values,<br/>dialog or row, control enabled"]
+    A --> U["unstub, trigger again"]
+    U --> O["one request, 2xx, alert gone"]
+```
+
+`declaredStatuses` is a Node task in `cypress.config.ts` reading the synced root `openapi.yaml`.
+
+## The role sweep
+
+`sweepRoles(label, cases)` (`tests/support/e2e/role-sweep.ts`) signs each persona in once and walks a module's pages. What a persona may open is derived from its own `GET /account/abilities`, evaluated like `session.can` (both scopes), never typed. An allowed page must render, keep its path and call no door that answers 401 or 403; a refused one turns the visitor back.
+
+## A backend with a boot-time knob
+
+A spec that needs the backend booted differently gets its own backend, as the antibot run does: name the spec `<name>.antibot.cy.ts`-style, keep it out of the functional glob, and boot one more shard (`scripts/e2e/run-shards.ts`, the antibot entry). There is no mechanism beyond that. Idle goes through `cy.travelEverywhere`, and an oversize upload through a stubbed 413, so neither needs a knob.
+
 ## Why the push tier is only a subset
 
 A full live run is minutes to hours, not seconds, and live CI must stay a signal people read. So the push tier is the smallest set that answers "does the real infrastructure work" — a real Mongo replica set, Redis, a real broker, a cookie over a real network — and the nightly is the full sweep. The price: a live-only break outside `@smoke` shows up the next morning, not on the push. Everything else is covered on the push by the demo run, which already runs every journey.
@@ -255,6 +280,8 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 | `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs)   |
 | `tests/support/e2e/commands.ts`                  | `cy.restore()`'s live branch, `cy.skipUnlessLive()`, `cy.emailTo()` |
 | `scripts/e2e/mail-message.ts`                    | A Mailpit message read back into the outbox's shape                 |
+| `scripts/e2e/mail-filters.ts`                    | `byTemplate` and `inLocale`, the matchers `cy.emailTo()` takes      |
+| `scripts/e2e/declared-statuses.ts`               | The statuses the contract declares for one operation                |
 | `scripts/e2e/webhook-tester.ts`                  | A `webhook-tester` session, read in the demo sink's shape           |
 | `scripts/e2e/webhook-tls.ts`, `scripts/e2e/tls/` | The demo webhook sink's test CA and leaf (backend-owned copies)     |
 | `tests/support/e2e/scenario.ts`                  | the accounts and subject ids, from the route or the described file  |
