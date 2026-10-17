@@ -20,7 +20,7 @@ import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
  * - `auth` — any authenticated visitor.
  * - `open` — anyone: a guest, or a signed-in visitor. `meta.can` is then asked of the signed-in
  *   only, so a screen that serves guests (the cart) can still turn away an account whose role
- *   has no use for it (staff hold no basket).
+ *   has no use for it.
  *
  * Anything narrower is not a LEVEL. A screen that needs a permission declares the rule it needs
  * in `meta.can`, and the rule is evaluated against the server's own published rules — there is no
