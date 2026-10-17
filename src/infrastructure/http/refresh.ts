@@ -115,5 +115,14 @@ export const onResponseRejectWithRefresh = (
             } as AxiosRequestConfigWithRetry);
         });
     }
+    // A 403 on a signed-in request may mean the rules changed under the session (a role taken
+    // away): re-read them so the menu and buttons follow. The abilities call itself is excluded,
+    // or a refused read would ask again forever.
+    if (
+        error.response?.status === 403 &&
+        session.isAuth &&
+        toPathname(originalRequest?.url ?? '') !== '/account/abilities'
+    )
+        void session.reloadAbilities();
     return onResponseReject(error);
 };

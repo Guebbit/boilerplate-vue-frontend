@@ -91,7 +91,9 @@ const copySecret = () =>
 
 <template>
     <v-card data-test="secret-reveal">
-        <v-card-title>{{ title ?? t('generic.secret-reveal-title') }}</v-card-title>
+        <v-card-title id="secret-reveal-title">{{
+            title ?? t('generic.secret-reveal-title')
+        }}</v-card-title>
         <v-card-text>
             <p class="mb-4">{{ intro ?? t('generic.secret-reveal-intro') }}</p>
             <div class="mb-4 flex items-center gap-2">

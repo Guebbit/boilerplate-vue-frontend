@@ -7,7 +7,7 @@
  * staff holding the refund key, who say why in a note; the step-up prompt for that key is the http
  * layer's, so it appears before the call resolves.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -56,6 +56,11 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
+const titleId = useId();
 
 /**
  * Whether the dialog fills the screen — it does on a phone.
@@ -141,10 +146,11 @@ const submit = () => {
         v-model="isOpen"
         max-width="480"
         :fullscreen="fullscreen"
+        :aria-labelledby="titleId"
         data-test="cancel-remainder-dialog"
     >
         <v-card class="p-5">
-            <h2 class="mb-3 text-lg font-semibold">
+            <h2 :id="titleId" class="mb-3 text-lg font-semibold">
                 {{ t('cancel-remainder-dialog.title', { number: option.number }) }}
             </h2>
 

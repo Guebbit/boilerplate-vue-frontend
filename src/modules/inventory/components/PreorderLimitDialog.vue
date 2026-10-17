@@ -5,7 +5,7 @@
  * reports a refusal in place. The number is absolute (`0` closes preordering), and may sit below
  * what is already outstanding: those orders stay, only new ones are refused — the hint says so.
  */
-import { ref, watch } from 'vue';
+import { ref, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -37,6 +37,11 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
+const titleId = useId();
 
 /**
  * Whether the dialog fills the screen — it does on a phone.
@@ -104,10 +109,11 @@ const submit = () => {
         v-model="isOpen"
         max-width="480"
         :fullscreen="fullscreen"
+        :aria-labelledby="titleId"
         data-test="preorder-limit-dialog"
     >
         <v-card class="p-5">
-            <h2 class="mb-4 text-lg font-semibold">
+            <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ t('preorder-limit-dialog.title', { name: level.title }) }}
             </h2>
 

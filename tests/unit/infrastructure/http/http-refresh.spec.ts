@@ -74,6 +74,10 @@ interface Scenario {
     protectedAccepts: boolean;
     /** Whether the protected route answers `401 SESSION_IDLE`: a staff session that idled out. */
     protectedIdle: boolean;
+    /** Whether the protected route answers `403`: the rules changed under a live session. */
+    protectedForbidden: boolean;
+    /** Whether `GET /account/abilities` itself answers `403`. */
+    abilitiesForbidden: boolean;
 }
 
 /** @returns The scenario every case starts from: one refresh available, nothing accepted yet. */
@@ -81,7 +85,9 @@ const defaultScenario = (): Scenario => ({
     refreshBudget: 1,
     refreshOmitsToken: false,
     protectedAccepts: false,
-    protectedIdle: false
+    protectedIdle: false,
+    protectedForbidden: false,
+    abilitiesForbidden: false
 });
 
 /** Requests seen by the server, in arrival order. Cleared before every case. */
@@ -130,6 +136,17 @@ const server = setupServer(
         const authorization = request.headers.get('authorization') ?? undefined;
         requestLog.push({ route: 'GET /orders', authorization });
 
+        if (scenario.protectedForbidden)
+            return HttpResponse.json(
+                {
+                    success: false,
+                    status: 403,
+                    message: 'Forbidden',
+                    errors: [{ code: 'FORBIDDEN', message: 'Forbidden' }]
+                },
+                { status: 403 }
+            );
+
         if (scenario.protectedIdle)
             return HttpResponse.json(
                 {
@@ -144,6 +161,26 @@ const server = setupServer(
         return scenario.protectedAccepts && authorization === `Bearer ${FRESH_TOKEN}`
             ? HttpResponse.json({ success: true, status: 200, data: { items: [] } })
             : unauthorized('Unauthorized');
+    }),
+
+    /** `GET /account/abilities` — what a 403 sends the session back to read. */
+    http.get(`${API}/account/abilities`, () => {
+        requestLog.push({ route: 'GET /account/abilities' });
+        return scenario.abilitiesForbidden
+            ? HttpResponse.json(
+                  {
+                      success: false,
+                      status: 403,
+                      message: 'Forbidden',
+                      errors: [{ code: 'FORBIDDEN', message: 'Forbidden' }]
+                  },
+                  { status: 403 }
+              )
+            : HttpResponse.json({
+                  success: true,
+                  status: 200,
+                  data: { platform: [], tenant: [], version: 1, subjects: [], grantableRoles: [] }
+              });
     }),
 
     /** Every excluded path, each answering 401 as the ordinary outcome the exclusion exists for. */
@@ -235,6 +272,65 @@ describe('a 401 SESSION_IDLE', () => {
                 expect(routes()).toEqual(['GET /orders']);
                 expect(useSessionStore().idleSignal).toBe(1);
                 expect(useSessionStore().expiredSignal).toBe(0);
+            });
+    });
+});
+
+/**
+ * Signs the store in (token and viewer), so `isAuth` is true. Imported after {@link loadHttp},
+ * so the store's own API calls go through the same freshly-built axios instance.
+ */
+const signIn = async () => {
+    const { useSessionStore: freshSessionStore } = await import('@/infrastructure/session.ts');
+    const session = freshSessionStore();
+    session.setAccessToken('token');
+    session.viewer = { id: '1', email: 'a@b.c', role: 'customer' };
+    return session;
+};
+
+describe('a 403 on a signed-in request', () => {
+    it('re-reads the abilities once, without refreshing the token', () => {
+        scenario.protectedForbidden = true;
+        let session!: Awaited<ReturnType<typeof signIn>>;
+
+        return loadHttp()
+            .then(signIn)
+            .then((signedIn) => {
+                session = signedIn;
+            })
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                orvalMutator({ url: '/orders', method: 'GET' }).catch(() => undefined)
+            )
+            .then(() => vi.waitFor(() => expect(session.abilitiesSignal).toBe(1)))
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders', 'GET /account/abilities']);
+            });
+    });
+
+    it('does not loop when the abilities read is itself refused', () => {
+        scenario.abilitiesForbidden = true;
+
+        return loadHttp()
+            .then(signIn)
+            .then(() => import('@/infrastructure/http'))
+            .then(({ orvalMutator }) =>
+                orvalMutator({ url: '/account/abilities', method: 'GET' }).catch(() => undefined)
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /account/abilities']);
+            });
+    });
+
+    it('asks nothing for a guest', () => {
+        scenario.protectedForbidden = true;
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                orvalMutator({ url: '/orders', method: 'GET' }).catch(() => undefined)
+            )
+            .then(() => {
+                expect(routes()).toEqual(['GET /orders']);
             });
     });
 });

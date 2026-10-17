@@ -76,7 +76,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @param email - Account email.
      * @param password - Plain-text password, sent over the wire only.
      * @param remember - The "remember me" checkbox. One checkbox, one tier: thirty days is what
-     *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the API sets a
+     *  the phrase conventionally promises, so it maps to `long`. Unchecked, the API sets a
      *  browser-session cookie (gone when the browser closes). On the 2FA path the choice rides
      *  along to the second step — see `useTwoFactorStore().submitLoginCode`.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` — `Login.vue` attaches
@@ -98,7 +98,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
                 {
                     email,
                     password,
-                    remember: remember ? RememberTier.medium : undefined
+                    remember: remember ? RememberTier.long : undefined
                 },
                 options
             ).then((data) => {

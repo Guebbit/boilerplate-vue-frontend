@@ -441,7 +441,12 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         </v-btn>
 
         <!-- Enrollment dialog -->
-        <v-dialog :model-value="!!enrolling" max-width="480" persistent>
+        <v-dialog
+            :model-value="!!enrolling"
+            max-width="480"
+            persistent
+            aria-labelledby="two-factor-enroll-title"
+        >
             <TwoFactorEnroll
                 v-if="enrolling"
                 :method="enrolling"
@@ -451,7 +456,12 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         </v-dialog>
 
         <!-- Backup codes — blocking, shown once, right after the first factor is confirmed -->
-        <v-dialog :model-value="!!revealedBackupCodes" max-width="480" persistent>
+        <v-dialog
+            :model-value="!!revealedBackupCodes"
+            max-width="480"
+            persistent
+            aria-labelledby="two-factor-backup-codes-title"
+        >
             <TwoFactorBackupCodes
                 v-if="revealedBackupCodes"
                 :codes="revealedBackupCodes"
@@ -460,9 +470,16 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         </v-dialog>
 
         <!-- The shared code prompt, for remove-one and disable-all -->
-        <v-dialog :model-value="!!codePrompt" max-width="420" persistent>
+        <v-dialog
+            :model-value="!!codePrompt"
+            max-width="420"
+            persistent
+            aria-labelledby="two-factor-code-prompt-title"
+        >
             <v-card v-if="codePrompt">
-                <v-card-title>{{ t('two-factor.label-code') }}</v-card-title>
+                <v-card-title id="two-factor-code-prompt-title">{{
+                    t('two-factor.label-code')
+                }}</v-card-title>
                 <v-card-text>
                     <p class="mb-2 text-sm opacity-70">{{ t('two-factor.label-code-hint') }}</p>
                     <v-btn

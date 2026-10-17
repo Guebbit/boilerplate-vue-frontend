@@ -6,7 +6,7 @@
  * is closed. The dialog owns its call and reports the outcome in place; the server re-checks every
  * limit, so the form only keeps staff from asking for the impossible.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -56,6 +56,11 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
+const titleId = useId();
 
 /**
  * Whether the dialog fills the screen — it does on a phone.
@@ -169,10 +174,11 @@ const submit = () => {
         v-model="isOpen"
         max-width="520"
         :fullscreen="fullscreen"
+        :aria-labelledby="titleId"
         data-test="ship-items-dialog"
     >
         <v-card class="p-5">
-            <h2 class="mb-4 text-lg font-semibold">
+            <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ t('ship-items-dialog.title', { number: fulfillmentOrder.number }) }}
             </h2>
 
