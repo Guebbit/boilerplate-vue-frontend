@@ -258,3 +258,23 @@ export const otherTab = {
             })
         )
 };
+
+/**
+ * Makes every refund of an order's payment refuse with a provider reason, or lets them through
+ * again — the demo backend's `POST /__test/payments/refund-failure`. Demo only.
+ *
+ * @param orderId - the order whose payment's refunds are steered
+ * @param reason - a closed refund-failure code (`insufficient_funds`, `declined`, …), or `null`
+ */
+export const failRefundsOf = (orderId: string, reason: string | null): Cypress.Chainable<number> =>
+    cy
+        .env(['apiUrl'])
+        .then(({ apiUrl }) =>
+            cy.request({
+                method: 'POST',
+                url: `${String(apiUrl)}/__test/payments/refund-failure`,
+                body: { orderId, reason }
+            })
+        )
+        .its('status')
+        .should('equal', 204);

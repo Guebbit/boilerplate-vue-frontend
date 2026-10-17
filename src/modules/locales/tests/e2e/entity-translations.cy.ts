@@ -1,7 +1,7 @@
 /**
  * @module
  * End-to-end coverage of the generic translation door's own screen: an editor (here, the admin
- * account, which holds the same `translations.manage` key) edits a product's translation, and the
+ * account, which holds the same `update:Translation` key) edits a product's translation, and the
  * storefront reflects it. The full invalidation path, not a store-level assertion: the write
  * clears the API's own cache tag, so what proves the path end to end is a fresh page load
  * actually showing the new words.
