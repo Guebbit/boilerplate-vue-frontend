@@ -36,7 +36,16 @@ sweepA11y(
         { name: 'users list, phone viewport', route: '/en/users', viewport: PHONE },
         ['user create', '/en/users/create'],
         ['user detail', userDetail],
-        ['user edit', userEdit]
+        ['user edit', userEdit],
+        {
+            // The dialog is named by its title (WCAG 4.1.2), which only an open dialog can show.
+            name: 'user detail, manage access dialog',
+            route: userDetail,
+            prepare: () => {
+                cy.get('[data-test=user-manage-access]').click();
+                cy.get('[data-test=user-access-dialog]').should('be.visible');
+            }
+        }
     ],
     'admin'
 );

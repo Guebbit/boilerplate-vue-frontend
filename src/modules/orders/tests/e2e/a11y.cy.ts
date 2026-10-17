@@ -49,3 +49,31 @@ sweepA11y(
     ],
     'admin'
 );
+
+// The order page hosts the delivery module's dialogs; an unopened dialog is never audited.
+/** The paid express order, as the page for it. */
+const paidExpressOrder = () => cy.subjectId('order.paidExpress').then((id) => `/en/orders/${id}`);
+
+sweepA11y(
+    'orders — delivery dialogs',
+    [
+        {
+            name: 'order, ship dialog',
+            route: paidExpressOrder,
+            prepare: () => {
+                cy.get('[data-test=mark-started]').click();
+                cy.get('[data-test=open-ship]').click();
+                cy.get('[data-test=ship-submit]').should('be.visible');
+            }
+        },
+        {
+            name: 'order, hold dialog',
+            route: paidExpressOrder,
+            prepare: () => {
+                cy.get('[data-test=open-hold]').click();
+                cy.get('[data-test=hold-dialog]').should('be.visible');
+            }
+        }
+    ],
+    'admin'
+);
