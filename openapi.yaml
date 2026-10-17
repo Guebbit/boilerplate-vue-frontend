@@ -8255,6 +8255,63 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+  /delivery/fulfillment-orders/release-date-impact:
+    get:
+      tags:
+        - Delivery
+      summary: What moving a product's release date would tell the buyers
+      description: |
+        A preview for staff about to save a release date, so the save is never a surprise. Counts the
+        orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
+        slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
+        by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+        the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
+        preview and the save can shift them.
+
+        `releaseDate` absent or blank previews a CLEARED date, which asks every waiting buyer. The same
+        format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
+        nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
+        is never cached.
+      operationId: previewReleaseDateImpact
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The product whose release date would move.
+        - name: releaseDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+      responses:
+        "200":
+          description: How many orders the move would notify and how many it would ask
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReleaseDateImpactEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /stats/sales:
     get:
       tags:
@@ -14991,7 +15048,7 @@ components:
         expectedAt:
           type: string
           format: date-time
-          description: When it is now expected to ship, when that differs from what was agreed.
+          description: When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
         consent:
           $ref: "#/components/schemas/FulfillmentConsent"
         consentDeadline:
@@ -17791,6 +17848,44 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/PaymentAttentionResponse"
+    ReleaseDateImpact:
+      type: object
+      additionalProperties: false
+      required:
+        - notify
+        - ask
+        - answerBy
+      description: Orders a release-date move would tell, counted in orders, never fulfillment orders.
+      properties:
+        notify:
+          type: integer
+          minimum: 0
+          description: Orders that get a notice only (a short first slip); silence keeps them waiting.
+        ask:
+          type: integer
+          minimum: 0
+          description: Orders that get a question; silence until `answerBy` cancels and refunds. Includes an order that also has a notice.
+        answerBy:
+          type: string
+          format: date-time
+          description: When silence would turn into a cancel, were the question asked now. Meaningful when `ask` is above 0.
+    ReleaseDateImpactEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/ReleaseDateImpact"
     StatsInterval:
       type: string
       enum:

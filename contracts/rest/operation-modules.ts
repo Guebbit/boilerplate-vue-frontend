@@ -144,6 +144,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     mintApiKey: 'api-keys',
     moveWishlistItemToCart: 'wishlist',
     overrideOrderStatus: 'orders',
+    previewReleaseDateImpact: 'delivery',
     readAllNotifications: 'notifications',
     reauth: 'account',
     receivePaymentWebhook: 'payments',

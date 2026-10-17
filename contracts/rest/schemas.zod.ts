@@ -13970,6 +13970,42 @@ export const ListPaymentAttentionResponse = zod.strictObject({
     })
 });
 /**
+ * A preview for staff about to save a release date, so the save is never a surprise. Counts the
+ * orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
+ * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
+ * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
+ * preview and the save can shift them.
+ *
+ * `releaseDate` absent or blank previews a CLEARED date, which asks every waiting buyer. The same
+ * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
+ * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
+ * is never cached.
+ * @summary What moving a product's release date would tell the buyers
+ */
+export const previewReleaseDateImpactQueryProductIdMax = 64;
+export const previewReleaseDateImpactQueryProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const PreviewReleaseDateImpactQueryParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(previewReleaseDateImpactQueryProductIdMax)
+        .regex(previewReleaseDateImpactQueryProductIdRegExp),
+    releaseDate: zod.iso.datetime({ offset: true }).optional()
+});
+export const previewReleaseDateImpactResponseDataNotifyMin = 0;
+export const previewReleaseDateImpactResponseDataAskMin = 0;
+export const PreviewReleaseDateImpactResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        notify: zod.number().min(previewReleaseDateImpactResponseDataNotifyMin),
+        ask: zod.number().min(previewReleaseDateImpactResponseDataAskMin),
+        answerBy: zod.iso.datetime({ offset: true })
+    })
+});
+/**
  * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
  * @summary Sales over time (staff)
  */

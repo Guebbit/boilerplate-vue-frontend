@@ -3696,7 +3696,7 @@ export interface FulfillmentOrder {
     holdNote?: string;
     /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
     agreedAt?: string;
-    /** When it is now expected to ship, when that differs from what was agreed. */
+    /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
     expectedAt?: string;
     consent?: FulfillmentConsent;
     /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
@@ -5309,6 +5309,31 @@ export interface PaymentAttentionResponseEnvelope {
 }
 
 /**
+ * Orders a release-date move would tell, counted in orders, never fulfillment orders.
+ */
+export interface ReleaseDateImpact {
+    /**
+     * Orders that get a notice only (a short first slip); silence keeps them waiting.
+     * @minimum 0
+     */
+    notify: number;
+    /**
+     * Orders that get a question; silence until `answerBy` cancels and refunds. Includes an order that also has a notice.
+     * @minimum 0
+     */
+    ask: number;
+    /** When silence would turn into a cancel, were the question asked now. Meaningful when `ask` is above 0. */
+    answerBy: string;
+}
+
+export interface ReleaseDateImpactEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReleaseDateImpact;
+}
+
+/**
  * The bucket size. A week starts on Monday.
  */
 export type StatsInterval = (typeof StatsInterval)[keyof typeof StatsInterval];
@@ -6504,6 +6529,17 @@ export type ListRefundsParams = {
     orderId?: Id;
     createdFrom?: string;
     createdTo?: string;
+};
+
+export type PreviewReleaseDateImpactParams = {
+    /**
+     * The product whose release date would move.
+     */
+    productId: Id;
+    /**
+     * The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+     */
+    releaseDate?: string;
 };
 
 export type GetSalesStatsParams = {
@@ -10631,6 +10667,30 @@ export const listPaymentAttention = (
 };
 
 /**
+ * A preview for staff about to save a release date, so the save is never a surprise. Counts the
+ * orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
+ * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
+ * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
+ * preview and the save can shift them.
+ *
+ * `releaseDate` absent or blank previews a CLEARED date, which asks every waiting buyer. The same
+ * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
+ * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
+ * is never cached.
+ * @summary What moving a product's release date would tell the buyers
+ */
+export const previewReleaseDateImpact = (
+    params: PreviewReleaseDateImpactParams,
+    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpactEnvelope>>
+) => {
+    return orvalMutator<ReleaseDateImpactEnvelope>(
+        { url: `/delivery/fulfillment-orders/release-date-impact`, method: 'GET', params },
+        options
+    );
+};
+
+/**
  * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
  * @summary Sales over time (staff)
  */
@@ -11362,6 +11422,9 @@ export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchP
 export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;
 export type ListPaymentAttentionResult = NonNullable<
     Awaited<ReturnType<typeof listPaymentAttention>>
+>;
+export type PreviewReleaseDateImpactResult = NonNullable<
+    Awaited<ReturnType<typeof previewReleaseDateImpact>>
 >;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;

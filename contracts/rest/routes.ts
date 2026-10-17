@@ -72,6 +72,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "DELETE", pattern: /^\/cart$/, schemaName: "RemoveCartItemByBodyResponse", bodySchemaName: "RemoveCartItemByBodyBody", module: "cart" },
     { method: "GET", pattern: /^\/cart$/, schemaName: "GetCartResponse", bodySchemaName: undefined, module: "cart" },
     { method: "POST", pattern: /^\/cart$/, schemaName: "AddCartItemResponse", bodySchemaName: "AddCartItemBody", module: "cart" },
+    { method: "GET", pattern: /^\/delivery\/fulfillment-orders\/release-date-impact$/, schemaName: "PreviewReleaseDateImpactResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "GET", pattern: /^\/delivery\/fulfillment-orders\/summary$/, schemaName: "SummarizePreorderFulfillmentOrdersResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "GET", pattern: /^\/delivery\/fulfillment-orders$/, schemaName: "ListPreorderFulfillmentOrdersResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "GET", pattern: /^\/delivery\/methods$/, schemaName: "ListShippingMethodsResponse", bodySchemaName: undefined, module: "delivery" },
