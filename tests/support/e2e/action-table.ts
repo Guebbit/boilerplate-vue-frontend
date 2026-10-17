@@ -83,6 +83,19 @@ export interface ActionRow {
     };
 }
 
+/**
+ * The matcher for a row's request: the API call only. A path like `/orders` is also the address
+ * of the app's own page, which a bare URL pattern would stub into a JSON "page"; the API is
+ * always called through XHR.
+ *
+ * @param intercept - the row's request
+ */
+const apiRequest = (intercept: ActionIntercept) => ({
+    method: intercept.method,
+    url: intercept.url,
+    resourceType: 'xhr' as const
+});
+
 /** Fallback for the `alert` selector. */
 const ANY_ALERT = '[role=alert]';
 
@@ -137,7 +150,7 @@ const stubFailure = (row: ActionRow, alias: string): void => {
         row.code ?? DEFAULT_CODE,
         row.message
     );
-    cy.intercept(row.intercept.method, row.intercept.url, response).as(alias);
+    cy.intercept(apiRequest(row.intercept), response).as(alias);
 };
 
 /**
@@ -147,7 +160,7 @@ const stubFailure = (row: ActionRow, alias: string): void => {
  * @param counter - incremented once per request
  */
 const passThrough = (row: ActionRow, counter: { count: number }): void => {
-    cy.intercept(row.intercept.method, row.intercept.url, (request) => {
+    cy.intercept(apiRequest(row.intercept), (request) => {
         counter.count += 1;
         request.continue();
     }).as('retry');
@@ -222,7 +235,7 @@ const runReadFailure = (row: ActionRow): void => {
         .should('be.visible')
         .and('contain.text', row.message ?? row.code ?? DEFAULT_CODE);
     cy.get(ACTIVITY_INDICATOR, { timeout: SPINNER_TIMEOUT_MS }).should('not.exist');
-    cy.intercept(row.intercept.method, row.intercept.url, (request) => {
+    cy.intercept(apiRequest(row.intercept), (request) => {
         request.continue();
     });
     cy.reload();
@@ -240,7 +253,7 @@ const runEmpty = (row: ActionRow): void => {
     const { empty, emptyBody, emptySchema, intercept, name, prepare } = row;
     if (!empty) throw new Error(`action row "${name}": an empty row needs \`empty\` selectors`);
     emptySchema?.parse(emptyBody);
-    cy.intercept(intercept.method, intercept.url, { statusCode: 200, body: emptyBody }).as('empty');
+    cy.intercept(apiRequest(intercept), { statusCode: 200, body: emptyBody }).as('empty');
     visitRoute(row);
     prepare?.();
     cy.wait('@empty');
