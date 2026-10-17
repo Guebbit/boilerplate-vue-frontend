@@ -56,5 +56,14 @@ actionTable('orders', [
         emptyBody: emptyPage,
         emptySchema: SearchOrdersResponse,
         empty: { copy: '.v-empty-state', rows: '[data-test=row-view]' }
+    },
+    {
+        name: 'a slow record read leaves the form closed until it lands, and a refetch keeps what was typed',
+        persona: 'admin',
+        route: () => cy.subjectId('order.otherPending').then((id) => `/en/orders/${id}/edit`),
+        intercept: { method: 'GET', url: '**/orders/*', operation: '/orders/{id}' },
+        kind: 'slow',
+        field: 'order-edit-email',
+        typed: 'typed-before-the-switch@example.com'
     }
 ]);

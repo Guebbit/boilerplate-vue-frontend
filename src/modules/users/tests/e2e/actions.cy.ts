@@ -64,5 +64,14 @@ actionTable('users', [
         alert: 'users-list-row-action-error',
         message: 'The delete failed',
         listed: '[data-test=list-row]'
+    },
+    {
+        name: 'a slow record read leaves the form closed until it lands, and a refetch keeps what was typed',
+        persona: 'admin',
+        route: () => cy.accountInRole('user').then((account) => `/en/users/${account.id}/edit`),
+        intercept: { method: 'GET', url: '**/users/*', operation: '/users/{id}' },
+        kind: 'slow',
+        field: 'user-edit-username',
+        typed: 'typed-before-the-switch'
     }
 ]);

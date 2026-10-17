@@ -78,5 +78,22 @@ actionTable('webhooks', [
         alert: 'webhooks-list-row-action-error',
         message: 'The delete failed',
         listed: '[data-test=list-row]'
+    },
+    {
+        name: 'a slow record read leaves the form closed until it lands, and a refetch keeps what was typed',
+        persona: 'admin',
+        route: () =>
+            sinkEndpoint(`/hook-${unique()}`)
+                .then((url) => cy.createWebhookSubscription({ url, eventTypes: ['order.created'] }))
+                .then((subscription) => `/en/webhooks/subscriptions/${subscription.id}/edit`),
+        // The edit page reads the subscription out of the list answer.
+        intercept: {
+            method: 'GET',
+            url: '**/webhooks/subscriptions?*',
+            operation: '/webhooks/subscriptions'
+        },
+        kind: 'slow',
+        field: 'webhook-description',
+        typed: 'typed before the switch'
     }
 ]);
