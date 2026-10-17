@@ -31,8 +31,9 @@ declare global {
              * the clock alone runs no job.
              *
              * Demo only: open the test with `cy.skipUnlessDemo()`. The browser's own clock is
-             * NOT moved — use `cy.clock` for a screen that compares against it. A jump past the
-             * refresh-token lifetime (7 days) ends the session, so log in again.
+             * NOT moved — use `cy.clock` for a screen that compares against it. A jump past a day
+             * ends a `loginAs` session (the short tier), and a staff or admin session also ends
+             * after 30 minutes without a request: sign in again after any longer jump.
              *
              * @param ms - how far forward, in milliseconds; never negative
              */
@@ -58,7 +59,7 @@ declare global {
              * The browser clock is Date-only (`cy.clock(now, ['Date'])`), installed on first use;
              * install it BEFORE `cy.visit` for the page to start on it, as `freezeForVisual` does.
              * Limits: the server clock only goes forward, a staff session idles out at 30 minutes,
-             * TTL indexes never move, and a jump past 7 days ends the session.
+             * TTL indexes never move, and a jump past a day ends a `loginAs` session.
              *
              * Demo only: open the test with `cy.skipUnlessDemo()`.
              *

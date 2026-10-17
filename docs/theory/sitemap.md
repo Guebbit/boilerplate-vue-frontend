@@ -17,7 +17,7 @@ Every screen the enabled modules contribute, generated from their route records 
 | [`account`](../modules/account.md)                     | `signup`                               | `Signup`                | `guest`  | —                            | `views/Signup.vue`                |
 | [`account`](../modules/account.md)                     | `login/2fa`                            | `TwoFactorChallenge`    | `guest`  | —                            | `views/TwoFactorChallenge.vue`    |
 | [`account`](../modules/account.md)                     | `password-reset`                       | `PasswordResetRequest`  | `guest`  | —                            | `views/PasswordResetRequest.vue`  |
-| [`account`](../modules/account.md)                     | `password-reset/confirm`               | `PasswordResetConfirm`  | `guest`  | —                            | `views/PasswordResetConfirm.vue`  |
+| [`account`](../modules/account.md)                     | `password-reset/confirm`               | `PasswordResetConfirm`  | `public` | —                            | `views/PasswordResetConfirm.vue`  |
 | [`account`](../modules/account.md)                     | `account-delete/confirm`               | `AccountDeleteConfirm`  | `public` | —                            | `views/AccountDeleteConfirm.vue`  |
 | [`account`](../modules/account.md)                     | `verify-email/confirm`                 | `VerifyEmailConfirm`    | `public` | —                            | `views/VerifyEmailConfirm.vue`    |
 | [`account`](../modules/account.md)                     | `email-change/confirm`                 | `EmailChangeConfirm`    | `public` | —                            | `views/EmailChangeConfirm.vue`    |

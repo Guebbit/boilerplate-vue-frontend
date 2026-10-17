@@ -16,6 +16,8 @@ import {
     shouldShowCents,
     sumCents
 } from '../../../support/e2e/steps';
+import { byTemplate, inLocale } from '../../../support/e2e/commands';
+import { requestReset } from '../../../support/e2e/security-steps';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /**
@@ -129,6 +131,21 @@ describe('CU16 · A whole purchase in Italian', () => {
                     ).to.equal(true);
                 }
             );
+        });
+
+        cy.step('a mail sent while signed out follows the language stored on the account');
+        cy.logout();
+        cy.accountOf('user').then(({ email }) => {
+            requestReset(email);
+            cy.emailTo(
+                email,
+                (mail) => byTemplate('account.reset-request')(mail) && inLocale('it')(mail)
+            ).then((reset) => {
+                expect(
+                    mailMentions(reset, '/it/'),
+                    'the reset link follows the stored language'
+                ).to.equal(true);
+            });
         });
     });
 });
