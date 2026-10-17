@@ -12,7 +12,7 @@
  * only the confirm step before submitting. Both go through `useUserAccessDialog()`, which is what
  * turns this plain `v-model` component into an awaitable request.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
@@ -50,6 +50,11 @@ const isOpen = defineModel<boolean>({ required: true });
  * Translation function.
  */
 const { t } = useI18n();
+
+/**
+ * The heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
+const titleId = useId();
 
 /**
  * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
@@ -199,11 +204,12 @@ const handleCancel = () => {
         v-model="isOpen"
         max-width="480"
         :fullscreen="fullscreen"
+        :aria-labelledby="titleId"
         data-test="user-access-dialog"
     >
         <v-card v-if="target" class="p-5">
             <template v-if="step === 'pick'">
-                <h2 class="mb-4 text-lg font-semibold">
+                <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                     {{ t('user-access-dialog.title-pick', { name: target.name }) }}
                 </h2>
 
@@ -243,7 +249,7 @@ const handleCancel = () => {
             </template>
 
             <template v-else>
-                <h2 class="mb-4 text-lg font-semibold">
+                <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                     {{ t('user-access-dialog.title-confirm', { name: target.name }) }}
                 </h2>
 

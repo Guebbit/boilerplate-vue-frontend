@@ -160,7 +160,12 @@ const handleSecretDone = () => {
 
 <template>
     <div id="api-key-create-page">
-        <v-dialog :model-value="!!revealedSecret" persistent max-width="640">
+        <v-dialog
+            :model-value="!!revealedSecret"
+            persistent
+            max-width="640"
+            aria-labelledby="secret-reveal-title"
+        >
             <SecretRevealModal
                 v-if="revealedSecret"
                 :secret="revealedSecret"

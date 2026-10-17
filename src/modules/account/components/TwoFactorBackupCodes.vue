@@ -55,7 +55,9 @@ watch(
 
 <template>
     <v-card data-test="two-factor-backup-codes">
-        <v-card-title>{{ t('two-factor.backup-codes-title') }}</v-card-title>
+        <v-card-title id="two-factor-backup-codes-title">{{
+            t('two-factor.backup-codes-title')
+        }}</v-card-title>
         <v-card-text>
             <p class="mb-4">{{ t('two-factor.backup-codes-intro') }}</p>
             <ul class="mb-4 grid grid-cols-2 gap-2 font-mono text-sm" data-test="backup-codes-list">
