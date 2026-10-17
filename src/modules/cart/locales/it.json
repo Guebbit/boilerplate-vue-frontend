@@ -70,5 +70,17 @@
     },
     "navigation": {
         "label-cart": "Carrello"
+    },
+    "cart-tour": {
+        "lines-title": "Le tue righe",
+        "lines-body": "Cambia la quantità o rimuovi una riga qui. Una riga segnata come non disponibile va tolta prima di ordinare.",
+        "summary-title": "Consegna e pagamento",
+        "summary-body": "Scegli come spedire, dove e come pagare. I costi si aggiornano mentre scegli.",
+        "notes-title": "Una nota per il negozio",
+        "notes-body": "Facoltativa. Qualsiasi cosa il negozio debba sapere su questo ordine.",
+        "total-title": "Quanto pagherai",
+        "total-body": "Prodotti più spedizione. È l'importo dell'ordine.",
+        "place-order-title": "Conferma l'ordine",
+        "place-order-body": "Non viene addebitato nulla prima della conferma. Il pulsante resta spento finché qualcosa sopra richiede attenzione."
     }
 }

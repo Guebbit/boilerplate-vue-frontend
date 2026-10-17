@@ -92,5 +92,13 @@
         "button-show-orders-named": "Fulfillment orders of {name}",
         "button-move-date": "Move release date",
         "button-move-date-named": "Move the release date of {name}"
+    },
+    "inventory-tour": {
+        "forms-title": "Record stock",
+        "forms-body": "A receipt adds a delivery; an adjustment corrects a count. Both need a short note.",
+        "board-title": "What is on the shelf",
+        "board-body": "Per product: what is held, what is reserved by open orders, and what is still available to sell.",
+        "ledger-title": "The ledger",
+        "ledger-body": "Every movement with its reason. Pick \"History\" on a product above to filter it."
     }
 }

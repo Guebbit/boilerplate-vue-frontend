@@ -221,5 +221,13 @@
         "done": "Orders exported.",
         "error-too-large": "Too many orders to export at once. Narrow the filters and try again.",
         "error-rate-limited": "Too many exports in a short time. Wait a little and try again."
+    },
+    "order-tour": {
+        "payment-title": "Payment",
+        "payment-body": "What was paid and by which method. Offline payments and refunds are recorded here.",
+        "shipment-title": "Shipment",
+        "shipment-body": "Start preparing the parcel, then mark it shipped and delivered. Only the steps the order allows are offered.",
+        "timeline-title": "Timeline",
+        "timeline-body": "Every change to this order, newest first, with who made it."
     }
 }

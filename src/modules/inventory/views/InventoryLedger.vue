@@ -21,6 +21,7 @@ import StockMovementForm from '../components/StockMovementForm.vue';
 import StockBoard from '../components/StockBoard.vue';
 import MovementLedger from '../components/MovementLedger.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import TourButton from '@/ui/molecules/TourButton.vue';
 
 /**
  * The stock board and the ledger behind it, admin-side — one page, deliberately.
@@ -47,13 +48,25 @@ const session = useSessionStore();
 
 <template>
     <div id="inventory-page">
-        <div v-if="session.can('create', 'StockMovement')" class="mb-6 grid gap-4 lg:grid-cols-2">
+        <div class="mb-2 flex justify-end">
+            <TourButton tour="stock-board" />
+        </div>
+
+        <div
+            v-if="session.can('create', 'StockMovement')"
+            class="mb-6 grid gap-4 lg:grid-cols-2"
+            data-tour="stock-forms"
+        >
             <StockMovementForm mode="receipt" />
             <StockMovementForm mode="adjust" />
         </div>
 
-        <StockBoard @history="(productId) => movementLedger?.focusProduct(productId)" />
+        <div data-tour="stock-board">
+            <StockBoard @history="(productId) => movementLedger?.focusProduct(productId)" />
+        </div>
 
-        <MovementLedger ref="movementLedger" />
+        <div data-tour="stock-ledger">
+            <MovementLedger ref="movementLedger" />
+        </div>
     </div>
 </template>

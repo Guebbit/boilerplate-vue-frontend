@@ -92,5 +92,13 @@
         "button-show-orders-named": "Gruppi di spedizione di {name}",
         "button-move-date": "Sposta la data di uscita",
         "button-move-date-named": "Sposta la data di uscita di {name}"
+    },
+    "inventory-tour": {
+        "forms-title": "Registra la giacenza",
+        "forms-body": "Un carico aggiunge una consegna; una rettifica corregge una conta. Entrambi richiedono una breve nota.",
+        "board-title": "Cosa c'è a scaffale",
+        "board-body": "Per prodotto: cosa è presente, cosa è riservato dagli ordini aperti e cosa resta disponibile alla vendita.",
+        "ledger-title": "Il registro",
+        "ledger-body": "Ogni movimento con il suo motivo. Scegli \"Storico\" su un prodotto qui sopra per filtrarlo."
     }
 }

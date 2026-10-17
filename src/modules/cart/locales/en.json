@@ -70,5 +70,17 @@
     },
     "navigation": {
         "label-cart": "Cart"
+    },
+    "cart-tour": {
+        "lines-title": "Your lines",
+        "lines-body": "Change a quantity or remove a line here. A line marked unavailable has to go before you can order.",
+        "summary-title": "Delivery and payment",
+        "summary-body": "Pick how it ships, where it goes and how you pay. The costs update as you choose.",
+        "notes-title": "A note for the shop",
+        "notes-body": "Optional. Anything the shop should know about this order.",
+        "total-title": "What you will pay",
+        "total-body": "Items plus shipping. This is the amount on the order.",
+        "place-order-title": "Place the order",
+        "place-order-body": "Nothing is charged before you confirm. The button stays off while something above needs attention."
     }
 }

@@ -44,6 +44,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import type { CartResponseItem, PaymentMethodId } from '@types';
 
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import TourButton from '@/ui/molecules/TourButton.vue';
 import MergeReportAlert from '../components/MergeReportAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
@@ -584,6 +585,10 @@ onMounted(() =>
         </v-empty-state>
 
         <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div class="flex justify-end lg:col-span-2">
+                <TourButton tour="checkout" />
+            </div>
+
             <!--
                 CART_INSUFFICIENT_STOCK names every short line in one response — rendering it as a
                 single "some items are unavailable" toast would turn a one-pass fix into a
@@ -671,7 +676,7 @@ onMounted(() =>
                 data-test="cart-line-action-error"
             />
 
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-4" data-tour="checkout-lines">
                 <v-card
                     v-for="item in cartItems"
                     :key="'cart-item-' + item.productId"
@@ -779,7 +784,12 @@ onMounted(() =>
             </div>
 
             <div class="flex flex-col gap-4">
-                <v-card v-if="cartSummary" data-test="cart-summary" class="p-5 lg:sticky lg:top-20">
+                <v-card
+                    v-if="cartSummary"
+                    data-test="cart-summary"
+                    data-tour="checkout-summary"
+                    class="p-5 lg:sticky lg:top-20"
+                >
                     <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
                     <dl class="mt-3 grid grid-cols-[1fr_auto] gap-y-1">
                         <dt class="opacity-70">{{ t('cart-page.label-items-count') }}</dt>
@@ -839,6 +849,7 @@ onMounted(() =>
                         auto-grow
                         class="mt-3"
                         data-test="cart-notes"
+                        data-tour="checkout-notes"
                     />
                     <v-divider class="my-3" />
                     <dl class="grid grid-cols-[1fr_auto] gap-y-1">
@@ -860,7 +871,12 @@ onMounted(() =>
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
-                        <span class="text-xl font-bold" role="status" data-test="cart-total">
+                        <span
+                            class="text-xl font-bold"
+                            role="status"
+                            data-test="cart-total"
+                            data-tour="checkout-total"
+                        >
                             {{ formatCurrency(cartSummary.totalPrice, cartSummary.currency) }}
                         </span>
                     </div>
@@ -895,6 +911,7 @@ onMounted(() =>
                         block
                         class="mt-2"
                         data-test="cart-checkout"
+                        data-tour="checkout-place-order"
                         :disabled="!canCheckout || loading || placing"
                         @click="checkout"
                     >

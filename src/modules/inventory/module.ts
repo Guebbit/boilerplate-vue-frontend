@@ -47,6 +47,32 @@ export default {
             icon: CalendarClock
         }
     ],
+    tours: [
+        {
+            tour: 'stock-board',
+            id: 'forms',
+            target: 'stock-forms',
+            title: 'inventory-tour.forms-title',
+            body: 'inventory-tour.forms-body',
+            order: 10
+        },
+        {
+            tour: 'stock-board',
+            id: 'board',
+            target: 'stock-board',
+            title: 'inventory-tour.board-title',
+            body: 'inventory-tour.board-body',
+            order: 20
+        },
+        {
+            tour: 'stock-board',
+            id: 'ledger',
+            target: 'stock-ledger',
+            title: 'inventory-tour.ledger-title',
+            body: 'inventory-tour.ledger-body',
+            order: 30
+        }
+    ],
     responseSchemas: () => import('./response-schemas').then((m) => m.inventoryResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),

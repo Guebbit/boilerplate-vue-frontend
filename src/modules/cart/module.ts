@@ -109,6 +109,48 @@ export default {
             }
         }
     ],
+    tours: [
+        {
+            tour: 'checkout',
+            id: 'lines',
+            target: 'checkout-lines',
+            title: 'cart-tour.lines-title',
+            body: 'cart-tour.lines-body',
+            order: 10
+        },
+        {
+            tour: 'checkout',
+            id: 'summary',
+            target: 'checkout-summary',
+            title: 'cart-tour.summary-title',
+            body: 'cart-tour.summary-body',
+            order: 20
+        },
+        {
+            tour: 'checkout',
+            id: 'notes',
+            target: 'checkout-notes',
+            title: 'cart-tour.notes-title',
+            body: 'cart-tour.notes-body',
+            order: 30
+        },
+        {
+            tour: 'checkout',
+            id: 'total',
+            target: 'checkout-total',
+            title: 'cart-tour.total-title',
+            body: 'cart-tour.total-body',
+            order: 40
+        },
+        {
+            tour: 'checkout',
+            id: 'place-order',
+            target: 'checkout-place-order',
+            title: 'cart-tour.place-order-title',
+            body: 'cart-tour.place-order-body',
+            order: 50
+        }
+    ],
     responseSchemas: () => import('./response-schemas').then((m) => m.cartResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),

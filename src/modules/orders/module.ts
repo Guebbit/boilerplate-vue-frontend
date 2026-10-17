@@ -50,6 +50,32 @@ export default {
             icon: ClipboardList
         }
     ],
+    tours: [
+        {
+            tour: 'order-staff',
+            id: 'payment',
+            target: 'order-payment',
+            title: 'order-tour.payment-title',
+            body: 'order-tour.payment-body',
+            order: 10
+        },
+        {
+            tour: 'order-staff',
+            id: 'shipment',
+            target: 'order-shipment',
+            title: 'order-tour.shipment-title',
+            body: 'order-tour.shipment-body',
+            order: 20
+        },
+        {
+            tour: 'order-staff',
+            id: 'timeline',
+            target: 'order-timeline',
+            title: 'order-tour.timeline-title',
+            body: 'order-tour.timeline-body',
+            order: 30
+        }
+    ],
     responseSchemas: () => import('./response-schemas').then((m) => m.ordersResponseSchemas),
     locales: {
         en: () => import('./locales/en.json').then(dictionary),

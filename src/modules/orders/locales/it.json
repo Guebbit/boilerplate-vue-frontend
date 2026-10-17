@@ -221,5 +221,13 @@
         "done": "Ordini esportati.",
         "error-too-large": "Troppi ordini da esportare in una volta. Restringi i filtri e riprova.",
         "error-rate-limited": "Troppe esportazioni in poco tempo. Attendi un momento e riprova."
+    },
+    "order-tour": {
+        "payment-title": "Pagamento",
+        "payment-body": "Cosa è stato pagato e con quale metodo. Qui si registrano pagamenti offline e rimborsi.",
+        "shipment-title": "Spedizione",
+        "shipment-body": "Avvia la preparazione del pacco, poi segnalo come spedito e consegnato. Sono offerti solo i passaggi che l'ordine consente.",
+        "timeline-title": "Cronologia",
+        "timeline-body": "Ogni modifica a questo ordine, dalla più recente, con chi l'ha fatta."
     }
 }

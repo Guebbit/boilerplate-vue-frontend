@@ -70,6 +70,7 @@ import { WithdrawalPanel } from '@/modules/returns';
 import { ShipmentPanel, ShippingMethodName } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import TourButton from '@/ui/molecules/TourButton.vue';
 import type { CreditNoteSummary } from '@types';
 
 /**
@@ -569,7 +570,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
             </CardDetail>
 
             <CardDetail v-if="currentOrder">
-                <OrderTimeline :order-id="currentOrder.id" :refresh-key="timelineRefreshKey" />
+                <div data-tour="order-timeline">
+                    <OrderTimeline :order-id="currentOrder.id" :refresh-key="timelineRefreshKey" />
+                </div>
             </CardDetail>
 
             <template #aside>
@@ -577,24 +580,29 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     <CardInfo :title="heroTitle" :description="heroDescription" accent="tertiary">
                         <template #icon><ShoppingCart :size="28" /></template>
                     </CardInfo>
+                    <div v-if="session.can('display', 'Order')" class="flex justify-end">
+                        <TourButton tour="order-staff" />
+                    </div>
                     <!-- The money and the parcel: each panel re-reads the order when its module
                          moves the status, so this page never guesses at either. -->
-                    <PaymentPanel
-                        v-if="currentOrder"
-                        :order-id="currentOrder.id"
-                        :order-payable="currentOrder.actions?.pay"
-                        :order-status="currentOrder.status"
-                        :pay-by="currentOrder.payBy"
-                        @paid="fetchOrder(currentOrder.id, { forced: true })"
-                    />
-                    <ShipmentPanel
-                        v-if="currentOrder"
-                        :order-id="currentOrder.id"
-                        :shipping-method-id="currentOrder.shippingMethod"
-                        :can-start="currentOrder.actions?.start ?? false"
-                        :override="currentOrder.actions?.override ?? []"
-                        @moved="fetchOrder(currentOrder.id, { forced: true })"
-                    />
+                    <div v-if="currentOrder" data-tour="order-payment">
+                        <PaymentPanel
+                            :order-id="currentOrder.id"
+                            :order-payable="currentOrder.actions?.pay"
+                            :order-status="currentOrder.status"
+                            :pay-by="currentOrder.payBy"
+                            @paid="fetchOrder(currentOrder.id, { forced: true })"
+                        />
+                    </div>
+                    <div v-if="currentOrder" data-tour="order-shipment">
+                        <ShipmentPanel
+                            :order-id="currentOrder.id"
+                            :shipping-method-id="currentOrder.shippingMethod"
+                            :can-start="currentOrder.actions?.start ?? false"
+                            :override="currentOrder.actions?.override ?? []"
+                            @moved="fetchOrder(currentOrder.id, { forced: true })"
+                        />
+                    </div>
                     <WithdrawalPanel
                         v-if="currentOrder"
                         :order-id="currentOrder.id"
