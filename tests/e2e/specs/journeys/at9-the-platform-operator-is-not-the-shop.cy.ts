@@ -6,35 +6,7 @@
  * of the shop's customers. Its menu is the platform pages, and every shop page turns it back.
  * The seeded `root` is both an administrator and the operator, so root sees both halves.
  */
-
-/**
- * The hrefs of the open administration menu, then closes it.
- *
- * @returns a chain yielding the hrefs
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
-
-/**
- * Follows an address the role may not use: the router sends the visitor Home with a notice, and
- * the page never renders.
- *
- * @param path - the locale-prefixed address
- */
-const isTurnedBack = (path: string): void => {
-    cy.visit(path);
-    cy.get('#home-page').should('exist');
-    cy.location('pathname').should('equal', '/en');
-    cy.get('.v-alert').should('exist');
-};
+import { adminMenuLinks, isTurnedBack } from '../../../support/e2e/steps';
 
 describe('AT9 · The platform operator is not the shop', () => {
     beforeEach(() => {

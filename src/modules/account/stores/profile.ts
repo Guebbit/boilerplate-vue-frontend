@@ -403,13 +403,14 @@ export const useProfileStore = defineStore('accountProfile', () => {
     /**
      * Spends the undo link mailed to the OLD address when an email change was requested — public,
      * the token is the credential. The server cancels a pending change or restores the previous
-     * address and ends every session, so there is nothing to refetch: the visitor signs in again.
+     * address and ends every session, so there is nothing to refetch: this tab's own session is
+     * torn down locally too (it is dead server-side) and the visitor signs in again.
      *
      * @param token - One-time token from the undo link.
      * @returns A promise resolving once the change is undone.
      */
     const undoEmailChange = (token: string) =>
-        fetchAny(() => apiUndoEmailChange({ token }).then(() => undefined));
+        fetchAny(() => apiUndoEmailChange({ token }).then(endLocalSession));
 
     // A session that died on its own leaves the last person's record in the cache, and the shell
     // is about to re-run the route guard: drop it so nothing of theirs can flash.
@@ -438,6 +439,19 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const clearSession = () => {
         resetAll();
         session.clearSession();
+    };
+
+    /**
+     * Local teardown once the server has ended every session of this account (a deletion, an
+     * email-change undo): observability identity, consent answer, cached record and session.
+     */
+    const endLocalSession = () => {
+        // Clear user identity from observability tools
+        useObservabilityStore().unidentifyUser();
+        // Back to the guest cookie's answer: the account's no longer applies.
+        useAnalyticsConsentStore().setAccountChoice(undefined);
+        useAnalyticsConsentStore().syncTracker();
+        clearSession();
     };
 
     /**
@@ -487,17 +501,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  session, cached record and observability identity have been cleared.
      */
     const confirmAccountDelete = (token: string) =>
-        fetchAny(() =>
-            apiConfirmAccountDelete({ token }).then(() => {
-                // Clear user identity from observability tools
-                const obs = useObservabilityStore();
-                obs.unidentifyUser();
-                // Back to the guest cookie's answer: the account's no longer applies.
-                useAnalyticsConsentStore().setAccountChoice(undefined);
-                useAnalyticsConsentStore().syncTracker();
-                clearSession();
-            })
-        );
+        fetchAny(() => apiConfirmAccountDelete({ token }).then(endLocalSession));
 
     /**
      * Whether a picked avatar is being uploaded.

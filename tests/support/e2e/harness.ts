@@ -217,3 +217,44 @@ export const signatureVerifies = (
         body: received.body,
         secret
     });
+
+/**
+ * Another browser tab of the same person, played from the page under test.
+ *
+ * A `BroadcastChannel` never hears its own posts and the app's instance is module-private, so
+ * the second tab is a second channel object on the same name in the same page. The `session`
+ * channel carries `logout` and `activity` today (`src/infrastructure/session.ts`).
+ */
+export const otherTab = {
+    /**
+     * Sends one message on the `session` channel, as another tab would.
+     *
+     * @param message - the payload; `type` names it
+     */
+    post: (
+        message: { type: string } & Record<string, unknown>
+    ): Cypress.Chainable<Cypress.AUTWindow> =>
+        cy.window({ log: false }).then((win) => {
+            const channel = new win.BroadcastChannel('session');
+            channel.postMessage(message);
+            channel.close();
+            return win;
+        }),
+
+    /**
+     * Signs in as `role` the way a second tab would — a login whose cookies land in the browser's
+     * own jar, which this page shares — then announces it with a `login` message.
+     *
+     * The app reads no `login` message yet, so the page learns of it only once it is built; until
+     * then a journey asserts what the cookie alone changes.
+     *
+     * @param role - which seeded account
+     */
+    signIn: (role: E2ERole): Cypress.Chainable<Cypress.AUTWindow> =>
+        cy.accountOf(role).then(({ email, password }) =>
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.request('POST', `${String(apiUrl)}/account/login`, { email, password });
+                return otherTab.post({ type: 'login' });
+            })
+        )
+};

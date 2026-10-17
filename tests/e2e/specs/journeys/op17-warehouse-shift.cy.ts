@@ -10,7 +10,7 @@
  * Setup the story does not care about goes through the API: the digital order is bought by the
  * customer and paid by the admin, and the return request is approved by support first.
  */
-import { centsOf, checkoutAs } from '../../../support/e2e/steps';
+import { adminMenuLinks, centsOf, checkoutAs, isTurnedBack } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
@@ -35,34 +35,6 @@ interface ReturnLike {
 interface PaymentLike {
     amount: number;
 }
-
-/**
- * The hrefs of the open administration menu, then closes it.
- *
- * @returns a chain yielding the hrefs
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
-
-/**
- * Follows an address the role may not use: Home, with a notice.
- *
- * @param path - the locale-prefixed address
- */
-const isTurnedBack = (path: string): void => {
-    cy.visit(path);
-    cy.get('#home-page').should('exist');
-    cy.location('pathname').should('equal', '/en');
-    cy.get('.v-alert').should('exist');
-};
 
 /**
  * Has the customer buy the digital course and the admin record the cash, so a paid digital order

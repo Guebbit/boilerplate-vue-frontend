@@ -39,6 +39,34 @@ declare global {
             travel(ms: number): Chainable<void>;
 
             /**
+             * Runs one declared background job now — the backend's `POST /__test/jobs/:name` —
+             * and yields `{ job, result }`, where `result` is the job's own count of what it swept.
+             * A name the backend does not carry fails the test and lists the ones it does.
+             *
+             * Demo only: open the test with `cy.skipUnlessDemo()`. Names are the declared job
+             * names with `:` spelled `-` (`sweep:reservations` is `sweep-reservations`).
+             *
+             * @param name - the job, e.g. `reap-orders`
+             */
+            runJob(name: string): Chainable<{ job: string; result: number }>;
+
+            /**
+             * Moves BOTH clocks forward: the backend's ({@link Chainable.travel}) and the
+             * browser's, so a countdown or an expiry the page works out itself moves with the
+             * server's.
+             *
+             * The browser clock is Date-only (`cy.clock(now, ['Date'])`), installed on first use;
+             * install it BEFORE `cy.visit` for the page to start on it, as `freezeForVisual` does.
+             * Limits: the server clock only goes forward, a staff session idles out at 30 minutes,
+             * TTL indexes never move, and a jump past 7 days ends the session.
+             *
+             * Demo only: open the test with `cy.skipUnlessDemo()`.
+             *
+             * @param ms - how far forward, in milliseconds
+             */
+            travelEverywhere(ms: number): Chainable<void>;
+
+            /**
              * Lets the page read and write the clipboard, so a copy button can be proved by reading
              * back what it copied (`cy.window().then((w) => w.navigator.clipboard.readText())`).
              * Without the grant the browser refuses the read in an automated run.
@@ -144,4 +172,75 @@ Cypress.Commands.add(
             cy.stub(win, 'open').as('windowOpen');
         })
     )
+);
+
+/**
+ * The names `GET /__test/jobs` lists, to put in a failure message; empty when the backend lists
+ * none (an older one, or the answer has a shape this does not know).
+ *
+ * @param apiUrl - the backend origin
+ */
+const listedJobs = (apiUrl: string): Cypress.Chainable<string[]> =>
+    cy.request({ url: `${apiUrl}/__test/jobs`, failOnStatusCode: false }).then((response) => {
+        const { jobs } = (response.body ?? {}) as { jobs?: unknown };
+        return Array.isArray(jobs)
+            ? jobs.filter((job): job is string => typeof job === 'string')
+            : [];
+    });
+
+Cypress.Commands.add(
+    'runJob',
+    asStub<Cypress.CommandFn<'runJob'>>((name: string) => {
+        Cypress.log({ name: 'runJob', displayName: 'JOB', message: name });
+        return cy.env(['liveProfile', 'apiUrl']).then(({ liveProfile, apiUrl }) => {
+            if (liveProfile === true)
+                throw new Error(
+                    'cy.runJob(): only the demo backend has job levers. Open this test with cy.skipUnlessDemo().'
+                );
+            const origin = String(apiUrl);
+            return cy
+                .request({
+                    method: 'POST',
+                    url: `${origin}/__test/jobs/${encodeURIComponent(name)}`,
+                    failOnStatusCode: false
+                })
+                .then((response) => {
+                    if (response.status === 404)
+                        return listedJobs(origin).then((jobs) => {
+                            throw new Error(
+                                `cy.runJob("${name}"): the backend carries no such job.` +
+                                    (jobs.length > 0 ? ` It carries: ${jobs.join(', ')}.` : '')
+                            );
+                        });
+                    expect(response.status, `POST /__test/jobs/${name}`).to.equal(200);
+                    return cy.wrap(response.body as { job: string; result: number });
+                });
+        });
+    })
+);
+
+/** The Date-only browser clock {@link Cypress.Chainable.travelEverywhere} installed, for this test. */
+let browserClock: Cypress.Clock | undefined;
+
+// A clock never leaks into the next test (Cypress restores the real one on its own).
+beforeEach(() => {
+    browserClock = undefined;
+});
+
+Cypress.Commands.add(
+    'travelEverywhere',
+    asStub<Cypress.CommandFn<'travelEverywhere'>>((ms: number) => {
+        Cypress.log({
+            name: 'travelEverywhere',
+            displayName: 'TRAVEL',
+            message: `+${String(ms)} ms (both clocks)`
+        });
+        // The server first: it is the clock that ends sessions and expires holds.
+        cy.travel(ms);
+        if (browserClock) return cy.then(() => browserClock?.tick(ms));
+        // Date only, like `freezeForVisual`: timers keep running, so the page still renders.
+        return cy.clock(Date.now() + ms, ['Date']).then((clock) => {
+            browserClock = clock;
+        });
+    })
 );

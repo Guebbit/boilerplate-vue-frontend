@@ -18,6 +18,8 @@ export interface MailedEmail {
     subject: string;
     /** The outbox template name — only the demo profile knows it. */
     template?: string;
+    /** The language tag the send was made in (`data.locale`) — only the demo profile knows it. */
+    locale?: string;
     /** The `#token=` of the first link that carries one. */
     token?: string;
     /** `code: <digits>` and `linkUrl: <url>`, when the message carries them. */

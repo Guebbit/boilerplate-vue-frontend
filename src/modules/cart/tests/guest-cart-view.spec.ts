@@ -295,6 +295,23 @@ describe('a product that is no longer there', () => {
         expect(keptLine?.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
     });
 
+    it('marks a line whose product is off sale, and only that one', async () => {
+        const { wrapper: page } = await mountPage(
+            [
+                ['off', 1],
+                ['on', 1]
+            ],
+            [{ ...aProduct('off', 10), purchasable: false }, aProduct('on', 10)]
+        );
+
+        const [offLine, onLine] = page.findAll('[data-test=guest-cart-item]');
+        expect(offLine?.get('[data-test=guest-cart-line-unavailable]').text()).toBe(
+            'Not available right now'
+        );
+        expect(offLine?.find('[data-test=guest-cart-line-removed]').exists()).toBe(false);
+        expect(onLine?.find('[data-test=guest-cart-line-unavailable]').exists()).toBe(false);
+    });
+
     it('raises no toast: the shopper decides what leaves the cart', async () => {
         await mountPage([['gone', 1]], []);
 

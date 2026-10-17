@@ -326,7 +326,7 @@ describe('the self-service actions', () => {
             });
     });
 
-    it('undoEmailChange posts the token and refetches nothing: every session was ended', () => {
+    it("undoEmailChange posts the token, refetches nothing and drops this tab's dead session", () => {
         const profile = useProfileStore();
 
         return useAuthStore()
@@ -337,6 +337,9 @@ describe('the self-service actions', () => {
             })
             .then((before) => {
                 expect(requestedUrls().slice(before)).toEqual(['/account/email-change-undo']);
+                expect(useSessionStore().isAuth).toBe(false);
+                expect(useSessionStore().accessToken).toBeUndefined();
+                expect(profile.profile).toBeUndefined();
             });
     });
 

@@ -17,6 +17,7 @@ import {
     addToCartFromStorefront,
     searchAndOpenProduct
 } from '../../../support/e2e/steps';
+import { otherTab } from '../../../support/e2e/harness';
 
 describe('FR11 · One device, two people', () => {
     beforeEach(() => {
@@ -57,13 +58,7 @@ describe('FR11 · One device, two people', () => {
         cy.get('[data-test=nav-badge]').should('contain.text', '1');
 
         cy.step('another tab logs out: this one is signed out and the cart leaves the bar');
-        cy.window().then((win) => {
-            // A second channel object in the same page: a channel never hears its own posts, and
-            // the app's own instance is module-private.
-            const otherTab = new win.BroadcastChannel('session');
-            otherTab.postMessage({ type: 'logout' });
-            otherTab.close();
-        });
+        otherTab.post({ type: 'logout' });
         cy.get('[data-test=nav-login-link]').should('exist');
         cy.get('[data-test=nav-badge]').should('not.exist');
         // The guest's own cart is theirs to fill, and the second person's lines are not in it.

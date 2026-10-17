@@ -129,6 +129,15 @@ const refreshLines = () => {
 const isGone = (productId: string): boolean => readAnswered.value && isRemoved(productId);
 
 /**
+ * Whether a line's product is still listed but off sale (`purchasable: false`), as the public
+ * read says it. The signed-in cart marks the same line "Not available right now".
+ *
+ * @param productId - The line's product.
+ * @returns `true` once the read has answered with the product flagged not purchasable.
+ */
+const isOffSale = (productId: string): boolean => productOf(productId)?.purchasable === false;
+
+/**
  * Steps a line's quantity by one, within what a line may hold.
  *
  * @param line - The line to change.
@@ -204,6 +213,17 @@ onMounted(refreshLines);
                             data-test="guest-cart-line-removed"
                         >
                             {{ availabilityLabel('removed') }}
+                        </v-chip>
+                        <v-chip
+                            v-else-if="isOffSale(line.productId)"
+                            size="small"
+                            color="warning"
+                            variant="tonal"
+                            label
+                            class="ml-2"
+                            data-test="guest-cart-line-unavailable"
+                        >
+                            {{ availabilityLabel('unavailable') }}
                         </v-chip>
                     </p>
                     <p

@@ -39,6 +39,7 @@ import { recordSpecDuration } from './scripts/e2e/spec-durations';
 import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
 import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
 import { totpCode } from './scripts/e2e/totp';
+import { declaredStatuses } from './scripts/e2e/declared-statuses';
 import {
     SINGLE_PROCESS_SINK_PORT,
     startWebhookSink,
@@ -195,6 +196,18 @@ export default defineConfig({
                  * library for it.
                  */
                 totpCode: (request: Parameters<typeof totpCode>[0]) => totpCode(request),
+
+                /*
+                 * The statuses the synced root `openapi.yaml` declares for one operation, so a
+                 * stubbed failure can be refused when the server could never answer it.
+                 * Read per call: a regenerate between runs is picked up.
+                 */
+                declaredStatuses: (request: { method: string; pathTemplate: string }) =>
+                    declaredStatuses(
+                        readFileSync(path.resolve('openapi.yaml'), 'utf8'),
+                        request.method,
+                        request.pathTemplate
+                    ),
                 /*
                  * The webhook sink this process hosts (demo profile): what arrived, and forget it.
                  * See `scripts/e2e/webhook-sink.ts`. Both ask for the sink, which starts it if the

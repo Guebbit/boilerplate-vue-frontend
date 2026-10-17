@@ -10,34 +10,7 @@
  * UI honours it. The editor is the surprise worth pinning: Orders and Returns sit in the account
  * menu for everyone signed in, and show an editor only their own (none, here).
  */
-/**
- * Every address the open administration menu links to.
- *
- * @returns a chain yielding the hrefs; the menu is closed again before it yields
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
-
-/**
- * Follows a direct address the role may not use: the router sends the visitor Home with a notice,
- * and the page they asked for never renders.
- *
- * @param path - the locale-prefixed address
- */
-const isTurnedBack = (path: string): void => {
-    cy.visit(path);
-    cy.get('#home-page').should('exist');
-    cy.location('pathname').should('equal', '/en');
-    cy.get('.v-alert').should('exist');
-};
+import { adminMenuLinks, isTurnedBack } from '../../../support/e2e/steps';
 
 /**
  * Waits for an orders list to have answered, then says how many rows the role was shown.

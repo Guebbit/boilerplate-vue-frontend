@@ -12,7 +12,7 @@
  * knows it, so it is logged into through the form, not `cy.loginAs`.
  */
 import { mailedLinkUrl, expectMailTemplate } from '../../../support/e2e/commands';
-import { signInWith } from '../../../support/e2e/steps';
+import { adminMenuLinks, signInWith } from '../../../support/e2e/steps';
 
 /** The new staff member, and the password the mailed link sets. */
 const STAFF = {
@@ -26,22 +26,6 @@ const ITALIAN_SETUP_SUBJECT = 'Configura il tuo account';
 
 /** What the admin types into the edit form. */
 const EDITED = { phone: '+39 055 1234567', website: 'https://warehouse.example.com' };
-
-/**
- * The hrefs of the open administration menu, then closes it.
- *
- * @returns a chain yielding the hrefs
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
 
 describe('AT7 · Staff accounts', () => {
     beforeEach(() => {

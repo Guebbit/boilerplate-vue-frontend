@@ -26,6 +26,7 @@ import { linkIfRouted } from '@/kernel/route-link.ts';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
@@ -43,6 +44,10 @@ const props = defineProps<{
  * Whether the drawer is open.
  */
 const open = defineModel<boolean>({ default: false });
+
+// A drawer has no activator: hand focus back to the row that opened it on close (WAI-ARIA APG
+// dialog pattern). A row the reload has since replaced is gone, and focus is left alone.
+useReturnFocus(() => open.value);
 
 /**
  * Emitted after a refund went through, so the list reloads what the drawer changed.

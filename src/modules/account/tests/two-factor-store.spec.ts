@@ -443,7 +443,7 @@ describe('the login-time challenge', () => {
         });
     });
 
-    it('submitLoginCode carries a ticked remember-me box to the API as the medium tier', () => {
+    it('submitLoginCode carries a ticked remember-me box to the API as the long tier', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, true);
         responses['POST /account/login/2fa'] = orvalEnvelope({ token: 'stepped-up-jwt' });
@@ -463,7 +463,7 @@ describe('the login-time challenge', () => {
             expect(contractRequest(schemas.LoginTwoFactorBody, last.data)).toEqual({
                 challenge: 'claim-check-token',
                 code: '123456',
-                remember: 'medium'
+                remember: 'long'
             });
         });
     });

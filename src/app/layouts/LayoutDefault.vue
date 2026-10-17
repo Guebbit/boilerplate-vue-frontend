@@ -35,6 +35,7 @@ import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { collectModuleLoadingKeys } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 
@@ -199,7 +200,7 @@ const router = useRouter();
  * The session store's own counter, bumped only when a session died on its own (a refresh the
  * server definitively refused) and never on an explicit logout.
  */
-const { expiredSignal, idleSignal } = storeToRefs(useSessionStore());
+const { expiredSignal, idleSignal, abilitiesSignal } = storeToRefs(useSessionStore());
 
 /**
  * A session that died on its own: say so, then re-enter the current route. A forced `replace` to
@@ -221,6 +222,16 @@ watch(expiredSignal, () => {
 watch(idleSignal, () => {
     useNotificationsStore().addMessage(t('idle-session.ended'));
     void router.replace({ path: route.path, query: route.query, hash: route.hash, force: true });
+});
+
+/**
+ * The rules were re-read under a live session (a 403, a token refresh): re-run the page on screen
+ * through the same access check the router uses. If it is no longer allowed, turn back with the
+ * notice the guard gives; if it is, nothing moves.
+ */
+watch(abilitiesSignal, () => {
+    const verdict = enforceRouteAccess(router.currentRoute.value, router);
+    if (verdict) void router.replace(verdict);
 });
 
 /*

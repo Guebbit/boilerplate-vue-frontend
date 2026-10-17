@@ -201,7 +201,7 @@ const handleConfirm = () => {
 
 <template>
     <v-card data-test="two-factor-enroll">
-        <v-card-title>{{ t('two-factor.button-add') }}</v-card-title>
+        <v-card-title id="two-factor-enroll-title">{{ t('two-factor.button-add') }}</v-card-title>
         <v-card-text>
             <template v-if="setup?.delivers === false">
                 <p class="mb-4">{{ t('two-factor.setup-totp-intro') }}</p>

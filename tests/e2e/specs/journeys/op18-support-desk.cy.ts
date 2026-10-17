@@ -10,7 +10,7 @@
  * What support is not given: a customer's credentials (no two-factor reset: the owner alone
  * manages their own), a ban or a lift of one (the moderator's key), and the Audit page itself.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { adminMenuLinks, eventually } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** The visitor, and the subject of the ticket they write. */
@@ -35,22 +35,6 @@ interface AuditRowLike {
 interface TicketLike {
     id: string;
 }
-
-/**
- * The hrefs of the open administration menu, then closes it.
- *
- * @returns a chain yielding the hrefs
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
 
 /**
  * The visitor fills the contact form and sends it.

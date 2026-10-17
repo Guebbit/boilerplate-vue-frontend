@@ -13,7 +13,7 @@
  * The second story is the other half of the rule: an account that holds a role is changed only by a
  * role manager, so a moderator is shown no way to demote an administrator.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { adminMenuLinks, eventually } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import type { E2ERole } from '../../../support/e2e/scenario';
 
@@ -27,22 +27,6 @@ interface AuditRowLike {
     action: string;
     actorRole: string;
 }
-
-/**
- * The hrefs of the open administration menu, then closes it.
- *
- * @returns a chain yielding the hrefs
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
 
 /**
  * Opens the target's page, picks a role in the access dialog and confirms it.
