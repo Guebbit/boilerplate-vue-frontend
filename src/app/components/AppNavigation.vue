@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n';
 import { useTheme } from 'vuetify';
 import { storeToRefs } from 'pinia';
 import {
+    CircleHelp,
     CircleUserRound,
     House,
     Info,
@@ -37,11 +38,13 @@ import {
     SIGN_UP_ROUTE_NAME
 } from '@/app/router/navigation.ts';
 import { canAccess } from '@/app/guards/authentications.ts';
+import { readToursEnabled } from '@/infrastructure/runtime-config.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { writeThemePreference } from '@/infrastructure/theme-preference.ts';
 import { collectModuleNavigation, groupNavigation, NAVIGATION_SECTIONS } from '@/kernel/registry';
 import type { AppNavigationEntry, AppNavigationSection } from '@/kernel/registry';
 import { useSlot } from '@/kernel/slots';
+import { WELCOME_TOUR_ID } from '@/app/tours/catalogue.ts';
 import { enabledModules } from '@/modules';
 
 /**
@@ -258,6 +261,17 @@ const logout = () =>
     );
 
 /**
+ * Whether the deployment lets tours open, read once: the menu entry exists only then.
+ */
+const toursEnabled = readToursEnabled();
+
+/**
+ * "Show me around": asks for the welcome tour through `?tour=`, the door `AppTourHost` listens at.
+ */
+const showWelcomeTour = () =>
+    void router.push({ query: { ...route.query, tour: WELCOME_TOUR_ID } });
+
+/**
  * Vuetify theme controller, used to read/toggle light vs dark.
  */
 const theme = useTheme();
@@ -282,7 +296,11 @@ const toggleTheme = () => {
         </template>
 
         <!-- Desktop: the main section, each entry its glyph and its name in full. -->
-        <nav class="hidden lg:flex items-center gap-1" :aria-label="t('navigation.label-menu')">
+        <nav
+            class="hidden lg:flex items-center gap-1"
+            :aria-label="t('navigation.label-menu')"
+            data-tour="nav-main"
+        >
             <AppNavBarLink
                 v-for="item in visibleSections.main"
                 :key="item.name"
@@ -314,6 +332,7 @@ const toggleTheme = () => {
                     :label="t('navigation.label-admin-menu')"
                     :icon="ShieldCheck"
                     data-test="admin-menu"
+                    tour="admin-menu"
                 />
 
                 <!--
@@ -352,6 +371,7 @@ const toggleTheme = () => {
                     :badge-label="item.badge ? t('navigation.badge-items', item.badge) : undefined"
                     :detail="item.detail"
                     :data-test="'pinned-' + item.name"
+                    :data-tour="'pinned-' + item.name"
                 />
 
                 <!--
@@ -370,9 +390,23 @@ const toggleTheme = () => {
                     :avatar-url="viewer.imageUrl"
                     :avatar-thumbnail-url="viewer.thumbnailUrl"
                     data-test="user-menu"
+                    tour="user-menu"
                 >
                     <template #after>
                         <v-divider class="my-1" />
+                        <!-- Reopens the welcome tour: the same `?tour=` door a docs link uses. -->
+                        <v-list-item
+                            v-if="toursEnabled"
+                            role="menuitem"
+                            color="primary"
+                            data-test="show-tour"
+                            @click="showWelcomeTour"
+                        >
+                            <template #prepend>
+                                <CircleHelp :size="20" class="mr-3" aria-hidden="true" />
+                            </template>
+                            <v-list-item-title>{{ t('tours.menu-entry') }}</v-list-item-title>
+                        </v-list-item>
                         <v-list-item
                             role="menuitem"
                             color="primary"
@@ -410,6 +444,7 @@ const toggleTheme = () => {
                     :aria-label="t('navigation.label-menu')"
                     :aria-expanded="drawer"
                     :aria-controls="DRAWER_ID"
+                    data-tour="menu-toggle"
                     @click="drawer = !drawer"
                 >
                     <Menu :size="22" aria-hidden="true" />

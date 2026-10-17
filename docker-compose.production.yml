@@ -47,6 +47,7 @@ services:
             VITE_UMAMI_SRC: '${VITE_UMAMI_SRC:-}'
             VITE_UMAMI_WEBSITE_ID: '${VITE_UMAMI_WEBSITE_ID:-}'
             VITE_UMAMI_REQUIRE_CONSENT: '${VITE_UMAMI_REQUIRE_CONSENT:-}'
+            VITE_TOURS_ENABLED: '${VITE_TOURS_ENABLED:-}'
             # /.well-known/security.txt — published only when both CONTACT and EXPIRES are set.
             VITE_SECURITY_CONTACT: '${VITE_SECURITY_CONTACT:-}'
             VITE_SECURITY_EXPIRES: '${VITE_SECURITY_EXPIRES:-}'

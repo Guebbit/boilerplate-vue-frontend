@@ -73,6 +73,7 @@ interface, a `config_entry` line in the entrypoint script, and the call site's `
 | `CART_STOCK_POLL_SECONDS`                                           | `VITE_CART_STOCK_POLL_SECONDS`                                           |
 | `FARO_URL`, `FARO_APP_NAME`, `FARO_APP_VERSION`, `FARO_ENVIRONMENT` | `VITE_FARO_*`                                                            |
 | `UMAMI_SRC`, `UMAMI_WEBSITE_ID`, `UMAMI_REQUIRE_CONSENT`            | `VITE_UMAMI_*`                                                           |
+| `TOURS_ENABLED`                                                     | `VITE_TOURS_ENABLED`                                                     |
 
 The container variable keeps its `VITE_` name, so the same `.env` line works for a dev server and
 for `docker run -e`.
@@ -163,6 +164,7 @@ nothing. See [Observability](./observability.md).
 | `VITE_UMAMI_WEBSITE_ID`      | [Umami](./umami.md) website id (empty = off)                                                     |
 | `VITE_UMAMI_SRC`             | Umami tracker script URL                                                                         |
 | `VITE_UMAMI_REQUIRE_CONSENT` | `true` (default) loads Umami only after the visitor accepts the banner; `false` loads it unasked |
+| `VITE_TOURS_ENABLED`         | `true` (default) lets [guided tours](./tours.md) open; `false` turns them off                    |
 
 ## `security.txt`
 

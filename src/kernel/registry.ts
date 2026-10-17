@@ -135,6 +135,48 @@ export interface AppNavigationEntry {
 }
 
 /**
+ * One step of a guided tour, contributed by whichever module owns the screen it points at.
+ *
+ * Carries no visibility rule, same as {@link AppNavigationEntry}: a step whose `target` is not on
+ * screen is skipped when the tour starts, so a staff-only step simply never shows to a customer.
+ * See `docs/tools/tours.md`.
+ */
+export interface AppTourStep {
+    /**
+     * Which tour this step belongs to — a key of the shell's tour catalogue. A step naming an
+     * unknown tour is never reached.
+     */
+    tour: string;
+
+    /**
+     * Stable id of the step, unique within its tour.
+     */
+    id: string;
+
+    /**
+     * Value of the `data-tour="…"` attribute on the element the step points at. On a Vuetify
+     * component the attribute lands on the wrapper, which is the right thing to highlight.
+     */
+    target: string;
+
+    /**
+     * i18n key of the step's heading.
+     */
+    title: string;
+
+    /**
+     * i18n key of the step's text.
+     */
+    body: string;
+
+    /**
+     * Sort key within the tour, spaced by tens like {@link AppNavigationEntry.order}. Absent sorts
+     * last.
+     */
+    order?: number;
+}
+
+/**
  * Everything a module declares about itself.
  *
  * Keep this interface small. A field that only one module ever fills does not belong here — that
@@ -160,6 +202,12 @@ export interface AppModule {
      * (`account` contributes only Profile, `cart` only Cart) simply omits it.
      */
     navigation?: AppNavigationEntry[];
+
+    /**
+     * Guided-tour steps this domain contributes, for screens it owns. Optional: most modules have
+     * none.
+     */
+    tours?: AppTourStep[];
 
     /**
      * Components this domain contributes to slots another module owns — see `kernel/slots.ts`.
@@ -299,6 +347,14 @@ export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] =
  */
 export const collectModuleNavigation = (appModules: AppModule[]): AppNavigationEntry[] =>
     appModules.flatMap((appModule) => appModule.navigation ?? []);
+
+/**
+ * Collect every enabled module's guided-tour steps, all tours together.
+ *
+ * @param appModules - the enabled module list
+ */
+export const collectModuleTours = (appModules: AppModule[]): AppTourStep[] =>
+    appModules.flatMap((appModule) => appModule.tours ?? []);
 
 /**
  * Sort navigation entries by `order`, entries without one going last.

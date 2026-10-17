@@ -57,6 +57,10 @@ defineProps<{
      * Forwarded to the activator button as `data-test`, for e2e targeting.
      */
     dataTest?: string;
+    /**
+     * Forwarded to the activator button as `data-tour`, the anchor a guided-tour step points at.
+     */
+    tour?: string;
 }>();
 
 /**
@@ -110,6 +114,7 @@ const focusFirstItemOnOpen = () => {
                 :avatar-url="avatarUrl"
                 :avatar-thumbnail-url="avatarThumbnailUrl"
                 :data-test="dataTest"
+                :data-tour="tour"
             />
         </template>
 

@@ -329,10 +329,14 @@ before(() => {
     });
 });
 Cypress.on('window:before:load', (contentWindow) => {
+    // `TOURS_ENABLED: 'false'`: a first-login tour would cover the screen in every spec. Only
+    // `tours.cy.ts` turns it back on, from its own `cy.visit` `onBeforeLoad`, which runs after this.
     if (injectedApiUrl !== undefined)
         (
-            contentWindow as Cypress.AUTWindow & { __APP_CONFIG?: { API_URL?: string } }
-        ).__APP_CONFIG = { API_URL: injectedApiUrl };
+            contentWindow as Cypress.AUTWindow & {
+                __APP_CONFIG?: { API_URL?: string; TOURS_ENABLED?: string };
+            }
+        ).__APP_CONFIG = { API_URL: injectedApiUrl, TOURS_ENABLED: 'false' };
 });
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is

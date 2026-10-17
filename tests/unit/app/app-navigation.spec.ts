@@ -565,8 +565,18 @@ describe('Navigation', () => {
         );
         expect(items.map((item) => item.text())).toEqual([
             'navigation.label-member:1',
+            'tours.menu-entry',
             'navigation.label-logout'
         ]);
+    });
+
+    it('asks for the welcome tour through ?tour= from the "Show me around" entry', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+
+        void mountNav().wrapper.find('[data-test="show-tour"]').trigger('click');
+
+        expect(pushSpy).toHaveBeenCalledWith({ query: { tour: 'welcome' } });
     });
 
     it('sends the signed-in visitor to Logout on click', () => {

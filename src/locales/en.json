@@ -336,5 +336,24 @@
                 "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]
         }
+    },
+    "tours": {
+        "menu-entry": "Show me around",
+        "button-text": "Show me around",
+        "button-label": "Show me around this page",
+        "progress-of": "of",
+        "next": "Next",
+        "previous": "Back",
+        "done": "Done",
+        "welcome-nav-title": "Find your way",
+        "welcome-nav-body": "These are the pages you can open. What you see here depends on what your account is allowed to do.",
+        "welcome-menu-toggle-title": "Find your way",
+        "welcome-menu-toggle-body": "Open the menu to reach the pages your account can use.",
+        "welcome-admin-title": "Running the shop",
+        "welcome-admin-body": "Orders, stock, payments and the rest of the shop's back office live in this menu.",
+        "welcome-cart-title": "Your cart",
+        "welcome-cart-body": "Products you add land here, with the running total. Checkout starts from this button.",
+        "welcome-account-title": "Your account",
+        "welcome-account-body": "Your profile, orders and settings are here. You can open this tour again from this menu, under \"Show me around\"."
     }
 }

@@ -68,15 +68,17 @@ reconciled against a manifest field here. See
 
 ## `tests/unit/`
 
-| File                                                    | What it guarantees                                                                               | Read next                                        |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `tests/unit/kernel/registry.spec.ts`                    | The registry's route- and navigation-collecting functions behave correctly on synthetic modules. | [Modules](../theory/modules.md)                  |
-| `tests/unit/app/router/router.spec.ts`                  | The router is assembled from the registry, and a module's routes arrive under the locale prefix. | [State & Routing](../tools/state-and-routing.md) |
-| `tests/unit/app/router/navigation.spec.ts`              | The navigation model: what the shell renders, and where an unauthenticated visitor is sent.      | [Sitemap & Access Control](../theory/sitemap.md) |
-| `tests/unit/app/guards/authentications.spec.ts`         | A route's declared requirement is enforced, and a public route stays public.                     | [Sitemap & Access Control](../theory/sitemap.md) |
-| `tests/unit/app/guards/authentications-restore.spec.ts` | A visitor sent to sign in is returned to where they were aiming.                                 | [Security](../tools/security.md)                 |
-| `tests/unit/app/guards/locale-choice.spec.ts`           | The locale a route is entered under, and the dictionary assembled for it.                        | [Infrastructure](./src-infrastructure.md)        |
-| `tests/unit/app/app-navigation.spec.ts`                 | The shell's navigation renders from the registry rather than a hand-written list.                | [App, Kernel & Types](./src-app.md)              |
+| File                                                    | What it guarantees                                                                                             | Read next                                        |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `tests/unit/kernel/registry.spec.ts`                    | The registry's route- and navigation-collecting functions behave correctly on synthetic modules.               | [Modules](../theory/modules.md)                  |
+| `tests/unit/app/router/router.spec.ts`                  | The router is assembled from the registry, and a module's routes arrive under the locale prefix.               | [State & Routing](../tools/state-and-routing.md) |
+| `tests/unit/app/router/navigation.spec.ts`              | The navigation model: what the shell renders, and where an unauthenticated visitor is sent.                    | [Sitemap & Access Control](../theory/sitemap.md) |
+| `tests/unit/app/guards/authentications.spec.ts`         | A route's declared requirement is enforced, and a public route stays public.                                   | [Sitemap & Access Control](../theory/sitemap.md) |
+| `tests/unit/app/guards/authentications-restore.spec.ts` | A visitor sent to sign in is returned to where they were aiming.                                               | [Security](../tools/security.md)                 |
+| `tests/unit/app/guards/locale-choice.spec.ts`           | The locale a route is entered under, and the dictionary assembled for it.                                      | [Infrastructure](./src-infrastructure.md)        |
+| `tests/unit/app/tours.spec.ts`                          | Tour steps assemble in order, drop absent anchors, have copy in both languages, and the popover is accessible. | [Guided tours](../tools/tours.md)                |
+| `tests/unit/app/tour-host.spec.ts`                      | The welcome tour opens once after the first sign-in; `?tour=` opens a known tour and is stripped.              | [Guided tours](../tools/tours.md)                |
+| `tests/unit/app/app-navigation.spec.ts`                 | The shell's navigation renders from the registry rather than a hand-written list.                              | [App, Kernel & Types](./src-app.md)              |
 
 ### `tests/unit/infrastructure/`
 

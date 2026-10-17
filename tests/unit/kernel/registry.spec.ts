@@ -5,6 +5,7 @@ import {
     collectModuleLoadingKeys,
     collectModuleNavigation,
     collectModuleRoutes,
+    collectModuleTours,
     groupNavigation,
     sortNavigation
 } from '@/kernel/registry';
@@ -199,5 +200,33 @@ describe('collectModuleLoadingKeys', () => {
         ];
 
         expect(collectModuleLoadingKeys(modules)).toEqual(['account', 'webhooks', 'hooks-extra']);
+    });
+});
+
+/** One tour step with throwaway copy. */
+const tourStep = (tour: string, id: string) => ({
+    tour,
+    id,
+    target: id,
+    title: `${id}-title`,
+    body: `${id}-body`
+});
+
+describe('collectModuleTours', () => {
+    it('concatenates the tour steps of every module that has some', () => {
+        const steps = collectModuleTours([
+            {
+                ...makeModule('cart'),
+                tours: [tourStep('checkout', 'lines'), tourStep('checkout', 'total')]
+            },
+            makeModule('orders'),
+            { ...makeModule('inventory'), tours: [tourStep('stock-board', 'board')] }
+        ]);
+
+        expect(steps.map(({ id }) => id)).toEqual(['lines', 'total', 'board']);
+    });
+
+    it('returns nothing for a build with no modules', () => {
+        expect(collectModuleTours([])).toEqual([]);
     });
 });

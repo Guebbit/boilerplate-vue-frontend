@@ -2,7 +2,7 @@
  * `runtimeValue` — `src/infrastructure/runtime-config.ts`.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { runtimeValue } from '@/infrastructure/runtime-config.ts';
+import { readToursEnabled, runtimeValue } from '@/infrastructure/runtime-config.ts';
 
 afterEach(() => {
     Reflect.deleteProperty(globalThis, '__APP_CONFIG');
@@ -35,5 +35,21 @@ describe('runtimeValue', () => {
     it('is undefined for a key config.js never set, even with others present', () => {
         (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = { API_URL: 'https://x' };
         expect(runtimeValue('LOCALE_APP')).toBeUndefined();
+    });
+});
+
+describe('readToursEnabled', () => {
+    it('is on by default', () => {
+        expect(readToursEnabled()).toBe(true);
+    });
+
+    it('is off when the container says so', () => {
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = { TOURS_ENABLED: 'false' };
+        expect(readToursEnabled()).toBe(false);
+    });
+
+    it('stays on for any other value', () => {
+        (globalThis as { __APP_CONFIG?: object }).__APP_CONFIG = { TOURS_ENABLED: 'true' };
+        expect(readToursEnabled()).toBe(true);
     });
 });

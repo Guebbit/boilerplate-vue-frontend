@@ -43,6 +43,7 @@ interface ImportMetaEnv {
     readonly VITE_UMAMI_SRC?: string;
     readonly VITE_UMAMI_WEBSITE_ID?: string;
     readonly VITE_UMAMI_REQUIRE_CONSENT?: string;
+    readonly VITE_TOURS_ENABLED?: string;
     readonly VITE_VALIDATE_REQUESTS?: string;
     readonly VITE_VALIDATE_RESPONSES?: string;
 }

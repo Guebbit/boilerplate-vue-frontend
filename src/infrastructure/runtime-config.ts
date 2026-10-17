@@ -32,6 +32,7 @@ export interface RuntimeConfig {
     UMAMI_SRC?: string;
     UMAMI_WEBSITE_ID?: string;
     UMAMI_REQUIRE_CONSENT?: string;
+    TOURS_ENABLED?: string;
 }
 
 /**
@@ -57,4 +58,17 @@ export function runtimeValue(name: keyof RuntimeConfig): string | undefined {
  */
 export function readApiUrl(): string {
     return runtimeValue('API_URL') || import.meta.env.VITE_API_URL?.trim() || '';
+}
+
+/**
+ * Whether guided tours may open at all — the deployment switch behind the first-login tour and
+ * the "Show me around" entry. On unless explicitly `false`; e2e runs inject `false` so a tour
+ * never covers the screen under test.
+ *
+ * @returns `false` only when the runtime or build-time `TOURS_ENABLED` reads `false`.
+ */
+export function readToursEnabled(): boolean {
+    return (
+        (runtimeValue('TOURS_ENABLED') || import.meta.env.VITE_TOURS_ENABLED?.trim()) !== 'false'
+    );
 }

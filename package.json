@@ -76,6 +76,7 @@
         "@zxcvbn-ts/language-en": "^4.1.1",
         "altcha": "^3.2.3",
         "axios": "^1.20.0",
+        "driver.js": "1.10.1",
         "lodash-es": "^4.18.1",
         "lucide-vue-next": "^1.0.0",
         "mermaid": "^11.15.0",

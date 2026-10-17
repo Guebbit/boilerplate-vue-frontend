@@ -49,6 +49,7 @@ config_entry() {
     config_entry 'UMAMI_SRC' "${VITE_UMAMI_SRC:-}"
     config_entry 'UMAMI_WEBSITE_ID' "${VITE_UMAMI_WEBSITE_ID:-}"
     config_entry 'UMAMI_REQUIRE_CONSENT' "${VITE_UMAMI_REQUIRE_CONSENT:-}"
+    config_entry 'TOURS_ENABLED' "${VITE_TOURS_ENABLED:-}"
     # A trailing comma above is always valid JS in an object literal, including after the last
     # real entry, so no entry needs special-casing as "the last one".
     printf '};\n'

@@ -29,6 +29,7 @@ import {
 import DialogHost from '@/ui/organisms/DialogHost.vue';
 import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import IdleSessionDialog from '@/app/components/IdleSessionDialog.vue';
+import AppTourHost from '@/app/tours/AppTourHost.vue';
 import PageHeader from '@/ui/molecules/PageHeader.vue';
 import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
@@ -319,6 +320,7 @@ watch(idleSignal, () => {
         <!-- The step-up prompt, opened by the http layer's `REAUTH_REQUIRED` interceptor -->
         <ReauthDialog />
         <IdleSessionDialog />
+        <AppTourHost />
 
         <!--
             Toast stack. The wrapper is a named region, NOT a live region: each alert announces

@@ -336,5 +336,24 @@
                 "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]
         }
+    },
+    "tours": {
+        "menu-entry": "Fammi fare un giro",
+        "button-text": "Fammi fare un giro",
+        "button-label": "Fammi fare un giro di questa pagina",
+        "progress-of": "di",
+        "next": "Avanti",
+        "previous": "Indietro",
+        "done": "Fine",
+        "welcome-nav-title": "Trova la tua strada",
+        "welcome-nav-body": "Queste sono le pagine che puoi aprire. Quello che vedi dipende da ciò che il tuo account può fare.",
+        "welcome-menu-toggle-title": "Trova la tua strada",
+        "welcome-menu-toggle-body": "Apri il menu per raggiungere le pagine che il tuo account può usare.",
+        "welcome-admin-title": "Gestire il negozio",
+        "welcome-admin-body": "Ordini, magazzino, pagamenti e il resto del back office del negozio sono in questo menu.",
+        "welcome-cart-title": "Il tuo carrello",
+        "welcome-cart-body": "I prodotti che aggiungi finiscono qui, con il totale aggiornato. Il checkout parte da questo pulsante.",
+        "welcome-account-title": "Il tuo account",
+        "welcome-account-body": "Profilo, ordini e impostazioni sono qui. Puoi riaprire questo giro da questo menu, alla voce \"Fammi fare un giro\"."
     }
 }

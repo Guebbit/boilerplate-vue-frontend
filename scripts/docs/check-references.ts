@@ -102,7 +102,8 @@ const ALLOWED: { prefix: string; reason: string }[] = [
         reason: 'the container entrypoint writes it at start; it is never tracked'
     },
     { prefix: 'dist/', reason: 'the build output, written by build' },
-    { prefix: 'dist-e2e/', reason: 'the e2e build output' }
+    { prefix: 'dist-e2e/', reason: 'the e2e build output' },
+    { prefix: 'driver.js', reason: 'an npm package whose name reads like a filename' }
 ];
 
 /**
