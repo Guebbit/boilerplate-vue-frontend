@@ -92,7 +92,9 @@ server's.
 **The returns form is for everything else.** Once something has shipped, `ReturnRequestForm` lets the
 customer tick the lines that come back, set a quantity for each (up to the server's `returnable`
 quantity), pick a reason (defective, wrong item or other — `withdrawal` is the button, not a choice
-here) and add a note. It sends only the ticked lines, so part of an order can go back; the same
+here) and add a note. The reasons on offer are the server's `reasons`: after the withdrawal period
+only the two guarantee reasons are left (two years from delivery), and a made-to-order line
+(`withdrawable: false`) is shut for `other`. It sends only the ticked lines, so part of an order can go back; the same
 product can be returned again until nothing is left. The server re-checks all of it (too many, an
 excluded line, a closed window) and its message shows in the form. Staff then approve or decline the
 return like any other.

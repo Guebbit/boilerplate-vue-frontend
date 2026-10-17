@@ -63,6 +63,7 @@
         "error-reason-required": "Scegli un motivo",
         "error-note-too-long": "La nota è troppo lunga (massimo 1000 caratteri)",
         "error-lines-required": "Scegli almeno un articolo da restituire",
+        "hint-line-excluded": "I beni su misura possono essere restituiti solo se difettosi o diversi da quanto ordinato.",
         "error-quantity-invalid": "Inserisci una quantità intera, da 1 fino a quanto puoi ancora restituire",
         "success": "Reso richiesto. Lo esamineremo e ti scriveremo via email."
     },

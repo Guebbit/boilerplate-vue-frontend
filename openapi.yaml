@@ -6667,7 +6667,7 @@ paths:
       tags:
         - Returns
       summary: What an order can still send back or cancel
-      description: The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+      description: "The server's answer to \"what can I still return, and what can I still cancel?\" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered to the buyer only and only while a deadline in `reasons` is open: staff get an empty list (cancelling is theirs, returning is the buyer's right), and so does a buyer past every deadline. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`."
       operationId: getReturnOptions
       security:
         - bearerAuth: []
@@ -15733,6 +15733,26 @@ components:
         - productId
         - title
         - quantity
+        - withdrawable
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        withdrawable:
+          type: boolean
+          description: "Whether the right of withdrawal reaches this line. False for goods Art. 16 excludes (made to order, perishable): only `defective` or `wrong_item` may name them, and a request that names them with another reason is a 422."
+    CancelOptionLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - quantity
+      description: A line of the remainder a cancel would take, which is what has not shipped, per product.
       properties:
         productId:
           $ref: "#/components/schemas/Id"
@@ -15761,7 +15781,7 @@ components:
         lines:
           type: array
           items:
-            $ref: "#/components/schemas/ReturnOptionLine"
+            $ref: "#/components/schemas/CancelOptionLine"
         refundAmount:
           type: number
           format: double
@@ -15789,11 +15809,16 @@ components:
         currency:
           type: string
           description: ISO-4217 code of the order's own currency.
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReturnRequestReason"
+          description: The reasons THIS caller can still name, so a client offers no door that is shut. Empty for staff (the right is the buyer's own) and once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included.
         returnable:
           type: array
           items:
             $ref: "#/components/schemas/ReturnOptionLine"
-          description: Per product, what has shipped and not yet been returned. Goods excluded from withdrawal (Art. 16) are not listed.
+          description: "Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed only while a `defective` or `wrong_item` reason is open, and carry `withdrawable: false`."
         cancellable:
           type: array
           items:
@@ -18932,7 +18957,7 @@ x-error-codes:
     description: The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands.
   RETURN_WINDOW_CLOSED:
     status: 409
-    description: The withdrawal period for this order has ended.
+    description: "The period for the reason named has ended: the withdrawal period for a withdrawal or other, two years from delivery for a defect or a wrong item."
   ROLE_MANAGEMENT_REQUIRED:
     status: 403
     description: "The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is never refused."

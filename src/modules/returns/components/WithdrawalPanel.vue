@@ -116,6 +116,14 @@ const cancellable = computed(() =>
 const returnLines = computed(() => options.value?.returnable ?? []);
 
 /**
+ * The reasons the form may offer: every open one but `withdrawal`, which is the panel's own
+ * reason-free button.
+ */
+const formReasons = computed(() =>
+    (options.value?.reasons ?? []).filter((reason) => reason !== 'withdrawal')
+);
+
+/**
  * The remainder whose cancel dialog is open, if any.
  */
 const cancelling = ref<CancellableFulfillmentOrder>();
@@ -268,9 +276,10 @@ onMounted(loadOpened);
         </p>
 
         <ReturnRequestForm
-            v-if="returnLines.length > 0"
+            v-if="returnLines.length > 0 && formReasons.length > 0"
             :order-id="orderId"
             :lines="returnLines"
+            :reasons="formReasons"
             @opened="handleReturnOpened"
         />
 

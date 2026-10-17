@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { VSelect } from 'vuetify/components';
+import type { ReturnOptionLine, ReturnRequestReason } from '@types';
 import ReturnRequestForm from '../components/ReturnRequestForm.vue';
 import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -22,9 +23,14 @@ wireModulesIntoCore();
  * The lines the order page would offer.
  */
 const LINES = [
-    { productId: 'p1', title: 'Shirt', quantity: 2 },
-    { productId: 'p2', title: 'Mug', quantity: 1 }
+    { productId: 'p1', title: 'Shirt', quantity: 2, withdrawable: true },
+    { productId: 'p2', title: 'Mug', quantity: 1, withdrawable: true }
 ];
+
+/**
+ * Every reason the form may offer, the state inside the withdrawal period.
+ */
+const ALL_REASONS: ReturnRequestReason[] = ['withdrawal', 'defective', 'wrong_item', 'other'];
 
 /**
  * Mounts the form with the store's call spied BEFORE mount — the component destructures its
@@ -32,11 +38,14 @@ const LINES = [
  *
  * @returns the wrapper and the store
  */
-const mountForm = () => {
+const mountForm = (
+    lines: ReturnOptionLine[] = LINES,
+    reasons: ReturnRequestReason[] = ALL_REASONS
+) => {
     const store = useReturnsStore();
     vi.spyOn(store, 'openReturn').mockResolvedValue(aReturn());
     const wrapper = mount(ReturnRequestForm, {
-        props: { orderId: 'o1', lines: LINES },
+        props: { orderId: 'o1', lines, reasons },
         global: { plugins: [vuetify, i18n] },
         attachTo: document.body
     });
@@ -106,6 +115,39 @@ describe('ReturnRequestForm', () => {
             { value: 'wrong_item', title: 'Wrong item' },
             { value: 'other', title: 'Other' }
         ]);
+    });
+
+    it('offers only the guarantee reasons once the withdrawal period is over', async () => {
+        const { wrapper } = mountForm(LINES, ['defective', 'wrong_item']);
+        await openForm(wrapper);
+
+        expect(wrapper.getComponent(VSelect).props('items')).toEqual([
+            { value: 'defective', title: 'Defective goods' },
+            { value: 'wrong_item', title: 'Wrong item' }
+        ]);
+    });
+
+    it('shuts a made-to-order line for the goodwill reason, and unticks it', async () => {
+        const engraved = {
+            productId: 'p3',
+            title: 'Engraved mug',
+            quantity: 1,
+            withdrawable: false
+        };
+        const { wrapper } = mountForm([...LINES, engraved]);
+        await openForm(wrapper);
+        await chooseReason(wrapper, 'defective');
+        await pick(wrapper, 'p3');
+        const box = () =>
+            wrapper.get('[data-test=return-line-pick-p3] input').element as HTMLInputElement;
+
+        expect(box().disabled).toBe(false);
+        expect(box().checked).toBe(true);
+
+        await chooseReason(wrapper, 'other');
+
+        expect(box().disabled).toBe(true);
+        expect(box().checked).toBe(false);
     });
 
     it('asks for everything that is left when a line is ticked', async () => {

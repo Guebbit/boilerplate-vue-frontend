@@ -4147,6 +4147,18 @@ export interface ReturnOptionLine {
     title: string;
     /** @minimum 1 */
     quantity: number;
+    /** Whether the right of withdrawal reaches this line. False for goods Art. 16 excludes (made to order, perishable): only `defective` or `wrong_item` may name them, and a request that names them with another reason is a 422. */
+    withdrawable: boolean;
+}
+
+/**
+ * A line of the remainder a cancel would take, which is what has not shipped, per product.
+ */
+export interface CancelOptionLine {
+    productId: Id;
+    title: string;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 /**
@@ -4156,7 +4168,7 @@ export interface CancellableFulfillmentOrder {
     fulfillmentOrderId: Id;
     /** @minimum 1 */
     number: number;
-    lines: ReturnOptionLine[];
+    lines: CancelOptionLine[];
     /**
      * What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`.
      * @minimum 0
@@ -4175,7 +4187,9 @@ export interface ReturnOptions {
     orderId: Id;
     /** ISO-4217 code of the order's own currency. */
     currency: string;
-    /** Per product, what has shipped and not yet been returned. Goods excluded from withdrawal (Art. 16) are not listed. */
+    /** The reasons THIS caller can still name, so a client offers no door that is shut. Empty for staff (the right is the buyer's own) and once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. */
+    reasons?: ReturnRequestReason[];
+    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed only while a `defective` or `wrong_item` reason is open, and carry `withdrawable: false`. */
     returnable: ReturnOptionLine[];
     cancellable: CancellableFulfillmentOrder[];
 }
@@ -10033,7 +10047,7 @@ export const createReturn = (
 };
 
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered to the buyer only and only while a deadline in `reasons` is open: staff get an empty list (cancelling is theirs, returning is the buyer's right), and so does a buyer past every deadline. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptions = (

@@ -10594,7 +10594,7 @@ export const CreateReturnResponse = zod.strictObject({
     })
 });
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered to the buyer only and only while a deadline in `reasons` is open: staff get an empty list (cancelling is theirs, returning is the buyer's right), and so does a buyer past every deadline. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptionsQueryOrderIdMax = 64;
@@ -10633,6 +10633,7 @@ export const GetReturnOptionsResponse = zod.strictObject({
             .max(getReturnOptionsResponseDataOrderIdMax)
             .regex(getReturnOptionsResponseDataOrderIdRegExp),
         currency: zod.string(),
+        reasons: zod.array(zod.enum(['withdrawal', 'defective', 'wrong_item', 'other'])).optional(),
         returnable: zod.array(
             zod.strictObject({
                 productId: zod
@@ -10641,7 +10642,8 @@ export const GetReturnOptionsResponse = zod.strictObject({
                     .max(getReturnOptionsResponseDataReturnableItemProductIdMax)
                     .regex(getReturnOptionsResponseDataReturnableItemProductIdRegExp),
                 title: zod.string(),
-                quantity: zod.number().min(1)
+                quantity: zod.number().min(1),
+                withdrawable: zod.boolean()
             })
         ),
         cancellable: zod.array(
