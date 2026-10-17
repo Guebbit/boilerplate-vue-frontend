@@ -16,6 +16,9 @@ import routes from './routes';
  * manifests. `cart` and `wishlist` read the catalogue back through this module's barrel
  * (`useProductLines`), which is why the arrows point at `products` and none point out of it.
  *
+ * One call reaches out: the edit form asks `delivery` how many paid orders a later release date
+ * would tell (`composables/use-release-date-confirm.ts`), and saves without it if that fails.
+ *
  * What a shop sells is the shop, and the catalogue is the screen a visitor spends their time
  * on. The client half owns the browsing experience; the server owns the prices.
  */

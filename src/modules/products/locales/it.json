@@ -142,7 +142,12 @@
         "button-translations": "Traduzioni",
         "label-release-date": "Data di uscita",
         "hint-release-date": "Spedizione da questa data. Finché è nel futuro il prodotto si vende in preordine, fino a un anno avanti. Spostarla più avanti avvisa chi ha già pagato. Lascia vuoto per un prodotto in vendita ora.",
-        "hint-release-date-preorder": "Questo prodotto è ora in preordine. Spostare la data più avanti avvisa chi ha già pagato; cancellarla chiude il preordine."
+        "hint-release-date-preorder": "Questo prodotto è ora in preordine. Spostare la data più avanti avvisa chi ha già pagato; cancellarla chiude il preordine.",
+        "impact-title": "Gli acquirenti verranno avvisati",
+        "impact-notify": "{count} ordine riceve un avviso | {count} ordini ricevono un avviso",
+        "impact-ask": "{count} ordine deve rispondere di sì entro il {date} | {count} ordini devono rispondere di sì entro il {date}",
+        "impact-silence": "il silenzio annulla e rimborsa (regola del negozio)",
+        "impact-back": "Indietro"
     },
     "navigation": {
         "label-products-list": "prodotto | prodotti"

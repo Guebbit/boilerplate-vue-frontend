@@ -53,6 +53,7 @@ import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progre
 import { shopCurrency } from '@/infrastructure/shop.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
 import { fromDateTimeLocal, toDateTimeLocal } from '../domain';
+import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -317,6 +318,11 @@ const releaseDateChange = (current?: string | null): string | undefined =>
         : fromDateTimeLocal(current);
 
 /**
+ * Asks, before a later or cleared release date is saved, how many buyers it reaches.
+ */
+const { confirmReleaseDateMove } = useReleaseDateConfirm(() => adminProduct.value?.releaseDate);
+
+/**
  * Validates the form and persists the product changes.
  *
  * @returns A promise resolving once the flow settles: a success toast and a fresh admin-record
@@ -346,35 +352,38 @@ const submitForm = () => {
         if (!id || price === undefined) return;
         // No baseline: the whole form is this save's intent. What the helper adds is the spelling —
         // a cleared weight or a blank translation description goes as the contract's `null`.
-        return toRequestBody('UpdateProductByIdBody', {
-            price,
-            active,
-            purchasable,
-            releaseDate: releaseDateChange(releaseDate),
-            requiresShipping,
-            noWithdrawal,
-            weight,
-            taxClass,
-            categories,
-            tags,
-            translations: toPatchTranslations(translations)
-        })
-            .then((body) =>
-                trackUpload(imageUpload, (options) =>
-                    updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
+        return confirmReleaseDateMove(id, releaseDate).then((confirmed) => {
+            if (!confirmed) return;
+            return toRequestBody('UpdateProductByIdBody', {
+                price,
+                active,
+                purchasable,
+                releaseDate: releaseDateChange(releaseDate),
+                requiresShipping,
+                noWithdrawal,
+                weight,
+                taxClass,
+                categories,
+                tags,
+                translations: toPatchTranslations(translations)
+            })
+                .then((body) =>
+                    trackUpload(imageUpload, (options) =>
+                        updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
+                    )
                 )
-            )
-            .then(() => {
-                // The API has answered with the stored `imageUrl` and the merged translations; the
-                // admin record is the only place both live, so it is reloaded rather than patched by
-                // hand — the store's own optimistic patch already skips `translations` for the same
-                // reason (see `products/store.ts`).
-                form.value.imageUpload = undefined;
-                addMessage(t('product-edit-page.success-update'));
-                // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
-                // and the reload itself (not what it returns) is the point.
-                return loadAdminProduct(id).then(() => undefined);
-            });
+                .then(() => {
+                    // The API has answered with the stored `imageUrl` and the merged translations; the
+                    // admin record is the only place both live, so it is reloaded rather than patched by
+                    // hand — the store's own optimistic patch already skips `translations` for the same
+                    // reason (see `products/store.ts`).
+                    form.value.imageUpload = undefined;
+                    addMessage(t('product-edit-page.success-update'));
+                    // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
+                    // and the reload itself (not what it returns) is the point.
+                    return loadAdminProduct(id).then(() => undefined);
+                });
+        });
     }).catch(handleSubmitFailure);
 };
 </script>

@@ -174,6 +174,31 @@ Store `products`, from `store.ts`. Only what the setup function returns is liste
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` (the standing it needs) and **Permission** its `meta.can` — the `[action, subject]` rule checked against the caller's own rules from `GET /account/abilities`. A menu entry restates neither, which is what keeps the menu and the router from disagreeing. See [Security](../tools/security.md#route-guards).
 
+### Saving a later or cleared release date
+
+A moved release date notifies the buyers who already paid (see the backend's
+`delivery` page, "Preorders and a moved date"). So the edit form asks first, through
+`src/modules/products/composables/use-release-date-confirm.ts`:
+
+```mermaid
+flowchart TD
+    A[Save pressed] --> B{Date later or cleared?}
+    B -- no --> S[Save]
+    B -- yes --> C{Can display Order?}
+    C -- no --> S
+    C -- yes --> D[GET /delivery/fulfillment-orders/release-date-impact]
+    D -- failed --> S
+    D -- ok --> E{notify + ask = 0?}
+    E -- yes --> S
+    E -- no --> F[Confirm dialog: counts and answer-by date]
+    F -- Save --> S
+    F -- Back --> X[Nothing saved]
+```
+
+The dialog informs and never refuses. A cleared date sends no `releaseDate`, which the backend reads
+as cleared. The ability is checked before the call, since a call the visitor may not make is logged
+on the server as a forbidden one.
+
 ## Wiring
 
 #### Endpoints called

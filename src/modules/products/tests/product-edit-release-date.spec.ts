@@ -5,11 +5,14 @@
  * travels only when it changed), sent as an ISO instant when edited and as `null` when cleared.
  * Proven against the contract's own body schema. Mounting mirrors `product-edit-purchasable.spec.ts`.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type MockInstance } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import ProductEdit from '../views/ProductEdit.vue';
+import { createMongoAbility } from '@casl/ability';
+import { useDialogStore } from '@/ui/dialog.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -199,4 +202,158 @@ describe('ProductEdit — release date', () => {
             .then(() => {
                 expect(lastPatch().data).not.toHaveProperty('releaseDate');
             }));
+});
+
+/**
+ * A signed-in visitor holding the given rules, as the session sees abilities.
+ */
+const signIn = (rules: { action: string; subject: string }[]) => {
+    const session = useSessionStore();
+    session.accessToken = 'test-token';
+    session.viewer = { id: 'u1', email: 'manager@example.com', role: 'manager' };
+    session.tenantAbility = createMongoAbility(rules);
+};
+
+/** Whether a PATCH was sent. */
+const patched = () =>
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.some(([config]) => (config as { method?: string }).method === 'PATCH');
+
+describe('ProductEdit — the preview before a later or cleared date', () => {
+    /** The preview route the form asks. */
+    const IMPACT_URL = '/delivery/fulfillment-orders/release-date-impact';
+
+    /** The dialog's answer, set per test; the host is not mounted, so the spy answers. */
+    let confirmSpy: MockInstance<ReturnType<typeof useDialogStore>['confirm']>;
+
+    /** Rules of a manager: moves dates and reads orders. */
+    const MANAGER = [
+        { action: 'update', subject: 'Product' },
+        { action: 'display', subject: 'Order' }
+    ];
+
+    /** The preview calls sent so far. */
+    const previewCalls = () =>
+        vi
+            .mocked(orvalMutator)
+            .mock.calls.filter(([config]) => (config as { url?: string }).url === IMPACT_URL);
+
+    /**
+     * Mounts with the preview answering `impact` (or failing), sets the date input and submits.
+     */
+    const submitWith = (
+        impact: Record<string, unknown> | Error,
+        next: string,
+        original: string | null = RELEASE_ISO
+    ) => {
+        return mountHydrated(original === null ? {} : { releaseDate: original }).then((wrapper) => {
+            const inner = vi.mocked(orvalMutator).getMockImplementation();
+            vi.mocked(orvalMutator).mockImplementation((config: { url?: string }) =>
+                config.url === IMPACT_URL
+                    ? impact instanceof Error
+                        ? Promise.reject(impact)
+                        : Promise.resolve(orvalEnvelope(impact))
+                    : (inner?.(config) ?? Promise.resolve(orvalEnvelope()))
+            );
+            return wrapper
+                .get('[data-test=product-release-date-field] input')
+                .setValue(next)
+                .then(() => wrapper.get('form').trigger('submit'))
+                .then(flushPromises);
+        });
+    };
+
+    /** An instant on the minute, so the input's spelling loses nothing. */
+    const RELEASE_ISO = new Date(2027, 2, 15, 9, 30).toISOString();
+
+    beforeEach(() => {
+        signIn(MANAGER);
+        confirmSpy = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+    });
+
+    it('asks before saving a later date, naming the notices and the questions', () =>
+        submitWith(
+            { notify: 12, ask: 3, answerBy: '2027-11-16T00:00:00.000Z' },
+            '2027-04-01T10:00'
+        ).then(() => {
+            expect(previewCalls()).toHaveLength(1);
+            expect(previewCalls()[0][0]).toMatchObject({
+                params: { productId: 'p1', releaseDate: new Date(2027, 3, 1, 10, 0).toISOString() }
+            });
+            expect(confirmSpy).toHaveBeenCalledOnce();
+            const request = confirmSpy.mock.calls[0][0] as { message: string; color: string };
+            expect(request.message).toContain('12 orders get a notice');
+            expect(request.message).toContain('3 orders must say yes by');
+            expect(request.message).toContain('silence cancels and refunds');
+            expect(request.color).toBe('warning');
+            expect(patched()).toBe(true);
+        }));
+
+    it('names only the notices when nobody has to answer', () =>
+        submitWith(
+            { notify: 1, ask: 0, answerBy: '2027-11-16T00:00:00.000Z' },
+            '2027-04-01T10:00'
+        ).then(() => {
+            const request = confirmSpy.mock.calls[0][0] as { message: string };
+            expect(request.message).toBe('1 order gets a notice');
+        }));
+
+    it('asks for a cleared date without sending a releaseDate', () =>
+        submitWith({ notify: 0, ask: 2, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(() => {
+            expect(previewCalls()[0][0]).toMatchObject({ params: { productId: 'p1' } });
+            expect(
+                (previewCalls()[0][0] as { params: Record<string, unknown> }).params.releaseDate
+            ).toBeUndefined();
+            expect(confirmSpy).toHaveBeenCalledOnce();
+        }));
+
+    it('does not save when the staff go back', () => {
+        confirmSpy.mockResolvedValue(false);
+
+        return submitWith({ notify: 0, ask: 1, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(
+            () => {
+                expect(confirmSpy).toHaveBeenCalledOnce();
+                expect(patched()).toBe(false);
+            }
+        );
+    });
+
+    it('saves without a dialog when nobody is reached', () =>
+        submitWith({ notify: 0, ask: 0, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(() => {
+            expect(confirmSpy).not.toHaveBeenCalled();
+            expect(patched()).toBe(true);
+        }));
+
+    it('saves without a dialog when the preview fails', () =>
+        submitWith(new Error('module off'), '').then(() => {
+            expect(confirmSpy).not.toHaveBeenCalled();
+            expect(patched()).toBe(true);
+        }));
+
+    it('does not even ask the server when the visitor cannot read orders', () => {
+        signIn([{ action: 'update', subject: 'Product' }]);
+
+        return submitWith({ notify: 5, ask: 5, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(
+            () => {
+                expect(previewCalls()).toHaveLength(0);
+                expect(confirmSpy).not.toHaveBeenCalled();
+                expect(patched()).toBe(true);
+            }
+        );
+    });
+
+    it.each([
+        ['an earlier date', '2027-03-01T10:00', RELEASE_ISO],
+        ['a product that never had a date', '2027-04-01T10:00', null]
+    ])('does not ask for %s', (_name, next, original) =>
+        submitWith(
+            { notify: 5, ask: 5, answerBy: '2027-11-16T00:00:00.000Z' },
+            next,
+            original
+        ).then(() => {
+            expect(previewCalls()).toHaveLength(0);
+            expect(patched()).toBe(true);
+        })
+    );
 });

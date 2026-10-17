@@ -142,7 +142,12 @@
         "button-translations": "Translations",
         "label-release-date": "Release date",
         "hint-release-date": "Ships from this date. While it is ahead, the product is sold as a preorder, up to one year out. Moving it later notifies the buyers who already paid. Leave empty for a product on sale now.",
-        "hint-release-date-preorder": "This product is a preorder now. Moving the date later notifies the buyers who already paid; clearing it ends the preorder."
+        "hint-release-date-preorder": "This product is a preorder now. Moving the date later notifies the buyers who already paid; clearing it ends the preorder.",
+        "impact-title": "Buyers will be told",
+        "impact-notify": "{count} order gets a notice | {count} orders get a notice",
+        "impact-ask": "{count} order must say yes by {date} | {count} orders must say yes by {date}",
+        "impact-silence": "silence cancels and refunds (shop policy)",
+        "impact-back": "Back"
     },
     "navigation": {
         "label-products-list": "product | products"

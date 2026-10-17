@@ -38,3 +38,20 @@ export const fromDateTimeLocal = (local?: string | null): string => {
     const date = new Date(local);
     return Number.isNaN(date.getTime()) ? '' : date.toISOString();
 };
+
+/**
+ * Whether saving this date would push a date that exists later, or take it away: the only moves
+ * that tell the buyers who already paid. A product that had no date has no one to tell.
+ *
+ * @param originalIso - The date as the product holds it now, when it has one.
+ * @param nextLocal - The input's value; empty or `null` means cleared.
+ */
+export const isReleaseDateSlip = (
+    originalIso: string | null | undefined,
+    nextLocal: string | null | undefined
+): boolean => {
+    const original = originalIso ? new Date(originalIso) : undefined;
+    if (!original || Number.isNaN(original.getTime())) return false;
+    const next = fromDateTimeLocal(nextLocal);
+    return next === '' || new Date(next).getTime() > original.getTime();
+};
