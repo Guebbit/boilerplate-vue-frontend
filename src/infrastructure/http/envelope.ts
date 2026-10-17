@@ -60,6 +60,24 @@ export const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | unde
     isWrappedResponse<T>(response) ? response.data : response;
 
 /**
+ * A body as an object: a string is parsed as JSON first. A request made with
+ * `responseType: 'text'` (the orders CSV export) hands even its error envelope over as a string,
+ * and a step-up challenge on it would otherwise go unread.
+ *
+ * @param value - The raw body, still unknown at this boundary.
+ * @returns The parsed body for a JSON string, `undefined` for any other string, else `value` as is.
+ */
+const parsedBody = (value: unknown): unknown => {
+    if (typeof value !== 'string') return value;
+    // eslint-disable-next-line no-restricted-syntax -- JSON.parse throws on text that is not JSON; such a body carries no envelope, so the local answer is `undefined`
+    try {
+        return JSON.parse(value) as unknown;
+    } catch {
+        return undefined;
+    }
+};
+
+/**
  * Reads `errors[0]` off a rejection — the envelope `onResponseReject` builds, or an axios error's
  * own `response.data`. An empty `errors` array is legal at the type level, so nothing here may
  * assume there is a first entry.
@@ -68,8 +86,9 @@ export const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | unde
  * @returns The first structured error, or `undefined` when the shape does not match.
  */
 export const getFirstApiError = (value: unknown): ApiErrorItem | undefined => {
-    if (!isObjectRecord(value)) return undefined;
-    const items = value.errors;
+    const body = parsedBody(value);
+    if (!isObjectRecord(body)) return undefined;
+    const items = body.errors;
     if (!Array.isArray(items)) return undefined;
     const [item] = items as unknown[];
     return isObjectRecord(item) ? item : undefined;

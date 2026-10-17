@@ -61,6 +61,17 @@ declare global {
             loginAs(role?: E2ERole): Chainable<void>;
 
             /**
+             * Signs in without the UI: one `POST /account/login`, whose cookies land in the
+             * browser's jar, plus the `isAuth` hint cookie the app reads to try a restore. The next
+             * `cy.visit()` restores the session from the refresh cookie, as a returning visitor's
+             * would. It exists for sweeps that sign in once per persona and walk many pages, where
+             * the form's seconds add up. A journey about signing in uses `loginAs`.
+             *
+             * @param role - which seeded account; `user` by default
+             */
+            loginAsFast(role?: E2ERole): Chainable<void>;
+
+            /**
              * Logs the current visitor out and a different one in, in the SAME tab and
              * without a `cy.visit()` reload — through the account menu's real logout, the nav
              * bar's own login link, and the login form, exactly as a visitor clicking through
@@ -889,6 +900,14 @@ const submitLoginForm = (credentials: { email: string; password: string }) => {
 Cypress.Commands.add('loginAs', (role: E2ERole = 'user') => {
     cy.visit('/en/login');
     submitLoginForm(seedAccount(role));
+});
+
+Cypress.Commands.add('loginAsFast', (role: E2ERole = 'user') => {
+    const { email, password } = seedAccount(role);
+    cy.env(['apiUrl']).then(({ apiUrl }) => {
+        cy.request('POST', `${String(apiUrl)}/account/login`, { email, password });
+    });
+    cy.setCookie('isAuth', 'true');
 });
 
 Cypress.Commands.add('switchUser', (role: E2ERole = 'user') => {

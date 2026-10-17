@@ -131,4 +131,55 @@ describe('OP16 · The shop manager’s morning', () => {
             cy.get('body').should('contain.text', NEW_PRICE);
         });
     });
+    it('the manager reads the numbers, exports the orders and takes a returned parcel back', () => {
+        cy.step('the sales pages are in the menu');
+        cy.loginAs('manager');
+        adminMenuLinks().should((links) => {
+            for (const page of ['/sales/stats', '/sales/payments', '/sales/orders'])
+                expect(links, page).to.include(`/en${page}`);
+        });
+
+        cy.step('the sales numbers render without a refused call');
+        const refusals: number[] = [];
+        cy.env(['apiUrl']).then(({ apiUrl }) => {
+            cy.intercept(`${String(apiUrl)}/**`, (request) => {
+                request.on('response', (response) => {
+                    if (response.statusCode === 401 || response.statusCode === 403)
+                        refusals.push(response.statusCode);
+                });
+            });
+        });
+        cy.visit('/en/sales/stats');
+        cy.get('#stats-dashboard-page').should('exist');
+        cy.settleNetwork();
+        cy.then(() => {
+            expect(refusals, 'stats: API answers 401/403').to.deep.equal([]);
+        });
+
+        cy.step('the orders export answers a CSV, and the session is fresh so no dialog asks');
+        cy.visit('/en/sales/orders');
+        cy.intercept('GET', '**/orders/export*').as('exportOrders');
+        cy.get('[data-test=orders-export]').click();
+        cy.wait('@exportOrders').then(({ response }) => {
+            expect(response?.statusCode).to.equal(200);
+            expect(response?.headers['content-type']).to.contain('text/csv');
+        });
+        cy.get('[data-test=reauth-dialog]').should('not.exist');
+
+        cy.step('the payments page lists payments, with no offline control for the manager');
+        cy.visit('/en/sales/payments');
+        cy.get('#payments-list-page').should('exist');
+        cy.get('[data-test=order-reference-search]').should('not.exist');
+
+        cy.step('a returned parcel is the manager’s to receive: it closes');
+        cy.subjectId('return.requested').then((returnId) => {
+            cy.visit(`/en/returns/${returnId}`);
+            cy.get('[data-test=return-approve]').click();
+            cy.get('[data-test=return-receive]').click();
+            cy.get('[data-test=return-receive-form]').should('not.exist');
+            cy.apiAs<{ status: string }>('manager', 'GET', `/returns/${returnId}`)
+                .its('status')
+                .should('equal', 'closed');
+        });
+    });
 });

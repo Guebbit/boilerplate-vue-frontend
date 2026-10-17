@@ -9,8 +9,7 @@
  * `session` BroadcastChannel. The spec posts that message itself, standing in for the other tab.
  * This tab must end up signed out, with the second person's cart gone from the bar too.
  *
- * The second person is the seeded second-shopper customer (staff hold no
- * shopping key, so none of them could be one).
+ * The second person is the seeded `secondShopper` customer.
  */
 import {
     addOpenProductToCart,
