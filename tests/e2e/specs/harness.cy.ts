@@ -205,10 +205,8 @@ describe('The journey harness', () => {
         it('runs reap-orders on demand, and refuses a job it does not carry', () => {
             cy.skipUnlessDemo();
 
+            cy.runJob('reap-orders').should('deep.equal', { job: 'reap-orders', result: 0 });
             cy.env(['apiUrl']).then(({ apiUrl }) => {
-                cy.request('POST', `${String(apiUrl)}/__test/jobs/reap-orders`)
-                    .its('body')
-                    .should('deep.equal', { job: 'reap-orders', result: 0 });
                 cy.request({
                     method: 'POST',
                     url: `${String(apiUrl)}/__test/jobs/not-a-job`,

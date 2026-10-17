@@ -6,7 +6,7 @@
  * but stays whole and staff can still ship it; an order that was never paid is no invoice, so its
  * personal details are marked for scrubbing at once and the next sweep wipes them.
  *
- * Demo only: the sweep is run on demand through the job lever (`POST /__test/jobs/reap-orders`),
+ * Demo only: the sweep is run on demand through the job lever (`cy.runJob('reap-orders')`),
  * which a live deployment does not mount. Needs the demo outbox for the two mails.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
@@ -136,11 +136,7 @@ describe('AC7 · Delete my account while an order is still open', () => {
         cy.step(
             'the sweep scrubs the unpaid order’s personal details and leaves the invoice alone'
         );
-        cy.env(['apiUrl']).then(({ apiUrl }) => {
-            cy.request('POST', `${String(apiUrl)}/__test/jobs/reap-orders`)
-                .its('body.result')
-                .should('be.greaterThan', 0);
-        });
+        cy.runJob('reap-orders').its('result').should('be.greaterThan', 0);
         cy.get<string>('@unpaid').then(readAsStaff).as('unpaidAfter');
         cy.get<OrderLike>('@unpaidBefore').then((before) => {
             cy.get<OrderLike>('@unpaidAfter').then((after) => {
