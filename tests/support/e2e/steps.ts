@@ -519,3 +519,74 @@ export const preorderOnSale = (options: {
             });
             return cy.wrap(id, { log: false });
         });
+
+/**
+ * Starts a paid order and ships everything that remains, as the admin, through the delivery doors
+ * — the setup half of a story that is about what happens after the parcel left.
+ *
+ * @param orderId - the paid order
+ * @param trackingCode - the carrier's handle; required when the order's method is tracked
+ * @returns a chain yielding the shipment as the API serialised it
+ */
+export const shipThroughTheApi = (
+    orderId: string,
+    trackingCode?: string
+): Cypress.Chainable<{ id: string } | null> => {
+    cy.apiAs('admin', 'POST', `/delivery/order/${orderId}/start`);
+    return cy
+        .apiAs<{ fulfillmentOrders: { id: string }[] }>(
+            'admin',
+            'GET',
+            `/delivery/order/${orderId}`
+        )
+        .then((fulfilment) => {
+            const group = fulfilment?.fulfillmentOrders[0];
+            if (!group) throw new Error(`shipThroughTheApi: order ${orderId} has no group to ship`);
+            return cy.apiAs<{ id: string }>(
+                'admin',
+                'POST',
+                `/delivery/fulfillment-orders/${group.id}/shipments`,
+                trackingCode === undefined ? {} : { trackingCode }
+            );
+        });
+};
+
+/**
+ * The sentence the "your shipment arrived" mail closes with on the delivery that ends the order,
+ * as the English template renders it: the deadline in long form, read in UTC, because the
+ * deadline is a UTC calendar day and a local rendering could print the day before.
+ *
+ * @param withdrawUntil - the order's `actions.withdrawUntil`, an ISO timestamp
+ */
+export const withdrawUntilLine = (withdrawUntil: string): string =>
+    `You may withdraw from the purchase until ${new Intl.DateTimeFormat('en', {
+        dateStyle: 'long',
+        timeZone: 'UTC'
+    }).format(new Date(withdrawUntil))}.`;
+
+/**
+ * The customer puts one unit of the product in the cart, checks out for pickup, and the admin
+ * records the cash: a paid preorder.
+ *
+ * @param productId - the preorder product
+ * @returns a chain yielding the paid order's id
+ */
+export const paidPreorderBy = (productId: string): Cypress.Chainable<string> => {
+    cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+    cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
+    return checkoutAs<{ id: string }>('user').then((order) => {
+        const id = String(order?.id);
+        cy.apiAs('admin', 'POST', `/payments/order/${id}/offline`, { method: 'cash' });
+        return cy.wrap(id, { log: false });
+    });
+};
+
+/**
+ * The calendar day (UTC) a timestamp falls on, shifted by whole days, spelled the way a date
+ * input takes it.
+ *
+ * @param iso - an ISO timestamp
+ * @param days - how many days to shift by; negative goes back
+ */
+export const dayShifted = (iso: string, days: number): string =>
+    new Date(new Date(iso).getTime() + days * 86_400_000).toISOString().slice(0, 10);

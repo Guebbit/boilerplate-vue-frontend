@@ -443,7 +443,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Local teardown once the server has ended every session of this account (a deletion, an
-     * email-change undo): observability identity, consent answer, cached record and session.
+     * email-change undo, a password reset): observability identity, consent answer, cached record and session.
      */
     const endLocalSession = () => {
         // Clear user identity from observability tools
@@ -529,6 +529,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         undoEmailChange,
         requestAccountDelete,
         confirmAccountDelete,
+        endLocalSession,
         requestAccountExport,
         downloadAccountExport
     };

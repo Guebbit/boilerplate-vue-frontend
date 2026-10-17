@@ -11,8 +11,14 @@
  * and the notice are read from the demo outbox or live Mailpit, so the journey needs a mailbox.
  */
 import { refreshDevice, loginDevice } from '../../../support/e2e/harness';
-import { loginDeviceWith, submitLoginForm } from '../../../support/e2e/security-steps';
-import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
+import { carriesAnotherLink } from '../../../support/e2e/steps';
+import {
+    loginDeviceWith,
+    requestReset,
+    submitLoginForm,
+    submitReset
+} from '../../../support/e2e/security-steps';
+import { byTemplate, expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
 
 /** On the backend's bundled breach list, and strong enough to pass the composition rules. */
 const BREACHED = 'Password1!';
@@ -22,9 +28,6 @@ const CHANGED = 'Changed_Secret1!';
 
 /** A fresh password, for the reset. */
 const RESET = 'Recovered_Secret1!';
-
-/** The enumeration-safe acknowledgement a reset request answers with, whoever asked. */
-const ACKNOWLEDGEMENT = 'If the account exists';
 
 /**
  * Types the profile's three password fields and submits, with the form open.
@@ -43,32 +46,6 @@ const submitPasswordChange = (current: string, next: string): void => {
 };
 
 /**
- * Asks for a reset link for an address, from the forgot-password page.
- *
- * @param address - who to send it to
- */
-const requestReset = (address: string): void => {
-    cy.visit('/en/password-reset');
-    cy.get('[data-test=password-reset-email] input').should('not.be.disabled').clear();
-    cy.get('[data-test=password-reset-email] input').type(address);
-    cy.get('#password-reset-request-page button[type=submit]').click();
-    cy.contains(ACKNOWLEDGEMENT).should('exist');
-};
-
-/**
- * Fills the reset confirmation form's two password fields and submits.
- *
- * @param password - the new password, typed twice
- */
-const submitReset = (password: string): void => {
-    cy.get('#password-reset-confirm-page [type=password]').eq(0).should('not.be.disabled').clear();
-    cy.get('#password-reset-confirm-page [type=password]').eq(0).type(password);
-    cy.get('#password-reset-confirm-page [type=password]').eq(1).clear();
-    cy.get('#password-reset-confirm-page [type=password]').eq(1).type(password);
-    cy.get('#password-reset-confirm-page button[type=submit]').click();
-};
-
-/**
  * The "your password was changed" notice after a reset. Only the demo outbox records which
  * template a mail came from; an SMTP inbox has only the rendered message, so live skips this.
  *
@@ -80,6 +57,9 @@ const expectResetNoticeMailed = (address: string): void => {
         cy.emailTo(address, (mail) => mail.template === 'account.reset-confirm');
     });
 };
+
+/** The link of the first reset mail, so the second can be told apart from it in one inbox. */
+let firstResetLink = '';
 
 describe('AC13 · My password, start to finish', () => {
     beforeEach(() => {
@@ -144,6 +124,7 @@ describe('AC13 · My password, start to finish', () => {
                 cy.emailTo(email).then((mail) => {
                     expectMailTemplate(mail, 'account.reset-request');
                     const link = mailedLinkUrl(mail);
+                    firstResetLink = link;
 
                     cy.step('the reset page warns about a breached password too');
                     cy.visit(link);
@@ -180,8 +161,24 @@ describe('AC13 · My password, start to finish', () => {
                 cy.get('#home-page').should('exist');
             });
 
+            cy.step('a reset link opened in a tab that is still signed in works, and signs it out');
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.request('POST', `${String(apiUrl)}/account/reset`, { email });
+            });
+            cy.emailTo(
+                email,
+                (mail) =>
+                    byTemplate('account.reset-request')(mail) &&
+                    carriesAnotherLink(firstResetLink)(mail)
+            ).then((mail) => {
+                cy.visit(mailedLinkUrl(mail));
+                cy.get('#password-reset-confirm-page').should('exist');
+                submitReset('Signed_In_Reset1!');
+                cy.get('#login-page').should('exist');
+                cy.get('[data-test=user-menu]').should('not.exist');
+            });
+
             cy.step('an address nobody has gets exactly the same acknowledgement');
-            cy.logout();
             requestReset('nobody-at-all@example.com');
         });
     });

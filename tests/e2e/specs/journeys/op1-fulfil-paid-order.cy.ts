@@ -9,7 +9,9 @@
  * the buttons that must be absent as well as the one that must be present. Express is tracked:
  * the panel keeps "ship" disabled until a code is typed.
  */
+import { byTemplate } from '../../../../scripts/e2e/mail-filters';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
+import { withdrawUntilLine } from '../../../support/e2e/steps';
 
 /** The tracking code the admin types. Chosen here, so the mail can be searched for it. */
 const TRACKING_CODE = 'TRK-E2E-OP1';
@@ -18,6 +20,7 @@ const TRACKING_CODE = 'TRK-E2E-OP1';
 interface OrderLike {
     status: string;
     fulfillmentStatus: string;
+    actions?: { withdrawUntil?: string };
 }
 
 /**
@@ -78,6 +81,23 @@ describe('OP1 · Fulfil a paid order the ordinary way', { tags: '@smoke' }, () =
             cy.get('[data-test=mark-started]').should('not.exist');
             cy.get('[data-test=open-ship]').should('not.exist');
             customerSees(orderId, 'delivered');
+
+            cy.step(
+                'the customer is mailed that it arrived, with the day the right to withdraw ends'
+            );
+            cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).then((order) => {
+                const until = order?.actions?.withdrawUntil;
+                if (!until) throw new Error('OP1: a delivered order has no withdrawal deadline');
+                cy.accountOf('user').then(({ email }) => {
+                    cy.emailTo(
+                        email,
+                        (mail) =>
+                            byTemplate('delivery.shipment-delivered')(mail) &&
+                            mailMentions(mail, 'has arrived') &&
+                            mailMentions(mail, withdrawUntilLine(until))
+                    );
+                });
+            });
 
             cy.step('the customer sees the parcel and its code, and has nothing to press');
             cy.logout();

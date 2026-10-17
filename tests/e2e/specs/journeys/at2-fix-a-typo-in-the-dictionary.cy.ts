@@ -133,5 +133,29 @@ describe('AT2 · Fix a typo in the dictionary', () => {
         cy.pickOption('[data-test=entries-filter-app]', /API/);
         cy.get('[data-test=entries-filter-text] input').type('{enter}');
         cy.get('[data-test=entry-value-field]').should('have.length', 2);
+
+        cy.step('pasted text that is not JSON is refused before anything is sent');
+        cy.get('[data-test=entries-import-open]').click();
+        cy.get('[data-test=import-json] textarea').first().type('{{}not json');
+        cy.get('[data-test=import-error]').should('be.visible');
+        cy.get('[data-test=import-submit]').should('be.disabled');
+        cy.get('body').type('{esc}');
+        cy.get('[data-test=entries-import]').should('not.exist');
+
+        cy.step('a key that is already on the board is not added twice');
+        cy.visit('/en/locales/dictionary');
+        cy.get('[data-test=dictionary-new-key] input').type(`${HERO_KEY}{enter}`);
+        cy.contains('That key is already on the board.').should('exist');
+
+        cy.step(
+            'the API app reads its own files, so its board carries no “files elsewhere” notice'
+        );
+        cy.pickOption('[data-test=dictionary-filter-app]', /API/);
+        cy.get('[data-test=dictionary-cell]').should('have.length.greaterThan', 0);
+        cy.get('[data-test=dictionary-no-baseline]').should('not.exist');
+
+        cy.step('a filter that matches nothing says so');
+        cy.get('[data-test=dictionary-filter-text] input').type('zzz-no-such-key{enter}');
+        cy.get('[data-test=dictionary-empty]').should('contain.text', 'No key matches');
     });
 });

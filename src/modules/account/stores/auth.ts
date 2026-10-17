@@ -227,10 +227,15 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @param token - One-time token received by email.
      * @param password - New password.
      * @param passwordConfirm - Confirmation of the new password.
-     * @returns A promise resolving once the password has been changed.
+     * @returns A promise resolving once the password has been changed and this tab's own session,
+     *  dead server-side like every other, has been dropped locally.
      */
     const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
-        fetchAny(() => apiConfirmPasswordReset({ token, password, passwordConfirm }));
+        fetchAny(() =>
+            apiConfirmPasswordReset({ token, password, passwordConfirm }).then(() => {
+                useProfileStore().endLocalSession();
+            })
+        );
 
     /**
      * Logs out of THIS session and clears all cached user data. Other devices stay signed in —
