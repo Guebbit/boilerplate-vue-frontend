@@ -101,6 +101,26 @@ describe('what a card shows', () => {
         );
     });
 
+    it('says there is no date yet when a preorder lost its date, and still shows the promise', () => {
+        const { wrapper } = mountCard(
+            aFulfillmentOrder({
+                status: 'on_hold',
+                holdReason: 'awaiting_stock',
+                agreedAt: '2026-12-01T00:00:00.000Z'
+            })
+        );
+
+        expect(wrapper.get('[data-test=fulfillment-order-no-date]').text()).toBe('No date yet');
+        expect(wrapper.find('[data-test=fulfillment-order-expected]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=fulfillment-order-promised]').exists()).toBe(true);
+    });
+
+    it('shows no "no date" line for an order that never had a promised date', () => {
+        const { wrapper } = mountCard(aFulfillmentOrder());
+
+        expect(wrapper.find('[data-test=fulfillment-order-no-date]').exists()).toBe(false);
+    });
+
     it('shows each line as shipped of quantity, with the cancelled count when there is one', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({

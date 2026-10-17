@@ -298,7 +298,10 @@ const STATE_COLORS = {
                 {{ formatDate(item.agreedAt) }}
             </template>
             <template v-slot:[`item.expectedAt`]="{ item }">
-                {{ formatDate(item.expectedAt ?? item.agreedAt) }}
+                <span v-if="!item.expectedAt" data-test="preorder-no-date">
+                    {{ t('preorder-board.no-date-yet') }}
+                </span>
+                <template v-else>{{ formatDate(item.expectedAt) }}</template>
                 <span
                     v-if="item.slippedDays > 0"
                     class="ml-1 text-xs opacity-80"

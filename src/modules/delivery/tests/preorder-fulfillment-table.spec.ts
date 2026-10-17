@@ -141,6 +141,11 @@ describe('what a row says', () => {
             expect(wrapper.get('[data-test=preorder-slipped]').text()).toBe('+12 d');
         }));
 
+    it('says there is no date yet on a row whose release date was cleared', () =>
+        mountTable([aPreorderFulfillmentOrder({ expectedAt: undefined })]).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=preorder-no-date]').text()).toBe('No date yet');
+        }));
+
     it('shows no slip and no late flag on a row that kept its date', () =>
         mountTable([aPreorderFulfillmentOrder()]).then(({ wrapper }) => {
             expect(wrapper.find('[data-test=preorder-late]').exists()).toBe(false);

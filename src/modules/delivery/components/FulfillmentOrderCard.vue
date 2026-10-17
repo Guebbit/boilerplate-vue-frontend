@@ -106,18 +106,18 @@ const offerShip = computed(
 );
 
 /**
- * The date shown for when it should leave: the revised one when it differs, else the agreed one.
+ * A preorder that lost its date: something was promised (`agreedAt`) but nothing is expected now,
+ * because the release date was cleared.
  */
-const expectedDate = computed(
-    () => props.fulfillmentOrder.expectedAt ?? props.fulfillmentOrder.agreedAt
+const hasNoDateYet = computed(
+    () => !!props.fulfillmentOrder.agreedAt && !props.fulfillmentOrder.expectedAt
 );
 
 /**
- * The promised date, shown only once the expected one has moved away from it.
+ * The promised date, shown once the expected one has moved away from it or is gone.
  */
 const promisedDate = computed(() =>
     props.fulfillmentOrder.agreedAt &&
-    props.fulfillmentOrder.expectedAt &&
     props.fulfillmentOrder.expectedAt !== props.fulfillmentOrder.agreedAt
         ? props.fulfillmentOrder.agreedAt
         : undefined
@@ -223,11 +223,22 @@ const release = () =>
             {{ t('fulfillment-order-card.hold-note', { note: fulfillmentOrder.holdNote }) }}
         </p>
         <p
-            v-if="expectedDate && fulfillmentOrder.status !== 'closed'"
+            v-if="fulfillmentOrder.expectedAt && fulfillmentOrder.status !== 'closed'"
             class="m-0 text-sm opacity-75"
             data-test="fulfillment-order-expected"
         >
-            {{ t('fulfillment-order-card.expected', { date: formatDateTime(expectedDate) }) }}
+            {{
+                t('fulfillment-order-card.expected', {
+                    date: formatDateTime(fulfillmentOrder.expectedAt)
+                })
+            }}
+        </p>
+        <p
+            v-else-if="hasNoDateYet && fulfillmentOrder.status !== 'closed'"
+            class="m-0 text-sm opacity-75"
+            data-test="fulfillment-order-no-date"
+        >
+            {{ t('fulfillment-order-card.no-date-yet') }}
         </p>
 
         <p
