@@ -176,7 +176,7 @@ export const ERROR_CODES = {
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
     /** 409 — The withdrawal period for this order has ended. */
     RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
-    /** 403 — The caller holds the permission this route requires, but the account it would change holds a staff role, and only a holder of `assign:Role` may change such an account. Staff without it change customers only. The caller's own account is never refused. */
+    /** 403 — The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is never refused. */
     ROLE_MANAGEMENT_REQUIRED: 'ROLE_MANAGEMENT_REQUIRED',
     /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',

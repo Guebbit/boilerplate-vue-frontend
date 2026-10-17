@@ -1908,7 +1908,7 @@ export const ResendPendingEmailResponse = zod.strictObject({
  * alternative is every client inventing the same guess.
  *
  * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
- * writes, computed by the same rule as their `409`; a role picker reads it instead of a
+ * writes, computed by the same rule as their `403`/`422`; a role picker reads it instead of a
  * hard-coded list. Empty for an anonymous caller. It has no authority either.
  *
  * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
@@ -2607,7 +2607,7 @@ export const ConfirmPasswordResetResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
+ * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it. A refresh is passive: it never counts as activity. A staff family idle past `NODE_SESSION_IDLE_TIME_STAFF` answers 401 `SESSION_IDLE` and the family is removed, so the next call starts at the sign-in screen.
  * @summary Refresh access token
  */
 export const RefreshTokenResponse = zod.strictObject({
@@ -12014,6 +12014,8 @@ export const ListApiKeysResponse = zod.strictObject({
  * currently-held tenant permissions: a key can never reach further than the person
  * who minted it, and that floor is re-checked on every request the key later makes,
  * not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+ * A key whose minter is banned, soft-deleted or erased is refused with 401 like a
+ * revoked one; an unban or a restore brings it back.
  * A permission no credential can use is refused with 422 too: one that demands a freshly
  * proved session, and one whose routes are session-only (`read:Stats`, the inbox, the
  * key list itself), which would grant nothing while looking like it grants something.
@@ -13393,7 +13395,7 @@ export const GetOrderTimelineResponse = zod.strictObject({
     )
 });
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPaymentsQueryPageDefault = 1;
