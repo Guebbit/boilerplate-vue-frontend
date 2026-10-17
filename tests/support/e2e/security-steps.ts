@@ -97,3 +97,32 @@ export const letTimePass = (ms: number): void => {
         cy.wait(ms);
     });
 };
+
+/** The enumeration-safe acknowledgement a reset request answers with, whoever asked. */
+const ACKNOWLEDGEMENT = 'If the account exists';
+
+/**
+ * Asks for a reset link for an address, from the forgot-password page.
+ *
+ * @param address - who to send it to
+ */
+export const requestReset = (address: string): void => {
+    cy.visit('/en/password-reset');
+    cy.get('[data-test=password-reset-email] input').should('not.be.disabled').clear();
+    cy.get('[data-test=password-reset-email] input').type(address);
+    cy.get('#password-reset-request-page button[type=submit]').click();
+    cy.contains(ACKNOWLEDGEMENT).should('exist');
+};
+
+/**
+ * Fills the reset confirmation form's two password fields and submits.
+ *
+ * @param password - the new password, typed twice
+ */
+export const submitReset = (password: string): void => {
+    cy.get('#password-reset-confirm-page [type=password]').eq(0).should('not.be.disabled').clear();
+    cy.get('#password-reset-confirm-page [type=password]').eq(0).type(password);
+    cy.get('#password-reset-confirm-page [type=password]').eq(1).clear();
+    cy.get('#password-reset-confirm-page [type=password]').eq(1).type(password);
+    cy.get('#password-reset-confirm-page button[type=submit]').click();
+};

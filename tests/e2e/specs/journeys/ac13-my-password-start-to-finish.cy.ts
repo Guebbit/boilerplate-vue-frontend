@@ -12,7 +12,12 @@
  */
 import { refreshDevice, loginDevice } from '../../../support/e2e/harness';
 import { carriesAnotherLink } from '../../../support/e2e/steps';
-import { loginDeviceWith, submitLoginForm } from '../../../support/e2e/security-steps';
+import {
+    loginDeviceWith,
+    requestReset,
+    submitLoginForm,
+    submitReset
+} from '../../../support/e2e/security-steps';
 import { byTemplate, expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
 
 /** On the backend's bundled breach list, and strong enough to pass the composition rules. */
@@ -23,9 +28,6 @@ const CHANGED = 'Changed_Secret1!';
 
 /** A fresh password, for the reset. */
 const RESET = 'Recovered_Secret1!';
-
-/** The enumeration-safe acknowledgement a reset request answers with, whoever asked. */
-const ACKNOWLEDGEMENT = 'If the account exists';
 
 /**
  * Types the profile's three password fields and submits, with the form open.
@@ -41,32 +43,6 @@ const submitPasswordChange = (current: string, next: string): void => {
     cy.get('[data-test=new-password-confirm] input').clear();
     cy.get('[data-test=new-password-confirm] input').type(next);
     cy.get('[data-test=submit-password-change]').click();
-};
-
-/**
- * Asks for a reset link for an address, from the forgot-password page.
- *
- * @param address - who to send it to
- */
-const requestReset = (address: string): void => {
-    cy.visit('/en/password-reset');
-    cy.get('[data-test=password-reset-email] input').should('not.be.disabled').clear();
-    cy.get('[data-test=password-reset-email] input').type(address);
-    cy.get('#password-reset-request-page button[type=submit]').click();
-    cy.contains(ACKNOWLEDGEMENT).should('exist');
-};
-
-/**
- * Fills the reset confirmation form's two password fields and submits.
- *
- * @param password - the new password, typed twice
- */
-const submitReset = (password: string): void => {
-    cy.get('#password-reset-confirm-page [type=password]').eq(0).should('not.be.disabled').clear();
-    cy.get('#password-reset-confirm-page [type=password]').eq(0).type(password);
-    cy.get('#password-reset-confirm-page [type=password]').eq(1).clear();
-    cy.get('#password-reset-confirm-page [type=password]').eq(1).type(password);
-    cy.get('#password-reset-confirm-page button[type=submit]').click();
 };
 
 /**

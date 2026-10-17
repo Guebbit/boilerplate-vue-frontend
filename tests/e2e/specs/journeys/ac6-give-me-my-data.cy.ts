@@ -34,6 +34,7 @@ const exportLinkOf = (mail: MailedEmail): string =>
 interface ExportData {
     exportedAt: string;
     profile: { id: string; email: string };
+    sessions: unknown[];
     addresses: unknown[];
     signInMethods: { providers: unknown[]; twoFactor: unknown[] };
     orders: { id: string; userId: string; email: string }[];
@@ -70,11 +71,13 @@ describe('AC6 · Give me my data', () => {
         cy.step('the link is mailed, and opening it offers the file');
         cy.intercept('GET', '**/account/export/*').as('download');
         cy.accountOf('user').then(({ email }) => {
+            cy.wrap(email).as('email');
             // No template filter: a live mail sink cannot say which template a mail came from, and
             // this inbox holds only the one the request just caused. `expectMailTemplate` checks the
             // template wherever the outbox can name it.
             cy.emailTo(email).then((mail) => {
                 expectMailTemplate(mail, 'account.export-ready');
+                cy.wrap(exportLinkOf(mail)).as('firstLink');
                 cy.visit(exportLinkOf(mail));
             });
         });
@@ -104,6 +107,9 @@ describe('AC6 · Give me my data', () => {
                     expect(data.orders.map(({ id }) => id)).to.include(paid);
                 });
 
+                cy.step('it lists the sessions, this one included');
+                expect(data.sessions, 'the sessions').to.have.length.greaterThan(0);
+
                 cy.step(
                     'it names the ways in the account holds, as facts: linked providers, armed factors'
                 );
@@ -127,5 +133,19 @@ describe('AC6 · Give me my data', () => {
                     });
                 }
             });
+
+        cy.step('asking again mails a new link, and that file downloads too');
+        cy.visit('/en/profile');
+        cy.get('[data-test=profile-export-data] button').click();
+        cy.wait('@export').its('response.statusCode').should('equal', 202);
+        cy.get<string>('@email').then((email) => {
+            cy.get<string>('@firstLink').then((firstLink) => {
+                cy.emailTo(email, (mail) => exportLinkOf(mail) !== firstLink).then((mail) => {
+                    cy.visit(exportLinkOf(mail));
+                });
+            });
+        });
+        cy.get('[data-test=account-export-download]').click();
+        cy.wait('@download').its('response.statusCode').should('equal', 200);
     });
 });
