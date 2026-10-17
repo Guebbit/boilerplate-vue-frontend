@@ -19,7 +19,6 @@ import {
     recordOfflinePayment as recordOfflinePaymentRequest,
     listPaymentMethods,
     searchPayments,
-    listPayments,
     listRefunds,
     listPaymentAttention
 } from '@api';
@@ -120,6 +119,17 @@ export const usePaymentsStore = defineStore('payments', () => {
                     return undefined;
                 })
         );
+
+    /**
+     * Reads what the caller may do to an order's payment (`GET /payments/order/{orderId}`) without
+     * touching the shared `payment` record: the staff list's rows carry no `actions`, so the drawer
+     * asks the payment's own read.
+     *
+     * @param orderId - The order whose payment is asked about.
+     * @returns A promise resolving with the actions for this caller, or undefined when none came.
+     */
+    const fetchActionsForOrder = (orderId: string) =>
+        fetchAny(() => getPaymentByOrder(orderId).then((response) => response.data.actions));
 
     /**
      * Pays an order: intent first, then the confirm with the provider's method reference.
@@ -316,8 +326,10 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
-     * Loads a page of the bank transfers still owed (`GET /payments`: `bank_transfer`,
-     * `incomplete`), by nearest `payBy`. Needs `display:Payment`.
+     * Loads a page of the bank transfers still owed (`POST /payments/search`: `bank_transfer`,
+     * `incomplete`), by nearest `payBy`. Needs `display:Payment`. The body form, because the GET
+     * form spells `sort` as a comma list and the HTTP client would send `sort[]=payBy`, which the
+     * API refuses as an unknown field.
      *
      * @param page - 1-based page.
      * @param pageSize - Rows per page.
@@ -325,7 +337,7 @@ export const usePaymentsStore = defineStore('payments', () => {
      */
     const fetchAwaitingPage = (page: number, pageSize: number) =>
         fetchAny(() =>
-            listPayments({
+            searchPayments({
                 page,
                 pageSize,
                 method: 'bank_transfer',
@@ -377,6 +389,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         attention,
         awaitingPage,
         awaitingTotal,
+        fetchActionsForOrder,
         fetchPaymentsPage,
         fetchAwaitingPage,
         fetchRefundsPage,
