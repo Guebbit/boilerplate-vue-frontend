@@ -11,7 +11,7 @@
  * drift either way, so each later code is minted a step ahead, and one real 30-second wait lets
  * the last code that needs to be fresh be so. Runs on both profiles; needs no mailbox.
  */
-import { totpCodeFor } from '../../../support/e2e/harness';
+import { loginDevice, refreshDevice, totpCodeFor } from '../../../support/e2e/harness';
 import {
     dismissBackupCodes,
     loginToChallenge,
@@ -73,82 +73,95 @@ describe('AC2 · An authenticator app', () => {
 
     it('enrols from the secret, signs in with a code, replaces it with a backup code, and turns 2FA off', () => {
         cy.accountOf('user').then((account) => {
-            cy.step('the customer adds an authenticator and reads the secret off the screen');
+            cy.step('the customer is signed in on this tab and on another device');
             cy.loginAs('user');
-            cy.visit('/en/profile');
-            cy.get('[data-test=two-factor-add-totp]').click();
-            secretOnScreen().then((first) => {
-                cy.step('a wrong code is refused, and the right one arms it');
-                confirmEnrolment('000000');
-                cy.get('[data-test=two-factor-enroll-error]').should('not.be.empty');
-                totpCodeFor(first, 0).then(confirmEnrolment);
-                cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
-                revealedBackupCodes().then((backupCodes) => {
-                    dismissBackupCodes();
-                    cy.get('[data-test=two-factor-armed]').should('exist');
-
-                    cy.step('at login a wrong code is refused, the right one signs in');
-                    cy.logout();
-                    loginToChallenge(account);
-                    cy.get('[data-test=two-factor-challenge-send]').should('not.exist');
-                    cy.get('[data-test=two-factor-challenge-code] input').type('000000');
-                    cy.get('[data-test=two-factor-challenge-submit]').click();
-                    cy.get('[data-test=two-factor-challenge-submit-error]').should('not.be.empty');
-                    cy.get('#two-factor-challenge-page').should('exist');
-                    cy.get('[data-test=two-factor-challenge-code] input').clear();
-                    totpCodeFor(first, 1).then((code) => {
-                        cy.get('[data-test=two-factor-challenge-code] input').type(code);
-                    });
-                    cy.get('[data-test=two-factor-challenge-submit]').click();
-                    cy.get('#home-page').should('exist');
-
-                    cy.step(
-                        'the phone is lost: replace the authenticator, proved with a backup code'
-                    );
-                    cy.visit('/en/profile');
-                    cy.get('[data-test=two-factor-replace-totp]').click();
-                    cy.get('[data-test=app-dialog-confirm]').click();
-                    cy.get('[data-test=two-factor-code-prompt-input] input').type(backupCodes[0]);
-                    cy.get('[data-test=two-factor-code-prompt-submit]').click();
-                    secretOnScreen().then((second) => {
-                        expect(second, 'a fresh secret').to.not.equal(first);
-                        totpCodeFor(second, 0).then(confirmEnrolment);
-                        cy.get('[data-test=two-factor-enroll]').should('not.exist');
+            loginDevice('user').then((otherDevice) => {
+                cy.step('the customer adds an authenticator and reads the secret off the screen');
+                cy.visit('/en/profile');
+                cy.get('[data-test=two-factor-add-totp]').click();
+                secretOnScreen().then((first) => {
+                    cy.step('a wrong code is refused, and the right one arms it');
+                    confirmEnrolment('000000');
+                    cy.get('[data-test=two-factor-enroll-error]').should('not.be.empty');
+                    totpCodeFor(first, 0).then(confirmEnrolment);
+                    cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
+                    revealedBackupCodes().then((backupCodes) => {
+                        dismissBackupCodes();
                         cy.get('[data-test=two-factor-armed]').should('exist');
 
-                        cy.step('the old authenticator no longer signs in; the new one does');
+                        cy.step('arming ended the other device and kept this tab');
+                        refreshDevice(otherDevice).its('status').should('equal', 401);
+                        cy.get('#profile-page').should('exist');
+                        cy.reload();
+                        cy.get('[data-test=user-menu]').should('exist');
+
+                        cy.step('at login a wrong code is refused, the right one signs in');
                         cy.logout();
-                        totpCodeFor(first, 2).then((stale) => {
-                            signInWithCode(account, stale);
-                        });
+                        loginToChallenge(account);
+                        cy.get('[data-test=two-factor-challenge-send]').should('not.exist');
+                        cy.get('[data-test=two-factor-challenge-code] input').type('000000');
+                        cy.get('[data-test=two-factor-challenge-submit]').click();
                         cy.get('[data-test=two-factor-challenge-submit-error]').should(
                             'not.be.empty'
                         );
                         cy.get('#two-factor-challenge-page').should('exist');
                         cy.get('[data-test=two-factor-challenge-code] input').clear();
-                        totpCodeFor(second, 1).then((code) => {
+                        totpCodeFor(first, 1).then((code) => {
                             cy.get('[data-test=two-factor-challenge-code] input').type(code);
                         });
                         cy.get('[data-test=two-factor-challenge-submit]').click();
                         cy.get('#home-page').should('exist');
 
-                        cy.step('turning 2FA off asks for a code from the new authenticator');
-                        // The last code used was this step's neighbour; wait for the next.
-                        // eslint-disable-next-line cypress/no-unnecessary-waiting -- the backend accepts a TOTP step once, and only real time makes the next one newer
-                        cy.wait(ONE_STEP_MS);
+                        cy.step(
+                            'the phone is lost: replace the authenticator, proved with a backup code'
+                        );
                         cy.visit('/en/profile');
-                        cy.get('[data-test=two-factor-disable-all]').click();
+                        cy.get('[data-test=two-factor-replace-totp]').click();
                         cy.get('[data-test=app-dialog-confirm]').click();
-                        totpCodeFor(second, 1).then((code) => {
-                            cy.get('[data-test=two-factor-code-prompt-input] input').type(code);
-                        });
+                        cy.get('[data-test=two-factor-code-prompt-input] input').type(
+                            backupCodes[0]
+                        );
                         cy.get('[data-test=two-factor-code-prompt-submit]').click();
-                        cy.get('[data-test=two-factor-armed]').should('not.exist');
+                        secretOnScreen().then((second) => {
+                            expect(second, 'a fresh secret').to.not.equal(first);
+                            totpCodeFor(second, 0).then(confirmEnrolment);
+                            cy.get('[data-test=two-factor-enroll]').should('not.exist');
+                            cy.get('[data-test=two-factor-armed]').should('exist');
 
-                        cy.step('and the next login asks for no code at all');
-                        cy.logout();
-                        submitLoginForm(account.email, account.password);
-                        cy.get('#home-page').should('exist');
+                            cy.step('the old authenticator no longer signs in; the new one does');
+                            cy.logout();
+                            totpCodeFor(first, 2).then((stale) => {
+                                signInWithCode(account, stale);
+                            });
+                            cy.get('[data-test=two-factor-challenge-submit-error]').should(
+                                'not.be.empty'
+                            );
+                            cy.get('#two-factor-challenge-page').should('exist');
+                            cy.get('[data-test=two-factor-challenge-code] input').clear();
+                            totpCodeFor(second, 1).then((code) => {
+                                cy.get('[data-test=two-factor-challenge-code] input').type(code);
+                            });
+                            cy.get('[data-test=two-factor-challenge-submit]').click();
+                            cy.get('#home-page').should('exist');
+
+                            cy.step('turning 2FA off asks for a code from the new authenticator');
+                            // The last code used was this step's neighbour; wait for the next.
+                            // eslint-disable-next-line cypress/no-unnecessary-waiting -- the backend accepts a TOTP step once, and only real time makes the next one newer
+                            cy.wait(ONE_STEP_MS);
+                            cy.visit('/en/profile');
+                            cy.get('[data-test=two-factor-disable-all]').click();
+                            cy.get('[data-test=app-dialog-confirm]').click();
+                            totpCodeFor(second, 1).then((code) => {
+                                cy.get('[data-test=two-factor-code-prompt-input] input').type(code);
+                            });
+                            cy.get('[data-test=two-factor-code-prompt-submit]').click();
+                            cy.get('[data-test=two-factor-armed]').should('not.exist');
+
+                            cy.step('and the next login asks for no code at all');
+                            cy.logout();
+                            submitLoginForm(account.email, account.password);
+                            cy.get('#home-page').should('exist');
+                        });
                     });
                 });
             });
