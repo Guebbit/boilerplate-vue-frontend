@@ -21,6 +21,8 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useWebhooksStore } from '../store';
 import { webhookEditSchema } from '../schemas.ts';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
@@ -85,6 +87,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -96,6 +99,12 @@ const {
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const session = useSessionStore();
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.
@@ -158,6 +167,7 @@ const submitForm = () => {
         )
             .then((body) => updateSubscription(id, body))
             .then(() => {
+                markSaved();
                 addMessage(t('webhook-edit-page.success-update'));
             });
     }).catch((error) => {

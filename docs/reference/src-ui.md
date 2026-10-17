@@ -44,6 +44,12 @@ with no `activator` has nobody for Vuetify to return focus to, so Escape would o
 keyboard user on the page body; every dialog calls it with its open flag, and the
 [FR12 journey](./tests.md#journeys--stories-that-cross-modules) proves it end to end.
 
+`use-leave-guard.ts` stops a half-typed staff form being thrown away: the router's leave hook asks
+through the confirm dialog ("Leave / Stay"), and a tab close or reload gets the browser's own
+prompt, registered only while the form is dirty. It stays silent for a clean form, a form just
+saved (`markSaved()`), and a session that has already ended, since a forced sign-out is not a
+choice to leave. The eight staff create and edit pages and the `example` template call it.
+
 ## Organisms
 
 | File                                    | What it is                                                                                                                                                                        | Read next                                                  |

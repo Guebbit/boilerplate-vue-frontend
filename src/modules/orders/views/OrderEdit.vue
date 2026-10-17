@@ -22,6 +22,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
@@ -294,6 +295,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -305,6 +307,11 @@ const {
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.
@@ -368,6 +375,7 @@ const submitForm = () => {
         const changes = email === currentOrder.value?.email ? {} : { email };
 
         return updateOrder(id, changes).then(() => {
+            markSaved();
             addMessage(t('order-edit-page.success-update'));
         });
     }).catch((error) => {

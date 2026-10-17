@@ -21,6 +21,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Calendar, Clock, Hash, NotebookPen, Pencil } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useExampleStore } from '../store';
 import { exampleEditSchema } from '../schemas.ts';
 import { EXAMPLE_STATUSES } from '../domain';
@@ -88,6 +90,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -99,6 +102,12 @@ const {
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const session = useSessionStore();
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Fills the form from the record once it is there, and again when the record changes under it.
@@ -168,6 +177,7 @@ const submitForm = () => {
                 // The served `imageUrl` is back in the record, so the picked file has done its job
                 // and holding it would only re-upload the same bytes on the next save.
                 form.value.imageUpload = undefined;
+                markSaved();
                 addMessage(t('example-edit-page.success-update'));
             });
     }).catch((error: unknown) => {

@@ -21,6 +21,8 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useUsersStore } from '../store';
 import { usersSchema } from '../schemas.ts';
 import { useRoleOptions } from '../composables/use-role-options.ts';
@@ -96,6 +98,7 @@ const {
     form,
     formErrors,
     showFormErrors: showErrors,
+    isDirty,
     isSubmitting,
     handleSubmit,
     applyServerErrors
@@ -108,6 +111,12 @@ const {
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const session = useSessionStore();
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while the multipart create is in flight.
@@ -159,6 +168,7 @@ const submitForm = () => {
             )
         ).then((newUser) => {
             if (!newUser) return;
+            markSaved();
             addMessage(t('user-create-page.success-create'));
             // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
             void router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));

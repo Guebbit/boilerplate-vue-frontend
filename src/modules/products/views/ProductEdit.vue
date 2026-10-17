@@ -22,6 +22,7 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useProductsStore } from '../store';
 import { productsSchema } from '../schemas.ts';
 import { useActiveLocales } from '../composables/use-active-locales.ts';
@@ -222,6 +223,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -241,6 +243,11 @@ const {
     onStale: handleStaleSave,
     reportSubmitError
 });
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Image upload progress, shown by `FormImageUpload` while a multipart save is in flight.
@@ -378,6 +385,7 @@ const submitForm = () => {
                     // hand — the store's own optimistic patch already skips `translations` for the same
                     // reason (see `products/store.ts`).
                     form.value.imageUpload = undefined;
+                    markSaved();
                     addMessage(t('product-edit-page.success-update'));
                     // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
                     // and the reload itself (not what it returns) is the point.

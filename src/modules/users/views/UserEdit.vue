@@ -30,6 +30,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
@@ -131,6 +132,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -142,6 +144,11 @@ const {
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while a multipart save is in flight.
@@ -340,6 +347,7 @@ const submitForm = () => {
                     // local File has done its job and holding it would only re-upload the same bytes on
                     // the next save.
                     form.value.imageUpload = undefined;
+                    markSaved();
                     addMessage(t('user-edit-page.success-update'));
                 });
         });
