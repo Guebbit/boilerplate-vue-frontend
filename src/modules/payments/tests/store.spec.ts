@@ -429,6 +429,28 @@ describe('the staff lists', () => {
             });
     });
 
+    it('reads the owed transfers by deadline, apart from the main list', () => {
+        responses['GET /payments'] = orvalEnvelope({
+            items: [{ ...PAYMENT, method: 'bank_transfer', status: 'requires_action' }],
+            meta: META
+        });
+        const store = usePaymentsStore();
+        return store.fetchAwaitingPage(2, 5).then(() => {
+            expect(store.awaitingPage).toHaveLength(1);
+            expect(store.awaitingTotal).toBe(31);
+            expect(store.paymentsPage).toEqual([]);
+            expect(bodyOf('GET /payments')).toMatchObject({
+                params: {
+                    page: 2,
+                    pageSize: 5,
+                    method: 'bank_transfer',
+                    displayStatus: 'incomplete',
+                    sort: ['payBy']
+                }
+            });
+        });
+    });
+
     it('keeps the list apart from the one payment an order page holds', () => {
         responses['POST /payments/search'] = orvalEnvelope({ items: [], meta: META });
         const store = usePaymentsStore();

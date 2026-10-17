@@ -13415,7 +13415,7 @@ export const ListPaymentsQueryParams = zod.strictObject({
         .max(listPaymentsQueryPageSizeMax)
         .default(listPaymentsQueryPageSizeDefault),
     sort: zod
-        .array(zod.enum(['createdAt', '-createdAt', 'amount', '-amount']))
+        .array(zod.enum(['createdAt', '-createdAt', 'amount', '-amount', 'payBy', '-payBy']))
         .min(1)
         .max(listPaymentsQuerySortMax)
         .optional(),
@@ -13621,7 +13621,7 @@ export const SearchPaymentsBody = zod.strictObject({
         .max(searchPaymentsBodyPageSizeMax)
         .default(searchPaymentsBodyPageSizeDefault),
     sort: zod
-        .array(zod.enum(['createdAt', '-createdAt', 'amount', '-amount']))
+        .array(zod.enum(['createdAt', '-createdAt', 'amount', '-amount', 'payBy', '-payBy']))
         .min(1)
         .max(searchPaymentsBodySortMax)
         .optional(),

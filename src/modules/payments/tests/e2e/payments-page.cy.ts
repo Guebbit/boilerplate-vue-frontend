@@ -77,10 +77,12 @@ describe('Payments page', () => {
             );
         });
 
-        it('lists the bank transfers still owed, with a way to record one', () => {
+        it('lists the bank transfers still owed, and a row opens its payment', () => {
             cy.get('[data-test=payments-tab-awaiting]').click();
             cy.get('[data-test=payments-awaiting]').should('be.visible');
-            cy.get('[data-test=awaiting-record]').should('have.length.at.least', 1);
+            cy.get('[data-test=awaiting-row]').should('have.length.at.least', 1);
+            cy.get('[data-test=awaiting-row]').first().click();
+            cy.get('[data-test=payment-drawer]').should('be.visible');
         });
     });
 

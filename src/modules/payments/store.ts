@@ -19,6 +19,7 @@ import {
     recordOfflinePayment as recordOfflinePaymentRequest,
     listPaymentMethods,
     searchPayments,
+    listPayments,
     listRefunds,
     listPaymentAttention
 } from '@api';
@@ -273,6 +274,17 @@ export const usePaymentsStore = defineStore('payments', () => {
     const paymentsTotal = ref(0);
 
     /**
+     * The "Awaiting transfer" tab's page: bank transfers still owed, soonest deadline first. Held
+     * apart from {@link paymentsPage}, because both tabs of the page stay mounted.
+     */
+    const awaitingPage = ref<Payment[]>([]);
+
+    /**
+     * How many transfers are owed, across every page.
+     */
+    const awaitingTotal = ref(0);
+
+    /**
      * The refunds list's current page, one row per refund across every payment.
      */
     const refundsPage = ref<RefundListItem[]>([]);
@@ -300,6 +312,29 @@ export const usePaymentsStore = defineStore('payments', () => {
                 paymentsPage.value = response.data.items;
                 paymentsTotal.value = response.data.meta.totalItems;
                 return paymentsPage.value;
+            })
+        );
+
+    /**
+     * Loads a page of the bank transfers still owed (`GET /payments`: `bank_transfer`,
+     * `incomplete`), by nearest `payBy`. Needs `display:Payment`.
+     *
+     * @param page - 1-based page.
+     * @param pageSize - Rows per page.
+     * @returns A promise resolving with the page's payments.
+     */
+    const fetchAwaitingPage = (page: number, pageSize: number) =>
+        fetchAny(() =>
+            listPayments({
+                page,
+                pageSize,
+                method: 'bank_transfer',
+                displayStatus: 'incomplete',
+                sort: ['payBy']
+            }).then((response) => {
+                awaitingPage.value = response.data.items;
+                awaitingTotal.value = response.data.meta.totalItems;
+                return awaitingPage.value;
             })
         );
 
@@ -340,7 +375,10 @@ export const usePaymentsStore = defineStore('payments', () => {
         refundsPage,
         refundsTotal,
         attention,
+        awaitingPage,
+        awaitingTotal,
         fetchPaymentsPage,
+        fetchAwaitingPage,
         fetchRefundsPage,
         fetchAttention,
         methods,

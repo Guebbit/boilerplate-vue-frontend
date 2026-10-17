@@ -15,19 +15,19 @@ export default {
  * bank transfers still owed, every refund, and what needs a person. The tabs are saved views, not
  * four pages, so a refund opened on the Refunds tab is the same record the drawer opens on All.
  *
- * "Awaiting transfer" reads ORDERS (no payment exists until the money is recorded), so the tab's
- * body is a slot `orders` fills: this module imports no sibling. The RF-reference lookup stays
- * here, its jump to the order is a route name, resolved only when the build ships `orders`.
+ * "Awaiting transfer" is the payments still owed by bank transfer, soonest deadline first. The
+ * RF-reference lookup stays here, its jump to the order is a route name, resolved only when the
+ * build ships `orders`.
  */
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
-import { useSlot } from '@/kernel/slots.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import type { Order, Payment } from '@types';
 import PaymentsTable from '../components/PaymentsTable.vue';
+import AwaitingTransfersTable from '../components/AwaitingTransfersTable.vue';
 import RefundsTable from '../components/RefundsTable.vue';
 import AttentionList from '../components/AttentionList.vue';
 import PaymentDrawer from '../components/PaymentDrawer.vue';
@@ -59,19 +59,9 @@ const route = useRoute();
 const session = useSessionStore();
 
 /**
- * What the orders module (or nobody) put in the "Awaiting transfer" tab.
+ * The tabs, in the order they show.
  */
-const awaitingContributions = useSlot('payments-awaiting-transfer');
-
-/**
- * The tabs this build offers: "Awaiting transfer" needs a module to read the orders.
- */
-const tabs = computed<PaymentsTab[]>(() => [
-    'all',
-    ...(awaitingContributions.length > 0 ? (['awaiting'] as const) : []),
-    'refunds',
-    'attention'
-]);
+const tabs: PaymentsTab[] = ['all', 'awaiting', 'refunds', 'attention'];
 
 /**
  * Reads the tab out of the URL, ignoring one this build does not have.
@@ -80,7 +70,7 @@ const tabs = computed<PaymentsTab[]>(() => [
  */
 const initialTab = (): PaymentsTab => {
     const requested = route.query.tab;
-    return tabs.value.find((tab) => tab === requested) ?? 'all';
+    return tabs.find((tab) => tab === requested) ?? 'all';
 };
 
 /**
@@ -159,12 +149,8 @@ const handleReferenceFound = (order: Order) => {
             <v-tabs-window-item value="all">
                 <PaymentsTable :key="reloadKey" @select="openDrawer" />
             </v-tabs-window-item>
-            <v-tabs-window-item v-if="awaitingContributions.length > 0" value="awaiting">
-                <component
-                    :is="contribution"
-                    v-for="(contribution, index) in awaitingContributions"
-                    :key="index"
-                />
+            <v-tabs-window-item value="awaiting">
+                <AwaitingTransfersTable :key="reloadKey" @select="openDrawer" />
             </v-tabs-window-item>
             <v-tabs-window-item value="refunds">
                 <RefundsTable :key="reloadKey" />

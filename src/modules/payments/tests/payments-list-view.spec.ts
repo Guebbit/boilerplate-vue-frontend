@@ -9,8 +9,6 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
 import PaymentsList from '../views/PaymentsList.vue';
-import { SLOTS_KEY } from '@/kernel/slots';
-import type { Slots } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -31,12 +29,13 @@ const router = createRouter({
     ]
 });
 
-/** What the orders module puts in the tab, stood in by a marker. */
-const AwaitingStub = { template: '<div data-test="awaiting-body" />' };
-
 /** The bodies and the drawer, replaced by markers; the real ones are specced elsewhere. */
 const STUBS = {
     PaymentsTable: { name: 'PaymentsTable', template: '<div data-test="all-body" />' },
+    AwaitingTransfersTable: {
+        name: 'AwaitingTransfersTable',
+        template: '<div data-test="awaiting-body" />'
+    },
     RefundsTable: { template: '<div data-test="refunds-body" />' },
     AttentionList: { template: '<div data-test="attention-body" />' },
     PaymentDrawer: {
@@ -51,14 +50,12 @@ const STUBS = {
  * Mounts the page at a URL.
  *
  * @param url - Where to land.
- * @param slots - What modules contribute to the page's slots.
  */
-const mountAt = (url: string, slots: Slots = {}) =>
+const mountAt = (url: string) =>
     router.push(url).then(() => {
         const wrapper = mount(PaymentsList, {
             global: {
                 plugins: [router, vuetify, i18n],
-                provide: { [SLOTS_KEY as symbol]: slots },
                 stubs: STUBS
             }
         });
@@ -71,24 +68,12 @@ beforeEach(() => {
 });
 
 describe('PaymentsList — the tabs', () => {
-    it('offers all four tabs when a module fills the awaiting-transfer slot', async () => {
-        const wrapper = await mountAt('/en/sales/payments', {
-            'payments-awaiting-transfer': [AwaitingStub]
-        });
-
-        expect(wrapper.findAll('[role=tab]').map((tab) => tab.text())).toEqual([
-            'All',
-            'Awaiting transfer',
-            'Refunds',
-            'Needs attention'
-        ]);
-    });
-
-    it('drops the awaiting-transfer tab in a build with no module to read orders', async () => {
+    it('offers all four tabs', async () => {
         const wrapper = await mountAt('/en/sales/payments');
 
         expect(wrapper.findAll('[role=tab]').map((tab) => tab.text())).toEqual([
             'All',
+            'Awaiting transfer',
             'Refunds',
             'Needs attention'
         ]);
@@ -100,16 +85,14 @@ describe('PaymentsList — the tabs', () => {
         expect(wrapper.find('[data-test="all-body"]').exists()).toBe(true);
     });
 
-    it('opens on the tab the URL names, and renders the slot contribution in it', async () => {
-        const wrapper = await mountAt('/en/sales/payments?tab=awaiting', {
-            'payments-awaiting-transfer': [AwaitingStub]
-        });
+    it('opens on the tab the URL names', async () => {
+        const wrapper = await mountAt('/en/sales/payments?tab=awaiting');
 
         expect(wrapper.get('[data-test="awaiting-body"]').isVisible()).toBe(true);
     });
 
-    it('ignores a tab this build does not have', async () => {
-        const wrapper = await mountAt('/en/sales/payments?tab=awaiting');
+    it('ignores a tab name it does not know', async () => {
+        const wrapper = await mountAt('/en/sales/payments?tab=nonsense');
 
         expect(wrapper.get('[data-test="all-body"]').isVisible()).toBe(true);
     });
@@ -142,6 +125,19 @@ describe('PaymentsList — the drawer and the reference lookup', () => {
 
         expect(wrapper.get('[data-test="drawer"]').attributes('data-open')).toBe('true');
         expect(wrapper.get('[data-test="drawer"]').attributes('data-id')).toBe('pay-9');
+    });
+
+    it('opens the drawer on a payment picked from the awaiting tab', async () => {
+        const wrapper = await mountAt('/en/sales/payments?tab=awaiting');
+
+        emitOn(
+            wrapper.findComponent({ name: 'AwaitingTransfersTable' }),
+            'select',
+            aPayment({ id: 'pay-7' })
+        );
+        await flushPromises();
+
+        expect(wrapper.get('[data-test="drawer"]').attributes('data-id')).toBe('pay-7');
     });
 
     it('offers the reference lookup only to someone who can record a payment', async () => {

@@ -34,7 +34,6 @@ import {
     contractResponse
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
-import { asStub } from '../../../../tests/support/stub.ts';
 
 /**
  * Fixture order returned by the mocked `@api` client.
@@ -332,42 +331,6 @@ describe('useOrdersStore', () => {
                 .then(() => {
                     expect(getOrderById).toHaveBeenCalledTimes(2);
                 });
-        });
-    });
-
-    describe('fetchAwaitingTransfers', () => {
-        it('asks for the pending bank transfers, nearest deadline first', () => {
-            const store = useOrdersStore();
-            vi.mocked(searchOrders).mockResolvedValueOnce(
-                asStub<Awaited<ReturnType<typeof searchOrders>>>(
-                    contractResponse(schemas.SearchOrdersResponse, {
-                        items: [{ ...ORDER, payBy: '2026-10-20T10:00:00Z' }],
-                        meta: { page: 2, pageSize: 5, totalItems: 11, totalPages: 3 }
-                    })
-                )
-            );
-
-            return store.fetchAwaitingTransfers(2, 5).then(() => {
-                expect(searchOrders).toHaveBeenCalledWith({
-                    page: 2,
-                    pageSize: 5,
-                    paymentMethod: 'bank_transfer',
-                    status: 'pending',
-                    sort: ['payBy']
-                });
-                expect(store.awaitingTransfers).toHaveLength(1);
-                expect(store.awaitingTransfersTotal).toBe(11);
-            });
-        });
-
-        it('keeps the queue apart from the staff list’s own filters and rows', () => {
-            const store = useOrdersStore();
-            store.filters = { email: 'ada@example.com' };
-
-            return store.fetchAwaitingTransfers(1, 10).then(() => {
-                expect(store.filters).toEqual({ email: 'ada@example.com' });
-                expect(vi.mocked(searchOrders).mock.calls.at(-1)?.[0]).not.toHaveProperty('email');
-            });
         });
     });
 

@@ -13,10 +13,8 @@ import routes from './routes';
  *
  * Paying happens ON the order, so this module contributes the `PaymentPanel` component (through
  * its barrel) and the orders module mounts it — that arrow is orders → payments, declared there.
- * The staff page is the other direction's problem: its "Awaiting transfer" tab reads orders, so it
- * is a slot (`payments-awaiting-transfer`) that `orders` fills, and this module imports nothing
- * from it. Deleting this module removes the panel, the pay flow and the page in one `rm -rf` plus
- * one registry line, and orders go back to being paid nowhere.
+ * The staff page lists payments only, so this module imports nothing from `orders`. Deleting
+ * this module removes the panel, the pay flow and the page in one `rm -rf` plus one registry line, and orders go back to being paid nowhere.
  *
  * Taking money is not this shop’s differentiator, and the provider is the API's business.
  * What stays here is a panel that belongs to an order.

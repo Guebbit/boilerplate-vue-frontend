@@ -12,6 +12,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router';
 import PaymentsTable from '../components/PaymentsTable.vue';
 import RefundsTable from '../components/RefundsTable.vue';
+import AwaitingTransfersTable from '../components/AwaitingTransfersTable.vue';
 import AttentionList from '../components/AttentionList.vue';
 import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -50,6 +51,16 @@ const answerPaymentsWith = (items: ReturnType<typeof aPayment>[]) => {
     });
 };
 
+/** Stubs the awaiting-transfers read. */
+const answerAwaitingWith = (items: ReturnType<typeof aPayment>[]) => {
+    const store = usePaymentsStore();
+    return vi.spyOn(store, 'fetchAwaitingPage').mockImplementation(() => {
+        store.awaitingPage = items;
+        store.awaitingTotal = items.length;
+        return Promise.resolve(items);
+    });
+};
+
 /** Stubs the refunds read. */
 const answerRefundsWith = (items: RefundListItem[]) => {
     const store = usePaymentsStore();
@@ -68,6 +79,52 @@ const answerAttentionWith = (items: PaymentAttentionItem[]) => {
         return Promise.resolve(items);
     });
 };
+
+describe('AwaitingTransfersTable', () => {
+    it('asks for the first page and shows deadline, reference, amount and order', async () => {
+        const read = answerAwaitingWith([
+            aPayment({
+                method: 'bank_transfer',
+                status: 'requires_action',
+                amount: 40,
+                nextAction: {
+                    type: 'bank_transfer',
+                    beneficiary: 'Shop Ltd',
+                    iban: 'IT60X0542811101000000123456',
+                    reference: 'RF18 5390 0754 7034',
+                    payBy: '2026-10-20T10:00:00Z'
+                }
+            })
+        ]);
+        const wrapper = mount(AwaitingTransfersTable, { global: GLOBAL });
+        await flushPromises();
+
+        expect(read).toHaveBeenCalledWith(1, 10);
+        const row = wrapper.get('[data-test="awaiting-row"]').text();
+        expect(row).toContain('RF18 5390 0754 7034');
+        expect(row).toContain('2026-000001');
+        expect(row).toContain('40');
+        expect(wrapper.find('[data-test="awaiting-order-link"]').exists()).toBe(true);
+    });
+
+    it('says so when no transfer is owed', async () => {
+        answerAwaitingWith([]);
+        const wrapper = mount(AwaitingTransfersTable, { global: GLOBAL });
+        await flushPromises();
+
+        expect(wrapper.text()).toContain('No bank transfer is owed');
+    });
+
+    it('emits the payment of the row the visitor picked', async () => {
+        answerAwaitingWith([aPayment({ id: 'pay-3', method: 'bank_transfer' })]);
+        const wrapper = mount(AwaitingTransfersTable, { global: GLOBAL });
+        await flushPromises();
+
+        await wrapper.get('[data-test="awaiting-row"]').trigger('click');
+
+        expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ id: 'pay-3' });
+    });
+});
 
 describe('PaymentsTable', () => {
     it('shows date, amount, status, method, provider, order, customer and refunded', async () => {

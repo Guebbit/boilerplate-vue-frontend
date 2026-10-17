@@ -5192,10 +5192,13 @@ export const PaymentSortItem = {
     createdAt: 'createdAt',
     '-createdAt': '-createdAt',
     amount: 'amount',
-    '-amount': '-amount'
+    '-amount': '-amount',
+    payBy: 'payBy',
+    '-payBy': '-payBy'
 } as const;
 
 /**
+ * `payBy` sorts on the bank-transfer deadline in `nextAction.payBy`. A payment with none (any other method) counts as the earliest: first ascending, last descending.
  * @minItems 1
  * @maxItems 2
  */

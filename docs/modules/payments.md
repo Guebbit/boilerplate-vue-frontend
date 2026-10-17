@@ -90,24 +90,18 @@ route asks `['display', 'Payment']`, because `read:Payment` answers a plain `can
 
 Four tabs, saved views over what the backend already holds (the active one is `?tab=`):
 
-| Tab               | Reads                                                  | Notes                                                                                                                    |
-| ----------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| All               | `POST /payments/search`                                | Filters (status, method, provider, dates, amounts, order, reference) and sort by date or amount; a row opens the drawer. |
-| Awaiting transfer | **orders**: pending `bank_transfer`, sorted by `payBy` | No payment exists until the money is recorded, so this tab is `orders`' component, in a slot.                            |
-| Refunds           | `GET /payments/refunds`                                | One row per refund across every payment; read-only.                                                                      |
-| Needs attention   | `GET /payments/attention`                              | Only problems still recorded on a document: a fixed one disappears. Repairs nothing.                                     |
+| Tab               | Reads                                                                    | Notes                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| All               | `POST /payments/search`                                                  | Filters (status, method, provider, dates, amounts, order, reference) and sort by date or amount; a row opens the drawer.           |
+| Awaiting transfer | `GET /payments?method=bank_transfer&displayStatus=incomplete&sort=payBy` | Soonest deadline first: `payBy`, the RF reference and the amount; a row opens the drawer, which links to the order's offline form. |
+| Refunds           | `GET /payments/refunds`                                                  | One row per refund across every payment; read-only.                                                                                |
+| Needs attention   | `GET /payments/attention`                                                | Only problems still recorded on a document: a fixed one disappears. Repairs nothing.                                               |
 
 ```mermaid
 flowchart LR
-    page["PaymentsList (payments)"] -->|"slot payments-awaiting-transfer"| slot["AwaitingTransferTable (orders)"]
-    slot --> form["RecordOfflinePaymentForm (payments)"]
-    page --> all["All · Refunds · Needs attention"]
+    page["PaymentsList (payments)"] --> all["All · Awaiting transfer · Refunds · Needs attention"]
     all --> api[("GET/POST /payments/*")]
 ```
-
-**Why a slot.** `orders` already depends on `payments` (it mounts the panel), and the tab needs
-orders, so `payments` importing `orders` would be a cycle. The page owns the slot, `orders`
-contributes the table, and a build with no `orders` module simply has three tabs.
 
 **The drawer** shows what a row has no room for: refunds, the card's last digits, and the provider
 references. `Payment.providerRef`, a refund's `providerRefundRef` and its `failureReason` are sent

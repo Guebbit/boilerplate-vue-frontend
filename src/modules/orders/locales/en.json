@@ -145,20 +145,6 @@
         "label-orders": "Orders",
         "label-sales-orders": "Sales orders"
     },
-    "awaiting-transfer": {
-        "hint": "Orders waiting for a bank transfer, nearest deadline first. No payment exists yet: record the money when it arrives.",
-        "empty": "No bank transfer is owed",
-        "table-caption": "Orders awaiting a bank transfer",
-        "column-order": "Order",
-        "column-email": "Customer",
-        "column-total": "Total",
-        "column-pay-by": "Pay by",
-        "column-actions": "Actions",
-        "button-record": "Record payment",
-        "button-record-named": "Record the payment for order {order}",
-        "dialog-title": "Record the payment for order {order}",
-        "button-close": "Close"
-    },
     "order-timeline": {
         "title": "History",
         "loading": "Loading history...",

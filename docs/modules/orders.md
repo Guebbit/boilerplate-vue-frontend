@@ -87,14 +87,6 @@ Both pages narrow by status, fulfilment, payment state, return state and two dat
 paid), and show when each order was paid. The four dates are calendar days in the store and are sent
 as inclusive instants (`src/infrastructure/utils/day-range.ts`), in the browser's zone.
 
-## The payments page's "Awaiting transfer" tab
-
-`AwaitingTransferTable.vue` lists the orders owed a bank transfer (pending, `bank_transfer`, nearest
-`payBy` first) and opens `payments`' `RecordOfflinePaymentForm` in a dialog per row. It is not a
-route of this module: `payments` owns the page and a slot, `payments-awaiting-transfer`, and this
-module fills it from its manifest. That direction avoids a `payments → orders` import, which would
-close a cycle with the panel `orders` already mounts. See [the payments page](./payments.md#the-staff-payments-page).
-
 ## Permanent delete: cancel first
 
 The list offers **Hard delete** on a row only when the order is `cancelled` and its
