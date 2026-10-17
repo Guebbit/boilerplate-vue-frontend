@@ -11,34 +11,7 @@
  * Money is not the manager's: refund buttons stay shut and there is no offline-payment form. Nor
  * are the accounts (no Users page). The manager is a customer too, so a basket is theirs.
  */
-
-/**
- * The hrefs of the open administration menu, then closes it.
- *
- * @returns a chain yielding the hrefs
- */
-const adminMenuLinks = (): Cypress.Chainable<string[]> => {
-    cy.get('[data-test=admin-menu]').click();
-    return cy
-        .get('[role=menu] a')
-        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
-        .then((hrefs) => {
-            cy.get('body').type('{esc}');
-            return cy.wrap(hrefs, { log: false });
-        });
-};
-
-/**
- * Follows an address the role may not use: Home, with a notice.
- *
- * @param path - the locale-prefixed address
- */
-const isTurnedBack = (path: string): void => {
-    cy.visit(path);
-    cy.get('#home-page').should('exist');
-    cy.location('pathname').should('equal', '/en');
-    cy.get('.v-alert').should('exist');
-};
+import { adminMenuLinks, isTurnedBack } from '../../../support/e2e/steps';
 
 /** The new price the manager sets, as the price field is typed. */
 const NEW_PRICE = '31.40';

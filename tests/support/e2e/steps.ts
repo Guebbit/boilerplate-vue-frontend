@@ -3,6 +3,7 @@
 import { cents } from '../../../scripts/e2e/cents';
 import type { MailedEmail } from '../../../scripts/e2e/mail-message';
 import type { E2ERole } from './scenario';
+import { requestAsDevice, type Device, type DeviceResponse } from './harness';
 
 export { cents, sumCents } from '../../../scripts/e2e/cents';
 
@@ -395,3 +396,101 @@ export const createProductThroughTheForm = (
         .location('pathname')
         .then((path) => (path.split('/products/')[1] ?? '').replace(/\/$/, ''));
 };
+
+/**
+ * The hrefs of the open administration menu, then closes it.
+ *
+ * @returns a chain yielding the hrefs
+ */
+export const adminMenuLinks = (): Cypress.Chainable<string[]> => {
+    cy.get('[data-test=admin-menu]').click();
+    return cy
+        .get('[role=menu] a')
+        .then(($links) => $links.toArray().map((link) => link.getAttribute('href') ?? ''))
+        .then((hrefs) => {
+            cy.get('body').type('{esc}');
+            return cy.wrap(hrefs, { log: false });
+        });
+};
+
+/**
+ * Follows an address the signed-in role may not use: the router sends the visitor Home with a
+ * notice, and the page never renders.
+ *
+ * @param path - the locale-prefixed address
+ */
+export const isTurnedBack = (path: string): void => {
+    cy.visit(path);
+    cy.get('#home-page').should('exist');
+    cy.location('pathname').should('equal', '/en');
+    cy.get('.v-alert').should('exist');
+};
+
+/**
+ * One call from a second device that the backend must refuse: asserts the status and, when given,
+ * the first error's code.
+ *
+ * @param device - the device making the call
+ * @param method - the HTTP verb
+ * @param path - the path after the API base, leading slash included
+ * @param body - a JSON body, for the verbs that carry one
+ * @param status - the refusal's HTTP status
+ * @param code - the `errors[0].code` it must carry
+ */
+export const refusedWith = (
+    device: Device,
+    method: string,
+    path: string,
+    body: Record<string, unknown> | undefined,
+    status: number,
+    code?: string
+): Cypress.Chainable<DeviceResponse> =>
+    requestAsDevice(device, method, path, body).then((response) => {
+        expect(response.status, `${method} ${path}`).to.equal(status);
+        if (code !== undefined)
+            expect(
+                (response.body as { errors?: { code?: string }[] } | null)?.errors?.[0]?.code,
+                `${method} ${path} error code`
+            ).to.equal(code);
+    });
+
+/**
+ * The text of a file the browser downloaded, from the run's downloads folder.
+ *
+ * @param fileName - the file's name as the download saved it
+ */
+export const downloadedText = (fileName: string): Cypress.Chainable<string> =>
+    cy.readFile<string>(`${Cypress.config('downloadsFolder')}/${fileName}`);
+
+/**
+ * A product on preorder with room in its allowance: the editor creates it through the API with a
+ * release date ahead, and the admin opens the allowance.
+ *
+ * @param options - `releaseInDays` how far ahead the release is; `limit` the preorder allowance
+ * @param options.title - the English title; unique per call by default
+ * @returns a chain yielding the new product's id
+ */
+export const preorderOnSale = (options: {
+    releaseInDays: number;
+    limit: number;
+    title?: string;
+}): Cypress.Chainable<string> =>
+    cy
+        .apiAs<{ id: string }>('editor', 'POST', '/products', {
+            price: 19.9,
+            releaseDate: new Date(Date.now() + options.releaseInDays * 86_400_000).toISOString(),
+            translations: {
+                en: {
+                    title:
+                        options.title ??
+                        `preorder ${String(Date.now())}-${String(Math.floor(Math.random() * 1000))}`
+                }
+            }
+        })
+        .then((product) => {
+            const id = String(product?.id);
+            cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/preorder-limit`, {
+                preorderLimit: options.limit
+            });
+            return cy.wrap(id, { log: false });
+        });

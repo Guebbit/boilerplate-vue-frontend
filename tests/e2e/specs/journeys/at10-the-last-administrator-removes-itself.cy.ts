@@ -11,18 +11,7 @@
  * no repair through the app, and none is offered.
  */
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
-
-/**
- * Follows an address the signed-in role may not use: Home, with a notice.
- *
- * @param path - the locale-prefixed address
- */
-const isTurnedBack = (path: string): void => {
-    cy.visit(path);
-    cy.get('#home-page').should('exist');
-    cy.location('pathname').should('equal', '/en');
-    cy.get('.v-alert').should('exist');
-};
+import { isTurnedBack } from '../../../support/e2e/steps';
 
 describe('AT10 · The last administrator removes itself', () => {
     beforeEach(() => {
