@@ -457,179 +457,184 @@ const submitForm = () => {
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <TranslationTabs
-                        v-model="activeTab"
-                        :locales="locales"
-                        :open-tags="openTags"
-                        :fallback-tag="fallbackLocale"
-                        :error-counts="tabErrorCounts"
-                        @add="handleAddLocale"
-                        @remove="handleRemoveLocale"
-                    />
+                    <fieldset
+                        :disabled="loadingAdmin"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                    >
+                        <TranslationTabs
+                            v-model="activeTab"
+                            :locales="locales"
+                            :open-tags="openTags"
+                            :fallback-tag="fallbackLocale"
+                            :error-counts="tabErrorCounts"
+                            @add="handleAddLocale"
+                            @remove="handleRemoveLocale"
+                        />
 
-                    <!--
+                        <!--
                         `form.translations[tag]!` — every open tab's slot is either the admin
                         record's own row (an object) or freshly seeded by `handleAddLocale` (also
                         an object); `null` only ever lands on a tab CLOSED by `handleRemoveLocale`,
                         which also removes it from `openTags` in the same call.
                     -->
-                    <v-window v-model="activeTab">
-                        <v-window-item
-                            v-for="tag in openTags"
-                            :key="tag"
-                            :value="tag"
-                            :id="`translation-panel-${tag}`"
-                            role="tabpanel"
-                            :aria-labelledby="`translation-tab-${tag}`"
-                        >
-                            <v-text-field
-                                v-model="form.translations[tag]!.title"
-                                type="text"
-                                :label="t('product-edit-page.label-title')"
-                                :error-messages="
-                                    showFormErrors && !form.translations[tag]?.title
-                                        ? [t('products-form.title-required')]
-                                        : []
-                                "
-                                data-test="translation-title-field"
-                            />
-                            <v-textarea
-                                v-model="form.translations[tag]!.description"
-                                :label="t('product-edit-page.label-description')"
-                                :rows="5"
-                                data-test="translation-description-field"
-                            />
-                        </v-window-item>
-                    </v-window>
+                        <v-window v-model="activeTab">
+                            <v-window-item
+                                v-for="tag in openTags"
+                                :key="tag"
+                                :value="tag"
+                                :id="`translation-panel-${tag}`"
+                                role="tabpanel"
+                                :aria-labelledby="`translation-tab-${tag}`"
+                            >
+                                <v-text-field
+                                    v-model="form.translations[tag]!.title"
+                                    type="text"
+                                    :label="t('product-edit-page.label-title')"
+                                    :error-messages="
+                                        showFormErrors && !form.translations[tag]?.title
+                                            ? [t('products-form.title-required')]
+                                            : []
+                                    "
+                                    data-test="translation-title-field"
+                                />
+                                <v-textarea
+                                    v-model="form.translations[tag]!.description"
+                                    :label="t('product-edit-page.label-description')"
+                                    :rows="5"
+                                    data-test="translation-description-field"
+                                />
+                            </v-window-item>
+                        </v-window>
 
-                    <v-number-input
-                        v-model="form.price"
-                        :label="t('product-edit-page.label-price')"
-                        :min="0"
-                        :step="priceStep"
-                        :precision="pricePrecision"
-                        control-variant="stacked"
-                        :error-messages="showFormErrors ? formErrors.price : []"
-                        data-test="product-price-field"
-                    />
-                    <v-number-input
-                        v-model="form.weight"
-                        :label="t('product-edit-page.label-weight')"
-                        :min="0"
-                        :step="1"
-                        :precision="0"
-                        control-variant="stacked"
-                        :hint="
-                            form.weight === undefined || form.weight === null
-                                ? t('product-edit-page.hint-weight-missing')
-                                : undefined
-                        "
-                        persistent-hint
-                        data-test="product-weight-field"
-                    />
-                    <v-text-field
-                        v-model="form.releaseDate"
-                        type="datetime-local"
-                        :label="t('product-edit-page.label-release-date')"
-                        :hint="
-                            adminProduct?.preorder
-                                ? t('product-edit-page.hint-release-date-preorder')
-                                : t('product-edit-page.hint-release-date')
-                        "
-                        persistent-hint
-                        clearable
-                        data-test="product-release-date-field"
-                    />
-                    <v-select
-                        v-model="form.taxClass"
-                        :label="t('product-edit-page.label-tax-class')"
-                        :items="[
-                            { title: t('product-edit-page.tax-class-standard'), value: null },
-                            {
-                                title: t('product-edit-page.tax-class-reduced'),
-                                value: 'reduced'
-                            },
-                            { title: t('product-edit-page.tax-class-zero'), value: 'zero' }
-                        ]"
-                        data-test="product-tax-class-field"
-                    />
-                    <v-combobox
-                        v-model="form.categories"
-                        multiple
-                        chips
-                        closable-chips
-                        :label="t('product-edit-page.label-categories')"
-                        data-test="product-categories-field"
-                    />
-                    <v-combobox
-                        v-model="form.tags"
-                        multiple
-                        chips
-                        closable-chips
-                        :label="t('product-edit-page.label-tags')"
-                        data-test="product-tags-field"
-                    />
-                    <v-switch
-                        v-model="form.active"
-                        :label="t('product-edit-page.label-active')"
-                        data-test="product-active-field"
-                    />
-                    <v-switch
-                        v-model="form.purchasable"
-                        :label="t('product-edit-page.label-purchasable')"
-                        :hint="t('product-edit-page.hint-purchasable')"
-                        persistent-hint
-                        data-test="product-purchasable-field"
-                    />
-                    <v-switch
-                        v-model="form.requiresShipping"
-                        :label="t('product-edit-page.label-requires-shipping')"
-                        data-test="product-requires-shipping-field"
-                    />
-                    <v-switch
-                        v-model="form.noWithdrawal"
-                        :label="t('product-edit-page.label-no-withdrawal')"
-                        :hint="t('product-edit-page.hint-no-withdrawal')"
-                        persistent-hint
-                        data-test="product-no-withdrawal-field"
-                    />
-                    <FormImageUpload
-                        v-model="form.imageUpload"
-                        :current-image-url="adminProduct?.imageUrl"
-                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
-                        :progress="uploadProgress"
-                        :disabled="isSubmitting"
-                    />
+                        <v-number-input
+                            v-model="form.price"
+                            :label="t('product-edit-page.label-price')"
+                            :min="0"
+                            :step="priceStep"
+                            :precision="pricePrecision"
+                            control-variant="stacked"
+                            :error-messages="showFormErrors ? formErrors.price : []"
+                            data-test="product-price-field"
+                        />
+                        <v-number-input
+                            v-model="form.weight"
+                            :label="t('product-edit-page.label-weight')"
+                            :min="0"
+                            :step="1"
+                            :precision="0"
+                            control-variant="stacked"
+                            :hint="
+                                form.weight === undefined || form.weight === null
+                                    ? t('product-edit-page.hint-weight-missing')
+                                    : undefined
+                            "
+                            persistent-hint
+                            data-test="product-weight-field"
+                        />
+                        <v-text-field
+                            v-model="form.releaseDate"
+                            type="datetime-local"
+                            :label="t('product-edit-page.label-release-date')"
+                            :hint="
+                                adminProduct?.preorder
+                                    ? t('product-edit-page.hint-release-date-preorder')
+                                    : t('product-edit-page.hint-release-date')
+                            "
+                            persistent-hint
+                            clearable
+                            data-test="product-release-date-field"
+                        />
+                        <v-select
+                            v-model="form.taxClass"
+                            :label="t('product-edit-page.label-tax-class')"
+                            :items="[
+                                { title: t('product-edit-page.tax-class-standard'), value: null },
+                                {
+                                    title: t('product-edit-page.tax-class-reduced'),
+                                    value: 'reduced'
+                                },
+                                { title: t('product-edit-page.tax-class-zero'), value: 'zero' }
+                            ]"
+                            data-test="product-tax-class-field"
+                        />
+                        <v-combobox
+                            v-model="form.categories"
+                            multiple
+                            chips
+                            closable-chips
+                            :label="t('product-edit-page.label-categories')"
+                            data-test="product-categories-field"
+                        />
+                        <v-combobox
+                            v-model="form.tags"
+                            multiple
+                            chips
+                            closable-chips
+                            :label="t('product-edit-page.label-tags')"
+                            data-test="product-tags-field"
+                        />
+                        <v-switch
+                            v-model="form.active"
+                            :label="t('product-edit-page.label-active')"
+                            data-test="product-active-field"
+                        />
+                        <v-switch
+                            v-model="form.purchasable"
+                            :label="t('product-edit-page.label-purchasable')"
+                            :hint="t('product-edit-page.hint-purchasable')"
+                            persistent-hint
+                            data-test="product-purchasable-field"
+                        />
+                        <v-switch
+                            v-model="form.requiresShipping"
+                            :label="t('product-edit-page.label-requires-shipping')"
+                            data-test="product-requires-shipping-field"
+                        />
+                        <v-switch
+                            v-model="form.noWithdrawal"
+                            :label="t('product-edit-page.label-no-withdrawal')"
+                            :hint="t('product-edit-page.hint-no-withdrawal')"
+                            persistent-hint
+                            data-test="product-no-withdrawal-field"
+                        />
+                        <FormImageUpload
+                            v-model="form.imageUpload"
+                            :current-image-url="adminProduct?.imageUrl"
+                            :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                            :progress="uploadProgress"
+                            :disabled="isSubmitting"
+                        />
 
-                    <InlineErrorAlert
-                        :message="submitError"
-                        :type="isStale ? 'warning' : 'error'"
-                        data-test="product-edit-submit-error"
-                    />
+                        <InlineErrorAlert
+                            :message="submitError"
+                            :type="isStale ? 'warning' : 'error'"
+                            data-test="product-edit-submit-error"
+                        />
 
-                    <v-btn
-                        v-if="isStale"
-                        variant="tonal"
-                        color="warning"
-                        data-test="product-edit-reload-latest"
-                        :loading="loadingAdmin"
-                        @click="reloadLatest"
-                    >
-                        {{ t('generic.action-reload-latest') }}
-                    </v-btn>
-
-                    <div class="flex flex-wrap gap-2">
                         <v-btn
-                            type="submit"
-                            color="primary"
-                            :disabled="isSubmitting || loadingAdmin"
+                            v-if="isStale"
+                            variant="tonal"
+                            color="warning"
+                            data-test="product-edit-reload-latest"
+                            :loading="loadingAdmin"
+                            @click="reloadLatest"
                         >
-                            {{ t('product-edit-page.button-submit') }}
+                            {{ t('generic.action-reload-latest') }}
                         </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('product-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                :disabled="isSubmitting || loadingAdmin"
+                            >
+                                {{ t('product-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('product-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
+                    </fieldset>
                 </form>
             </CardDetail>
 

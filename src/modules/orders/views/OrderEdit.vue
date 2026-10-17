@@ -470,24 +470,33 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-text-field
-                        v-model="form.email"
-                        data-test="order-edit-email"
-                        type="email"
-                        :label="t('order-edit-page.label-email')"
-                        :error-messages="showFormErrors ? formErrors.email : []"
-                    />
+                    <fieldset
+                        :disabled="loading"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                    >
+                        <v-text-field
+                            v-model="form.email"
+                            data-test="order-edit-email"
+                            type="email"
+                            :label="t('order-edit-page.label-email')"
+                            :error-messages="showFormErrors ? formErrors.email : []"
+                        />
 
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
-                            {{ t('order-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('order-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                :disabled="isSubmitting || loading"
+                            >
+                                {{ t('order-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('order-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
 
-                    <InlineErrorAlert :message="formError" data-test="order-edit-form-error" />
+                        <InlineErrorAlert :message="formError" data-test="order-edit-form-error" />
+                    </fieldset>
                 </form>
 
                 <!--

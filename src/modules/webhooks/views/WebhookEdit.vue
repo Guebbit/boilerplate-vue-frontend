@@ -207,52 +207,60 @@ watchSubscription(() => id);
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-text-field
-                        v-model="form.url"
-                        type="url"
-                        data-test="webhook-url"
-                        :label="t('webhook-edit-page.label-url')"
-                        :error-messages="showFormErrors ? formErrors.url : []"
-                    />
-                    <v-text-field
-                        v-model="form.description"
-                        type="text"
-                        data-test="webhook-description"
-                        :label="t('webhook-edit-page.label-description')"
-                        :error-messages="showFormErrors ? formErrors.description : []"
-                    />
-                    <v-select
-                        v-model="form.eventTypes"
-                        data-test="webhook-event-types"
-                        multiple
-                        chips
-                        :items="eventCatalogue"
-                        item-title="name"
-                        item-value="name"
-                        :loading="loadingEventCatalogue"
-                        :label="t('webhook-edit-page.label-event-types')"
-                        :error-messages="showFormErrors ? formErrors.eventTypes : []"
-                    />
-                    <v-switch
-                        v-model="form.enabled"
-                        data-test="webhook-enabled"
-                        :label="t('webhook-edit-page.label-enabled')"
-                    />
+                    <fieldset
+                        :disabled="loadingSubscriptions"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                    >
+                        <v-text-field
+                            v-model="form.url"
+                            type="url"
+                            data-test="webhook-url"
+                            :label="t('webhook-edit-page.label-url')"
+                            :error-messages="showFormErrors ? formErrors.url : []"
+                        />
+                        <v-text-field
+                            v-model="form.description"
+                            type="text"
+                            data-test="webhook-description"
+                            :label="t('webhook-edit-page.label-description')"
+                            :error-messages="showFormErrors ? formErrors.description : []"
+                        />
+                        <v-select
+                            v-model="form.eventTypes"
+                            data-test="webhook-event-types"
+                            multiple
+                            chips
+                            :items="eventCatalogue"
+                            item-title="name"
+                            item-value="name"
+                            :loading="loadingEventCatalogue"
+                            :label="t('webhook-edit-page.label-event-types')"
+                            :error-messages="showFormErrors ? formErrors.eventTypes : []"
+                        />
+                        <v-switch
+                            v-model="form.enabled"
+                            data-test="webhook-enabled"
+                            :label="t('webhook-edit-page.label-enabled')"
+                        />
 
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn
-                            type="submit"
-                            color="primary"
-                            :disabled="isSubmitting || loadingSubscriptions"
-                        >
-                            {{ t('webhook-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('webhook-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                :disabled="isSubmitting || loadingSubscriptions"
+                            >
+                                {{ t('webhook-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('webhook-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
 
-                    <InlineErrorAlert :message="formError" data-test="webhook-edit-form-error" />
+                        <InlineErrorAlert
+                            :message="formError"
+                            data-test="webhook-edit-form-error"
+                        />
+                    </fieldset>
                 </form>
             </CardDetail>
 

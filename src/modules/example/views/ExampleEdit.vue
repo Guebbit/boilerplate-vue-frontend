@@ -226,53 +226,61 @@ watchExample(() => id, { onError: onMissingRecord });
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-text-field
-                        v-model="form.title"
-                        type="text"
-                        data-test="example-title"
-                        :label="t('example-edit-page.label-title')"
-                        :error-messages="showFormErrors ? formErrors.title : []"
-                    />
-                    <v-textarea
-                        v-model="form.body"
-                        data-test="example-body"
-                        :label="t('example-edit-page.label-body')"
-                        :error-messages="showFormErrors ? formErrors.body : []"
-                        rows="6"
-                    />
-                    <v-select
-                        v-model="form.status"
-                        data-test="example-status"
-                        :label="t('example-edit-page.label-status')"
-                        :items="statusOptions"
-                        item-title="label"
-                        item-value="value"
-                        :error-messages="showFormErrors ? formErrors.status : []"
-                    />
-                    <FormImageUpload
-                        v-model="form.imageUpload"
-                        :current-image-url="currentExample?.imageUrl"
-                        :label="t('example-edit-page.label-cover')"
-                        :progress="uploadProgress"
-                        :disabled="isSubmitting"
-                        class="mt-2"
-                    />
+                    <fieldset
+                        :disabled="loading"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                    >
+                        <v-text-field
+                            v-model="form.title"
+                            type="text"
+                            data-test="example-title"
+                            :label="t('example-edit-page.label-title')"
+                            :error-messages="showFormErrors ? formErrors.title : []"
+                        />
+                        <v-textarea
+                            v-model="form.body"
+                            data-test="example-body"
+                            :label="t('example-edit-page.label-body')"
+                            :error-messages="showFormErrors ? formErrors.body : []"
+                            rows="6"
+                        />
+                        <v-select
+                            v-model="form.status"
+                            data-test="example-status"
+                            :label="t('example-edit-page.label-status')"
+                            :items="statusOptions"
+                            item-title="label"
+                            item-value="value"
+                            :error-messages="showFormErrors ? formErrors.status : []"
+                        />
+                        <FormImageUpload
+                            v-model="form.imageUpload"
+                            :current-image-url="currentExample?.imageUrl"
+                            :label="t('example-edit-page.label-cover')"
+                            :progress="uploadProgress"
+                            :disabled="isSubmitting"
+                            class="mt-2"
+                        />
 
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn
-                            type="submit"
-                            color="primary"
-                            data-test="example-submit"
-                            :disabled="isSubmitting || loading"
-                        >
-                            {{ t('example-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('example-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                data-test="example-submit"
+                                :disabled="isSubmitting || loading"
+                            >
+                                {{ t('example-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('example-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
 
-                    <InlineErrorAlert :message="formError" data-test="example-edit-form-error" />
+                        <InlineErrorAlert
+                            :message="formError"
+                            data-test="example-edit-form-error"
+                        />
+                    </fieldset>
                 </form>
             </CardDetail>
 

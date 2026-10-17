@@ -56,5 +56,16 @@ actionTable('products', [
         alert: 'products-list-row-action-error',
         message: 'The delete failed',
         listed: '[data-test=list-row]'
+    },
+    {
+        name: 'a slow record read leaves the form closed until it lands, and a refetch keeps what was typed',
+        persona: 'editor',
+        route: () => cy.subjectId('product.inStock').then((id) => `/en/products/${id}/edit`),
+        intercept: { method: 'GET', url: '**/products/*/admin', operation: '/products/{id}/admin' },
+        kind: 'slow',
+        field: 'product-price-field',
+        typed: '41.50',
+        // The Italian number format: the value kept, written as the new language writes it.
+        keptAs: '41,50'
     }
 ]);

@@ -22,7 +22,7 @@ import type { E2ERole } from './scenario';
  */
 
 /** Which part of the screen the row exercises; decides what "still there" means after a failure. */
-export type ActionKind = 'form' | 'dialog' | 'row' | 'read' | 'empty';
+export type ActionKind = 'form' | 'dialog' | 'row' | 'read' | 'empty' | 'slow';
 
 /** The request a row stubs. */
 export interface ActionIntercept {
@@ -50,8 +50,11 @@ export interface ActionRow {
     route: string | (() => Cypress.Chainable<string>);
     /** Puts the page in the state to act on: open a dialog, fill a form. Runs after the visit. */
     prepare?: () => void;
-    /** Presses the control. Runs again after the stub is removed, to prove a retry works. */
-    trigger: () => void;
+    /**
+     * Presses the control. Runs again after the stub is removed, to prove a retry works. Required
+     * for `form`, `dialog` and `row`; a `read`, `empty` or `slow` row has no control to press.
+     */
+    trigger?: () => void;
     /** The request that is stubbed. */
     intercept: ActionIntercept;
     /** What the row exercises. */
@@ -70,6 +73,12 @@ export interface ActionRow {
     dialog?: string;
     /** For `row`: the selector of the row that must still be listed. */
     listed?: string;
+    /** For `slow`: the `data-test` of the input the person types into once the record is in. */
+    field?: string;
+    /** For `slow`: what is typed into `field`. */
+    typed?: string;
+    /** For `slow`: how `field` reads after the language switch re-reads the record; `typed` when omitted. */
+    keptAs?: string;
     /** For `empty`: the list read's body, served as a 200. */
     emptyBody?: unknown;
     /** For `empty`: the generated response schema `emptyBody` must satisfy. */
@@ -193,7 +202,7 @@ const expectFailureHandled = (row: ActionRow, before: { href: string; values: st
 const expectRetryWorks = (row: ActionRow): void => {
     const counter = { count: 0 };
     passThrough(row, counter);
-    row.trigger();
+    row.trigger?.();
     cy.wait('@retry').its('response.statusCode').should('be.within', 200, 299);
     cy.then(() => {
         expect(counter.count, 'requests sent by the retry').to.equal(1);
@@ -212,7 +221,7 @@ const runActionFailure = (row: ActionRow): void => {
     stubFailure(row, 'failure');
     cy.location('href').then((href) =>
         typedValues().then((values) => {
-            row.trigger();
+            row.trigger?.();
             cy.wait('@failure');
             expectFailureHandled(row, { href, values });
         })
@@ -266,6 +275,37 @@ const runEmpty = (row: ActionRow): void => {
     }
 };
 
+/** How long a `slow` row holds the page's own read back. */
+const SLOW_READ_MS = 2000;
+
+/**
+ * Runs a `slow` row: the page's own record read is held back, so the form is visited before it has
+ * its values. Typing is refused until the record is in, and once it is, a refetch (a language
+ * switch re-reads the record) never replaces what was typed.
+ *
+ * @param row - the row
+ */
+const runSlowRead = (row: ActionRow): void => {
+    const { field, intercept, keptAs, name } = row;
+    const typed = row.typed ?? 'typed';
+    if (!field) throw new Error(`action row "${name}": a slow row needs \`field\``);
+    cy.intercept(apiRequest(intercept), (request) => {
+        request.continue((response) => {
+            response.setDelay(SLOW_READ_MS);
+        });
+    }).as('slowRead');
+    visitRoute(row);
+    cy.get(`[data-test=${field}] input`).should('be.disabled');
+    cy.wait('@slowRead');
+    cy.get(`[data-test=${field}] input`).should('not.be.disabled');
+    cy.get(`[data-test=${field}] input`).clear();
+    cy.get(`[data-test=${field}] input`).type(typed);
+    cy.get('[data-test=language-switcher]').first().click();
+    cy.get('[data-test=language-option-it]').click();
+    cy.get('html').should('have.attr', 'lang', 'it');
+    cy.get(`[data-test=${field}] input`).should('have.value', keptAs ?? typed);
+};
+
 /**
  * Checks the row's status is one the contract declares, then runs the branch its kind names.
  *
@@ -274,6 +314,10 @@ const runEmpty = (row: ActionRow): void => {
 const runRow = (row: ActionRow): void => {
     if (row.kind === 'empty') {
         runEmpty(row);
+        return;
+    }
+    if (row.kind === 'slow') {
+        runSlowRead(row);
         return;
     }
     expectDeclaredStatus(
