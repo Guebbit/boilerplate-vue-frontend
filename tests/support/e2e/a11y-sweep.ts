@@ -60,6 +60,7 @@ import {
 } from '../../../scripts/audit/design-manual/scripts/capture-matrix';
 import { applyViewport } from './apply-viewport';
 import { waitForTransitions } from './commands';
+import type { E2ERole } from '../scenario-description';
 import { settleLayout, withTextMode } from './layout-checks';
 import { reachState, resolveRoute, type SweepRoute } from './sweep-state';
 
@@ -198,7 +199,7 @@ const sweepLayout = (sweepCase: A11ySweepCase, first: ViewportName): void => {
 const captureShot = (
     sweepCase: A11ySweepCase,
     shot: PlannedShot,
-    role: 'user' | 'admin' | undefined
+    role: E2ERole | undefined
 ): void => {
     reachState({
         route: () => resolveRoute(sweepCase.route).then((path) => withLocale(path, shot.locale)),
@@ -228,7 +229,7 @@ const captureShot = (
 const captureA11y = (
     label: string,
     cases: readonly A11ySweepCase[],
-    role: 'user' | 'admin' | undefined
+    role: E2ERole | undefined
 ): void => {
     // `Cypress.expose` is typed `any`; the config always writes a string, so narrow it to one.
     const exposed: unknown = Cypress.expose('designCaptureLocales');
@@ -273,7 +274,7 @@ const captureA11y = (
 export const sweepA11y = (
     label: string,
     routes: readonly A11ySweepEntry[],
-    role?: 'user' | 'admin'
+    role?: E2ERole
 ): void => {
     // `Cypress.expose` is typed `any`; compare to `true` so only the config's boolean passes.
     if (Cypress.expose('designCapture') === true) {

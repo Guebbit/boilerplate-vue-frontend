@@ -57,7 +57,7 @@ describe('Resilience', () => {
         });
 
         it('authenticated routes: profile, examples', () => {
-            cy.loginAs('user');
+            cy.loginAs('editor');
             assertRouteIsHealthy('/en/profile', '#profile-page');
             assertRouteIsHealthy('/en/examples', '#examples-list-page');
         });

@@ -6,13 +6,13 @@
  */
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
 
-/** The customer's seeded published example, the same pinned id the a11y sweep edits. */
+/** The editor's seeded published example, the same pinned id the a11y sweep edits. */
 const CUSTOMER_PUBLISHED = '65e1a0000000000000000e01';
 
 actionTable('example', [
     {
         name: 'a failed create keeps the form and its typed values, and a retry succeeds',
-        persona: 'user',
+        persona: 'editor',
         route: '/en/examples/create',
         prepare: () => {
             cy.get('[data-test=example-title] input').type('A note that fails to save');
@@ -29,7 +29,7 @@ actionTable('example', [
     },
     {
         name: 'a failed edit keeps the form and its typed values, and a retry succeeds',
-        persona: 'user',
+        persona: 'editor',
         route: `/en/examples/${CUSTOMER_PUBLISHED}/edit`,
         prepare: () => {
             cy.get('[data-test=example-title] input').should('not.have.value', '');
@@ -50,7 +50,7 @@ actionTable('example', [
     },
     {
         name: 'a failed delete keeps the row listed and shows the alert, and a retry succeeds',
-        persona: 'user',
+        persona: 'editor',
         route: '/en/examples',
         trigger: () => {
             cy.get('[data-test=row-delete]').first().click();
@@ -64,7 +64,7 @@ actionTable('example', [
     },
     {
         name: 'a failed delete from the detail page keeps the example and its button, and a retry succeeds',
-        persona: 'user',
+        persona: 'editor',
         route: `/en/examples/${CUSTOMER_PUBLISHED}`,
         trigger: () => {
             cy.get('[data-test=example-delete]').click();

@@ -1,9 +1,10 @@
 /**
  * @module
- * Cypress end-to-end spec driving the real app: the example module's whole loop. A customer writes
+ * Cypress end-to-end spec driving the real app: the example module's whole loop. An editor writes
  * a note, publishes it, and a stranger reads it; the lists narrow to who is asking. The backend's
- * demo scenario seeds the customer three examples (one per status) and the admin one published
- * example, so each list starts with something in it.
+ * demo scenario seeds the editor three examples (one per status) and the admin one published
+ * example, so each list starts with something in it. Authoring is staff-only; `roles.cy.ts`
+ * checks that a shopper is turned away.
  */
 
 /** A value unique enough per run that two specs racing the same backend cannot collide. */
@@ -16,8 +17,8 @@ describe('Example', () => {
     });
 
     describe('Who sees what', () => {
-        it('shows a customer their own examples and nobody else’s', () => {
-            cy.loginAs('user');
+        it('shows an editor their own examples and nobody else’s', () => {
+            cy.loginAs('editor');
             cy.visit('/en/examples');
 
             cy.get('#examples-list-page').should('exist');
@@ -36,7 +37,7 @@ describe('Example', () => {
         });
 
         it('narrows the list by status', () => {
-            cy.loginAs('user');
+            cy.loginAs('editor');
             cy.visit('/en/examples');
 
             cy.pickOption('[data-test=filter-status]', 'Archived');
@@ -49,7 +50,7 @@ describe('Example', () => {
         it('creates a draft, publishes it, and lets a stranger read it', () => {
             const title = `e2e-note-${unique()}`;
 
-            cy.loginAs('user');
+            cy.loginAs('editor');
             cy.visit('/en/examples/create');
             cy.get('[data-test=example-title] input').type(title);
             cy.get('[data-test=example-body] textarea').type('Written through the real form.');
@@ -75,8 +76,8 @@ describe('Example', () => {
         });
 
         it('keeps a draft away from the public page', () => {
-            cy.loginAs('user');
-            // The customer’s seeded draft: readable by its owner, a 404 for everyone else.
+            cy.loginAs('editor');
+            // The editor’s seeded draft: readable by its owner, a 404 for everyone else.
             cy.visit('/en/examples/published/65e1a0000000000000000e02');
 
             cy.get('#example-published-page').should('not.exist');
@@ -88,7 +89,7 @@ describe('Example', () => {
         it('changes a title through the edit form', () => {
             const title = `e2e-renamed-${unique()}`;
 
-            cy.loginAs('user');
+            cy.loginAs('editor');
             cy.visit('/en/examples/65e1a0000000000000000e02/edit');
             cy.get('[data-test=example-title] input').should('not.have.value', '').clear();
             cy.get('[data-test=example-title] input').type(title);
@@ -100,7 +101,7 @@ describe('Example', () => {
         });
 
         it('deletes an example after a confirmation', () => {
-            cy.loginAs('user');
+            cy.loginAs('editor');
             cy.visit('/en/examples');
 
             cy.contains('[data-test=list-row]', 'Notes on a first vet visit').within(() => {
