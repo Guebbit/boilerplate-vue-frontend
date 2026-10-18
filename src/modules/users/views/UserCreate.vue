@@ -217,7 +217,7 @@ const submitForm = () => {
                 :error-messages="showErrors ? formErrors.imageUpload : []"
                 :progress="uploadProgress"
                 :disabled="isSubmitting"
-                class="mt-2 mb-2"
+                class="my-2"
             />
             <div class="flex flex-wrap gap-x-8">
                 <!-- One list, not a free-text field: the server's `grantableRoles`. Hidden when the

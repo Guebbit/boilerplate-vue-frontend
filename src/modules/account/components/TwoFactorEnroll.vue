@@ -209,7 +209,7 @@ const handleConfirm = () => {
                     v-if="qrCodeDataUrl"
                     :src="qrCodeDataUrl"
                     :alt="t('two-factor.setup-totp-qr-alt')"
-                    class="mx-auto mb-4 h-40 w-40"
+                    class="mx-auto mb-4 size-40"
                 />
                 <p
                     v-if="setup.secret"

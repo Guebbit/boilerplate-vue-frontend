@@ -167,7 +167,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                         }}
                     </p>
                     <div
-                        class="max-h-[320px] overflow-y-auto"
+                        class="max-h-80 overflow-y-auto"
                         tabindex="0"
                         role="log"
                         :aria-label="t('realtime-playground-page.section-feed')"

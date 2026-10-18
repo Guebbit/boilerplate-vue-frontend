@@ -51,7 +51,7 @@ const accentClass = computed(
 <template>
     <v-card class="grid grid-cols-[84px_1fr] items-center gap-4 p-5">
         <div
-            class="grid h-[84px] w-[84px] place-items-center rounded-2xl"
+            class="grid size-21 place-items-center rounded-2xl"
             :class="accentClass"
             aria-hidden="true"
         >

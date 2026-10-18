@@ -22,13 +22,13 @@ defineProps<{
 
 <template>
     <header class="page-hero py-8 lg:py-10">
-        <div class="mx-auto w-full max-w-[1280px] px-4">
+        <div class="mx-auto w-full max-w-7xl px-4">
             <slot>
                 <h1 class="text-3xl font-bold tracking-tight lg:text-4xl">
                     {{ title }}
                 </h1>
                 <div
-                    class="mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-primary to-tertiary"
+                    class="mt-3 h-1 w-16 rounded-full bg-linear-to-r from-primary to-tertiary"
                     aria-hidden="true"
                 />
             </slot>

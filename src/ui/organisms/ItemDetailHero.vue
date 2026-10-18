@@ -72,7 +72,7 @@ const { hasImage } = defineProps<{
         -->
         <div
             v-else
-            class="grid h-18 w-18 place-items-center rounded-3xl text-3xl shadow-lg bg-gradient-to-br from-[rgb(var(--detail-accent))] to-[rgb(var(--detail-accent))]/65 text-surface"
+            class="grid size-18 place-items-center rounded-3xl text-3xl shadow-lg bg-linear-to-br from-[rgb(var(--detail-accent))] to-[rgb(var(--detail-accent))]/65 text-surface"
             aria-hidden="true"
         >
             <slot name="icon" />
@@ -84,7 +84,7 @@ const { hasImage } = defineProps<{
             >
                 {{ eyebrow }}
             </p>
-            <h2 class="text-2xl font-bold leading-tight">{{ title }}</h2>
+            <h2 class="text-2xl/tight font-bold">{{ title }}</h2>
             <p class="mt-2 leading-relaxed opacity-75">{{ description }}</p>
         </div>
     </CardDetail>

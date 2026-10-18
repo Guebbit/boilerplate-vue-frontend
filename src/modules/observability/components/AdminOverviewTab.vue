@@ -240,14 +240,14 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
                     <!-- The dot is colour only; the status word beside it is what a reader gets. -->
                     <span class="flex shrink-0 items-center gap-1">
                         <span
-                            class="h-2 w-2 rounded-full"
+                            class="size-2 rounded-full"
                             :class="kpiDotClass(card.status)"
                             aria-hidden="true"
                         />
                         <span class="sr-only">{{ kpiStatusText(card.status) }}</span>
                     </span>
                 </div>
-                <p class="mt-2 text-2xl font-semibold leading-tight">{{ card.value }}</p>
+                <p class="mt-2 text-2xl/tight font-semibold">{{ card.value }}</p>
                 <p v-if="card.hint" class="mt-1 text-xs text-error">{{ card.hint }}</p>
             </v-card>
         </div>

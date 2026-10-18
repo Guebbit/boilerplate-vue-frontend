@@ -89,7 +89,7 @@ const groupedReference = computed(
                 })
             }}
         </p>
-        <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-2 text-sm">
+        <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
             <dt class="opacity-70">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>
             <dd class="font-medium" data-test="transfer-beneficiary">
                 {{ instructions.beneficiary }}
@@ -128,7 +128,7 @@ const groupedReference = computed(
             </p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
                 <p
-                    class="m-0 font-mono text-xl font-semibold tracking-wide [overflow-wrap:anywhere]"
+                    class="m-0 font-mono text-xl font-semibold tracking-wide wrap-anywhere"
                     data-test="transfer-reference"
                 >
                     {{ groupedReference }}
