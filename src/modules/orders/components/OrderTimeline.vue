@@ -22,7 +22,12 @@ import { useI18n } from 'vue-i18n';
 import { EyeOff } from 'lucide-vue-next';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatCurrency, formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import {
+    formatCurrency,
+    formatDate,
+    formatDateTime,
+    formatUtcDate
+} from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { describeTimelineEntry, isStaffOnly } from '../domain';
 import type { TimelineTools } from '../domain';
@@ -76,7 +81,8 @@ const tools: TimelineTools = {
     t: (key, params) => t(key, params ?? {}),
     has: (key) => i18n.te(key),
     money: (amount, currency) => formatCurrency(amount, currency),
-    date: (iso) => formatDate(iso)
+    date: (iso) => formatDate(iso),
+    utcDate: (iso) => formatUtcDate(iso)
 };
 
 /**

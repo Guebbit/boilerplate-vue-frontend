@@ -71,6 +71,21 @@ export const formatDate = (value?: string | null) =>
     });
 
 /**
+ * A date the server fixed as a UTC calendar day (a withdrawal deadline is the last instant of its
+ * UTC day), printed as that same day. {@link formatDate} would use the browser's zone and show the
+ * NEXT day east of UTC.
+ *
+ * @param value - ISO 8601 date/datetime string, possibly nullish.
+ * @returns The localized date string, or {@link EMPTY_VALUE}.
+ */
+export const formatUtcDate = (value?: string | null) =>
+    formatDateTimeBase(value, {
+        locale: getLocale(),
+        empty: EMPTY_VALUE,
+        format: { year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'UTC' }
+    });
+
+/**
  * Formats numeric values as currency with locale-aware separators and symbol.
  *
  * No default: the shop's currency is configurable (`NODE_DEFAULT_CURRENCY`), and every money
