@@ -28,6 +28,7 @@ import OAuthButtons from '../components/OAuthButtons.vue';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
@@ -39,6 +40,11 @@ import type { LoginRequest } from '@api';
  * UI logics
  */
 const { t, locale } = useI18n();
+
+/**
+ * The password toggle's size: a finger's 44 px on a phone, compact from `sm` up.
+ */
+const toggleSize = useTouchFriendlySize();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -207,7 +213,7 @@ const submitForm = () => {
                         <v-btn
                             icon
                             variant="text"
-                            size="small"
+                            :size="toggleSize"
                             :aria-label="t('login-page.label-toggle-password')"
                             @click="showPassword = !showPassword"
                         >

@@ -303,7 +303,7 @@ const toggleTheme = () => {
                 -->
                 <img
                     :alt="t('navigation.label-logo')"
-                    class="mx-2 block h-9 w-auto"
+                    class="mx-1 block h-9 w-auto sm:mx-2"
                     height="36"
                     :src="logoSource"
                     width="37"
@@ -342,14 +342,16 @@ const toggleTheme = () => {
                     :key="index"
                 />
 
-                <AppNavMenu
-                    v-if="menuItems.admin.length > 0"
-                    :items="menuItems.admin"
-                    :label="t('navigation.label-admin-menu')"
-                    :icon="ShieldCheck"
-                    data-test="admin-menu"
-                    tour="admin-menu"
-                />
+                <!-- Below `sm` there is no room for it, and the drawer lists the same pages. -->
+                <div v-if="menuItems.admin.length > 0" class="hidden sm:block">
+                    <AppNavMenu
+                        :items="menuItems.admin"
+                        :label="t('navigation.label-admin-menu')"
+                        :icon="ShieldCheck"
+                        data-test="admin-menu"
+                        tour="admin-menu"
+                    />
+                </div>
 
                 <!--
                     Links, not buttons: they go somewhere, so a screen reader should say so and a

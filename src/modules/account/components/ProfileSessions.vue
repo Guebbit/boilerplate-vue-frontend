@@ -32,6 +32,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -42,6 +43,11 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
  * page navigates home afterwards rather than leaving a signed-out shell on screen.
  */
 const { t } = useI18n();
+
+/**
+ * The revoke button's size: compact from `sm` up, a finger's 44 px below it.
+ */
+const actionSize = useTouchFriendlySize();
 
 /**
  * Router instance, for the navigations this file performs.
@@ -182,7 +188,7 @@ onMounted(fetchSessions);
                     <v-btn
                         variant="text"
                         color="error"
-                        size="small"
+                        :size="actionSize"
                         data-test="session-revoke"
                         :aria-label="
                             session.current
@@ -226,5 +232,9 @@ onMounted(fetchSessions);
 .session-last-used,
 .session-expiry {
     --v-medium-emphasis-opacity: 1;
+
+    /* Vuetify clamps a subtitle to one line; these dates are the whole point of the row. */
+    -webkit-line-clamp: unset;
+    white-space: normal;
 }
 </style>

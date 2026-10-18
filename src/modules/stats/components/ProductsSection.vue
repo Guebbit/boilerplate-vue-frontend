@@ -116,7 +116,7 @@ const categoryCharts = computed(() => {
                     <th scope="row">
                         <router-link
                             :to="productLink(row.productId)"
-                            class="underline"
+                            class="inline-flex min-h-11 items-center underline sm:min-h-0"
                             data-test="product-link"
                         >
                             {{ row.title }}

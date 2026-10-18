@@ -19,6 +19,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Plus, X } from 'lucide-vue-next';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * One language the tab bar can offer — a `LocaleCapability`, narrowed to the three fields this
@@ -79,6 +80,12 @@ const emit = defineEmits<{ add: [tag: string]; remove: [tag: string] }>();
  * Translator for the tabs' own labels.
  */
 const { t } = useI18n();
+
+/**
+ * The remove button's size: 28 px with a mouse, a finger's 44 px below `sm`. Not `x-small`: at
+ * about 20 px it is under the 24 px floor (WCAG 2.5.8) too.
+ */
+const removeSize = useTouchFriendlySize();
 
 /**
  * `locales`, resolved to a display row per open tab — falls back to the bare tag when the
@@ -153,9 +160,8 @@ const handlePick = (tag: string | null) => {
         <v-btn
             v-if="activeLocale && activeLocale.tag !== fallbackTag"
             icon
-            size="x-small"
+            :size="removeSize"
             variant="text"
-            density="compact"
             data-test="translation-tab-remove"
             :aria-label="
                 t('translation-tabs.button-remove-language', {

@@ -49,7 +49,13 @@ const COLORS = {
 </script>
 
 <template>
-    <v-chip size="small" variant="tonal" :color="COLORS[status]" data-test="payment-status">
+    <v-chip
+        size="small"
+        variant="tonal"
+        :color="COLORS[status]"
+        class="shrink-0"
+        data-test="payment-status"
+    >
         {{ t(`payments-list-page.display-status-${status}`) }}
     </v-chip>
 </template>
