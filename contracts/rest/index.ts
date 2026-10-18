@@ -5945,6 +5945,10 @@ export interface Shop {
     legalName: string;
     /** VAT identification number; absent for a shop below the registration threshold. */
     vatNumber?: string;
+    /** The commercial register the seller is entered in (`NODE_SHOP_TRADE_REGISTER`); absent for a seller in none. */
+    tradeRegister?: string;
+    /** The seller's number in that register (`NODE_SHOP_REGISTRATION_NUMBER`); absent when there is no register. */
+    registrationNumber?: string;
     street: string;
     city: string;
     zip: string;

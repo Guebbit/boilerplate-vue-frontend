@@ -16014,6 +16014,8 @@ export const GetShopResponse = zod.strictObject({
     data: zod.strictObject({
         legalName: zod.string(),
         vatNumber: zod.string().optional(),
+        tradeRegister: zod.string().optional(),
+        registrationNumber: zod.string().optional(),
         street: zod.string(),
         city: zod.string(),
         zip: zod.string(),
