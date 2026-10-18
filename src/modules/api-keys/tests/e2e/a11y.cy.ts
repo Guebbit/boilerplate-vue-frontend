@@ -43,6 +43,20 @@ sweepA11y(
                 cy.get('form button[type=submit]').click();
                 cy.get('.v-messages__message').should('be.visible');
             }
+        },
+        {
+            // The one-time secret modal is named by its title (WCAG 4.1.2).
+            name: 'create, secret revealed',
+            route: '/en/api-keys/create',
+            prepare: () => {
+                cy.get('[data-test=api-key-name] input').type('a11y key');
+                cy.get('[data-test=api-key-permissions] input').type('display:Product{enter}');
+                cy.get('[data-test=api-key-expires-at] input').type(
+                    new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 16)
+                );
+                cy.get('form').submit();
+                cy.get('[data-test=secret-reveal]').should('be.visible');
+            }
         }
     ],
     'admin'

@@ -5,7 +5,7 @@
  * `step-up.ts` both depend on for de-duplicating a 401's recovery.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { singleFlight } from '@/infrastructure/http/single-flight.ts';
+import { exclusiveRunner, singleFlight } from '@/infrastructure/http/single-flight.ts';
 
 describe('singleFlight', () => {
     it('shares one in-flight promise between callers that overlap', () => {
@@ -47,6 +47,34 @@ describe('singleFlight', () => {
             .then((result) => {
                 expect(result).toBe('ok');
                 expect(attempt).toBe(2);
+            });
+    });
+});
+
+describe('exclusiveRunner', () => {
+    it('joins a second action started while the first runs, whichever action it is', () => {
+        const run = exclusiveRunner();
+        const first = vi.fn(() => Promise.resolve('first'));
+        const second = vi.fn(() => Promise.resolve('second'));
+
+        const one = run(first);
+        const two = run(second);
+
+        expect(second).not.toHaveBeenCalled();
+        return Promise.all([one, two]).then(([a, b]) => {
+            expect(a).toBe('first');
+            expect(b).toBe('first');
+        });
+    });
+
+    it('lets the next action start once the previous one settled, failed or not', () => {
+        const run = exclusiveRunner();
+
+        return run(() => Promise.reject(new Error('refused')))
+            .catch(() => undefined)
+            .then(() => run(() => Promise.resolve('again')))
+            .then((answer) => {
+                expect(answer).toBe('again');
             });
     });
 });

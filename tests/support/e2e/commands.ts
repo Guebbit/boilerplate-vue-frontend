@@ -1180,43 +1180,54 @@ Cypress.Commands.add('settleNetwork', () => {
 });
 
 Cypress.Commands.add('compareSnapshot', (name: string) => {
-    cy.screenshot(name, { overwrite: true, capture: 'viewport' });
-
-    // Cypress types `cy.env(keys)` as `Chainable<Record<string, any>>` — every key comes back
-    // `any` regardless of what the config actually holds — so the callback's own parameter is
-    // typed honestly instead of carrying that `any` into the task payload below.
-    cy.env(['visualDiffDirectory', 'updateSnapshots']).then(
-        ({ visualDiffDirectory, updateSnapshots }: Record<string, string | boolean>) => {
-            /*
-             * Cypress writes screenshots as `<screenshotsFolder>/<spec relative path>/<name>.png`
-             * — the WHOLE path, not the file name. Take only the basename and the read fails with
-             * an ENOENT naming a directory Cypress never wrote to.
-             */
-            const actualPath = `${Cypress.config('screenshotsFolder')}/${
-                Cypress.spec.relative
-            }/${name}.png`;
-
-            /*
-             * The baseline directory is derived from the SPEC, not configured centrally: a spec at
-             * `src/modules/products/tests/e2e/*.visual.cy.ts` keeps its baselines in a
-             * `__snapshots__` folder beside it. That is what makes `rm -rf src/modules/products`
-             * take its baselines with it — a central folder would be left holding PNGs of a screen
-             * that no longer exists, and nothing would ever notice.
-             *
-             * Diffs go the other way, to one central `reports/` folder: they are throwaway output
-             * of a failed run, they are gitignored, and CI uploads them from one place.
-             */
-            cy.task('compareVisualSnapshot', {
-                name,
-                actualPath,
-                specRelative: Cypress.spec.relative,
-                diffDirectory: visualDiffDirectory,
-                update: updateSnapshots === true
-            }).then((result) => {
-                const { passed, message } = result as { passed: boolean; message: string };
-                cy.log(`[visual] ${message}`);
-                if (!passed) throw new Error(`[visual] ${message}`);
-            });
+    /*
+     * Cypress writes the PNG where IT decides (`<screenshotsFolder>/<spec relative path>/<name>.png`,
+     * with the spec path varying by how the run was started), so the path comes from its own
+     * `onAfterScreenshot` callback instead of being rebuilt here.
+     * https://docs.cypress.io/api/commands/screenshot#Arguments
+     */
+    let actualPath = '';
+    cy.screenshot(name, {
+        overwrite: true,
+        capture: 'viewport',
+        onAfterScreenshot: (_element, properties) => {
+            actualPath = properties.path;
         }
-    );
+    });
+
+    // The page's own idea of its size: the guard compares the PNG against it, so a clamped or
+    // device-pixel-ratio-2 shot can never be recorded as a baseline.
+    cy.window({ log: false }).then((win) => {
+        const expected = { width: win.innerWidth, height: win.innerHeight };
+
+        // Cypress types `cy.env(keys)` as `Chainable<Record<string, any>>` — every key comes back
+        // `any` regardless of what the config actually holds — so the callback's own parameter is
+        // typed honestly instead of carrying that `any` into the task payload below.
+        cy.env(['visualDiffDirectory', 'updateSnapshots']).then(
+            ({ visualDiffDirectory, updateSnapshots }: Record<string, string | boolean>) => {
+                /*
+                 * The baseline directory is derived from the SPEC, not configured centrally: a spec at
+                 * `src/modules/products/tests/e2e/*.visual.cy.ts` keeps its baselines in a
+                 * `__snapshots__` folder beside it. That is what makes `rm -rf src/modules/products`
+                 * take its baselines with it — a central folder would be left holding PNGs of a screen
+                 * that no longer exists, and nothing would ever notice.
+                 *
+                 * Diffs go the other way, to one central `reports/` folder: they are throwaway output
+                 * of a failed run, they are gitignored, and CI uploads them from one place.
+                 */
+                cy.task('compareVisualSnapshot', {
+                    name,
+                    actualPath,
+                    specRelative: Cypress.spec.relative,
+                    expected,
+                    diffDirectory: visualDiffDirectory,
+                    update: updateSnapshots === true
+                }).then((result) => {
+                    const { passed, message } = result as { passed: boolean; message: string };
+                    cy.log(`[visual] ${message}`);
+                    if (!passed) throw new Error(`[visual] ${message}`);
+                });
+            }
+        );
+    });
 });

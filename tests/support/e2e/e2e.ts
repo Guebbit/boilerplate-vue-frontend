@@ -28,6 +28,7 @@ import './scenario';
 import './commands';
 import './fixtures';
 import './journey';
+import './touch';
 
 registerCypressGrep();
 

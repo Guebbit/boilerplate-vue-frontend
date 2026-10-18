@@ -1,7 +1,7 @@
 // requires-module: products
 /**
  * @module
- * N3 · Two staff edit one product. The editor opens a product's edit form; while it is open the
+ * OP38 · Two staff edit one product. The editor opens a product's edit form; while it is open the
  * admin changes the price; the editor saves a different price and is refused rather than
  * overwriting the admin's — told so, offered the latest version, and able to save on top of it.
  *
@@ -31,7 +31,7 @@ const publicPrice = (id: string): Cypress.Chainable<number> =>
                 .then((response) => (response.body as { data: { price: number } }).data.price)
         );
 
-describe('N3 · Two staff edit one product', () => {
+describe('OP38 · Two staff edit one product', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();

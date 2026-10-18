@@ -22,6 +22,8 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useWebhooksStore } from '../store';
 import { webhookCreateSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -69,6 +71,7 @@ const {
     form,
     formErrors,
     showFormErrors: showErrors,
+    isDirty,
     isSubmitting,
     handleSubmit,
     applyServerErrors
@@ -85,6 +88,16 @@ const {
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
+
+/**
+ * The signed-in viewer's session, read by the leave guard to tell a forced sign-out from a choice.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * The id of the subscription just created, once the reveal modal is on screen — held so `Done`
@@ -145,6 +158,7 @@ const submitForm = () => {
  * Leaves the reveal modal and opens the new subscription's detail page.
  */
 const handleSecretDone = () => {
+    markSaved();
     addMessage(t('webhook-create-page.success-create'));
     const id = createdSubscriptionId.value;
     revealedSecret.value = undefined;

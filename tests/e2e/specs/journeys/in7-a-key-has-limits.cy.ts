@@ -114,6 +114,8 @@ describe('IN7 · A key has limits', () => {
 
                     cy.step('and the list says Expired once the browser agrees');
                     cy.clock(Date.now() + 2 * HOUR_MS, ['Date']);
+                    // Two hours idle ended the admin's staff session (30 minutes): sign in again.
+                    cy.switchUser('admin');
                     cy.visit('/en/api-keys');
                     cy.contains('[data-test=list-row]', KEY_NAME).within(() => {
                         cy.get('[data-test=api-key-status]').should(

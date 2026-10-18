@@ -21,6 +21,9 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Calendar, Clock, Hash, NotebookPen, Pencil } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useExampleStore } from '../store';
 import { exampleEditSchema } from '../schemas.ts';
 import { EXAMPLE_STATUSES } from '../domain';
@@ -88,6 +91,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -101,10 +105,20 @@ const {
 });
 
 /**
+ * The signed-in viewer's session, read by the leave guard to tell a forced sign-out from a choice.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
+
+/**
  * Fills the form from the record once it is there, and again when the record changes under it.
  */
 activateAutoHydrate(
-    computed(() =>
+    holdWhileSubmitting(isSubmitting, () =>
         currentExample.value
             ? {
                   title: currentExample.value.title,
@@ -168,6 +182,7 @@ const submitForm = () => {
                 // The served `imageUrl` is back in the record, so the picked file has done its job
                 // and holding it would only re-upload the same bytes on the next save.
                 form.value.imageUpload = undefined;
+                markSaved();
                 addMessage(t('example-edit-page.success-update'));
             });
     }).catch((error: unknown) => {
@@ -211,53 +226,61 @@ watchExample(() => id, { onError: onMissingRecord });
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-text-field
-                        v-model="form.title"
-                        type="text"
-                        data-test="example-title"
-                        :label="t('example-edit-page.label-title')"
-                        :error-messages="showFormErrors ? formErrors.title : []"
-                    />
-                    <v-textarea
-                        v-model="form.body"
-                        data-test="example-body"
-                        :label="t('example-edit-page.label-body')"
-                        :error-messages="showFormErrors ? formErrors.body : []"
-                        rows="6"
-                    />
-                    <v-select
-                        v-model="form.status"
-                        data-test="example-status"
-                        :label="t('example-edit-page.label-status')"
-                        :items="statusOptions"
-                        item-title="label"
-                        item-value="value"
-                        :error-messages="showFormErrors ? formErrors.status : []"
-                    />
-                    <FormImageUpload
-                        v-model="form.imageUpload"
-                        :current-image-url="currentExample?.imageUrl"
-                        :label="t('example-edit-page.label-cover')"
-                        :progress="uploadProgress"
-                        :disabled="isSubmitting"
-                        class="mt-2"
-                    />
+                    <fieldset
+                        :disabled="loading"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                    >
+                        <v-text-field
+                            v-model="form.title"
+                            type="text"
+                            data-test="example-title"
+                            :label="t('example-edit-page.label-title')"
+                            :error-messages="showFormErrors ? formErrors.title : []"
+                        />
+                        <v-textarea
+                            v-model="form.body"
+                            data-test="example-body"
+                            :label="t('example-edit-page.label-body')"
+                            :error-messages="showFormErrors ? formErrors.body : []"
+                            rows="6"
+                        />
+                        <v-select
+                            v-model="form.status"
+                            data-test="example-status"
+                            :label="t('example-edit-page.label-status')"
+                            :items="statusOptions"
+                            item-title="label"
+                            item-value="value"
+                            :error-messages="showFormErrors ? formErrors.status : []"
+                        />
+                        <FormImageUpload
+                            v-model="form.imageUpload"
+                            :current-image-url="currentExample?.imageUrl"
+                            :label="t('example-edit-page.label-cover')"
+                            :progress="uploadProgress"
+                            :disabled="isSubmitting"
+                            class="mt-2"
+                        />
 
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn
-                            type="submit"
-                            color="primary"
-                            data-test="example-submit"
-                            :disabled="isSubmitting || loading"
-                        >
-                            {{ t('example-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('example-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                data-test="example-submit"
+                                :disabled="isSubmitting || loading"
+                            >
+                                {{ t('example-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('example-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
 
-                    <InlineErrorAlert :message="formError" data-test="example-edit-form-error" />
+                        <InlineErrorAlert
+                            :message="formError"
+                            data-test="example-edit-form-error"
+                        />
+                    </fieldset>
                 </form>
             </CardDetail>
 

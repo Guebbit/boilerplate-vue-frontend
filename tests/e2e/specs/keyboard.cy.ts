@@ -74,7 +74,17 @@ describe('keyboard', () => {
             // The new page's title first, then the app's name — and not the previous page's.
             cy.title().should('not.eq', homeTitle);
             cy.title().should('match', /^About this shop — /);
+            // The live region says the page part of the title (WCAG 4.1.3), not the app's name.
+            cy.get('[data-test=route-announcer]').should('have.text', 'About this shop');
         });
+
+        // Back on a page the announcer already named once, it says so again: the region is cleared
+        // before it is set, so a repeat is a real mutation a screen reader hears.
+        cy.go('back');
+        cy.location('pathname').should('eq', '/en');
+        cy.get('[data-test=route-announcer]').should('not.have.text', 'About this shop');
+        cy.go('forward');
+        cy.get('[data-test=route-announcer]').should('have.text', 'About this shop');
     });
 
     it('opens the drawer onto its first entry and returns focus to the hamburger on Escape', () => {
