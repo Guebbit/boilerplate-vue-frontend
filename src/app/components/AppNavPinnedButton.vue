@@ -56,7 +56,7 @@ const attributes = useAttrs();
 /**
  * The tooltip's open state and the focus listeners that drive it — see `useFocusTooltip`.
  */
-const { tooltipOpen, openTooltipOnRealFocus, closeTooltip } = useFocusTooltip();
+const { tooltipOpen, canHover, openTooltipOnRealFocus, closeTooltip } = useFocusTooltip();
 
 /**
  * The tooltip's hover handlers and whatever the parent passed through, plus the explicit
@@ -83,6 +83,7 @@ const accessibleName = () =>
 <template>
     <v-tooltip
         v-model="tooltipOpen"
+        :open-on-hover="canHover"
         :open-on-focus="false"
         :text="label"
         :aria-label="label"
