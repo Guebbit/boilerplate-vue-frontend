@@ -25,6 +25,7 @@ scripts/
 ├── demo/        booting the paired backend's demo profile from here
 ├── e2e/         the Cypress shard runner, its balancer and the spec globs
 ├── mutation/    the Stryker run and the per-file ratchet
+├── lighthouse/  the lab-performance run, its judgement and its baseline
 ├── testing/     everything else that reads a test suite
 └── audit/       AI audit prompts, each with the scripts it runs
 ```
@@ -94,11 +95,30 @@ second, deeper scope that this repo has no equivalent for.
 | `scripts/mutation/baseline.ts`       | The per-file ratchet: the recorded score for each file, and the comparison that fails when one drops. Nothing here ever lowers a baseline on its own.               | [Mutation Testing](../tools/mutation-testing.md) |
 | `scripts/mutation/check-baseline.ts` | Its CLI — compare, or record a new floor with `--update`.                                                                                                           | [Mutation Testing](../tools/mutation-testing.md) |
 
+## Lab performance — `scripts/lighthouse/`
+
+| File                                                        | What it is                                                                                                      | Read next                                                        |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `scripts/lighthouse/build.ts`                               | The audit build: `vite build` into `dist-lighthouse`, then every container-start generator run into it.         | [Lighthouse](../tools/lighthouse.md)                             |
+| `scripts/lighthouse/audit-environment.ts`                   | The environment that build gets (every URL loopback) and which generators it runs.                              | [Lighthouse](../tools/lighthouse.md)                             |
+| `scripts/lighthouse/analytics-sink.ts`                      | A local 204 server standing in for Faro and Umami, so the audit shows the consent banner and sends nothing out. | [Lighthouse](../tools/lighthouse.md#no-byte-leaves-the-machine)  |
+| `scripts/lighthouse/chrome.ts`                              | Launches Chrome with the egress lock and attaches Puppeteer.                                                    | [Lighthouse](../tools/lighthouse.md#no-byte-leaves-the-machine)  |
+| `scripts/lighthouse/settings.ts`                            | The Lighthouse flags: the phone profile, the categories, error reporting off.                                   | [Lighthouse](../tools/lighthouse.md#the-phone-profile)           |
+| `scripts/lighthouse/route.ts`                               | Fills `{subject:x}` in a case's route from the backend's published ids.                                         | [Lighthouse](../tools/lighthouse.md#cases-live-with-modules)     |
+| `scripts/lighthouse/collect.ts`                             | Drives every case: sign in, prepare, then N Lighthouse runs.                                                    | [Lighthouse](../tools/lighthouse.md#signed-in-routes)            |
+| `scripts/lighthouse/evaluate.ts`                            | Pure: medians, the hard set, the warnings. Exit code logic lives in `run.ts`.                                   | [Lighthouse](../tools/lighthouse.md#what-gates-and-what-reports) |
+| `scripts/lighthouse/summary.ts`                             | Renders the Markdown summary.                                                                                   | [Lighthouse](../tools/lighthouse.md#reading-the-report)          |
+| `scripts/lighthouse/run.ts`                                 | `npm run test:lighthouse`'s runner.                                                                             | [Lighthouse](../tools/lighthouse.md#running-it)                  |
+| `scripts/lighthouse/baseline.ts`                            | The timing baseline's shape and its only-improves ratchet.                                                      | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)        |
+| `scripts/lighthouse/update-baseline.ts`, `pull-baseline.ts` | `npm run test:lighthouse:baseline` and `:pull`.                                                                 | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)        |
+
 ## Testing — `scripts/testing/`
 
-| File                                | What it is                                                                                       | Read next                                          |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| `scripts/testing/report-results.ts` | Turns a runner's JSON report into which **module** a failure belongs to and where the time went. | [Testing (overview)](../tools/testing-and-docs.md) |
+| File                                  | What it is                                                                                             | Read next                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `scripts/testing/report-results.ts`   | Turns a runner's JSON report into which **module** a failure belongs to and where the time went.       | [Testing (overview)](../tools/testing-and-docs.md)                                 |
+| `scripts/testing/github-artifacts.ts` | Which uploaded baseline a `pull-baseline` script takes: the newest unexpired one from a run on `main`. | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind the mutation and Lighthouse baseline pulls.                                      | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
 
 ## AI audits — `scripts/audit/`
 
@@ -109,18 +129,19 @@ and follows, and a `scripts/` folder for anything it runs.
 | -------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | `scripts/audit/*/SKILL.md` | The four audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
 
+The design review keeps its programs in `scripts/audit/design-manual/scripts/`:
+
+| File                                                  | What it is                                                                                                                | Read next                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `scripts/audit/design-manual/scripts/stitch.ts`       | Pure: scroll offsets, the stitcher that lays viewport shots onto one tall page, and the tile cutter with its size limits. | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/manifest.ts`     | The types of one capture run (what was shot, from which commit, at which sizes) and the merge of its parts.               | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/plan-batches.ts` | Pure: splits a manifest into batches small enough for one reviewer. `plan.ts` is its CLI, `npm run audit:design:plan`.    | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/check-report.ts` | Pure: checks every tile and `file:line` a findings table cites. `check.ts` is its CLI, `npm run audit:design:check`.      | [AI Auditing](../tools/ai-auditing.md) |
+
 ## Lint rules — `scripts/eslint/`
 
 The design system's ESLint rules and the policy they read. How they fit together, and the commands:
 [Design Lint](../tools/design-lint.md).
-
-| File                                               | What it is                                                                                                        | Read next                                   |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `scripts/design-policy.ts`                         | The design checks' knobs in one file: severities, root font size, the colour props, and the theme colour names.   | [Design Lint](../tools/design-lint.md)      |
-| `scripts/eslint/index.ts`                          | The local rule plugin (`local/*`).                                                                                | [Design Lint](../tools/design-lint.md)      |
-| `scripts/eslint/design-config.ts`                  | The Tailwind rule blocks `eslint.config.ts` spreads in: entry stylesheet, root font size, the class-map selector. | [Design Lint](../tools/design-lint.md)      |
-| `scripts/eslint/theme-token.ts`                    | `local/theme-token`: a colour is a named theme colour or a finding.                                               | [Design System](../theory/design-system.md) |
-| `scripts/eslint/template-directive-description.ts` | `local/template-directive-description`: a template `eslint-disable` must say why.                                 | [Design System](../theory/design-system.md) |
 
 ## Git hooks
 

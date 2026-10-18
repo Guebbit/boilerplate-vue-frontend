@@ -1,12 +1,19 @@
 /**
- * `scripts/mutation/github-artifacts.ts` — which uploaded baseline `npm run test:mutation:pull` takes.
+ * `scripts/testing/github-artifacts.ts` — which uploaded baseline a `pull-baseline` script takes.
  *
  * Driven against synthetic artifact lists, never GitHub: the download half
- * (`scripts/mutation/pull-baseline.ts`) is a thin wrapper over the GitHub CLI.
+ * (`scripts/testing/pull-artifact.ts`) is a thin wrapper over the GitHub CLI.
  */
 import { describe, expect, it } from 'vitest';
-import type { GitHubArtifact } from '../../../../scripts/mutation/github-artifacts';
-import { BASELINE_ARTIFACT, newestBaseline } from '../../../../scripts/mutation/github-artifacts';
+import type { GitHubArtifact } from '../../../../scripts/testing/github-artifacts';
+import { newestArtifact } from '../../../../scripts/testing/github-artifacts';
+
+/** The artifact name every case asks for. */
+const BASELINE_ARTIFACT = 'mutation-baseline';
+
+/** `newestArtifact` for {@link BASELINE_ARTIFACT}. */
+const newestBaseline = (artifacts: readonly GitHubArtifact[]) =>
+    newestArtifact(artifacts, BASELINE_ARTIFACT);
 
 /**
  * A baseline artifact uploaded by a run on `main`, with whatever the case changes.

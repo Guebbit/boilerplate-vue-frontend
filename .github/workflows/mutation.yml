@@ -100,7 +100,7 @@ jobs:
             - name: Upload this run's baseline
               # The record leaves as an artifact, never as a commit: `npm run test:mutation:pull`
               # fetches the newest one, and a person commits it. Name and path are what
-              # scripts/mutation/github-artifacts.ts and pull-baseline.ts expect.
+              # scripts/testing/github-artifacts.ts and pull-artifact.ts expect.
               # https://github.com/actions/upload-artifact
               if: always() && steps.record.outcome == 'success'
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

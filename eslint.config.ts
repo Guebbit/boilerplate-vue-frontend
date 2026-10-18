@@ -687,6 +687,8 @@ export default defineConfigWithVueTs(
         'dist',
         // The e2e bundle `npm run test:e2e` builds and serves; generated output, same as `dist`.
         'dist-e2e',
+        // The audit build `npm run test:lighthouse` serves; generated output, same as `dist`.
+        'dist-lighthouse',
         // The built docs site and its cache; authored docs are markdown, and the VitePress
         // config is linted through the tool-config block below.
         'docs/.vitepress/dist/**',

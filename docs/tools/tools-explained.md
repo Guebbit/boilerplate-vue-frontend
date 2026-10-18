@@ -271,6 +271,18 @@ this diagram exists to prevent.
 
 ---
 
+### Lighthouse
+
+**What it is.** Google's lab auditor: it loads a page under an emulated phone and a throttled network, and reports performance, best-practice and SEO findings.
+
+**Problem it solves.** Field data (Faro) tells you what users felt after shipping. Lighthouse tells you, before shipping, whether the first load is stable (layout shift, image sizes, console errors) and roughly how fast it is on one reference phone.
+
+**In this repo.** The Node API, not the CLI or `@lhci/cli`, so nothing is uploaded anywhere. Chrome runs with an egress lock and the run fails if the page names an outside host. Structure gates the nightly; timing is only a warning row.
+
+→ [Lighthouse](./lighthouse.md)
+
+---
+
 ### @guebbit/vue-toolkit
 
 **What it is.** An internal shared library of reusable Vue composables and stores — the REST/CRUD resource stores, form validation, notifications and loading state.

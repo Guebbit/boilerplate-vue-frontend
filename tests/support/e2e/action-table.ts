@@ -2,7 +2,7 @@
 
 import { expectDeclaredStatus, rejectEnvelope, type ErrorCode } from './envelope';
 import { skipUnlessSessionMode } from './harness';
-import type { E2ERole } from './scenario';
+import type { E2ERole } from '../scenario-description';
 
 /**
  * One runner for "this control, answered with a failure or an empty list" rows.

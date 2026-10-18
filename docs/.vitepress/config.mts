@@ -171,6 +171,7 @@ export default withMermaid(
                             { text: 'Accessibility Testing', link: '/tools/accessibility-testing' },
                             { text: 'Design Lint', link: '/tools/design-lint' },
                             { text: 'Visual Regression', link: '/tools/visual-regression' },
+                            { text: 'Lighthouse', link: '/tools/lighthouse' },
                             { text: 'Mutation Testing', link: '/tools/mutation-testing' },
                             { text: 'AI Auditing', link: '/tools/ai-auditing' }
                         ]

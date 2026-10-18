@@ -3,7 +3,7 @@
 import { cents } from '../../../scripts/e2e/cents';
 import { mailAbout } from '../../../scripts/e2e/mail-filters';
 import type { MailedEmail } from '../../../scripts/e2e/mail-message';
-import type { E2ERole } from './scenario';
+import type { E2ERole } from '../scenario-description';
 import { requestAsDevice, type Device, type DeviceResponse } from './harness';
 
 export { cents, sumCents } from '../../../scripts/e2e/cents';

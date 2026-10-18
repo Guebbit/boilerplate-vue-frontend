@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
-import { loadScenario, seedAccount, type E2ERole } from './scenario';
+import type { E2ERole } from '../scenario-description';
+import { loadScenario, seedAccount } from './scenario';
 import { withScenario } from '../../../scripts/e2e/reset-command';
 import { asStub } from '../stub';
 import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';

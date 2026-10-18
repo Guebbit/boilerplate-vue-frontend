@@ -86,6 +86,11 @@ const ALLOWED: { prefix: string; reason: string }[] = [
     { prefix: 'reports/e2e/', reason: 'written by the sharded e2e runner, absent until one runs' },
     { prefix: 'reports/mutation/', reason: 'written by a Stryker run, absent until one happens' },
     { prefix: 'reports/visual-diff/', reason: 'written by a visual-regression run' },
+    { prefix: 'reports/lighthouse/', reason: 'written by a Lighthouse run' },
+    {
+        prefix: 'lighthouse-baseline.json',
+        reason: 'created by the first `test:lighthouse:baseline`, after a measured nightly'
+    },
     { prefix: 'reports/audit/', reason: 'written by an audit prompt run' },
     { prefix: 'reports/test-report.json', reason: 'written by `test:unit:report`' },
     { prefix: 'reports/stryker-incremental.json', reason: "Stryker's local cache, gitignored" },

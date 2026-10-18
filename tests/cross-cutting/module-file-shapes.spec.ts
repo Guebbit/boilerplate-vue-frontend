@@ -129,6 +129,10 @@ const FILE_SHAPES: readonly FileShape[] = [
         onlyIn: 'observability'
     },
     {
+        match: /^tests\/lighthouse\.ts$/,
+        what: 'The Lighthouse cases this module contributes: routes the nightly audit loads on a phone profile.'
+    },
+    {
         match: /^tests\/e2e\/__snapshots__\/.+\.png$/,
         what: 'A committed visual-regression baseline.'
     },

@@ -291,7 +291,17 @@ const toggleTheme = () => {
     <v-app-bar flat border="b" density="comfortable">
         <template #prepend>
             <RouterLink :to="routerLinkI18n({ name: 'Home' })" class="flex items-center">
-                <img :alt="t('navigation.label-logo')" class="mx-2 block h-9" :src="logoSource" />
+                <!--
+                    width/height give the browser the logo's aspect ratio before it loads (no layout
+                    shift); `w-auto` lets a configured logo of another ratio keep its own.
+                -->
+                <img
+                    :alt="t('navigation.label-logo')"
+                    class="mx-2 block h-9 w-auto"
+                    height="36"
+                    :src="logoSource"
+                    width="37"
+                />
             </RouterLink>
         </template>
 

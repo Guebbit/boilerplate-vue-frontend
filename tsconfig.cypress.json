@@ -9,6 +9,11 @@
         // The repo's one sanctioned cast seam, shared with the Vitest project the same way
         // `scripts/**` is: a file imported by a project but not included in it is TS6307.
         "tests/support/stub.ts",
+        // Cypress-free shapes the support imports (`scenario.ts`) and `scripts/lighthouse/` imports
+        // too, through `scripts/**` below.
+        "tests/support/scenario-description.ts",
+        "tests/support/lighthouse/**/*.ts",
+        "tests/lighthouse/**/*.ts",
         "src/modules/*/tests/e2e/**/*.ts",
         "cypress.config.ts",
         // `tests/support/e2e/envelope.ts` builds stubbed failures from the contract's code list.
