@@ -38,6 +38,8 @@ import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
 import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
 import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
+import { VIEWPORTS } from './scripts/e2e/viewports';
+import { windowFor, withWindowSize } from './scripts/e2e/browser-launch';
 import { totpCode } from './scripts/e2e/totp';
 import { declaredStatuses } from './scripts/e2e/declared-statuses';
 import {
@@ -98,8 +100,8 @@ export default defineConfig({
     // A FIXED viewport, because a screenshot's size is part of what is being compared. Cypress'
     // default is 1000x660; pinning it here means a future default change cannot silently
     // invalidate every baseline.
-    viewportWidth: 1280,
-    viewportHeight: 800,
+    viewportWidth: VIEWPORTS.desktop.width,
+    viewportHeight: VIEWPORTS.desktop.height,
     /*
      * One retry in `cypress run`, none in `cypress open`. A headless run shares one preview
      * server and one machine with three other shards, and the specs already wait on conditions
@@ -144,6 +146,16 @@ export default defineConfig({
              * https://docs.cypress.io/api/node-events/before-run-api
              * https://docs.cypress.io/api/node-events/after-spec-api
              */
+            /*
+             * The one `before:browser:launch` handler: Cypress keeps only the last registered, so
+             * every launch tweak composes here (see `scripts/e2e/browser-launch.ts`).
+             * The headless window must hold the tallest and widest viewport of the matrix, or a
+             * viewport-sized screenshot is clipped to the default 1280x720 window.
+             * https://docs.cypress.io/api/node-events/browser-launch-api
+             */
+            on('before:browser:launch', (browser, launchOptions) =>
+                withWindowSize(browser, launchOptions, windowFor(VIEWPORTS))
+            );
             on('before:run', () => {
                 if (process.env.E2E_SHARDED !== 'true') resetFlakyReport();
             });
