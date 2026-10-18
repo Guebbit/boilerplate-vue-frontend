@@ -20,6 +20,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useApiKeysStore } from '../store';
 import { apiKeyCreateSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -59,7 +61,7 @@ const card = ref<InstanceType<typeof FormCard>>();
 /**
  * Form state, validation and submission wiring from the shared app-form composable.
  */
-const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServerErrors } =
+const { form, formErrors, showFormErrors, isDirty, isSubmitting, handleSubmit, applyServerErrors } =
     useStructureFormValidation<{ name?: string; permissions?: string[]; expiresAt?: string }>(
         {},
         apiKeyCreateSchema,
@@ -71,6 +73,16 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServe
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
+
+/**
+ * The signed-in viewer's session, read by the leave guard to tell a forced sign-out from a choice.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * The newly minted secret, held only long enough to render the reveal modal. Never sent anywhere
@@ -151,6 +163,7 @@ const submitForm = () => {
  * Leaves the reveal modal and returns to the credentials list.
  */
 const handleSecretDone = () => {
+    markSaved();
     addMessage(t('api-key-create-page.success-create'));
     revealedSecret.value = undefined;
     // Fire-and-forget: a NavigationFailure must not convert a completed mint into an error toast.

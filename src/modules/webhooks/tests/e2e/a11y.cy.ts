@@ -12,6 +12,7 @@
  * rather than looking one up, same reasoning `cy.createProduct()` documents.
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
+import { sinkEndpoint } from '../../../../../tests/support/e2e/integrator';
 
 /** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
 const PHONE = [390, 844] as const;
@@ -45,6 +46,20 @@ const webhookDeliveriesFiltered = () =>
 sweepA11y(
     'webhooks',
     [
+        {
+            // The one-time secret modal is named by its title (WCAG 4.1.2).
+            name: 'create, secret revealed',
+            route: '/en/webhooks/subscriptions/create',
+            prepare: () => {
+                sinkEndpoint(`/hook-a11y-${String(Date.now())}`).then((url) => {
+                    cy.get('[data-test=webhook-url] input').type(url);
+                });
+                cy.pickOption('[data-test=webhook-event-types]', 'order.created');
+                cy.get('body').type('{esc}');
+                cy.get('form').submit();
+                cy.get('[data-test=secret-reveal]').should('be.visible');
+            }
+        },
         ['subscriptions list', '/en/webhooks/subscriptions'],
         // The table stacked into cards below `sm` — the layout the desktop sweep never sees.
         {

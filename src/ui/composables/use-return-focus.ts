@@ -4,7 +4,7 @@
  * it is a separate element. Close it with Escape and focus falls to the page body, so a keyboard
  * user starts again from the top of the page. This remembers the opener and puts focus back.
  */
-import { nextTick, watch } from 'vue';
+import { nextTick, onScopeDispose, watch } from 'vue';
 
 /**
  * Returns focus to whatever held it when a dialog opened, once the dialog closes.
@@ -20,21 +20,41 @@ export const useReturnFocus = (isOpen: () => boolean): void => {
      */
     let opener: HTMLElement | undefined;
 
+    /**
+     * The control that holds focus right now, unless it is the page body.
+     *
+     * @returns That element, or `undefined`.
+     */
+    const focusedControl = (): HTMLElement | undefined => {
+        const { activeElement, body } = document;
+        return activeElement instanceof HTMLElement && activeElement !== body
+            ? activeElement
+            : undefined;
+    };
+
+    // A dialog mounted with `v-if` already open never sees the change the watcher below waits for:
+    // its opener is whatever holds focus while it is being set up.
+    if (isOpen()) opener = focusedControl();
+
     // Vue `watch` runs before the DOM update by default, which is what is wanted on open: Vuetify
     // has not yet moved focus into the dialog, so `activeElement` is still the opener.
     // https://vuejs.org/api/reactivity-core.html#watch
     watch(isOpen, (open) => {
         if (open) {
-            const { activeElement, body } = document;
-            opener =
-                activeElement instanceof HTMLElement && activeElement !== body
-                    ? activeElement
-                    : undefined;
+            opener = focusedControl();
             return;
         }
         const target = opener;
         opener = undefined;
         // After the update, so the closing dialog no longer owns focus when it is handed back.
+        if (target?.isConnected) void nextTick(() => target.focus({ preventScroll: true }));
+    });
+
+    // A dialog mounted with `v-if` is destroyed in the same update that closes it, so the watcher
+    // above never sees the close: the opener still held at that point gets focus back here.
+    onScopeDispose(() => {
+        const target = opener;
+        opener = undefined;
         if (target?.isConnected) void nextTick(() => target.focus({ preventScroll: true }));
     });
 };

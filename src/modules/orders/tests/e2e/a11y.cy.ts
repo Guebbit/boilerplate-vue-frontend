@@ -49,3 +49,47 @@ sweepA11y(
     ],
     'admin'
 );
+
+// The order page hosts the delivery module's dialogs; an unopened dialog is never audited.
+/** The paid express order, as the page for it. */
+const paidExpressOrder = () => cy.subjectId('order.paidExpress').then((id) => `/en/orders/${id}`);
+
+sweepA11y(
+    'orders — delivery dialogs',
+    [
+        {
+            name: 'order, ship dialog',
+            route: paidExpressOrder,
+            prepare: () => {
+                cy.get('[data-test=mark-started]').click();
+                cy.get('[data-test=open-ship]').click();
+                cy.get('[data-test=ship-submit]').should('be.visible');
+            }
+        },
+        {
+            name: 'order, hold dialog',
+            route: paidExpressOrder,
+            prepare: () => {
+                cy.get('[data-test=open-hold]').click();
+                cy.get('[data-test=hold-dialog]').should('be.visible');
+            }
+        }
+    ],
+    'admin'
+);
+
+// The order page hosts the returns module's cancel-the-rest dialog.
+sweepA11y(
+    'orders — cancel the rest dialog',
+    [
+        {
+            name: 'order, cancel the rest dialog',
+            route: () => cy.subjectId('order.partiallyFulfilled').then((id) => `/en/orders/${id}`),
+            prepare: () => {
+                cy.get('[data-test=cancel-remainder-open]').click();
+                cy.get('[data-test=cancel-remainder-dialog]').should('be.visible');
+            }
+        }
+    ],
+    'user'
+);

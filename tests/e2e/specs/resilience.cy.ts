@@ -38,10 +38,8 @@ describe('Resilience', () => {
      * be meaningful — this is the reachable-by-clicking set, and it is short enough to read.
      *
      * Every route below is FOUNDATION — a module every deployment of this boilerplate
-     * ships. `cart`, `orders` and `products` carry their own equivalent case in their own
-     * `tests/e2e/resilience.cy.ts`, so this file no longer depends on the shop being present.
-     * `inventory` and `feedback` are absent deliberately: both belong to a feature still in
-     * progress at the time of writing. Add them here when it lands.
+     * ships. `cart`, `orders`, `products`, `inventory` and `feedback` carry their own equivalent case
+     * in their own `tests/e2e/resilience.cy.ts`, so this file does not depend on the shop being present.
      */
     describe('every route renders, quietly, inside the viewport', () => {
         it('public routes: home, a published example', () => {

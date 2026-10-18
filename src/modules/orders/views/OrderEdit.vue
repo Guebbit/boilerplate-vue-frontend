@@ -22,6 +22,9 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { exclusiveRunner } from '@/infrastructure/http/single-flight.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
@@ -203,6 +206,12 @@ const {
 } = useBlockingError();
 
 /**
+ * The gate the three money actions share: these requests carry no `Idempotency-Key`, so a second
+ * press while one runs must join it, not reach the server as a second cancel that comes back 409.
+ */
+const runExclusive = exclusiveRunner();
+
+/**
  * Cancels the order, with or without returning the money. The order re-read is the store's own
  * `updateTarget` write; the payment is a sibling record the order's cache entry knows nothing
  * about, so it needs its own re-read here — otherwise "Refund only" stays enabled on a payment
@@ -211,7 +220,15 @@ const {
  * @param withRefund - Whether the money goes back with the cancellation.
  * @returns A promise resolving once the order and its payment are re-read.
  */
-const runCancel = (withRefund: boolean) => {
+const runCancel = (withRefund: boolean) => runExclusive(() => cancelOnce(withRefund));
+
+/**
+ * The cancel itself, behind {@link runCancel}'s gate.
+ *
+ * @param withRefund - Whether the money goes back with the cancellation.
+ * @returns A promise resolving once the order and its payment are re-read.
+ */
+const cancelOnce = (withRefund: boolean) => {
     if (!id) return Promise.resolve();
     clearActionsError();
     return cancelOrder(id, withRefund)
@@ -256,7 +273,14 @@ const refundAmountInvalid = computed(() => Number.isNaN(refundAmount.value));
  *
  * @returns A promise resolving once the payment is re-read, which is what greys the control out.
  */
-const runRefund = () => {
+const runRefund = () => runExclusive(refundOnce);
+
+/**
+ * The refund itself, behind {@link runRefund}'s gate.
+ *
+ * @returns A promise resolving once the refund and the re-read are done.
+ */
+const refundOnce = () => {
     clearActionsError();
     return refund(refundAmount.value)
         .then(() => {
@@ -294,6 +318,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -307,10 +332,17 @@ const {
 });
 
 /**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
+
+/**
  * Auto-hydrate the form from the fetched record once it resolves.
  */
 activateAutoHydrate(
-    computed(() => (currentOrder.value ? { email: currentOrder.value.email } : undefined))
+    holdWhileSubmitting(isSubmitting, () =>
+        currentOrder.value ? { email: currentOrder.value.email } : undefined
+    )
 );
 
 /**
@@ -368,6 +400,7 @@ const submitForm = () => {
         const changes = email === currentOrder.value?.email ? {} : { email };
 
         return updateOrder(id, changes).then(() => {
+            markSaved();
             addMessage(t('order-edit-page.success-update'));
         });
     }).catch((error) => {
@@ -437,24 +470,33 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-text-field
-                        v-model="form.email"
-                        data-test="order-edit-email"
-                        type="email"
-                        :label="t('order-edit-page.label-email')"
-                        :error-messages="showFormErrors ? formErrors.email : []"
-                    />
+                    <fieldset
+                        :disabled="loading"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+                    >
+                        <v-text-field
+                            v-model="form.email"
+                            data-test="order-edit-email"
+                            type="email"
+                            :label="t('order-edit-page.label-email')"
+                            :error-messages="showFormErrors ? formErrors.email : []"
+                        />
 
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
-                            {{ t('order-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('order-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                :disabled="isSubmitting || loading"
+                            >
+                                {{ t('order-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('order-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
 
-                    <InlineErrorAlert :message="formError" data-test="order-edit-form-error" />
+                        <InlineErrorAlert :message="formError" data-test="order-edit-form-error" />
+                    </fieldset>
                 </form>
 
                 <!--

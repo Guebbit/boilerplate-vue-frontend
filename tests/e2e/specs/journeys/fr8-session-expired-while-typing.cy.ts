@@ -1,6 +1,4 @@
 // requires-module: account
-import { skipUnlessSessionMode } from '../../../support/e2e/harness';
-
 /**
  * @module
  * FR8 · My session expired while I was typing. A customer fills in the address form, the access
@@ -9,8 +7,8 @@ import { skipUnlessSessionMode } from '../../../support/e2e/harness';
  *
  * The token lapses by moving the demo backend's clock past its 600 s life (the refresh token
  * lasts days), so this is a demo-only journey. The save is asserted as the sequence it is: a 401,
- * one refresh, then the same request again answered 201. `jwt` mode only: a `cookie` session has
- * no access token to lapse.
+ * one refresh, then the same request again answered 201. In `cookie` mode there is no access token
+ * to lapse: the same save is answered 201 at once, with no 401 and no refresh request.
  */
 
 /** Past the access token's 600 s life, inside the refresh token's 7 days. */
@@ -25,10 +23,8 @@ describe('FR8 · My session expired while I was typing', () => {
         cy.restore();
     });
 
-    // A regular `function`, so Mocha's `this.skip()` works.
-    it('a form left open past the access token’s life still saves, through a silent refresh', function () {
+    it('a form left open past the access token’s life still saves, through a silent refresh in jwt mode', () => {
         cy.skipUnlessDemo();
-        skipUnlessSessionMode(this, 'jwt');
 
         cy.step('the customer opens the address form and fills every field');
         cy.loginAs('user');
@@ -48,13 +44,20 @@ describe('FR8 · My session expired while I was typing', () => {
         cy.step('the access token lapses while the form sits open');
         cy.travel(PAST_ACCESS_TOKEN_MS);
 
-        cy.step('saving is refused once, renewed silently, and replayed');
+        cy.step('saving is renewed silently and replayed (jwt), or just answered (cookie)');
         cy.intercept('POST', '**/account/addresses').as('save');
         cy.intercept('POST', '**/account/refresh').as('refresh');
         cy.get('[data-test=address-save]').click();
-        cy.wait('@save').its('response.statusCode').should('equal', 401);
-        cy.wait('@refresh').its('response.statusCode').should('equal', 200);
-        cy.wait('@save').its('response.statusCode').should('equal', 201);
+        cy.env(['sessionMode']).then(({ sessionMode }) => {
+            if (sessionMode === 'cookie') {
+                cy.wait('@save').its('response.statusCode').should('equal', 201);
+                cy.get('@refresh.all').should('have.length', 0);
+                return;
+            }
+            cy.wait('@save').its('response.statusCode').should('equal', 401);
+            cy.wait('@refresh').its('response.statusCode').should('equal', 200);
+            cy.wait('@save').its('response.statusCode').should('equal', 201);
+        });
 
         cy.step('nothing typed was lost, and I was never sent to login');
         cy.get('[data-test=address-dialog]').should('not.exist');

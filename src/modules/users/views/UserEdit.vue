@@ -30,6 +30,8 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
+import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
@@ -131,6 +133,7 @@ const {
     form,
     formErrors,
     showFormErrors,
+    isDirty,
     isSubmitting,
     resetForm,
     handleSubmit,
@@ -144,6 +147,11 @@ const {
 });
 
 /**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
+
+/**
  * Avatar upload progress, shown by `FormImageUpload` while a multipart save is in flight.
  */
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
@@ -155,7 +163,7 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
  * instead of two `undefined`s that would always look equal.
  */
 activateAutoHydrate(
-    computed(() =>
+    holdWhileSubmitting(isSubmitting, () =>
         currentUser.value
             ? {
                   username: currentUser.value.username,
@@ -340,6 +348,7 @@ const submitForm = () => {
                     // local File has done its job and holding it would only re-upload the same bytes on
                     // the next save.
                     form.value.imageUpload = undefined;
+                    markSaved();
                     addMessage(t('user-edit-page.success-update'));
                 });
         });
@@ -398,96 +407,103 @@ watchUser(() => id, { onError: onMissingRecord });
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
-                    <v-text-field
-                        v-model="form.username"
-                        type="text"
-                        data-test="user-edit-username"
-                        :label="t('user-edit-page.label-username')"
-                        :disabled="!rowActions?.update"
-                        :error-messages="showFormErrors ? formErrors.username : []"
-                    />
-                    <v-text-field
-                        v-model="form.phone"
-                        type="tel"
-                        autocomplete="tel"
-                        data-test="user-edit-phone"
-                        :label="t('user-edit-page.label-phone')"
-                        :disabled="!rowActions?.update"
-                        :error-messages="showFormErrors ? formErrors.phone : []"
-                    />
-                    <v-text-field
-                        v-model="form.website"
-                        type="url"
-                        autocomplete="url"
-                        data-test="user-edit-website"
-                        :label="t('user-edit-page.label-website')"
-                        :disabled="!rowActions?.update"
-                        :error-messages="showFormErrors ? formErrors.website : []"
-                    />
-                    <v-select
-                        v-model="form.locale"
-                        :items="localeOptions"
-                        data-test="user-edit-locale"
-                        :label="t('user-edit-page.label-locale')"
-                        :disabled="!rowActions?.update"
-                    />
-                    <div class="flex flex-wrap gap-x-8">
-                        <!-- One list, not a free-text field: the server's `grantableRoles`, plus the
-                             account's current role so the select can still show it. -->
-                        <v-select
-                            v-model="form.role"
-                            :items="roleOptions(currentUser?.role)"
-                            data-test="user-edit-role"
-                            :label="t('user-edit-page.label-role')"
-                            :disabled="!canEditRole"
-                        />
-                        <v-switch
-                            v-model="form.active"
-                            data-test="user-edit-active"
-                            :label="t('user-edit-page.label-active')"
-                            :disabled="!rowActions?.ban"
-                        />
-                    </div>
-                    <FormImageUpload
-                        v-model="form.imageUpload"
-                        data-test="user-edit-avatar"
-                        :current-image-url="currentUser?.imageUrl"
-                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
-                        :progress="uploadProgress"
-                        :disabled="isSubmitting || !rowActions?.update"
-                    />
-
-                    <InlineErrorAlert
-                        :message="submitError"
-                        :type="isStale ? 'warning' : 'error'"
-                        data-test="user-edit-submit-error"
-                    />
-                    <v-btn
-                        v-if="isStale"
-                        variant="tonal"
-                        color="warning"
-                        data-test="user-edit-reload-latest"
-                        :loading="loading"
-                        @click="reloadLatest"
+                    <fieldset
+                        :disabled="loading"
+                        class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
                     >
-                        {{ t('generic.action-reload-latest') }}
-                    </v-btn>
+                        <v-text-field
+                            v-model="form.username"
+                            type="text"
+                            data-test="user-edit-username"
+                            :label="t('user-edit-page.label-username')"
+                            :disabled="!rowActions?.update"
+                            :error-messages="showFormErrors ? formErrors.username : []"
+                        />
+                        <v-text-field
+                            v-model="form.phone"
+                            type="tel"
+                            autocomplete="tel"
+                            data-test="user-edit-phone"
+                            :label="t('user-edit-page.label-phone')"
+                            :disabled="!rowActions?.update"
+                            :error-messages="showFormErrors ? formErrors.phone : []"
+                        />
+                        <v-text-field
+                            v-model="form.website"
+                            type="url"
+                            autocomplete="url"
+                            data-test="user-edit-website"
+                            :label="t('user-edit-page.label-website')"
+                            :disabled="!rowActions?.update"
+                            :error-messages="showFormErrors ? formErrors.website : []"
+                        />
+                        <v-select
+                            v-model="form.locale"
+                            :items="localeOptions"
+                            data-test="user-edit-locale"
+                            :label="t('user-edit-page.label-locale')"
+                            :disabled="!rowActions?.update"
+                        />
+                        <div class="flex flex-wrap gap-x-8">
+                            <!-- One list, not a free-text field: the server's `grantableRoles`, plus the
+                             account's current role so the select can still show it. -->
+                            <v-select
+                                v-model="form.role"
+                                :items="roleOptions(currentUser?.role)"
+                                data-test="user-edit-role"
+                                :label="t('user-edit-page.label-role')"
+                                :disabled="!canEditRole"
+                            />
+                            <v-switch
+                                v-model="form.active"
+                                data-test="user-edit-active"
+                                :label="t('user-edit-page.label-active')"
+                                :disabled="!rowActions?.ban"
+                            />
+                        </div>
+                        <FormImageUpload
+                            v-model="form.imageUpload"
+                            data-test="user-edit-avatar"
+                            :current-image-url="currentUser?.imageUrl"
+                            :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                            :progress="uploadProgress"
+                            :disabled="isSubmitting || !rowActions?.update"
+                        />
 
-                    <div class="flex flex-wrap gap-2">
+                        <InlineErrorAlert
+                            :message="submitError"
+                            :type="isStale ? 'warning' : 'error'"
+                            data-test="user-edit-submit-error"
+                        />
                         <v-btn
-                            type="submit"
-                            color="primary"
-                            data-test="user-edit-submit"
-                            :disabled="
-                                isSubmitting || loading || !(rowActions?.update || rowActions?.ban)
-                            "
+                            v-if="isStale"
+                            variant="tonal"
+                            color="warning"
+                            data-test="user-edit-reload-latest"
+                            :loading="loading"
+                            @click="reloadLatest"
                         >
-                            {{ t('user-edit-page.button-submit') }}
+                            {{ t('generic.action-reload-latest') }}
                         </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('user-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                type="submit"
+                                color="primary"
+                                data-test="user-edit-submit"
+                                :disabled="
+                                    isSubmitting ||
+                                    loading ||
+                                    !(rowActions?.update || rowActions?.ban)
+                                "
+                            >
+                                {{ t('user-edit-page.button-submit') }}
+                            </v-btn>
+                            <v-btn variant="tonal" @click="resetForm">
+                                {{ t('user-edit-page.reset-form') }}
+                            </v-btn>
+                        </div>
+                    </fieldset>
                 </form>
             </CardDetail>
 
