@@ -1,17 +1,16 @@
 ---
 name: test-honesty
-description: Audit tests that pass without proving anything — coverage padding, mocked subjects, swallowed failures, lying titles, degenerate inputs — and, with --fix, repair the confirmed ones
+description: Report tests that pass without proving anything — coverage padding, mocked subjects, swallowed failures, lying titles, degenerate inputs
 ---
 
 ROLE: Sceptical test auditor. Read every test as if its author were paid per green test and per
 covered line. A test is innocent only once it has been seen to fail.
 
-GOAL: Find tests that stay green when the behaviour they claim to check is broken. Then, only when
-asked, make each one honest — or say plainly that it cannot be.
+GOAL: Find tests that stay green when the behaviour they claim to check is broken, and say what
+would make each one honest. This audit only reports. It never edits code, tests or documentation.
 
 SCOPE: the argument you were given — a module name (`cart`), a path, or `--diff` for modules
-touched by the working tree. If empty, use `git status --porcelain` to pick the scope. A `--fix`
-anywhere in the argument turns on step 5; without it this is a report.
+touched by the working tree. If empty, use `git status --porcelain` to pick the scope.
 
 ## Naming the scope
 
@@ -84,58 +83,62 @@ Add the two priors, in this order:
 Then read every remaining test in scope for **The Liar** and **Success Against All Odds**. Those
 two need judgement, and no pattern finds them.
 
-Cypress specs (`**/tests/e2e/**/*.cy.ts`) are read too, but their oracle needs a build and a
-backend — see step 3.
+Cypress specs (`**/tests/e2e/**/*.cy.ts`) are read too, but Stryker never runs them — see step 3.
 
-### 2 — for each candidate, write the sabotage first
+### 2 — for each candidate, name the break
 
-Before running anything, write down, per candidate:
+Write down, per candidate:
 
 - the behaviour the test's **title** claims to pin
-- the smallest edit to `src/` that breaks exactly that behaviour — the _sabotage_
+- the smallest change to `src/` that would break exactly that behaviour — the _break_
 
-Sabotages, by the claim they test:
+The break is written into the report. It is never applied.
 
-| The title claims                       | Sabotage                                                      |
-| -------------------------------------- | ------------------------------------------------------------- |
-| a guard refuses (route, role, form)    | delete the guard, or make it return early as allowed          |
-| a value is computed or rendered        | return a constant, or the input unchanged                     |
-| an order or precedence                 | swap the two branches, or reverse the sort                    |
-| a side effect happens                  | delete the call (the request, the emit, the toast, the store) |
-| a state is shown (error, empty, busy)  | never set the flag, or render the other branch                |
-| a boundary (`<` vs `<=`, expiry, poll) | move the boundary by one                                      |
+| The title claims                 | Break                                               |
+| -------------------------------- | --------------------------------------------------- |
+| a guard refuses                  | the guard deleted, or returning early as allowed    |
+| a value is computed              | a constant returned, or the input unchanged         |
+| an order or precedence           | the two branches swapped, or the sort reversed      |
+| a side effect happens            | the call deleted (the write, the emit, the request) |
+| a boundary (`<` vs `<=`, expiry) | the boundary moved by one                           |
 
-Write the sabotage from the title, not from the test body. A sabotage chosen by reading the
-assertions only proves the assertions agree with themselves — it is how **The Liar** survives an
-audit.
+Write the break from the title, not from the test body. A break chosen by reading the assertions
+only proves the assertions agree with themselves — it is how **The Liar** survives an audit.
 
-### 3 — run the oracle
+### 3 — the oracle is Stryker's report
 
-The oracle is deterministic and reproducible: apply the sabotage, run that one test file, restore.
+Stryker already breaks the code for you, in a sandbox copy (`.stryker-tmp/`), never in the
+working tree. With `coverageAnalysis: "perTest"` (`stryker.config.json`), its report records
+for every mutant which tests ran it (`coveredBy`) and which failed on it (`killedBy`). Read that
+report; never edit `src/` to check.
 
-```bash
-npx vitest run <test file> -t "<test name>"     # once on the real code: must pass
-# apply the sabotage to src/
-npx vitest run <test file> -t "<test name>"     # once sabotaged
-# restore, then prove it:
-git diff --quiet -- <sabotaged src file> && echo restored
-```
+- The report is `reports/mutation/mutation.json`. When it is missing, or older than the last
+  commit touching the scope:
+    - `npm run test:mutation:pull` fetches the latest sweep
+    - `npm run test:mutation -- --mutate <file>` re-runs it for one file
 
-- Cypress specs need `npm run test:e2e:spec` with `E2E_SPEC=<spec>` — a build and a demo backend
-  each run. Mark them UNVERIFIED unless the user asked for the e2e oracle.
-- Other sessions may share this checkout. If `git worktree list` shows a peer working here, run the
-  sabotage in a worktree of your own, never in theirs — and never leave a sabotage in place between
-  two steps.
-- Never sabotage with a `git stash`: it takes every peer's uncommitted work with it.
+    Both write only under the gitignored `reports/`.
+    If neither covers the scope, say so at the top and mark every row UNVERIFIED.
+
+- Match each break to a mutant: same location, same effect — a `ConditionalExpression` forced to
+  `true` for a deleted guard, an emptied `BlockStatement` for a deleted call, an `EqualityOperator`
+  for a moved boundary.
+- Stryker stops at the first test that kills a mutant, so `killedBy` names one test. A mutant
+  killed by a _different_ test says nothing about this one.
+- Cypress specs never run under Stryker. Mark them UNVERIFIED.
+- `.vue` files are not in Stryker's `mutate` list, so a break inside a component's own
+  `<script setup>` has no mutant to match. Mark it UNVERIFIED and say so; the break stays in the
+  report for a human to try.
 
 Verdicts:
 
-| Verdict        | Means                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------- |
-| **CONFIRMED**  | the test **passed** under the sabotage. It cannot fail for the reason its title gives.  |
-| **CLEAN**      | the test failed under the sabotage. The candidate was a false alarm — drop it silently. |
-| **UNVERIFIED** | the oracle was not run (a Cypress spec, an external service). Say why.                  |
-| **DULL**       | a naming finding only — the oracle does not apply.                                      |
+| Verdict        | Means                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **CONFIRMED**  | the matching mutant **Survived** and this test is in its `coveredBy`: the test ran the broken code and stayed green.   |
+| **CONFIRMED**  | the matching mutant is **NoCoverage**: the test never even runs the code its title names.                              |
+| **CLEAN**      | this test is in the matching mutant's `killedBy`. A false alarm — drop it silently.                                    |
+| **UNVERIFIED** | no mutant matches the break, the mutant was killed by another test, or the file is outside Stryker's reach. Say which. |
+| **DULL**       | a naming finding only — the oracle does not apply.                                                                     |
 
 Only CONFIRMED and DULL rows are findings. CLEAN rows go in a one-line count, never a table row.
 
@@ -143,47 +146,34 @@ Only CONFIRMED and DULL rows are findings. CLEAN rows go in a one-line count, ne
 
 `reports/audit/test-honesty/<SCOPE>.md`:
 
-| file:line | test name | shape | claims | sabotage | result under sabotage | verdict | fix |
+| file:line | test name | shape | claims | break | mutant (id, status) | verdict | suggested fix |
 
-Then print the CONFIRMED rows to the terminal, auth, money and data loss first, with one line of
-totals: candidates, CONFIRMED, CLEAN, UNVERIFIED, DULL. A low CONFIRMED-to-candidate ratio is good
-news, and worth saying.
+The suggested fix is prose, never code, in this order of preference:
 
-### 5 — fix, only with `--fix`
+1. **Make it check its title** — name the missing assertion, or the input that would discriminate
+   (an unsorted list, a caller without the permission, a value that rounds).
+2. **Make the title tell the truth**, when the body checks something real but different.
+3. **Delete it**, naming the test that already kills the same mutant.
 
-Only CONFIRMED and DULL rows. One test at a time, in this order of preference:
+Its expected value comes from the spec — the root `openapi.yaml` and `asyncapi.yaml`,
+`docs/modules/<module>*.md`, `docs/theory/*.md`, cited by `file:line` — or, where the spec is
+silent, is worked out by hand from the input and labelled so. Never from running the code: that is
+**Bent to fit**, done by the auditor.
 
-1. **Make it check its title.** Assert what the user sees — the text, the role, the disabled state,
-   the request sent — or change the input so it discriminates (an unsorted list, a role without
-   the permission, a price that rounds).
-2. **Make the title tell the truth**, when the body checks something real but different. A smaller
-   honest claim beats a large false one.
-3. **Propose deletion** — never apply it. Ask before deleting anything. List it with the test that
-   already kills the same sabotage, if one does.
-
-Rules for every fix:
-
-- The expected value comes from the spec — the root `openapi.yaml` and `asyncapi.yaml`,
-  `docs/modules/<module>*.md`, `docs/theory/*.md` — or, where the spec is silent, from working the
-  input out by hand in a one-line comment. **Never** run the code and paste its output into the
-  assertion, nor regenerate a snapshot to make it pass: that is **Bent to fit**, done by the
-  auditor.
-- A fixed test must pass on the real code **and** fail under the same sabotage. Run both and put
-  both results in the report's `fix` column. A fix that skips the second run is not a fix.
-- If the honest version **fails on the real code**, do not soften it. Revert that one test, mark
-  the row `BUG?`, and stop to tell the user — the test was hiding a defect, and the decision is
-  theirs. It belongs to `/audit-spec-drift` if a spec line backs it.
-- Do not touch `src/`. This step edits test files only, and follows `CLAUDE.md`: no `.only`/
-  `.skip`, no double cast, no `any`.
-- Do not commit. Leave the diff for the human, and say which files it touches.
+Then print the CONFIRMED rows to the terminal, security boundaries and money first, with one line
+of totals: candidates, CONFIRMED, CLEAN, UNVERIFIED, DULL. A low CONFIRMED-to-candidate ratio is
+good news, and worth saying.
 
 ## Rules
 
-- A finding needs the oracle's result. "It looks weak" is not a finding — the sabotage either let
-  it through or it did not.
+- **Report only.** Write nothing but the report under `reports/audit/test-honesty/`. Do NOT edit
+  source, tests, documentation, contracts or config. Do NOT commit, and never `git stash` — it
+  takes every peer's uncommitted work with it.
+- A finding needs a mutant id. "It looks weak" is not a finding — the mutant either survived this
+  test or it did not.
 - Prefer three CONFIRMED rows over thirty candidates. A report full of guesses trains its reader to
   skip it.
 - A short test is not a weak test. `expect(button.attributes('disabled')).toBeDefined()` on a
-  well-chosen state is honest; only the sabotage tells the difference.
-- `reports/` is gitignored. The report is working evidence, not a deliverable — its conclusions
-  belong in the fixed tests and the commit message.
+  well-chosen state is honest; only the mutant tells the difference.
+- `reports/` is gitignored. The report is working evidence, not a deliverable — its
+  conclusions belong in a fixed test, a commit message or a tracked issue.
