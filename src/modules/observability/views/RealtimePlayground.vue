@@ -8,6 +8,7 @@
 import { computed, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
+import type { ThemeColor } from '@/ui/types.ts';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { useRealtimeObservability } from '../use-realtime-observability';
 import { formatMegabytes, formatTime, formatUptime } from '@/infrastructure/utils/formatters.ts';
@@ -41,7 +42,7 @@ const showRawEvents = ref(false);
  */
 const KIND_META: Record<
     RealtimeMetricsEntry['kind'],
-    { icon: typeof Camera; color: string; border: string }
+    { icon: typeof Camera; color: ThemeColor; border: string }
 > = {
     snapshot: { icon: Camera, color: 'info', border: 'border-s-info' },
     update: { icon: RefreshCw, color: 'primary', border: 'border-s-primary' },

@@ -6,8 +6,10 @@
  * `tests/unit/scripts/eslint/`. The paired backend keeps the same layout in `scripts/eslint/`.
  */
 import { templateDirectiveDescription } from './template-directive-description';
+import { themeToken } from './theme-token';
 
 /** The plugin's rule table: rule name (as used in `eslint.config.ts`) to implementation. */
 export default {
-    'template-directive-description': templateDirectiveDescription
+    'template-directive-description': templateDirectiveDescription,
+    'theme-token': themeToken
 };

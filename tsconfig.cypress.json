@@ -18,7 +18,9 @@
         // `cypress.config.ts` imports these two for its `specPattern`/backend-pairing setup; a
         // file a project imports but does not include is TS6307. Same reasoning as
         // `tsconfig.vitest.json`'s own `scripts/**/*.ts` entry.
-        "scripts/**/*.ts"
+        "scripts/**/*.ts",
+        // `scripts/design-policy.ts` reads the theme's colour maps, and is itself under `scripts/**`.
+        "src/ui/vuetify/theme.ts"
     ],
     "exclude": [],
     "compilerOptions": {

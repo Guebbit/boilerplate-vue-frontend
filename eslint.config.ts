@@ -21,6 +21,13 @@ import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { assertAcyclicModuleEdges, MODULE_EDGES } from './scripts/module-edges';
 import { MODULE_GROUPS } from './scripts/module-groups';
 import localRules from './scripts/eslint/index';
+import { DESIGN_POLICY } from './scripts/design-policy';
+
+/**
+ * The project-local rules as one plugin object. Flat config refuses two different objects under
+ * the same plugin key, so every block that uses `local/*` shares this one.
+ */
+const localPlugin = { rules: localRules };
 
 /**
  * Every module `MODULE_GROUPS` labels `shop` — the removable pet-supply domain. Computed once
@@ -771,11 +778,22 @@ export default defineConfigWithVueTs(
     },
     {
         files: ['src/**/*.vue'],
-        plugins: { local: { rules: localRules } },
+        plugins: { local: localPlugin },
         rules: {
             'vue/comment-directive': ['error', { reportUnusedDisableDirectives: true }],
             'local/template-directive-description': 'error'
         }
+    },
+
+    /**
+     * Colours are named theme colours, never literals: `local/theme-token`. The theme file is
+     * where the literals live, and tests build whatever fixtures they need.
+     */
+    {
+        files: ['src/**/*.{ts,vue}'],
+        ignores: ['src/ui/vuetify/theme.ts', 'src/**/tests/**', 'src/**/*.spec.ts'],
+        plugins: { local: localPlugin },
+        rules: { 'local/theme-token': DESIGN_POLICY.severity.themeToken }
     },
 
     /**

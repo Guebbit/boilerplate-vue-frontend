@@ -24,6 +24,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useExampleStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { EXAMPLE_STATUSES } from '../domain';
@@ -97,7 +98,7 @@ const statusChoice = useAnyFilterChoice(
 /**
  * Colour of a status chip, one per status.
  */
-const statusColor: Readonly<Record<ExampleStatus, string>> = {
+const statusColor: Readonly<Record<ExampleStatus, ThemeColor>> = {
     draft: 'warning',
     published: 'success',
     archived: 'secondary'
