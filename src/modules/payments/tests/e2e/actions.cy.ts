@@ -7,7 +7,6 @@
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
 import {
     ListPaymentAttentionResponse,
-    ListPaymentsResponse,
     ListRefundsResponse,
     SearchPaymentsResponse
 } from '../../../../../contracts/rest/schemas.zod';
@@ -35,10 +34,10 @@ actionTable('payments', [
         name: 'the Awaiting tab with nothing owed shows its empty state',
         persona: 'admin',
         route: '/en/sales/payments?tab=awaiting',
-        intercept: { method: 'GET', url: '**/payments?*', operation: '/payments' },
+        intercept: { method: 'POST', url: '**/payments/search', operation: '/payments/search' },
         kind: 'empty',
         emptyBody: emptyPage,
-        emptySchema: ListPaymentsResponse,
+        emptySchema: SearchPaymentsResponse,
         empty: { copy: '.v-empty-state', rows: '[data-test=list-row]' }
     },
     {

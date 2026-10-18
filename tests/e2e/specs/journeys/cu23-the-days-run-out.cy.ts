@@ -87,7 +87,12 @@ describe('CU23 · The days run out', () => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('#order-target').should('exist');
             cy.get('[data-test=payment-status]').should('exist');
-            cy.get('[data-test=withdraw-button]').should('not.exist');
+            // The button stays, switched off, with the server's reason beside it.
+            cy.get('[data-test=withdraw-button]').should('be.disabled');
+            cy.get('[data-test=withdraw-blocked-reason]').should(
+                'contain.text',
+                'withdrawal period'
+            );
             cy.get('[data-test=withdrawal-until]').should('not.exist');
 
             cy.step('the API refuses the withdrawal in words a client can act on');
@@ -95,7 +100,7 @@ describe('CU23 · The days run out', () => {
         });
     });
 
-    it('the button is offered through the last day, and gone after it', () => {
+    it('the button is offered through the last day, and switched off after it', () => {
         cy.skipUnlessDemo();
         cy.subjectId('order.deliveredRecent').then((orderId) => {
             cy.step('the customer reads the deadline the server decided');
@@ -121,7 +126,7 @@ describe('CU23 · The days run out', () => {
             cy.get('[data-test=withdraw-button]').should('exist');
             cy.get('[data-test=withdrawal-until]').should('exist');
 
-            cy.step('the day after, the button is gone and the API says why');
+            cy.step('the day after, the button is off and the API says why');
             cy.then(() => {
                 travelTo(deadline.at + 2 * HOUR_MS);
             });
@@ -130,7 +135,11 @@ describe('CU23 · The days run out', () => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('#order-target').should('exist');
             cy.get('[data-test=payment-status]').should('exist');
-            cy.get('[data-test=withdraw-button]').should('not.exist');
+            cy.get('[data-test=withdraw-button]').should('be.disabled');
+            cy.get('[data-test=withdraw-blocked-reason]').should(
+                'contain.text',
+                'withdrawal period'
+            );
             apiRefusesWithdrawal(orderId);
         });
     });
