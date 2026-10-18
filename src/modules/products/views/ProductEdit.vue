@@ -164,6 +164,9 @@ interface ProductEditForm {
     purchasable?: boolean;
     // The `datetime-local` input's own string (`''` = no date), converted on submit.
     releaseDate?: string;
+    // Keep selling while out of stock, and when stock is expected back (`''` = no date).
+    allowBackorder?: boolean;
+    restockDate?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
@@ -266,6 +269,8 @@ activateAutoHydrate(
                   active: adminProduct.value.active ?? false,
                   purchasable: adminProduct.value.purchasable ?? true,
                   releaseDate: toDateTimeLocal(adminProduct.value.releaseDate),
+                  allowBackorder: adminProduct.value.allowBackorder ?? false,
+                  restockDate: toDateTimeLocal(adminProduct.value.restockDate),
                   requiresShipping: adminProduct.value.requiresShipping ?? true,
                   noWithdrawal: adminProduct.value.noWithdrawal ?? false,
                   weight: adminProduct.value.weight,
@@ -326,9 +331,29 @@ const releaseDateChange = (current?: string | null): string | undefined =>
         : fromDateTimeLocal(current);
 
 /**
+ * The restock date's twin of {@link releaseDateChange}: an untouched one must not travel, because a
+ * moved restock date reaches the buyers who were promised it.
+ *
+ * @param current - The input's value.
+ * @returns The wire value (`''` clears it), or `undefined` to leave it out.
+ */
+const restockDateChange = (current?: string | null): string | undefined =>
+    toDateTimeLocal(adminProduct.value?.restockDate) === (current ?? '')
+        ? undefined
+        : fromDateTimeLocal(current);
+
+/**
  * Asks, before a later or cleared release date is saved, how many buyers it reaches.
  */
 const { confirmReleaseDateMove } = useReleaseDateConfirm(() => adminProduct.value?.releaseDate);
+
+/**
+ * The same question for a restock date, which moves the promise of the owed units.
+ */
+const { confirmReleaseDateMove: confirmRestockDateMove } = useReleaseDateConfirm(
+    () => adminProduct.value?.restockDate,
+    'restock'
+);
 
 /**
  * Validates the form and persists the product changes.
@@ -348,6 +373,8 @@ const submitForm = () => {
             active,
             purchasable,
             releaseDate,
+            allowBackorder,
+            restockDate,
             requiresShipping,
             noWithdrawal,
             weight,
@@ -360,39 +387,43 @@ const submitForm = () => {
         if (!id || price === undefined) return;
         // No baseline: the whole form is this save's intent. What the helper adds is the spelling —
         // a cleared weight or a blank translation description goes as the contract's `null`.
-        return confirmReleaseDateMove(id, releaseDate).then((confirmed) => {
-            if (!confirmed) return;
-            return toRequestBody('UpdateProductByIdBody', {
-                price,
-                active,
-                purchasable,
-                releaseDate: releaseDateChange(releaseDate),
-                requiresShipping,
-                noWithdrawal,
-                weight,
-                taxClass,
-                categories,
-                tags,
-                translations: toPatchTranslations(translations)
-            })
-                .then((body) =>
-                    trackUpload(imageUpload, (options) =>
-                        updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
+        return confirmReleaseDateMove(id, releaseDate)
+            .then((confirmed) => confirmed && confirmRestockDateMove(id, restockDate))
+            .then((confirmed) => {
+                if (!confirmed) return;
+                return toRequestBody('UpdateProductByIdBody', {
+                    price,
+                    active,
+                    purchasable,
+                    releaseDate: releaseDateChange(releaseDate),
+                    allowBackorder,
+                    restockDate: restockDateChange(restockDate),
+                    requiresShipping,
+                    noWithdrawal,
+                    weight,
+                    taxClass,
+                    categories,
+                    tags,
+                    translations: toPatchTranslations(translations)
+                })
+                    .then((body) =>
+                        trackUpload(imageUpload, (options) =>
+                            updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
+                        )
                     )
-                )
-                .then(() => {
-                    // The API has answered with the stored `imageUrl` and the merged translations; the
-                    // admin record is the only place both live, so it is reloaded rather than patched by
-                    // hand — the store's own optimistic patch already skips `translations` for the same
-                    // reason (see `products/store.ts`).
-                    form.value.imageUpload = undefined;
-                    markSaved();
-                    addMessage(t('product-edit-page.success-update'));
-                    // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
-                    // and the reload itself (not what it returns) is the point.
-                    return loadAdminProduct(id).then(() => undefined);
-                });
-        });
+                    .then(() => {
+                        // The API has answered with the stored `imageUrl` and the merged translations; the
+                        // admin record is the only place both live, so it is reloaded rather than patched by
+                        // hand — the store's own optimistic patch already skips `translations` for the same
+                        // reason (see `products/store.ts`).
+                        form.value.imageUpload = undefined;
+                        markSaved();
+                        addMessage(t('product-edit-page.success-update'));
+                        // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
+                        // and the reload itself (not what it returns) is the point.
+                        return loadAdminProduct(id).then(() => undefined);
+                    });
+            });
     }).catch(handleSubmitFailure);
 };
 </script>
@@ -543,6 +574,23 @@ const submitForm = () => {
                             persistent-hint
                             clearable
                             data-test="product-release-date-field"
+                        />
+                        <v-checkbox
+                            v-model="form.allowBackorder"
+                            :label="t('product-edit-page.label-allow-backorder')"
+                            :hint="t('product-edit-page.hint-allow-backorder')"
+                            persistent-hint
+                            data-test="product-allow-backorder-field"
+                        />
+                        <v-text-field
+                            v-model="form.restockDate"
+                            type="datetime-local"
+                            :label="t('product-edit-page.label-restock-date')"
+                            :hint="t('product-edit-page.hint-restock-date')"
+                            persistent-hint
+                            clearable
+                            :disabled="!form.allowBackorder"
+                            data-test="product-restock-date-field"
                         />
                         <v-select
                             v-model="form.taxClass"

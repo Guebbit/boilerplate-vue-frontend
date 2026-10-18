@@ -125,7 +125,7 @@ export const aProduct = (overrides: Partial<Product> = {}): Product => ({
 });
 
 /**
- * A valid stock-board row — some on the shelf, nothing preordered, preordering closed.
+ * A valid stock-board row — some on the shelf, nothing backordered, preordering closed.
  *
  * @param overrides - the fields a case actually cares about
  * @returns an `InventoryLevel` that parses against the generated schema
@@ -136,8 +136,8 @@ export const aLevel = (overrides: Partial<InventoryLevel> = {}): InventoryLevel 
     onHand: 10,
     reserved: 2,
     available: 8,
-    preorderLimit: 0,
-    preordered: 0,
+    backorderLimit: 0,
+    backordered: 0,
     ...overrides
 });
 
@@ -151,8 +151,8 @@ export const aPreorderLevel = (overrides: Partial<PreorderLevel> = {}): Preorder
     productId: 'p1',
     title: 'Walnut desk',
     releaseDate: '2027-03-15T12:00:00.000Z',
-    preorderLimit: 10,
-    preordered: 4,
+    backorderLimit: 10,
+    backordered: 4,
     held: 1,
     paid: 3,
     left: 6,

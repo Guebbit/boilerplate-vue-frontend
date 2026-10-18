@@ -13,7 +13,7 @@ import { paidPreorderBy, preorderOnSale, shipThroughTheApi } from '../../../supp
 /** The slice of a stock level this story reads. */
 interface LevelLike {
     productId: string;
-    preorderLimit: number;
+    backorderLimit: number;
 }
 
 /**
@@ -25,7 +25,7 @@ const limitOf = (productId: string): Cypress.Chainable<number | undefined> =>
     cy
         .apiAs<{ items: LevelLike[] }>('admin', 'GET', '/inventory/levels?pageSize=100')
         .then((page) =>
-            cy.wrap(page?.items.find((level) => level.productId === productId)?.preorderLimit, {
+            cy.wrap(page?.items.find((level) => level.productId === productId)?.backorderLimit, {
                 log: false
             })
         );
@@ -44,34 +44,34 @@ describe('PS3 · The preorder board, from allowance to allocation', () => {
             cy.loginAs('warehouse');
             cy.visit('/en/inventory');
             cy.contains('[data-test=level-row]', title)
-                .find('[data-test=level-preorder-limit]')
+                .find('[data-test=level-backorder-limit]')
                 .click();
-            cy.get('[data-test=preorder-limit-cancel]').click();
-            cy.get('[data-test=preorder-limit-dialog]').should('not.exist');
+            cy.get('[data-test=backorder-limit-cancel]').click();
+            cy.get('[data-test=backorder-limit-dialog]').should('not.exist');
             limitOf(productId).should('equal', 1);
 
             cy.step(
                 'a negative number is held at zero by the field, and Cancel still writes nothing'
             );
             cy.contains('[data-test=level-row]', title)
-                .find('[data-test=level-preorder-limit]')
+                .find('[data-test=level-backorder-limit]')
                 .click();
-            cy.get('[data-test=preorder-limit-field] input').clear();
-            cy.get('[data-test=preorder-limit-field] input').type('-1');
-            cy.get('[data-test=preorder-limit-field] input').blur();
-            cy.get('[data-test=preorder-limit-field] input').should('have.value', '0');
-            cy.get('[data-test=preorder-limit-cancel]').click();
-            cy.get('[data-test=preorder-limit-dialog]').should('not.exist');
+            cy.get('[data-test=backorder-limit-field] input').clear();
+            cy.get('[data-test=backorder-limit-field] input').type('-1');
+            cy.get('[data-test=backorder-limit-field] input').blur();
+            cy.get('[data-test=backorder-limit-field] input').should('have.value', '0');
+            cy.get('[data-test=backorder-limit-cancel]').click();
+            cy.get('[data-test=backorder-limit-dialog]').should('not.exist');
             limitOf(productId).should('equal', 1);
 
             cy.step('two is saved');
             cy.contains('[data-test=level-row]', title)
-                .find('[data-test=level-preorder-limit]')
+                .find('[data-test=level-backorder-limit]')
                 .click();
-            cy.get('[data-test=preorder-limit-field] input').clear();
-            cy.get('[data-test=preorder-limit-field] input').type('2');
-            cy.get('[data-test=preorder-limit-submit]').click();
-            cy.get('[data-test=preorder-limit-dialog]').should('not.exist');
+            cy.get('[data-test=backorder-limit-field] input').clear();
+            cy.get('[data-test=backorder-limit-field] input').type('2');
+            cy.get('[data-test=backorder-limit-submit]').click();
+            cy.get('[data-test=backorder-limit-dialog]').should('not.exist');
             limitOf(productId).should('equal', 2);
 
             cy.step('the customer preorders twice and pays both');

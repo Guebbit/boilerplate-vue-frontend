@@ -14,13 +14,14 @@
         "button-clear-all": "Clear all",
         "button-delete-named": "Delete notification: {text}",
         "unread": "New",
-        "preorder-delayed": "Your preorder ({titles}) is delayed: it was promised for {agreed} and is now expected on {expected}. You can keep waiting or cancel it from your order.",
-        "preorder-delayed-undated": "Your preorder ({titles}) is delayed: it was promised for {agreed} and has no new date yet. You can keep waiting or cancel it from your order.",
-        "preorder-confirm-wait": "Your preorder ({titles}) is late. Tell us you still want to wait by {answerBy}, or it will be cancelled and refunded.",
+        "fulfillment-delayed": "Part of your order ({titles}) is delayed: it was promised for {agreed} and is now expected on {expected}. You can keep waiting or cancel it from your order.",
+        "fulfillment-delayed-undated": "Part of your order ({titles}) is delayed: it was promised for {agreed} and we are still waiting for stock. You can keep waiting or cancel it from your order.",
+        "fulfillment-confirm-wait": "Part of your order ({titles}) is late. Tell us you still want to wait by {answerBy}, or it will be cancelled and refunded.",
         "fulfillment-held-check_address": "Part of your order is on hold: please check its delivery address.",
         "fulfillment-held-delayed": "Part of your order is held back for a moment and will leave later than planned.",
         "fulfillment-held-message": "The shop says: {message}",
-        "preorder-confirm-wait-bare": "Your preorder ({titles}) is late. Tell us whether you still want to wait, or cancel it from your order.",
-        "link-order": "Open the order"
+        "fulfillment-confirm-wait-bare": "Part of your order ({titles}) is late. Tell us whether you still want to wait, or cancel it from your order.",
+        "link-order": "Open the order",
+        "stock-alert": "Good news: {name} can be ordered again."
     }
 }

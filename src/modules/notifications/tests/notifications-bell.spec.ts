@@ -338,7 +338,7 @@ describe('a notice about an order', () => {
         inboxOnServer = [
             {
                 id: 'n1',
-                code: 'notifications.preorder-confirm-wait',
+                code: 'notifications.fulfillment-confirm-wait',
                 params: {
                     orderId: 'o7',
                     fulfillmentOrderId: 'fo1',

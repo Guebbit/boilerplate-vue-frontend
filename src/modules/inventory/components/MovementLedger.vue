@@ -106,7 +106,7 @@ const movementHeaders = computed<CoreDataTableHeader<StockMovement>[]>(() => [
     { title: t('inventory-page.column-product'), key: 'product', synthetic: true },
     { title: t('inventory-page.column-on-hand'), key: 'onHandDelta' },
     { title: t('inventory-page.column-reserved'), key: 'reservedDelta' },
-    { title: t('inventory-page.column-preordered'), key: 'preorderedDelta' },
+    { title: t('inventory-page.column-backordered'), key: 'backorderedDelta' },
     { title: t('inventory-page.column-reason'), key: 'reason' },
     { title: t('inventory-page.column-reference'), key: 'reference' },
     { title: t('inventory-page.column-note'), key: 'note' }
@@ -420,9 +420,9 @@ onMounted(() => {
             </span>
         </template>
 
-        <template v-slot:[`item.preorderedDelta`]="{ item }">
-            <span :class="deltaClass(item.preorderedDelta)">
-                {{ signed(item.preorderedDelta) }}
+        <template v-slot:[`item.backorderedDelta`]="{ item }">
+            <span :class="deltaClass(item.backorderedDelta)">
+                {{ signed(item.backorderedDelta) }}
             </span>
         </template>
 

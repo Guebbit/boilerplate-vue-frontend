@@ -5,7 +5,10 @@
         "off-sale": "Not available right now",
         "success": "Product added to cart.",
         "guest-full": "Your cart already holds as many different products as it can. Remove one, or sign in, to add another.",
-        "preorder": "Preorder"
+        "preorder": "Preorder",
+        "backorder": "Backorder",
+        "backorder-ships-by": "Out of stock now. Ships by {date}.",
+        "backorder-ships-undated": "Out of stock now. Ships within 30 days."
     },
     "cart-page": {
         "page-title": "My Cart",

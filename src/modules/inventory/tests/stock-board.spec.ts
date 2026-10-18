@@ -9,7 +9,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import StockBoard from '../components/StockBoard.vue';
-import PreorderLimitDialog from '../components/PreorderLimitDialog.vue';
+import BackorderLimitDialog from '../components/BackorderLimitDialog.vue';
 import { useInventoryStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -53,7 +53,7 @@ beforeEach(() => {
 describe('StockBoard preorder columns', () => {
     it('shows each product’s limit and what is outstanding against it', () => {
         const wrapper = mountBoard(
-            [aLevel({ preorderLimit: 10, preordered: 4 })],
+            [aLevel({ backorderLimit: 10, backordered: 4 })],
             [['read', 'StockLevel']]
         );
 
@@ -62,7 +62,7 @@ describe('StockBoard preorder columns', () => {
 
             expect(text).toContain('10');
             expect(text).toContain('4');
-            expect(wrapper.text()).toContain('Preorder limit');
+            expect(wrapper.text()).toContain('Backorder limit');
         });
     });
 
@@ -71,7 +71,7 @@ describe('StockBoard preorder columns', () => {
 
         return flushPromises()
             .then(() => {
-                expect(reader.find('[data-test=level-preorder-limit]').exists()).toBe(false);
+                expect(reader.find('[data-test=level-backorder-limit]').exists()).toBe(false);
                 setActivePinia(createPinia());
                 const writer = mountBoard(
                     [aLevel()],
@@ -83,7 +83,7 @@ describe('StockBoard preorder columns', () => {
                 return flushPromises().then(() => writer);
             })
             .then((writer) => {
-                expect(writer.find('[data-test=level-preorder-limit]').exists()).toBe(true);
+                expect(writer.find('[data-test=level-backorder-limit]').exists()).toBe(true);
             });
     });
 
@@ -100,10 +100,10 @@ describe('StockBoard preorder columns', () => {
         );
 
         return flushPromises()
-            .then(() => wrapper.findAll('[data-test=level-preorder-limit]')[1]?.trigger('click'))
+            .then(() => wrapper.findAll('[data-test=level-backorder-limit]')[1]?.trigger('click'))
             .then(flushPromises)
             .then(() => {
-                expect(wrapper.findComponent(PreorderLimitDialog).props('level')).toMatchObject({
+                expect(wrapper.findComponent(BackorderLimitDialog).props('level')).toMatchObject({
                     productId: 'p2'
                 });
             });

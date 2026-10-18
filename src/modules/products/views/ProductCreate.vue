@@ -100,6 +100,8 @@ interface ProductCreateForm {
     purchasable?: boolean;
     // The `datetime-local` input's own string (`''` = no date), converted on submit.
     releaseDate?: string;
+    allowBackorder?: boolean;
+    restockDate?: string;
     requiresShipping?: boolean;
     noWithdrawal?: boolean;
     weight?: number;
@@ -215,7 +217,7 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 const submitForm = () => {
     clearSubmitError();
     return handleSubmit(() => {
-        const { imageUpload, translations, price, releaseDate } = form.value;
+        const { imageUpload, translations, price, releaseDate, restockDate } = form.value;
         if (price === undefined) return;
         // No baseline: a create sends everything the form holds. What the helper adds is the
         // spelling — a cleared weight or category list is omitted rather than sent empty — and a
@@ -223,6 +225,7 @@ const submitForm = () => {
         return toRequestBody('CreateProductBody', {
             ...form.value,
             releaseDate: fromDateTimeLocal(releaseDate),
+            restockDate: fromDateTimeLocal(restockDate),
             translations: toCreateTranslations(translations),
             imageUpload: undefined
         })
@@ -348,6 +351,25 @@ const submitForm = () => {
                 persistent-hint
                 clearable
                 data-test="product-release-date-field"
+                class="mb-2"
+            />
+            <v-checkbox
+                v-model="form.allowBackorder"
+                :label="t('product-create-page.label-allow-backorder')"
+                :hint="t('product-create-page.hint-allow-backorder')"
+                persistent-hint
+                data-test="product-allow-backorder-field"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.restockDate"
+                type="datetime-local"
+                :label="t('product-create-page.label-restock-date')"
+                :hint="t('product-create-page.hint-restock-date')"
+                persistent-hint
+                clearable
+                :disabled="!form.allowBackorder"
+                data-test="product-restock-date-field"
                 class="mb-2"
             />
             <v-select

@@ -14,13 +14,14 @@
         "button-clear-all": "Elimina tutte",
         "button-delete-named": "Elimina la notifica: {text}",
         "unread": "Nuova",
-        "preorder-delayed": "Il tuo preordine ({titles}) è in ritardo: era promesso per il {agreed} e ora è atteso il {expected}. Puoi continuare ad aspettare o annullarlo dal tuo ordine.",
-        "preorder-delayed-undated": "Il tuo preordine ({titles}) è in ritardo: era promesso per il {agreed} e non ha ancora una nuova data. Puoi continuare ad aspettare o annullarlo dal tuo ordine.",
-        "preorder-confirm-wait": "Il tuo preordine ({titles}) è in ritardo. Dicci entro il {answerBy} se vuoi ancora aspettare, altrimenti verrà annullato e rimborsato.",
+        "fulfillment-delayed": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} ed è ora attesa per il {expected}. Puoi continuare ad aspettare o annullarla dal tuo ordine.",
+        "fulfillment-delayed-undated": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} e stiamo ancora aspettando la merce. Puoi continuare ad aspettare o annullarla dal tuo ordine.",
+        "fulfillment-confirm-wait": "Una parte del tuo ordine ({titles}) è in ritardo. Dicci entro il {answerBy} che vuoi ancora aspettare, altrimenti sarà annullata e rimborsata.",
         "fulfillment-held-check_address": "Una parte del tuo ordine è in sospeso: controlla l'indirizzo di consegna.",
         "fulfillment-held-delayed": "Una parte del tuo ordine è trattenuta per un momento e partirà più tardi del previsto.",
         "fulfillment-held-message": "Il negozio scrive: {message}",
-        "preorder-confirm-wait-bare": "Il tuo preordine ({titles}) è in ritardo. Dicci se vuoi ancora aspettare, oppure annullalo dal tuo ordine.",
-        "link-order": "Apri l'ordine"
+        "fulfillment-confirm-wait-bare": "Una parte del tuo ordine ({titles}) è in ritardo. Dicci se vuoi ancora aspettare, oppure annullala dal tuo ordine.",
+        "link-order": "Apri l'ordine",
+        "stock-alert": "Buone notizie: {name} si può ordinare di nuovo."
     }
 }

@@ -294,7 +294,7 @@ const summaryPage = (productId: string, pageNumber: number) =>
     });
 
 describe('the preorder board reads', () => {
-    it('lists the board with preorder=true added, and keeps the total', async () => {
+    it('lists the board with cause=any added, and keeps the total', async () => {
         responses['GET /delivery/fulfillment-orders'] = orvalEnvelope({
             items: [aPreorderFulfillmentOrder()],
             meta: { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
@@ -309,7 +309,7 @@ describe('the preorder board reads', () => {
         const call = vi
             .mocked(orvalMutator)
             .mock.calls.find(([config]) => config.url === '/delivery/fulfillment-orders');
-        expect(call?.[0].params).toEqual({ page: 1, pageSize: 10, late: true, preorder: true });
+        expect(call?.[0].params).toEqual({ page: 1, pageSize: 10, late: true, cause: 'any' });
     });
 
     it('reads the summaries page after page until the last', async () => {

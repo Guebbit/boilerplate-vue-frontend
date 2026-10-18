@@ -139,7 +139,7 @@ flowchart TD
 ```
 
 A preorder's shelf may be empty: its units are claimed against the preorder allowance
-(`preorderLimit`, set on the [stock board](./inventory.md)), not the shelf, so `inStock` is not
+(`backorderLimit`, set on the [stock board](./inventory.md)), not the shelf, so `inStock` is not
 asked. The shopper never sees the allowance; a full one shows up as "Sold out" on the cart line.
 
 Staff set the date with the "Release date" field on the create and edit forms

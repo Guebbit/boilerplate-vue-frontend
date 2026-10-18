@@ -1,0 +1,15 @@
+{
+    "notify-me": {
+        "button": "Notify me",
+        "button-told": "You'll be told"
+    },
+    "stock-alerts-page": {
+        "page-title": "Back-in-stock alerts",
+        "empty": "You are not waiting for any product.",
+        "button-cancel": "Cancel",
+        "success-cancelled": "Request cancelled."
+    },
+    "navigation": {
+        "label-stock-alerts": "Back-in-stock alerts"
+    }
+}

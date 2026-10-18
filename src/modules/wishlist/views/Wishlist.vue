@@ -167,16 +167,18 @@ onMounted(() =>
                 <v-chip
                     v-if="availabilityLabel(item.availability)"
                     size="small"
-                    :color="item.availability === 'preorder' ? 'info' : 'warning'"
+                    :color="
+                        item.availability === 'preorder' || item.availability === 'backorder'
+                            ? 'info'
+                            : 'warning'
+                    "
                     variant="tonal"
                     label
                     class="mt-1"
                     :data-availability="item.availability"
                     data-test="wishlist-line-availability"
                 >
-                    {{
-                        availabilityLabel(item.availability, productOf(item.productId)?.releaseDate)
-                    }}
+                    {{ availabilityLabel(item.availability, productOf(item.productId)) }}
                 </v-chip>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn

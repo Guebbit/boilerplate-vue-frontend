@@ -61,7 +61,7 @@ const NAME_SEPARATOR = ', ';
  */
 type PreorderParameters = Extract<
     DescribableNotification,
-    { code: 'notifications.preorder-delayed' | 'notifications.preorder-confirm-wait' }
+    { code: 'notifications.fulfillment-delayed' | 'notifications.fulfillment-confirm-wait' }
 >['params'];
 
 /**
@@ -70,13 +70,13 @@ type PreorderParameters = Extract<
  * delayed notice, `answerBy` for the confirm-wait one).
  */
 const PREORDER_KEYS = {
-    'notifications.preorder-delayed': {
-        full: 'notifications.preorder-delayed',
-        withoutDate: 'notifications.preorder-delayed-undated'
+    'notifications.fulfillment-delayed': {
+        full: 'notifications.fulfillment-delayed',
+        withoutDate: 'notifications.fulfillment-delayed-undated'
     },
-    'notifications.preorder-confirm-wait': {
-        full: 'notifications.preorder-confirm-wait',
-        withoutDate: 'notifications.preorder-confirm-wait-bare'
+    'notifications.fulfillment-confirm-wait': {
+        full: 'notifications.fulfillment-confirm-wait',
+        withoutDate: 'notifications.fulfillment-confirm-wait-bare'
     }
 };
 
@@ -91,7 +91,7 @@ const PREORDER_KEYS = {
  * @returns The finished text.
  */
 const describePreorder = (
-    code: 'notifications.preorder-delayed' | 'notifications.preorder-confirm-wait',
+    code: 'notifications.fulfillment-delayed' | 'notifications.fulfillment-confirm-wait',
     parameters: PreorderParameters,
     format: FormatDate,
     translate: Translate
@@ -104,7 +104,7 @@ const describePreorder = (
     };
     const keys = PREORDER_KEYS[code];
     const dateMissing =
-        code === 'notifications.preorder-delayed'
+        code === 'notifications.fulfillment-delayed'
             ? parameters.expectedAt === undefined
             : parameters.answerBy === undefined;
     return translate(dateMissing ? keys.withoutDate : keys.full, named);
@@ -148,8 +148,8 @@ const describeHeld = (
  * @returns The order id, or `undefined` for a notification that concerns no order.
  */
 export const notificationOrderId = (notification: DescribableNotification): string | undefined =>
-    notification.code === 'notifications.preorder-delayed' ||
-    notification.code === 'notifications.preorder-confirm-wait' ||
+    notification.code === 'notifications.fulfillment-delayed' ||
+    notification.code === 'notifications.fulfillment-confirm-wait' ||
     notification.code === 'notifications.fulfillment-held'
         ? notification.params.orderId
         : undefined;
@@ -215,7 +215,8 @@ export const describeNotification = (
 ): string => {
     switch (notification.code) {
         case 'notifications.cart-line-removed':
-        case 'notifications.wishlist-item-removed': {
+        case 'notifications.wishlist-item-removed':
+        case 'notifications.stock-alert': {
             return translate(notification.code, {
                 name: productName(notification.params.titles, preferred, translate)
             });
@@ -228,8 +229,8 @@ export const describeNotification = (
                 ? translate(MERGE_REFUSED_BARE_KEY)
                 : translate(notification.code, { lines: lines.join(LINE_SEPARATOR) });
         }
-        case 'notifications.preorder-delayed':
-        case 'notifications.preorder-confirm-wait': {
+        case 'notifications.fulfillment-delayed':
+        case 'notifications.fulfillment-confirm-wait': {
             return describePreorder(notification.code, notification.params, formatDate, translate);
         }
         case 'notifications.fulfillment-held': {

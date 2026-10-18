@@ -48,6 +48,7 @@ flowchart LR
         payments["payments"]
         returns["returns"]
         stats["stats"]
+        stockAlerts["stock-alerts"]
         webhooks["webhooks"]
         wishlist["wishlist"]
     end
@@ -71,13 +72,14 @@ flowchart LR
     orders -.-> returns
     products ==> cart
     products ==> wishlist
+    stockAlerts --> products
     wishlist --> cart
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,notifications,payments,returns,stats,webhooks,wishlist supporting;
+    class delivery,inventory,notifications,payments,returns,stats,stockAlerts,webhooks,wishlist supporting;
     class account,apiKeys,demo,feedback,locales,observability,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
@@ -157,6 +159,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
 | [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
 | [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |
+| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 0          | 0              |
 | [`users`](./users.md)                                          | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
 | [`webhooks`](./webhooks.md)                                    | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
 | [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 1          | 1              |

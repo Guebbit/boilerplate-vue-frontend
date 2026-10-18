@@ -150,6 +150,11 @@ const stockLabel = computed(() => {
     // A preorder is bought before it exists: the shelf may be empty, the date is what matters.
     if (shelf === 'preorder')
         return t('product-target-page.preorder', { date: formatDate(shown.releaseDate) });
+    // A backorder is bought now and ships by its restock date, or within 30 days when none is named.
+    if (shelf === 'backorder')
+        return shown.restockDate
+            ? t('product-target-page.backorder', { date: formatDate(shown.restockDate) })
+            : t('product-target-page.backorder-undated');
     if (!shown.inStock) return t('product-target-page.out-of-stock');
     if (shown.lowStock) return t('product-target-page.low-stock');
     return shown.available === undefined

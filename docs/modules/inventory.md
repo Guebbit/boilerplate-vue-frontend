@@ -70,22 +70,22 @@ names and the products dictionary does not hold yet go out in one batched `POST 
 
 A preorder claims units that do not exist yet, so it is counted against its own allowance, not the
 shelf. Two numbers per product, both on the board: the **preorder limit** (how many may be
-preordered at once; `0` closes preordering) and **preordered** (outstanding units, unpaid or paid,
+backordered at once; `0` closes preordering) and **backordered** (outstanding units, unpaid or paid,
 until stock arrives and is allocated to them, oldest payment first).
 
 ```mermaid
 flowchart LR
-    A[admin sets the limit] --> B[orders claim units: preordered up]
+    A[admin sets the limit] --> B[orders claim units: backordered up]
     B --> C[a receipt arrives]
-    C --> D[allocate: preordered down, reserved up]
-    B -->|cancel or expiry| E[allowance given back: preordered down]
+    C --> D[allocate: backordered down, reserved up]
+    B -->|cancel or expiry| E[allowance given back: backordered down]
 ```
 
-- The limit is set from a dialog on the board row (`PUT /inventory/levels/{id}/preorder-limit`),
+- The limit is set from a dialog on the board row (`PUT /inventory/levels/{id}/backorder-limit`),
   offered only to a holder of the stock write (`create:StockMovement`). It is absolute and
   idempotent, may sit below what is outstanding (only new orders are refused), and is **not** a
   movement: it leaves no ledger row.
-- The ledger has a "Preordered" column for the third counter, and two reasons: `preorder` (units
+- The ledger has a "Backordered" column for the third counter, and two reasons: `preorder` (units
   claimed) and `allocate` (stock arrived for a paid preorder).
 
 ## The preorder board
@@ -141,15 +141,15 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                        | Response envelope             |
-| ------------------------------------------- | ----------------------------- |
-| `POST /inventory/adjustments`               | `AdjustStockResponse`         |
-| `GET /inventory/levels(\?.*)?`              | `ListInventoryLevelsResponse` |
-| `GET /inventory/movements(\?.*)?`           | `ListStockMovementsResponse`  |
-| `GET /inventory/preorders(\?.*)?`           | `ListPreorderLevelsResponse`  |
-| `PUT /inventory/levels/{id}/preorder-limit` | `SetPreorderLimitResponse`    |
-| `POST /inventory/receipts`                  | `ReceiveStockResponse`        |
-| `POST /inventory/reservations/sweep`        | `SweepReservationsResponse`   |
+| Call                                         | Response envelope             |
+| -------------------------------------------- | ----------------------------- |
+| `POST /inventory/adjustments`                | `AdjustStockResponse`         |
+| `GET /inventory/levels(\?.*)?`               | `ListInventoryLevelsResponse` |
+| `GET /inventory/movements(\?.*)?`            | `ListStockMovementsResponse`  |
+| `GET /inventory/preorders(\?.*)?`            | `ListPreorderLevelsResponse`  |
+| `PUT /inventory/levels/{id}/backorder-limit` | `SetBackorderLimitResponse`   |
+| `POST /inventory/receipts`                   | `ReceiveStockResponse`        |
+| `POST /inventory/reservations/sweep`         | `SweepReservationsResponse`   |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
@@ -177,7 +177,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `views/InventoryLedger.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 | `views/PreordersBoard.vue`                     | A routed screen: the preorder board's two tabs, the tab and product filter kept in the URL.                                                                                         | [read](../theory/layers.md)           |
 | `components/PreorderProductsTable.vue`         | The board's first tab: the allowance joined to the units by state, one row per product.                                                                                             | [read](../theory/layers.md)           |
-| `components/PreorderLimitDialog.vue`           | Staff set a product's preorder limit from the stock board.                                                                                                                          | [read](../theory/layers.md)           |
+| `components/BackorderLimitDialog.vue`          | Staff set a product's preorder limit from the stock board.                                                                                                                          | [read](../theory/layers.md)           |
 | `domain/preorder-rows.ts`                      | Pure: joins the two reads by product and orders the rows, the worst first.                                                                                                          | [read](../theory/domain-layer.md)     |
 
 ## Working on it

@@ -45,11 +45,12 @@
         "button-history-named": "History of {name}",
         "pagination-board": "Stock board pages",
         "pagination-ledger": "Ledger pages",
-        "reason-preorder": "Preordered",
+        "reason-backorder": "Backordered",
         "reason-allocate": "Allocated",
-        "column-preorder-limit": "Preorder limit",
-        "column-preordered": "Preordered",
-        "button-preorder-limit-named": "Set the preorder limit of {name}"
+        "column-backorder-limit": "Backorder limit",
+        "column-backordered": "Backordered",
+        "button-backorder-limit-named": "Set the backorder limit of {name}",
+        "unlimited": "Unlimited"
     },
     "opening-stock-field": {
         "label": "Opening stock",
@@ -60,12 +61,14 @@
         "label-inventory": "Inventory",
         "label-preorders": "Preorders"
     },
-    "preorder-limit-dialog": {
-        "title": "Preorder limit of {name}",
-        "label-limit": "Units that may be preordered at once",
-        "hint-limit": "0 closes preordering. {outstanding} are outstanding now; a lower limit leaves those orders alone and only refuses new ones.",
+    "backorder-limit-dialog": {
+        "title": "Backorder limit of {name}",
+        "label-limit": "Units that may be owed at once",
         "button-save": "Save limit",
-        "success": "Preorder limit saved."
+        "success": "Backorder limit saved.",
+        "label-unlimited": "No limit",
+        "hint-unlimited": "Set a cap equal to the incoming quantity if the date must hold for everyone.",
+        "hint-limit": "0 closes it. {outstanding} are outstanding now; a lower limit leaves those orders alone and only refuses new ones."
     },
     "preorders-page": {
         "page-title": "Preorders",

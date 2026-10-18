@@ -514,8 +514,8 @@ export const preorderOnSale = (options: {
         })
         .then((product) => {
             const id = String(product?.id);
-            cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/preorder-limit`, {
-                preorderLimit: options.limit
+            cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
+                backorderLimit: options.limit
             });
             return cy.wrap(id, { log: false });
         });

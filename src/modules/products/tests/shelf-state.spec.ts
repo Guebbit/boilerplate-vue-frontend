@@ -16,7 +16,22 @@ describe('shelfStateOf', () => {
         ['no purchasable flag, sold out', { inStock: false }, 'out-of-stock'],
         ['a preorder with allowance left', { preorder: true, inStock: true }, 'preorder'],
         ['a preorder whose allowance is full', { preorder: true, inStock: false }, 'out-of-stock'],
-        ['an off-sale preorder', { purchasable: false, preorder: true, inStock: false }, 'off-sale']
+        [
+            'an off-sale preorder',
+            { purchasable: false, preorder: true, inStock: false },
+            'off-sale'
+        ],
+        ['a backorder with an empty shelf', { backorder: true, inStock: false }, 'backorder'],
+        [
+            'a backorder with units still on the shelf',
+            { backorder: true, inStock: true },
+            'in-stock'
+        ],
+        [
+            'an off-sale backorder',
+            { purchasable: false, backorder: true, inStock: false },
+            'off-sale'
+        ]
     ] as const)('%s reads %s', (_label, product, expected) => {
         expect(shelfStateOf(product)).toBe(expected);
     });

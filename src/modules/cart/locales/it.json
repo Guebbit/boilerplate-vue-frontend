@@ -5,7 +5,10 @@
         "off-sale": "Non disponibile al momento",
         "success": "Prodotto aggiunto al carrello.",
         "guest-full": "Il tuo carrello contiene già il massimo di prodotti diversi. Rimuovine uno, o accedi, per aggiungerne un altro.",
-        "preorder": "Preordina"
+        "preorder": "Preordina",
+        "backorder": "Ordina",
+        "backorder-ships-by": "Esaurito al momento. Spedizione entro il {date}.",
+        "backorder-ships-undated": "Esaurito al momento. Spedizione entro 30 giorni."
     },
     "cart-page": {
         "page-title": "Il mio carrello",

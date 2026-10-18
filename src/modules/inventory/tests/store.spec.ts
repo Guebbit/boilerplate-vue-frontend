@@ -42,8 +42,8 @@ const LEVEL = {
     onHand: 24,
     reserved: 2,
     available: 22,
-    preorderLimit: 0,
-    preordered: 0
+    backorderLimit: 0,
+    backordered: 0
 };
 
 /**
@@ -83,8 +83,8 @@ beforeEach(() => {
                 {
                     productId: 'p1',
                     title: 'Product one',
-                    preorderLimit: 10,
-                    preordered: 4,
+                    backorderLimit: 10,
+                    backordered: 4,
                     held: 1,
                     paid: 3,
                     left: 6,
@@ -93,7 +93,7 @@ beforeEach(() => {
             ],
             meta: { totalItems: 1, totalPages: 1 }
         }),
-        'PUT /inventory/levels/p1/preorder-limit': orvalEnvelope({ ...LEVEL, preorderLimit: 10 }),
+        'PUT /inventory/levels/p1/backorder-limit': orvalEnvelope({ ...LEVEL, backorderLimit: 10 }),
         'POST /inventory/receipts': orvalEnvelope(LEVEL),
         'POST /inventory/adjustments': orvalEnvelope(LEVEL)
     };
@@ -163,8 +163,8 @@ const allowancePage = (productId: string, pageNumber: number) =>
             {
                 productId,
                 title: productId,
-                preorderLimit: 1,
-                preordered: 0,
+                backorderLimit: 1,
+                backordered: 0,
                 held: 0,
                 paid: 0,
                 left: 1,
@@ -211,14 +211,14 @@ describe('setLimit', () => {
     it('puts the absolute limit, then reloads the board, and answers the level', () => {
         const store = useInventoryStore();
         return store.setLimit('p1', 10).then((level) => {
-            expect(level).toMatchObject({ productId: 'p1', preorderLimit: 10 });
+            expect(level).toMatchObject({ productId: 'p1', backorderLimit: 10 });
             expect(requestedUrls()).toEqual([
-                '/inventory/levels/p1/preorder-limit',
+                '/inventory/levels/p1/backorder-limit',
                 '/inventory/levels'
             ]);
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(contractRequest(schemas.SetPreorderLimitBody, call.data)).toEqual({
-                preorderLimit: 10
+            expect(contractRequest(schemas.SetBackorderLimitBody, call.data)).toEqual({
+                backorderLimit: 10
             });
         });
     });

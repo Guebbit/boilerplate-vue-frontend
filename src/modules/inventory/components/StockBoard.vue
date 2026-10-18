@@ -24,7 +24,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useInventoryStore } from '../store.ts';
-import PreorderLimitDialog from './PreorderLimitDialog.vue';
+import BackorderLimitDialog from './BackorderLimitDialog.vue';
 import type { InventoryLevel } from '@types';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
@@ -57,7 +57,7 @@ const session = useSessionStore();
 const limitRow = ref<InventoryLevel>();
 
 /**
- * Whether the preorder-limit dialog is open.
+ * Whether the backorder-limit dialog is open.
  */
 const limitOpen = ref(false);
 
@@ -103,8 +103,8 @@ const levelHeaders = computed<CoreDataTableHeader<InventoryLevel>[]>(() => [
     { title: t('inventory-page.column-on-hand'), key: 'onHand' },
     { title: t('inventory-page.column-reserved'), key: 'reserved' },
     { title: t('inventory-page.column-available'), key: 'available' },
-    { title: t('inventory-page.column-preorder-limit'), key: 'preorderLimit' },
-    { title: t('inventory-page.column-preordered'), key: 'preordered' },
+    { title: t('inventory-page.column-backorder-limit'), key: 'backorderLimit' },
+    { title: t('inventory-page.column-backordered'), key: 'backordered' },
     // Reads no field: the cell is a button, and the column has no heading.
     { title: '', key: 'history', synthetic: true }
 ]);
@@ -198,17 +198,17 @@ onMounted(() => {
             <span class="font-medium">{{ item.available }}</span>
         </template>
 
-        <template v-slot:[`item.preorderLimit`]="{ item }">
+        <template v-slot:[`item.backorderLimit`]="{ item }">
             <span class="inline-flex items-center gap-1">
-                {{ item.preorderLimit }}
+                {{ item.backorderLimit ?? t('inventory-page.unlimited') }}
                 <v-btn
                     v-if="session.can('create', 'StockMovement')"
                     :size="rowActionSize"
                     variant="text"
                     icon
-                    data-test="level-preorder-limit"
+                    data-test="level-backorder-limit"
                     :aria-label="
-                        t('inventory-page.button-preorder-limit-named', { name: item.title })
+                        t('inventory-page.button-backorder-limit-named', { name: item.title })
                     "
                     @click="editLimit(item)"
                 >
@@ -229,7 +229,7 @@ onMounted(() => {
             </v-btn>
         </template>
     </DataTable>
-    <PreorderLimitDialog v-if="limitRow" v-model="limitOpen" :level="limitRow" />
+    <BackorderLimitDialog v-if="limitRow" v-model="limitOpen" :level="limitRow" />
     <ListPagination
         v-model="levelsPage"
         :length="levelsPageTotal"

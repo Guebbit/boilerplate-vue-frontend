@@ -60,7 +60,7 @@ const held = (notice: 'check_address' | 'delayed', message?: string) =>
 const confirmNotice = (answerBy?: string) =>
     describeNotification(
         {
-            code: 'notifications.preorder-confirm-wait',
+            code: 'notifications.fulfillment-confirm-wait',
             params: { ...base, ...(answerBy ? { answerBy } : {}) }
         },
         ['en'],
@@ -129,6 +129,19 @@ describe('describeNotification', () => {
         ).toBe('notifications.wishlist-item-removed|name=Collar');
     });
 
+    it('names the product in a back-in-stock notification', () => {
+        expect(
+            describeNotification(
+                {
+                    code: 'notifications.stock-alert',
+                    params: { productId: 'p1', titles: { en: 'Lamp' } }
+                },
+                ['en'],
+                translate
+            )
+        ).toBe('notifications.stock-alert|name=Lamp');
+    });
+
     it('says "a product" in a cart-line notification whose names are all gone', () => {
         expect(
             describeNotification(
@@ -182,7 +195,7 @@ describe('describeNotification', () => {
             expect(
                 describeNotification(
                     {
-                        code: 'notifications.preorder-delayed',
+                        code: 'notifications.fulfillment-delayed',
                         params: { ...base, expectedAt: 'E' }
                     },
                     ['en'],
@@ -190,30 +203,30 @@ describe('describeNotification', () => {
                     format
                 )
             ).toBe(
-                'notifications.preorder-delayed|titles=Vinyl, Poster|agreed=A!|expected=E!|answerBy='
+                'notifications.fulfillment-delayed|titles=Vinyl, Poster|agreed=A!|expected=E!|answerBy='
             );
         });
 
         it('says there is no new date yet when the delay has none', () => {
             expect(
                 describeNotification(
-                    { code: 'notifications.preorder-delayed', params: base },
+                    { code: 'notifications.fulfillment-delayed', params: base },
                     ['en'],
                     translate,
                     format
                 )
-            ).toMatch(/^notifications\.preorder-delayed-undated\|/);
+            ).toMatch(/^notifications\.fulfillment-delayed-undated\|/);
         });
 
         it('asks for an answer by the deadline, or without one when there is none', () => {
             expect(confirmNotice('D')).toContain('answerBy=D!');
-            expect(confirmNotice('D')).toMatch(/^notifications\.preorder-confirm-wait\|/);
-            expect(confirmNotice()).toMatch(/^notifications\.preorder-confirm-wait-bare\|/);
+            expect(confirmNotice('D')).toMatch(/^notifications\.fulfillment-confirm-wait\|/);
+            expect(confirmNotice()).toMatch(/^notifications\.fulfillment-confirm-wait-bare\|/);
         });
 
         it('names the order it is about, and no order for any other code', () => {
             expect(
-                notificationOrderId({ code: 'notifications.preorder-delayed', params: base })
+                notificationOrderId({ code: 'notifications.fulfillment-delayed', params: base })
             ).toBe('o1');
             expect(
                 notificationOrderId({

@@ -4041,7 +4041,10 @@ export const ListProductsResponse = zod.strictObject({
                     .boolean()
                     .default(listProductsResponseDataItemsItemPurchasableDefault),
                 releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                allowBackorder: zod.boolean().optional(),
+                restockDate: zod.iso.datetime({ offset: true }).optional(),
                 preorder: zod.boolean().optional(),
+                backorder: zod.boolean().optional(),
                 requiresShipping: zod
                     .boolean()
                     .default(listProductsResponseDataItemsItemRequiresShippingDefault),
@@ -4085,6 +4088,7 @@ export const createProductBodyPriceMin = 0;
 export const createProductBodySkuMax = 64;
 export const createProductBodyActiveDefault = true;
 export const createProductBodyPurchasableDefault = true;
+export const createProductBodyAllowBackorderDefault = false;
 export const createProductBodyRequiresShippingDefault = true;
 export const createProductBodyNoWithdrawalDefault = false;
 export const createProductBodyWeightMin = 0;
@@ -4115,6 +4119,8 @@ export const CreateProductBody = zod.strictObject({
     active: zod.boolean().default(createProductBodyActiveDefault),
     purchasable: zod.boolean().default(createProductBodyPurchasableDefault),
     releaseDate: zod.iso.datetime({ offset: true }).optional(),
+    allowBackorder: zod.boolean().default(createProductBodyAllowBackorderDefault),
+    restockDate: zod.iso.datetime({ offset: true }).optional(),
     requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     noWithdrawal: zod.boolean().default(createProductBodyNoWithdrawalDefault),
     weight: zod.number().min(createProductBodyWeightMin).optional(),
@@ -4158,7 +4164,10 @@ export const CreateProductResponse = zod.strictObject({
         active: zod.boolean().optional(),
         purchasable: zod.boolean().default(createProductResponseDataPurchasableDefault),
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
+        allowBackorder: zod.boolean().optional(),
+        restockDate: zod.iso.datetime({ offset: true }).optional(),
         preorder: zod.boolean().optional(),
+        backorder: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
         noWithdrawal: zod.boolean().default(createProductResponseDataNoWithdrawalDefault),
         weight: zod.number().min(createProductResponseDataWeightMin).optional(),
@@ -4258,7 +4267,10 @@ export const GetProductByIdResponse = zod.strictObject({
         active: zod.boolean().optional(),
         purchasable: zod.boolean().default(getProductByIdResponseDataPurchasableDefault),
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
+        allowBackorder: zod.boolean().optional(),
+        restockDate: zod.iso.datetime({ offset: true }).optional(),
         preorder: zod.boolean().optional(),
+        backorder: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
         noWithdrawal: zod.boolean().default(getProductByIdResponseDataNoWithdrawalDefault),
         weight: zod.number().min(getProductByIdResponseDataWeightMin).optional(),
@@ -4326,6 +4338,8 @@ export const ReplaceProductByIdBody = zod.strictObject({
     active: zod.boolean(),
     purchasable: zod.boolean(),
     releaseDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
+    allowBackorder: zod.boolean().optional(),
+    restockDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
     requiresShipping: zod.boolean(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(replaceProductByIdBodyWeightMin).nullish(),
@@ -4369,7 +4383,10 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         active: zod.boolean().optional(),
         purchasable: zod.boolean().default(replaceProductByIdResponseDataPurchasableDefault),
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
+        allowBackorder: zod.boolean().optional(),
+        restockDate: zod.iso.datetime({ offset: true }).optional(),
         preorder: zod.boolean().optional(),
+        backorder: zod.boolean().optional(),
         requiresShipping: zod
             .boolean()
             .default(replaceProductByIdResponseDataRequiresShippingDefault),
@@ -4451,6 +4468,8 @@ export const UpdateProductByIdBody = zod.strictObject({
     active: zod.boolean().optional(),
     purchasable: zod.boolean().optional(),
     releaseDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
+    allowBackorder: zod.boolean().optional(),
+    restockDate: zod.union([zod.iso.datetime({ offset: true }), zod.null()]).optional(),
     requiresShipping: zod.boolean().optional(),
     noWithdrawal: zod.boolean().optional(),
     weight: zod.number().min(updateProductByIdBodyWeightMin).nullish(),
@@ -4496,7 +4515,10 @@ export const UpdateProductByIdResponse = zod.strictObject({
         active: zod.boolean().optional(),
         purchasable: zod.boolean().default(updateProductByIdResponseDataPurchasableDefault),
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
+        allowBackorder: zod.boolean().optional(),
+        restockDate: zod.iso.datetime({ offset: true }).optional(),
         preorder: zod.boolean().optional(),
+        backorder: zod.boolean().optional(),
         requiresShipping: zod
             .boolean()
             .default(updateProductByIdResponseDataRequiresShippingDefault),
@@ -4580,7 +4602,10 @@ export const GetProductAdminResponse = zod.strictObject({
         active: zod.boolean().optional(),
         purchasable: zod.boolean().optional(),
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
+        allowBackorder: zod.boolean().optional(),
+        restockDate: zod.iso.datetime({ offset: true }).optional(),
         preorder: zod.boolean().optional(),
+        backorder: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductAdminResponseDataRequiresShippingDefault),
         noWithdrawal: zod.boolean().default(getProductAdminResponseDataNoWithdrawalDefault),
         weight: zod.number().min(getProductAdminResponseDataWeightMin).optional(),
@@ -4645,7 +4670,10 @@ export const RestoreProductByIdResponse = zod.strictObject({
         active: zod.boolean().optional(),
         purchasable: zod.boolean().default(restoreProductByIdResponseDataPurchasableDefault),
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
+        allowBackorder: zod.boolean().optional(),
+        restockDate: zod.iso.datetime({ offset: true }).optional(),
         preorder: zod.boolean().optional(),
+        backorder: zod.boolean().optional(),
         requiresShipping: zod
             .boolean()
             .default(restoreProductByIdResponseDataRequiresShippingDefault),
@@ -4785,7 +4813,10 @@ export const SearchProductsResponse = zod.strictObject({
                     .boolean()
                     .default(searchProductsResponseDataItemsItemPurchasableDefault),
                 releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                allowBackorder: zod.boolean().optional(),
+                restockDate: zod.iso.datetime({ offset: true }).optional(),
                 preorder: zod.boolean().optional(),
+                backorder: zod.boolean().optional(),
                 requiresShipping: zod
                     .boolean()
                     .default(searchProductsResponseDataItemsItemRequiresShippingDefault),
@@ -4846,6 +4877,7 @@ export const GetCartResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -4914,6 +4946,7 @@ export const AddCartItemResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -4982,6 +5015,7 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5043,6 +5077,7 @@ export const ClearCartResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5115,6 +5150,7 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5183,6 +5219,7 @@ export const RemoveCartItemResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5250,6 +5287,7 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5449,6 +5487,9 @@ export const CheckoutResponse = zod.strictObject({
                     .string()
                     .max(checkoutResponseDataItemsItemLocaleMax)
                     .regex(checkoutResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -5585,6 +5626,7 @@ export const ReorderResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5635,6 +5677,7 @@ export const GetWishlistResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5674,6 +5717,7 @@ export const AddWishlistItemResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5715,6 +5759,7 @@ export const RemoveWishlistItemResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5756,6 +5801,7 @@ export const MoveWishlistItemToCartResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -5968,6 +6014,9 @@ export const ListOrdersResponse = zod.strictObject({
                             .string()
                             .max(listOrdersResponseDataItemsItemItemsItemLocaleMax)
                             .regex(listOrdersResponseDataItemsItemItemsItemLocaleRegExp),
+                        backorderedQuantity: zod.number().min(1).optional(),
+                        promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                        promiseDated: zod.boolean().optional(),
                         current: zod.union([
                             zod.strictObject({
                                 imageUrl: zod.string().min(1).optional(),
@@ -6289,6 +6338,9 @@ export const CreateOrderResponse = zod.strictObject({
                     .string()
                     .max(createOrderResponseDataItemsItemLocaleMax)
                     .regex(createOrderResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -6620,6 +6672,9 @@ export const SearchOrdersResponse = zod.strictObject({
                             .string()
                             .max(searchOrdersResponseDataItemsItemItemsItemLocaleMax)
                             .regex(searchOrdersResponseDataItemsItemItemsItemLocaleRegExp),
+                        backorderedQuantity: zod.number().min(1).optional(),
+                        promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                        promiseDated: zod.boolean().optional(),
                         current: zod.union([
                             zod.strictObject({
                                 imageUrl: zod.string().min(1).optional(),
@@ -6914,6 +6969,9 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(getOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(getOrderByIdResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -7140,6 +7198,9 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(replaceOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(replaceOrderByIdResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -7374,6 +7435,9 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(updateOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(updateOrderByIdResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -7625,6 +7689,9 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(restoreOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(restoreOrderByIdResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -7873,6 +7940,9 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .string()
                     .max(cancelOrderByIdResponseDataItemsItemLocaleMax)
                     .regex(cancelOrderByIdResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -8108,6 +8178,9 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .string()
                     .max(overrideOrderStatusResponseDataItemsItemLocaleMax)
                     .regex(overrideOrderStatusResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -8700,6 +8773,9 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     .string()
                     .max(getOrderByReferenceResponseDataItemsItemLocaleMax)
                     .regex(getOrderByReferenceResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -9739,6 +9815,9 @@ export const StartFulfilmentResponse = zod.strictObject({
                     .string()
                     .max(startFulfilmentResponseDataItemsItemLocaleMax)
                     .regex(startFulfilmentResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -9853,7 +9932,7 @@ export const StartFulfilmentResponse = zod.strictObject({
 /**
  * One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
  * board: the fulfillment orders of preorders, where they stand with their buyer, and which are late.
- * `preorder=true` keeps those made from a preorder line (the ones that carry an agreed date).
+ * `cause` keeps one kind of wait: `preorder`, `backorder`, or `any` that carries an agreed date.
  *
  * `late=true` is the Late view: the expected date has passed and units remain, whether still waiting
  * for stock, allocated and not yet shipped, or part shipped. `dueWithin=N` is its warning: still
@@ -9882,7 +9961,7 @@ export const ListPreorderFulfillmentOrdersQueryParams = zod.strictObject({
         .min(1)
         .max(listPreorderFulfillmentOrdersQueryPageSizeMax)
         .default(listPreorderFulfillmentOrdersQueryPageSizeDefault),
-    preorder: zod.boolean().optional(),
+    cause: zod.enum(['preorder', 'backorder', 'any']).optional(),
     state: zod.enum(['waiting', 'awaiting_yes', 'allocated', 'shipped', 'cancelled']).optional(),
     productId: zod
         .string()
@@ -11398,8 +11477,8 @@ export const listInventoryLevelsResponseDataItemsItemProductIdRegExp = new RegEx
 export const listInventoryLevelsResponseDataItemsItemOnHandMin = 0;
 export const listInventoryLevelsResponseDataItemsItemReservedMin = 0;
 export const listInventoryLevelsResponseDataItemsItemAvailableMin = 0;
-export const listInventoryLevelsResponseDataItemsItemPreorderLimitMin = 0;
-export const listInventoryLevelsResponseDataItemsItemPreorderedMin = 0;
+export const listInventoryLevelsResponseDataItemsItemBackorderLimitMin = 0;
+export const listInventoryLevelsResponseDataItemsItemBackorderedMin = 0;
 export const listInventoryLevelsResponseDataMetaPageDefault = 1;
 export const listInventoryLevelsResponseDataMetaPageMax = 10000;
 export const listInventoryLevelsResponseDataMetaPageSizeDefault = 10;
@@ -11422,10 +11501,13 @@ export const ListInventoryLevelsResponse = zod.strictObject({
                 onHand: zod.number().min(listInventoryLevelsResponseDataItemsItemOnHandMin),
                 reserved: zod.number().min(listInventoryLevelsResponseDataItemsItemReservedMin),
                 available: zod.number().min(listInventoryLevelsResponseDataItemsItemAvailableMin),
-                preorderLimit: zod
+                backorderLimit: zod
                     .number()
-                    .min(listInventoryLevelsResponseDataItemsItemPreorderLimitMin),
-                preordered: zod.number().min(listInventoryLevelsResponseDataItemsItemPreorderedMin)
+                    .min(listInventoryLevelsResponseDataItemsItemBackorderLimitMin)
+                    .nullable(),
+                backordered: zod
+                    .number()
+                    .min(listInventoryLevelsResponseDataItemsItemBackorderedMin)
             })
         ),
         meta: zod.strictObject({
@@ -11445,32 +11527,32 @@ export const ListInventoryLevelsResponse = zod.strictObject({
     })
 });
 /**
- * Sets how many units of the product may be preordered at once: the allowance an order claims when it is placed. `0` closes preordering. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
+ * Sets how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
  *
  * Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited).
  * @summary Set a product's preorder limit
  */
-export const setPreorderLimitPathProductIdMax = 64;
-export const setPreorderLimitPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const SetPreorderLimitParams = zod.strictObject({
+export const setBackorderLimitPathProductIdMax = 64;
+export const setBackorderLimitPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const SetBackorderLimitParams = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(setPreorderLimitPathProductIdMax)
-        .regex(setPreorderLimitPathProductIdRegExp)
+        .max(setBackorderLimitPathProductIdMax)
+        .regex(setBackorderLimitPathProductIdRegExp)
 });
-export const setPreorderLimitBodyPreorderLimitMin = 0;
-export const SetPreorderLimitBody = zod.strictObject({
-    preorderLimit: zod.number().min(setPreorderLimitBodyPreorderLimitMin)
+export const setBackorderLimitBodyBackorderLimitMin = 0;
+export const SetBackorderLimitBody = zod.strictObject({
+    backorderLimit: zod.number().min(setBackorderLimitBodyBackorderLimitMin).nullable()
 });
-export const setPreorderLimitResponseDataProductIdMax = 64;
-export const setPreorderLimitResponseDataProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const setPreorderLimitResponseDataOnHandMin = 0;
-export const setPreorderLimitResponseDataReservedMin = 0;
-export const setPreorderLimitResponseDataAvailableMin = 0;
-export const setPreorderLimitResponseDataPreorderLimitMin = 0;
-export const setPreorderLimitResponseDataPreorderedMin = 0;
-export const SetPreorderLimitResponse = zod.strictObject({
+export const setBackorderLimitResponseDataProductIdMax = 64;
+export const setBackorderLimitResponseDataProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const setBackorderLimitResponseDataOnHandMin = 0;
+export const setBackorderLimitResponseDataReservedMin = 0;
+export const setBackorderLimitResponseDataAvailableMin = 0;
+export const setBackorderLimitResponseDataBackorderLimitMin = 0;
+export const setBackorderLimitResponseDataBackorderedMin = 0;
+export const SetBackorderLimitResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -11478,18 +11560,18 @@ export const SetPreorderLimitResponse = zod.strictObject({
         productId: zod
             .string()
             .min(1)
-            .max(setPreorderLimitResponseDataProductIdMax)
-            .regex(setPreorderLimitResponseDataProductIdRegExp),
+            .max(setBackorderLimitResponseDataProductIdMax)
+            .regex(setBackorderLimitResponseDataProductIdRegExp),
         title: zod.string(),
-        onHand: zod.number().min(setPreorderLimitResponseDataOnHandMin),
-        reserved: zod.number().min(setPreorderLimitResponseDataReservedMin),
-        available: zod.number().min(setPreorderLimitResponseDataAvailableMin),
-        preorderLimit: zod.number().min(setPreorderLimitResponseDataPreorderLimitMin),
-        preordered: zod.number().min(setPreorderLimitResponseDataPreorderedMin)
+        onHand: zod.number().min(setBackorderLimitResponseDataOnHandMin),
+        reserved: zod.number().min(setBackorderLimitResponseDataReservedMin),
+        available: zod.number().min(setBackorderLimitResponseDataAvailableMin),
+        backorderLimit: zod.number().min(setBackorderLimitResponseDataBackorderLimitMin).nullable(),
+        backordered: zod.number().min(setBackorderLimitResponseDataBackorderedMin)
     })
 });
 /**
- * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `preordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
+ * Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
  *
  * The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
  * @summary Preorder allowances
@@ -11514,8 +11596,8 @@ export const listPreorderLevelsResponseDataItemsItemProductIdMax = 64;
 export const listPreorderLevelsResponseDataItemsItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const listPreorderLevelsResponseDataItemsItemPreorderLimitMin = 0;
-export const listPreorderLevelsResponseDataItemsItemPreorderedMin = 0;
+export const listPreorderLevelsResponseDataItemsItemBackorderLimitMin = 0;
+export const listPreorderLevelsResponseDataItemsItemBackorderedMin = 0;
 export const listPreorderLevelsResponseDataItemsItemHeldMin = 0;
 export const listPreorderLevelsResponseDataItemsItemPaidMin = 0;
 export const listPreorderLevelsResponseDataItemsItemLeftMin = 0;
@@ -11540,13 +11622,16 @@ export const ListPreorderLevelsResponse = zod.strictObject({
                     .regex(listPreorderLevelsResponseDataItemsItemProductIdRegExp),
                 title: zod.string(),
                 releaseDate: zod.iso.datetime({ offset: true }).optional(),
-                preorderLimit: zod
+                backorderLimit: zod
                     .number()
-                    .min(listPreorderLevelsResponseDataItemsItemPreorderLimitMin),
-                preordered: zod.number().min(listPreorderLevelsResponseDataItemsItemPreorderedMin),
+                    .min(listPreorderLevelsResponseDataItemsItemBackorderLimitMin)
+                    .nullable(),
+                backordered: zod
+                    .number()
+                    .min(listPreorderLevelsResponseDataItemsItemBackorderedMin),
                 held: zod.number().min(listPreorderLevelsResponseDataItemsItemHeldMin),
                 paid: zod.number().min(listPreorderLevelsResponseDataItemsItemPaidMin),
-                left: zod.number().min(listPreorderLevelsResponseDataItemsItemLeftMin),
+                left: zod.number().min(listPreorderLevelsResponseDataItemsItemLeftMin).nullish(),
                 ordered: zod.number().min(listPreorderLevelsResponseDataItemsItemOrderedMin)
             })
         ),
@@ -11602,7 +11687,7 @@ export const ListStockMovementsQueryParams = zod.strictObject({
             'receive',
             'adjust',
             'restock',
-            'preorder',
+            'backorder',
             'allocate'
         ])
         .optional()
@@ -11644,12 +11729,12 @@ export const ListStockMovementsResponse = zod.strictObject({
                     'receive',
                     'adjust',
                     'restock',
-                    'preorder',
+                    'backorder',
                     'allocate'
                 ]),
                 onHandDelta: zod.number(),
                 reservedDelta: zod.number(),
-                preorderedDelta: zod.number(),
+                backorderedDelta: zod.number(),
                 reference: zod.string().optional(),
                 note: zod.string().optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -11703,8 +11788,8 @@ export const receiveStockResponseDataProductIdRegExp = new RegExp('^[0-9A-Za-z_-
 export const receiveStockResponseDataOnHandMin = 0;
 export const receiveStockResponseDataReservedMin = 0;
 export const receiveStockResponseDataAvailableMin = 0;
-export const receiveStockResponseDataPreorderLimitMin = 0;
-export const receiveStockResponseDataPreorderedMin = 0;
+export const receiveStockResponseDataBackorderLimitMin = 0;
+export const receiveStockResponseDataBackorderedMin = 0;
 export const ReceiveStockResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -11719,8 +11804,8 @@ export const ReceiveStockResponse = zod.strictObject({
         onHand: zod.number().min(receiveStockResponseDataOnHandMin),
         reserved: zod.number().min(receiveStockResponseDataReservedMin),
         available: zod.number().min(receiveStockResponseDataAvailableMin),
-        preorderLimit: zod.number().min(receiveStockResponseDataPreorderLimitMin),
-        preordered: zod.number().min(receiveStockResponseDataPreorderedMin)
+        backorderLimit: zod.number().min(receiveStockResponseDataBackorderLimitMin).nullable(),
+        backordered: zod.number().min(receiveStockResponseDataBackorderedMin)
     })
 });
 /**
@@ -11754,8 +11839,8 @@ export const adjustStockResponseDataProductIdRegExp = new RegExp('^[0-9A-Za-z_-]
 export const adjustStockResponseDataOnHandMin = 0;
 export const adjustStockResponseDataReservedMin = 0;
 export const adjustStockResponseDataAvailableMin = 0;
-export const adjustStockResponseDataPreorderLimitMin = 0;
-export const adjustStockResponseDataPreorderedMin = 0;
+export const adjustStockResponseDataBackorderLimitMin = 0;
+export const adjustStockResponseDataBackorderedMin = 0;
 export const AdjustStockResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -11770,8 +11855,8 @@ export const AdjustStockResponse = zod.strictObject({
         onHand: zod.number().min(adjustStockResponseDataOnHandMin),
         reserved: zod.number().min(adjustStockResponseDataReservedMin),
         available: zod.number().min(adjustStockResponseDataAvailableMin),
-        preorderLimit: zod.number().min(adjustStockResponseDataPreorderLimitMin),
-        preordered: zod.number().min(adjustStockResponseDataPreorderedMin)
+        backorderLimit: zod.number().min(adjustStockResponseDataBackorderLimitMin).nullable(),
+        backordered: zod.number().min(adjustStockResponseDataBackorderedMin)
     })
 });
 /**
@@ -12692,6 +12777,18 @@ export const downloadAccountExportResponseNotificationsItemSixParamsFulfillmentO
 export const downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseNotificationsItemSixParamsMessageMax = 500;
+export const downloadAccountExportResponseNotificationsItemSevenIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSevenIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseNotificationsItemSevenParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSevenParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const downloadAccountExportResponseStockAlertsItemProductIdMax = 64;
+export const downloadAccountExportResponseStockAlertsItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const DownloadAccountExportResponse = zod.strictObject({
     exportedAt: zod.iso.datetime({ offset: true }),
     profile: zod.strictObject({
@@ -12908,6 +13005,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .string()
                         .max(downloadAccountExportResponseOrdersItemItemsItemLocaleMax)
                         .regex(downloadAccountExportResponseOrdersItemItemsItemLocaleRegExp),
+                    backorderedQuantity: zod.number().min(1).optional(),
+                    promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                    promiseDated: zod.boolean().optional(),
                     current: zod.union([
                         zod.strictObject({
                             imageUrl: zod.string().min(1).optional(),
@@ -13479,7 +13579,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .min(1)
                     .max(downloadAccountExportResponseNotificationsItemFourIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemFourIdRegExp),
-                code: zod.enum(['notifications.preorder-delayed']),
+                code: zod.enum(['notifications.fulfillment-delayed']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
@@ -13512,7 +13612,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .min(1)
                     .max(downloadAccountExportResponseNotificationsItemFiveIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemFiveIdRegExp),
-                code: zod.enum(['notifications.preorder-confirm-wait']),
+                code: zod.enum(['notifications.fulfillment-confirm-wait']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
@@ -13572,8 +13672,39 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true })
+            }),
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(downloadAccountExportResponseNotificationsItemSevenIdMax)
+                    .regex(downloadAccountExportResponseNotificationsItemSevenIdRegExp),
+                code: zod.enum(['notifications.stock-alert']),
+                params: zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(downloadAccountExportResponseNotificationsItemSevenParamsProductIdMax)
+                        .regex(
+                            downloadAccountExportResponseNotificationsItemSevenParamsProductIdRegExp
+                        ),
+                    titles: zod.record(zod.string(), zod.string())
+                }),
+                severity: zod.enum(['info', 'success', 'warning', 'error']),
+                readAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true })
             })
         ])
+    ),
+    stockAlerts: zod.array(
+        zod.strictObject({
+            productId: zod
+                .string()
+                .min(1)
+                .max(downloadAccountExportResponseStockAlertsItemProductIdMax)
+                .regex(downloadAccountExportResponseStockAlertsItemProductIdRegExp),
+            createdAt: zod.iso.datetime({ offset: true })
+        })
     )
 });
 /**
@@ -13637,6 +13768,7 @@ export const MergeCartResponse = zod.strictObject({
                     availability: zod.enum([
                         'in_stock',
                         'preorder',
+                        'backorder',
                         'insufficient_stock',
                         'out_of_stock',
                         'unavailable',
@@ -13680,6 +13812,7 @@ export const MergeCartResponse = zod.strictObject({
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
+                    'backorder',
                     'insufficient_stock',
                     'out_of_stock',
                     'unavailable',
@@ -13991,6 +14124,9 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                     .string()
                     .max(correctOrderShippingAddressResponseDataItemsItemLocaleMax)
                     .regex(correctOrderShippingAddressResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
                 current: zod.union([
                     zod.strictObject({
                         imageUrl: zod.string().min(1).optional(),
@@ -14741,6 +14877,42 @@ export const PreviewReleaseDateImpactResponse = zod.strictObject({
     data: zod.strictObject({
         notify: zod.number().min(previewReleaseDateImpactResponseDataNotifyMin),
         ask: zod.number().min(previewReleaseDateImpactResponseDataAskMin),
+        answerBy: zod.iso.datetime({ offset: true })
+    })
+});
+/**
+ * A preview for staff about to save a restock date, so the save is never a surprise. Counts the
+ * orders whose backordered units for this product would get a notice (`notify`: a short first
+ * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
+ * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
+ * preview and the save can shift them.
+ *
+ * `restockDate` absent or blank previews a CLEARED date, which asks every buyer who was promised that date. A buyer promised the 30-day default is left alone. The same
+ * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
+ * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
+ * is never cached.
+ * @summary What moving a product's restock date would tell the buyers
+ */
+export const previewRestockDateImpactQueryProductIdMax = 64;
+export const previewRestockDateImpactQueryProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const PreviewRestockDateImpactQueryParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(previewRestockDateImpactQueryProductIdMax)
+        .regex(previewRestockDateImpactQueryProductIdRegExp),
+    restockDate: zod.iso.datetime({ offset: true }).optional()
+});
+export const previewRestockDateImpactResponseDataNotifyMin = 0;
+export const previewRestockDateImpactResponseDataAskMin = 0;
+export const PreviewRestockDateImpactResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        notify: zod.number().min(previewRestockDateImpactResponseDataNotifyMin),
+        ask: zod.number().min(previewRestockDateImpactResponseDataAskMin),
         answerBy: zod.iso.datetime({ offset: true })
     })
 });
@@ -15581,6 +15753,12 @@ export const listNotificationsResponseDataItemsItemSixParamsFulfillmentOrderIdRe
     '^[0-9A-Za-z_-]+$'
 );
 export const listNotificationsResponseDataItemsItemSixParamsMessageMax = 500;
+export const listNotificationsResponseDataItemsItemSevenIdMax = 64;
+export const listNotificationsResponseDataItemsItemSevenIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listNotificationsResponseDataItemsItemSevenParamsProductIdMax = 64;
+export const listNotificationsResponseDataItemsItemSevenParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const ListNotificationsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -15660,7 +15838,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseDataItemsItemFourIdMax)
                         .regex(listNotificationsResponseDataItemsItemFourIdRegExp),
-                    code: zod.enum(['notifications.preorder-delayed']),
+                    code: zod.enum(['notifications.fulfillment-delayed']),
                     params: zod.strictObject({
                         orderId: zod
                             .string()
@@ -15691,7 +15869,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseDataItemsItemFiveIdMax)
                         .regex(listNotificationsResponseDataItemsItemFiveIdRegExp),
-                    code: zod.enum(['notifications.preorder-confirm-wait']),
+                    code: zod.enum(['notifications.fulfillment-confirm-wait']),
                     params: zod.strictObject({
                         orderId: zod
                             .string()
@@ -15743,6 +15921,27 @@ export const ListNotificationsResponse = zod.strictObject({
                             .string()
                             .max(listNotificationsResponseDataItemsItemSixParamsMessageMax)
                             .optional()
+                    }),
+                    severity: zod.enum(['info', 'success', 'warning', 'error']),
+                    readAt: zod.iso.datetime({ offset: true }).optional(),
+                    createdAt: zod.iso.datetime({ offset: true })
+                }),
+                zod.strictObject({
+                    id: zod
+                        .string()
+                        .min(1)
+                        .max(listNotificationsResponseDataItemsItemSevenIdMax)
+                        .regex(listNotificationsResponseDataItemsItemSevenIdRegExp),
+                    code: zod.enum(['notifications.stock-alert']),
+                    params: zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(listNotificationsResponseDataItemsItemSevenParamsProductIdMax)
+                            .regex(
+                                listNotificationsResponseDataItemsItemSevenParamsProductIdRegExp
+                            ),
+                        titles: zod.record(zod.string(), zod.string())
                     }),
                     severity: zod.enum(['info', 'success', 'warning', 'error']),
                     readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -15838,5 +16037,92 @@ export const GetShopResponse = zod.strictObject({
                 .regex(getShopResponseDataReturnAddressCountryRegExp)
         }),
         returnPostagePayer: zod.enum(['consumer', 'shop'])
+    })
+});
+/**
+ * Returns the authenticated user's open requests, newest first. A request is used once: when it is answered it is deleted, so an answered one never appears here. Absence and emptiness are the same state, so this never answers 404.
+ * @summary List my back-in-stock requests
+ */
+export const listStockAlertsResponseDataItemsItemProductIdMax = 64;
+export const listStockAlertsResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ListStockAlertsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(listStockAlertsResponseDataItemsItemProductIdMax)
+                    .regex(listStockAlertsResponseDataItemsItemProductIdRegExp),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    })
+});
+/**
+ * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * @summary Ask to be told when a product is back
+ */
+export const createStockAlertPathProductIdMax = 64;
+export const createStockAlertPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateStockAlertParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(createStockAlertPathProductIdMax)
+        .regex(createStockAlertPathProductIdRegExp)
+});
+export const createStockAlertResponseDataItemsItemProductIdMax = 64;
+export const createStockAlertResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateStockAlertResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(createStockAlertResponseDataItemsItemProductIdMax)
+                    .regex(createStockAlertResponseDataItemsItemProductIdRegExp),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    })
+});
+/**
+ * Cancels the caller's own request before it is answered. A request the caller does not hold is a 404, because the client's view is stale and it needs to know.
+ * @summary Cancel a back-in-stock request
+ */
+export const deleteStockAlertPathProductIdMax = 64;
+export const deleteStockAlertPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteStockAlertParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(deleteStockAlertPathProductIdMax)
+        .regex(deleteStockAlertPathProductIdRegExp)
+});
+export const deleteStockAlertResponseDataItemsItemProductIdMax = 64;
+export const deleteStockAlertResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteStockAlertResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(deleteStockAlertResponseDataItemsItemProductIdMax)
+                    .regex(deleteStockAlertResponseDataItemsItemProductIdRegExp),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        )
     })
 });

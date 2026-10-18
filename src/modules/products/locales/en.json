@@ -5,14 +5,18 @@
         "out-of-stock": "Sold out",
         "insufficient-stock": "Not enough in stock",
         "preorder": "Preorder · ships {date}",
-        "preorder-undated": "Preorder"
+        "preorder-undated": "Preorder",
+        "backorder": "Backorder · ships by {date}",
+        "backorder-undated": "Backorder · ships within 30 days"
     },
     "product-card": {
         "in-stock": "In stock",
         "out-of-stock": "Out of stock",
         "off-sale": "Not available right now",
         "login-to-buy": "Sign in to check out or save this product.",
-        "preorder": "Preorder · ships {date}"
+        "preorder": "Preorder · ships {date}",
+        "backorder": "Backorder · ships by {date}",
+        "backorder-undated": "Backorder · ships within 30 days"
     },
     "products-list-page": {
         "sort-label": "Sort by",
@@ -90,7 +94,9 @@
         "preorder": "Preorder: ships {date}",
         "label-release-date": "Ships from",
         "label-no-withdrawal": "Right of withdrawal",
-        "no-withdrawal-notice": "Made to order or perishable: there is no right of withdrawal for this item once you order it. Defects are still covered by the legal guarantee."
+        "no-withdrawal-notice": "Made to order or perishable: there is no right of withdrawal for this item once you order it. Defects are still covered by the legal guarantee.",
+        "backorder": "Backorder: ships by {date}",
+        "backorder-undated": "Backorder: ships within 30 days"
     },
     "product-create-page": {
         "page-title": "Create product",
@@ -115,7 +121,11 @@
         "button-go-to-list": "Back to products list",
         "success-create": "Product created successfully",
         "label-release-date": "Release date",
-        "hint-release-date": "Ships from this date. While it is ahead, the product is sold as a preorder, up to one year out. Leave empty for a product on sale now."
+        "hint-release-date": "Ships from this date. While it is ahead, the product is sold as a preorder, up to one year out. Leave empty for a product on sale now.",
+        "label-allow-backorder": "Keep selling when out of stock",
+        "hint-allow-backorder": "Buyers can order while the shelf is empty, up to the backorder limit you set in Inventory. Without a restock date you promise delivery within 30 days.",
+        "label-restock-date": "Back in stock",
+        "hint-restock-date": "When stock is expected. Leave empty to promise delivery within 30 days. A date that passes makes the product read sold out until you set a new one."
     },
     "product-edit-page": {
         "page-title": "Edit product",
@@ -149,7 +159,11 @@
         "impact-notify": "{count} order gets a notice | {count} orders get a notice",
         "impact-ask": "{count} order must say yes by {date} | {count} orders must say yes by {date}",
         "impact-silence": "silence cancels and refunds (shop policy)",
-        "impact-back": "Back"
+        "impact-back": "Back",
+        "label-allow-backorder": "Keep selling when out of stock",
+        "hint-allow-backorder": "Buyers can order while the shelf is empty, up to the backorder limit you set in Inventory. Without a restock date you promise delivery within 30 days.",
+        "label-restock-date": "Back in stock",
+        "hint-restock-date": "When stock is expected. Moving it later notifies the buyers who were promised it. Leave empty to promise delivery within 30 days. A date that passes makes the product read sold out until you set a new one."
     },
     "navigation": {
         "label-products-list": "product | products"

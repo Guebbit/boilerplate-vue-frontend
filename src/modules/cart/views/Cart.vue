@@ -206,11 +206,15 @@ watch([notes, paymentMethodId, addressId], () => {
 /**
  * Whether any line cannot be bought as it stands (short, sold out, off sale, removed). Checkout
  * refuses every one of those, so "Place order" waits until the shopper has fixed them. A
- * `preorder` line is buyable: it ships from its release date.
+ * `preorder` line is buyable: it ships from its release date. So is a `backorder` one: it ships
+ * by its restock date.
  */
 const linesNeedAttention = computed(() =>
     cartItems.value.some(
-        ({ availability }) => availability !== 'in_stock' && availability !== 'preorder'
+        ({ availability }) =>
+            availability !== 'in_stock' &&
+            availability !== 'preorder' &&
+            availability !== 'backorder'
     )
 );
 
@@ -698,19 +702,19 @@ onMounted(() =>
                         <v-chip
                             v-if="availabilityLabel(item.availability)"
                             size="small"
-                            :color="item.availability === 'preorder' ? 'info' : 'warning'"
+                            :color="
+                                item.availability === 'preorder' ||
+                                item.availability === 'backorder'
+                                    ? 'info'
+                                    : 'warning'
+                            "
                             variant="tonal"
                             label
                             class="ml-2"
                             :data-availability="item.availability"
                             data-test="cart-line-availability"
                         >
-                            {{
-                                availabilityLabel(
-                                    item.availability,
-                                    productOf(item.productId)?.releaseDate
-                                )
-                            }}
+                            {{ availabilityLabel(item.availability, productOf(item.productId)) }}
                         </v-chip>
                         <!-- Art. 6(1)(k) CRD: told BEFORE buying that this item has no right of withdrawal. -->
                         <v-chip

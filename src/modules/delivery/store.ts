@@ -100,13 +100,13 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * Loads a page of the preorder board's fulfillment orders.
      *
      * @param query - Page, size and the filters: `state`, `productId`, `late` (the Late view) and
-     *  `dueWithin` (the Due-soon warning). `preorder=true` is always added: the board is about
-     *  preorders, whatever the endpoint could also list.
+     *  `dueWithin` (the Due-soon warning), and `cause` (`preorder`, `backorder` or `any`, the default:
+     *  every wait that carries a promised date).
      * @returns A promise resolving with the page's rows.
      */
     const fetchPreorderBoard = (query: ListPreorderFulfillmentOrdersParams = {}) =>
         fetchAny(() =>
-            listPreorderFulfillmentOrders({ ...query, preorder: true }).then((response) => {
+            listPreorderFulfillmentOrders({ cause: 'any', ...query }).then((response) => {
                 preorderBoard.value = response.data.items;
                 preorderBoardTotal.value = response.data.meta.totalItems;
                 return preorderBoard.value;
