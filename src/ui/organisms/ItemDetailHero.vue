@@ -54,7 +54,7 @@ const { hasImage } = defineProps<{
 </script>
 
 <template>
-    <CardDetail class="detail-hero grid items-center gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
+    <CardDetail class="detail-hero grid items-center gap-5 sm:grid-cols-term">
         <LazyImage
             v-if="hasImage"
             :src="imageUrl"
@@ -72,7 +72,7 @@ const { hasImage } = defineProps<{
         -->
         <div
             v-else
-            class="grid size-18 elevation-4 place-items-center rounded-xl text-3xl bg-linear-to-br from-[rgb(var(--detail-accent))] to-[rgb(var(--detail-accent))]/65 text-surface"
+            class="grid size-18 elevation-4 place-items-center rounded-xl text-3xl bg-linear-to-br from-detail-accent to-detail-accent/65 text-surface"
             aria-hidden="true"
         >
             <slot name="icon" />
@@ -80,7 +80,7 @@ const { hasImage } = defineProps<{
         <div>
             <p
                 v-if="eyebrow !== undefined && eyebrow !== null"
-                class="mb-1 text-xs uppercase tracking-[0.12em] opacity-80"
+                class="mb-1 text-xs uppercase tracking-eyebrow opacity-80"
             >
                 {{ eyebrow }}
             </p>

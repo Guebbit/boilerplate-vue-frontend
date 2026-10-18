@@ -49,8 +49,25 @@
     --radius-lg: 8px;
     --radius-xl: 24px;
     --radius-2xl: 1rem;
-    /* The analytics consent banner sits above Vuetify's overlays and below the toast stack. */
+    /*
+     * Layout tokens: a value more than one place needs gets a name here, and the canonicaliser
+     * (`npm run lint:fix`) then rewrites an equal arbitrary value into it.
+     */
+    --container-toast: min(420px, calc(100vw - 2rem));
+
+    /* Above Vuetify's overlays: the consent banner, then the corner activity loader, then toasts. */
     --z-index-banner: 2000;
+    --z-index-activity: 9998;
+    --z-index-toast: 9999;
+
+    --tracking-eyebrow: 0.12em;
+    --tracking-label: 0.08em;
+
+    --grid-template-columns-term: auto minmax(0, 1fr);
+    --grid-template-columns-summary: 1fr auto;
+    --grid-template-columns-cart: minmax(0, 1fr) 280px;
+    --grid-template-columns-detail: minmax(0, 2fr) minmax(280px, 1fr);
+    --grid-template-columns-tiles: repeat(auto-fit, minmax(180px, 1fr));
 
     --shadow-*: initial;
     --inset-shadow-*: initial;
@@ -94,6 +111,14 @@
     --color-warning: rgb(var(--v-theme-warning));
     --color-info: rgb(var(--v-theme-info));
     --color-link: rgb(var(--v-theme-link));
+
+    /* Vuetify's generated darker variants (the theme's `variations`), for gradients. */
+    --color-primary-darken-1: rgb(var(--v-theme-primary-darken-1));
+    --color-secondary-darken-1: rgb(var(--v-theme-secondary-darken-1));
+    --color-tertiary-darken-1: rgb(var(--v-theme-tertiary-darken-1));
+
+    /* The accent an item detail page sets on itself (`ItemDetailLayout`). */
+    --color-detail-accent: rgb(var(--detail-accent));
 }
 
 /**

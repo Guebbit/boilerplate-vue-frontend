@@ -33,12 +33,9 @@ const props = defineProps<{
  * `variations` config). A top-level `*_CLASSES` const, so the Tailwind lint reads the strings.
  */
 const ACCENT_CLASSES = {
-    primary:
-        'bg-linear-to-br from-primary to-[rgb(var(--v-theme-primary-darken-1))] text-on-primary',
-    secondary:
-        'bg-linear-to-br from-secondary to-[rgb(var(--v-theme-secondary-darken-1))] text-on-secondary',
-    tertiary:
-        'bg-linear-to-br from-tertiary to-[rgb(var(--v-theme-tertiary-darken-1))] text-on-tertiary'
+    primary: 'bg-linear-to-br from-primary to-primary-darken-1 text-on-primary',
+    secondary: 'bg-linear-to-br from-secondary to-secondary-darken-1 text-on-secondary',
+    tertiary: 'bg-linear-to-br from-tertiary to-tertiary-darken-1 text-on-tertiary'
 } as const;
 
 /**
@@ -50,7 +47,7 @@ const accentClass = computed(() => ACCENT_CLASSES[props.accent ?? 'primary']);
 </script>
 
 <template>
-    <v-card class="grid grid-cols-[84px_1fr] items-center gap-4 p-5">
+    <v-card class="grid grid-cols-term items-center gap-4 p-5">
         <div
             class="grid size-21 place-items-center rounded-2xl"
             :class="accentClass"

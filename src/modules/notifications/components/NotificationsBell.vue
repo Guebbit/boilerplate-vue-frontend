@@ -154,7 +154,7 @@ const focusPanel = () => {
             role="dialog"
             :aria-labelledby="TITLE_ID"
             tabindex="-1"
-            class="w-[min(420px,calc(100vw-2rem))]"
+            class="w-toast"
             data-test="notifications-panel"
         >
             <div class="flex items-center justify-between gap-2 px-4 pt-3">
@@ -180,7 +180,8 @@ const focusPanel = () => {
                 {{ t('notifications.empty') }}
             </p>
 
-            <v-list v-else class="max-h-[60vh] overflow-y-auto" lines="two">
+            <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the list never outgrows a phone; a share of the viewport is the rule, not a scale step -->
+            <v-list v-else class="max-h-[60dvh] overflow-y-auto" lines="two">
                 <v-list-item
                     v-for="item in items"
                     :key="item.id"

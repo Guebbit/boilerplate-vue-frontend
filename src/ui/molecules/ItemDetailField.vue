@@ -48,7 +48,7 @@ const displayValue = computed(() => {
 
 <template>
     <article
-        class="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-3.5 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
+        class="grid grid-cols-term items-start gap-3.5 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
         :class="props.fullWidth && 'col-span-full'"
     >
         <div
@@ -58,7 +58,7 @@ const displayValue = computed(() => {
             <component :is="props.icon" v-if="props.icon" :size="20" />
         </div>
         <div class="min-w-0">
-            <p class="text-xs uppercase tracking-[0.08em] opacity-80">{{ props.label }}</p>
+            <p class="text-xs uppercase tracking-label opacity-80">{{ props.label }}</p>
             <div class="mt-1.5 leading-relaxed wrap-anywhere">
                 <slot>{{ displayValue }}</slot>
             </div>

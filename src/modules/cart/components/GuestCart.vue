@@ -183,7 +183,7 @@ onMounted(refreshLines);
             </template>
         </v-empty-state>
 
-        <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-cart">
             <InlineErrorAlert
                 :message="loadError"
                 class="lg:col-span-2"
@@ -296,7 +296,7 @@ onMounted(refreshLines);
             <div class="flex flex-col gap-4">
                 <v-card data-test="guest-cart-summary" class="p-5 lg:sticky lg:top-20">
                     <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
-                    <dl class="mt-3 grid grid-cols-[1fr_auto] gap-y-1">
+                    <dl class="mt-3 grid grid-cols-summary gap-y-1">
                         <dt class="opacity-70">{{ t('cart-page.label-items-count') }}</dt>
                         <dd class="text-right font-medium">{{ guestLines.length }}</dd>
                         <dt class="opacity-70">{{ t('cart-page.label-total-quantity') }}</dt>

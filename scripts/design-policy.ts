@@ -62,8 +62,25 @@ export interface AmbiguousUtility {
     message: string;
 }
 
+/**
+ * A class pattern the lint refuses, with the reason and what to write instead.
+ * First match wins, so a specific refusal goes before the general arbitrary-value one.
+ */
+export interface RestrictedClass {
+    /** A regular expression over the class as written, variants (`md:`, `hover:`) included. */
+    pattern: string;
+    /** What is wrong and the way out; shown as the lint message. */
+    message: string;
+}
+
 /** The design policy object. */
 export const DESIGN_POLICY = {
+    /**
+     * How many places one arbitrary class may appear in, disabled or not. A second use is a
+     * token, so a copied disable cannot become a habit.
+     */
+    arbitraryRepeatLimit: 1,
+
     /** Rem to px for the canonicaliser, so `max-w-[1280px]` can map to `max-w-7xl`. */
     rootFontSize: 16,
 
@@ -79,6 +96,7 @@ export const DESIGN_POLICY = {
         conflictingClasses: 'error',
         deprecatedClasses: 'error',
         duplicateClasses: 'error',
+        restrictedClasses: 'error',
         themeToken: 'error',
         unknownClasses: 'error'
     } satisfies Record<string, DesignSeverity>,
@@ -132,6 +150,39 @@ export const DESIGN_POLICY = {
                 'Vuetify also sets the text colour; Tailwind the background. Both applying is harmless for `bg-transparent`. `bg-black` and `bg-white` are refused as theme-blind colours.'
         }
     ] satisfies AmbiguousUtility[],
+
+    /**
+     * The classes the lint refuses. A token added to `@theme` in `main.css` is a legitimate class
+     * at once; these are the ones that must not be improvised. A true one-off takes
+     * `eslint-disable-next-line better-tailwindcss/no-restricted-classes -- <why>`.
+     */
+    restrictedClasses: [
+        {
+            pattern: String.raw`\[[^\]]*?\d(?:\.\d+)?vh`,
+            message:
+                '`vh` ignores the mobile URL bar. Use `dvh` or `svh`; a repeated size becomes a token in `@theme`.'
+        },
+        {
+            pattern: String.raw`(?:^|:)(?:bg|text|border|from|to|via|ring|outline|fill|stroke|divide|shadow)-(?:white|black)(?:/\d+)?$`,
+            message:
+                '`white` and `black` do not follow the theme (invisible on the dark surface). Use `on-surface` or `surface`, with an opacity if needed.'
+        },
+        {
+            pattern: String.raw`(?:^|:)-?z-\d{3,}$`,
+            message:
+                'A bare z-index of 100 or more is improvised. Name it as a `--z-index-*` token in `main.css`.'
+        },
+        {
+            pattern: String.raw`(?:^|:)(?:group-|peer-)?hover:(?:underline|opacity-|visible|invisible|block|flex|grid|inline|hidden)`,
+            message:
+                "Tailwind's `hover:` never fires on touch. Give the resting state the cue, and keep `hover:` for a refinement on top of it."
+        },
+        {
+            pattern: String.raw`\[`,
+            message:
+                'An arbitrary value is not on the scale. Use the scale, or add a token to `@theme` in `src/styles/main.css` (then `npm run lint:fix`). A true one-off takes `eslint-disable-next-line better-tailwindcss/no-restricted-classes -- <why>`.'
+        }
+    ] satisfies RestrictedClass[],
 
     /** The theme's stylesheet entry, read live by the Tailwind plugin. */
     tailwindEntryPoint: 'src/styles/main.css',

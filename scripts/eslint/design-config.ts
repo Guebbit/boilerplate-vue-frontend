@@ -56,6 +56,20 @@ export const designLintConfig = () => {
         ...ignorePatterns(stylesheets.global),
         ...DESIGN_POLICY.vuetifyOwnedClasses
     ];
+    /**
+     * The refused classes: the policy's list, then every ambiguous utility it marks restricted.
+     * The plugin's `restrict` takes `{ pattern, message }` objects, first match wins.
+     */
+    const restrictedClasses = [
+        ...DESIGN_POLICY.restrictedClasses,
+        ...DESIGN_POLICY.ambiguousUtilities
+            .filter((entry) => entry.restrict)
+            .map((entry) => ({
+                // The policy pattern is anchored over the bare name; a variant (`md:`) may precede it.
+                pattern: entry.pattern.replace(/^\^/, '(?:^|:)'),
+                message: entry.message
+            }))
+    ];
     /** The rule entry for a list of ignored class patterns. */
     const unknownClassesRule = (ignore: string[]): [DesignSeverity, { ignore: string[] }] => [
         DESIGN_POLICY.severity.unknownClasses,
@@ -86,6 +100,10 @@ export const designLintConfig = () => {
                 'better-tailwindcss/no-deprecated-classes':
                     DESIGN_POLICY.severity.deprecatedClasses,
                 'better-tailwindcss/no-duplicate-classes': DESIGN_POLICY.severity.duplicateClasses,
+                'better-tailwindcss/no-restricted-classes': [
+                    DESIGN_POLICY.severity.restrictedClasses,
+                    { restrict: restrictedClasses }
+                ],
                 'better-tailwindcss/no-unknown-classes': unknownClassesRule(globalIgnore)
             }
         },

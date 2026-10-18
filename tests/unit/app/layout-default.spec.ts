@@ -107,12 +107,12 @@ describe('LayoutDefault — the matched view', () => {
             const wrapper = mountLayout();
 
             expect(wrapper.text()).toContain('custom content');
-            expect(wrapper.html()).toContain('min-h-[60vh]');
+            expect(wrapper.html()).toContain('min-h-[60dvh]');
         }));
 
     it('does not center an ordinary route', () =>
         router.push('/plain').then(() => {
-            expect(mountLayout().html()).not.toContain('min-h-[60vh]');
+            expect(mountLayout().html()).not.toContain('min-h-[60dvh]');
         }));
 });
 

@@ -146,7 +146,7 @@ onMounted(() => {
     <div id="oauth-callback-page">
         <v-card v-if="errorMessage" class="mx-auto mt-16 w-full max-w-md p-8 text-center">
             <p class="mb-4">{{ errorMessage }}</p>
-            <RouterLink :to="routerLinkI18n({ name: 'Login' })" class="text-link hover:underline">
+            <RouterLink :to="routerLinkI18n({ name: 'Login' })" class="text-link underline">
                 {{ t('oauth.callback-page.link-back-to-login') }}
             </RouterLink>
         </v-card>
