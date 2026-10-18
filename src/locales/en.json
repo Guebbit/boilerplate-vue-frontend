@@ -73,9 +73,23 @@
         "message": "Your staff role is switched off until you set up an authenticator app. You can still shop as a customer.",
         "button": "Set up now"
     },
+    "seller-identity": {
+        "legal-name": "Seller",
+        "address": "Address",
+        "email": "Email",
+        "phone": "Phone",
+        "vat-number": "VAT number",
+        "trade-register": "Trade register",
+        "registration-number": "Registration number"
+    },
+    "footer": {
+        "seller": "© {legalName} · VAT {vatNumber}",
+        "seller-no-vat": "© {legalName}"
+    },
     "analytics-consent": {
         "banner-label": "Analytics consent",
-        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is measured until you say yes. Crash reports are always sent, so we can fix errors. You can change your mind any time from \"Privacy choices\" in the footer.",
+        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is measured until you say yes. You can change your mind any time from \"Privacy choices\" in the footer.",
+        "crash-reports": "Crash reports follow your answer too: none are sent until you accept.",
         "privacy-choices": "Privacy choices",
         "button-accept": "Accept",
         "button-decline": "Decline"
@@ -343,6 +357,10 @@
                 "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                 "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]
+        },
+        "legal": {
+            "title": "Legal notice",
+            "intro": "Who runs this shop."
         }
     },
     "tours": {

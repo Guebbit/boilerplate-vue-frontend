@@ -16,7 +16,7 @@ Both are no-ops when their env vars are absent, so local dev works without the s
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
-    Main["src/main.ts\ninitFaro() + initUmami()"]
+    Main["src/main.ts\nsyncTracker() on the visitor's answer"]
     Store["src/infrastructure/observability/store.ts\nuseObservabilityStore()"]
     HTTP["src/infrastructure/http/index.ts\ncaptureException() on 5xx"]
     Components["Stores + composables\ntrack() / identifyUser()"]
@@ -32,20 +32,22 @@ flowchart LR
 
 ## Initialization
 
-Both tools are initialized in `src/main.ts` via the store:
+Neither tool loads before the visitor has said yes. `src/main.ts` hands the stored answer to the consent store's `syncTracker`, which calls the store:
 
 ```ts
 const obs = useObservabilityStore();
-obs.initFaro(); // no-op if VITE_FARO_URL is absent
-obs.initUmami(); // no-op if VITE_UMAMI_WEBSITE_ID is absent
+obs.setFaroConsent(granted); // boots Faro on a yes; no-op if VITE_FARO_URL is absent
+obs.setUmamiConsent(granted); // loads Umami on a yes; no-op if VITE_UMAMI_WEBSITE_ID is absent
 ```
 
 ## Grafana Faro
 
 ### What it captures
 
-Faro boots with **crash reports only**, which need no consent, and **no session id** (`sessionTracking`
-is off, so nothing like `com.grafana.faro.session` is written to `sessionStorage`):
+Faro is **not loaded until the visitor consents**: crash reports are browser requests to a third party, so
+they fall under ePrivacy Art. 5(3) like the rest (EDPB Guidelines 2/2023), and legitimate interest is not an
+exemption. Once it boots it has **no session id** (`sessionTracking` is off, so nothing like
+`com.grafana.faro.session` is written to `sessionStorage`) and captures:
 
 - Uncaught errors + unhandled promise rejections
 - Console errors
@@ -53,11 +55,19 @@ is off, so nothing like `com.grafana.faro.session` is written to `sessionStorage
 - Views (which screen an error happened on)
 - Tracing (below)
 
-**Measurement waits for the visitor.** Core Web Vitals, performance and navigation timing are
-added by `setFaroConsent(true)` and removed again on a withdrawal, called next to every
-`setUmamiConsent` (the consent store's `syncTracker`, and the profile store once the account's own
-answer arrives). It is idempotent, and a consent given before Faro has loaded is applied the moment
-it has.
+**The answer drives it.** `setFaroConsent(true)` boots Faro, lets its transport send and adds Core Web
+Vitals, performance and navigation timing. `setFaroConsent(false)` pauses the transport, which drops what
+is reported from then on, and removes the measurement. It is called next to every `setUmamiConsent` (the
+consent store's `syncTracker`, and the profile store once the account's own answer arrives). It is
+idempotent, and a withdrawal that lands while Faro is still loading wins.
+
+```mermaid
+flowchart LR
+    Answer["The visitor's answer"] -->|granted| Boot["Faro boots once, transport sends"]
+    Answer -->|denied or withdrawn| Pause["Transport paused, measurement removed"]
+    Boot -->|withdrawn| Pause
+    Pause -->|granted again| Boot
+```
 
 The `TracingInstrumentation` opens a span for every `fetch`/XHR and **propagates the W3C `traceparent` header to the API origin** (`VITE_API_URL`). Because the header is propagated, a single trace spans _"button click in the browser → API handler → Mongoose query"_ inside Grafana/Tempo.
 

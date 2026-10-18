@@ -37,6 +37,13 @@ vi.mock('@/infrastructure/analytics-consent.ts', () => ({
     isAnalyticsConsentEnabled: () => flagEnabled
 }));
 
+/** Whether the mocked build has a Faro receiver configured. */
+let faroConfigured = false;
+
+vi.mock('@/infrastructure/observability/config.ts', () => ({
+    readFaroConfig: () => (faroConfigured ? { url: 'http://collector/collect' } : undefined)
+}));
+
 vi.mock('vue-i18n', async (importOriginal) => {
     const actual = await importOriginal<typeof import('vue-i18n')>();
     return { ...actual, useI18n: () => ({ t: (key: string) => key }) };
@@ -48,6 +55,7 @@ const mountBanner = () =>
 
 beforeEach(() => {
     flagEnabled = true;
+    faroConfigured = false;
     consentChoice.value = 'unknown';
     promptOpen.value = true;
     grant.mockReset();
@@ -59,6 +67,16 @@ describe('AppAnalyticsConsentBanner', () => {
         flagEnabled = false;
 
         expect(mountBanner().find('[data-test="analytics-consent-banner"]').exists()).toBe(false);
+    });
+
+    it('says crash reports follow the answer when a Faro receiver is configured', () => {
+        faroConfigured = true;
+
+        expect(mountBanner().text()).toContain('analytics-consent.crash-reports');
+    });
+
+    it('says nothing about crash reports when no Faro receiver is configured', () => {
+        expect(mountBanner().text()).not.toContain('analytics-consent.crash-reports');
     });
 
     it('shows the banner while the choice is unknown', () => {

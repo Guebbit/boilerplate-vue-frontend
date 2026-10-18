@@ -198,7 +198,7 @@ describe('Feedback', () => {
 });
 
 describe('Static pages', () => {
-    it('about renders and cross-links reach the other three', () => {
+    it('about renders and cross-links reach the other four', () => {
         cy.visit('/en/about');
         cy.get('#static-page-about').should('exist');
 
@@ -211,5 +211,9 @@ describe('Static pages', () => {
 
         cy.contains('a', 'Privacy').click();
         cy.get('#static-page-privacy').should('exist');
+
+        cy.contains('a', 'Legal notice').click();
+        cy.get('#static-page-legal').should('exist');
+        cy.get('[data-test=seller-identity]').should('contain.text', 'Acme Garden Supplies');
     });
 });

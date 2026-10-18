@@ -4,7 +4,7 @@
  * Every other route's sweep lives with the module that owns it, at
  * `src/modules/<name>/tests/e2e/a11y.cy.ts`, so that deleting a domain deletes its accessibility
  * coverage rather than leaving a central list naming routes the app no longer serves. What stays
- * here is what has no owner to move to: the landing page, the four prose pages, and the error
+ * here is what has no owner to move to: the landing page, the five prose pages, and the error
  * page — reached both the way a visitor reaches it (a bad URL) and by its own address.
  *
  * The shell is also where the chrome every page shares lives — the app bar, the drawer, the
@@ -35,6 +35,7 @@ sweepA11y('the shell', [
     ['faq', '/en/faq'],
     ['terms', '/en/terms'],
     ['privacy', '/en/privacy'],
+    ['legal', '/en/legal'],
     ['404', '/en/this-route-does-not-exist'],
     // The Error route by its own address: `:status` is required, `:message?` is an i18n key
     // the page translates, and the error handler sends real failures here with both.

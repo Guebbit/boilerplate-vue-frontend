@@ -73,9 +73,23 @@
         "message": "Il tuo ruolo di staff è disattivato finché non configuri un'app di autenticazione. Puoi comunque acquistare come cliente.",
         "button": "Configura ora"
     },
+    "seller-identity": {
+        "legal-name": "Venditore",
+        "address": "Indirizzo",
+        "email": "Email",
+        "phone": "Telefono",
+        "vat-number": "Partita IVA",
+        "trade-register": "Registro delle imprese",
+        "registration-number": "Numero di iscrizione"
+    },
+    "footer": {
+        "seller": "© {legalName} · P.IVA {vatNumber}",
+        "seller-no-vat": "© {legalName}"
+    },
     "analytics-consent": {
         "banner-label": "Consenso analitico",
-        "message": "Vorremmo misurare come viene usato il sito: pagine visitate, e come viene cercato e sfogliato il catalogo. Nulla viene misurato finché non accetti. Le segnalazioni di errore vengono sempre inviate, così possiamo correggere i problemi. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",
+        "message": "Vorremmo misurare come viene usato il sito: pagine visitate, e come viene cercato e sfogliato il catalogo. Nulla viene misurato finché non accetti. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",
+        "crash-reports": "Anche le segnalazioni di errore seguono la tua scelta: nessuna viene inviata finché non accetti.",
         "privacy-choices": "Scelte sulla privacy",
         "button-accept": "Accetta",
         "button-decline": "Rifiuta"
@@ -343,6 +357,10 @@
                 "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
                 "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]
+        },
+        "legal": {
+            "title": "Note legali",
+            "intro": "Chi gestisce questo negozio."
         }
     },
     "tours": {

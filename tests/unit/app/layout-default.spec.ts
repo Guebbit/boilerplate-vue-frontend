@@ -17,6 +17,14 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
+import { getShop } from '@api';
+import { loadShop, resetShop } from '@/infrastructure/shop.ts';
+import { aShop } from '../../support/unit/fixtures.ts';
+
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    getShop: vi.fn()
+}));
 
 /** A trivial leaf component, so `<RouterView />` has something real to render. */
 const leaf = (text: string) => ({ template: `<p>${text}</p>` });
@@ -145,6 +153,50 @@ describe('LayoutDefault — a session that died on its own', () => {
             return flushPromises().then(() => {
                 expect(replace).not.toHaveBeenCalled();
             });
+        }));
+});
+
+/** Mounts the layout once `GET /shop` has answered with these fields. */
+const mountWithShop = (overrides: Parameters<typeof aShop>[0]) => {
+    vi.mocked(getShop).mockResolvedValue({ data: aShop(overrides) } as Awaited<
+        ReturnType<typeof getShop>
+    >);
+    return router.push('/plain').then(() => {
+        const wrapper = mountLayout();
+        return loadShop()
+            .then(() => flushPromises())
+            .then(() => wrapper);
+    });
+};
+
+describe('LayoutDefault — the seller line', () => {
+    beforeEach(() => resetShop());
+
+    it('is not drawn until the shop has loaded', () => {
+        vi.mocked(getShop).mockReturnValue(new Promise(() => undefined));
+
+        return router.push('/plain').then(() => {
+            expect(mountLayout().find('[data-test="footer-seller"]').exists()).toBe(false);
+        });
+    });
+
+    it('prints the legal name and the VAT number on every page', () =>
+        mountWithShop({ vatNumber: 'IT12345678901' }).then((wrapper) => {
+            expect(wrapper.get('[data-test="footer-seller"]').text()).toBe(
+                '© Guebbit Demo Shop Srl · VAT IT12345678901'
+            );
+        }));
+
+    it('prints the name alone for a shop with no VAT number', () =>
+        mountWithShop({}).then((wrapper) => {
+            expect(wrapper.get('[data-test="footer-seller"]').text()).toBe(
+                '© Guebbit Demo Shop Srl'
+            );
+        }));
+
+    it('links the Legal notice page next to the other prose pages', () =>
+        router.push('/plain').then(() => {
+            expect(mountLayout().get('footer').text()).toContain('Legal notice');
         }));
 });
 
