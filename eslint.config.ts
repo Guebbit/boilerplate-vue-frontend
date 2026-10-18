@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { assertAcyclicModuleEdges, MODULE_EDGES } from './scripts/module-edges';
 import { MODULE_GROUPS } from './scripts/module-groups';
+import localRules from './scripts/eslint/index';
 
 /**
  * Every module `MODULE_GROUPS` labels `shop` — the removable pet-supply domain. Computed once
@@ -749,6 +750,33 @@ export default defineConfigWithVueTs(
         files: ['src/**/*.vue'],
         ignores: ['src/modules/*/tests/**']
     })),
+
+    /**
+     * Escape hatches that cannot rot, in the template as in the script.
+     *
+     * - `reportUnusedDisableDirectives` / `reportUnusedInlineConfigs` as errors: a disable that
+     *   no longer silences anything is a lie about the code, so it fails like any other finding.
+     *   (ESLint's default is a warning, which `--max-warnings 0` already made fatal in CI; the
+     *   explicit error makes the editor agree.)
+     * - `vue/comment-directive` with `reportUnusedDisableDirectives`: the same for
+     *   `<!-- eslint-disable… -->`, which the script-side option does not reach.
+     * - `local/template-directive-description`: a template disable must say why, because
+     *   `require-description` (below) reads script comments only.
+     */
+    {
+        linterOptions: {
+            reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error'
+        }
+    },
+    {
+        files: ['src/**/*.vue'],
+        plugins: { local: { rules: localRules } },
+        rules: {
+            'vue/comment-directive': ['error', { reportUnusedDisableDirectives: true }],
+            'local/template-directive-description': 'error'
+        }
+    },
 
     /**
      * Every `eslint-disable` must say why — matching the paired backend.
