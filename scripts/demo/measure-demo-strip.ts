@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { readDemoModuleNames } from './demo-module-names';
 import {
     pruneModuleEdges,
+    pruneModuleGroups,
     removeManifest,
     removeModuleFolders,
     stripModuleRegistry
@@ -71,13 +72,14 @@ const assembleScratchCopy = (): void => {
 
 /**
  * Apply `demo:remove`'s own edits to the scratch copy: the module folders, the registry, the
- * coupling graph, the manifest and the cross-module specs. The checks below then ask whether what
+ * coupling graph, the group map, the manifest and the cross-module specs. The checks below then ask whether what
  * is left stands up, which is the question `demo:remove` has to answer for a real checkout.
  */
 const stripDemoModules = (names: readonly string[]): void => {
     removeModuleFolders(SCRATCH, names);
     stripModuleRegistry(SCRATCH, names);
     pruneModuleEdges(SCRATCH, names);
+    pruneModuleGroups(SCRATCH, names);
     removeManifest(SCRATCH);
     removeResidueSpecs(SCRATCH, names);
 };

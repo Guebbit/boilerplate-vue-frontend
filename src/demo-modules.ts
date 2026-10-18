@@ -19,13 +19,16 @@
  */
 
 /**
- * Every demo-only module's own registry name — mirrors the backend's `group: shop` set exactly,
- * `invoicing` aside: the backend issues PDFs from its own module, and this frontend reads that
- * output through the `orders` module's own download link rather than owning a module of its own.
+ * Every module `npm run demo:remove` deletes — mirrors the backend's `group: shop` and
+ * `group: example` sets exactly, `invoicing` aside: the backend issues PDFs from its own module,
+ * and this frontend reads that output through the `orders` module's own download link rather than
+ * owning a module of its own. `example` is here because it is the template to copy first and then
+ * delete, like the shop.
  */
 export const DEMO_MODULE_NAMES = [
     'cart',
     'delivery',
+    'example',
     'inventory',
     'notifications',
     'orders',

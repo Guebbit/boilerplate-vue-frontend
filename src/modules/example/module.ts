@@ -30,7 +30,7 @@ declare module '@/infrastructure/utils/logger.ts' {
  * entry and every screen disappear for anyone the server's rules do not let in; the one public
  * route needs neither.
  *
- * It is not on `DEMO_MODULE_NAMES`, so `npm run demo:remove` leaves it in place.
+ * It is on `DEMO_MODULE_NAMES`, so `npm run demo:remove` deletes it with the shop: copy it first.
  */
 export default {
     name: 'example',

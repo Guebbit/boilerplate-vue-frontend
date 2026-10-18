@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { readDemoModuleNames } from './demo-module-names';
 import {
     pruneModuleEdges,
+    pruneModuleGroups,
     removeManifest,
     removeModuleFolders,
     stripModuleRegistry
@@ -73,6 +74,8 @@ stripModuleRegistry(REPO_ROOT, demoModuleNames);
 console.info(`  src/modules.ts — removed ${demoModuleNames.join(', ')}`);
 pruneModuleEdges(REPO_ROOT, demoModuleNames);
 console.info('  scripts/module-edges.ts — dropped their entries');
+pruneModuleGroups(REPO_ROOT, demoModuleNames);
+console.info('  scripts/module-groups.ts — dropped their entries');
 console.info(`  ${removeManifest(REPO_ROOT).join(', ')} — deleted`);
 
 console.info('\n[demo-remove] cross-module specs:');

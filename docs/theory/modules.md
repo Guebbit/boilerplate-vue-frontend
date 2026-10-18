@@ -216,9 +216,9 @@ The template to copy is `src/modules/example`: a small note domain with a list, 
 form, an edit form (with a cover upload) and one public screen, a store over the generated client,
 the Zod schemas, the response-schema rows, a teaching route guard, a provide/inject pair and both
 languages. It has no page of its own and no barrel (nothing imports it, and a barrel is published
-only for what a sibling imports); `demo:remove` leaves it in place. Copy the folder, rename it,
-and delete the screens you do not need; delete the folder, and its line in `src/modules.ts`,
-once you have your own domain.
+only for what a sibling imports); `demo:remove` deletes it with the shop, so copy it first. Copy
+the folder, rename it, and delete the screens you do not need; delete the folder, and its line in
+`src/modules.ts`, once you have your own domain.
 
 Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines
 in `src/modules.ts`, with **zero** edits to any existing file. Deleting `products`, `cart`, `orders`

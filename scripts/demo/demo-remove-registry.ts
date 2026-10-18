@@ -75,6 +75,22 @@ export const pruneModuleEdges = (root: string, names: readonly string[]): void =
 };
 
 /**
+ * Edit `scripts/module-groups.ts`: drop the group entry of each removed module, because the
+ * module-groups spec refuses a name that is no longer an enabled module.
+ *
+ * @param root - the checkout root
+ * @param names - the module names to remove
+ */
+export const pruneModuleGroups = (root: string, names: readonly string[]): void => {
+    // A key is bare (`cart:`) or quoted when it holds a hyphen (`'stock-alerts':`).
+    const entryPattern = new RegExp(
+        String.raw`^\s{4}['"]?(?:${names.join('|')})['"]?:\s*'[a-z]+',?\s*$`
+    );
+
+    filterLines(path.join(root, 'scripts', 'module-groups.ts'), (line) => !entryPattern.test(line));
+};
+
+/**
  * Delete `src/demo-modules.ts` and its spec — their whole job was naming modules that no longer
  * exist. `scripts/demo/demo-module-names.ts` stays: `measure-demo-strip.ts` still needs it for
  * whatever this build's module set becomes next.

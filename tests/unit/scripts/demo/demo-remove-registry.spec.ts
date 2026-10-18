@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
     pruneModuleEdges,
+    pruneModuleGroups,
     removeManifest,
     removeModuleFolders,
     stripModuleRegistry
@@ -108,6 +109,33 @@ describe('pruneModuleEdges', () => {
         pruneModuleEdges(root, ['wishlist']);
 
         expect(read('scripts/module-edges.ts')).toContain("cart: ['delivery', 'account'],");
+    });
+});
+
+describe('pruneModuleGroups', () => {
+    const GROUPS = [
+        'export const MODULE_GROUPS: Record<string, ModuleGroup> = {',
+        "    account: 'foundation',",
+        "    cart: 'shop',",
+        "    example: 'example',",
+        "    'stock-alerts': 'shop',",
+        "    users: 'foundation'",
+        '};'
+    ].join('\n');
+
+    it('drops the entry of each removed module, bare or quoted, and keeps the rest', () => {
+        write('scripts/module-groups.ts', GROUPS);
+
+        pruneModuleGroups(root, ['cart', 'example', 'stock-alerts']);
+
+        expect(read('scripts/module-groups.ts')).toBe(
+            [
+                'export const MODULE_GROUPS: Record<string, ModuleGroup> = {',
+                "    account: 'foundation',",
+                "    users: 'foundation'",
+                '};'
+            ].join('\n')
+        );
     });
 });
 
