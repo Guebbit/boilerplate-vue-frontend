@@ -391,9 +391,13 @@ export const DeleteLocaleResponse = zod.strictObject({
  *
  * 404 for a language that does not exist in the dynamic tier, and equally for one
  * that exists but is inactive — an inactive language is invisible to every public
- * route, which is the whole point of the flag.
+ * route, which is the whole point of the flag. A caller holding `display:Locale`
+ * (staff, or an API key minted with it) is the exception: they get an inactive
+ * language's dictionary too, so a translation can be seen in the shop before it is
+ * switched on for everyone.
  *
- * Public and cacheable, like every other locale read.
+ * Public and cacheable, like every other locale read; a staff answer skips the
+ * shared cache.
  * @summary Client message dictionary
  */
 export const getLocaleMessagesPathLocaleMax = 35;
@@ -968,8 +972,7 @@ export const GetEntityTranslationsResponse = zod.strictObject({
  * invariant `POST /products` already enforces on create: a caller cannot replace the
  * whole set and leave the entity with nothing to fall back to.
  *
- * 422 for the same reasons `PATCH` refuses — an unknown locale, an inactive one being written (a `null` that deletes an inactive locale's row is
- * allowed), an empty
+ * 422 for the same reasons `PATCH` refuses — an unknown locale, an empty
  * `fields` object, a `fields` key the `translatables` registry does not declare, or a
  * missing/`null` fallback locale.
  * @summary Replace every translation an entity has
