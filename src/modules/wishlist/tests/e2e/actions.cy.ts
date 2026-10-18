@@ -18,5 +18,18 @@ actionTable('wishlist', [
         alert: 'wishlist-line-action-error',
         message: 'The removal failed',
         listed: '[data-test=wishlist-item]'
+    },
+    {
+        name: 'a failed save from the product page keeps the heart and shows the alert, and a retry succeeds',
+        persona: 'user',
+        route: () => cy.subjectId('product.barebones').then((id) => `/en/products/${id}`),
+        trigger: () => {
+            cy.get('[data-test=wishlist-toggle]').click();
+        },
+        intercept: { method: 'PUT', url: '**/wishlist/*', operation: '/wishlist/{productId}' },
+        kind: 'row',
+        alert: 'wishlist-toggle-error',
+        message: 'The save failed',
+        listed: '[data-test=wishlist-toggle]'
     }
 ]);
