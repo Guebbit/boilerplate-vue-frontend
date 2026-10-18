@@ -13,11 +13,13 @@ export default {
  * @module
  * Dedicated privacy-policy page, its own component rather than a shared paragraph renderer — real policy copy
  * needs its own structure (headings, lists, data-category tables) that the shared paragraph
- * renderer does not support. Copy lives under `static-pages.privacy.paragraphs`, currently
- * placeholder Lorem Ipsum, replaced before launch.
+ * renderer does not support. Opens with a placeholder the operator replaces before going live (this
+ * repository ships no legal wording), then the one statement that describes what this app itself
+ * does: the analytics tracker and its consent. Copy lives under `static-pages.privacy`.
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import LegalPlaceholder from '@/app/components/LegalPlaceholder.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
 import { staticPageParagraphs } from '@/app/utils/static-pages.ts';
 
@@ -37,6 +39,8 @@ const paragraphs = computed(() => staticPageParagraphs(tm, rt, 'static-pages.pri
 <template>
     <div id="static-page-privacy">
         <v-card class="mx-auto mt-10 w-full max-w-2xl p-8">
+            <LegalPlaceholder page="privacy" />
+
             <p v-for="(paragraph, index) in paragraphs" :key="'p-' + index" class="mb-4">
                 {{ paragraph }}
             </p>

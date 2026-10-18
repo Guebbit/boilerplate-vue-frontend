@@ -344,18 +344,39 @@
         },
         "terms": {
             "title": "Termini di servizio",
-            "paragraphs": [
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
-            ]
+            "placeholder": {
+                "notice": "Segnaposto: questo negozio non ha fornito le proprie condizioni di vendita. Il gestore deve sostituire questo testo prima della messa online.",
+                "checklist-title": "Il testo vero deve coprire:",
+                "sections": [
+                    "Identità del venditore",
+                    "Prezzi e pagamento",
+                    "Consegna",
+                    "Preordine e ordine in arretrato",
+                    "Il diritto di recesso di 14 giorni, con il relativo modulo tipo",
+                    "La garanzia legale di 2 anni",
+                    "Reclami"
+                ]
+            }
         },
         "privacy": {
             "title": "Privacy",
+            "placeholder": {
+                "notice": "Segnaposto: questo negozio non ha fornito la propria informativa sulla privacy. Il gestore deve sostituire questo testo prima della messa online.",
+                "checklist-title": "Il testo vero deve coprire:",
+                "sections": [
+                    "Chi è responsabile dei dati e come contattarlo",
+                    "Quali dati vengono raccolti, perché e su quale base giuridica",
+                    "Chi riceve i dati (responsabili del trattamento e altri destinatari)",
+                    "Trasferimenti fuori dall'UE",
+                    "Per quanto tempo i dati vengono conservati",
+                    "I diritti della persona (accesso, rettifica, cancellazione, opposizione, portabilità)",
+                    "Come revocare il consenso",
+                    "Il diritto di presentare reclamo all'autorità di controllo",
+                    "Cookie e archiviazione (la forma di questa sezione è ancora da decidere)"
+                ]
+            },
             "paragraphs": [
-                "Analisi: quando è configurato, questo sito misura le visualizzazioni di pagina con un tracker Umami self-hosted, ma solo dopo che accetti il banner sulle analisi. Sono inclusi l'indirizzo di ogni pagina, la lingua e la dimensione dello schermo del browser e la pagina di provenienza. Se rifiuti, o ritiri il consenso da \"Scelte sulla privacy\" nel piè di pagina, il tracker non viene caricato o smette di inviare. Se hai effettuato l'accesso, l'id del tuo account viene associato a ciò che viene registrato.",
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
+                "Analisi: quando è configurato, questo sito misura le visualizzazioni di pagina con un tracker Umami self-hosted, ma solo dopo che accetti il banner sulle analisi. Sono inclusi l'indirizzo di ogni pagina, la lingua e la dimensione dello schermo del browser e la pagina di provenienza. Se rifiuti, o ritiri il consenso da \"Scelte sulla privacy\" nel piè di pagina, il tracker non viene caricato o smette di inviare. Se hai effettuato l'accesso, l'id del tuo account viene associato a ciò che viene registrato."
             ]
         },
         "legal": {

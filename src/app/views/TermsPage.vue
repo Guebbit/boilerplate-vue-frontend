@@ -13,26 +13,12 @@ export default {
  * @module
  * Dedicated terms-of-service page, its own component rather than a shared paragraph renderer — real legal copy
  * needs its own structure (headings, lists, numbered clauses) that the shared paragraph
- * renderer does not support. Opens with the seller's identity, read from `GET /shop`. Copy lives
- * under `static-pages.terms.paragraphs`, currently placeholder Lorem Ipsum, replaced before launch.
+ * renderer does not support. Opens with the seller's identity, read from `GET /shop`, then a
+ * placeholder the operator replaces before going live: this repository ships no legal wording.
  */
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import LegalPlaceholder from '@/app/components/LegalPlaceholder.vue';
 import SellerIdentityBlock from '@/app/components/SellerIdentityBlock.vue';
 import StaticPageLinks from '@/app/components/StaticPageLinks.vue';
-import { staticPageParagraphs } from '@/app/utils/static-pages.ts';
-
-/**
- * Translation helpers: `tm`/`rt` for the raw paragraph list resolved by
- * {@link staticPageParagraphs}.
- */
-// eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n's documented destructuring; the composer binds these itself
-const { tm, rt } = useI18n();
-
-/**
- * The page's prose, one string per paragraph.
- */
-const paragraphs = computed(() => staticPageParagraphs(tm, rt, 'static-pages.terms.paragraphs'));
 </script>
 
 <template>
@@ -40,9 +26,7 @@ const paragraphs = computed(() => staticPageParagraphs(tm, rt, 'static-pages.ter
         <v-card class="mx-auto mt-10 w-full max-w-2xl p-8">
             <SellerIdentityBlock />
 
-            <p v-for="(paragraph, index) in paragraphs" :key="'p-' + index" class="mb-4">
-                {{ paragraph }}
-            </p>
+            <LegalPlaceholder page="terms" />
 
             <StaticPageLinks current="terms" />
         </v-card>

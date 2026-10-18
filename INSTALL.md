@@ -16,7 +16,7 @@ If you pair it with the Node backend, that repository has its own `INSTALL.md`.
 - [ ] Name, logo, favicons and the web manifest still say "Guebbit": [Branding](docs/tools/environment.md#branding)
 - [ ] The licence holder, and the AGPL section 13 source offer (the app has no place to show the link): [License](README.md#license)
 - [ ] `robots.txt`: none ships, add one if you want crawlers steered
-- [ ] The Terms and Privacy pages are placeholder text (Lorem Ipsum): replace `static-pages.terms` and `static-pages.privacy` in `src/locales/en.json` and `it.json`, and write the Privacy page's cookie section (the cookies and storage keys the app sets, and what each is for)
+- [ ] Replace the legal placeholders (Terms, Privacy): `static-pages.terms` and `static-pages.privacy` in `src/locales/en.json` and `it.json`, or edit them at runtime from the admin dictionary. The Privacy page also needs its cookie section (the cookies and storage keys the app sets, and what each is for)
 - [ ] The seller's name, address, VAT number and trade register shown in the footer, on Terms and on the Legal notice page come from the backend's `NODE_SHOP_*` variables (set once there)
 
 ## Features, each off until you act
