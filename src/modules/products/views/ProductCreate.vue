@@ -285,8 +285,8 @@ const submitForm = () => {
                 tag's slot is seeded as an object by `handleAddLocale`/the fallback watcher above;
                 a create never puts `null` there (that signal only exists on the merging PATCH).
             -->
-            <v-window v-model="activeTab">
-                <v-window-item
+            <v-tabs-window v-model="activeTab">
+                <v-tabs-window-item
                     v-for="tag in openTags"
                     :key="tag"
                     :value="tag"
@@ -312,8 +312,8 @@ const submitForm = () => {
                         :rows="5"
                         data-test="translation-description-field"
                     />
-                </v-window-item>
-            </v-window>
+                </v-tabs-window-item>
+            </v-tabs-window>
 
             <v-number-input
                 v-model="form.price"

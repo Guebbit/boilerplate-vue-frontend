@@ -9,9 +9,10 @@
  * The remove control sits outside `<v-tabs>` on purpose: axe's `nested-interactive` flags any
  * focusable control inside a `role="tab"`, and a sibling `<button>` inside `role="tablist"` trips
  * `aria-required-children` instead — no shape with the button inside the tab bar satisfies both.
- * Every tab also carries `id`/`aria-controls` pointing at the matching `v-window-item`, which the
- * caller completes with `role="tabpanel"`/`aria-labelledby` — the WAI-ARIA APG tabs pattern,
- * finished rather than half-wired.
+ * Every tab also carries `id`/`aria-controls` pointing at the matching `v-tabs-window-item`,
+ * which the caller completes with `role="tabpanel"`/`aria-labelledby` — the WAI-ARIA APG tabs
+ * pattern, finished rather than half-wired. The panels are a `v-tabs-window`, not a `v-window`:
+ * a plain window swipes between panels, so a horizontal drag in a text field changed language.
  *
  * Purely presentational — `v-model` is the active tab, `add`/`remove` report the caller's intent,
  * and the caller owns the actual per-locale data and its ordering (see `useTranslationTabOrder`).

@@ -1,7 +1,8 @@
 // requires-module: account, cart, delivery, inventory, orders, payments, products
 /**
  * @module
- * FR5 · Shopping on a phone. At a 390 × 844 viewport a guest opens the drawer menu, signs in
+ * FR5 · Shopping on a phone. At a 390 × 844 viewport, on an emulated touch screen (taps, not
+ * clicks: no hover, a finger-sized pointer), a guest opens the drawer menu, signs in
  * through it, buys a product by card — adding a second address in the dialog on the way — and logs
  * out through the drawer.
  *
@@ -22,7 +23,7 @@ const DRAWER = '#app-drawer';
 
 /** Opens the drawer with the hamburger and waits for it to be on screen. */
 const openDrawer = (): void => {
-    cy.get('[aria-controls=app-drawer]').click();
+    cy.get('[aria-controls=app-drawer]').tap();
     cy.get(DRAWER).should('be.visible');
 };
 
@@ -32,7 +33,7 @@ const openDrawer = (): void => {
  */
 const dismissToasts = (): void => {
     cy.get('.v-alert').each((alert) => {
-        cy.wrap(alert).find('.v-alert__close button').click();
+        cy.wrap(alert).find('.v-alert__close button').tap();
     });
     cy.get('.v-alert').should('not.exist');
 };
@@ -67,7 +68,7 @@ describe('FR5 · Shopping on a phone', () => {
         cy.get(`${DRAWER} a[href^="/en/signup"]`).should('be.visible');
 
         cy.step('signs in through it');
-        cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).click();
+        cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).tap();
         cy.get('#login-page').should('exist');
         fitsTheScreen('the login page');
         cy.accountOf('user').then(({ email, password }) => {
@@ -83,7 +84,7 @@ describe('FR5 · Shopping on a phone', () => {
         openDrawer();
         cy.get(`${DRAWER} [data-test^=drawer-section-]`).should('have.length.at.least', 1);
         cy.get(`${DRAWER} a[href="/en/orders"]`).should('exist');
-        cy.get(`${DRAWER} a[href="/en/products"]`).click();
+        cy.get(`${DRAWER} a[href="/en/products"]`).tap();
         cy.get(DRAWER).should('not.be.visible');
 
         cy.step('finds a product and puts it in the cart');
@@ -99,8 +100,8 @@ describe('FR5 · Shopping on a phone', () => {
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 1);
         fitsTheScreen('the cart');
-        cy.get('[data-test=shipping-method-standard]').click();
-        cy.get('[data-test=address-picker-add]').click();
+        cy.get('[data-test=shipping-method-standard]').tap();
+        cy.get('[data-test=address-picker-add]').tap();
         cy.get('[data-test=address-dialog]').should('be.visible');
         fitsTheScreen('the address dialog');
         fillAddressDialog({
@@ -113,7 +114,7 @@ describe('FR5 · Shopping on a phone', () => {
         });
         cy.get('[data-test=address-dialog]').should('not.exist');
         fitsTheScreen('the cart with an address');
-        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').tap();
 
         cy.step('pays by card on the order page');
         cy.get('#order-target').should('exist');
@@ -125,7 +126,10 @@ describe('FR5 · Shopping on a phone', () => {
         cy.step('logs out through the drawer, which then offers login again');
         dismissToasts();
         openDrawer();
-        cy.contains(`${DRAWER} [role=button]`, 'Logout').click();
+        cy.contains(`${DRAWER} [role=button]`, 'Logout').tap();
+        // The drawer closes with the navigation; a tap on the hamburger sent before that would
+        // toggle it shut again instead of opening it.
+        cy.get(DRAWER).should('not.be.visible');
         openDrawer();
         cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).should('be.visible');
     });

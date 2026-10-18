@@ -6,6 +6,7 @@
  * clears the API's own cache tag, so what proves the path end to end is a fresh page load
  * actually showing the new words.
  */
+import { applyViewport } from '../../../../../tests/support/e2e/apply-viewport';
 
 describe('Entity translations — the generic admin door', () => {
     beforeEach(() => {
@@ -29,7 +30,7 @@ describe('Entity translations — the generic admin door', () => {
             cy.get('[data-test=translation-tab-it]').click();
             /*
              * Scoped to the `it` PANEL, not filtered by `:visible`. Every open locale's fields
-             * stay in the DOM — `v-window` renders them all — so `:visible` is a race with the
+             * stay in the DOM — `v-tabs-window` renders them all — so `:visible` is a race with the
              * tab transition: the outgoing panel is still on screen for a frame, both panels
              * match, and `cy.type()` refuses a two-element subject. The panel's own id is the
              * one selector that names exactly one of them.
@@ -63,5 +64,46 @@ describe('Entity translations — the generic admin door', () => {
                 cy.get('#entity-translations-page').should('exist');
             }
         );
+    });
+    /*
+     * Appended last: touch emulation leaks into the tests after it in live Chromium (the desktop
+     * pointer is lost), so nothing may follow this block.
+     */
+    describe('on a touch screen', () => {
+        it('keeps the language when a swipe starts inside a field', () => {
+            cy.createProduct({
+                translations: {
+                    en: { title: `EN swipe ${Date.now()}` },
+                    it: { title: `IT swipe ${Date.now()}` }
+                }
+            }).then((product) => {
+                applyViewport('phone');
+                cy.visit(`/en/locales/translations/product/${product.id}`);
+
+                cy.get('[data-test=translation-tab-en]').should(
+                    'have.attr',
+                    'aria-selected',
+                    'true'
+                );
+                cy.get('#translation-panel-en [data-field=title] textarea')
+                    .invoke('val')
+                    .then((typed) => {
+                        cy.get('#translation-panel-en [data-field=title] textarea').realSwipe(
+                            'toLeft',
+                            { length: 120 }
+                        );
+
+                        cy.get('[data-test=translation-tab-en]').should(
+                            'have.attr',
+                            'aria-selected',
+                            'true'
+                        );
+                        cy.get('#translation-panel-en [data-field=title] textarea').should(
+                            'have.value',
+                            typed
+                        );
+                    });
+            });
+        });
     });
 });

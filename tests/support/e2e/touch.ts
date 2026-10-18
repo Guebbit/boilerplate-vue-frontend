@@ -142,6 +142,8 @@ export const collectTouchProbes = (win: Window): TouchProbe[] =>
                 visibility: win.getComputedStyle(element).visibility,
                 selectionControlInput: Boolean(element.closest('.v-selection-control__input')),
                 fileInput: element.matches('input[type=file]'),
+                fieldInput:
+                    element.matches('input, textarea') && Boolean(element.closest('.v-field')),
                 title: element.getAttribute('title') ?? '',
                 text,
                 clipped:
@@ -194,10 +196,17 @@ Cypress.Commands.add(
     'shouldBeTappable',
     { prevSubject: true },
     asStub<Cypress.CommandFn<'shouldBeTappable'>>((subject: JQuery) => {
+        // Scrolled before the visibility check: Cypress calls an element clipped by a scrolling
+        // container (a long drawer) not visible, and a finger would scroll to it first.
+        // Centred, not top-aligned: a top-aligned element sits under the sticky app bar, where
+        // the hit test below would then (rightly) call it covered.
+        // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView
+        cy.wrap(subject, { log: false }).then(($element) => {
+            $element.get(0)?.scrollIntoView({ block: 'center', inline: 'center' });
+        });
         cy.wrap(subject, { log: false }).should('be.visible');
         if (subject.is('button, input, select, textarea'))
             cy.wrap(subject, { log: false }).should('not.be.disabled');
-        cy.wrap(subject, { log: false }).scrollIntoView();
         return cy.wrap(subject, { log: false }).then(($element) => {
             const element = $element.get(0);
             if (!element) throw new Error('shouldBeTappable: the subject is empty');

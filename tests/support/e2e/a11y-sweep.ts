@@ -110,9 +110,25 @@ const toCase = (entry: A11ySweepEntry): A11ySweepCase => {
 /** Whether this size lays out as a phone, where the focus-zoom and reflow checks apply. */
 const isNarrow = (size: ViewportName): boolean => VIEWPORTS[size].width < BREAKPOINTS.sm;
 
+/** The one matrix size the touch scan runs at: the narrowest, where truncation is worst. */
+const TOUCH_SCAN_SIZE: ViewportName = 'phone-small';
+
+/**
+ * Whether the touch scan runs for this case at this size.
+ *
+ * The matrix scans once, at {@link TOUCH_SCAN_SIZE}: its four rules do not depend on width, so
+ * every touch width would cost four times for no extra catch. A case pinned to a touch size
+ * (the drawer cases at `phone`) is scanned there, once, since it never visits the matrix.
+ *
+ * @param sweepCase - the case being swept
+ * @param size - the size the page is laid out at now
+ */
+const isTouchScanned = (sweepCase: A11ySweepCase, size: ViewportName): boolean =>
+    sweepCase.viewport ? VIEWPORTS[size].touch : size === TOUCH_SCAN_SIZE;
+
 /**
  * The layout checks at one size, plus what that size adds: the text treatment it is checked
- * under, axe and the comfort tier at phone widths.
+ * under, axe and the comfort tier at phone widths, and the touch scan (a finger's reach).
  *
  * @param sweepCase - the case being swept
  * @param size - the size the page is laid out at now
@@ -124,6 +140,7 @@ const auditAt = (sweepCase: A11ySweepCase, size: ViewportName): void => {
 
     if (size === 'phone' || size === 'phone-small') cy.checkTargetComfort(`${name} @ ${size}`);
     if (size === 'phone') cy.checkPageA11y(`${name} @ ${size}`);
+    if (isTouchScanned(sweepCase, size)) cy.checkTouchReachable(`${name} @ ${size}`);
 
     const mode = TEXT_MODE_AT[size];
     if (mode)

@@ -18,6 +18,7 @@ const probe = (overrides: Partial<TouchProbe> = {}): TouchProbe => ({
     visibility: 'visible',
     selectionControlInput: false,
     fileInput: false,
+    fieldInput: false,
     title: '',
     text: 'Save',
     clipped: false,
@@ -45,11 +46,12 @@ describe('hidden-control', () => {
         expect(classifyTouchProbes([probe(), probe({ opacity: 0.5 })])).toEqual([]);
     });
 
-    it('lets a selection-control input and a file input hide: the glyph beside them is the control', () => {
+    it('lets a selection-control, a file input and a field input hide: the thing beside or around them takes the tap', () => {
         expect(
             classifyTouchProbes([
                 probe({ opacity: 0, selectionControlInput: true }),
-                probe({ opacity: 0, fileInput: true })
+                probe({ opacity: 0, fileInput: true }),
+                probe({ opacity: 0, fieldInput: true })
             ])
         ).toEqual([]);
     });

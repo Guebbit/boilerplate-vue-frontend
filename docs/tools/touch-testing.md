@@ -95,12 +95,26 @@ flowchart LR
 | `tooltip-on-non-control` | A Vuetify tooltip hangs on a non-interactive element.                                     | yes   |
 | `title-only-hint`        | A `title` adds a hint nothing cut off. Recorded for triage.                               | no    |
 
-The allowlist is closed: the visible input of a Vuetify selection control, and `input[type=file]` inside a
-file input (the glyph or button beside them is the control). Findings with the same kind and detail are
+The allowlist is closed: the visible input of a Vuetify selection control, `input[type=file]` inside a
+file input (the glyph or button beside them is the control), and the `input` or `textarea` inside a
+`.v-field` (at rest its label sits on top of it, at opacity 0, and the field takes the tap and focuses it). Findings with the same kind and detail are
 grouped, with a count and up to three selectors.
 
 Where it runs: the shell contract in `tests/e2e/specs/touch.cy.ts`. It carries a committed red/green case
 that doctors the page and expects exactly the two findings, then none.
+
+It also runs in every module's viewport sweep (`tests/support/e2e/a11y-sweep.ts`), as a column of the layout
+matrix: once, at `phone-small`, the narrowest width, where truncation is worst. The four rules do not
+depend on width, so a scan at every touch size would cost four times for no extra catch. A case pinned to a
+touch size (the drawer and dialog cases at `phone`) is scanned there instead, once, since it never visits
+the matrix. Like the matrix it runs on the demo profile's `jwt` leg, and the report key is
+`<case> @ <viewport>`.
+
+A worked example: the audit trail cut a request id to `abc12345...` and kept the rest in a `title`, which
+is exactly `title-only-data` (the text is the title cut short in JavaScript). The cell now has a copy button
+whose name carries the whole id and no `title`, so the observability audit route scans green. The scan's
+first sweep also showed its own false positive: an empty text field has its input at opacity 0 under the
+label, so the input is on the allowlist above.
 
 ## Determinism rules
 

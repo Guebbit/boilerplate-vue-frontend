@@ -222,7 +222,8 @@ A phone is not a narrow desktop. What a user can do depends on the **input**, no
 - **Input modality is not width.** `hover`, `any-hover`, `pointer` and `any-pointer` (Media Queries
   Level 4) describe the device. A touch laptop is wide and coarse; a tablet with a mouse is both.
   `mobile` (width) and `coarse` (pointer) are separate inputs, and `useTouchFriendlySize` combines
-  them: a row action is big when either is true.
+  them: a row action is the 44 px `large` when either is true, so a touch tablet above 600 px gets
+  finger-sized buttons and a narrow desktop window does too.
 - **Compatibility mouse events and sticky hover.** A tap emits `mouseover`, `mouseenter` and `click`
   (Touch Events, Pointer Events), so a hover state set by a tap sticks until a tap lands elsewhere.
 - **A tooltip is a pointer affordance.** Material 3 and WCAG 1.4.13 (content on hover or focus is
@@ -231,9 +232,13 @@ A phone is not a narrow desktop. What a user can do depends on the **input**, no
   keyboard focus everywhere.
 - **`title=` never carries information alone.** The HTML standard warns that `title` is not exposed to
   touch or keyboard users. Truncated data needs a tap route: an expansion row, a copy button, a caption.
+  The audit trail's request and trace ids show their first characters and carry a copy button
+  (`useCopyToClipboard`) whose name holds the whole id.
 - **Gestures are an enhancement, never the only route**, and never inside an input. WCAG 2.5.1 (pointer
   gestures) and 2.5.7 (dragging). The trap to avoid: a swipe that starts in a text field switching a
-  panel (`v-window` does, `v-tabs-window` does not).
+  panel. `v-window` swipes between its items, so the translation panels (product create and edit,
+  the entity translations screen) are a `v-tabs-window`, Vuetify's own component for a `v-tabs`
+  panel set, which does not.
 - **Target size** is the layout lane's: WCAG 2.5.8 gates at 24 px, and the 44 px comfort tier applies at
   phone widths.
 

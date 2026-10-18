@@ -13,12 +13,14 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { Search } from 'lucide-vue-next';
+import { Copy, Search } from 'lucide-vue-next';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
+import { useCopyToClipboard } from '@/ui/composables/use-copy-to-clipboard.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * i18n translator for this component's template and messages.
@@ -158,6 +160,17 @@ const handleReset = () => {
 const truncateId = (value?: string, length = 8) =>
     value ? `${value.slice(0, length)}...` : EMPTY_VALUE;
 
+/**
+ * Copies a full correlation id: the cell shows only its first characters, and a title would
+ * give a finger no way to read the rest.
+ */
+const copyId = useCopyToClipboard('admin-page.audit-copy-failed');
+
+/**
+ * Size of the copy buttons: a finger's 44 px on a touch screen.
+ */
+const copySize = useTouchFriendlySize();
+
 // The initial load: the first page, unfiltered.
 void fetchPage({ ...filters });
 </script>
@@ -270,22 +283,48 @@ void fetchPage({ ...filters });
 
             <template v-slot:[`item.requestId`]="{ item }">
                 <!--
-                    The full id for the reader too — a title alone is mouse-only. As hidden text
-                    rather than an `aria-label`: a role-less span may not carry a name
-                    (`aria-prohibited-attr`), and the visible span is hidden from the reader so
-                    the id is not announced twice.
+                    The truncated id is for the eye only (hidden from a reader); the copy button
+                    carries the full id in its name, for a screen reader and a finger alike.
                 -->
-                <span :title="item.requestId" class="font-mono text-xs" aria-hidden="true">
-                    {{ truncateId(item.requestId) }}
+                <span class="inline-flex items-center gap-1" v-if="item.requestId">
+                    <span class="font-mono text-xs" aria-hidden="true">
+                        {{ truncateId(item.requestId) }}
+                    </span>
+                    <v-btn
+                        icon
+                        variant="text"
+                        :size="copySize"
+                        :data-test="`audit-copy-requestId`"
+                        :aria-label="t('admin-page.audit-copy-request-id', { id: item.requestId })"
+                        @click="copyId(item.requestId)"
+                    >
+                        <Copy :size="14" aria-hidden="true" />
+                    </v-btn>
                 </span>
-                <span class="sr-only">{{ item.requestId }}</span>
+                <template v-else>{{ EMPTY_VALUE }}</template>
             </template>
 
             <template v-slot:[`item.traceId`]="{ item }">
-                <span :title="item.traceId" class="font-mono text-xs" aria-hidden="true">
-                    {{ truncateId(item.traceId) }}
+                <!--
+                    The truncated id is for the eye only (hidden from a reader); the copy button
+                    carries the full id in its name, for a screen reader and a finger alike.
+                -->
+                <span class="inline-flex items-center gap-1" v-if="item.traceId">
+                    <span class="font-mono text-xs" aria-hidden="true">
+                        {{ truncateId(item.traceId) }}
+                    </span>
+                    <v-btn
+                        icon
+                        variant="text"
+                        :size="copySize"
+                        :data-test="`audit-copy-traceId`"
+                        :aria-label="t('admin-page.audit-copy-trace-id', { id: item.traceId })"
+                        @click="copyId(item.traceId)"
+                    >
+                        <Copy :size="14" aria-hidden="true" />
+                    </v-btn>
                 </span>
-                <span class="sr-only">{{ item.traceId }}</span>
+                <template v-else>{{ EMPTY_VALUE }}</template>
             </template>
         </DataTable>
 
