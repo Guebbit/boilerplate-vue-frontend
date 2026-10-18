@@ -189,7 +189,12 @@ describe('the inbox search', () => {
 
     it('posts every supported filter', () => {
         const store = useFeedbackStore();
-        store.filters = { text: 'cats', status: 'new', email: 'curious@example.com' };
+        store.filters = {
+            text: 'cats',
+            status: 'new',
+            category: 'privacy',
+            email: 'curious@example.com'
+        };
 
         return store
             .watchSearchRequests()
@@ -198,6 +203,7 @@ describe('the inbox search', () => {
                 expect(lastBody()).toMatchObject({
                     text: 'cats',
                     status: 'new',
+                    category: 'privacy',
                     email: 'curious@example.com'
                 });
             });

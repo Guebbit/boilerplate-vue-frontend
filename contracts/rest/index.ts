@@ -2082,6 +2082,18 @@ export interface SearchUsersRequest {
     deleted?: boolean;
 }
 
+export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
+
+export const FeedbackCategory = {
+    order: 'order',
+    cancellation: 'cancellation',
+    return: 'return',
+    payment: 'payment',
+    account: 'account',
+    privacy: 'privacy',
+    other: 'other'
+} as const;
+
 export interface CreateFeedbackRequest {
     /**
      * @minLength 1
@@ -2099,6 +2111,13 @@ export interface CreateFeedbackRequest {
      * @maxLength 5000
      */
     message: string;
+    category?: FeedbackCategory;
+    /**
+     * The order the visitor says this is about, free text. Not checked against any order.
+     * @minLength 1
+     * @maxLength 40
+     */
+    orderNumber?: string;
     /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
      * @maxLength 200
@@ -2122,6 +2141,9 @@ export interface FeedbackRequest {
     email: Email;
     subject: string;
     message: string;
+    category?: FeedbackCategory;
+    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+    orderNumber?: string;
     status: FeedbackRequestStatus;
     adminNotes?: string;
     respondedAt?: string;
@@ -2172,6 +2194,7 @@ export interface SearchFeedbackRequestsRequest {
     sort?: FeedbackRequestSort;
     text?: Text;
     status?: FeedbackRequestStatus;
+    category?: FeedbackCategory;
     email?: Email;
 }
 
@@ -4805,6 +4828,8 @@ export interface ExportFeedbackTicket {
     email: Email;
     subject: string;
     message: string;
+    category?: FeedbackCategory;
+    orderNumber?: string;
     status: FeedbackRequestStatus;
     respondedAt?: string;
     createdAt?: string;
@@ -6235,6 +6260,7 @@ export type ListFeedbackRequestsParams = {
     text?: TextParamParameter;
     email?: Email;
     status?: FeedbackRequestStatus;
+    category?: FeedbackCategory;
 };
 
 export type ListProductsParams = {

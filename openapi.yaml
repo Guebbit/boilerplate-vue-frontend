@@ -3675,6 +3675,11 @@ paths:
           required: false
           schema:
             $ref: "#/components/schemas/FeedbackRequestStatus"
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/FeedbackCategory"
       responses:
         "200":
           description: Feedback request list
@@ -12699,6 +12704,16 @@ components:
           type: boolean
         deleted:
           type: boolean
+    FeedbackCategory:
+      type: string
+      enum:
+        - order
+        - cancellation
+        - return
+        - payment
+        - account
+        - privacy
+        - other
     CreateFeedbackRequest:
       type: object
       additionalProperties: false
@@ -12721,6 +12736,13 @@ components:
           type: string
           minLength: 1
           maxLength: 5000
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: The order the visitor says this is about, free text. Not checked against any order.
         website:
           type: string
           maxLength: 200
@@ -12754,6 +12776,11 @@ components:
           type: string
         message:
           type: string
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
+          type: string
+          description: The order the visitor said this is about, as they typed it. Not checked against any order.
         status:
           $ref: "#/components/schemas/FeedbackRequestStatus"
         adminNotes:
@@ -12841,6 +12868,8 @@ components:
           $ref: "#/components/schemas/Text"
         status:
           $ref: "#/components/schemas/FeedbackRequestStatus"
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
         email:
           $ref: "#/components/schemas/Email"
     ReplaceFeedbackRequestStatusRequest:
@@ -17008,6 +17037,10 @@ components:
         subject:
           type: string
         message:
+          type: string
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
           type: string
         status:
           $ref: "#/components/schemas/FeedbackRequestStatus"

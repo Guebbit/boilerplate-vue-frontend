@@ -287,7 +287,12 @@ onMounted(loadOpened);
                 {{ t(`withdrawal-panel.blocked-${withdrawBlocked}`) }}
                 <router-link
                     v-if="hasContact"
-                    :to="routerLinkI18n({ name: 'Contact', query: { order: orderNumber } })"
+                    :to="
+                        routerLinkI18n({
+                            name: 'Contact',
+                            query: { category: 'cancellation', order: orderNumber }
+                        })
+                    "
                     data-test="withdraw-blocked-contact"
                 >
                     {{ t('withdrawal-panel.contact-us') }}
