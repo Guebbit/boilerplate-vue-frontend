@@ -25,7 +25,9 @@
         // `tsconfig.vitest.json`'s own `scripts/**/*.ts` entry.
         "scripts/**/*.ts",
         // `scripts/design-policy.ts` reads the theme's colour maps, and is itself under `scripts/**`.
-        "src/ui/vuetify/theme.ts"
+        "src/ui/vuetify/theme.ts",
+        // `tests/support/e2e/sweep-state.ts` reads where the phone layout starts.
+        "src/ui/vuetify/breakpoints.ts"
     ],
     "exclude": [],
     "compilerOptions": {

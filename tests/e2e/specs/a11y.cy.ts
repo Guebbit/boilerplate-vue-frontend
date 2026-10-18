@@ -63,6 +63,12 @@ sweepA11y('the shell', [
             // The switcher's accessible name is "Language: EN" — label, colon, current code.
             cy.get('[data-test=language-switcher]').click();
             cy.get('[role=menu] [role=menuitem]').should('be.visible');
+        },
+        layout: {
+            only: {
+                viewports: ['desktop'],
+                reason: 'an open menu is placed once, against its activator: a resize cannot carry it (the same menu is audited open at a phone below)'
+            }
         }
     }
 ]);
@@ -101,6 +107,21 @@ sweepA11y(
             prepare: () => {
                 cy.get('[data-test=user-menu]').click();
                 cy.get('[role=menu] [role=menuitem]').should('be.visible');
+            },
+            layout: {
+                only: {
+                    viewports: ['desktop'],
+                    reason: 'an open menu is placed once, against its activator: a resize cannot carry it (the same menu is audited open at a phone below)'
+                }
+            }
+        },
+        {
+            name: 'home, account menu open on a phone',
+            route: '/en',
+            viewport: 'phone',
+            prepare: () => {
+                cy.get('[data-test=user-menu]').click();
+                cy.get('[role=menu] [role=menuitem]').should('be.visible');
             }
         }
     ],
@@ -113,6 +134,21 @@ sweepA11y(
         {
             name: 'home, administration menu open',
             route: '/en',
+            prepare: () => {
+                cy.get('[data-test=admin-menu]').click();
+                cy.get('[role=menu] [role=menuitem]').should('be.visible');
+            },
+            layout: {
+                only: {
+                    viewports: ['desktop'],
+                    reason: 'an open menu is placed once, against its activator: a resize cannot carry it (the same menu is audited open at a phone below)'
+                }
+            }
+        },
+        {
+            name: 'home, administration menu open on a phone',
+            route: '/en',
+            viewport: 'phone',
             prepare: () => {
                 cy.get('[data-test=admin-menu]').click();
                 cy.get('[role=menu] [role=menuitem]').should('be.visible');

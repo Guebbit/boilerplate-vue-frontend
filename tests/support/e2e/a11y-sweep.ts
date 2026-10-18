@@ -36,8 +36,18 @@
  * Every finding, the lighter ones included, is written to `reports/a11y/` by the same command.
  */
 
-import type { ViewportName } from '../../../scripts/e2e/viewports';
+import {
+    assertCaseOptions,
+    sizesFor,
+    TEXT_MODE_AT,
+    type LayoutCaseOptions
+} from '../../../scripts/e2e/layout-findings';
+import { VIEWPORTS, type ViewportName } from '../../../scripts/e2e/viewports';
+import { BREAKPOINTS } from '../../../src/ui/vuetify/breakpoints';
 import { applyViewport } from './apply-viewport';
+import { waitForTransitions } from './commands';
+import { withTextMode } from './layout-checks';
+import { reachState, type SweepRoute } from './sweep-state';
 
 /** One audited state of one route. */
 export interface A11ySweepCase {
@@ -57,22 +67,33 @@ export interface A11ySweepCase {
      */
     prepare?: () => void;
     /**
-     * Audit under the dark theme, switched on the way the visitor does it: through the app bar's
-     * toggle. A sweep that set Vuetify's theme directly would audit a state no click can reach.
+     * Audit under the dark theme, switched on the way the visitor does it: through the toggle.
+     * A sweep that set Vuetify's theme directly would audit a state no click can reach.
      */
     theme?: 'dark';
     /** A size from the layout matrix, for the layouts a phone gets — the drawer, the stacked forms. */
     viewport?: ViewportName;
+    /**
+     * Narrows the layout matrix for this case, or accepts single elements for single checks.
+     * Every reason is checked when the spec is collected (`docs/tools/layout-sweep.md#opting-out`).
+     */
+    layout?: LayoutCaseOptions;
 }
 
 /** A path, or a way to find one once the backend can be asked. */
-export type A11ySweepRoute = string | (() => Cypress.Chainable<string>);
+export type A11ySweepRoute = SweepRoute;
 
 /** The terse spelling for the common case — a route, loaded, audited. */
 type A11ySweepEntry = readonly [name: string, route: A11ySweepRoute] | A11ySweepCase;
 
-/** Selector of the app bar's theme toggle — `data-test`, so the `/it/` sweep finds it too. */
-const THEME_TOGGLE = '[data-test=theme-toggle]';
+/** The sizes of the matrix, in the order the sweep walks them after the first. */
+const MATRIX_ORDER: readonly ViewportName[] = [
+    'desktop',
+    'tablet',
+    'phone-landscape',
+    'phone',
+    'phone-small'
+];
 
 /** Expands the terse `[name, route]` spelling into a full sweep case. */
 const toCase = (entry: A11ySweepEntry): A11ySweepCase => {
@@ -86,9 +107,50 @@ const toCase = (entry: A11ySweepEntry): A11ySweepCase => {
     return entry as A11ySweepCase;
 };
 
-/** A literal path passes straight through; a lookup is run now, inside the test. */
-const resolveRoute = (route: A11ySweepRoute): Cypress.Chainable<string> =>
-    typeof route === 'string' ? cy.wrap(route, { log: false }) : route();
+/** Whether this size lays out as a phone, where the focus-zoom and reflow checks apply. */
+const isNarrow = (size: ViewportName): boolean => VIEWPORTS[size].width < BREAKPOINTS.sm;
+
+/**
+ * The layout checks at one size, plus what that size adds: the text treatment it is checked
+ * under, axe and the comfort tier at phone widths.
+ *
+ * @param sweepCase - the case being swept
+ * @param size - the size the page is laid out at now
+ */
+const auditAt = (sweepCase: A11ySweepCase, size: ViewportName): void => {
+    const { name, layout } = sweepCase;
+    const base = { viewport: size, allow: layout?.allow, narrow: isNarrow(size) };
+    cy.checkLayout(name, base);
+
+    if (size === 'phone' || size === 'phone-small') cy.checkTargetComfort(`${name} @ ${size}`);
+    if (size === 'phone') cy.checkPageA11y(`${name} @ ${size}`);
+
+    const mode = TEXT_MODE_AT[size];
+    if (mode)
+        withTextMode(mode, () => {
+            cy.checkLayout(name, { ...base, mode, checks: ['overflow', 'clipped'] });
+        });
+};
+
+/**
+ * Runs the layout checks at every size the case covers, resizing in place.
+ *
+ * Each case loads once; a resize lays the app out the same as a fresh load (nothing in `src/`
+ * reads the width at mount), and it keeps the state `prepare` built — a reload would lose it.
+ *
+ * @param sweepCase - the case being swept
+ * @param first - the size the page was loaded at
+ */
+const sweepLayout = (sweepCase: A11ySweepCase, first: ViewportName): void => {
+    const sizes = sweepCase.viewport ? [first] : sizesFor(MATRIX_ORDER, sweepCase.layout);
+    for (const size of sizes) {
+        if (size !== first) {
+            applyViewport(size);
+            waitForTransitions();
+        }
+        auditAt(sweepCase, size);
+    }
+};
 
 /**
  * @param label - what this group of routes is, for the describe title
@@ -108,52 +170,18 @@ export const sweepA11y = (
             if (role) cy.loginAs(role);
         });
 
-        for (const { name, route, prepare, theme, viewport } of routes.map((entry) =>
-            toCase(entry)
-        ))
-            it(`has no serious or critical violations on ${name}`, () => {
-                // Before the visit, so the page lays itself out for that size from the start
-                // rather than reflowing under axe. Cypress restores the configured viewport
-                // between tests on its own.
-                if (viewport) applyViewport(viewport);
-                // Before the visit, so the page's very first fetch is counted — see the command.
-                cy.trackNetwork();
-                resolveRoute(route).then((path) => {
-                    cy.visit(path);
+        for (const sweepCase of routes.map((entry) => toCase(entry))) {
+            assertCaseOptions(sweepCase.name, sweepCase.layout);
+            it(`has no serious or critical violations on ${sweepCase.name}`, () => {
+                reachState(sweepCase);
+                cy.checkPageA11y(sweepCase.name);
+                // The layout matrix is markup, not backend: the demo profile's jwt leg is enough
+                // (`docs/tools/layout-sweep.md`), and the other legs keep today's length.
+                cy.env(['sessionMode', 'liveProfile']).then(({ sessionMode, liveProfile }) => {
+                    if (sessionMode === 'jwt' && liveProfile !== true)
+                        sweepLayout(sweepCase, sweepCase.viewport ?? 'desktop');
                 });
-                // Wait for real content rather than the shell, so axe does not audit a loading
-                // state and report an empty page as perfect.
-                cy.get('h1').should('exist');
-                /*
-                 * ...and then for the panels BELOW the heading, which fetch their own data after
-                 * it renders. A button awaiting a response has its label dimmed by Vuetify's own
-                 * loading state, and axe reports that dimming as a contrast failure — correctly,
-                 * and about copy nobody is being asked to read yet. `h1` is the shell; this is
-                 * the content.
-                 *
-                 * A data table does the same: `.v-data-table--loading` sets every cell to the
-                 * disabled opacity while rows already on screen wait for the rest of their data,
-                 * which is a board that fills column by column — not the empty state.
-                 *
-                 * These two and nothing wider. A bare `.v-progress-circular` also matches the app
-                 * shell's own indicator, which is mounted permanently and hidden by CSS, so
-                 * waiting on it waits forever.
-                 */
-                /*
-                 * ...and both of those pass trivially BEFORE the first fetch fires, so on their
-                 * own they would audit an empty page. The network count cannot be fooled that way.
-                 */
-                cy.settleNetwork();
-                cy.get('.v-btn--loading').should('not.exist');
-                cy.get('.v-data-table--loading').should('not.exist');
-                if (theme === 'dark') {
-                    cy.get(THEME_TOGGLE).click();
-                    // Vuetify stamps the active theme on the app root; colours are only worth
-                    // measuring once that has flipped.
-                    cy.get('.v-application.v-theme--dark').should('exist');
-                }
-                prepare?.();
-                cy.checkPageA11y(name);
             });
+        }
     });
 };

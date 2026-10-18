@@ -34,6 +34,7 @@ import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi, guestApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
+import { recordLayoutFindings, type LayoutRecordRequest } from './tests/support/e2e/layout-task';
 import { recordTouchFindings } from './tests/support/e2e/touch-task';
 import type { TouchRecordRequest } from './tests/support/e2e/touch-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
@@ -90,6 +91,9 @@ const A11Y_REPORT_TASK = 'recordA11yViolations';
 
 /** Where the a11y task writes its per-spec reports. */
 const A11Y_REPORT_DIRECTORY = path.resolve('reports/a11y');
+
+/** Name shared with `cy.checkLayout()` in `tests/support/e2e/layout-checks.ts`. */
+const LAYOUT_REPORT_TASK = 'recordLayoutFindings';
 
 /** Name shared with `cy.checkTouchReachable()` in `tests/support/e2e/touch.ts`. */
 const TOUCH_REPORT_TASK = 'recordTouchFindings';
@@ -277,6 +281,12 @@ export default defineConfig({
                  */
                 [A11Y_REPORT_TASK]: (request: A11yRecordRequest) =>
                     recordA11yViolations(request, A11Y_REPORT_DIRECTORY),
+                /*
+                 * Every layout finding `cy.checkLayout()` saw, accepted and advisory ones
+                 * included, to `reports/a11y/<spec>.layout.json` — see `layout-task.ts`.
+                 */
+                [LAYOUT_REPORT_TASK]: (request: LayoutRecordRequest) =>
+                    recordLayoutFindings(request, A11Y_REPORT_DIRECTORY),
                 /*
                  * Every touch-reachability finding `cy.checkTouchReachable()` saw, to
                  * `reports/touch/<spec>.json` — see `tests/support/e2e/touch-task.ts`.
