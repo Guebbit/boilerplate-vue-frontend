@@ -4,6 +4,7 @@
  * languages in one submit, removing a language while editing another in the same save, and a
  * validation error on a tab that is not selected still showing on the tab itself.
  */
+import { applyViewport } from '../../../../../tests/support/e2e/apply-viewport';
 
 /** A value unique enough per run that two specs racing the same backend cannot collide. */
 const unique = () => `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -30,7 +31,7 @@ describe('Product write surface', () => {
             cy.get('[data-test=product-price-field] input').type('19.99');
 
             // Open the Italian tab and fill it, in the SAME submit as the English one above.
-            // Scoped by the panel's own id, not `:visible`: `v-window`'s slide transition leaves
+            // Scoped by the panel's own id, not `:visible`: `v-tabs-window`'s slide transition leaves
             // both panels reporting nonzero size for a moment, which `:visible` alone can't tell
             // apart — Cypress's own actionability retry is what actually waits out the animation.
             cy.get('[data-test=translation-tab-add]').click();
@@ -87,7 +88,7 @@ describe('Product write surface', () => {
                 cy.get('[data-test=translation-tab-es]').should('exist');
 
                 // Edit the Spanish tab's title. Scoped by the panel id — see the create spec's
-                // own comment for why `:visible` alone races `v-window`'s slide transition.
+                // own comment for why `:visible` alone races `v-tabs-window`'s slide transition.
                 cy.get('[data-test=translation-tab-es]').click();
                 cy.get('#translation-panel-es [data-test=translation-title-field]').clear();
                 cy.get('#translation-panel-es [data-test=translation-title-field]').type(
@@ -146,6 +147,66 @@ describe('Product write surface', () => {
                     cy.get('[data-test=translation-tab-error-badge]').should('exist');
                 });
             });
+        });
+    });
+    /*
+     * Appended last: touch emulation leaks into the tests after it in live Chromium (the desktop
+     * pointer is lost), so nothing may follow this block.
+     */
+    describe('on a touch screen', () => {
+        it('keeps the language when a swipe starts inside a title field (edit)', () => {
+            const title = `EN swipe ${unique()}`;
+
+            cy.createProduct({
+                translations: { en: { title }, it: { title: `IT swipe ${unique()}` } }
+            }).then((product) => {
+                applyViewport('phone');
+                cy.visit(`/en/products/${product.id}/edit`);
+
+                // The fallback language's panel is the one showing on load.
+                cy.get('[data-test=translation-tab-en]').should(
+                    'have.attr',
+                    'aria-selected',
+                    'true'
+                );
+                cy.get('#translation-panel-en [data-test=translation-title-field] input')
+                    .should('be.visible')
+                    .realSwipe('toLeft', { length: 120 });
+
+                cy.get('[data-test=translation-tab-en]').should(
+                    'have.attr',
+                    'aria-selected',
+                    'true'
+                );
+                cy.get('#translation-panel-en [data-test=translation-title-field] input').should(
+                    'have.value',
+                    title
+                );
+            });
+        });
+
+        it('keeps the language when a swipe starts inside a title field (create)', () => {
+            const title = `EN create swipe ${unique()}`;
+
+            applyViewport('phone');
+            cy.visit('/en/products/create');
+            cy.get('#translation-panel-en [data-test=translation-title-field] input').type(title);
+            // Setup, not the thing under test: a click is enough to open the picker and pick.
+            cy.get('[data-test=translation-tab-add]').click();
+            cy.contains('.v-list-item-title', 'Italiano').click();
+            cy.get('[data-test=translation-tab-en]').click();
+            cy.get('[data-test=translation-tab-en]').should('have.attr', 'aria-selected', 'true');
+
+            cy.get('#translation-panel-en [data-test=translation-title-field] input').realSwipe(
+                'toLeft',
+                { length: 120 }
+            );
+
+            cy.get('[data-test=translation-tab-en]').should('have.attr', 'aria-selected', 'true');
+            cy.get('#translation-panel-en [data-test=translation-title-field] input').should(
+                'have.value',
+                title
+            );
         });
     });
 });

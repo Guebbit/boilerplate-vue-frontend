@@ -477,8 +477,8 @@ const submitForm = () => {
                         an object); `null` only ever lands on a tab CLOSED by `handleRemoveLocale`,
                         which also removes it from `openTags` in the same call.
                     -->
-                        <v-window v-model="activeTab">
-                            <v-window-item
+                        <v-tabs-window v-model="activeTab">
+                            <v-tabs-window-item
                                 v-for="tag in openTags"
                                 :key="tag"
                                 :value="tag"
@@ -503,8 +503,8 @@ const submitForm = () => {
                                     :rows="5"
                                     data-test="translation-description-field"
                                 />
-                            </v-window-item>
-                        </v-window>
+                            </v-tabs-window-item>
+                        </v-tabs-window>
 
                         <v-number-input
                             v-model="form.price"
