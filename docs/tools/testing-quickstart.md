@@ -25,7 +25,7 @@ know _which domain_, the third line is the one.
 | `test:e2e`                         | Does the app work against the real API?                   | ~2m     | ✅                |
 | `test:e2e:spec`                    | …just this one spec?                                      | ~30s    | —                 |
 | `test:e2e:live`                    | Does the app agree with the **real backend**?             | ~6m     | ✅ (CI job)       |
-| `test:e2e:visual`                  | Does it still _look_ right?                               | ~1m     | ❌ by design      |
+| `test:e2e:visual`                  | Does it still _look_ right?                               | ~4m     | ❌ by design      |
 | `test:mutation`                    | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
 | `complete`                         | All of the gate, in CI's order                            | ~7m     | —                 |
 
@@ -125,7 +125,10 @@ sweepVisual('products', [['products-list', '/en/products', '#products-list-page'
 ```bash
 npm run test:e2e:visual            # compare; a failure writes a diff to reports/visual-diff/
 npm run test:e2e:visual:update     # re-record, AFTER looking at the diff
+E2E_GREP_TAGS=@visual-phone npm run test:e2e:visual:update   # only the phone images
 ```
+
+Baselines are recorded only inside the pinned image, never on a host: see [Visual Regression](./visual-regression.md#re-recording-the-baselines).
 
 Look at the diff image first. Re-recording without looking is the one thing that makes this suite
 worthless — the new baseline goes into the pull request as an image, and that is where it gets

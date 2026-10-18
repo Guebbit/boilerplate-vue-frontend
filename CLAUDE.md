@@ -125,6 +125,11 @@ sharp(buffer).resize(
 )
 ```
 
+## Tests
+
+- Visual baselines (`**/__snapshots__/*.png`) are recorded only inside the pinned image
+  (`docs/tools/visual-regression.md`), never on a host.
+
 ## UI and design
 
 - Viewport sizes come only from `scripts/e2e/viewports.ts`; `viewport-matrix.spec.ts` refuses a size
