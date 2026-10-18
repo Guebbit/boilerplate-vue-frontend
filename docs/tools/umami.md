@@ -51,8 +51,8 @@ Umami waits for the visitor, the same private-by-default rule as the backend's
 | Footer "Privacy choices" link | Reopens the banner for any visitor, so withdrawing is as easy as agreeing (GDPR Art. 7(3)); signed in, its answer goes to the account |
 
 The banner and the link show whenever Umami (`VITE_UMAMI_WEBSITE_ID`) or Faro (`VITE_FARO_URL`) is
-configured; there is no separate flag. Faro's measurement follows the same answer
-(`setFaroConsent`), and its crash reports do not wait for it: the banner says so. `VITE_UMAMI_REQUIRE_CONSENT=false` makes the tracker load unasked, for a deployer
+configured; there is no separate flag. Faro follows the same answer
+(`setFaroConsent`): it is not loaded, so no crash report is sent, until the visitor agrees, and the banner says so. `VITE_UMAMI_REQUIRE_CONSENT=false` makes the tracker load unasked, for a deployer
 with their own legal basis. That also makes the banner's promise untrue, so change its copy too.
 
 The tag sends the page URL, the full referrer, screen size and language, and for a signed-in,

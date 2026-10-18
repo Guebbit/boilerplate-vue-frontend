@@ -75,7 +75,8 @@
     },
     "analytics-consent": {
         "banner-label": "Consenso analitico",
-        "message": "Vorremmo misurare come viene usato il sito: pagine visitate, e come viene cercato e sfogliato il catalogo. Nulla viene misurato finché non accetti. Le segnalazioni di errore vengono sempre inviate, così possiamo correggere i problemi. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",
+        "message": "Vorremmo misurare come viene usato il sito: pagine visitate, e come viene cercato e sfogliato il catalogo. Nulla viene misurato finché non accetti. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",
+        "crash-reports": "Anche le segnalazioni di errore seguono la tua scelta: nessuna viene inviata finché non accetti.",
         "privacy-choices": "Scelte sulla privacy",
         "button-accept": "Accetta",
         "button-decline": "Rifiuta"

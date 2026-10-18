@@ -27,8 +27,13 @@ const faroApi = {
 /** The `faro.instrumentations` surface `setFaroConsent` drives. */
 const faroInstrumentations = { add: vi.fn(), remove: vi.fn() };
 
-/** What `initializeFaro` returns — the `api` handle and the instrumentation registry. */
-const fakeFaro = { api: faroApi, instrumentations: faroInstrumentations };
+/** What `initializeFaro` returns — the `api` handle, the instrumentation registry and the transport switch. */
+const fakeFaro = {
+    api: faroApi,
+    instrumentations: faroInstrumentations,
+    pause: vi.fn(),
+    unpause: vi.fn()
+};
 
 /** Stub for Faro's `initializeFaro`, returning the fake instance. */
 const initializeFaro = vi.fn(() => fakeFaro);
@@ -99,7 +104,16 @@ const namesOf = (call: unknown[] | undefined): string[] =>
     (call as { name: string }[]).map(({ name }) => name);
 
 describe('Faro before consent', () => {
-    it('boots with crash reports and tracing only', async () => {
+    it('is not loaded at all while consent is unknown or denied', async () => {
+        const store = useObservabilityStore();
+        store.setFaroConsent(false);
+        await Promise.resolve();
+
+        expect(initializeFaro).not.toHaveBeenCalled();
+        expect(store.faroReady).toBe(false);
+    });
+
+    it('boots with crash reports and tracing, and no measurement', async () => {
         await useObservabilityStore().initFaro();
 
         expect(bootInstrumentations()).toEqual([
@@ -109,6 +123,7 @@ describe('Faro before consent', () => {
             'ViewInstrumentation',
             'TracingInstrumentation'
         ]);
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
     });
 
     it('tracks no session, so no session id is generated or stored', async () => {
@@ -119,68 +134,83 @@ describe('Faro before consent', () => {
         );
         expect(sessionStorage.getItem('com.grafana.faro.session')).toBeNull();
     });
-
-    it('adds no measurement while consent is unknown or denied', async () => {
-        const store = useObservabilityStore();
-        await store.initFaro();
-        store.setFaroConsent(false);
-
-        expect(faroInstrumentations.add).not.toHaveBeenCalled();
-    });
 });
 
 describe('setFaroConsent', () => {
-    it('adds web vitals, performance and navigation on consent', async () => {
+    it('boots Faro and adds web vitals, performance and navigation on consent', async () => {
         const store = useObservabilityStore();
-        await store.initFaro();
 
         store.setFaroConsent(true);
+        await store.initFaro();
 
+        expect(initializeFaro).toHaveBeenCalledOnce();
         expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
         expect(namesOf(faroInstrumentations.add.mock.calls[0])).toEqual([
             'WebVitalsInstrumentation',
             'PerformanceInstrumentation',
             'NavigationInstrumentation'
         ]);
+        expect(fakeFaro.unpause).toHaveBeenCalledOnce();
     });
 
-    it('is idempotent: a second grant adds nothing', async () => {
+    it('is idempotent: a second grant boots and adds nothing more', async () => {
         const store = useObservabilityStore();
+
+        store.setFaroConsent(true);
+        await store.initFaro();
+        store.setFaroConsent(true);
         await store.initFaro();
 
-        store.setFaroConsent(true);
-        store.setFaroConsent(true);
-
+        expect(initializeFaro).toHaveBeenCalledOnce();
         expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
     });
 
-    it('removes exactly what it added on withdrawal, once', async () => {
+    it('pauses the transport and removes exactly what it added on withdrawal, once', async () => {
         const store = useObservabilityStore();
-        await store.initFaro();
         store.setFaroConsent(true);
+        await store.initFaro();
         const added = faroInstrumentations.add.mock.calls[0];
 
         store.setFaroConsent(false);
         store.setFaroConsent(false);
 
+        expect(fakeFaro.pause).toHaveBeenCalled();
         expect(faroInstrumentations.remove).toHaveBeenCalledTimes(1);
         expect(faroInstrumentations.remove.mock.calls[0]).toEqual(added);
     });
 
-    it('applies a consent given before Faro finished loading', async () => {
+    it('lets the transport send again when consent is given back', async () => {
         const store = useObservabilityStore();
         store.setFaroConsent(true);
-        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+        await store.initFaro();
+        store.setFaroConsent(false);
+        fakeFaro.unpause.mockClear();
 
+        store.setFaroConsent(true);
         await store.initFaro();
 
-        expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
+        expect(fakeFaro.unpause).toHaveBeenCalledOnce();
+        expect(initializeFaro).toHaveBeenCalledOnce();
     });
 
-    it('is a no-op while Faro is disabled by configuration', () => {
+    it('never unpauses when the withdrawal lands while Faro is still loading', async () => {
+        const store = useObservabilityStore();
+
+        store.setFaroConsent(true);
+        store.setFaroConsent(false);
+        await store.initFaro();
+
+        expect(fakeFaro.unpause).not.toHaveBeenCalled();
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+    });
+
+    it('is a no-op while Faro is disabled by configuration', async () => {
         vi.stubEnv('VITE_FARO_URL', '');
 
         expect(() => useObservabilityStore().setFaroConsent(true)).not.toThrow();
+        await Promise.resolve();
+
+        expect(initializeFaro).not.toHaveBeenCalled();
         expect(faroInstrumentations.add).not.toHaveBeenCalled();
     });
 });

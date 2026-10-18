@@ -9,9 +9,11 @@
  * Umami loads only after the visitor consents (`setUmamiConsent`), unless the build opts out with
  * `VITE_UMAMI_REQUIRE_CONSENT=false`.
  *
- * Before consent nothing identifies or measures the visitor. Faro boots with crash reports only
- * (errors, console, CSP violations, views, tracing) and no session id; consent adds the
- * measurement instrumentations (`setFaroConsent`), withdrawal removes them.
+ * Before consent nothing identifies, measures or reports the visitor: Faro is not even loaded.
+ * `setFaroConsent(true)` boots it (crash reports, tracing, and the measurement instrumentations,
+ * with no session id); withdrawal pauses its transport and removes the measurement. Crash
+ * reports are browser requests to a third party, so they follow consent too (EDPB Guidelines
+ * 2/2023 on ePrivacy Art. 5(3)).
  *
  * Umami writes the PAGEVIEWS itself, including SPA route changes. The only custom events this app
  * sends are browsing ones (`trackBrowsing` in `analytics-consent.ts`), through the backend's relay
@@ -231,12 +233,12 @@ export const useObservabilityStore = defineStore('observability', () => {
     // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────
 
     /**
-     * Initialise Grafana Faro as early as possible in app bootstrap.
+     * Initialise Grafana Faro. Only {@link setFaroConsent} calls it, once the visitor has agreed.
      *
-     * Boots with crash reports only, which need no consent: uncaught errors and rejections,
-     * console errors, CSP violations and views, plus tracing. Session tracking is off (no session id
-     * is generated or stored) and the measurement instrumentations (Core Web Vitals, performance,
-     * navigation) are added by {@link setFaroConsent}. The tracing instrumentation opens a span per
+     * Boots with uncaught errors and rejections, console errors, CSP violations and views, plus
+     * tracing. Session tracking is off (no session id is generated or stored) and the measurement
+     * instrumentations (Core Web Vitals, performance, navigation) are added by
+     * {@link applyMeasurementConsent}. The tracing instrumentation opens a span per
      * fetch/XHR and propagates `traceparent` to the API origin. The API links its request span to that
      * browser span rather than continuing its trace, so the two are findable from each other but
      * stay separate traces. Both SDKs are dynamically imported, off the critical entry bundle.
@@ -328,15 +330,29 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Applies the visitor's consent to Faro's measurement: granted adds web vitals, performance
-     * and navigation timing, withdrawn removes them. Crash reports are unaffected. Idempotent, and
-     * safe to call before Faro has loaded: the answer is applied once it has.
+     * Applies the visitor's consent to Faro. Granted loads and boots it (once), lets its transport
+     * send and adds web vitals, performance and navigation timing. Withdrawn pauses the transport,
+     * which drops what is reported from then on, and removes the measurement. Idempotent, and a
+     * withdrawal that lands while Faro is still loading wins: it is never unpaused.
      *
      * @param granted - Whether the visitor currently consents to analytics.
      */
     const setFaroConsent = (granted: boolean): void => {
         measurementConsent = granted;
-        applyMeasurementConsent();
+
+        if (!granted) {
+            // Faro `pause()`: the transport stops sending and drops new items, nothing is buffered.
+            faro?.pause();
+            applyMeasurementConsent();
+            return;
+        }
+
+        void initFaro().then((ready) => {
+            if (!ready || !measurementConsent) return;
+            // Faro `unpause()`: undoes an earlier `pause()`; a no-op on a transport never paused.
+            faro?.unpause();
+            applyMeasurementConsent();
+        });
     };
 
     /**

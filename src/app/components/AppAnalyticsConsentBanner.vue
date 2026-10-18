@@ -3,11 +3,12 @@
  * @module
  * The guest analytics-consent banner, pinned to the bottom edge: shown while the choice is
  * `unknown`, or after the footer's "privacy choices" link reopens it, and only when Umami or Faro
- * is configured. Accept/Decline both persist
+ * is configured. It says crash reports follow the answer too when Faro is. Accept/Decline both persist
  * through `useAnalyticsConsentStore`, which the http layer's `onRequest` interceptor reads to
  * decide whether an anonymous request carries `X-Analytics-Consent`.
  */
 import { useI18n } from 'vue-i18n';
+import { readFaroConfig } from '@/infrastructure/observability/config.ts';
 import {
     useAnalyticsConsentStore,
     isAnalyticsConsentEnabled
@@ -47,6 +48,11 @@ const consent = useAnalyticsConsentStore();
             data-test="analytics-consent-banner"
         >
             {{ t('analytics-consent.message') }}
+            <!-- Crash reports are browser requests to a third party, so they follow consent too:
+                 said only when a receiver is configured, since otherwise there are none. -->
+            <template v-if="readFaroConfig() !== undefined">
+                {{ t('analytics-consent.crash-reports') }}
+            </template>
             <template #append>
                 <div class="flex gap-2">
                     <!-- Both choices share one look: a refusal that is visibly weaker than the

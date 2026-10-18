@@ -75,7 +75,8 @@
     },
     "analytics-consent": {
         "banner-label": "Analytics consent",
-        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is measured until you say yes. Crash reports are always sent, so we can fix errors. You can change your mind any time from \"Privacy choices\" in the footer.",
+        "message": "We'd like to measure how the site is used: pages visited, and how the catalogue is searched and browsed. Nothing is measured until you say yes. You can change your mind any time from \"Privacy choices\" in the footer.",
+        "crash-reports": "Crash reports follow your answer too: none are sent until you accept.",
         "privacy-choices": "Privacy choices",
         "button-accept": "Accept",
         "button-decline": "Decline"
