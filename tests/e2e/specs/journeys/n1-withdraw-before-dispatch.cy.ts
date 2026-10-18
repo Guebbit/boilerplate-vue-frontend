@@ -128,4 +128,55 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             });
         });
     });
+
+    it('withdraws from a mixed order whole while the shop has not started, made-to-order line included', () => {
+        cy.step('the customer buys an ordinary product and a made-to-order one, and pays');
+        cy.loginAs('user');
+        cy.navigateTo('/en/products');
+        searchAndOpenProduct('product.barebones');
+        addOpenProductToCart();
+        cy.navigateTo('/en/products');
+        searchAndOpenProduct('product.noWithdrawal');
+        addOpenProductToCart();
+        cy.goToCart();
+        cy.get('[data-test=shipping-method-standard]').click();
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
+        cy.get('#order-target').should('exist');
+        cy.payWith('Card that pays');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
+
+        cy.step(
+            'the button is offered although one line is made to order, and withdraws the whole'
+        );
+        cy.get('[data-test=withdraw-button]').should('not.be.disabled').click();
+        cy.get('[data-test=app-dialog-confirm]').click();
+        idFromLocation().then((orderId) => {
+            cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
+                expect(order?.status).to.equal('cancelled');
+            });
+        });
+        cy.get('[data-test=withdraw-button]').should('not.exist');
+    });
+
+    it('shows the button disabled, with the reason, on an order made only of made-to-order goods', () => {
+        cy.step('the customer buys only the made-to-order product, and pays');
+        cy.loginAs('user');
+        cy.navigateTo('/en/products');
+        searchAndOpenProduct('product.noWithdrawal');
+        addOpenProductToCart();
+        cy.goToCart();
+        cy.get('[data-test=shipping-method-standard]').click();
+        cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
+        cy.get('#order-target').should('exist');
+        cy.payWith('Card that pays');
+        cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
+
+        cy.step('the button is there but off, and the page says why');
+        cy.get('[data-test=withdraw-button]').should('be.disabled');
+        cy.get('[data-test=withdraw-blocked-reason]').should(
+            'contain.text',
+            'made to your specifications'
+        );
+        cy.get('[data-test=withdraw-blocked-contact]').should('exist');
+    });
 });

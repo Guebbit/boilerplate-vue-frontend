@@ -101,7 +101,8 @@ const checkoutRejection = (status: number, code: string, details?: Record<string
 const mountCart = ({
     report = [],
     held = A_CART,
-    attach = false
+    attach = false,
+    products = []
 }: {
     /** What the last guest-cart merge changed, as the store holds it. */
     report?: MergeReportLine[];
@@ -109,12 +110,15 @@ const mountCart = ({
     held?: CartResponse;
     /** Whether to attach to the document, for the checks that need real layout (axe). */
     attach?: boolean;
+    /** The products the lines join to, put in the products store before the page mounts. */
+    products?: Parameters<ReturnType<typeof useProductsStore>['addProduct']>[0][];
 } = {}) => {
     const cart = useCartStore();
     cart.cart = held;
     cart.mergeReport = report;
     vi.spyOn(cart, 'fetchCart').mockResolvedValue(held);
     vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+    for (const product of products) useProductsStore().addProduct(product);
     // Stubbed, not exercised here: this suite is about checkout's own refusals, and the stubbed
     // `ShippingSelector` below emits a method on mount purely to unblock the checkout button —
     // the real `PUT /cart/shipping-method` round trip has its own coverage in `store.spec.ts`.
@@ -1144,5 +1148,37 @@ describe('the stock poll on the page', () => {
 
             expect(vi.getTimerCount()).toBe(0);
             expect(poll).not.toHaveBeenCalled();
+        }));
+});
+
+/** A product the lines join to, marked or not as having no right of withdrawal. */
+const product = (id: string, noWithdrawal: boolean) => ({
+    id,
+    title: `Product ${id}`,
+    price: 10,
+    currency: 'EUR',
+    inStock: true,
+    lowStock: false,
+    noWithdrawal
+});
+
+describe('the no-withdrawal marker on a line', () => {
+    it('tells the shopper, before buying, which line has no right of withdrawal', () =>
+        mountCart({
+            held: {
+                ...A_CART,
+                items: [
+                    { productId: 'p1', quantity: 1, availability: 'in_stock' },
+                    { productId: 'p2', quantity: 1, availability: 'in_stock' }
+                ]
+            },
+            products: [product('p1', true), product('p2', false)]
+        }).then(({ wrapper }) => {
+            const [first, second] = wrapper.findAll('[data-test=cart-item]');
+
+            expect(first?.get('[data-test=cart-line-no-withdrawal]').text()).toBe(
+                'No right of withdrawal'
+            );
+            expect(second?.find('[data-test=cart-line-no-withdrawal]').exists()).toBe(false);
         }));
 });

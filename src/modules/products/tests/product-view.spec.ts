@@ -96,6 +96,35 @@ describe('the shelf', () => {
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('Out of stock');
     });
 
+    it('tells the shopper a made-to-order product has no right of withdrawal', () => {
+        const wrapper = mountProduct({
+            id: 'p-bespoke',
+            title: 'Engraved bowl',
+            price: 19.99,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false,
+            noWithdrawal: true
+        });
+
+        expect(wrapper.get('[data-test=product-no-withdrawal]').text()).toContain(
+            'no right of withdrawal'
+        );
+    });
+
+    it('says nothing about withdrawal on an ordinary product', () => {
+        const wrapper = mountProduct({
+            id: 'p-plain',
+            title: 'Plain bowl',
+            price: 9.99,
+            currency: 'EUR',
+            inStock: true,
+            lowStock: false
+        });
+
+        expect(wrapper.find('[data-test=product-no-withdrawal]').exists()).toBe(false);
+    });
+
     it('shows the stock left for an in-stock product', () => {
         const wrapper = mountProduct({
             id: 'p-in-stock',

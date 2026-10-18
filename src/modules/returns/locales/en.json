@@ -76,7 +76,11 @@
         "success": "Withdrawal received. A confirmation is on its way to your email.",
         "cancel-line": "Not shipped yet: group #{number}",
         "button-cancel-rest": "Cancel what has not shipped",
-        "cancel-hint": "Your withdrawal period starts when the last shipment arrives."
+        "cancel-hint": "Your withdrawal period starts when the last shipment arrives.",
+        "blocked-all_excluded": "Everything in this order was made to your specifications, so the right of withdrawal does not apply. If nothing has shipped, you can still cancel the order.",
+        "blocked-window_closed": "The withdrawal period for this order has ended.",
+        "blocked-nothing_left": "Everything in this order has already been returned.",
+        "contact-us": "Contact us"
     },
     "cancel-remainder-dialog": {
         "title": "Cancel what has not shipped: group #{number}",

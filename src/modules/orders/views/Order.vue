@@ -607,7 +607,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         v-if="currentOrder"
                         :order-id="currentOrder.id"
                         :can-withdraw="currentOrder.actions?.withdraw ?? false"
+                        :withdraw-blocked="currentOrder.actions?.withdrawBlocked"
                         :withdraw-until="currentOrder.actions?.withdrawUntil"
+                        :order-number="currentOrder.orderNumber"
                         @opened="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <ItemDetailField

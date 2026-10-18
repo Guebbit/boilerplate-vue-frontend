@@ -712,6 +712,17 @@ onMounted(() =>
                                 )
                             }}
                         </v-chip>
+                        <!-- Art. 6(1)(k) CRD: told BEFORE buying that this item has no right of withdrawal. -->
+                        <v-chip
+                            v-if="productOf(item.productId)?.noWithdrawal"
+                            size="small"
+                            variant="tonal"
+                            label
+                            class="ml-2"
+                            data-test="cart-line-no-withdrawal"
+                        >
+                            {{ t('cart-page.label-no-withdrawal') }}
+                        </v-chip>
                     </p>
                     <!-- Absent until the product read has answered for this line — no price
                          guessed ahead of the server's own answer. -->

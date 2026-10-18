@@ -22,6 +22,7 @@ export default {
  */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -33,7 +34,12 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import CancelRemainderDialog from './CancelRemainderDialog.vue';
 import ReturnRequestForm from './ReturnRequestForm.vue';
-import type { CancellableFulfillmentOrder, Return, ReturnOptions } from '@types';
+import type {
+    CancellableFulfillmentOrder,
+    Return,
+    ReturnOptions,
+    WithdrawBlockedReason
+} from '@types';
 
 /**
  * The order this panel belongs to, and what the server said about the button.
@@ -42,8 +48,15 @@ const props = defineProps<{
     orderId: string;
     /** `Order.actions.withdraw` — whether the button is offered at all; true only for the buyer. */
     canWithdraw?: boolean;
+    /**
+     * `Order.actions.withdrawBlocked` — why the button is off, for the buyer. The button then shows
+     * disabled with this reason instead of vanishing.
+     */
+    withdrawBlocked?: WithdrawBlockedReason;
     /** `Order.actions.withdrawUntil` — the last instant a withdrawal is valid, once the clock runs. */
     withdrawUntil?: string;
+    /** The order's number, for the "contact us" link that names it. */
+    orderNumber?: string;
 }>();
 
 /**
@@ -87,6 +100,17 @@ const opened = ref<Return[]>([]);
  * caller may not read it.
  */
 const options = ref<ReturnOptions>();
+
+/**
+ * The router, to ask whether this build ships a contact page at all (the `feedback` module's).
+ */
+const router = useRouter();
+
+/**
+ * Whether the "contact us" link has somewhere to go: a build without the feedback module has no
+ * `Contact` route, and shows the reason without the link.
+ */
+const hasContact = computed(() => router.hasRoute('Contact'));
 
 /**
  * Signed-in caller, to tell staff holding the refund key from a caller with no door at all.
@@ -213,7 +237,13 @@ onMounted(loadOpened);
 
 <template>
     <section
-        v-if="canWithdraw || opened.length > 0 || returnLines.length > 0 || cancellable.length > 0"
+        v-if="
+            canWithdraw ||
+            withdrawBlocked ||
+            opened.length > 0 ||
+            returnLines.length > 0 ||
+            cancellable.length > 0
+        "
         class="flex flex-col gap-3"
         data-test="withdrawal-panel"
     >
@@ -237,6 +267,32 @@ onMounted(loadOpened);
                 {{ t('withdrawal-panel.button') }}
             </v-btn>
             <InlineErrorAlert :message="withdrawError" data-test="withdraw-error" />
+        </template>
+        <template v-else-if="withdrawBlocked">
+            <!-- Disabled, not hidden: the server says why, and a way out stays one click away. -->
+            <v-btn
+                color="error"
+                variant="tonal"
+                data-test="withdraw-button"
+                disabled
+                :aria-describedby="'withdraw-blocked-' + orderId"
+            >
+                {{ t('withdrawal-panel.button') }}
+            </v-btn>
+            <p
+                :id="'withdraw-blocked-' + orderId"
+                class="m-0 text-sm opacity-75"
+                data-test="withdraw-blocked-reason"
+            >
+                {{ t(`withdrawal-panel.blocked-${withdrawBlocked}`) }}
+                <router-link
+                    v-if="hasContact"
+                    :to="routerLinkI18n({ name: 'Contact', query: { order: orderNumber } })"
+                    data-test="withdraw-blocked-contact"
+                >
+                    {{ t('withdrawal-panel.contact-us') }}
+                </router-link>
+            </p>
         </template>
 
         <ul
