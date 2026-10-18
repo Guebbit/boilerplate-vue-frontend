@@ -10,6 +10,7 @@
 import type { LayoutCheckId, LayoutFinding } from '../../../scripts/e2e/layout-findings';
 import { applyViewport } from '../../support/e2e/apply-viewport';
 import { collectLayoutFindings } from '../../support/e2e/layout-checks';
+import { switchToDarkTheme } from '../../support/e2e/sweep-state';
 
 /** Appends markup to the page, inside a container the cases can find. */
 const plant = (html: string) =>
@@ -184,6 +185,30 @@ describe('the layout checks, on planted fixtures', () => {
             cy.then(() => {
                 done(new Error('the comfort pass accepted two 30 px buttons 2 px apart'));
             });
+        });
+    });
+
+    describe('the seams the sweep stands on', () => {
+        it('lays the page out at the size it was asked for, height included', () => {
+            applyViewport('phone');
+
+            cy.window({ log: false }).then((win) => {
+                expect([win.innerWidth, win.innerHeight]).to.deep.equal([390, 844]);
+            });
+        });
+
+        it('switches to the dark theme through the drawer on a phone', () => {
+            switchToDarkTheme();
+
+            cy.get('.v-application').should('have.class', 'v-theme--dark');
+        });
+
+        it('switches to the dark theme through the bar on a desktop', () => {
+            applyViewport('desktop');
+            cy.get('h1').should('exist');
+            switchToDarkTheme();
+
+            cy.get('.v-application').should('have.class', 'v-theme--dark');
         });
     });
 });

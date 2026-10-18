@@ -24,12 +24,6 @@ sweepA11y(
     [
         ['list, empty', '/en/api-keys'],
         { name: 'list, with a credential', route: apiKeysListWithRow },
-        // The table stacked into cards below `sm` — the layout the desktop sweep never sees.
-        {
-            name: 'list, phone viewport',
-            route: apiKeysListWithRow,
-            viewport: 'phone'
-        },
         ['create', '/en/api-keys/create'],
         {
             // Submitted empty: every field shows its error, and an error message has to be

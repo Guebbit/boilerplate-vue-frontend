@@ -58,12 +58,6 @@ sweepA11y(
             }
         },
         ['subscriptions list', '/en/webhooks/subscriptions'],
-        // The table stacked into cards below `sm` — the layout the desktop sweep never sees.
-        {
-            name: 'subscriptions list, phone viewport',
-            route: '/en/webhooks/subscriptions',
-            viewport: 'phone'
-        },
         ['subscription create', '/en/webhooks/subscriptions/create'],
         {
             // Submitted empty: every field shows its error, and an error message has to be

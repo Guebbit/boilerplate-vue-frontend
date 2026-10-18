@@ -451,6 +451,19 @@ const restoreScrollers = (scrollers: readonly Scroller[], win: Window, start: Bo
     win.scrollTo({ left: start.x, top: start.y, behavior: 'instant' });
 };
 
+/**
+ * Whether `element` is a toast: a dismissible alert in a fixed stack. The visitor closes it, and
+ * focus scrolling keeps a 6rem margin clear for it (`scroll-padding-bottom`), so a control under
+ * one is not out of reach.
+ */
+const isToast = (element: Element, win: Window): boolean => {
+    const alert = element.closest('.v-alert');
+    if (!alert?.querySelector('.v-alert__close')) return false;
+    for (let node: Element | null = alert; node; node = node.parentElement)
+        if (win.getComputedStyle(node).position === 'fixed') return true;
+    return false;
+};
+
 /** Whether the point's topmost element is the control, inside it, or part of the same widget. */
 const isTheControl = (element: Element, hit: Element | null): boolean => {
     if (!hit) return false;
@@ -497,7 +510,7 @@ const judgeControl = (
         };
     const { x, y } = centreOf(element, page);
     const hit = page.win.document.elementFromPoint(x, y);
-    return isTheControl(element, hit)
+    return isTheControl(element, hit) || (hit && isToast(hit, page.win))
         ? undefined
         : {
               check: 'covered',
@@ -593,6 +606,14 @@ const nextFrames = (win: Window): Promise<void> =>
     });
 
 /**
+ * Lets the app finish re-laying itself out after a resize: Vuetify's display state updates on the
+ * `resize` event, and the components that read it re-render a frame later.
+ */
+export const settleLayout = (): void => {
+    cy.window({ log: false }).then((win) => nextFrames(win));
+};
+
+/**
  * Runs `measure` with a text treatment applied, then takes the treatment off.
  *
  * @param mode - `normal` runs as is
@@ -653,6 +674,9 @@ Cypress.Commands.add(
     })
 );
 
+/** The content of an open dialog or menu: tooltips are not modal. */
+const OPEN_OVERLAY = '.v-overlay--active:not(.v-tooltip) > .v-overlay__content';
+
 /** The comfort tier's size, in CSS px: Apple HIG's 44 pt, and Vuetify's `large` button. */
 const COMFORT_SIZE = 44;
 
@@ -673,24 +697,34 @@ Cypress.Commands.add(
                 { id: 'target-offset', options: { minOffset: COMFORT_SIZE } }
             ]
         });
-        cy.checkA11y(
-            undefined,
-            { runOnly: { type: 'rule', values: ['target-size'] } },
-            (violations) => {
-                const nodes = violations.flatMap((violation) => violation.nodes);
-                // Put the 24 px gate back for the next `checkPageA11y`.
-                cy.window({ log: false }).then((win) => {
-                    (win as Window & { axe?: { reset: () => void } }).axe?.reset();
-                });
-                if (nodes.length > 0)
-                    throw new Error(
-                        `[comfort ${label}] ${String(nodes.length)} target(s) under ${String(COMFORT_SIZE)} px with no room around them (WCAG 2.5.8 spacing allowance, not 2.5.5):\n` +
-                            nodes
-                                .map(({ target }) => `  ${target.map(String).join(' ')}`)
-                                .join('\n')
-                    );
-            },
-            true
-        );
+        cy.document({ log: false }).then((document_) => {
+            // While a dialog or menu is open the page behind it is partly covered, which axe
+            // reads as every control there being "obscured": only the open one is judged.
+            const modal = document_.querySelector(OPEN_OVERLAY) !== null;
+            cy.checkA11y(
+                // A field's native `<input>` is 24 px tall (6 px wide beside a row of chips) inside
+                // a `.v-field` that is 48 px or more and takes the tap: the field is the target.
+                { ...(modal && { include: [[OPEN_OVERLAY]] }), exclude: [['.v-field input']] },
+                { runOnly: { type: 'rule', values: ['target-size'] } },
+                (violations) => {
+                    const nodes = violations.flatMap((violation) => violation.nodes);
+                    // Put the 24 px gate back for the next `checkPageA11y`.
+                    cy.window({ log: false }).then((win) => {
+                        (win as Window & { axe?: { reset: () => void } }).axe?.reset();
+                    });
+                    if (nodes.length > 0)
+                        throw new Error(
+                            `[comfort ${label}] ${String(nodes.length)} target(s) under ${String(COMFORT_SIZE)} px with no room around them (WCAG 2.5.8 spacing allowance, not 2.5.5):\n` +
+                                nodes
+                                    .map(
+                                        ({ target, failureSummary }) =>
+                                            `  ${target.map(String).join(' ')}\n    ${(failureSummary ?? '').replaceAll('\n', ' ')}`
+                                    )
+                                    .join('\n')
+                        );
+                },
+                true
+            );
+        });
     })
 );

@@ -24,8 +24,6 @@ sweepA11y(
     'example',
     [
         ['list', '/en/examples'],
-        // The table stacked into cards below `sm` — the layout the desktop sweep never sees.
-        { name: 'list, phone viewport', route: '/en/examples', viewport: 'phone' },
         ['create', '/en/examples/create'],
         {
             // Submitted empty: every field shows its error, and an error message has to be

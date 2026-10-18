@@ -14,14 +14,6 @@ sweepA11y(
         ['languages board', '/en/locales'],
         ['dictionary board', '/en/locales/dictionary'],
         ['translation entries', '/en/locales/it'],
-        // Each table stacked into cards below `sm` — the layout the desktop sweep never sees.
-        { name: 'languages board, phone viewport', route: '/en/locales', viewport: 'phone' },
-        {
-            name: 'dictionary board, phone viewport',
-            route: '/en/locales/dictionary',
-            viewport: 'phone'
-        },
-        { name: 'translation entries, phone viewport', route: '/en/locales/it', viewport: 'phone' },
         {
             // The entry form dialog over the entries table: a modal with three fields, named
             // by its title, over a page the reader must not be able to wander into.

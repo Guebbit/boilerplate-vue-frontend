@@ -29,8 +29,6 @@ sweepA11y(
     'users',
     [
         ['users list', '/en/users'],
-        // The 8-column table stacked into cards below `sm` — the layout the desktop sweep never sees.
-        { name: 'users list, phone viewport', route: '/en/users', viewport: 'phone' },
         ['user create', '/en/users/create'],
         ['user detail', userDetail],
         ['user edit', userEdit],

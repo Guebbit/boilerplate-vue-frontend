@@ -11,7 +11,6 @@ sweepA11y(
     'stats',
     [
         ['sales dashboard', '/en/sales/stats'],
-        { name: 'sales dashboard, phone viewport', route: '/en/sales/stats', viewport: 'phone' },
         ['product sales', '/en/sales/stats/products/demo-product']
     ],
     'admin'

@@ -93,42 +93,46 @@ describe('touch', () => {
     });
 
     describe('menus and tooltips', () => {
-        for (const viewport of ['phone', 'tablet'] as const)
-            for (const [role, menu] of [
-                ['user', 'user-menu'],
-                ['admin', 'admin-menu']
-            ] as const)
-                it(`opens the ${menu} by a tap at ${viewport} with no tooltip over its first entry`, () => {
-                    cy.loginAs(role);
-                    cy.visit('/en');
-                    applyViewport(viewport);
-                    cy.get('h1').should('exist');
+        /*
+         * The administration menu is not offered on a phone: below `sm` the bar has no room for
+         * it, and the drawer lists the same pages.
+         */
+        for (const [viewport, role, menu] of [
+            ['phone', 'user', 'user-menu'],
+            ['tablet', 'user', 'user-menu'],
+            ['tablet', 'admin', 'admin-menu']
+        ] as const)
+            it(`opens the ${menu} by a tap at ${viewport} with no tooltip over its first entry`, () => {
+                cy.loginAs(role);
+                cy.visit('/en');
+                applyViewport(viewport);
+                cy.get('h1').should('exist');
 
-                    cy.get(`[data-test=${menu}]`).tap();
+                cy.get(`[data-test=${menu}]`).tap();
 
-                    cy.get(FIRST_MENU_ENTRY).first().shouldBeTappable();
-                    // Rectangles, not a hit test: tooltip content ignores pointer events.
-                    cy.get(FIRST_MENU_ENTRY)
-                        .first()
-                        .then(($entry) => {
-                            const entry = $entry.get(0)?.getBoundingClientRect();
-                            cy.document({ log: false }).then((page) => {
-                                for (const tooltip of page.querySelectorAll(SHOWN_TOOLTIP)) {
-                                    const box = tooltip.getBoundingClientRect();
-                                    const overlaps =
-                                        entry !== undefined &&
-                                        box.left < entry.right &&
-                                        box.right > entry.left &&
-                                        box.top < entry.bottom &&
-                                        box.bottom > entry.top;
-                                    expect(
-                                        overlaps,
-                                        'a tooltip covering the first menu entry'
-                                    ).to.equal(false);
-                                }
-                            });
+                cy.get(FIRST_MENU_ENTRY).first().shouldBeTappable();
+                // Rectangles, not a hit test: tooltip content ignores pointer events.
+                cy.get(FIRST_MENU_ENTRY)
+                    .first()
+                    .then(($entry) => {
+                        const entry = $entry.get(0)?.getBoundingClientRect();
+                        cy.document({ log: false }).then((page) => {
+                            for (const tooltip of page.querySelectorAll(SHOWN_TOOLTIP)) {
+                                const box = tooltip.getBoundingClientRect();
+                                const overlaps =
+                                    entry !== undefined &&
+                                    box.left < entry.right &&
+                                    box.right > entry.left &&
+                                    box.top < entry.bottom &&
+                                    box.bottom > entry.top;
+                                expect(
+                                    overlaps,
+                                    'a tooltip covering the first menu entry'
+                                ).to.equal(false);
+                            }
                         });
-                });
+                    });
+            });
 
         it('goes to the cart by a tap on the pinned entry and leaves no tooltip behind', () => {
             cy.loginAs('user');

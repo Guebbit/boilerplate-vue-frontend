@@ -26,9 +26,7 @@ sweepA11y('products — public', [
     ['product detail', productDetail],
     // The storefront's most-used page in its other theme: the product cards and the facet
     // chips carry their own colours, and a pair that passes on white can fail on dark.
-    { name: 'products list, dark theme', route: '/en/products', theme: 'dark' },
-    // The 8-column table stacked into cards below `sm` — the layout the desktop sweep never sees.
-    { name: 'products list, phone viewport', route: '/en/products', viewport: 'phone' }
+    { name: 'products list, dark theme', route: '/en/products', theme: 'dark' }
 ]);
 
 sweepA11y(
@@ -38,6 +36,16 @@ sweepA11y(
         ['products list, staff table', '/en/products'],
         ['product create', '/en/products/create'],
         ['product edit', productEdit],
+        {
+            // The remove-language button exists only beside a non-fallback tab, which no other
+            // case opens.
+            name: 'product edit, second language tab',
+            route: productEdit,
+            prepare: () => {
+                cy.get('[data-test=translation-tabs] .v-tab').eq(1).click();
+                cy.get('[data-test=translation-tab-remove]').should('be.visible');
+            }
+        },
         {
             // Submitted empty: every field shows its error, and an error message has to be
             // associated with its field (`aria-describedby`) and announced, not only coloured.

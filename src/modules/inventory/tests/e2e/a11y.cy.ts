@@ -14,11 +14,8 @@ sweepA11y(
     'inventory',
     [
         ['inventory ledger', '/en/inventory'],
-        // `StockBoard` and the 7-column `MovementLedger` stacked into cards below `sm`.
-        { name: 'inventory ledger, phone viewport', route: '/en/inventory', viewport: 'phone' },
         ['preorders board, products', '/en/sales/preorders'],
-        ['preorders board, fulfillment orders', '/en/sales/preorders?tab=orders'],
-        { name: 'preorders board, phone viewport', route: '/en/sales/preorders', viewport: 'phone' }
+        ['preorders board, fulfillment orders', '/en/sales/preorders?tab=orders']
     ],
     'admin'
 );

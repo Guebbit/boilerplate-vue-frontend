@@ -46,7 +46,7 @@ import { VIEWPORTS, type ViewportName } from '../../../scripts/e2e/viewports';
 import { BREAKPOINTS } from '../../../src/ui/vuetify/breakpoints';
 import { applyViewport } from './apply-viewport';
 import { waitForTransitions } from './commands';
-import { withTextMode } from './layout-checks';
+import { settleLayout, withTextMode } from './layout-checks';
 import { reachState, type SweepRoute } from './sweep-state';
 
 /** One audited state of one route. */
@@ -146,6 +146,7 @@ const sweepLayout = (sweepCase: A11ySweepCase, first: ViewportName): void => {
     for (const size of sizes) {
         if (size !== first) {
             applyViewport(size);
+            settleLayout();
             waitForTransitions();
         }
         auditAt(sweepCase, size);

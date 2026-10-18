@@ -11,7 +11,6 @@ sweepA11y(
     'payments',
     [
         ['payments, all', '/en/sales/payments'],
-        { name: 'payments, phone viewport', route: '/en/sales/payments', viewport: 'phone' },
         ['payments, refunds', '/en/sales/payments?tab=refunds'],
         ['payments, needs attention', '/en/sales/payments?tab=attention'],
         ['payments, awaiting transfer', '/en/sales/payments?tab=awaiting'],
