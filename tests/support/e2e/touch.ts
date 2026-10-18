@@ -142,6 +142,8 @@ export const collectTouchProbes = (win: Window): TouchProbe[] =>
                 visibility: win.getComputedStyle(element).visibility,
                 selectionControlInput: Boolean(element.closest('.v-selection-control__input')),
                 fileInput: element.matches('input[type=file]'),
+                fieldInput:
+                    element.matches('input, textarea') && Boolean(element.closest('.v-field')),
                 title: element.getAttribute('title') ?? '',
                 text,
                 clipped:

@@ -23,6 +23,8 @@ export interface TouchProbe {
     selectionControlInput: boolean;
     /** A file input behind a Vuetify file-input: the button beside it is the control. */
     fileInput: boolean;
+    /** The input of a Vuetify field: at rest its label sits on it and the field takes the tap. */
+    fieldInput: boolean;
     /** The native `title` attribute, empty when there is none. */
     title: string;
     /** The text the element shows, trimmed. */
@@ -87,11 +89,18 @@ const titleKind = (probe: TouchProbe): TouchFindingKind | undefined => {
     return 'title-only-hint';
 };
 
+/**
+ * Whether a control is hidden on purpose, its visible stand-in taking the tap: the input of a
+ * selection control, a file input, or the input under a field's resting label.
+ */
+const isAllowlisted = (probe: TouchProbe): boolean =>
+    probe.selectionControlInput || probe.fileInput || probe.fieldInput;
+
 /** The (kind, detail) pairs one probe breaks. */
 const hitsOf = (probe: TouchProbe): { kind: TouchFindingKind; detail: string }[] => {
     const hits: { kind: TouchFindingKind; detail: string }[] = [];
     const hiddenFromFinger = probe.opacity < HIDDEN_OPACITY || probe.visibility === 'hidden';
-    if (probe.interactive && hiddenFromFinger && !probe.selectionControlInput && !probe.fileInput)
+    if (probe.interactive && hiddenFromFinger && !isAllowlisted(probe))
         hits.push({ kind: 'hidden-control', detail: probe.selector });
     const kind = titleKind(probe);
     if (kind) hits.push({ kind, detail: probe.title });
