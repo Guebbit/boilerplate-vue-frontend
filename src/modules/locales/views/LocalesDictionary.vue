@@ -382,7 +382,7 @@ onMounted(() => {
                         :label="t('locales-dictionary-page.filter-text')"
                         maxlength="200"
                         hide-details
-                        class="min-w-64"
+                        class="w-full sm:w-auto sm:min-w-64"
                         data-test="dictionary-filter-text"
                     />
                     <v-select
@@ -414,7 +414,7 @@ onMounted(() => {
                         :label="t('locales-dictionary-page.new-key-label')"
                         :hint="t('locales-dictionary-page.new-key-hint')"
                         persistent-hint
-                        class="min-w-64 font-mono"
+                        class="w-full font-mono sm:w-auto sm:min-w-64"
                         data-test="dictionary-new-key"
                     />
                     <v-btn type="submit" variant="tonal" data-test="dictionary-add-key">
@@ -596,12 +596,25 @@ onMounted(() => {
  * The key column stays put while the languages scroll: five columns of text fields overflow any
  * viewport, and a row is meaningless without its key. The background is required — a sticky
  * cell with none lets the scrolled cells show through it.
+ *
+ * The column has a fixed width so the board can tell the browser how much of its left edge the
+ * column covers (`scroll-padding-inline-start`): without it, tabbing to a field in the next row
+ * scrolls the field under the sticky key, where nothing can reach it.
  */
+.dictionary-board {
+    --key-column: 12rem;
+
+    scroll-padding-inline-start: var(--key-column);
+}
+
 .dictionary-board :deep(td:first-child),
 .dictionary-board :deep(th:first-child) {
     position: sticky;
     left: 0;
     z-index: 1;
+    min-width: var(--key-column);
+    max-width: var(--key-column);
+    overflow-wrap: anywhere;
     background: rgb(var(--v-theme-surface));
 }
 

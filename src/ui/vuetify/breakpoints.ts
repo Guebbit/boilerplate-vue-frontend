@@ -21,7 +21,16 @@ export const BREAKPOINTS = {
     xxl: 2560
 } as const;
 
+/**
+ * Vuetify's `useDisplay().mobile` is true below this band's edge: a phone, not a laptop.
+ * Its default is `lg`, which would put 1024 px tablets and small laptops on the phone layout
+ * (fullscreen dialogs, touch-sized row buttons).
+ * https://vuetifyjs.com/en/features/display-and-platform/
+ */
+export const MOBILE_BREAKPOINT = 'sm';
+
 /** The `display` block handed to `createVuetify`. */
 export const display = {
+    mobileBreakpoint: MOBILE_BREAKPOINT,
     thresholds: BREAKPOINTS
 } as const;

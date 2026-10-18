@@ -24,6 +24,7 @@ import {
     Sun
 } from 'lucide-vue-next';
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
+import { useLanguageSwitch } from '@/app/components/use-language-switch.ts';
 import AppNavMenu from '@/app/components/AppNavMenu.vue';
 import type { AppNavItem } from '@/app/components/app-nav-item.ts';
 import AppNavBarLink from '@/app/components/AppNavBarLink.vue';
@@ -272,6 +273,11 @@ const showWelcomeTour = () =>
     void router.push({ query: { ...route.query, tour: WELCOME_TOUR_ID } });
 
 /**
+ * The language choices for the phone drawer, which carries them below `sm`.
+ */
+const { languages, locale, choiceLabel, switchLanguage } = useLanguageSwitch();
+
+/**
  * Vuetify theme controller, used to read/toggle light vs dark.
  */
 const theme = useTheme();
@@ -433,9 +439,14 @@ const toggleTheme = () => {
                     </template>
                 </AppNavMenu>
 
-                <!-- `data-test`: the a11y sweep flips the theme through this, in every locale. -->
+                <!--
+                    `data-test`: the a11y sweep flips the theme through this, in every locale.
+                    Below `sm` the bar has no room for it (nor for the language menu): the drawer
+                    carries both there.
+                -->
                 <v-btn
                     icon
+                    class="hidden sm:inline-flex"
                     variant="text"
                     data-test="theme-toggle"
                     :aria-label="t('navigation.label-theme')"
@@ -546,6 +557,47 @@ const toggleTheme = () => {
             >
                 <v-list-item-title>{{ t('navigation.label-signup') }}</v-list-item-title>
             </v-list-item>
+            <!--
+                Below `sm` the bar has no room for the theme toggle or the language menu, so the
+                drawer carries them. Hidden from `sm` up, where the bar has them: a hidden entry
+                leaves the tab order, so nothing is reachable twice.
+            -->
+            <v-list-subheader class="sm:hidden">
+                {{ t('navigation.label-language') }}
+            </v-list-subheader>
+            <v-list-item
+                v-for="choice in languages"
+                :key="`drawer-locale-${choice}`"
+                class="sm:hidden"
+                role="button"
+                color="primary"
+                :lang="choice"
+                :active="locale === choice"
+                :aria-current="locale === choice ? 'true' : undefined"
+                :data-test="`drawer-language-${choice}`"
+                @click="switchLanguage(choice)"
+            >
+                <v-list-item-title>{{ choiceLabel(choice) }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+                class="sm:hidden"
+                role="button"
+                color="primary"
+                data-test="drawer-theme-toggle"
+                @click="toggleTheme"
+            >
+                <template #prepend>
+                    <Sun
+                        v-if="theme.current.value.dark"
+                        :size="20"
+                        class="mr-3"
+                        aria-hidden="true"
+                    />
+                    <Moon v-else :size="20" class="mr-3" aria-hidden="true" />
+                </template>
+                <v-list-item-title>{{ t('navigation.label-theme') }}</v-list-item-title>
+            </v-list-item>
+
             <!--
                 `role="button"`: with no `to`, Vuetify renders a `listitem`, which is not a
                 permitted child of the presentational list above (axe `aria-required-parent`),

@@ -21,6 +21,7 @@ export default {
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useDisplay } from 'vuetify';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
@@ -32,6 +33,11 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
+
+/**
+ * The drawer's width on a screen that has room for it, in CSS px.
+ */
+const DRAWER_WIDTH = 440;
 
 /**
  * The payment to show, and the open state.
@@ -136,6 +142,13 @@ const orderEditLink = computed(() => {
 });
 
 /**
+ * The drawer's width: 440 px, but never wider than the screen. Vuetify does not cap a drawer's
+ * width, so on a 320 px phone 120 px of it would fall off the edge.
+ */
+const { width: screenWidth } = useDisplay();
+const drawerWidth = computed(() => Math.min(DRAWER_WIDTH, screenWidth.value));
+
+/**
  * Refunds everything still refundable, after an explicit confirmation.
  *
  * @returns A promise settling once the viewer answered and, if they accepted, the refund finished;
@@ -175,7 +188,7 @@ const handleRefund = () => {
         v-model="open"
         temporary
         location="end"
-        width="440"
+        :width="drawerWidth"
         :aria-label="t('payments-list-page.drawer-label')"
         data-test="payment-drawer"
         @keydown.esc="open = false"

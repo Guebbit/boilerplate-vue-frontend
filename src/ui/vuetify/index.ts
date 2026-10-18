@@ -26,7 +26,7 @@ import { readThemePreference } from '@/infrastructure/theme-preference.ts';
  * `src/main.ts`.
  */
 export default createVuetify({
-    // Thresholds mirror Tailwind's: src/ui/vuetify/breakpoints.ts.
+    // Thresholds mirror Tailwind's, and `mobile` starts below `sm`: src/ui/vuetify/breakpoints.ts.
     display,
 
     theme: {

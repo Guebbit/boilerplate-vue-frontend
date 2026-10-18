@@ -429,7 +429,7 @@ const handleExport = () => {
                         v-model="filters.text"
                         :label="t('locale-entries-page.filter-text')"
                         hide-details
-                        class="min-w-64"
+                        class="w-full sm:w-auto sm:min-w-64"
                         data-test="entries-filter-text"
                     />
                     <v-select
