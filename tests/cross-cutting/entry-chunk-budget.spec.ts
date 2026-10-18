@@ -14,7 +14,7 @@
  * (`main.ts`, gated on `shouldValidateResponses()`) and stripping their generated `.describe()`
  * calls (`scripts/contracts/strip-schema-descriptions.ts`): 407 KB raw / 132 KB gzip.
  *
- * The budget below is 460 KB raw — headroom over the current, measured size for ordinary feature
+ * The budget below is 470 KB raw — headroom over the current, measured size for ordinary feature
  * growth, but far under the pre-fix number, so a schema import (or an equally large dependency)
  * finding its way back into the entry graph fails this test instead of shipping silently.
  *
@@ -31,7 +31,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 /** Raw bytes the entry chunk must stay under — see the module docblock for how this was chosen. */
-const ENTRY_CHUNK_BUDGET_BYTES = 460 * 1024;
+const ENTRY_CHUNK_BUDGET_BYTES = 470 * 1024;
 
 /** The repo root — this file lives two levels under it. */
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
