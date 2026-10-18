@@ -45,7 +45,8 @@ export const TIMELINE_AUDIENCE: Readonly<Record<OrderTimelineType, TimelineAudie
     release_date_moved: 'buyer',
     delay_notice_sent: 'buyer',
     wait_confirmed: 'buyer',
-    wait_expired: 'buyer'
+    wait_expired: 'buyer',
+    address_corrected: 'staff'
 };
 
 /**

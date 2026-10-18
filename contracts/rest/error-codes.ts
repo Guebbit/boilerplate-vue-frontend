@@ -108,6 +108,8 @@ export const ERROR_CODES = {
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
     NOT_FOUND: 'NOT_FOUND',
+    /** 409 — The order cannot be redirected: something has shipped, or it has no shipping address (a pickup, a digital order). */
+    ORDER_ADDRESS_LOCKED: 'ORDER_ADDRESS_LOCKED',
     /** 404 — The order exists but has no such credit note. */
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */

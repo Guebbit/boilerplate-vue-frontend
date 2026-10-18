@@ -26,6 +26,7 @@ import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
+import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
 import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
@@ -147,6 +148,12 @@ const { canRefund, refund, refreshPayment, refundLoading } = useOrderRefund(comp
 const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
 
 /**
+ * The order's own `actions.correctAddress`: staff may still redirect it (it has an address and
+ * nothing has shipped), so the form is never offered for a call the API would refuse.
+ */
+const canCorrectAddress = computed(() => currentOrder.value?.actions?.correctAddress === true);
+
+/**
  * Whether both halves of "cancel and refund" are available, which is what the combined
  * button needs.
  */
@@ -190,6 +197,12 @@ const onOfflinePaymentRecorded = () => {
         reportOfflinePaymentRefreshError(error)
     );
 };
+
+/**
+ * Reloads the order once its address was replaced: `actions` (and so the form itself) must read
+ * the new record, and the cached copy still holds the old address.
+ */
+const onAddressCorrected = onOfflinePaymentRecorded;
 
 /**
  * The three money-action buttons' own blocked state — cancel-only and cancel-and-refund are the
@@ -539,6 +552,25 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :message="actionsError"
                         class="mt-3"
                         data-test="order-edit-actions-error"
+                    />
+                </div>
+
+                <!--
+                    Staff redirecting an unshipped order: the form a held `incorrect_address`
+                    group needs. Offered only on the server's own `actions.correctAddress`.
+                -->
+                <div v-if="canCorrectAddress && id" class="mt-6 border-t pt-5">
+                    <h3 class="text-lg font-semibold">
+                        {{ t('order-edit-page.shipping-address-title') }}
+                    </h3>
+                    <p class="mt-1 mb-3 opacity-75">
+                        {{ t('order-edit-page.shipping-address-hint') }}
+                    </p>
+                    <ShippingAddressForm
+                        :key="JSON.stringify(currentOrder?.shippingAddress)"
+                        :order-id="id"
+                        :address="currentOrder?.shippingAddress"
+                        @corrected="onAddressCorrected"
                     />
                 </div>
 

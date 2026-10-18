@@ -135,6 +135,8 @@
         "cancel-done": "Order cancelled. The payment was left as it stands.",
         "cancel-refund-done": "Order cancelled and the payment refunded.",
         "refund-done": "Payment refunded. The order status is unchanged.",
+        "shipping-address-title": "Correct the shipping address",
+        "shipping-address-hint": "Replaces where this order ships. Only possible while nothing has shipped. The buyer sees the new address on the order.",
         "override-title": "Correct status",
         "override-hint": "Force a move past the ordinary rule, with a reason recorded on the order. No parcel record and no shipped email fire.",
         "label-override-reason": "Reason",
@@ -178,6 +180,7 @@
         "type-release_date_moved": "Release date changed",
         "type-delay_notice_sent": "Delay notice sent to the buyer",
         "type-wait_confirmed": "Buyer chose to keep waiting",
+        "type-address_corrected": "Shipping address corrected by staff",
         "type-wait_expired": "Waiting period ended without an answer",
         "detail-method": "Paid by {value}",
         "detail-withdraw-until": "Right of withdrawal until {value}",
@@ -229,5 +232,16 @@
         "shipment-body": "Start preparing the parcel, then mark it shipped and delivered. Only the steps the order allows are offered.",
         "timeline-title": "Timeline",
         "timeline-body": "Every change to this order, newest first, with who made it."
+    },
+    "shipping-address-form": {
+        "label-full-name": "Full name",
+        "label-street": "Street",
+        "label-city": "City",
+        "label-zip": "Postcode",
+        "label-country": "Country",
+        "label-phone": "Phone (optional)",
+        "button-submit": "Replace the address",
+        "success": "Shipping address corrected.",
+        "error-required": "This field is required"
     }
 }

@@ -2243,7 +2243,7 @@ export interface Product {
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
-    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). */
+    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). For a `preorder` it reads the allowance, not the shelf: `true` while any of it is left, `false` the day it is full (or was never set). */
     readonly inStock: boolean;
     /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
     readonly lowStock: boolean;
@@ -2258,7 +2258,7 @@ export interface Product {
      */
     readonly reserved?: number;
     /**
-     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `read:StockLevel`.
+     * Units a customer may actually buy, derived from the two counters above. For a `preorder` it is what is left of the preorder allowance instead (the shelf is empty by definition). Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
     readonly available?: number;
@@ -2928,11 +2928,16 @@ export interface OrderTaxSummaryRow {
 }
 
 export interface OrderAddress {
+    /** @maxLength 100 */
     fullName: string;
+    /** @maxLength 200 */
     street: string;
+    /** @maxLength 100 */
     city: string;
+    /** @maxLength 20 */
     zip: string;
     country: CountryCode;
+    /** @maxLength 32 */
     phone?: string;
 }
 
@@ -3006,6 +3011,8 @@ export interface OrderActions {
     start: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
+    /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and nothing has shipped. */
+    correctAddress: boolean;
     /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
     withdraw: boolean;
     /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
@@ -3622,6 +3629,18 @@ export interface FulfillmentOrderLine {
 }
 
 /**
+ * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
+ */
+export type FulfillmentHoldNotice =
+    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
+
+export const FulfillmentHoldNotice = {
+    awaiting_stock: 'awaiting_stock',
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
  * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
  */
 export type FulfillmentHoldReason =
@@ -3688,6 +3707,12 @@ export interface FulfillmentOrder {
     kind: FulfillmentOrderKind;
     status: FulfillmentOrderStatus;
     lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /**
+     * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
+     * @maxLength 500
+     */
+    holdMessage?: string;
     holdReason?: FulfillmentHoldReason;
     /**
      * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
@@ -3941,6 +3966,12 @@ export interface HoldFulfillmentOrderRequest {
      * @maxLength 1000
      */
     note?: string;
+    /**
+     * A sentence for the buyer, shown on their order and mailed with the hold. Separate from `note`, which they never see. A hold for `incorrect_address` or with a message is mailed; a bare one is not.
+     * @minLength 1
+     * @maxLength 500
+     */
+    message?: string;
 }
 
 export interface FulfillmentOrderEnvelope {
@@ -4761,7 +4792,7 @@ export interface WishlistExportItem {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`, `wait_confirmed`, `wait_expired`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`, `wait_confirmed`, `wait_expired`. Staff-only: `address_corrected`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -4792,7 +4823,8 @@ export const OrderTimelineType = {
     release_date_moved: 'release_date_moved',
     delay_notice_sent: 'delay_notice_sent',
     wait_confirmed: 'wait_confirmed',
-    wait_expired: 'wait_expired'
+    wait_expired: 'wait_expired',
+    address_corrected: 'address_corrected'
 } as const;
 
 /**
@@ -4886,6 +4918,9 @@ export interface ExportFulfillmentOrder {
     kind: FulfillmentOrderKind;
     status: FulfillmentOrderStatus;
     lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /** @maxLength 500 */
+    holdMessage?: string;
     holdReason?: FulfillmentHoldReason;
     /**
      * Staff's free text about the hold. Present until the retention sweep unsets it.
@@ -5091,12 +5126,52 @@ export interface NotificationPreorderConfirmWait {
     createdAt: string;
 }
 
+export type FulfillmentHeldParamsNotice =
+    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
+
+export const FulfillmentHeldParamsNotice = {
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
+ * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
+ */
+export interface FulfillmentHeldParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    notice: FulfillmentHeldParamsNotice;
+    /** @maxLength 500 */
+    message?: string;
+}
+
+export type NotificationFulfillmentHeldCode =
+    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
+
+export const NotificationFulfillmentHeldCode = {
+    'notificationsfulfillment-held': 'notifications.fulfillment-held'
+} as const;
+
+/**
+ * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+ */
+export interface NotificationFulfillmentHeld {
+    id: Id;
+    code: NotificationFulfillmentHeldCode;
+    params: FulfillmentHeldParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type Notification =
     | NotificationCartLineRemoved
     | NotificationWishlistItemRemoved
     | NotificationCartMergeRefused
     | NotificationPreorderDelayed
-    | NotificationPreorderConfirmWait;
+    | NotificationPreorderConfirmWait
+    | NotificationFulfillmentHeld;
 
 export type AccountExportResponseInvoicing = {
     invoices: ExportInvoiceDocument[];
@@ -5199,6 +5274,11 @@ export interface OrderTimelineEnvelope {
     message: EnvelopeMessage;
     data: OrderTimelineEntry[];
 }
+
+/**
+ * The corrected shipping address; the whole of it replaces the old one.
+ */
+export type ReplaceShippingAddressRequest = OrderAddress;
 
 export type PaymentSortItem = (typeof PaymentSortItem)[keyof typeof PaymentSortItem];
 
@@ -9800,7 +9880,7 @@ export const listShippingMethods = (
 };
 
 /**
- * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. `holdNote` is staff's own and is left out for anyone else.
+ * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
  * @summary Get the fulfilment of an order
  */
 export const getFulfillmentByOrder = (
@@ -10623,6 +10703,26 @@ export const getOrderTimeline = (
 };
 
 /**
+ * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed only while nothing has shipped and the order has a shipping address at all: after that the parcel went where it went (`409 ORDER_ADDRESS_LOCKED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
+ * @summary Correct where an unshipped order ships (staff)
+ */
+export const correctOrderShippingAddress = (
+    id: string,
+    replaceShippingAddressRequest: ReplaceShippingAddressRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}/shipping-address`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceShippingAddressRequest
+        },
+        options
+    );
+};
+
+/**
  * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
@@ -11433,6 +11533,9 @@ export type DownloadAccountExportResult = NonNullable<
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
 export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;
+export type CorrectOrderShippingAddressResult = NonNullable<
+    Awaited<ReturnType<typeof correctOrderShippingAddress>>
+>;
 export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
 export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
 export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;

@@ -91,6 +91,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     recordPayment: false,
     start: false,
     override: [],
+    correctAddress: false,
     invoice: false,
     withdraw: false,
     ...overrides

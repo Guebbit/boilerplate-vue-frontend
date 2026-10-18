@@ -189,6 +189,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "DELETE", pattern: /^\/orders\/[^/]+\/hard$/, schemaName: "HardDeleteOrderByIdResponse", bodySchemaName: undefined, module: "orders" },
     { method: "GET", pattern: /^\/orders\/[^/]+\/invoice$/, schemaName: "GetOrderInvoiceResponse", bodySchemaName: undefined, module: "invoicing" },
     { method: "POST", pattern: /^\/orders\/[^/]+\/restore$/, schemaName: "RestoreOrderByIdResponse", bodySchemaName: undefined, module: "orders" },
+    { method: "PUT", pattern: /^\/orders\/[^/]+\/shipping-address$/, schemaName: "CorrectOrderShippingAddressResponse", bodySchemaName: "CorrectOrderShippingAddressBody", module: "orders" },
     { method: "POST", pattern: /^\/orders\/[^/]+\/status-override$/, schemaName: "OverrideOrderStatusResponse", bodySchemaName: "OverrideOrderStatusBody", module: "orders" },
     { method: "GET", pattern: /^\/orders\/[^/]+\/timeline$/, schemaName: "GetOrderTimelineResponse", bodySchemaName: undefined, module: "orders" },
     { method: "DELETE", pattern: /^\/orders\/[^/]+$/, schemaName: "DeleteOrderByIdResponse", bodySchemaName: "DeleteOrderByIdBody", module: "orders" },
