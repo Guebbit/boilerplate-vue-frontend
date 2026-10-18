@@ -8,7 +8,7 @@ notice that the docs promise a rule the contract never encodes.
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
 approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
 
-`scripts/audit/` holds four prompts that live in exactly that gap, plus `test-honesty`, which asks
+`scripts/audit/` holds five prompts that live in exactly that gap, plus `test-honesty`, which asks
 whether a test can fail at all. They are plain markdown, run by hand against an LLM, and they write
 reports — `test-honesty` alone edits tests, and only when asked.
 
@@ -41,7 +41,7 @@ Two consequences, both non-negotiable:
 - **A finding without a citation is not a finding.** Either a `file:line` in the spec, or nothing.
   Prose confidence is not evidence.
 
-## The five prompts
+## The six prompts
 
 | File                                          | Asks                                                                                                                                                          | Writes to                             |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -50,16 +50,18 @@ Two consequences, both non-negotiable:
 | `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
 | `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                    | `reports/audit/test-honesty/`         |
 | `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
+| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                            | `reports/audit/design-manual/`        |
 
 The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
 the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
-still a gap.
+still a gap. `design-manual` does the same and adds `shell` (the app-level sweep) as a scope; a
+whole-app run starts with a ~45 minute capture, so it prints the command and waits for a person.
 
 ### Each repo keeps the prompts its own stack needs
 
-The two repos do **not** hold one set, and no longer try to. `accessibility-manual` audits UI/UX
-judgement calls with no backend equivalent; the backend's own
+The two repos do **not** hold one set, and no longer try to. `accessibility-manual` and
+`design-manual` audit UI/UX judgement calls with no backend equivalent; the backend's own
 `boilerplate-node-backend/scripts/audit/reachability/SKILL.md` and
 `boilerplate-node-backend/scripts/audit/rate-limit-keys/SKILL.md` reason about a mounted Express request
 path and have no counterpart here.
@@ -172,6 +174,9 @@ Claude for `spec-drift` and `spec-gaps` — long-context reasoning over prose vs
 where small local models confabulate citations most confidently, and a fabricated `file:line` costs
 more than the finding was worth.
 
+`design-manual` needs a multimodal model, so Claude: the screenshots travel only as part of that
+conversation's own context, and nothing is uploaded to an image service.
+
 `suite-bloat` is the exception. It is bookkeeping over `reports/mutation/mutation.json`, and a local
 Ollama model handles it.
 :::
@@ -233,6 +238,47 @@ A findings table uses four verdicts, and only one of them is a bug:
 expectation recomputed with the very schema the view uses, or a clamp asserted against the module's
 own `MIN_*` constant, is a test that cannot fail and therefore proves nothing. Stryker finds some of
 these; the audit finds the rest.
+
+### `design-manual`'s verdicts
+
+The same four verbs, plus the verifier's own:
+
+| Verdict                              | Means                                                                                         |
+| ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| **ISSUE**                            | A design defect with an anchor: a precedent, a named rule, or a task that fails.              |
+| **OK**                               | Checked and fine, with what was looked at.                                                    |
+| **NOT-APPLICABLE**                   | The item does not apply to that screen, reason given.                                         |
+| **NEEDS-DEVICE-CHECK**               | A static Chromium screenshot cannot settle it: safe areas, the soft keyboard, scroll physics. |
+| **CONFIRMED / REFUTED / DOWNGRADED** | The verifier's answer to a proposed ISSUE: it held, it did not, or the severity was too high. |
+
+### Two steps: capture, then judge
+
+A model cannot open a browser, but it can read a PNG and a `.vue` file. So `design-manual` is two
+steps with a program in the middle:
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
+flowchart LR
+    S["npm run audit:design:capture<br/><i>a program: PNG tiles + manifest</i>"] --> R["reviewers<br/><i>LLM reads PNG + .vue</i>"]
+    R --> F["findings.md<br/><b>frozen</b>"]
+    F --> V["verifier<br/><i>a second LLM pass,<br/>tries to refute</i>"]
+    V --> C{"audit:design:check<br/><i>citations resolve?</i>"}
+    C -->|yes| O["report row"]
+    C -->|no| D["dropped, counted"]
+
+    classDef prog fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef ai fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    classDef gate fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef out fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef dead fill:#fee2e2,stroke:#dc2626,color:#111827;
+    class S prog;
+    class R,V ai;
+    class F,C gate;
+    class O out;
+    class D dead;
+```
+
+The capture, the matrix, the tile size and the checklist are on [Design Review](./design-review.md).
 
 ### `accessibility-manual`'s verdicts
 

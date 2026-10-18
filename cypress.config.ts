@@ -36,6 +36,12 @@ import { adminApi, guestApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 import { recordLayoutFindings, type LayoutRecordRequest } from './tests/support/e2e/layout-task';
 import { recordTouchFindings } from './tests/support/e2e/touch-task';
+import {
+    recordDesignShot,
+    stitchDesignCapture,
+    type RecordShotRequest,
+    type StitchRequest
+} from './scripts/audit/design-manual/scripts/capture-task';
 import type { TouchRecordRequest } from './tests/support/e2e/touch-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
@@ -142,7 +148,15 @@ export default defineConfig({
      */
     expose: {
         grepTags: process.env.E2E_GREP_TAGS ?? '',
-        grepFilterSpecs: true
+        grepFilterSpecs: true,
+        /*
+         * Capture mode: the module accessibility sweeps photograph their cases instead of running
+         * axe (`npm run audit:design:capture`, `docs/tools/design-review.md`). Read when a spec is
+         * collected, because the matrix decides how many tests exist. Off in every other run.
+         */
+        designCapture: process.env.E2E_DESIGN_CAPTURE === 'true',
+        // Comma-separated locale prefixes to add a phone shot for; `en,it` adds the Italian one.
+        designCaptureLocales: process.env.E2E_DESIGN_CAPTURE_LOCALES ?? 'en'
     },
     e2e: {
         /**
@@ -293,6 +307,12 @@ export default defineConfig({
                  */
                 [TOUCH_REPORT_TASK]: (request: TouchRecordRequest) =>
                     recordTouchFindings(request, TOUCH_REPORT_DIRECTORY),
+                /*
+                 * The Node half of `cy.captureDesign()`: stitch a page's screenshots into tiles,
+                 * and keep its manifest row — see `scripts/audit/design-manual/scripts/capture-task.ts`.
+                 */
+                stitchDesignCapture: (request: StitchRequest) => stitchDesignCapture(request),
+                recordDesignShot: (request: RecordShotRequest) => recordDesignShot(request),
 
                 /*
                  * A line on the terminal from inside a spec, for the things that are worth

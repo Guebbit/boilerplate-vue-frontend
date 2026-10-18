@@ -397,6 +397,7 @@ It also does not replace accessibility testing. A screenshot cannot tell you tha
 ## Related pages
 
 - [Accessibility Testing](./accessibility-testing.md) — the other layer that looks at the rendered result, and the one that judges it
+- [Design Review](./design-review.md) — the AI judgement of the same screens: this suite says "did it change", that one asks "is it right"
 - [Component Testing](./component-testing.md) — appearance of a single component, before it reaches a page
 - [The demo profile](./demo-profile.md) — the fixed dataset these screenshots depend on
 - [Testing (overview)](./testing-and-docs.md) — the map of every layer

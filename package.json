@@ -20,6 +20,7 @@
         "lint:asyncapi": "tsx scripts/contracts/validate-asyncapi.ts asyncapi.yaml",
         "check:spec-identity": "tsx scripts/pairing/check-spec-identity.ts",
         "check:docs-references": "tsx scripts/docs/check-references.ts",
+        "audit:design:capture": "tsx scripts/audit/design-manual/scripts/capture.ts",
         "audit:design:plan": "tsx scripts/audit/design-manual/scripts/plan.ts",
         "audit:design:check": "tsx scripts/audit/design-manual/scripts/check.ts",
         "prettier:check": "prettier --check .",

@@ -74,6 +74,8 @@ Genuinely undecided, listed so the idea is not lost.
 - Extend `useI18n` — or add a sibling composable — to carry the custom helpers currently in the
   i18n utilities.
 - A Bootstrap variant from the skeleton.
+- A nightly design capture, once something reads its output. The capture is a ~45 minute live e2e,
+  and nothing in CI would use the tiles, so it stays on demand.
 - An `AppDialog` wrapper owning `max-width`, `fullscreen` and labelling, so no dialog binds them by
   hand. Left out of the design lint on purpose: it is a refactor, not a rule.
 - EPC QR / GiroCode on `TransferInstructionsPanel`, so the customer's own banking app fills in the

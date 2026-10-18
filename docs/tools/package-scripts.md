@@ -110,10 +110,11 @@ Those two, the authorization keys and the demo webhook sink's three TLS files (`
 The programs an AI audit runs (`scripts/audit/*/scripts/`). The audits themselves are prompts, not
 scripts: see [AI Auditing](./ai-auditing.md).
 
-| Script               | Job                                                                                            | Read more                       |
-| -------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------- |
-| `audit:design:plan`  | Splits the last design capture into batches small enough for one reviewer's context            | [AI Auditing](./ai-auditing.md) |
-| `audit:design:check` | Checks that every tile and `file:line` a design review cites exists; exits 1 when one does not | [AI Auditing](./ai-auditing.md) |
+| Script                 | Job                                                                                                                                      | Read more                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `audit:design:capture` | Photographs the app for the design review: runs the sweeps in capture mode, writes PNG tiles and a manifest. A live e2e; not in the gate | [Design Review](./design-review.md) |
+| `audit:design:plan`    | Splits the last design capture into batches small enough for one reviewer's context                                                      | [AI Auditing](./ai-auditing.md)     |
+| `audit:design:check`   | Checks that every tile and `file:line` a design review cites exists; exits 1 when one does not                                           | [AI Auditing](./ai-auditing.md)     |
 
 ## Related pages
 

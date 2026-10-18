@@ -55,7 +55,7 @@ A backend with a human-challenge provider asks every signup and login to solve i
 
 ## The action table
 
-`actionTable(module, rows)` (`tests/support/e2e/action-table.ts`) runs one control per row, answered with a failure or an empty list. Rows sit in `src/modules/<m>/tests/e2e/actions.cy.ts`, so `demo:remove` takes them with the module. The jwt leg only: a stubbed answer never reaches the session layer.
+`actionTable(module, rows)` (`tests/support/e2e/action-table.ts`) runs one control per row, answered with a failure or an empty list. Rows sit in `src/modules/<m>/tests/e2e/actions.cy.ts`, so `demo:remove` takes them with the module. The jwt leg only: a stubbed answer never reaches the session layer. With `E2E_DESIGN_CAPTURE=true` the same rows are photographed instead of asserted (loading with the request held open, then the error or empty state); see [Design Review](./design-review.md#the-capture-matrix).
 
 ```mermaid
 flowchart LR

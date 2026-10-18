@@ -2,7 +2,12 @@
 
 import { expectDeclaredStatus, rejectEnvelope, type ErrorCode } from './envelope';
 import { skipUnlessSessionMode } from './harness';
+import { applyViewport } from './apply-viewport';
 import type { E2ERole } from '../scenario-description';
+import {
+    expandActionRows,
+    type PlannedActionShot
+} from '../../../scripts/audit/design-manual/scripts/capture-matrix';
 
 /**
  * One runner for "this control, answered with a failure or an empty list" rows.
@@ -17,6 +22,11 @@ import type { E2ERole } from '../scenario-description';
  *
  * ── Why jwt only ─────────────────────────────────────────────────────────────────────────────
  * A stubbed answer never reaches the session layer, so the cookie leg would re-run identical code.
+ *
+ * ── Capture mode ─────────────────────────────────────────────────────────────────────────────
+ * With `E2E_DESIGN_CAPTURE=true` (`expose.designCapture`) the same rows are photographed, not
+ * asserted: the loading state with the request held open, then the error or empty state it ends
+ * in. Which shots a row becomes is `expandActionRows`; the photographing is `cy.captureDesign()`.
  *
  * Steps are in `docs/tools/live-e2e.md#the-action-table`.
  */
@@ -336,12 +346,168 @@ const runRow = (row: ActionRow): void => {
 };
 
 /**
+ * Holds the row's request open until `release` is called, then answers it with `response`.
+ *
+ * A handler that returns a promise keeps the request waiting until the promise settles
+ * (https://docs.cypress.io/api/commands/intercept#Interception-lifecycle), so the page is
+ * photographed mid-load and then given its ending.
+ *
+ * @param row - the row
+ * @param response - what the request is answered with once released
+ * @returns the gate: `seen` turns true once the page has asked, `release` lets the answer through
+ */
+const holdRequest = (
+    row: ActionRow,
+    response: EndingResponse
+): { seen: () => boolean; release: () => void } => {
+    let seen = false;
+    let open: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+        open = resolve;
+    });
+    cy.intercept(apiRequest(row.intercept), (request) => {
+        seen = true;
+        return gate.then(() => {
+            request.reply(response);
+        });
+    }).as('held');
+    return {
+        seen: () => seen,
+        release: () => {
+            open?.();
+        }
+    };
+};
+
+/** A static answer to a stubbed request: a status and a JSON body. */
+interface EndingResponse {
+    /** The HTTP status. */
+    statusCode: number;
+    /** The JSON body. */
+    body: object;
+}
+
+/**
+ * What a row's request is answered with in its ending state: the failure, or the empty page.
+ *
+ * @param row - the row
+ * @throws {Error} when an `empty` row's `emptyBody` is not a JSON object
+ */
+const endingOf = (row: ActionRow): EndingResponse => {
+    if (row.kind !== 'empty')
+        return rejectEnvelope(row.status ?? DEFAULT_STATUS, row.code ?? DEFAULT_CODE, row.message);
+    if (typeof row.emptyBody !== 'object' || row.emptyBody === null)
+        throw new Error(`action row "${row.name}": an empty row needs an \`emptyBody\` object`);
+    return { statusCode: 200, body: row.emptyBody };
+};
+
+/**
+ * Photographs a `read` or `empty` row: the page's own load is the request that is held, so the
+ * loading shot is taken before it is answered and the ending after.
+ *
+ * @param row - the row
+ * @param shot - the planned shot
+ */
+const captureRead = (row: ActionRow, shot: PlannedActionShot): void => {
+    const request = captureIdentity(row, shot);
+    if (shot.state === 'loading') {
+        const hold = holdRequest(row, endingOf(row));
+        visitRoute(row);
+        row.prepare?.();
+        // The page has asked, and nothing has answered it: this is the loading state.
+        cy.wrap(null, { log: false }).should(() => {
+            expect(hold.seen(), 'the page asked for the held read').to.equal(true);
+        });
+        cy.captureDesign(request);
+        cy.then(hold.release);
+        return;
+    }
+    cy.intercept(apiRequest(row.intercept), endingOf(row)).as('ending');
+    visitRoute(row);
+    row.prepare?.();
+    cy.wait('@ending');
+    const copy = row.kind === 'empty' ? row.empty?.copy : undefined;
+    cy.get(copy ?? (row.alert ? `[data-test=${row.alert}]` : ANY_ALERT)).should('be.visible');
+    cy.settleNetwork();
+    cy.captureDesign(request);
+};
+
+/**
+ * Photographs a `form`, `dialog` or `row` failure: the page is reached, the control pressed
+ * against a stubbed failure, and the page shot with the alert showing.
+ *
+ * @param row - the row
+ * @param shot - the planned shot
+ */
+const captureFailure = (row: ActionRow, shot: PlannedActionShot): void => {
+    visitRoute(row);
+    row.prepare?.();
+    stubFailure(row, 'failure');
+    row.trigger?.();
+    cy.wait('@failure');
+    cy.get(row.alert ? `[data-test=${row.alert}]` : ANY_ALERT).should('be.visible');
+    cy.settleNetwork();
+    cy.captureDesign(captureIdentity(row, shot));
+};
+
+/**
+ * What the manifest records about an action shot.
+ *
+ * @param row - the row
+ * @param shot - the planned shot
+ */
+const captureIdentity = (row: ActionRow, shot: PlannedActionShot) => ({
+    id: shot.id,
+    caseName: row.name,
+    viewport: shot.viewport,
+    theme: shot.theme,
+    locale: shot.locale,
+    role: row.persona,
+    state: shot.state
+});
+
+/**
+ * Capture mode: one `it()` per planned shot of every row, instead of one per row.
+ *
+ * The size is applied before the first visit, so the page lays itself out for it from the start,
+ * and the network is tracked from there, so `settleNetwork` sees the page's first fetch.
+ *
+ * @param module - the owning module's name
+ * @param rows - the rows
+ */
+const captureActionTable = (module: string, rows: readonly ActionRow[]): void => {
+    const planned = expandActionRows(rows, module);
+    describe(`design capture — actions — ${module}`, () => {
+        for (const [index, shots] of planned.entries()) {
+            const row = rows[index];
+            if (!row) continue;
+            for (const shot of shots)
+                it(`captures ${shot.id}`, function () {
+                    skipUnlessSessionMode(this, 'jwt');
+                    applyViewport(shot.viewport);
+                    cy.visit('/en');
+                    cy.restore();
+                    cy.loginAs(row.persona);
+                    cy.trackNetwork();
+                    if (row.kind === 'read' || row.kind === 'empty') captureRead(row, shot);
+                    else captureFailure(row, shot);
+                });
+        }
+    });
+};
+
+/**
  * Declares one `it` per row: restore, sign in as the row's persona, run it.
  *
  * @param module - the owning module's name, for the describe title
  * @param rows - the rows
  */
 export const actionTable = (module: string, rows: readonly ActionRow[]): void => {
+    // `Cypress.expose` is typed `any`; compare to `true` so only the config's boolean passes.
+    if (Cypress.expose('designCapture') === true) {
+        captureActionTable(module, rows);
+        return;
+    }
     describe(`actions — ${module}`, () => {
         for (const row of rows)
             it(row.name, function () {

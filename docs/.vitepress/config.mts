@@ -41,6 +41,7 @@ export default withMermaid(
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
                             { text: 'Web Attack Catalog', link: '/theory/web-attack-catalog' },
                             { text: 'Web Attack Defences', link: '/theory/web-attack-defences' },
+                            { text: 'Judging a Design', link: '/theory/design-judgement' },
                             { text: 'Roadmap', link: '/theory/roadmap' }
                         ]
                     }
@@ -175,7 +176,8 @@ export default withMermaid(
                             { text: 'Visual Regression', link: '/tools/visual-regression' },
                             { text: 'Lighthouse', link: '/tools/lighthouse' },
                             { text: 'Mutation Testing', link: '/tools/mutation-testing' },
-                            { text: 'AI Auditing', link: '/tools/ai-auditing' }
+                            { text: 'AI Auditing', link: '/tools/ai-auditing' },
+                            { text: 'Design Review', link: '/tools/design-review' }
                         ]
                     }
                 ],

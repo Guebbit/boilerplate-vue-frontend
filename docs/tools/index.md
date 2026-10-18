@@ -48,23 +48,24 @@ flowchart LR
 
 ## Read by intent
 
-| Group         | Page                                                  | What you'll find                                                                                                                        |
-| ------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview      | **[Tools Explained](./tools-explained.md)**           | "What is X and why is it here?" for every tool: plain-English definition, problem it solves, and how it's wired in this repo.           |
-| Setup         | **[Runtime](./runtime.md)**                           | Vue 3, Vite, TypeScript, @vitejs/plugin-vue: the framework-level packages that make the app build and run.                              |
-| Setup         | **[Security](./security.md)**                         | How the FE handles JWT access tokens, refresh cookies, and route guards.                                                                |
-| Setup         | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern.                                                                                       |
-| Setup         | **[Package Scripts](./package-scripts.md)**           | What every `npm run <script>` does and when to reach for it.                                                                            |
-| Setup         | **[Docker & Podman](./docker-and-podman.md)**         | The compose stack, and how this app pairs with the backend's without being joined to it.                                                |
-| Framework     | **[State & Routing](./state-and-routing.md)**         | Pinia stores, Vue Router locale routing and guards, Vue I18n setup.                                                                     |
-| Framework     | **[Realtime](./realtime.md)**                         | FE SSE client, `createSseClient`, realtime observability store.                                                                         |
-| Observability | **[Observability](./observability.md)**               | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store.                                  |
-| Observability | **[Umami](./umami.md)**                               | Product analytics events and the event taxonomy used in this repo.                                                                      |
-| Interface     | **[Guided tours](./tours.md)**                        | The first-login welcome tour and the page tours: how a module adds steps, the version bump, the switch.                                 |
-| Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                                   |
-| Testing       | **[Design lint](./design-lint.md)**                   | ESLint and Vitest reading the source for design drift: tokens, arbitrary values, dialogs, hover-only cues.                              |
-| Testing       | **[Layout sweep](./layout-sweep.md)**                 | The a11y sweep at five device sizes: what overflows, is cut off, is covered, or is too small for a finger.                              |
-| Testing       | **[Touch testing](./touch-testing.md)**               | Cypress as a phone: CDP touch emulation, real taps and swipes, and the scan for what a finger cannot reach.                             |
-| Testing       | **[Lighthouse](./lighthouse.md)**                     | The lab half of performance: a phone-profile run over six routes, what gates and what only reports, and why nothing leaves the machine. |
-| Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__test` control surface.                       |
-| API           | **[API](../api/)**                                    | Orval, Spectral, generated client, and contract-first workflow.                                                                         |
+| Group         | Page                                                  | What you'll find                                                                                                                          |
+| ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview      | **[Tools Explained](./tools-explained.md)**           | "What is X and why is it here?" for every tool: plain-English definition, problem it solves, and how it's wired in this repo.             |
+| Setup         | **[Runtime](./runtime.md)**                           | Vue 3, Vite, TypeScript, @vitejs/plugin-vue: the framework-level packages that make the app build and run.                                |
+| Setup         | **[Security](./security.md)**                         | How the FE handles JWT access tokens, refresh cookies, and route guards.                                                                  |
+| Setup         | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern.                                                                                         |
+| Setup         | **[Package Scripts](./package-scripts.md)**           | What every `npm run <script>` does and when to reach for it.                                                                              |
+| Setup         | **[Docker & Podman](./docker-and-podman.md)**         | The compose stack, and how this app pairs with the backend's without being joined to it.                                                  |
+| Framework     | **[State & Routing](./state-and-routing.md)**         | Pinia stores, Vue Router locale routing and guards, Vue I18n setup.                                                                       |
+| Framework     | **[Realtime](./realtime.md)**                         | FE SSE client, `createSseClient`, realtime observability store.                                                                           |
+| Observability | **[Observability](./observability.md)**               | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store.                                    |
+| Observability | **[Umami](./umami.md)**                               | Product analytics events and the event taxonomy used in this repo.                                                                        |
+| Interface     | **[Guided tours](./tours.md)**                        | The first-login welcome tour and the page tours: how a module adds steps, the version bump, the switch.                                   |
+| Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                                     |
+| Testing       | **[Design lint](./design-lint.md)**                   | ESLint and Vitest reading the source for design drift: tokens, arbitrary values, dialogs, hover-only cues.                                |
+| Testing       | **[Layout sweep](./layout-sweep.md)**                 | The a11y sweep at five device sizes: what overflows, is cut off, is covered, or is too small for a finger.                                |
+| Testing       | **[Touch testing](./touch-testing.md)**               | Cypress as a phone: CDP touch emulation, real taps and swipes, and the scan for what a finger cannot reach.                               |
+| Testing       | **[Design review](./design-review.md)**               | An AI review of the rendered design: screenshots at three sizes in two themes, a checklist, a verifier that tries to refute each finding. |
+| Testing       | **[Lighthouse](./lighthouse.md)**                     | The lab half of performance: a phone-profile run over six routes, what gates and what only reports, and why nothing leaves the machine.   |
+| Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__test` control surface.                         |
+| API           | **[API](../api/)**                                    | Orval, Spectral, generated client, and contract-first workflow.                                                                           |

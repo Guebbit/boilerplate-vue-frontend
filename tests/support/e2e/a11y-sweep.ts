@@ -34,6 +34,13 @@
  * fires on advisory contrast findings is a gate somebody disables, and those two impact levels are
  * the ones that mean "unusable with a keyboard or a screen reader" rather than "could be nicer".
  * Every finding, the lighter ones included, is written to `reports/a11y/` by the same command.
+ *
+ * ── Capture mode ─────────────────────────────────────────────────────────────────────────────
+ * With `E2E_DESIGN_CAPTURE=true` (`expose.designCapture`) the same cases are photographed instead
+ * of audited: no axe, no layout matrix, no touch scan. Which sizes and themes a case becomes is
+ * `capture-matrix.ts`; the photographing is `design-capture.ts`; the review that reads the result
+ * is `docs/tools/design-review.md`. The flag is read when the spec is collected, because the
+ * matrix decides how many `it()`s exist; with it unset, nothing here changes.
  */
 
 import {
@@ -44,10 +51,17 @@ import {
 } from '../../../scripts/e2e/layout-findings';
 import { VIEWPORTS, type ViewportName } from '../../../scripts/e2e/viewports';
 import { BREAKPOINTS } from '../../../src/ui/vuetify/breakpoints';
+import {
+    DEFAULT_LOCALE,
+    expandCaptureCases,
+    moduleOfSpec,
+    withLocale,
+    type PlannedShot
+} from '../../../scripts/audit/design-manual/scripts/capture-matrix';
 import { applyViewport } from './apply-viewport';
 import { waitForTransitions } from './commands';
 import { settleLayout, withTextMode } from './layout-checks';
-import { reachState, type SweepRoute } from './sweep-state';
+import { reachState, resolveRoute, type SweepRoute } from './sweep-state';
 
 /** One audited state of one route. */
 export interface A11ySweepCase {
@@ -171,6 +185,86 @@ const sweepLayout = (sweepCase: A11ySweepCase, first: ViewportName): void => {
 };
 
 /**
+ * Photographs one planned shot of a case: reaches the state, asserts the theme the shot claims,
+ * then hands the page to `cy.captureDesign()`.
+ *
+ * The theme is asserted because the default is the visitor's stored choice, else the OS's: a shot
+ * must never record whatever the host happens to prefer.
+ *
+ * @param sweepCase - the case being photographed
+ * @param shot - the size, theme and locale planned for it
+ * @param role - who is signed in, for the manifest
+ */
+const captureShot = (
+    sweepCase: A11ySweepCase,
+    shot: PlannedShot,
+    role: 'user' | 'admin' | undefined
+): void => {
+    reachState({
+        route: () => resolveRoute(sweepCase.route).then((path) => withLocale(path, shot.locale)),
+        prepare: sweepCase.prepare,
+        theme: shot.theme === 'dark' ? 'dark' : undefined,
+        viewport: shot.viewport
+    });
+    cy.get(`.v-application.v-theme--${shot.theme}`).should('exist');
+    cy.captureDesign({
+        id: shot.id,
+        caseName: sweepCase.name,
+        viewport: shot.viewport,
+        theme: shot.theme,
+        locale: shot.locale,
+        role: role ?? 'anonymous',
+        state: sweepCase.prepare ? 'prepared' : 'first-paint'
+    });
+};
+
+/**
+ * Capture mode: one `it()` per planned shot of every case, instead of one per case.
+ *
+ * @param label - what this group of routes is, for the describe title
+ * @param cases - the group's cases
+ * @param role - sign in as this first; omitted, the visitor is anonymous
+ */
+const captureA11y = (
+    label: string,
+    cases: readonly A11ySweepCase[],
+    role: 'user' | 'admin' | undefined
+): void => {
+    // `Cypress.expose` is typed `any`; the config always writes a string, so narrow it to one.
+    const exposed: unknown = Cypress.expose('designCaptureLocales');
+    const locales =
+        typeof exposed === 'string' && exposed !== '' ? exposed.split(',') : [DEFAULT_LOCALE];
+    const module = moduleOfSpec(Cypress.spec.relative);
+    const expanded = expandCaptureCases(
+        cases.map((sweepCase) => ({
+            name: sweepCase.name,
+            hasPrepare: sweepCase.prepare !== undefined,
+            viewport: sweepCase.viewport,
+            theme: sweepCase.theme
+        })),
+        module,
+        locales
+    );
+
+    describe(`design capture — ${label}`, () => {
+        beforeEach(() => {
+            cy.visit('/en');
+            cy.restore();
+            if (role) cy.loginAs(role);
+        });
+
+        for (const [index, { shots }] of expanded.entries()) {
+            const sweepCase = cases[index];
+            if (!sweepCase) continue;
+            for (const shot of shots)
+                it(`captures ${shot.id}`, () => {
+                    captureShot(sweepCase, shot, role);
+                });
+        }
+    });
+};
+
+/**
  * @param label - what this group of routes is, for the describe title
  * @param routes - `[human name, path]` pairs, or full {@link A11ySweepCase} objects for a state
  *  the visitor has to act to reach
@@ -181,6 +275,16 @@ export const sweepA11y = (
     routes: readonly A11ySweepEntry[],
     role?: 'user' | 'admin'
 ): void => {
+    // `Cypress.expose` is typed `any`; compare to `true` so only the config's boolean passes.
+    if (Cypress.expose('designCapture') === true) {
+        captureA11y(
+            label,
+            routes.map((entry) => toCase(entry)),
+            role
+        );
+        return;
+    }
+
     describe(`accessibility — ${label}`, () => {
         beforeEach(() => {
             cy.visit('/en');
