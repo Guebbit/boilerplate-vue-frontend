@@ -98,4 +98,11 @@ describe('design lint, Tailwind class rules', () => {
         );
         expect(await ruleIdsOf('<div class="rounded" />')).not.toEqual([]);
     });
+
+    it('reads the classes a component prop carries', async () => {
+        expect(await ruleIdsOf('<LazyImage rounded-class="rounded-3xl" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<LazyImage rounded-class="rounded-full" />')).toEqual([]);
+    });
 });

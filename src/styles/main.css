@@ -49,6 +49,9 @@
     --radius-lg: 8px;
     --radius-xl: 24px;
     --radius-2xl: 1rem;
+    /* The analytics consent banner sits above Vuetify's overlays and below the toast stack. */
+    --z-index-banner: 2000;
+
     --shadow-*: initial;
     --inset-shadow-*: initial;
     --drop-shadow-*: initial;

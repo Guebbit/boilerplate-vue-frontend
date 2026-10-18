@@ -35,8 +35,7 @@ const consent = useAnalyticsConsentStore();
     -->
     <div
         v-if="isAnalyticsConsentEnabled() && consent.promptOpen"
-        class="bg-surface elevation-8 fixed inset-x-0 bottom-0"
-        style="z-index: 2000"
+        class="bg-surface elevation-8 fixed inset-x-0 bottom-0 z-banner"
     >
         <v-alert
             type="info"

@@ -63,7 +63,7 @@ const { hasImage } = defineProps<{
             :width="72"
             :height="72"
             :eager="true"
-            rounded="rounded-xl"
+            rounded-class="rounded-xl"
             class="elevation-4"
         />
         <!--

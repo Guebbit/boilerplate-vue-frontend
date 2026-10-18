@@ -156,11 +156,7 @@ const handleRevoke = (apiKey: ApiKey) =>
 <template>
     <div id="api-keys-list-page">
         <div class="mb-6 flex flex-wrap items-center gap-2">
-            <PageSizeSelect
-                v-model="pageSize"
-                :label="t('generic.page-size')"
-                style="max-width: 160px"
-            />
+            <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" class="max-w-40" />
             <v-spacer />
             <v-btn
                 v-if="session.can('create', 'ApiKey')"

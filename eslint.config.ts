@@ -784,7 +784,10 @@ export default defineConfigWithVueTs(
         plugins: { local: localPlugin },
         rules: {
             'vue/comment-directive': ['error', { reportUnusedDisableDirectives: true }],
-            'local/template-directive-description': 'error'
+            'local/template-directive-description': 'error',
+            // A static `style="…"` is a Tailwind class or a token. A bound style stays legal: it
+            // hands over a computed value (a CSS variable, a measured box) a class cannot.
+            'vue/no-static-inline-styles': ['error', { allowBinding: true }]
         }
     },
 

@@ -147,6 +147,31 @@ describe('LazyImage — how it loads', () => {
         expect(wrapper.attributes('style')).toContain('aspect-ratio: 56 / 72');
     });
 
+    it('never outgrows its container, so a narrow card cannot clip it', () => {
+        expect(mountImage({ src: '/images/abc.png', width: 320 }).attributes('style')).toContain(
+            'max-width: 100%'
+        );
+    });
+
+    it('fills its container when asked, with no pixel width of its own', () => {
+        const style = mountImage({
+            src: '/images/abc.png',
+            width: 320,
+            height: 240,
+            fill: true
+        }).attributes('style');
+
+        expect(style).toContain('width: 100%');
+        expect(style).not.toContain('320px');
+        expect(style).toContain('aspect-ratio: 320 / 240');
+    });
+
+    it('takes its corner rounding as a class', () => {
+        expect(
+            mountImage({ src: '/images/abc.png', roundedClass: 'rounded-full' }).classes()
+        ).toContain('rounded-full');
+    });
+
     it('renders no thumbnail tier when the caller passes none', () => {
         // The single `img` IS the assertion: a second one would mean the component is painting a
         // blurred layer with nothing behind it.

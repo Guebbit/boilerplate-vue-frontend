@@ -400,7 +400,7 @@ const handleHardDelete = (userId: string, username: string) =>
                     :alt="t('users-list-page.image-alt', { name: item.username })"
                     :width="56"
                     :height="56"
-                    rounded="rounded-full"
+                    rounded-class="rounded-full"
                 />
             </template>
 

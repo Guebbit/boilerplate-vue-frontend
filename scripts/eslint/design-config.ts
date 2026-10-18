@@ -33,6 +33,16 @@ const CLASS_MAP_SELECTOR = {
 };
 
 /**
+ * A component prop that carries classes, by naming convention (`rounded-class`, `roundedClass`).
+ * The plugin reads `class` only unless told: a class handed through a prop would go unlinted.
+ */
+const CLASS_PROP_SELECTOR = {
+    kind: SelectorKind.Attribute,
+    name: '.*(?:-class|Class)',
+    match: [{ type: MatcherType.String }]
+};
+
+/**
  * The flat-config blocks for the Tailwind class rules, over `src/` templates and scripts.
  * Test files are left out: they hold fixtures, not styling.
  *
@@ -65,7 +75,7 @@ export const designLintConfig = () => {
                     rootFontSize: DESIGN_POLICY.rootFontSize,
                     // Treat a class defined in our own CSS as known rather than reporting it.
                     detectComponentClasses: true,
-                    selectors: [...getDefaultSelectors(), CLASS_MAP_SELECTOR]
+                    selectors: [...getDefaultSelectors(), CLASS_MAP_SELECTOR, CLASS_PROP_SELECTOR]
                 }
             },
             rules: {
