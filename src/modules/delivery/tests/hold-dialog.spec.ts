@@ -80,6 +80,25 @@ describe('HoldDialog', () => {
                 });
         }));
 
+    it('sends the buyer’s message apart from the staff note', () =>
+        openDialog().then(({ wrapper, hold }) => {
+            emitOn(wrapper.findComponent(VSelect), 'update:modelValue', 'high_risk');
+            return nextRenderTick(wrapper)
+                .then(() => wrapper.get('[data-test=hold-note] textarea').setValue('odd voice'))
+                .then(() =>
+                    wrapper.get('[data-test=hold-message] textarea').setValue(' Back soon. ')
+                )
+                .then(() => wrapper.get('form').trigger('submit'))
+                .then(() => nextRenderTick(wrapper))
+                .then(() => {
+                    expect(hold).toHaveBeenCalledWith('fo1', {
+                        reason: 'high_risk',
+                        note: 'odd voice',
+                        message: 'Back soon.'
+                    });
+                });
+        }));
+
     it('leaves the note out when it is empty, and shows a refusal in place', () =>
         openDialog().then(({ wrapper, hold }) => {
             hold.mockRejectedValue(new Error('DELIVERY_NOT_HOLDABLE'));

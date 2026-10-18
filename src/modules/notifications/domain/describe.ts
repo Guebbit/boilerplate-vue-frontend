@@ -111,6 +111,37 @@ const describePreorder = (
 };
 
 /**
+ * The hold notice's two sentences and the shop's message line, as literals so the unused-key check
+ * can see them.
+ */
+const HELD_KEYS = {
+    check_address: 'notifications.fulfillment-held-check_address',
+    delayed: 'notifications.fulfillment-held-delayed',
+    message: 'notifications.fulfillment-held-message'
+};
+
+/**
+ * The sentence of a hold the buyer can act on or should read: what the notice means, then what
+ * the shop wrote for them. Never a reason: the server does not send one.
+ *
+ * @param parameters - The notice's facts.
+ * @param translate - The translate function.
+ * @returns The finished text.
+ */
+const describeHeld = (
+    parameters: Extract<
+        DescribableNotification,
+        { code: 'notifications.fulfillment-held' }
+    >['params'],
+    translate: Translate
+): string => {
+    const sentence = translate(HELD_KEYS[parameters.notice]);
+    return parameters.message
+        ? `${sentence} ${translate(HELD_KEYS.message, { message: parameters.message })}`
+        : sentence;
+};
+
+/**
  * The order a notification is about, when it is about one — where the reader answers or cancels.
  *
  * @param notification - The stored row's `code` and `params`.
@@ -118,7 +149,8 @@ const describePreorder = (
  */
 export const notificationOrderId = (notification: DescribableNotification): string | undefined =>
     notification.code === 'notifications.preorder-delayed' ||
-    notification.code === 'notifications.preorder-confirm-wait'
+    notification.code === 'notifications.preorder-confirm-wait' ||
+    notification.code === 'notifications.fulfillment-held'
         ? notification.params.orderId
         : undefined;
 
@@ -199,6 +231,9 @@ export const describeNotification = (
         case 'notifications.preorder-delayed':
         case 'notifications.preorder-confirm-wait': {
             return describePreorder(notification.code, notification.params, formatDate, translate);
+        }
+        case 'notifications.fulfillment-held': {
+            return describeHeld(notification.params, translate);
         }
         default: {
             return translate(UNKNOWN_CODE_KEY);

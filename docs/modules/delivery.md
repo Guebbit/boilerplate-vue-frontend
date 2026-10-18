@@ -105,6 +105,13 @@ counted here — what has shipped and what remains come off each line.
 stock, so that card says "waits for stock" and has no release; the three staff reasons
 (`incorrect_address`, `high_risk`, `other`) can be released by hand.
 
+**The buyer reads a notice, not the reason.** `holdReason` and `holdNote` are staff's; everyone gets
+`holdNotice` (`awaiting_stock`, `check_address`, `delayed`) and the optional `holdMessage` staff wrote
+for them. A buyer's card therefore says "Delayed", an address warning or a neutral line, and shows the
+shop's message; staff keep "On hold" and the reason chip. `HoldDialog` has a second text, "message for
+the buyer", beside the staff-only note. When the address is wrong, staff correct it on the order's edit
+page ([orders](./orders.md)).
+
 ## A late preorder
 
 A preorder's fulfillment order carries the dates it was promised and is expected on, and where it
@@ -169,7 +176,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | File                                  | What it is                                                                                                                                                                          | Explained in                          |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | `components/FulfillmentOrderCard.vue` | One card per fulfillment order: status, hold reason, a late preorder's dates and consent, lines, its shipments, and the buttons its `actions` offer.                                | [read](../theory/layers.md)           |
-| `components/HoldDialog.vue`           | Staff hold a fulfillment order back: a reason and an optional note.                                                                                                                 | [read](../theory/layers.md)           |
+| `components/HoldDialog.vue`           | Staff hold a fulfillment order back: a reason, an optional staff note and an optional message for the buyer.                                                                        | [read](../theory/layers.md)           |
 | `components/ShipItemsDialog.vue`      | Staff cut a shipment: a quantity per remaining line, a tracking code, and the forced door.                                                                                          | [read](../theory/layers.md)           |
 | `components/ShipmentPanel.vue`        | The order page's shipping corner: the cards, "arrives in N shipments" and "Start fulfilment". Published through the barrel.                                                         | [read](../theory/layers.md)           |
 | `components/ShipmentRow.vue`          | One shipment: lines, tracking, dates, mark delivered, edit tracking.                                                                                                                | [read](../theory/layers.md)           |

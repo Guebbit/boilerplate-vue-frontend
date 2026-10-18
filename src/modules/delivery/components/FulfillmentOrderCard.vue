@@ -106,6 +106,18 @@ const offerShip = computed(
 );
 
 /**
+ * The status chip's text. A buyer, who is never sent staff's reason, reads a held group as
+ * "Delayed": the shop's word for it, not a status that sounds like a decision about them.
+ */
+const statusLabel = computed(() =>
+    props.fulfillmentOrder.status === 'on_hold' &&
+    !props.fulfillmentOrder.holdReason &&
+    props.fulfillmentOrder.holdNotice !== 'awaiting_stock'
+        ? t('fulfillment-order-card.status-delayed')
+        : t(`fulfillment-order-card.status-${props.fulfillmentOrder.status}`)
+);
+
+/**
  * A preorder that lost its date: something was promised (`agreedAt`) but nothing is expected now,
  * because the release date was cleared.
  */
@@ -191,7 +203,7 @@ const release = () =>
                 {{ t('fulfillment-order-card.title', { number: fulfillmentOrder.number }) }}
             </h4>
             <v-chip size="small" variant="tonal" data-test="fulfillment-order-status">
-                {{ t(`fulfillment-order-card.status-${fulfillmentOrder.status}`) }}
+                {{ statusLabel }}
             </v-chip>
             <v-chip
                 v-if="fulfillmentOrder.kind === 'digital'"
@@ -213,11 +225,31 @@ const release = () =>
         </div>
 
         <p
-            v-if="fulfillmentOrder.holdReason === 'awaiting_stock'"
+            v-if="fulfillmentOrder.holdNotice === 'awaiting_stock'"
             class="m-0 text-sm"
             data-test="fulfillment-order-awaiting-stock"
         >
             {{ t('fulfillment-order-card.waits-for-stock') }}
+        </p>
+        <v-alert
+            v-else-if="fulfillmentOrder.holdNotice"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="m-0 text-sm"
+            :data-notice="fulfillmentOrder.holdNotice"
+            data-test="fulfillment-order-hold-notice"
+        >
+            {{ t(`fulfillment-order-card.hold-notice-${fulfillmentOrder.holdNotice}`) }}
+        </v-alert>
+        <p
+            v-if="fulfillmentOrder.holdMessage"
+            class="m-0 text-sm"
+            data-test="fulfillment-order-hold-message"
+        >
+            {{
+                t('fulfillment-order-card.hold-message', { message: fulfillmentOrder.holdMessage })
+            }}
         </p>
         <p v-if="fulfillmentOrder.holdNote" class="m-0 text-sm" data-test="fulfillment-order-note">
             {{ t('fulfillment-order-card.hold-note', { note: fulfillmentOrder.holdNote }) }}

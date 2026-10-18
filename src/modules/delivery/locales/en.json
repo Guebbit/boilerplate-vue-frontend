@@ -26,6 +26,10 @@
         "hold-reason-high_risk": "High risk",
         "hold-reason-other": "Other reason",
         "waits-for-stock": "Waits for stock. It is released when the stock arrives.",
+        "status-delayed": "Delayed",
+        "hold-notice-check_address": "Please check the delivery address of this order. If something is wrong, contact us and we will fix it.",
+        "hold-notice-delayed": "Part of this order is held back for a moment and will leave later than planned. You may cancel it at any time before it ships.",
+        "hold-message": "Message from the shop: {message}",
         "hold-note": "Note: {note}",
         "expected": "Expected to ship {date}",
         "no-date-yet": "No date yet",
@@ -87,7 +91,9 @@
         "label-note": "Note (optional)",
         "hint-note": "Staff only. Don't include phone numbers or addresses.",
         "button-hold": "Put on hold",
-        "success": "Put on hold."
+        "success": "Put on hold.",
+        "label-message": "Message for the buyer (optional)",
+        "hint-message": "The buyer reads this and gets it by email. Keep it short, and leave out the reason for the hold."
     },
     "preorder-board": {
         "caption-orders": "Preorder fulfillment orders",

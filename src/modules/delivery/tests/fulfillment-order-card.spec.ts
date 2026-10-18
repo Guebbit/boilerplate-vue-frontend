@@ -55,7 +55,10 @@ describe('what a card shows', () => {
         ['closed', 'Fulfilled'],
         ['cancelled', 'Cancelled']
     ] as const)('labels a %s fulfillment order in words', (status, text) => {
-        const { wrapper } = mountCard(aFulfillmentOrder({ status }));
+        // `holdReason` is staff's: a record that carries it is read as staff read it ("On hold").
+        const { wrapper } = mountCard(
+            aFulfillmentOrder({ status, ...(status === 'on_hold' ? { holdReason: 'other' } : {}) })
+        );
 
         expect(wrapper.get('[data-test=fulfillment-order-status]').text()).toBe(text);
     });
@@ -65,6 +68,7 @@ describe('what a card shows', () => {
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'awaiting_stock',
+                holdNotice: 'awaiting_stock',
                 actions: {
                     ship: false,
                     fulfill: false,
@@ -81,11 +85,55 @@ describe('what a card shows', () => {
         expect(wrapper.find('[data-test=release]').exists()).toBe(false);
     });
 
+    it('tells a buyer a held group is delayed, in the notice words and never as a reason', () => {
+        const { wrapper } = mountCard(
+            aFulfillmentOrder({
+                status: 'on_hold',
+                holdNotice: 'delayed',
+                holdMessage: 'A short check, back soon.'
+            })
+        );
+
+        expect(wrapper.get('[data-test=fulfillment-order-status]').text()).toBe('Delayed');
+        expect(wrapper.get('[data-test=fulfillment-order-hold-notice]').text()).toContain(
+            'held back for a moment'
+        );
+        expect(wrapper.get('[data-test=fulfillment-order-hold-message]').text()).toContain(
+            'A short check, back soon.'
+        );
+        expect(wrapper.find('[data-test=fulfillment-order-hold-reason]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=fulfillment-order-note]').exists()).toBe(false);
+    });
+
+    it('asks a buyer whose address is in question to check it', () => {
+        const { wrapper } = mountCard(
+            aFulfillmentOrder({ status: 'on_hold', holdNotice: 'check_address' })
+        );
+
+        expect(wrapper.get('[data-test=fulfillment-order-hold-notice]').text()).toContain(
+            'check the delivery address'
+        );
+    });
+
+    it('keeps "On hold" and the reason chip for staff, beside the notice', () => {
+        const { wrapper } = mountCard(
+            aFulfillmentOrder({
+                status: 'on_hold',
+                holdReason: 'high_risk',
+                holdNotice: 'delayed'
+            })
+        );
+
+        expect(wrapper.get('[data-test=fulfillment-order-status]').text()).toBe('On hold');
+        expect(wrapper.get('[data-test=fulfillment-order-hold-reason]').text()).toBe('High risk');
+    });
+
     it('shows the staff note and the revised date over the agreed one', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'incorrect_address',
+                holdNotice: 'check_address',
                 holdNote: 'call the buyer',
                 agreedAt: '2026-12-01T00:00:00.000Z',
                 expectedAt: '2026-12-12T00:00:00.000Z'
