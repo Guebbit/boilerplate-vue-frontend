@@ -43,4 +43,28 @@ describe('useFocusTooltip', () => {
         vi.runAllTimers();
         expect(tooltipOpen.value).toBe(false);
     });
+
+    it('lets hover open the tooltip only where the device can hover', () => {
+        const matchMedia = vi.fn((query: string) =>
+            asStub<MediaQueryList>({
+                matches: query === '(hover: hover)',
+                addEventListener: () => {},
+                removeEventListener: () => {}
+            })
+        );
+        vi.stubGlobal('matchMedia', matchMedia);
+
+        expect(useFocusTooltip().canHover.value).toBe(true);
+
+        vi.stubGlobal('matchMedia', (query: string) =>
+            asStub<MediaQueryList>({
+                matches: false,
+                media: query,
+                addEventListener: () => {},
+                removeEventListener: () => {}
+            })
+        );
+        expect(useFocusTooltip().canHover.value).toBe(false);
+        vi.unstubAllGlobals();
+    });
 });

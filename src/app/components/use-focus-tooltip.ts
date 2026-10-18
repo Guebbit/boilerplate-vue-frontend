@@ -3,8 +3,12 @@
  * The open state of a nav button's tooltip, driven by keyboard focus instead of `v-tooltip`'s own
  * `open-on-focus` wiring. Shared by the icon button and the pinned button, which differ in what
  * they show and not in how their tooltip behaves.
+ *
+ * Hover opens it only where the device can hover. A tap fires compatibility mouse events, so on a
+ * touch screen a hover-opened tooltip would stick over the menu the tap just opened.
  */
 import { ref, type Ref } from 'vue';
+import { useMediaQuery } from '@/ui/composables/use-media-query.ts';
 
 /**
  * What {@link useFocusTooltip} hands back.
@@ -14,6 +18,10 @@ export interface FocusTooltip {
      * Whether the tooltip shows. Bind it to the `v-tooltip`'s `v-model`.
      */
     tooltipOpen: Ref<boolean>;
+    /**
+     * Whether the device can hover. Bind it to the `v-tooltip`'s `open-on-hover`.
+     */
+    canHover: Readonly<Ref<boolean>>;
     /**
      * `focus` listener: opens the tooltip on a real keyboard focus.
      */
@@ -49,6 +57,7 @@ export const useFocusTooltip = (): FocusTooltip => {
 
     return {
         tooltipOpen,
+        canHover: useMediaQuery('(hover: hover)'),
         openTooltipOnRealFocus: (event) => {
             if ((event.target as HTMLElement).matches(':focus-visible')) tooltipOpen.value = true;
         },

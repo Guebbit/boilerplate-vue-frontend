@@ -17,13 +17,13 @@ export default {
  * panel never asks for a password itself. There is no "last method" guard: forgot-password
  * recovers an account left with none, by the backend's own decision.
  */
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, unref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Link2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useOAuthLinksStore } from '../stores/oauth-links.ts';
-import { providerLabel } from '../stores/oauth.ts';
+import { startProviderLink, useOAuthLinksStore } from '../stores/oauth-links.ts';
+import { providerLabel, useOAuthProvidersStore } from '../stores/oauth.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -32,7 +32,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 /**
  * Translation function.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 /**
  * Toast dispatcher, used to report the outcome to the visitor.
@@ -43,6 +43,25 @@ const { addMessage } = useNotificationsStore();
  * The link-list actions: load them, and remove one.
  */
 const { fetchLinks, unlinkProvider } = useOAuthLinksStore();
+
+/**
+ * The providers this deployment offers, so the panel can offer to connect the ones not yet linked.
+ */
+const { providers: offeredProviders } = storeToRefs(useOAuthProvidersStore());
+
+/**
+ * The offered providers this account has not connected yet.
+ */
+const connectable = computed(() =>
+    unref(offeredProviders).filter(
+        (name) => !unref(links).some(({ provider }) => provider === name)
+    )
+);
+
+/**
+ * The provider being connected, if any — per button, so only that one spins.
+ */
+const connecting = ref<string>();
 
 /**
  * The connected providers.
@@ -91,7 +110,34 @@ const handleRemove = (provider: string) =>
                 });
         });
 
-onMounted(fetchLinks);
+/**
+ * Starts connecting one provider: asks the server for the consent URL, then leaves for it. The
+ * visitor comes back to this page through the OAuth callback with the provider linked. A fresh
+ * session is required; the shared step-up prompt answers a stale one.
+ *
+ * @param provider - Registry key of the provider to connect.
+ * @returns Nothing; a failure blocks the panel in place ({@link actionError}).
+ */
+const handleConnect = (provider: string) => {
+    connecting.value = provider;
+    clearActionError();
+    return startProviderLink(provider, {
+        continueTo: globalThis.location.pathname,
+        locale: locale.value
+    })
+        .then((authorizeUrl) => {
+            globalThis.location.assign(authorizeUrl);
+        })
+        .catch((error: unknown) => {
+            reportActionError(error);
+            connecting.value = undefined;
+        });
+};
+
+onMounted(() => {
+    void useOAuthProvidersStore().fetchProviders();
+    return fetchLinks();
+});
 </script>
 
 <template>
@@ -137,6 +183,20 @@ onMounted(fetchLinks);
         <p v-else class="opacity-80" data-test="connected-empty">
             {{ t('profile-page.connected-empty') }}
         </p>
+
+        <div v-if="connectable.length > 0" class="mt-4 flex flex-wrap gap-2">
+            <v-btn
+                v-for="provider in connectable"
+                :key="'connect-' + provider"
+                variant="tonal"
+                size="small"
+                :data-test="`connected-connect-${provider}`"
+                :loading="connecting === provider"
+                @click="handleConnect(provider)"
+            >
+                {{ t('profile-page.connected-connect', { provider: providerLabel(provider) }) }}
+            </v-btn>
+        </div>
     </v-card>
 </template>
 

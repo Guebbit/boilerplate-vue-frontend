@@ -59,7 +59,7 @@ describe('AT10 · The last administrator removes itself', () => {
                         role: 'admin'
                     })
                         .its('status')
-                        .should('equal', 409);
+                        .should('equal', 403);
                 });
                 cy.apiAs<{ role: string }>('moderator', 'GET', `/users/${customerId}`).then(
                     (customer) => {

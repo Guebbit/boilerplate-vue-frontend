@@ -3,7 +3,8 @@
  * @module
  * Staff hold one fulfillment order back: a reason from the three staff may give (never
  * `awaiting_stock`, which only the allocation of stock sets) and an optional note. The dialog owns
- * its call and reports the outcome in place.
+ * its call and reports the outcome in place. A second, separate text is the message the BUYER
+ * reads: the note stays staff's.
  */
 import { computed, ref, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -96,6 +97,11 @@ const reason = ref<HoldFulfillmentOrderRequestReason | undefined>();
 const note = ref('');
 
 /**
+ * Optional sentence for the buyer, mailed with the hold. Staff's note above stays staff's.
+ */
+const message = ref('');
+
+/**
  * This dialog's own blocked state.
  */
 const { message: holdError, report: reportHoldError, clear: clearHoldError } = useBlockingError();
@@ -107,6 +113,7 @@ watch(isOpen, (open) => {
     if (!open) return;
     reason.value = undefined;
     note.value = '';
+    message.value = '';
     clearHoldError();
 });
 
@@ -121,7 +128,8 @@ const submit = () => {
     return deliveryStore
         .hold(props.fulfillmentOrder.id, {
             reason: reason.value,
-            ...(note.value.trim() ? { note: note.value.trim() } : {})
+            ...(note.value.trim() ? { note: note.value.trim() } : {}),
+            ...(message.value.trim() ? { message: message.value.trim() } : {})
         })
         .then(() => {
             addMessage(t('hold-dialog.success'));
@@ -163,6 +171,18 @@ const submit = () => {
                     maxlength="1000"
                     density="compact"
                     data-test="hold-note"
+                />
+
+                <v-textarea
+                    v-model="message"
+                    :label="t('hold-dialog.label-message')"
+                    :hint="t('hold-dialog.hint-message')"
+                    persistent-hint
+                    rows="2"
+                    maxlength="500"
+                    counter
+                    density="compact"
+                    data-test="hold-message"
                 />
 
                 <InlineErrorAlert :message="holdError" data-test="hold-error" />

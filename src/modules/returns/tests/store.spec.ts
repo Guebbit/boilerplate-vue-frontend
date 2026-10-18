@@ -178,7 +178,8 @@ describe('fetchReturnOptions', () => {
         const options = {
             orderId: 'o1',
             currency: 'EUR',
-            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
+            reasons: ['withdrawal', 'defective'],
+            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1, withdrawable: true }],
             cancellable: []
         };
         responses['GET /returns/options'] = orvalEnvelope(options);

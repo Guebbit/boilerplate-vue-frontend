@@ -149,10 +149,11 @@ describe('the preorder rows', () => {
 });
 
 describe('isStaffOnly', () => {
-    it('flags exactly the four types the buyer never sees', () => {
+    it('flags exactly the five types the buyer never sees', () => {
         const staffOnly = Object.values(OrderTimelineType).filter((type) => isStaffOnly(type));
 
         expect(staffOnly.toSorted()).toEqual([
+            'address_corrected',
             'fulfillment_held',
             'fulfillment_released',
             'refund_failed',

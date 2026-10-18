@@ -269,6 +269,16 @@ this diagram exists to prevent.
 
 → [Testing](./testing-and-docs.md)
 
+### cypress-real-events
+
+**What it is.** A Cypress plugin that sends real input through the Chrome DevTools Protocol: key presses, taps and swipes, instead of events dispatched on an element.
+
+**Problem it solves.** Cypress' own `.type('{tab}')` and `.click()` dispatch events and move nothing the browser does itself: focus traversal is the browser's behaviour, and a touch needs touch events. Real input exercises the real paths.
+
+**In this repo.** `realPress` drives the keyboard specs (`tests/e2e/specs/keyboard.cy.ts`, the FR12 journey). `realTouch` and `realSwipe` drive the touch contract (`tests/e2e/specs/touch.cy.ts`), behind `.tap()` in `tests/support/e2e/touch.ts`. Chromium family only.
+
+→ [Accessibility Testing](./accessibility-testing.md) · [Touch Testing](./touch-testing.md)
+
 ---
 
 ### Lighthouse

@@ -62,7 +62,7 @@ const SHELF_COLORS = {
 } satisfies Record<ShelfState, ThemeColor>;
 
 /**
- * The shelf as the shopper reads it: off sale outranks a preorder, which outranks the stock badge.
+ * The shelf as the shopper reads it: off sale outranks a preorder with allowance left, which outranks the stock badge.
  */
 const shelf = computed(() => shelfStateOf(product));
 </script>

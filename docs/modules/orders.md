@@ -104,6 +104,14 @@ flowchart LR
     paid[paid or refunded] -. no action offered .-> gone
 ```
 
+## Correcting the shipping address
+
+`OrderEdit` shows `ShippingAddressForm` while the order's own `actions.correctAddress` is true: the
+server says staff hold `update:Order`, the order has a shipping address and nothing has shipped. It
+sends `PUT /orders/{id}/shipping-address` with the whole address, so a held `incorrect_address`
+group has a way out. A refusal that slipped through (it shipped meanwhile) blocks the form in place
+with the server's `ORDER_ADDRESS_LOCKED` message; the form decides nothing about when it may run.
+
 ## The timeline
 
 `src/modules/orders/components/OrderTimeline.vue` sits under the order's details and lists what happened to it, oldest first

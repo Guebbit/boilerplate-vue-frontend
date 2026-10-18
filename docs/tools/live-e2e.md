@@ -220,6 +220,13 @@ leak, or anything in this app's own code. Real Chromium runs the same interactio
 `--browser chromium` is scoped to this one script: the demo-profile suites do not hit it (the demo
 backend's upload response is faster/smaller) and stay on Electron.
 
+A headless Chromium has no mouse, so it reports `hover: none` and no pointer, and Vuetify's touch-only
+CSS (the always-visible clear "×") would render at desktop width, unlike in Electron. The one
+`before:browser:launch` handler (`scripts/e2e/browser-launch.ts`) therefore launches it with Blink
+pointer settings that report a hovering, fine pointer. Limit: once a test turns touch emulation off,
+Chromium falls back to "no pointer", not to the flag, so put touch tests last in a spec. See
+[Touch testing](touch-testing.md).
+
 ### Point the backend at Umami, or the analytics spec fails with Umami running
 
 `compose:restart` starts Umami on `:3080`, and the frontend's tracker finds it on its own — `VITE_UMAMI_SRC` and `VITE_UMAMI_WEBSITE_ID` in `.env-example` already name it. The **backend** is the half that does not: `NODE_UMAMI_*` is commented out there, because the compose stack sets it on the `app` service, and `npm run host` runs the backend outside that service. So a backend booted the way the recipe above describes emits nothing, logs `Analytics provider is 'umami' but ... events are being discarded`, and carries on.

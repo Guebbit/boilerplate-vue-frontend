@@ -3,8 +3,8 @@
  * What the one `before:browser:launch` handler in `cypress.config.ts` does to a browser.
  *
  * Cypress keeps only the LAST handler registered for this event, so every launch tweak lives
- * here as a pure function and the config composes them. Two seams today: the window size, and
- * (added by the touch lane) the pointer flags.
+ * here as a pure function and the config composes them. Two seams: the window size, and the
+ * pointer a headless Chromium reports.
  */
 
 /** A width and a height in CSS pixels. */
@@ -74,4 +74,31 @@ export const withWindowSize = <TOptions extends LaunchOptions>(
         };
 
     return launchOptions;
+};
+
+/**
+ * Launch options that make a headless Chromium report a mouse, as Electron does.
+ *
+ * A headless Chromium has no pointing device, so it reports `hover: none` and no pointer, and
+ * Vuetify's touch-only CSS renders at desktop width. These Blink settings give it a fine pointer
+ * that can hover; the enums are Blink's `HoverType` (2 = can hover) and `PointerType` (4 = fine).
+ * https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/public/common/css/
+ *
+ * Electron already reports a mouse, and Firefox has no such switch, so both are left alone.
+ * Known limit: touch emulation, once turned off, falls back to "no pointer", not to these flags,
+ * so a desktop test that follows a touch test in the same spec runs with no pointer.
+ */
+export const withDesktopPointer = <TOptions extends LaunchOptions>(
+    browser: LaunchBrowser,
+    launchOptions: TOptions
+): TOptions => {
+    if (browser.family !== 'chromium' || browser.name === 'electron') return launchOptions;
+
+    return {
+        ...launchOptions,
+        args: [
+            ...launchOptions.args,
+            '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4'
+        ]
+    };
 };

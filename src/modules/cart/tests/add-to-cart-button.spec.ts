@@ -118,12 +118,20 @@ describe('the shelf', () => {
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
     });
 
-    it('lets a preorder be bought with an empty shelf, and says "Preorder"', () => {
+    it('lets a preorder with allowance left be bought, and says "Preorder"', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, inStock: false, preorder: true });
+        const wrapper = mountButton({ ...IN_STOCK, inStock: true, preorder: true });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Preorder');
+    });
+
+    it('shuts a preorder whose allowance is full, as out of stock', () => {
+        signIn();
+        const wrapper = mountButton({ ...IN_STOCK, inStock: false, preorder: true });
+
+        expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
+        expect(wrapper.get('[data-test=add-to-cart]').text()).not.toContain('Preorder');
     });
 
     it('allows buying what is in stock', () => {

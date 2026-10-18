@@ -38,6 +38,7 @@ const router = createRouter({
 const NO_OPTIONS: ReturnOptions = {
     orderId: 'o1',
     currency: 'EUR',
+    reasons: [],
     returnable: [],
     cancellable: []
 };
@@ -173,7 +174,8 @@ describe('WithdrawalPanel', () => {
          */
         const RETURNABLE: ReturnOptions = {
             ...NO_OPTIONS,
-            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1 }]
+            reasons: ['withdrawal', 'defective', 'wrong_item', 'other'],
+            returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1, withdrawable: true }]
         };
 
         it('is offered when the server lists something returnable, with no withdrawal button needed', async () => {
@@ -198,6 +200,26 @@ describe('WithdrawalPanel', () => {
             expect(wrapper.getComponent(ReturnRequestForm).props('lines')).toEqual(
                 RETURNABLE.returnable
             );
+        });
+
+        it('hands the form the reasons still open, without the withdrawal button’s own', async () => {
+            const { wrapper } = mountPanel({}, [], {
+                ...RETURNABLE,
+                reasons: ['defective', 'wrong_item']
+            });
+            await flushPromises();
+
+            expect(wrapper.getComponent(ReturnRequestForm).props('reasons')).toEqual([
+                'defective',
+                'wrong_item'
+            ]);
+        });
+
+        it('offers no form once only the withdrawal reason is left', async () => {
+            const { wrapper } = mountPanel({}, [], { ...RETURNABLE, reasons: ['withdrawal'] });
+            await flushPromises();
+
+            expect(wrapper.find('[data-test=return-request]').exists()).toBe(false);
         });
 
         it('tells the page and re-reads the lists when a return was opened', async () => {

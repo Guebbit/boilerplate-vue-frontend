@@ -56,11 +56,11 @@ vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getAccount: () => getAccountMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    getMyAbilities: () => getMyAbilitiesMock(),
+    getMyAbilities: (options?: unknown) => getMyAbilitiesMock(options),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     getSessionConfig: () => getSessionConfigMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    refreshToken: () => refreshTokenMock(),
+    refreshToken: (options?: unknown) => refreshTokenMock(options),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logout: () => logoutMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
@@ -634,6 +634,19 @@ describe('clearSession', () => {
  * A network error or a 5xx says nothing about the cookie, so it must leave the session alone.
  */
 describe('refreshToken', () => {
+    it('is marked passive, with its abilities re-read: neither is the person acting', () => {
+        refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+        const marked = { headers: { 'X-Session-Passive': 'true' } };
+        const store = signedIn();
+
+        return store
+            .refreshToken()
+            .then(() => vi.waitFor(() => expect(getMyAbilitiesMock).toHaveBeenCalledWith(marked)))
+            .then(() =>
+                expect(refreshTokenMock).toHaveBeenCalledWith({ _refreshed: true, ...marked })
+            );
+    });
+
     it('stores the fresh token on success', () => {
         refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
         const store = useSessionStore();

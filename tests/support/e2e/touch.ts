@@ -15,7 +15,14 @@
  *   - `setEmulatedMedia` for hover/pointer and `setDeviceMetricsOverride` are silent no-ops here,
  *     so neither is used, and `enableTouch` checks that the switch took.
  */
+import {
+    classifyTouchProbes,
+    gatedFindings,
+    type TouchProbe
+} from '../../../scripts/e2e/touch-findings';
 import { asStub } from '../stub';
+import { waitForTransitions } from './commands';
+import type { TouchRecordRequest } from './touch-task';
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace -- Cypress's own typing contract: custom commands merge into its global namespace
@@ -42,9 +49,27 @@ declare global {
 
             /** Taps the page heading, a neutral spot: closes a sticky tooltip the way a person does. */
             tapAway(): Chainable<void>;
+
+            /**
+             * Scans the page for what a finger cannot reach (a control a hover reveals, data only a
+             * `title` holds, a tooltip on a non-control), records every finding to
+             * `reports/touch/<spec>.json` and fails on the gated kinds.
+             * @param context - the label of the audited state, the report entry's key
+             */
+            checkTouchReachable(context: string): Chainable<void>;
         }
     }
 }
+
+/** Name shared with the `recordTouchFindings` task registered in `cypress.config.ts`. */
+const TOUCH_REPORT_TASK = 'recordTouchFindings';
+
+/** Elements a finger can press: the scan's notion of a control. */
+const CONTROL_SELECTOR =
+    'a[href], button, input:not([type=hidden]), select, textarea, [role=button], [role=link], [role=menuitem], [role=tab], [role=checkbox], [role=switch], [tabindex]:not([tabindex="-1"])';
+
+/** Elements the scan reads: every control, plus anything carrying a `title` or a tooltip. */
+const PROBED_SELECTOR = `${CONTROL_SELECTOR}, [title], [aria-describedby^="v-tooltip-"]`;
 
 /** Whether this spec has turned touch on and not yet turned it off. */
 let emulating = false;
@@ -65,6 +90,69 @@ const pointerIsCoarse = (): boolean => window.top?.matchMedia('(pointer: coarse)
 /** Names the browser in a failure, so a silent no-op in a new Cypress is easy to place. */
 const browserLabel = (): string =>
     `Cypress ${Cypress.version}, ${Cypress.browser.displayName} ${Cypress.browser.version}`;
+
+/** A short path to an element for the report: tag, id or `data-test`, first classes. */
+const describeElement = (element: Element): string => {
+    const id = element.id ? `#${element.id}` : '';
+    const { test } = (element as HTMLElement).dataset;
+    const classes = [...element.classList].slice(0, 2).join('.');
+    return `${element.tagName.toLowerCase()}${id}${test ? `[data-test=${test}]` : ''}${classes ? `.${classes}` : ''}`;
+};
+
+/** The product of `opacity` from the element up to the root: 0 anywhere up the chain hides it. */
+const effectiveOpacity = (element: Element, win: Window): number => {
+    let opacity = 1;
+    for (let node: Element | null = element; node; node = node.parentElement)
+        opacity *= Number(win.getComputedStyle(node).opacity);
+    return opacity;
+};
+
+/** Whether a control is on screen and in the tree: a box, not inert, not in a closed overlay. */
+const isInteractive = (element: Element): boolean => {
+    const box = element.getBoundingClientRect();
+    return (
+        box.width > 0 &&
+        box.height > 0 &&
+        !element.closest('[inert], [aria-hidden="true"]') &&
+        !element.closest('.v-overlay:not(.v-overlay--active)')
+    );
+};
+
+/**
+ * Reads the page into plain records for the classifier.
+ *
+ * Exported so the shell spec can drive it on a page it has just doctored.
+ *
+ * @param win - the app's window
+ * @returns one record per control, titled element or tooltip target
+ */
+export const collectTouchProbes = (win: Window): TouchProbe[] =>
+    [...win.document.querySelectorAll(PROBED_SELECTOR)]
+        // Frames, SVG and abbreviations carry a `title` of their own kind: not this scan's concern.
+        .filter((element) => !element.matches('iframe, abbr') && !element.closest('svg'))
+        .map((element): TouchProbe => {
+            const html = element as HTMLElement;
+            const text = (element.textContent ?? '').trim();
+            const isControl = element.matches(CONTROL_SELECTOR);
+            return {
+                selector: describeElement(element),
+                isControl,
+                interactive: isControl && isInteractive(element),
+                opacity: effectiveOpacity(element, win),
+                visibility: win.getComputedStyle(element).visibility,
+                selectionControlInput: Boolean(element.closest('.v-selection-control__input')),
+                fileInput: element.matches('input[type=file]'),
+                title: element.getAttribute('title') ?? '',
+                text,
+                clipped:
+                    html.scrollWidth > html.clientWidth + 1 ||
+                    html.scrollHeight > html.clientHeight + 1,
+                accessibleName: element.getAttribute('aria-label') ?? text,
+                describedByTooltip: Boolean(
+                    element.getAttribute('aria-describedby')?.startsWith('v-tooltip-')
+                )
+            };
+        });
 
 Cypress.Commands.add(
     'enableTouch',
@@ -128,13 +216,46 @@ Cypress.Commands.add(
     })
 );
 
+/** Frames an element's box must hold still for before a finger lands on it. */
+const STABLE_FRAMES = 2;
+
+/** How many times a still-moving element is re-measured before the tap goes ahead anyway. */
+const SETTLE_ATTEMPTS = 20;
+
+/** Whether two boxes sit in the same place at the same size. */
+const sameBox = (a?: DOMRect, b?: DOMRect): boolean =>
+    a?.x === b?.x && a?.y === b?.y && a?.width === b?.width && a?.height === b?.height;
+
+/**
+ * Resolves with the subject once its box has not moved for {@link STABLE_FRAMES} frames.
+ *
+ * Cypress' own `.click()` waits for an element to stop animating; `realTouch` does not, and a
+ * bar that re-flows when a late icon (the bell) arrives would send the finger to the neighbour.
+ * https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
+ */
+const settled = (subject: JQuery): Cypress.Chainable<JQuery> =>
+    cy.window({ log: false }).then(
+        (win) =>
+            new Cypress.Promise<JQuery>((resolve) => {
+                const check = (before: DOMRect | undefined, frames: number, attempts: number) =>
+                    win.requestAnimationFrame(() => {
+                        const now = subject.get(0)?.getBoundingClientRect();
+                        if (!sameBox(before, now) && attempts > 0)
+                            check(now, STABLE_FRAMES, attempts - 1);
+                        else if (frames > 1) check(now, frames - 1, attempts);
+                        else resolve(subject);
+                    });
+                check(subject.get(0)?.getBoundingClientRect(), STABLE_FRAMES, SETTLE_ATTEMPTS);
+            })
+    );
+
 Cypress.Commands.add(
     'tap',
     { prevSubject: true },
     asStub<Cypress.CommandFn<'tap'>>((subject: JQuery) =>
         // `realTouch` (cypress-real-events) sends CDP touch input but checks nothing itself,
-        // so the actionability checks come first.
-        cy.wrap(subject, { log: false }).shouldBeTappable().realTouch()
+        // so the actionability checks come first, then a wait for the box to hold still.
+        cy.wrap(subject, { log: false }).shouldBeTappable().then(settled).realTouch()
     )
 );
 
@@ -143,6 +264,39 @@ Cypress.Commands.add(
     asStub<Cypress.CommandFn<'tapAway'>>(() => {
         cy.get('h1').first().realTouch();
         return cy.wrap(undefined, { log: false });
+    })
+);
+
+Cypress.Commands.add(
+    'checkTouchReachable',
+    asStub<Cypress.CommandFn<'checkTouchReachable'>>((context: string) => {
+        waitForTransitions();
+        return cy.window({ log: false }).then((win) => {
+            const findings = classifyTouchProbes(collectTouchProbes(win));
+            // Recorded before the gate throws, so a failing page's whole picture is in the report.
+            cy.url({ log: false }).then((url) => {
+                const request: TouchRecordRequest = {
+                    spec: Cypress.spec.relative,
+                    context,
+                    url,
+                    findings
+                };
+                cy.task(TOUCH_REPORT_TASK, request, { log: false });
+            });
+            cy.then(() => {
+                const blocking = gatedFindings(findings);
+                if (blocking.length > 0)
+                    throw new Error(
+                        `[touch ${context}] ${String(blocking.length)} thing(s) a finger cannot reach:\n` +
+                            blocking
+                                .map(
+                                    ({ kind, detail, count, selectors }) =>
+                                        `  ${kind}: ${detail} (${String(count)}× ${selectors.join(', ')})`
+                                )
+                                .join('\n')
+                    );
+            });
+        });
     })
 );
 

@@ -17,7 +17,7 @@ export default {
  * other reason, and for sending back only part of an order. The server re-checks every limit, so
  * the form only keeps the customer from asking for the impossible.
  */
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import type { ReturnOptionLine } from '@types';
+import type { ReturnOptionLine, ReturnRequestReason } from '@types';
 
 /**
  * The order and what can still come back from it.
@@ -35,6 +35,8 @@ const props = defineProps<{
     orderId: string;
     /** The lines the form offers, each with how many are still returnable (`quantity`). */
     lines: ReturnOptionLine[];
+    /** The reasons the server says can still be named (`ReturnOptions.reasons`). */
+    reasons: ReturnRequestReason[];
 }>();
 
 /**
@@ -73,15 +75,24 @@ const { loading } = storeToRefs(useReturnsStore());
 const REASONS = ['defective', 'wrong_item', 'other'] as const;
 
 /**
- * {@link REASONS} widened to plain strings, so a form value can be checked against it.
+ * {@link REASONS} the server still lets this buyer name: a defect or a wrong item outlives the
+ * withdrawal period, `other` does not.
  */
-const REASON_NAMES: readonly string[] = REASONS;
+const reasonChoices = computed(() => REASONS.filter((reason) => props.reasons.includes(reason)));
+
+/**
+ * {@link reasonChoices} widened to plain strings, so a form value can be checked against it.
+ */
+const reasonNames = computed<readonly string[]>(() => reasonChoices.value);
 
 /**
  * The reason select's choices, translated.
  */
 const reasonOptions = computed(() =>
-    REASONS.map((reason) => ({ value: reason, title: t(`returns-form.reason-${reason}`) }))
+    reasonChoices.value.map((reason) => ({
+        value: reason,
+        title: t(`returns-form.reason-${reason}`)
+    }))
 );
 
 /**
@@ -127,7 +138,7 @@ const isValidQuantity = (productId: string, value: string): boolean => {
  */
 const schema = z.object({
     // A plain string, not `z.enum`: the form starts empty, and the field's type must admit that.
-    reason: z.string().refine((value) => REASON_NAMES.includes(value), {
+    reason: z.string().refine((value) => reasonNames.value.includes(value), {
         error: () => t('returns-request.error-reason-required')
     }),
     note: z
@@ -159,6 +170,33 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors, reset
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
+
+/**
+ * Whether a line cannot come back for the reason now chosen: goods Art. 16 excludes from the
+ * right of withdrawal may only be named for a defect or a wrong item, so `other` shuts them.
+ *
+ * @param line - The offered line.
+ * @returns `true` when the line must not be ticked for this reason.
+ */
+const isLineShut = (line: ReturnOptionLine): boolean =>
+    form.value.reason === 'other' && !line.withdrawable;
+
+/**
+ * A line the new reason shuts is unticked, so the request never carries goods the reason cannot name.
+ */
+watch(
+    () => form.value.reason,
+    () => {
+        const kept = Object.fromEntries(
+            Object.entries(form.value.lines).filter(([productId]) => {
+                const line = props.lines.find((candidate) => candidate.productId === productId);
+                return line === undefined || !isLineShut(line);
+            })
+        );
+        if (Object.keys(kept).length !== Object.keys(form.value.lines).length)
+            form.value.lines = kept;
+    }
+);
 
 /**
  * Whether a product is ticked for return.
@@ -264,7 +302,12 @@ const submit = () =>
                     <v-checkbox
                         :model-value="isPicked(line.productId)"
                         :label="line.title"
-                        hide-details
+                        :disabled="isLineShut(line)"
+                        :hint="
+                            isLineShut(line) ? t('returns-request.hint-line-excluded') : undefined
+                        "
+                        :persistent-hint="isLineShut(line)"
+                        hide-details="auto"
                         density="compact"
                         :data-test="'return-line-pick-' + line.productId"
                         @update:model-value="setPicked(line.productId, $event === true)"

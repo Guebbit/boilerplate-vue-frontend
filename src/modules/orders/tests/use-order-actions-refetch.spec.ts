@@ -23,6 +23,7 @@ const NO_MOVES: OrderActions = {
     recordPayment: false,
     start: false,
     override: [],
+    correctAddress: false,
     invoice: false,
     withdraw: false
 };

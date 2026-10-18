@@ -63,6 +63,7 @@
         "error-reason-required": "Choose a reason",
         "error-note-too-long": "The note is too long (1000 characters at most)",
         "error-lines-required": "Pick at least one item to send back",
+        "hint-line-excluded": "Made to order goods can only come back if they are defective or not what you ordered.",
         "error-quantity-invalid": "Enter a whole quantity, from 1 up to what you can still return",
         "success": "Return requested. We will review it and email you."
     },

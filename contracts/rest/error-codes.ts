@@ -108,6 +108,8 @@ export const ERROR_CODES = {
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
     NOT_FOUND: 'NOT_FOUND',
+    /** 409 — The order cannot be redirected: something has shipped, or it has no shipping address (a pickup, a digital order). */
+    ORDER_ADDRESS_LOCKED: 'ORDER_ADDRESS_LOCKED',
     /** 404 — The order exists but has no such credit note. */
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
@@ -174,9 +176,9 @@ export const ERROR_CODES = {
     RETURN_NOT_RECEIVABLE: 'RETURN_NOT_RECEIVABLE',
     /** 409 — The order is not in a state a return can be opened on — cancelled, or (for a reason other than withdrawal) still in the shop's hands. */
     RETURN_ORDER_NOT_RETURNABLE: 'RETURN_ORDER_NOT_RETURNABLE',
-    /** 409 — The withdrawal period for this order has ended. */
+    /** 409 — The period for the reason named has ended: the withdrawal period for a withdrawal or other, two years from delivery for a defect or a wrong item. */
     RETURN_WINDOW_CLOSED: 'RETURN_WINDOW_CLOSED',
-    /** 403 — The caller holds the permission this route requires, but the account it would change holds a staff role, and only a holder of `assign:Role` may change such an account. Staff without it change customers only. The caller's own account is never refused. */
+    /** 403 — The caller holds the permission this route requires, but the change needs `assign:Role`, which they do not hold: it would hand out a staff role, or it would change an account that holds one. Staff without it change customers only, and a role they may not give is refused here before any role name is judged. The caller's own account is never refused. */
     ROLE_MANAGEMENT_REQUIRED: 'ROLE_MANAGEMENT_REQUIRED',
     /** 503 — A dependency (database, broker) is unreachable. Carries a `Retry-After` hint. */
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',

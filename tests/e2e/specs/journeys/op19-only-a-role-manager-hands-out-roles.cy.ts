@@ -62,7 +62,7 @@ const roleIs = (userId: string, role: string | undefined): void => {
 
 /**
  * A caller without role management: the picker offers no role to grant, and the server refuses one
- * asked for by hand with a `409`, the account staying as it was.
+ * asked for by hand with a `403` (`ROLE_MANAGEMENT_REQUIRED`, whatever the name), the account staying as it was.
  *
  * @param userId - whose role
  * @param role - the role asked for
@@ -76,7 +76,7 @@ const noRoleOffered = (userId: string, role: string, as: E2ERole): void => {
     loginDevice(as).then((device) => {
         requestAsDevice(device, 'PATCH', `/users/${userId}`, { role })
             .its('status')
-            .should('equal', 409);
+            .should('equal', 403);
     });
     roleIs(userId, undefined);
 };

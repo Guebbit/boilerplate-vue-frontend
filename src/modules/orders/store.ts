@@ -27,6 +27,7 @@ import {
     getOrderTimeline,
     exportOrders,
     overrideOrderStatus,
+    correctOrderShippingAddress,
     OrderSortItem
 } from '@api';
 import type {
@@ -34,6 +35,7 @@ import type {
     CreateOrderRequest,
     UpdateOrderByIdRequest,
     SearchOrdersRequest,
+    OrderAddress,
     OrderStatus,
     CreditNoteSummary,
     OrderTimelineEntry
@@ -290,6 +292,22 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
+     * Replaces where an unshipped order ships — `PUT /orders/{id}/shipping-address`
+     * (`update:Order`; `Order.actions.correctAddress` says whether it would be accepted). The
+     * cached record is replaced, same reasoning as {@link cancelOrder}.
+     *
+     * @param orderId - Which order.
+     * @param address - The corrected address; the whole of it replaces the old one.
+     * @returns A promise resolving with the order, its new address in place.
+     */
+    const correctShippingAddress = (orderId: string, address: OrderAddress) =>
+        updateTarget(
+            () => correctOrderShippingAddress(orderId, address).then((response) => response.data),
+            {},
+            orderId
+        );
+
+    /**
      * Downloads every order the filters match as one CSV file — `GET /orders/export`
      * (`export:Order`, step-up). Held outside `fetchAny`: a file is not a record, and the
      * page keeps its own `exporting` flag so the table stays usable meanwhile. The step-up
@@ -348,6 +366,7 @@ export const useOrdersStore = defineStore('orders', () => {
         deleteOrder,
         cancelOrder,
         overrideStatus,
+        correctShippingAddress,
         hardDeleteOrder,
         restoreOrder,
         fetchInvoice,

@@ -56,6 +56,7 @@
         "connected-remove": "Scollega",
         "connected-remove-named": "Scollega {provider}",
         "connected-confirm-remove": "Scollegare {provider}? Non potrà più accedere a questo account.",
+        "connected-connect": "Collega {provider}",
         "connected-removed": "Provider scollegato.",
         "sessions-title": "Sessioni attive",
         "sessions-intro": "Tutti i dispositivi connessi a questo account. Revocarne uno lo disconnette.",
@@ -233,6 +234,10 @@
             "error-access_denied": "Accesso annullato.",
             "error-email_unverified": "Questa email non è ancora verificata con questo provider, quindi non è stato creato alcun account. Verifica prima l'indirizzo presso il provider, poi riprova.",
             "error-account_unverified": "Un account usa già questo indirizzo email, ma non è mai stato confermato. Reimposta la sua password dal link che ti invieremo — così dimostri che l'indirizzo è tuo e potrai collegare il provider dopo.",
+            "error-account_exists": "Esiste già un account con questo indirizzo email. Accedi nel modo abituale, poi collega questo provider dal tuo profilo.",
+            "error-already_linked": "Questo account del provider è già collegato a un altro account qui. Scollegalo da lì prima, poi riprova.",
+            "error-link_expired": "Il collegamento ha impiegato troppo tempo o è già stato usato. Ricomincia dal tuo profilo.",
+            "linked": "{provider} è collegato. Ora puoi accedere con esso.",
             "error-provider_error": "Si è verificato un problema durante l'accesso. Riprova.",
             "link-back-to-login": "Torna al login"
         }

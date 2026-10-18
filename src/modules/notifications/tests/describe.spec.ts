@@ -35,6 +35,23 @@ const base = {
     agreedAt: 'A'
 };
 
+/** A fulfillment-held notice's sentence. */
+const held = (notice: 'check_address' | 'delayed', message?: string) =>
+    describeNotification(
+        {
+            code: 'notifications.fulfillment-held',
+            params: {
+                orderId: 'o1',
+                fulfillmentOrderId: 'fo1',
+                notice,
+                ...(message ? { message } : {})
+            }
+        },
+        ['en'],
+        translate,
+        format
+    );
+
 /**
  * A confirm-wait notice's sentence, with or without a deadline.
  *
@@ -204,6 +221,28 @@ describe('describeNotification', () => {
                     params: { productId: 'p1', titles: {} }
                 })
             ).toBeUndefined();
+        });
+    });
+
+    describe('a hold the buyer can act on', () => {
+        it('says what the notice means, in its own sentence', () => {
+            expect(held('check_address')).toBe('notifications.fulfillment-held-check_address');
+            expect(held('delayed')).toBe('notifications.fulfillment-held-delayed');
+        });
+
+        it('adds what the shop wrote for the buyer after it', () => {
+            expect(held('delayed', 'Back soon.')).toBe(
+                'notifications.fulfillment-held-delayed notifications.fulfillment-held-message|message=Back soon.'
+            );
+        });
+
+        it('names the order it is about', () => {
+            expect(
+                notificationOrderId({
+                    code: 'notifications.fulfillment-held',
+                    params: { orderId: 'o9', fulfillmentOrderId: 'f', notice: 'delayed' }
+                })
+            ).toBe('o9');
         });
     });
 

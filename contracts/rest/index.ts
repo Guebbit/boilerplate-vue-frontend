@@ -1203,7 +1203,7 @@ export interface Abilities {
     /**
      * The tenant-scope roles this caller may assign through `POST`/`PUT`/`PATCH
      * /users`, in the order `shared/authorization-roles.yaml` declares them.
-     * Computed by the same rule as the `409` those writes answer, so a role
+     * Computed by the same rule as the `403`/`422` those writes answer, so a role
      * picker built from it offers exactly what the write accepts. Empty for a
      * caller who may grant nothing, an anonymous one included. It has NO
      * AUTHORITY: the write is re-checked server-side.
@@ -1869,6 +1869,21 @@ export interface OAuthLinksEnvelope {
     data: OAuthLinks;
 }
 
+export interface OAuthLinkStart {
+    /**
+     * The provider's consent screen, with the state and PKCE challenge of this attempt. Navigate the browser to it.
+     * @maxLength 2048
+     */
+    authorizeUrl: string;
+}
+
+export interface OAuthLinkStartEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OAuthLinkStart;
+}
+
 export type UserSortItem = (typeof UserSortItem)[keyof typeof UserSortItem];
 
 export const UserSortItem = {
@@ -2243,7 +2258,7 @@ export interface Product {
     taxClass?: TaxClass;
     rateType?: RateType;
     sku?: Sku;
-    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). */
+    /** Something is for sale. `false` renders as out of stock — the catalogue still lists the product, and checkout is what refuses it (`CART_INSUFFICIENT_STOCK`). For a `preorder` it reads the allowance, not the shelf: `true` while any of it is left, `false` the day it is full (or was never set). */
     readonly inStock: boolean;
     /** What is left is at or under the shop's low-stock threshold (`NODE_LOW_STOCK_THRESHOLD`) while something is still for sale. Never true together with `inStock` false. */
     readonly lowStock: boolean;
@@ -2258,7 +2273,7 @@ export interface Product {
      */
     readonly reserved?: number;
     /**
-     * Units a customer may actually buy, derived from the two counters above. Only for a caller holding `read:StockLevel`.
+     * Units a customer may actually buy, derived from the two counters above. For a `preorder` it is what is left of the preorder allowance instead (the shelf is empty by definition). Only for a caller holding `read:StockLevel`.
      * @minimum 0
      */
     readonly available?: number;
@@ -2928,11 +2943,16 @@ export interface OrderTaxSummaryRow {
 }
 
 export interface OrderAddress {
+    /** @maxLength 100 */
     fullName: string;
+    /** @maxLength 200 */
     street: string;
+    /** @maxLength 100 */
     city: string;
+    /** @maxLength 20 */
     zip: string;
     country: CountryCode;
+    /** @maxLength 32 */
     phone?: string;
 }
 
@@ -3006,6 +3026,8 @@ export interface OrderActions {
     start: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
+    /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and nothing has shipped. */
+    correctAddress: boolean;
     /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
     withdraw: boolean;
     /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
@@ -3622,6 +3644,18 @@ export interface FulfillmentOrderLine {
 }
 
 /**
+ * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
+ */
+export type FulfillmentHoldNotice =
+    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
+
+export const FulfillmentHoldNotice = {
+    awaiting_stock: 'awaiting_stock',
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
  * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
  */
 export type FulfillmentHoldReason =
@@ -3688,6 +3722,12 @@ export interface FulfillmentOrder {
     kind: FulfillmentOrderKind;
     status: FulfillmentOrderStatus;
     lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /**
+     * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
+     * @maxLength 500
+     */
+    holdMessage?: string;
     holdReason?: FulfillmentHoldReason;
     /**
      * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
@@ -3941,6 +3981,12 @@ export interface HoldFulfillmentOrderRequest {
      * @maxLength 1000
      */
     note?: string;
+    /**
+     * A sentence for the buyer, shown on their order and mailed with the hold. Separate from `note`, which they never see. A hold for `incorrect_address` or with a message is mailed; a bare one is not.
+     * @minLength 1
+     * @maxLength 500
+     */
+    message?: string;
 }
 
 export interface FulfillmentOrderEnvelope {
@@ -4147,6 +4193,18 @@ export interface ReturnOptionLine {
     title: string;
     /** @minimum 1 */
     quantity: number;
+    /** Whether the right of withdrawal reaches this line. False for goods Art. 16 excludes (made to order, perishable): only `defective` or `wrong_item` may name them, and a request that names them with another reason is a 422. */
+    withdrawable: boolean;
+}
+
+/**
+ * A line of the remainder a cancel would take, which is what has not shipped, per product.
+ */
+export interface CancelOptionLine {
+    productId: Id;
+    title: string;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 /**
@@ -4156,7 +4214,7 @@ export interface CancellableFulfillmentOrder {
     fulfillmentOrderId: Id;
     /** @minimum 1 */
     number: number;
-    lines: ReturnOptionLine[];
+    lines: CancelOptionLine[];
     /**
      * What the cancel would refund, in `ReturnOptions.currency` — the lines plus `shippingRefund`.
      * @minimum 0
@@ -4175,7 +4233,9 @@ export interface ReturnOptions {
     orderId: Id;
     /** ISO-4217 code of the order's own currency. */
     currency: string;
-    /** Per product, what has shipped and not yet been returned. Goods excluded from withdrawal (Art. 16) are not listed. */
+    /** The reasons THIS caller can still name, so a client offers no door that is shut. Empty for staff (the right is the buyer's own) and once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. */
+    reasons?: ReturnRequestReason[];
+    /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed only while a `defective` or `wrong_item` reason is open, and carry `withdrawable: false`. */
     returnable: ReturnOptionLine[];
     cancellable: CancellableFulfillmentOrder[];
 }
@@ -4747,7 +4807,7 @@ export interface WishlistExportItem {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`, `wait_confirmed`, `wait_expired`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`, `wait_confirmed`, `wait_expired`. Staff-only: `address_corrected`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -4778,7 +4838,8 @@ export const OrderTimelineType = {
     release_date_moved: 'release_date_moved',
     delay_notice_sent: 'delay_notice_sent',
     wait_confirmed: 'wait_confirmed',
-    wait_expired: 'wait_expired'
+    wait_expired: 'wait_expired',
+    address_corrected: 'address_corrected'
 } as const;
 
 /**
@@ -4872,6 +4933,9 @@ export interface ExportFulfillmentOrder {
     kind: FulfillmentOrderKind;
     status: FulfillmentOrderStatus;
     lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /** @maxLength 500 */
+    holdMessage?: string;
     holdReason?: FulfillmentHoldReason;
     /**
      * Staff's free text about the hold. Present until the retention sweep unsets it.
@@ -5077,12 +5141,52 @@ export interface NotificationPreorderConfirmWait {
     createdAt: string;
 }
 
+export type FulfillmentHeldParamsNotice =
+    (typeof FulfillmentHeldParamsNotice)[keyof typeof FulfillmentHeldParamsNotice];
+
+export const FulfillmentHeldParamsNotice = {
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
+
+/**
+ * What the buyer needs to read a hold notice: which order and fulfillment order, whether the address needs a look (`check_address`) or the order is only `delayed`, and the sentence staff wrote for them, if any. Never staff's reason.
+ */
+export interface FulfillmentHeldParams {
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    notice: FulfillmentHeldParamsNotice;
+    /** @maxLength 500 */
+    message?: string;
+}
+
+export type NotificationFulfillmentHeldCode =
+    (typeof NotificationFulfillmentHeldCode)[keyof typeof NotificationFulfillmentHeldCode];
+
+export const NotificationFulfillmentHeldCode = {
+    'notificationsfulfillment-held': 'notifications.fulfillment-held'
+} as const;
+
+/**
+ * Part of an order the caller bought is held back, and they can act (check the address) or have a message from the shop.
+ */
+export interface NotificationFulfillmentHeld {
+    id: Id;
+    code: NotificationFulfillmentHeldCode;
+    params: FulfillmentHeldParams;
+    severity: NotificationSeverity;
+    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
+    readAt?: string;
+    createdAt: string;
+}
+
 export type Notification =
     | NotificationCartLineRemoved
     | NotificationWishlistItemRemoved
     | NotificationCartMergeRefused
     | NotificationPreorderDelayed
-    | NotificationPreorderConfirmWait;
+    | NotificationPreorderConfirmWait
+    | NotificationFulfillmentHeld;
 
 export type AccountExportResponseInvoicing = {
     invoices: ExportInvoiceDocument[];
@@ -5185,6 +5289,11 @@ export interface OrderTimelineEnvelope {
     message: EnvelopeMessage;
     data: OrderTimelineEntry[];
 }
+
+/**
+ * The corrected shipping address; the whole of it replaces the old one.
+ */
+export type ReplaceShippingAddressRequest = OrderAddress;
 
 export type PaymentSortItem = (typeof PaymentSortItem)[keyof typeof PaymentSortItem];
 
@@ -5996,6 +6105,19 @@ export const ListAuditEntriesOutcome = {
     success: 'success',
     failure: 'failure'
 } as const;
+
+export type StartOAuthLinkParams = {
+    /**
+     * A same-origin relative path to come back to; anything else is dropped.
+     * @maxLength 512
+     */
+    continue?: string;
+    /**
+     * The language tag the browser comes back in.
+     * @maxLength 16
+     */
+    locale?: string;
+};
 
 export type StartOAuthLoginParams = {
     /**
@@ -7593,7 +7715,7 @@ export const resendPendingEmail = (
  * alternative is every client inventing the same guess.
  *
  * `grantableRoles` lists the tenant-scope roles the caller may assign through the user
- * writes, computed by the same rule as their `409`; a role picker reads it instead of a
+ * writes, computed by the same rule as their `403`/`422`; a role picker reads it instead of a
  * hard-coded list. Empty for an anonymous caller. It has no authority either.
  *
  * Answered for an anonymous caller too: a stranger holds the `guest` role, which is
@@ -7987,7 +8109,7 @@ export const confirmPasswordReset = (
 };
 
 /**
- * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it.
+ * `jwt` mode only — answers 404 in `cookie` mode, whose one session id never rotates. Creates a new short-lived access token from the refresh token in the `__Host-session` cookie, and rotates that token. A POST because it changes state, and refused with 403 when the request names an `Origin` that is not an allowed frontend origin — the cookie alone authenticates it. The cookie is `HttpOnly`, `Secure` in every environment and host-locked (no `Domain`, `Path=/`), so the token is never readable by page scripts, never appears in a URL, a proxy log or a `Referer` header, and a sibling subdomain cannot overwrite it. A refresh is passive: it never counts as activity. A staff family idle past `NODE_SESSION_IDLE_TIME_STAFF` answers 401 `SESSION_IDLE` and the family is removed, so the next call starts at the sign-in screen.
  * @summary Refresh access token
  */
 export const refreshToken = (
@@ -8208,7 +8330,22 @@ export const listOAuthLinks = (
 };
 
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * The only way to add a provider to an account that already exists: a sign-in with a provider whose email matches an account links nothing (`?error=account_exists` on the callback), because linking needs an authenticated session with the account (NIST SP 800-63C-4 §3.8.1). Needs a fresh session (`401 REAUTH_REQUIRED`). Sets the short-lived state, verifier and connect cookies and answers the provider's consent URL, which the client navigates the browser to; the callback then links the identity to THIS account and redirects to the frontend with `?linked=<provider>`. The owner is mailed that a sign-in method was added. `continue` and `locale` ride the same cookies as a login. Answers 404 for a provider this deployment never configured. A provider account that already belongs to another account is refused at the callback (`?error=already_linked`).
+ * @summary Connect a sign-in provider to the signed-in account
+ */
+export const startOAuthLink = (
+    provider: string,
+    params?: StartOAuthLinkParams,
+    options?: SecondParameter<typeof orvalMutator<OAuthLinkStartEnvelope>>
+) => {
+    return orvalMutator<OAuthLinkStartEnvelope>(
+        { url: `/account/oauth/links/${provider}`, method: 'POST', params },
+        options
+    );
+};
+
+/**
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProvider = (
@@ -8237,7 +8374,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
@@ -9786,7 +9923,7 @@ export const listShippingMethods = (
 };
 
 /**
- * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. `holdNote` is staff's own and is left out for anyone else.
+ * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
  * @summary Get the fulfilment of an order
  */
 export const getFulfillmentByOrder = (
@@ -10033,7 +10170,7 @@ export const createReturn = (
 };
 
 /**
- * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
+ * The server's answer to "what can I still return, and what can I still cancel?" for one order, so no client counts. `returnable` is the quantity per product that has SHIPPED and has not already been returned, offered to the buyer only and only while a deadline in `reasons` is open: staff get an empty list (cancelling is theirs, returning is the buyer's right), and so does a buyer past every deadline. `cancellable` lists each fulfillment order that still has a remainder, with the exact refund cancelling it would owe (the delivery included when it takes the last unit of the order). `cancellable` is empty while nothing has shipped — the whole order is cancelled instead (`Order.actions.cancel`). The caller must own the order, or hold `read:Return`.
  * @summary What an order can still send back or cancel
  */
 export const getReturnOptions = (
@@ -10455,6 +10592,8 @@ export const listApiKeys = (
  * currently-held tenant permissions: a key can never reach further than the person
  * who minted it, and that floor is re-checked on every request the key later makes,
  * not just at mint time — see `docs/tools/security.md#machine-to-machine-credentials`.
+ * A key whose minter is banned, soft-deleted or erased is refused with 401 like a
+ * revoked one; an unban or a restore brings it back.
  * A permission no credential can use is refused with 422 too: one that demands a freshly
  * proved session, and one whose routes are session-only (`read:Stats`, the inbox, the
  * key list itself), which would grant nothing while looking like it grants something.
@@ -10607,7 +10746,27 @@ export const getOrderTimeline = (
 };
 
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Replaces the order's shipping address, as staff do when a fulfillment order was held for `incorrect_address` and the buyer wrote back. Needs `update:Order`. Allowed only while nothing has shipped and the order has a shipping address at all: after that the parcel went where it went (`409 ORDER_ADDRESS_LOCKED`). Leaves a staff-only timeline row, `address_corrected`, and an audit row naming who changed it, never what it says. `OrderActions.correctAddress` says whether this would be accepted.
+ * @summary Correct where an unshipped order ships (staff)
+ */
+export const correctOrderShippingAddress = (
+    id: string,
+    replaceShippingAddressRequest: ReplaceShippingAddressRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}/shipping-address`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceShippingAddressRequest
+        },
+        options
+    );
+};
+
+/**
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPayments = (
@@ -11188,6 +11347,7 @@ export type RegenerateBackupCodesResult = NonNullable<
 >;
 export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
 export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>;
+export type StartOAuthLinkResult = NonNullable<Awaited<ReturnType<typeof startOAuthLink>>>;
 export type UnlinkOAuthProviderResult = NonNullable<
     Awaited<ReturnType<typeof unlinkOAuthProvider>>
 >;
@@ -11417,6 +11577,9 @@ export type DownloadAccountExportResult = NonNullable<
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
 export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;
+export type CorrectOrderShippingAddressResult = NonNullable<
+    Awaited<ReturnType<typeof correctOrderShippingAddress>>
+>;
 export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
 export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
 export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;

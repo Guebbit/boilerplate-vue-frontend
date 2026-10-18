@@ -81,7 +81,7 @@ describe('Social login (OAuth)', () => {
         cy.get('[data-test=verify-banner]').should('exist');
     });
 
-    it('links to an existing password account once that account has proved the email', () => {
+    it('links nothing on a sign-in whose email matches; the owner connects the provider from a session', () => {
         cy.skipUnlessDemo();
 
         signUpUnverified('Original_Pass1!');
@@ -96,19 +96,35 @@ describe('Social login (OAuth)', () => {
         cy.get('#home-page').should('exist');
         cy.get('[data-test=user-menu]').should('not.exist');
 
-        // ── Now the provider may link onto it ─────────────────────────────────────────
+        // ── A sign-in never links by email match (NIST SP 800-63C-4 3.8.1) ─────────────────
+        cy.visit('/en/login');
+        cy.get('[data-test=oauth-fake]').should('exist').click();
+        cy.url().should('include', 'error=account_exists');
+        cy.get('#oauth-callback-page').should('exist');
+        cy.get('[data-test=user-menu]').should('not.exist');
+
+        // ── The owner signs in the usual way and connects it from the profile ──────────────
+        cy.visit('/en/login');
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').should('not.be.disabled').type('oauth.demo@example.com');
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').should('not.be.disabled').type('Original_Pass1!');
+        cy.get('form').submit();
+        cy.url().should('not.include', '/login');
+        cy.visit('/en/profile');
+        cy.get('[data-test=connected-connect-fake]').should('exist').click();
+        cy.url().should('include', '/en/profile');
+        cy.get('[data-test=connected-item]').should('have.length', 1);
+
+        // The SAME account, not a duplicate: now the provider signs in to it, and the password
+        // still does too — linking added a second way in, it did not replace the first.
+        cy.logout();
         cy.visit('/en/login');
         cy.get('[data-test=oauth-fake]').should('exist').click();
         cy.url().should('not.include', '/login');
         cy.get('#home-page').should('exist');
-
-        // The SAME account, not a duplicate — same address, and nothing left to verify.
         cy.visit('/en/profile');
         cy.get('[type=email]').should('have.value', 'oauth.demo@example.com');
-        cy.get('[data-test=verify-banner]').should('not.exist');
-
-        // The original password still opens it — linking added a second way in, it did not
-        // replace the first.
         cy.logout();
         cy.visit('/en/login');
         cy.get('[type=email]').should('not.be.disabled').clear();

@@ -11,7 +11,8 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Landing page for the OAuth redirect chain. Any session is already restored by `tryRestoreAuth`
+ * Landing page for the OAuth redirect chain (a sign-in, or a signed-in account connecting a
+ * provider: `?linked=<provider>`). Any session is already restored by `tryRestoreAuth`
  * in the router's global guard by the time this view mounts — this only decides where to go next:
  * `Home` on a plain success, `TwoFactorChallenge` when the account has 2FA armed
  * (`?mfaRequired=1`), or a translated explanation with a way back to `/login` when the backend
@@ -19,6 +20,8 @@ export default {
  */
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { providerLabel } from '../stores/oauth.ts';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useTwoFactorStore } from '../stores/two-factor.ts';
@@ -41,6 +44,11 @@ const route = useRoute();
 const router = useRouter();
 
 /**
+ * Toast dispatcher, used to confirm a provider was connected.
+ */
+const { addMessage } = useNotificationsStore();
+
+/**
  * Where a plain (non-2FA) success lands — the same `?continue=` handling and saved-locale
  * preference the password login step uses, so OAuth does not skip either .
  */
@@ -54,6 +62,9 @@ const KNOWN_ERROR_CODES = [
     'access_denied',
     'email_unverified',
     'account_unverified',
+    'account_exists',
+    'already_linked',
+    'link_expired',
     'provider_error'
 ] as const;
 
@@ -105,6 +116,16 @@ const oauthChallenge = computed(() => {
  */
 onMounted(() => {
     if (errorMessage.value) return;
+
+    // A signed-in account just connected a provider (`POST /account/oauth/links/:provider`): no
+    // session was minted, none is needed. Say so and go back to where the visitor was.
+    if (typeof route.query.linked === 'string') {
+        addMessage(
+            t('oauth.callback-page.linked', { provider: providerLabel(route.query.linked) })
+        );
+        void redirectAfterLogin();
+        return;
+    }
 
     if (oauthChallenge.value) {
         useTwoFactorStore().beginOAuthChallenge(oauthChallenge.value);

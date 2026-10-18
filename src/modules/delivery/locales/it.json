@@ -26,6 +26,10 @@
         "hold-reason-high_risk": "Rischio elevato",
         "hold-reason-other": "Altro motivo",
         "waits-for-stock": "In attesa di scorte. Si sblocca quando arrivano.",
+        "status-delayed": "In ritardo",
+        "hold-notice-check_address": "Controlla l'indirizzo di consegna di questo ordine. Se qualcosa non va, contattaci e lo correggiamo.",
+        "hold-notice-delayed": "Una parte di questo ordine è trattenuta per un momento e partirà più tardi del previsto. Puoi annullarla in qualsiasi momento prima della spedizione.",
+        "hold-message": "Messaggio del negozio: {message}",
         "hold-note": "Nota: {note}",
         "expected": "Spedizione prevista {date}",
         "no-date-yet": "Ancora nessuna data",
@@ -87,7 +91,9 @@
         "label-note": "Nota (facoltativa)",
         "hint-note": "Solo per il personale. Non inserire numeri di telefono o indirizzi.",
         "button-hold": "Sospendi",
-        "success": "Gruppo sospeso."
+        "success": "Gruppo sospeso.",
+        "label-message": "Messaggio per l'acquirente (facoltativo)",
+        "hint-message": "L'acquirente lo legge e lo riceve per email. Sii breve e non indicare il motivo della sospensione."
     },
     "preorder-board": {
         "caption-orders": "Gruppi di spedizione dei preordini",
