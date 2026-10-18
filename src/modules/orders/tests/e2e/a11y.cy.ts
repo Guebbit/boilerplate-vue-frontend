@@ -77,3 +77,19 @@ sweepA11y(
     ],
     'admin'
 );
+
+// The order page hosts the returns module's cancel-the-rest dialog.
+sweepA11y(
+    'orders — cancel the rest dialog',
+    [
+        {
+            name: 'order, cancel the rest dialog',
+            route: () => cy.subjectId('order.partiallyFulfilled').then((id) => `/en/orders/${id}`),
+            prepare: () => {
+                cy.get('[data-test=cancel-remainder-open]').click();
+                cy.get('[data-test=cancel-remainder-dialog]').should('be.visible');
+            }
+        }
+    ],
+    'user'
+);

@@ -29,3 +29,21 @@ describe('order-page delivery dialogs by keyboard', () => {
         });
     });
 });
+
+describe('order-page returns dialogs by keyboard', () => {
+    beforeEach(() => {
+        cy.visit('/en');
+        cy.restore();
+        cy.loginAs('user');
+    });
+
+    it('the cancel-the-rest dialog traps Tab, closes on Escape and hands focus back', () => {
+        cy.subjectId('order.partiallyFulfilled').then((orderId) => {
+            cy.visit(`/en/orders/${orderId}`);
+            expectDialogKeyboardPattern(
+                '[data-test=cancel-remainder-open]',
+                '[data-test=cancel-remainder-dialog]'
+            );
+        });
+    });
+});

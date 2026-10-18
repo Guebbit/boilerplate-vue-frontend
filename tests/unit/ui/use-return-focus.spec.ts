@@ -40,6 +40,37 @@ describe('useReturnFocus', () => {
         expect(document.activeElement).toBe(opener);
     });
 
+    it('remembers the opener of a dialog that is mounted already open', async () => {
+        const opener = focusedButton();
+        const open = ref(true);
+        effectScope().run(() => {
+            useReturnFocus(() => open.value);
+        });
+        // Stand-in for Vuetify moving focus into the dialog.
+        document.body.focus();
+        open.value = false;
+        await settle();
+
+        expect(document.activeElement).toBe(opener);
+    });
+
+    it('hands focus back when the dialog is destroyed while open', async () => {
+        const open = ref(false);
+        const scope = effectScope();
+        scope.run(() => {
+            useReturnFocus(() => open.value);
+        });
+        const opener = focusedButton();
+        open.value = true;
+        await settle();
+        document.body.focus();
+
+        scope.stop();
+        await settle();
+
+        expect(document.activeElement).toBe(opener);
+    });
+
     it('leaves focus alone when the opener has left the page', async () => {
         const open = ref(false);
         effectScope().run(() => {
