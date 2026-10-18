@@ -56,6 +56,13 @@ ends a session, `accountProfile` owns the editable record once one exists, and `
 `accountAddresses`, `accountOAuthProviders` and `accountTwoFactor` each own a panel's own slice.
 A store that outlives its panel would be a cache nobody invalidates.
 
+**Connecting a provider is a signed-in step.** A sign-in with a provider whose email matches an
+account links nothing (`/oauth/callback?error=account_exists`): the owner signs in the usual way and
+presses _Connect_ in the profile's connected-accounts panel. That calls
+`POST /account/oauth/links/{provider}` (a fresh session), navigates to the consent URL it answers,
+and the callback lands on `OAuthCallback` with `?linked=<provider>`: a toast, then back to where the
+visitor was. No session is minted for it.
+
 **The data export is a link, not a download.** The profile button only asks (`requestAccountExport`,
 `202`) and says an email is coming; the API builds the file in the background and mails a link to
 `account-export/:id`, whose one button fetches it (`downloadAccountExport`) and saves it as JSON. A
@@ -140,6 +147,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/oauth/providers`               | `ListOAuthProvidersResponse`       |
 | `GET /account/oauth/{provider}`              | `StartOAuthLoginResponse`          |
 | `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
+| `POST /account/oauth/links/{provider}`       | `StartOAuthLinkResponse`           |
 | `POST /account/password`                     | `ChangePasswordResponse`           |
 | `DELETE /account/pending-email`              | `CancelPendingEmailChangeResponse` |
 | `POST /account/pending-email/resend`         | `ResendPendingEmailResponse`       |

@@ -152,6 +152,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/account\/oauth\/[^/]+\/callback$/, schemaName: "CompleteOAuthLoginResponse", bodySchemaName: undefined, module: "account" },
     { method: "GET", pattern: /^\/account\/oauth\/[^/]+$/, schemaName: "StartOAuthLoginResponse", bodySchemaName: undefined, module: "account" },
     { method: "DELETE", pattern: /^\/account\/oauth\/links\/[^/]+$/, schemaName: "UnlinkOAuthProviderResponse", bodySchemaName: undefined, module: "account" },
+    { method: "POST", pattern: /^\/account\/oauth\/links\/[^/]+$/, schemaName: "StartOAuthLinkResponse", bodySchemaName: undefined, module: "account" },
     { method: "POST", pattern: /^\/account\/reauth\/methods\/[^/]+\/send$/, schemaName: "SendReauthCodeResponse", bodySchemaName: undefined, module: "account" },
     { method: "DELETE", pattern: /^\/account\/sessions\/[^/]+$/, schemaName: "RevokeSessionResponse", bodySchemaName: undefined, module: "account" },
     { method: "DELETE", pattern: /^\/api-keys\/[^/]+$/, schemaName: "RevokeApiKeyResponse", bodySchemaName: undefined, module: "api-keys" },

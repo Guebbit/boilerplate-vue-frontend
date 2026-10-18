@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useOAuthLinksStore } from '../stores/oauth-links.ts';
+import { startProviderLink, useOAuthLinksStore } from '../stores/oauth-links.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
@@ -46,7 +46,10 @@ beforeEach(() => {
         'GET /account/oauth/links': orvalEnvelope({
             links: [{ provider: 'google', connectedAt: '2026-01-01T00:00:00.000Z' }]
         }),
-        'DELETE /account/oauth/links/google': orvalEnvelope()
+        'DELETE /account/oauth/links/google': orvalEnvelope(),
+        'POST /account/oauth/links/google': orvalEnvelope({
+            authorizeUrl: 'https://accounts.example/consent?state=x'
+        })
     };
 });
 
@@ -85,5 +88,32 @@ describe('useOAuthLinksStore', () => {
         return store.fetchLinks().then(() => {
             expect(store.links).toEqual([]);
         });
+    });
+});
+
+describe('startProviderLink', () => {
+    it('posts to the provider and answers the consent URL, carrying where to land', async () => {
+        const url = await startProviderLink('google', { continueTo: '/en/profile', locale: 'it' });
+
+        expect(url).toBe('https://accounts.example/consent?state=x');
+        const call = vi
+            .mocked(orvalMutator)
+            .mock.calls.find(
+                ([config]) => (config as { method: string }).method === 'POST'
+            )?.[0] as {
+            url: string;
+            params: Record<string, string>;
+        };
+        expect(call.url).toBe('/account/oauth/links/google');
+        expect(call.params).toEqual({ continue: '/en/profile', locale: 'it' });
+    });
+
+    it('is an error when the server answers no URL', async () => {
+        responses['POST /account/oauth/links/google'] = orvalEnvelope({});
+        vi.mocked(orvalMutator).mockImplementationOnce(() =>
+            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
+        );
+
+        await expect(startProviderLink('google')).rejects.toThrow('no consent URL');
     });
 });

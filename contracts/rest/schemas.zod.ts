@@ -2884,7 +2884,30 @@ export const ListOAuthLinksResponse = zod.strictObject({
     })
 });
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * The only way to add a provider to an account that already exists: a sign-in with a provider whose email matches an account links nothing (`?error=account_exists` on the callback), because linking needs an authenticated session with the account (NIST SP 800-63C-4 §3.8.1). Needs a fresh session (`401 REAUTH_REQUIRED`). Sets the short-lived state, verifier and connect cookies and answers the provider's consent URL, which the client navigates the browser to; the callback then links the identity to THIS account and redirects to the frontend with `?linked=<provider>`. The owner is mailed that a sign-in method was added. `continue` and `locale` ride the same cookies as a login. Answers 404 for a provider this deployment never configured. A provider account that already belongs to another account is refused at the callback (`?error=already_linked`).
+ * @summary Connect a sign-in provider to the signed-in account
+ */
+export const startOAuthLinkPathProviderMax = 32;
+export const StartOAuthLinkParams = zod.strictObject({
+    provider: zod.string().max(startOAuthLinkPathProviderMax)
+});
+export const startOAuthLinkQueryContinueMax = 512;
+export const startOAuthLinkQueryLocaleMax = 16;
+export const StartOAuthLinkQueryParams = zod.strictObject({
+    continue: zod.string().max(startOAuthLinkQueryContinueMax).optional(),
+    locale: zod.string().max(startOAuthLinkQueryLocaleMax).optional()
+});
+export const startOAuthLinkResponseDataAuthorizeUrlMax = 2048;
+export const StartOAuthLinkResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        authorizeUrl: zod.url().max(startOAuthLinkResponseDataAuthorizeUrlMax)
+    })
+});
+/**
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProviderPathProviderMax = 32;
@@ -2912,7 +2935,7 @@ export const StartOAuthLoginQueryParams = zod.strictObject({
 });
 export const StartOAuthLoginResponse = zod.void();
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLoginPathProviderMax = 32;

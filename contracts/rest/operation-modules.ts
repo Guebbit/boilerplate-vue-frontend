@@ -206,6 +206,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     shipFulfillmentOrder: 'delivery',
     signup: 'account',
     startFulfilment: 'delivery',
+    startOAuthLink: 'account',
     startOAuthLogin: 'account',
     summarizePreorderFulfillmentOrders: 'delivery',
     sweepReservations: 'inventory',

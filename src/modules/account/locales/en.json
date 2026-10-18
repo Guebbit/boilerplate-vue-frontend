@@ -56,6 +56,7 @@
         "connected-remove": "Disconnect",
         "connected-remove-named": "Disconnect {provider}",
         "connected-confirm-remove": "Disconnect {provider}? It will no longer be able to sign in to this account.",
+        "connected-connect": "Connect {provider}",
         "connected-removed": "Provider disconnected.",
         "sessions-title": "Active sessions",
         "sessions-intro": "Every device signed into this account. Revoking one signs that device out.",
@@ -233,6 +234,10 @@
             "error-access_denied": "Sign-in was cancelled.",
             "error-email_unverified": "That email isn't verified with this provider yet, so no account was created. Verify the address with the provider first, then try again.",
             "error-account_unverified": "An account already uses this email address, but it has never been confirmed. Reset its password from the link we email you — that proves the address is yours, and you can connect this provider afterwards.",
+            "error-account_exists": "An account already uses this email address. Sign in the way you usually do, then connect this provider from your profile.",
+            "error-already_linked": "That provider account is already connected to another account here. Disconnect it there first, then try again.",
+            "error-link_expired": "The connection took too long or was already used. Start again from your profile.",
+            "linked": "{provider} is connected. You can now sign in with it.",
             "error-provider_error": "Something went wrong signing you in. Please try again.",
             "link-back-to-login": "Back to login"
         }

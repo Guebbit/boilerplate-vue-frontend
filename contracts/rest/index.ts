@@ -1869,6 +1869,21 @@ export interface OAuthLinksEnvelope {
     data: OAuthLinks;
 }
 
+export interface OAuthLinkStart {
+    /**
+     * The provider's consent screen, with the state and PKCE challenge of this attempt. Navigate the browser to it.
+     * @maxLength 2048
+     */
+    authorizeUrl: string;
+}
+
+export interface OAuthLinkStartEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OAuthLinkStart;
+}
+
 export type UserSortItem = (typeof UserSortItem)[keyof typeof UserSortItem];
 
 export const UserSortItem = {
@@ -6091,6 +6106,19 @@ export const ListAuditEntriesOutcome = {
     failure: 'failure'
 } as const;
 
+export type StartOAuthLinkParams = {
+    /**
+     * A same-origin relative path to come back to; anything else is dropped.
+     * @maxLength 512
+     */
+    continue?: string;
+    /**
+     * The language tag the browser comes back in.
+     * @maxLength 16
+     */
+    locale?: string;
+};
+
 export type StartOAuthLoginParams = {
     /**
      * Same-origin relative path to send the browser back to once the login completes — the OAuth equivalent of the password-login flow's own `?continue=`. Saved as a cookie for the round trip to the provider and back; anything that is not a same-origin relative path (an absolute URL, a protocol-relative `//host/path`) is dropped silently rather than refused, since a browser navigation has nowhere to show a validation error.
@@ -8302,7 +8330,22 @@ export const listOAuthLinks = (
 };
 
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * The only way to add a provider to an account that already exists: a sign-in with a provider whose email matches an account links nothing (`?error=account_exists` on the callback), because linking needs an authenticated session with the account (NIST SP 800-63C-4 §3.8.1). Needs a fresh session (`401 REAUTH_REQUIRED`). Sets the short-lived state, verifier and connect cookies and answers the provider's consent URL, which the client navigates the browser to; the callback then links the identity to THIS account and redirects to the frontend with `?linked=<provider>`. The owner is mailed that a sign-in method was added. `continue` and `locale` ride the same cookies as a login. Answers 404 for a provider this deployment never configured. A provider account that already belongs to another account is refused at the callback (`?error=already_linked`).
+ * @summary Connect a sign-in provider to the signed-in account
+ */
+export const startOAuthLink = (
+    provider: string,
+    params?: StartOAuthLinkParams,
+    options?: SecondParameter<typeof orvalMutator<OAuthLinkStartEnvelope>>
+) => {
+    return orvalMutator<OAuthLinkStartEnvelope>(
+        { url: `/account/oauth/links/${provider}`, method: 'POST', params },
+        options
+    );
+};
+
+/**
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProvider = (
@@ -8331,7 +8374,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise.
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
@@ -11304,6 +11347,7 @@ export type RegenerateBackupCodesResult = NonNullable<
 >;
 export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
 export type ListOAuthLinksResult = NonNullable<Awaited<ReturnType<typeof listOAuthLinks>>>;
+export type StartOAuthLinkResult = NonNullable<Awaited<ReturnType<typeof startOAuthLink>>>;
 export type UnlinkOAuthProviderResult = NonNullable<
     Awaited<ReturnType<typeof unlinkOAuthProvider>>
 >;
