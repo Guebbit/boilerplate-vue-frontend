@@ -21,6 +21,8 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useProductsStore } from '../store';
 import { useSlot } from '@/kernel/slots.ts';
 import { productsSchema } from '../schemas.ts';
@@ -143,6 +145,7 @@ const {
     form,
     formErrors,
     showFormErrors: showErrors,
+    isDirty,
     isSubmitting,
     handleSubmit,
     openTags,
@@ -169,6 +172,16 @@ const {
     seedFallback: true,
     reportSubmitError
 });
+
+/**
+ * The signed-in viewer's session, read by the leave guard to tell a forced sign-out from a choice.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * The shop's currency decides how many decimals the price input takes: a JPY shop has no cents to
@@ -221,6 +234,7 @@ const submitForm = () => {
             .then((newProduct) => {
                 if (!newProduct) return;
                 return Promise.all(afterCreateSteps.map((step) => step(newProduct.id))).then(() => {
+                    markSaved();
                     addMessage(t('product-create-page.success-create'));
                     // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
                     void router.push(

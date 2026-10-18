@@ -34,10 +34,14 @@ import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi, guestApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
+import { recordTouchFindings } from './tests/support/e2e/touch-task';
+import type { TouchRecordRequest } from './tests/support/e2e/touch-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
 import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
 import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
+import { VIEWPORTS } from './scripts/e2e/viewports';
+import { windowFor, withDesktopPointer, withWindowSize } from './scripts/e2e/browser-launch';
 import { totpCode } from './scripts/e2e/totp';
 import { declaredStatuses } from './scripts/e2e/declared-statuses';
 import {
@@ -87,6 +91,12 @@ const A11Y_REPORT_TASK = 'recordA11yViolations';
 /** Where the a11y task writes its per-spec reports. */
 const A11Y_REPORT_DIRECTORY = path.resolve('reports/a11y');
 
+/** Name shared with `cy.checkTouchReachable()` in `tests/support/e2e/touch.ts`. */
+const TOUCH_REPORT_TASK = 'recordTouchFindings';
+
+/** Where the touch task writes its per-spec reports. */
+const TOUCH_REPORT_DIRECTORY = path.resolve('reports/touch');
+
 /**
  * The Cypress config; `defineConfig` only adds typing and editor completion.
  * https://docs.cypress.io/app/references/configuration
@@ -98,8 +108,8 @@ export default defineConfig({
     // A FIXED viewport, because a screenshot's size is part of what is being compared. Cypress'
     // default is 1000x660; pinning it here means a future default change cannot silently
     // invalidate every baseline.
-    viewportWidth: 1280,
-    viewportHeight: 800,
+    viewportWidth: VIEWPORTS.desktop.width,
+    viewportHeight: VIEWPORTS.desktop.height,
     /*
      * One retry in `cypress run`, none in `cypress open`. A headless run shares one preview
      * server and one machine with three other shards, and the specs already wait on conditions
@@ -144,6 +154,20 @@ export default defineConfig({
              * https://docs.cypress.io/api/node-events/before-run-api
              * https://docs.cypress.io/api/node-events/after-spec-api
              */
+            /*
+             * The one `before:browser:launch` handler: Cypress keeps only the last registered, so
+             * every launch tweak composes here (see `scripts/e2e/browser-launch.ts`).
+             * The headless window must hold the tallest and widest viewport of the matrix, or a
+             * viewport-sized screenshot is clipped to the default 1280x720 window. A headless
+             * Chromium also gets a mouse to report, as Electron has one.
+             * https://docs.cypress.io/api/node-events/browser-launch-api
+             */
+            on('before:browser:launch', (browser, launchOptions) =>
+                withDesktopPointer(
+                    browser,
+                    withWindowSize(browser, launchOptions, windowFor(VIEWPORTS))
+                )
+            );
             on('before:run', () => {
                 if (process.env.E2E_SHARDED !== 'true') resetFlakyReport();
             });
@@ -253,6 +277,12 @@ export default defineConfig({
                  */
                 [A11Y_REPORT_TASK]: (request: A11yRecordRequest) =>
                     recordA11yViolations(request, A11Y_REPORT_DIRECTORY),
+                /*
+                 * Every touch-reachability finding `cy.checkTouchReachable()` saw, to
+                 * `reports/touch/<spec>.json` — see `tests/support/e2e/touch-task.ts`.
+                 */
+                [TOUCH_REPORT_TASK]: (request: TouchRecordRequest) =>
+                    recordTouchFindings(request, TOUCH_REPORT_DIRECTORY),
 
                 /*
                  * A line on the terminal from inside a spec, for the things that are worth

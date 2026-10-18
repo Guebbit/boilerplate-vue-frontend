@@ -29,29 +29,30 @@ const props = defineProps<{
 }>();
 
 /**
- * Gradient tile keyed to the theme accent (the `darken-1` variation comes from
- * the Vuetify theme `variations` config).
- *
- * @returns The utility classes for the requested accent, falling back to
- *  `primary`.
+ * Gradient tile classes per theme accent (the `darken-1` variation comes from the Vuetify theme
+ * `variations` config). A top-level `*_CLASSES` const, so the Tailwind lint reads the strings.
  */
-const accentClass = computed(
-    () =>
-        ({
-            primary:
-                'bg-gradient-to-br from-primary to-[rgb(var(--v-theme-primary-darken-1))] text-on-primary',
-            secondary:
-                'bg-gradient-to-br from-secondary to-[rgb(var(--v-theme-secondary-darken-1))] text-on-secondary',
-            tertiary:
-                'bg-gradient-to-br from-tertiary to-[rgb(var(--v-theme-tertiary-darken-1))] text-on-tertiary'
-        })[props.accent ?? 'primary']
-);
+const ACCENT_CLASSES = {
+    primary:
+        'bg-linear-to-br from-primary to-[rgb(var(--v-theme-primary-darken-1))] text-on-primary',
+    secondary:
+        'bg-linear-to-br from-secondary to-[rgb(var(--v-theme-secondary-darken-1))] text-on-secondary',
+    tertiary:
+        'bg-linear-to-br from-tertiary to-[rgb(var(--v-theme-tertiary-darken-1))] text-on-tertiary'
+} as const;
+
+/**
+ * Gradient tile keyed to the theme accent.
+ *
+ * @returns The utility classes for the requested accent, falling back to `primary`.
+ */
+const accentClass = computed(() => ACCENT_CLASSES[props.accent ?? 'primary']);
 </script>
 
 <template>
     <v-card class="grid grid-cols-[84px_1fr] items-center gap-4 p-5">
         <div
-            class="grid h-[84px] w-[84px] place-items-center rounded-2xl"
+            class="grid size-21 place-items-center rounded-2xl"
             :class="accentClass"
             aria-hidden="true"
         >

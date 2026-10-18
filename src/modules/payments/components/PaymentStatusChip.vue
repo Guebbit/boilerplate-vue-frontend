@@ -15,6 +15,7 @@ export default {
  * Stripe-style list shows), never recomputed from `status` and `amountRefunded` here: a refund still
  * pending would read as done from the amounts alone.
  */
+import type { ThemeColor } from '@/ui/types.ts';
 import { useI18n } from 'vue-i18n';
 import type { PaymentDisplayStatus } from '@types';
 
@@ -43,8 +44,8 @@ const COLORS = {
     partially_refunded: 'secondary',
     refunded: 'secondary',
     failed: 'error',
-    cancelled: 'default'
-} satisfies Record<PaymentDisplayStatus, string>;
+    cancelled: undefined
+} satisfies Record<PaymentDisplayStatus, ThemeColor | undefined>;
 </script>
 
 <template>

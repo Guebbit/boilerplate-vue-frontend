@@ -10,6 +10,8 @@
  * Every button comes from the record's own actions, so the story reads the order's state off the
  * API between steps — the screen follows the server, it never counts the parcels itself.
  */
+import { byTemplate } from '../../../../scripts/e2e/mail-filters';
+import { mailMentions } from '../../../../scripts/e2e/mail-message';
 import { shipTheOpenGroup } from '../../../support/e2e/steps';
 
 /** The tracking code the admin types for the second shipment. */
@@ -60,16 +62,37 @@ describe('OP24 · Ship an order in two goes', () => {
             cy.get('[data-test=fulfillment-order-status]').should('contain.text', 'Fulfilled');
             customerSees(orderId, 'shipped', 'shipped');
 
+            cy.step('the "shipped" mail for the second parcel carries its tracking code');
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(email, (mail) => mailMentions(mail, TRACKING_CODE));
+            });
+
             cy.step('delivers the first shipment: the order has not arrived yet');
             cy.get('[data-test=mark-delivered]').should('have.length', 2);
             cy.get('[data-test=mark-delivered]').first().click();
             cy.get('[data-test=mark-delivered]').should('have.length', 1);
             customerSees(orderId, 'shipped', 'shipped');
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(
+                    email,
+                    (mail) =>
+                        byTemplate('delivery.shipment-delivered')(mail) &&
+                        !mailMentions(mail, 'You may withdraw')
+                );
+            });
 
             cy.step('delivers the second: the order is delivered and the clock starts');
             cy.get('[data-test=mark-delivered]').click();
             cy.get('[data-test=mark-delivered]').should('not.exist');
             customerSees(orderId, 'delivered', 'fulfilled');
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(
+                    email,
+                    (mail) =>
+                        byTemplate('delivery.shipment-delivered')(mail) &&
+                        mailMentions(mail, 'You may withdraw from the purchase until')
+                );
+            });
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(
                     order?.actions?.withdrawUntil,
@@ -86,6 +109,15 @@ describe('OP24 · Ship an order in two goes', () => {
             cy.get('[data-test=shipment-tracking]').should('contain.text', TRACKING_CODE);
             cy.get('[data-test=mark-delivered]').should('not.exist');
             cy.get('[data-test=open-ship]').should('not.exist');
+            cy.get('[data-test=order-timeline-entry][data-type=shipment_shipped]').should(
+                'have.length',
+                2
+            );
+            cy.get('[data-test=order-timeline-entry][data-type=shipment_delivered]').should(
+                'have.length',
+                2
+            );
+            cy.get('[data-test=order-timeline-staff-only]').should('not.exist');
         });
     });
 });

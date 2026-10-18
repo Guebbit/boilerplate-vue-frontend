@@ -2,7 +2,7 @@
 
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
-import type { E2ERole } from './scenario';
+import type { E2ERole } from '../scenario-description';
 import { adminMenuLinks, isTurnedBack } from './steps';
 
 /**

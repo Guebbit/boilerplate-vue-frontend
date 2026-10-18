@@ -1,6 +1,7 @@
 #!/bin/sh
-# Writes /usr/share/nginx/html/config.js from this container's own environment, every time it
-# starts — a config change is a restart, not a rebuild. Runs automatically: the official nginx
+# Writes config.js under the web root (/usr/share/nginx/html) from this container's own
+# environment, every time it starts — a config change is a restart, not a rebuild. Runs
+# automatically: the official nginx
 # image sources every executable *.sh under /docker-entrypoint.d/ before starting nginx itself.
 # https://github.com/nginxinc/docker-nginx/blob/master/entrypoint/docker-entrypoint.sh
 #
@@ -9,7 +10,10 @@
 # Every value here already ships to the browser via the compiled bundle today — never a secret.
 set -eu
 
-CONFIG_FILE="/usr/share/nginx/html/config.js"
+# The web root every generator writes under. `NGINX_HTML_ROOT` overrides it, so the Lighthouse audit
+# build (`scripts/lighthouse/build.ts`) runs these same scripts into its own folder.
+HTML_ROOT="${NGINX_HTML_ROOT:-/usr/share/nginx/html}"
+CONFIG_FILE="$HTML_ROOT/config.js"
 
 # JSON-escapes one value: backslash and double-quote, then strips control characters (newlines
 # above all — an operator-supplied env var with one would otherwise break the generated script).

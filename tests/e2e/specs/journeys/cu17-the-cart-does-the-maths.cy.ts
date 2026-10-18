@@ -127,6 +127,37 @@ describe('CU17 · The cart does the maths', () => {
                 });
 
                 cy.step(
+                    'the per-line cap: one more unit is refused, on the cart and on the product page'
+                );
+                const cap = 10;
+                cy.apiAs('user', 'PUT', `/cart/${food.id}`, { quantity: cap });
+                cy.reload();
+                cy.intercept('PUT', `**/cart/${food.id}`).as('pastTheCap');
+                cy.contains('[data-test=cart-item]', food.title)
+                    .find('[data-test=cart-increase]')
+                    .click();
+                cy.wait('@pastTheCap').its('response.statusCode').should('equal', 422);
+                cy.get('[data-test=cart-line-action-error]').should(
+                    'contain.text',
+                    'This item is already at the maximum quantity allowed per order.'
+                );
+                cy.apiAs<{ items: { productId: string; quantity: number }[] }>(
+                    'user',
+                    'GET',
+                    '/cart'
+                ).should((cart) => {
+                    const line = cart?.items.find(({ productId }) => productId === food.id);
+                    expect(line?.quantity, 'the line stays at the cap').to.equal(cap);
+                });
+                cy.visit(`/en/products/${food.id}`);
+                cy.get('[data-test=add-to-cart]').click();
+                cy.get('[data-test=add-to-cart-error]').should(
+                    'contain.text',
+                    'This item is already at the maximum quantity allowed per order.'
+                );
+
+                cy.goToCart();
+                cy.step(
                     'clears the cart after confirming: no count, and the empty state leads back to the catalogue'
                 );
                 cy.get('[data-test=cart-clear]').click();

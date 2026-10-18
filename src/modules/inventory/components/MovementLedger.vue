@@ -220,10 +220,24 @@ const movementsPageTotal = computed(() => Math.ceil(movementsTotal.value / PAGE_
 const signed = (delta: number) => (delta > 0 ? `+${delta}` : String(delta));
 
 /**
- * Green for units gained, red for units lost, neutral for a counter this transition left alone.
+ * The delta cell's classes: neutral for a counter this transition left alone, red for units lost,
+ * green for units gained. A top-level `*_CLASSES` const, so the Tailwind lint reads the strings.
  */
-const deltaClass = (delta: number) =>
-    delta === 0 ? 'opacity-50' : delta < 0 ? 'text-error' : 'text-success';
+const DELTA_CLASSES = {
+    unchanged: 'opacity-50',
+    lost: 'text-error',
+    gained: 'text-success'
+} as const;
+
+/**
+ * Picks the delta cell's class from the sign of the change.
+ *
+ * @param delta - Signed change a transition made to one counter.
+ */
+const deltaClass = (delta: number) => {
+    if (delta === 0) return DELTA_CLASSES.unchanged;
+    return delta < 0 ? DELTA_CLASSES.lost : DELTA_CLASSES.gained;
+};
 
 /**
  * Title lookup for the ledger — it stores ids, the page can still say names. A product the search

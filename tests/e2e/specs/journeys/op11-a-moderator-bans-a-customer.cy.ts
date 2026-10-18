@@ -83,6 +83,13 @@ describe('OP11 · A moderator bans a customer', () => {
                 submitCustomerLogin();
                 cy.url().should('not.include', '/login');
                 cy.get('[data-test=user-menu]').should('exist');
+
+                cy.step('the ban left no ghost session: the list shows only this sign-in');
+                cy.visit('/en/profile');
+                cy.get('[data-test=sessions-list] [data-test=session-item]').should(
+                    'have.length',
+                    1
+                );
             });
         });
     });

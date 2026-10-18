@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 import { routeAnnouncement } from '@/app/router/announcer.ts';
+import { useThemeColorMeta } from '@/ui/composables/use-theme-color-meta.ts';
 
 /**
  * @module
@@ -16,7 +17,11 @@ import { routeAnnouncement } from '@/app/router/announcer.ts';
  * It lives here, outside every layout, because it has to exist before the first page mounts and
  * survive the swap between two of them — a region that is re-created with the page is never
  * heard.
+ *
+ * It also keeps the browser's address-bar colour in step with the theme (`useThemeColorMeta`):
+ * app-wide, and not any one page's concern.
  */
+useThemeColorMeta();
 </script>
 
 <template>

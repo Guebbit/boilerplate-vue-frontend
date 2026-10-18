@@ -112,11 +112,38 @@ describe('PaymentDrawer', () => {
                 .find('[data-test="drawer-refund"]')
                 .exists()
         ).toBe(false);
-        expect(
-            mountDrawer({ ...FULL, actions: undefined })
-                .find('[data-test="drawer-refund"]')
-                .exists()
-        ).toBe(false);
+    });
+
+    it('asks the order’s own payment what is allowed when the row carries no actions', async () => {
+        const read = vi
+            .spyOn(usePaymentsStore(), 'fetchActionsForOrder')
+            .mockResolvedValue({ pay: false, refund: true });
+        const wrapper = mountDrawer({ ...FULL, actions: undefined });
+        await flushPromises();
+
+        expect(read).toHaveBeenCalledWith('o1');
+        expect(wrapper.find('[data-test="drawer-refund"]').exists()).toBe(true);
+    });
+
+    it('offers no refund when that read says it would not work, or fails', async () => {
+        const read = vi.spyOn(usePaymentsStore(), 'fetchActionsForOrder');
+        read.mockResolvedValueOnce({ pay: false, refund: false });
+        const refused = mountDrawer({ ...FULL, actions: undefined });
+        await flushPromises();
+        expect(refused.find('[data-test="drawer-refund"]').exists()).toBe(false);
+
+        read.mockRejectedValueOnce({
+            success: false,
+            status: 500,
+            message: 'Boom',
+            errors: [{ code: 'INTERNAL_ERROR', message: 'Could not read the payment.' }]
+        });
+        const failed = mountDrawer({ ...FULL, actions: undefined });
+        await flushPromises();
+        expect(failed.find('[data-test="drawer-refund"]').exists()).toBe(false);
+        expect(failed.get('[data-test="drawer-refund-error"]').text()).toContain(
+            'Could not read the payment.'
+        );
     });
 
     it('refunds the whole remainder after a confirmation, then tells the list and closes', async () => {

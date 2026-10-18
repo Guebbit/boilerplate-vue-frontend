@@ -398,18 +398,19 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 
 ## File map
 
-| Path                                   | Contents                                                                                |
-| -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `stryker.config.json`                  | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
-| `scripts/mutation/run-tests.ts`        | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
-| `mutation-baseline.json`               | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
-| `scripts/mutation/baseline.ts`         | Ratchet logic — scoring, comparison, the "never lower" rule                             |
-| `scripts/mutation/check-baseline.ts`   | CLI for the two commands below                                                          |
-| `scripts/mutation/pull-baseline.ts`    | `npm run test:mutation:pull` — the newest uploaded baseline, written over the file      |
-| `scripts/mutation/github-artifacts.ts` | Which uploaded baseline that is: the newest unexpired one from a run on `main`          |
-| `.github/workflows/mutation.yml`       | Nightly schedule + dispatch, read-only; uploads the report and the baseline             |
-| `reports/mutation/index.html`          | Human-readable report (generated per run)                                               |
-| `reports/mutation/mutation.json`       | Machine-readable report the ratchet reads                                               |
+| Path                                  | Contents                                                                                |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `stryker.config.json`                 | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
+| `scripts/mutation/run-tests.ts`       | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
+| `mutation-baseline.json`              | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
+| `scripts/mutation/baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                             |
+| `scripts/mutation/check-baseline.ts`  | CLI for the two commands below                                                          |
+| `scripts/mutation/pull-baseline.ts`   | `npm run test:mutation:pull` — the newest uploaded baseline, written over the file      |
+| `scripts/testing/github-artifacts.ts` | Which uploaded baseline that is: the newest unexpired one from a run on `main`          |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind it, shared with the Lighthouse baseline pull                      |
+| `.github/workflows/mutation.yml`      | Nightly schedule + dispatch, read-only; uploads the report and the baseline             |
+| `reports/mutation/index.html`         | Human-readable report (generated per run)                                               |
+| `reports/mutation/mutation.json`      | Machine-readable report the ratchet reads                                               |
 
 ## Commands
 

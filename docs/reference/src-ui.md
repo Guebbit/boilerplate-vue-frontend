@@ -44,6 +44,17 @@ with no `activator` has nobody for Vuetify to return focus to, so Escape would o
 keyboard user on the page body; every dialog calls it with its open flag, and the
 [FR12 journey](./tests.md#journeys--stories-that-cross-modules) proves it end to end.
 
+`use-leave-guard.ts` stops a half-typed staff form being thrown away: the router's leave hook asks
+through the confirm dialog ("Leave / Stay"), and a tab close or reload gets the browser's own
+prompt, registered only while the form is dirty. It stays silent for a clean form, a form just
+saved (`markSaved()`), and a session that has already ended, since a forced sign-out is not a
+choice to leave. The eight staff create and edit pages and the `example` template call it.
+
+`use-theme-color-meta.ts` keeps the browser's address-bar colour in step with the theme. `index.html`
+ships a `theme-color` pair keyed to the OS preference; this writes the active Vuetify theme's
+`surface` into both tags, so a visitor who forces dark on a light OS gets a dark address bar too.
+`App.vue` calls it once.
+
 ## Organisms
 
 | File                                    | What it is                                                                                                                                                                        | Read next                                                  |
@@ -72,5 +83,6 @@ translated, so the store holds a queue and the promises and nothing else.
 | File                          | What it is                                                                                                                                                        | Read next                                                |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `src/ui/vuetify/index.ts`     | The Vuetify instance: the theme, its accent colours, and the defaults every component inherits. Changing the palette is one edit here.                            | [Runtime](../tools/runtime.md)                           |
+| `src/ui/vuetify/theme.ts`     | The light and dark colour maps and the generated variations, as plain data. The lint, the specs and `ThemeColor` read it; `index.ts` builds the instance from it. | [Design System](../theory/design-system.md)              |
 | `src/ui/vuetify/icons.ts`     | The icon set registration, kept apart so the icon library can be swapped without touching the theme.                                                              | [Package Dependencies](../tools/package-dependencies.md) |
 | `src/ui/vuetify/selectors.ts` | CSS selectors describing Vuetify's own generated markup — `VUETIFY_INVALID_FIELD_SELECTOR`, the field `useStructureFormValidation` focuses after a failed submit. | [UI Kit](./src-ui.md)                                    |

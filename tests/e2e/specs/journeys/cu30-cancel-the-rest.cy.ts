@@ -6,11 +6,15 @@
  * SERVER computed — never a sum made on the page — and a confirm step. Confirming closes a
  * cancellation, the group has nothing left to cancel, and the money for those two units goes back.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, orderMailTo } from '../../../support/e2e/steps';
 
 /** The slice of the options read this story compares the screen with. */
 interface OptionsLike {
-    cancellable: { refundAmount: number }[];
+    cancellable: {
+        refundAmount: number;
+        shippingRefund: number;
+        lines: { quantity: number; title: string }[];
+    }[];
 }
 
 /** The slice of a return this story reads. */
@@ -38,11 +42,17 @@ describe('CU30 · Cancel what has not shipped', () => {
         cy.subjectId('order.partiallyFulfilled').then((orderId) => {
             cy.step('the customer is offered the cancel, with what it would refund');
             cy.loginAs('user');
-            const refund = { amount: 0 };
+            const refund = {
+                amount: 0,
+                shipping: 0,
+                lines: [] as { quantity: number; title: string }[]
+            };
             cy.apiAs<OptionsLike>('user', 'GET', `/returns/options?orderId=${orderId}`).then(
                 (options) => {
                     expect(options?.cancellable).to.have.length(1);
                     refund.amount = Number(options?.cancellable[0].refundAmount);
+                    refund.shipping = Number(options?.cancellable[0].shippingRefund);
+                    refund.lines = options?.cancellable[0].lines ?? [];
                 }
             );
             cy.visit(`/en/orders/${orderId}`);
@@ -56,6 +66,18 @@ describe('CU30 · Cancel what has not shipped', () => {
             cy.get('[data-test=cancel-remainder-refund]').should(($line) => {
                 expect($line.text()).to.contain(refund.amount.toFixed(2));
             });
+            cy.get('[data-test=cancel-remainder-lines] li').should(($items) => {
+                expect($items.toArray().map((item) => item.textContent?.trim())).to.deep.equal(
+                    refund.lines.map(({ quantity, title }) => `${quantity} × ${title}`)
+                );
+            });
+            if (refund.shipping > 0) {
+                cy.get('[data-test=cancel-remainder-shipping]').should(($line) => {
+                    expect($line.text()).to.contain(refund.shipping.toFixed(2));
+                });
+            }
+            cy.get('[data-test=cancel-remainder-back]').click();
+            cy.get('[data-test=cancel-remainder-dialog]').should('not.exist');
             cy.apiAs<{ items: ReturnLike[] }>('user', 'GET', `/returns?orderId=${orderId}`).should(
                 (page) => {
                     expect(
@@ -63,6 +85,7 @@ describe('CU30 · Cancel what has not shipped', () => {
                     ).to.have.length(0);
                 }
             );
+            cy.get('[data-test=cancel-remainder-open]').click();
 
             cy.step('confirms: a closed cancellation is on record and nothing is left to cancel');
             cy.get('[data-test=cancel-remainder-confirm]').click();
@@ -83,6 +106,10 @@ describe('CU30 · Cancel what has not shipped', () => {
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('partially_refunded');
             });
+
+            cy.step('the buyer is mailed the acknowledgement and the refund');
+            orderMailTo('user', orderId, 'We received your withdrawal');
+            orderMailTo('user', orderId, 'Your refund has been issued');
         });
     });
 });

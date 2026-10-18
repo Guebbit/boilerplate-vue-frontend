@@ -14,7 +14,7 @@
  * production-sized TTL it is the story's real test.
  */
 
-import { checkoutAs } from '../../../support/e2e/steps';
+import { checkoutAs, shipThroughTheApi } from '../../../support/e2e/steps';
 
 /** Units on the shelf at the start, taken by the first order, and by the second. */
 const SHELF = 5;
@@ -59,6 +59,24 @@ const boardShows = (title: string, expected: Counts): void => {
             const counts = [1, 2, 3].map((index) => Number($cells.eq(index).text().trim()));
             expect(counts, 'on hand, reserved, available').to.deep.equal(expected);
         });
+};
+
+/**
+ * Fills the inventory page's adjustment form and submits it. The caller waits for the answer.
+ *
+ * @param title - the product's title
+ * @param delta - units to add (negative to write off)
+ * @param note - the reason typed in the note field
+ */
+const adjustBy = (title: string, delta: number, note: string): void => {
+    cy.get('[data-test=adjust-product] input').clear();
+    cy.get('[data-test=adjust-product] input').type(title);
+    cy.get('[role=listbox] [role=option]').contains(title).click();
+    cy.get('[data-test=adjust-delta] input').clear();
+    cy.get('[data-test=adjust-delta] input').type(String(delta));
+    cy.get('[data-test=adjust-note] input').clear();
+    cy.get('[data-test=adjust-note] input').type(note);
+    cy.get('[data-test=adjust-submit]').click();
 };
 
 /**
@@ -119,15 +137,18 @@ describe('OP21 · The stock counters follow an order', () => {
             });
             boardShows(title, [SHELF, FIRST_ORDER, SHELF - FIRST_ORDER]);
 
+            cy.step(
+                'a write-off that would leave less than is reserved is refused, and nothing moves'
+            );
+            cy.intercept('POST', '**/inventory/adjustments').as('adjust');
+            adjustBy(title, -(SHELF - FIRST_ORDER + 1), 'OP21 too many');
+            cy.wait('@adjust').its('response.statusCode').should('equal', 409);
+            cy.get('[data-test=adjust-error]').should('not.be.empty');
+            boardShows(title, [SHELF, FIRST_ORDER, SHELF - FIRST_ORDER]);
+
             cy.step('the administrator writes the unsold units off');
-            cy.get('[data-test=adjust-product] input').clear();
-            cy.get('[data-test=adjust-product] input').type(title);
-            cy.get('[role=listbox] [role=option]').contains(title).click();
-            cy.get('[data-test=adjust-delta] input').clear();
-            cy.get('[data-test=adjust-delta] input').type(String(-(SHELF - FIRST_ORDER)));
-            cy.get('[data-test=adjust-note] input').type('OP21 stocktake');
-            cy.intercept('POST', '**/inventory/**').as('adjust');
-            cy.get('[data-test=adjust-submit]').click();
+            cy.visit('/en/inventory');
+            adjustBy(title, -(SHELF - FIRST_ORDER), 'OP21 stocktake');
             cy.wait('@adjust').its('response.statusCode').should('be.within', 200, 299);
             cy.get('[data-test=adjust-error]').should('not.exist');
             // The paid order's units are still on the shelf, so the count cannot drop below them.
@@ -160,6 +181,23 @@ describe('OP21 · The stock counters follow an order', () => {
                     );
                 });
             }
+
+            cy.step('the paid order ships: its units leave the shelf and the ledger says so');
+            cy.get<string>('@first').then((orderId) => {
+                shipThroughTheApi(orderId);
+            });
+            boardShows(title, [0, 0, 0]);
+            pickLedgerProduct(title);
+            cy.get('[data-test=movement-reason]').should(($reasons) => {
+                const newestFirst = $reasons.toArray().map((reason) => reason.textContent?.trim());
+                expect(newestFirst[0]).to.equal('Shipped');
+                expect(newestFirst).to.have.length(6);
+            });
+            cy.get<string>('@first').then((orderId) => {
+                cy.contains('[data-test=movement-row]', 'Shipped')
+                    .find(`a[href$="/orders/${orderId}"]`)
+                    .should('exist');
+            });
 
             cy.step('the guest’s page says out of stock at once');
             cy.logout();

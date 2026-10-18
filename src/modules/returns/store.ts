@@ -7,7 +7,7 @@
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
+import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
 import {
     approveReturn,
     createReturn,
@@ -82,15 +82,16 @@ export const useReturnsStore = defineStore('returns', () => {
     );
 
     /**
-     * `Idempotency-Key` for `openReturn` — a network error or a 5xx resends the SAME key, so a lost
-     * response never opens two returns; any other outcome mints a fresh one.
+     * `Idempotency-Key`s for `openReturn`, one per order — a lost connection resends the SAME key,
+     * so a lost response never opens two returns; any answer mints a fresh one.
      */
-    const openIdempotencyKey = useIdempotencyKey();
+    const openIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key` for `receive` — the move that pays the customer back must not run twice.
+     * `Idempotency-Key`s for `receive`, one per return — the move that pays the customer back must
+     * not run twice, and must not share a key with another return.
      */
-    const receiveIdempotencyKey = useIdempotencyKey();
+    const receiveIdempotencyKeys = useIdempotencyKeys();
 
     /**
      * Opens a return, or withdraws from the contract — one call behind `POST /returns`, which always
@@ -101,15 +102,16 @@ export const useReturnsStore = defineStore('returns', () => {
      * @returns A promise resolving with the return that was written (cached here); `undefined` only
      *   when the toolkit's read wrapper handed back no response.
      */
-    const openReturn = (request: CreateReturnRequest): Promise<Return | undefined> =>
-        fetchAny(() =>
-            createReturn(request, openIdempotencyKey.withKey())
+    const openReturn = (request: CreateReturnRequest): Promise<Return | undefined> => {
+        const keeper = openIdempotencyKeys.forSubject(request.orderId);
+        return fetchAny(() =>
+            createReturn(request, keeper.withKey())
                 .then((response) => {
-                    openIdempotencyKey.settle();
+                    keeper.settle();
                     return response;
                 })
                 .catch((error: unknown) => {
-                    openIdempotencyKey.settle(error);
+                    keeper.settle(error);
                     throw error;
                 })
         ).then((response) => {
@@ -117,6 +119,7 @@ export const useReturnsStore = defineStore('returns', () => {
             if (created) addReturn(created);
             return created;
         });
+    };
 
     /**
      * Reads every return opened on one order — how an order page shows what became of a
@@ -175,21 +178,23 @@ export const useReturnsStore = defineStore('returns', () => {
      * @param body - Optionally the handling damage to keep back from the refund.
      * @returns A promise resolving with the return as it now stands.
      */
-    const receive = (returnId: string, body?: ReceiveReturnRequest) =>
-        updateTarget(
+    const receive = (returnId: string, body?: ReceiveReturnRequest) => {
+        const keeper = receiveIdempotencyKeys.forSubject(returnId);
+        return updateTarget(
             () =>
-                receiveReturn(returnId, body, receiveIdempotencyKey.withKey())
+                receiveReturn(returnId, body, keeper.withKey())
                     .then((response) => {
-                        receiveIdempotencyKey.settle();
+                        keeper.settle();
                         return response.data;
                     })
                     .catch((error: unknown) => {
-                        receiveIdempotencyKey.settle(error);
+                        keeper.settle(error);
                         throw error;
                     }),
             {},
             returnId
         );
+    };
 
     return {
         returns,

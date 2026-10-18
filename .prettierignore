@@ -1,5 +1,6 @@
 dist
 dist-e2e
+dist-lighthouse
 node_modules
 docs/.vitepress/dist
 docs/.vitepress/cache

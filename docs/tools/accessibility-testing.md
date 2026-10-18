@@ -164,6 +164,10 @@ Each case is one control. The FR12 [journey](../reference/tests.md#journeys--sto
 
 `cypress-real-events` is what makes this possible: Cypress' own `.type('{tab}')` dispatches an event and moves nothing, because focus traversal is the browser's behaviour rather than a handler's. `cy.realPress()` sends the keystroke through the DevTools Protocol, so the browser performs it. The trade is Chromium only, which is every headless run here.
 
+## …nor a finger
+
+A keyboard spec cannot tap either. Whether a control is reachable by a finger, whether information hides in a `title`, whether a tooltip sticks after a tap: [Touch testing](./touch-testing.md).
+
 ## Before any of it runs: the lint plugin
 
 `eslint-plugin-vuejs-accessibility`'s `flat/recommended` set is enabled on `src/**/*.vue`. It is the static half of what the sweeps check at runtime — and it reads **every** template, rendered or not, failing the edit rather than the e2e run: a `<div @click>` with no key handler, an `<img>` with no `alt`, an `aria-` attribute an element may not carry, a `tabindex` above zero.
@@ -181,6 +185,9 @@ The whole set, nothing switched off. The rules that look at native `<label>`/`<i
 | `tests/cross-cutting/a11y-coverage.spec.ts` | Parses every `routes.ts` against its sweep; fails on an unswept route, a swept path no route serves, or a sweep that outlives its module. Holds `EXEMPT`                        |
 | `tests/support/e2e/commands.ts`             | `cy.checkPageA11y()`: the single axe pass with pinned tags, the impact threshold, the report task call                                                                          |
 | `tests/support/e2e/a11y-task.ts`            | The Node side: writes every finding to `reports/a11y/<spec>.json`. Registered in `cypress.config.ts`                                                                            |
+| `tests/e2e/specs/touch.cy.ts`               | The shell's touch contract: drawer, menus, tooltips, swipe, and the scan's red/green case                                                                                       |
+| `tests/support/e2e/touch-task.ts`           | The Node side of the scan: writes `reports/touch/<spec>.json`. Registered in `cypress.config.ts`                                                                                |
+| `tests/support/e2e/touch.ts`                | The touch commands and the reachability scan: see [Touch testing](./touch-testing.md)                                                                                           |
 | `tests/support/e2e/e2e.ts`                  | Imports `cypress-axe` (`cy.injectAxe()` / `cy.checkA11y()`) and `cypress-real-events` (`cy.realPress()`)                                                                        |
 | `eslint.config.ts`                          | `eslint-plugin-vuejs-accessibility`, `flat/recommended`, scoped to `src/**/*.vue`                                                                                               |
 
@@ -220,6 +227,7 @@ If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command �
 ## Related pages
 
 - [Visual Regression](./visual-regression.md) — the other layer that looks at the rendered page; it records appearance, this one judges it
+- [Lighthouse](./lighthouse.md) — its own accessibility category is switched off: it is a subset of the same `axe-core`, and this sweep covers more
 - [The demo profile](./demo-profile.md) — the backend these run against
 - [Component Testing](./component-testing.md) — the layer below, where markup is asserted directly
 - [Testing & Docs](./testing-and-docs.md) — the map

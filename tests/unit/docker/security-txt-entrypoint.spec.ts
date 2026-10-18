@@ -22,7 +22,7 @@ let root = '';
  */
 const run = (environment: Record<string, string>): void => {
     const { status } = spawnSync('sh', [script], {
-        env: { PATH: process.env.PATH ?? '', SECURITY_TXT_ROOT: root, ...environment }
+        env: { PATH: process.env.PATH ?? '', NGINX_HTML_ROOT: root, ...environment }
     });
     expect(status).toBe(0);
 };

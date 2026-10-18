@@ -25,6 +25,7 @@ scripts/
 ├── demo/        booting the paired backend's demo profile from here
 ├── e2e/         the Cypress shard runner, its balancer and the spec globs
 ├── mutation/    the Stryker run and the per-file ratchet
+├── lighthouse/  the lab-performance run, its judgement and its baseline
 ├── testing/     everything else that reads a test suite
 └── audit/       AI audit prompts, each with the scripts it runs
 ```
@@ -74,11 +75,15 @@ whose Artisan command classes are the StudlyCase spelling of these names. Abbrev
 
 ## End-to-end — `scripts/e2e/`
 
-| File                                | What it is                                                                                                                                                             | Read next                                      |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `scripts/e2e/run-shards.ts`         | Runs the Cypress specs in parallel shards against one preview server, each shard with its own backend. The reason a full e2e pass is minutes rather than tens of them. | [Live E2E](../tools/live-e2e.md)               |
-| `scripts/e2e/shard-balancer.ts`     | The pure half of the runner: the measured-duration table and the LPT bin-packing that assigns specs to shards. Split out so the algorithm can be unit tested.          | [Live E2E](../tools/live-e2e.md)               |
-| `scripts/e2e/cypress-spec-globs.ts` | Where the Cypress specs live, as the one definition `cypress.config.ts`, `eslint.config.ts` and the shard runner all read.                                             | [Package Scripts](../tools/package-scripts.md) |
+| File                                | What it is                                                                                                                                                             | Read next                                                             |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `scripts/e2e/run-shards.ts`         | Runs the Cypress specs in parallel shards against one preview server, each shard with its own backend. The reason a full e2e pass is minutes rather than tens of them. | [Live E2E](../tools/live-e2e.md)                                      |
+| `scripts/e2e/shard-balancer.ts`     | The pure half of the runner: the measured-duration table and the LPT bin-packing that assigns specs to shards. Split out so the algorithm can be unit tested.          | [Live E2E](../tools/live-e2e.md)                                      |
+| `scripts/e2e/viewports.ts`          | The layout matrix: the device sizes (and whether each is a touch device) every browser suite lays the app out at. Pure data, so Node tools import it too.              | [Visual Regression](../tools/visual-regression.md)                    |
+| `scripts/e2e/browser-launch.ts`     | The pure half of the one `before:browser:launch` handler: the headless window that holds the whole matrix, and the pointer a headless Chromium reports.                | [Visual Regression](../tools/visual-regression.md#the-browser-window) |
+| `scripts/e2e/touch-findings.ts`     | The pure half of the touch scan: four rules over plain probe records, grouped, with the kinds that fail a test. Unit tested with no DOM.                               | [Touch Testing](../tools/touch-testing.md)                            |
+| `scripts/e2e/shot-size.ts`          | The guard that refuses a screenshot whose size is not the page's viewport (a clamped window, a double pixel ratio).                                                    | [Visual Regression](../tools/visual-regression.md#the-browser-window) |
+| `scripts/e2e/cypress-spec-globs.ts` | Where the Cypress specs live, as the one definition `cypress.config.ts`, `eslint.config.ts` and the shard runner all read.                                             | [Package Scripts](../tools/package-scripts.md)                        |
 
 ## Mutation testing — `scripts/mutation/`
 
@@ -91,11 +96,30 @@ second, deeper scope that this repo has no equivalent for.
 | `scripts/mutation/baseline.ts`       | The per-file ratchet: the recorded score for each file, and the comparison that fails when one drops. Nothing here ever lowers a baseline on its own.               | [Mutation Testing](../tools/mutation-testing.md) |
 | `scripts/mutation/check-baseline.ts` | Its CLI — compare, or record a new floor with `--update`.                                                                                                           | [Mutation Testing](../tools/mutation-testing.md) |
 
+## Lab performance — `scripts/lighthouse/`
+
+| File                                                        | What it is                                                                                                      | Read next                                                        |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `scripts/lighthouse/build.ts`                               | The audit build: `vite build` into `dist-lighthouse`, then every container-start generator run into it.         | [Lighthouse](../tools/lighthouse.md)                             |
+| `scripts/lighthouse/audit-environment.ts`                   | The environment that build gets (every URL loopback) and which generators it runs.                              | [Lighthouse](../tools/lighthouse.md)                             |
+| `scripts/lighthouse/analytics-sink.ts`                      | A local 204 server standing in for Faro and Umami, so the audit shows the consent banner and sends nothing out. | [Lighthouse](../tools/lighthouse.md#no-byte-leaves-the-machine)  |
+| `scripts/lighthouse/chrome.ts`                              | Launches Chrome with the egress lock and attaches Puppeteer.                                                    | [Lighthouse](../tools/lighthouse.md#no-byte-leaves-the-machine)  |
+| `scripts/lighthouse/settings.ts`                            | The Lighthouse flags: the phone profile, the categories, error reporting off.                                   | [Lighthouse](../tools/lighthouse.md#the-phone-profile)           |
+| `scripts/lighthouse/route.ts`                               | Fills `{subject:x}` in a case's route from the backend's published ids.                                         | [Lighthouse](../tools/lighthouse.md#cases-live-with-modules)     |
+| `scripts/lighthouse/collect.ts`                             | Drives every case: sign in, prepare, then N Lighthouse runs.                                                    | [Lighthouse](../tools/lighthouse.md#signed-in-routes)            |
+| `scripts/lighthouse/evaluate.ts`                            | Pure: medians, the hard set, the warnings. Exit code logic lives in `run.ts`.                                   | [Lighthouse](../tools/lighthouse.md#what-gates-and-what-reports) |
+| `scripts/lighthouse/summary.ts`                             | Renders the Markdown summary.                                                                                   | [Lighthouse](../tools/lighthouse.md#reading-the-report)          |
+| `scripts/lighthouse/run.ts`                                 | `npm run test:lighthouse`'s runner.                                                                             | [Lighthouse](../tools/lighthouse.md#running-it)                  |
+| `scripts/lighthouse/baseline.ts`                            | The timing baseline's shape and its only-improves ratchet.                                                      | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)        |
+| `scripts/lighthouse/update-baseline.ts`, `pull-baseline.ts` | `npm run test:lighthouse:baseline` and `:pull`.                                                                 | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)        |
+
 ## Testing — `scripts/testing/`
 
-| File                                | What it is                                                                                       | Read next                                          |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| `scripts/testing/report-results.ts` | Turns a runner's JSON report into which **module** a failure belongs to and where the time went. | [Testing (overview)](../tools/testing-and-docs.md) |
+| File                                  | What it is                                                                                             | Read next                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `scripts/testing/report-results.ts`   | Turns a runner's JSON report into which **module** a failure belongs to and where the time went.       | [Testing (overview)](../tools/testing-and-docs.md)                                 |
+| `scripts/testing/github-artifacts.ts` | Which uploaded baseline a `pull-baseline` script takes: the newest unexpired one from a run on `main`. | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind the mutation and Lighthouse baseline pulls.                                      | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
 
 ## AI audits — `scripts/audit/`
 
@@ -105,6 +129,20 @@ and follows, and a `scripts/` folder for anything it runs.
 | File                       | What it is                                                                                        | Read next                              |
 | -------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | `scripts/audit/*/SKILL.md` | The four audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
+
+The design review keeps its programs in `scripts/audit/design-manual/scripts/`:
+
+| File                                                  | What it is                                                                                                                | Read next                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `scripts/audit/design-manual/scripts/stitch.ts`       | Pure: scroll offsets, the stitcher that lays viewport shots onto one tall page, and the tile cutter with its size limits. | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/manifest.ts`     | The types of one capture run (what was shot, from which commit, at which sizes) and the merge of its parts.               | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/plan-batches.ts` | Pure: splits a manifest into batches small enough for one reviewer. `plan.ts` is its CLI, `npm run audit:design:plan`.    | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/check-report.ts` | Pure: checks every tile and `file:line` a findings table cites. `check.ts` is its CLI, `npm run audit:design:check`.      | [AI Auditing](../tools/ai-auditing.md) |
+
+## Lint rules — `scripts/eslint/`
+
+The design system's ESLint rules and the policy they read. How they fit together, and the commands:
+[Design Lint](../tools/design-lint.md).
 
 ## Git hooks
 

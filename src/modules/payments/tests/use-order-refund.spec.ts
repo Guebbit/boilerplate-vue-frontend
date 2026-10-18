@@ -85,7 +85,11 @@ describe('useOrderRefund', () => {
         const { canRefund, refund } = useOrderRefund(ref('o1'));
 
         return settled()
-            .then(() => refund())
+            .then(() => {
+                // The refund answer carries no `actions`; the re-read after it does.
+                responses['GET /payments/order/o1'] = orvalEnvelope(payment(false));
+                return refund();
+            })
             .then(() => {
                 expect(canRefund.value).toBe(false);
             });

@@ -27,6 +27,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
+import { shotSizeProblem, type ShotSize } from '../../../scripts/e2e/shot-size';
 
 /** Per-pixel colour tolerance, 0–1. Higher tolerates more antialiasing difference. */
 const PIXEL_THRESHOLD = 0.15;
@@ -47,6 +48,8 @@ export interface CompareOptions {
      * the spec — a module, or the shell — and are deleted by deleting it.
      */
     specRelative: string;
+    /** The page's own `innerWidth` × `innerHeight` when it was shot: the PNG must be exactly this. */
+    expected: ShotSize;
     /** Directory for diff images produced on failure. */
     diffDirectory: string;
     /** When true, overwrite the baseline instead of comparing against it. */
@@ -70,12 +73,13 @@ export interface CompareResult {
  *      to compare against; failing would only mean "this is new". The baseline is committed, so
  *      the diff that matters is the one a reviewer sees in the pull request when the image
  *      changes — that is where a human actually looks at the picture.
+ *   0. **Not the viewport's size** → fail, before anything else (the browser window clipped it).
  *   2. **Different dimensions** → fail immediately. Comparing images of different sizes pixel by
  *      pixel is meaningless, and a size change is itself a layout regression.
  *   3. **Same size** → compare, and fail when more than `MAX_DIFFERING_RATIO` differs.
  */
 export const compareSnapshot = (options: CompareOptions): CompareResult => {
-    const { name, actualPath, specRelative, diffDirectory, update } = options;
+    const { name, actualPath, specRelative, expected, diffDirectory, update } = options;
 
     /*
      * `__snapshots__` beside the spec. Resolved here rather than in the browser because only Node
@@ -88,6 +92,11 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
     mkdirSync(baselineDirectory, { recursive: true });
 
     const actual = PNG.sync.read(readFileSync(actualPath));
+
+    // Before any baseline logic, update mode included: a clamped or double-density shot must
+    // never become a baseline, and "the window is too small" must not read as "the page changed".
+    const problem = shotSizeProblem(actual, expected);
+    if (problem) return { passed: false, message: `${name}: ${problem}` };
 
     if (update || !existsSync(baselinePath)) {
         writeFileSync(baselinePath, PNG.sync.write(actual));

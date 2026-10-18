@@ -92,6 +92,12 @@ describe('CU1 · First purchase, from nothing', { tags: '@smoke' }, () => {
         centsOf('[data-test=cart-total]').should((total) => {
             expect(total).to.equal(cart.items + cart.shipping);
         });
+        cy.get('[data-test=cart-order-terms]')
+            .should('exist')
+            .within(() => {
+                cy.get('a[href$="/terms"]').should('exist');
+                cy.get('a[href$="/privacy"]').should('exist');
+            });
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
 
         cy.step('pays by card');

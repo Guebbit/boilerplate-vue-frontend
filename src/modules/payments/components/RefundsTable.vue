@@ -28,6 +28,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { RefundReason, RefundStatus } from '@/types/enums.ts';
+import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
@@ -207,7 +208,7 @@ const STATUS_COLORS = {
     pending: 'warning',
     succeeded: 'success',
     failed: 'error'
-} satisfies Record<TRefundStatus, string>;
+} satisfies Record<TRefundStatus, ThemeColor>;
 </script>
 
 <template>

@@ -149,7 +149,7 @@ const submitForm = () =>
                     filling in something that marks their own message as spam. `autocomplete="off"`
                     keeps a browser from ever offering to fill it for a real visitor either.
                 -->
-                <div class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+                <div class="absolute left-[-9999px] size-0 overflow-hidden" aria-hidden="true">
                     <input
                         v-model="form.website"
                         type="text"

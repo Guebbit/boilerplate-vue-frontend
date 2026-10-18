@@ -28,6 +28,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { EMPTY_VALUE, formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
@@ -203,12 +204,12 @@ const orderLink = (orderId: string) => {
  * State chip colours; `satisfies` makes a new contract state fail the type check.
  */
 const STATE_COLORS = {
-    waiting: 'default',
+    waiting: undefined,
     awaiting_yes: 'warning',
     allocated: 'info',
     shipped: 'success',
     cancelled: 'error'
-} satisfies Record<PreorderFulfillmentState, string>;
+} satisfies Record<PreorderFulfillmentState, ThemeColor | undefined>;
 </script>
 
 <template>

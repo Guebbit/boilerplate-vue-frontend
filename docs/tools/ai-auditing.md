@@ -8,8 +8,9 @@ notice that the docs promise a rule the contract never encodes.
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
 approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
 
-`scripts/audit/` holds four prompts that live in exactly that gap. They are plain markdown, run by
-hand against an LLM, and they write reports — never code.
+`scripts/audit/` holds four prompts that live in exactly that gap, plus `test-honesty`, which asks
+whether a test can fail at all. They are plain markdown, run by hand against an LLM, and they write
+reports — `test-honesty` alone edits tests, and only when asked.
 
 ## The one rule
 
@@ -40,16 +41,17 @@ Two consequences, both non-negotiable:
 - **A finding without a citation is not a finding.** Either a `file:line` in the spec, or nothing.
   Prose confidence is not evidence.
 
-## The four prompts
+## The five prompts
 
 | File                                          | Asks                                                                                                                                                          | Writes to                             |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                 | `reports/audit/spec-drift/`           |
 | `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                          | `reports/audit/spec-gaps/`            |
 | `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
+| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                    | `reports/audit/test-honesty/`         |
 | `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
 
-The first three take one argument — a module (`orders`), a path, or `--diff` for whatever the
+The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
 the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
 still a gap.
@@ -62,11 +64,11 @@ judgement calls with no backend equivalent; the backend's own
 `boilerplate-node-backend/scripts/audit/rate-limit-keys/SKILL.md` reason about a mounted Express request
 path and have no counterpart here.
 
-Only `spec-drift`, `spec-gaps` and `suite-bloat` exist on both sides, because what they
-ask — does the test agree with the spec, is anything uncovered, is anything redundant — is about
-specs and suites rather than about a runtime.
+Only `spec-drift`, `spec-gaps`, `suite-bloat` and `test-honesty` exist on both sides, because what
+they ask — does the test agree with the spec, is anything uncovered, is anything redundant, can the
+test fail at all — is about specs and suites rather than about a runtime.
 
-Nothing keeps even those three in step, and nothing should try. None is in `SHARED_FILES`, whose
+Nothing keeps even those four in step, and nothing should try. None is in `SHARED_FILES`, whose
 rule is that a shared file must be owned by one side and regenerated. Improve one where you find
 it; carry the improvement across when it applies, and expect the two to drift in between. Reading
 an audit prompt as a spec for its sibling is the mistake to avoid — it is a prompt, and the copy in
@@ -161,6 +163,10 @@ tool:
 The pointer's `allowed-tools` is Claude Code's permission list: `Read`, `Glob`, `Grep`, `Write` and
 a few `Bash` verbs, with no `Edit`. These prompts report; they never touch source.
 
+`test-honesty` is the one exception, and its pointer carries `Edit` and `npx vitest` for it. Its
+oracle breaks a line of `src/` for the length of one test run and restores it, and its `--fix`
+edits test files. It never commits, and it never deletes a test — it proposes the deletion.
+
 ::: tip Which model
 Claude for `spec-drift` and `spec-gaps` — long-context reasoning over prose vs. code is exactly
 where small local models confabulate citations most confidently, and a fabricated `file:line` costs
@@ -169,6 +175,46 @@ more than the finding was worth.
 `suite-bloat` is the exception. It is bookkeeping over `reports/mutation/mutation.json`, and a local
 Ollama model handles it.
 :::
+
+## `test-honesty`: a test is innocent once it has failed
+
+The fear it answers: tests written to raise a number, or to agree with whoever wrote the code, that
+stay green whatever the code does. Mutation testing finds some of them. This audit finds the rest,
+and names the shape — coverage padding, a snapshot dump, a mocked subject, a swallowed failure, a
+title that lies, an input that cannot discriminate.
+
+It applies [the one rule](#the-one-rule) with a cheap oracle: **sabotage**. For each suspect test,
+the model writes down what the test's title claims, and the smallest `src/` edit that would break
+that claim. Then the test runs against the broken code.
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
+flowchart LR
+    C["Candidate<br/><i>grep, survived mutants,<br/>git history</i>"] --> T["Sabotage<br/>written from the title"]
+    T --> R{"Run the one test<br/>against broken code"}
+    R -->|still green| Y["CONFIRMED"]
+    R -->|red| N["CLEAN —<br/>dropped silently"]
+    Y --> F["--fix: strengthen it,<br/>re-run both ways"]
+
+    classDef ai fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    classDef gate fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef out fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef dead fill:#fee2e2,stroke:#dc2626,color:#111827;
+    class C,T ai;
+    class R gate;
+    class Y,F out;
+    class N dead;
+```
+
+The sabotage comes from the title, never from the assertions. One chosen by reading the assertions
+proves only that they agree with themselves.
+
+A fix has to pass twice: green on the real code, red under the same sabotage. A fix whose honest
+version fails on the real code is not softened. It is reverted and reported as `BUG?`, because the
+test was hiding a defect and the decision belongs to a human.
+
+Cypress specs are read, but their oracle needs a build and a demo backend per run, so they come out
+`UNVERIFIED` unless the e2e oracle is asked for.
 
 ## Reading the output
 

@@ -39,9 +39,11 @@ export default [
         component: () => import('./views/PasswordResetRequest.vue')
     },
     {
+        // Public like the other mailed links: the token is the credential, and the owner may open
+        // it in a browser that is still signed in. A reset ends every session, this tab's too.
         path: 'password-reset/confirm',
         name: 'PasswordResetConfirm',
-        meta: { access: 'guest', title: 'password-reset-confirm-page.page-title' },
+        meta: { title: 'password-reset-confirm-page.page-title' },
         component: () => import('./views/PasswordResetConfirm.vue')
     },
     {

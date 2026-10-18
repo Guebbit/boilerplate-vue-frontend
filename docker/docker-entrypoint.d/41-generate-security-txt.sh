@@ -8,7 +8,7 @@
 # Expires is passed through as written: the operator supplies an ISO 8601 date-time.
 set -eu
 
-HTML_ROOT="${SECURITY_TXT_ROOT:-/usr/share/nginx/html}"
+HTML_ROOT="${NGINX_HTML_ROOT:-/usr/share/nginx/html}"
 TARGET_DIR="$HTML_ROOT/.well-known"
 TARGET_FILE="$TARGET_DIR/security.txt"
 

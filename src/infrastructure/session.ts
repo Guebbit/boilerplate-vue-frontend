@@ -285,6 +285,12 @@ export const useSessionStore = defineStore('session', () => {
     const idle = ref<{ timeoutMs: number; lastActiveAt: number }>();
 
     /**
+     * Whether this signed-in stretch has asked the server for its idle clock. A shopper's answer
+     * leaves {@link idle} empty, so "empty" alone cannot say "already asked".
+     */
+    let idleRead = false;
+
+    /**
      * Bumped when the session ended for inactivity — the server answered `SESSION_IDLE`, or the
      * clock ran out here first. `LayoutDefault.vue` turns it into its own toast and a redirect.
      */
@@ -453,6 +459,10 @@ export const useSessionStore = defineStore('session', () => {
     const adoptSession = (response: unknown, remember?: boolean) => {
         if (mode.value === 'cookie') startCookieSession(remember);
         else setAccessToken(getTokenFromResponse(response), remember);
+        // A sign-in (it names a "remember me" choice) replaces the browser-wide session: every
+        // other tab must re-read who it is, not keep acting as the person it was. A re-proof
+        // keeps the same person, so it says nothing.
+        if (remember !== undefined) sessionChannel?.postMessage({ type: 'login' });
     };
 
     /**
@@ -543,7 +553,11 @@ export const useSessionStore = defineStore('session', () => {
             return Promise.resolve();
         }
 
-        return reloadAbilities(false);
+        // Read the idle clock once per signed-in stretch, from the server's numbers. Not on
+        // every viewer load: a touch counts as activity, and a silent token refresh is not the
+        // person acting. Here and not in `loadViewer`, so a form sign-in (which never reloads the
+        // viewer) is asked too.
+        return reloadAbilities(false).then(() => (idleRead ? undefined : touchSession()));
     };
     /**
      * The one refresh attempt in flight, or `undefined` between attempts — single-flight (several
@@ -635,25 +649,18 @@ export const useSessionStore = defineStore('session', () => {
                 thumbnailUrl?: string;
                 verifiedAt?: string | null;
             }>(data);
-            return (
-                setViewer(
-                    payload && {
-                        id: payload.id,
-                        email: payload.email,
-                        // Absent for a plain customer: only a staff role is ever stored.
-                        role: payload.role,
-                        imageUrl: payload.imageUrl,
-                        thumbnailUrl: payload.thumbnailUrl,
-                        // Absent means unverified: the backend sends the field only once it's set.
-                        verified: payload.verifiedAt != null
-                    }
-                )
-                    // Read the idle clock once per signed-in stretch, from the server's numbers. Not on
-                    // every viewer load: a touch counts as activity, and a silent token refresh is not
-                    // the person acting.
-                    .then(() => (idle.value ? undefined : touchSession()))
-                    .then(() => payload)
-            );
+            return setViewer(
+                payload && {
+                    id: payload.id,
+                    email: payload.email,
+                    // Absent for a plain customer: only a staff role is ever stored.
+                    role: payload.role,
+                    imageUrl: payload.imageUrl,
+                    thumbnailUrl: payload.thumbnailUrl,
+                    // Absent means unverified: the backend sends the field only once it's set.
+                    verified: payload.verifiedAt != null
+                }
+            ).then(() => payload);
         });
 
     /**
@@ -700,6 +707,7 @@ export const useSessionStore = defineStore('session', () => {
         // The record versions the last person read are theirs; the next one must not send them.
         clearEtags();
         idle.value = undefined;
+        idleRead = false;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
@@ -736,8 +744,9 @@ export const useSessionStore = defineStore('session', () => {
      *
      * @returns A promise resolving once the clock reflects the server's answer.
      */
-    const touchSession = (): Promise<void> =>
-        apiTouchSession()
+    const touchSession = (): Promise<void> => {
+        idleRead = true;
+        return apiTouchSession()
             .then((data) => {
                 const clock = getPayloadFromResponse<{
                     lastActiveAt: string;
@@ -751,17 +760,37 @@ export const useSessionStore = defineStore('session', () => {
                     : undefined;
                 if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });
             })
+            .catch(() => {
+                // Quiet, and asked again by the next viewer load.
+                idleRead = false;
+            });
+    };
+
+    /**
+     * Takes up the session another tab just opened: renews the token or the cookie marker from
+     * what the browser now holds, then replaces the viewer. A failure is quiet — the next request
+     * answers 401 and the usual expiry path ends the session.
+     *
+     * @returns A promise resolving once the viewer reflects the shared session.
+     */
+    const rereadSession = (): Promise<void> =>
+        restoreFromCookies()
+            .then(() => (hasSession.value ? loadViewer() : undefined))
+            .then(() => undefined)
             .catch(() => undefined);
 
     /**
-     * Reacts to another tab's broadcast: a `logout` message clears this tab's session locally
-     * without echoing the message back, so two tabs cannot ping-pong it.
+     * Reacts to another tab's broadcast: a `login` re-reads the shared session, a `logout`
+     * clears this tab's session locally without echoing the message back, so two tabs cannot
+     * ping-pong it.
      */
     const onBroadcast = (event: MessageEvent<unknown>) => {
         // Defensive, not just typed: this channel is a cross-tab boundary — another tab could be
         // running an older or newer build with a different message shape.
         const message = event.data as { type?: unknown; at?: unknown } | undefined;
         if (message?.type === 'logout') clearSessionLocally();
+        // Another tab signed in: the shared session is now that person's, so this tab re-reads it.
+        if (message?.type === 'login') void rereadSession();
         // Another tab acted: the server's one idle clock is shared by every tab of this session.
         if (message?.type === 'activity' && typeof message.at === 'number') markActive(message.at);
     };

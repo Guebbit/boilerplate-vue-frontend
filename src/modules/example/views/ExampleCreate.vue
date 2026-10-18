@@ -20,6 +20,8 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useExampleStore } from '../store';
 import { exampleCreateSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -60,6 +62,7 @@ const {
     form,
     formErrors,
     showFormErrors: showErrors,
+    isDirty,
     isSubmitting,
     handleSubmit,
     applyServerErrors
@@ -72,6 +75,16 @@ const {
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * The signed-in viewer's session, read by the leave guard to tell a forced sign-out from a choice.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before a half-typed form is lost to a navigation; `markSaved` lifts it for a save.
+ */
+const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * This form's own blocked state: a single dedicated submit, so a failed create blocks it in place
@@ -96,6 +109,7 @@ const submitForm = () => {
         toRequestBody('CreateExampleBody', { title: form.value.title, body: form.value.body })
             .then((body) => createExample(body))
             .then((created) => {
+                markSaved();
                 addMessage(t('example-create-page.success-create'));
                 // Fire-and-forget: a NavigationFailure must not turn a completed create into an error.
                 if (created)

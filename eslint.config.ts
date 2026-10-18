@@ -20,6 +20,15 @@ import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { assertAcyclicModuleEdges, MODULE_EDGES } from './scripts/module-edges';
 import { MODULE_GROUPS } from './scripts/module-groups';
+import localRules from './scripts/eslint/index';
+import { DESIGN_POLICY } from './scripts/design-policy';
+import { designLintConfig } from './scripts/eslint/design-config';
+
+/**
+ * The project-local rules as one plugin object. Flat config refuses two different objects under
+ * the same plugin key, so every block that uses `local/*` shares this one.
+ */
+const localPlugin = { rules: localRules };
 
 /**
  * Every module `MODULE_GROUPS` labels `shop` — the removable pet-supply domain. Computed once
@@ -678,6 +687,8 @@ export default defineConfigWithVueTs(
         'dist',
         // The e2e bundle `npm run test:e2e` builds and serves; generated output, same as `dist`.
         'dist-e2e',
+        // The audit build `npm run test:lighthouse` serves; generated output, same as `dist`.
+        'dist-lighthouse',
         // The built docs site and its cache; authored docs are markdown, and the VitePress
         // config is linted through the tool-config block below.
         'docs/.vitepress/dist/**',
@@ -749,6 +760,50 @@ export default defineConfigWithVueTs(
         files: ['src/**/*.vue'],
         ignores: ['src/modules/*/tests/**']
     })),
+
+    /**
+     * Escape hatches that cannot rot, in the template as in the script.
+     *
+     * - `reportUnusedDisableDirectives` / `reportUnusedInlineConfigs` as errors: a disable that
+     *   no longer silences anything is a lie about the code, so it fails like any other finding.
+     *   (ESLint's default is a warning, which `--max-warnings 0` already made fatal in CI; the
+     *   explicit error makes the editor agree.)
+     * - `vue/comment-directive` with `reportUnusedDisableDirectives`: the same for
+     *   `<!-- eslint-disable… -->`, which the script-side option does not reach.
+     * - `local/template-directive-description`: a template disable must say why, because
+     *   `require-description` (below) reads script comments only.
+     */
+    {
+        linterOptions: {
+            reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error'
+        }
+    },
+    {
+        files: ['src/**/*.vue'],
+        plugins: { local: localPlugin },
+        rules: {
+            'vue/comment-directive': ['error', { reportUnusedDisableDirectives: true }],
+            'local/template-directive-description': 'error'
+        }
+    },
+
+    /**
+     * Tailwind classes against the theme: canonical spelling, conflicts, duplicates, deprecations.
+     * The wiring and the knobs are in `scripts/eslint/design-config.ts` and `scripts/design-policy.ts`.
+     */
+    ...designLintConfig(),
+
+    /**
+     * Colours are named theme colours, never literals: `local/theme-token`. The theme file is
+     * where the literals live, and tests build whatever fixtures they need.
+     */
+    {
+        files: ['src/**/*.{ts,vue}'],
+        ignores: ['src/ui/vuetify/theme.ts', 'src/**/tests/**', 'src/**/*.spec.ts'],
+        plugins: { local: localPlugin },
+        rules: { 'local/theme-token': DESIGN_POLICY.severity.themeToken }
+    },
 
     /**
      * Every `eslint-disable` must say why — matching the paired backend.

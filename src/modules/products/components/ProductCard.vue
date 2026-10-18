@@ -13,6 +13,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useSlot } from '@/kernel/slots';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
+import type { ThemeColor } from '@/ui/types.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { Product } from '@types';
 import { shelfStateOf, type ShelfState } from '../domain';
@@ -58,7 +59,7 @@ const SHELF_COLORS = {
     preorder: 'info',
     'out-of-stock': 'error',
     'off-sale': 'error'
-} satisfies Record<ShelfState, string>;
+} satisfies Record<ShelfState, ThemeColor>;
 
 /**
  * The shelf as the shopper reads it: off sale outranks a preorder with allowance left, which outranks the stock badge.

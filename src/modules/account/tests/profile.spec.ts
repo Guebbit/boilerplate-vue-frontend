@@ -236,10 +236,12 @@ describe('the account deletion flow', () => {
                 // the shell has both.
                 // Sorted: the rules are fetched without being awaited — a shell that blocked on
                 // learning what to hide would be worse than one that hides too much for a moment
-                // — so which of the two lands first is not a fact worth pinning.
-                expect(requestedUrls().slice(-2).toSorted()).toEqual([
+                // — so which of the two lands first is not a fact worth pinning. The idle
+                // clock is read once the viewer is set.
+                expect(requestedUrls().slice(-3).toSorted()).toEqual([
                     '/account',
-                    '/account/abilities'
+                    '/account/abilities',
+                    '/account/session/touch'
                 ]);
                 expect(useSessionStore().isAuth).toBe(true);
             });

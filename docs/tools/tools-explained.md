@@ -223,6 +223,30 @@ this diagram exists to prevent.
 
 ## Testing tools
 
+### Tailwind CSS v4 (beside Vuetify)
+
+**What it is.** A utility-class CSS framework. Version 4 is configured in CSS (`@theme` in `src/styles/main.css`) rather than in a JavaScript config file.
+
+**Problem it solves.** Layout and spacing in a template without a stylesheet per component.
+
+**In this repo.** Tailwind provides layout, spacing and type utilities only. Vuetify owns colour, font family and the components, and Tailwind's colours are aliases of Vuetify's runtime theme variables, so the two cannot drift. Who owns which token: [Design System](../theory/design-system.md).
+
+→ [Design System](../theory/design-system.md)
+
+---
+
+### eslint-plugin-better-tailwindcss
+
+**What it is.** An ESLint plugin that understands Tailwind v4: it loads the project's stylesheet and checks every class against it.
+
+**Problem it solves.** A token added to the theme should count at once, and a class that is spelled the long way, duplicated or contradicted should fail the edit, not review.
+
+**In this repo.** Wired in `scripts/eslint/design-config.ts`, reading `src/styles/main.css` live. Canonical spelling, conflicts and duplicates are errors; stylistic rules (class order, line wrapping) are off.
+
+→ [Design Lint](./design-lint.md)
+
+---
+
 ### Vitest + @vue/test-utils
 
 **What it is.** Vitest is a fast unit test runner built on Vite. `@vue/test-utils` provides Vue-specific mounting and assertion helpers for testing SFC components.
@@ -244,6 +268,28 @@ this diagram exists to prevent.
 **In this repo.** E2E specs live in two places: a domain's own under `src/modules/<name>/tests/e2e/`, the cross-cutting ones under `tests/e2e/specs/`. `npm run test:e2e` builds the bundle, serves it with `vite preview`, boots one demo backend per shard and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
 
 → [Testing](./testing-and-docs.md)
+
+### cypress-real-events
+
+**What it is.** A Cypress plugin that sends real input through the Chrome DevTools Protocol: key presses, taps and swipes, instead of events dispatched on an element.
+
+**Problem it solves.** Cypress' own `.type('{tab}')` and `.click()` dispatch events and move nothing the browser does itself: focus traversal is the browser's behaviour, and a touch needs touch events. Real input exercises the real paths.
+
+**In this repo.** `realPress` drives the keyboard specs (`tests/e2e/specs/keyboard.cy.ts`, the FR12 journey). `realTouch` and `realSwipe` drive the touch contract (`tests/e2e/specs/touch.cy.ts`), behind `.tap()` in `tests/support/e2e/touch.ts`. Chromium family only.
+
+→ [Accessibility Testing](./accessibility-testing.md) · [Touch Testing](./touch-testing.md)
+
+---
+
+### Lighthouse
+
+**What it is.** Google's lab auditor: it loads a page under an emulated phone and a throttled network, and reports performance, best-practice and SEO findings.
+
+**Problem it solves.** Field data (Faro) tells you what users felt after shipping. Lighthouse tells you, before shipping, whether the first load is stable (layout shift, image sizes, console errors) and roughly how fast it is on one reference phone.
+
+**In this repo.** The Node API, not the CLI or `@lhci/cli`, so nothing is uploaded anywhere. Chrome runs with an egress lock and the run fails if the page names an outside host. Structure gates the nightly; timing is only a warning row.
+
+→ [Lighthouse](./lighthouse.md)
 
 ---
 

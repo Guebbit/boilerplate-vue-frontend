@@ -286,7 +286,7 @@ watch(abilitiesSignal, () => {
             <PageHeader v-if="!customHero && heroTitle" :title="heroTitle" />
 
             <div
-                class="mx-auto w-full max-w-[1280px] px-4 pb-12"
+                class="mx-auto w-full max-w-7xl px-4 pb-12"
                 :class="
                     centered && 'flex min-h-[60vh] flex-col items-center justify-center text-center'
                 "
@@ -342,7 +342,7 @@ watch(abilitiesSignal, () => {
             to be re-announced.
         -->
         <div
-            class="fixed bottom-4 right-4 z-[9999] flex w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
+            class="fixed bottom-4 right-4 z-9999 flex w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
             role="region"
             :aria-label="t('generic.notifications')"
         >
@@ -381,7 +381,7 @@ watch(abilitiesSignal, () => {
         <v-fade-transition>
             <div
                 v-show="showSideLoading"
-                class="fixed bottom-4 left-4 z-[9998]"
+                class="fixed bottom-4 left-4 z-9998"
                 role="status"
                 data-test="activity-indicator"
                 :aria-label="t('generic.loading-state')"
