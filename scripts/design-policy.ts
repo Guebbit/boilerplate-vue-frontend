@@ -116,3 +116,25 @@ export const CSS_NAMED_COLORS: ReadonlySet<string> = new Set(
         'yellowgreen'
     ).split(' ')
 );
+
+/** Hex colour of 3, 4, 6 or 8 digits, not part of a longer word, path or entity. */
+const HEX_COLOR = /(?<![\w&/])#(?:[\da-f]{8}|[\da-f]{6}|[\da-f]{3,4})(?![\w-])/i;
+
+/** A functional colour notation whose arguments are not a `var(` reference. */
+const FUNCTIONAL_COLOR = /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\((?![^)]*var\()/i;
+
+/**
+ * Whether a string is, or contains, a colour literal: a hex, a functional notation with no
+ * `var(`, or a CSS colour name that is the whole string. A bare name only counts as the whole
+ * string, so prose is left alone; `transparent`, `currentcolor` and `inherit` name no fixed colour.
+ *
+ * @param text - A string from the source or a CSS declaration value.
+ */
+export const isColorLiteral = (text: string): boolean => {
+    if (HEX_COLOR.test(text) || FUNCTIONAL_COLOR.test(text)) return true;
+    const word = text.trim().toLowerCase();
+    return (
+        CSS_NAMED_COLORS.has(word) &&
+        !(DESIGN_POLICY.colorKeywords as readonly string[]).includes(word)
+    );
+};

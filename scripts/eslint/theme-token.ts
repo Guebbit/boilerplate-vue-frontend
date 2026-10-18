@@ -16,19 +16,13 @@
  */
 import { AST_NODE_TYPES, ESLintUtils } from '@typescript-eslint/utils';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { CSS_NAMED_COLORS, DESIGN_POLICY, themeColorNames } from '../design-policy';
+import { DESIGN_POLICY, isColorLiteral, themeColorNames } from '../design-policy';
 
 /** `RuleCreator`'s two type parameters: this rule takes no options. */
 type Options = [];
 
 /** The rule's three message ids. */
 type MessageIds = 'colorLiteral' | 'unknownThemeVariable' | 'unknownThemeColor';
-
-/** Hex colour of 3, 4, 6 or 8 digits, not part of a longer word, path or entity. */
-const HEX_COLOR = /(?<![\w&/])#(?:[\da-f]{8}|[\da-f]{6}|[\da-f]{3,4})(?![\w-])/i;
-
-/** A functional colour notation whose arguments are not a `var(` reference. */
-const FUNCTIONAL_COLOR = /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\((?![^)]*var\()/i;
 
 /** `--v-theme-<name>`: Vuetify's published channel variable for a theme colour. */
 const THEME_VARIABLE = /--v-theme-([\da-z-]*)/g;
@@ -51,19 +45,6 @@ interface TemplateAttribute extends TemplateNode {
     value: { type: string; value?: string; expression?: TSESTree.Node | null } | null;
     parent: { parent: { name: string } };
 }
-
-/**
- * Whether a whole string is, or contains, a colour literal.
- * A bare CSS colour name only counts when it is the entire string, so prose is left alone.
- */
-const isColorLiteral = (text: string): boolean => {
-    if (HEX_COLOR.test(text) || FUNCTIONAL_COLOR.test(text)) return true;
-    const word = text.trim().toLowerCase();
-    return (
-        CSS_NAMED_COLORS.has(word) &&
-        !(DESIGN_POLICY.colorKeywords as readonly string[]).includes(word)
-    );
-};
 
 /**
  * The string literals a colour-prop expression can evaluate to directly: itself, both branches of

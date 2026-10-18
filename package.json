@@ -140,6 +140,7 @@
         "otplib": "^13.5.0",
         "pixelmatch": "^7.2.0",
         "pngjs": "^7.0.0",
+        "postcss": "8.5.28",
         "prettier": "^3.8.1",
         "start-server-and-test": "^2.0.10",
         "tsx": "^4.21.0",
