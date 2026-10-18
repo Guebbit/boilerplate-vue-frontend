@@ -2,7 +2,11 @@
  * `scripts/e2e/browser-launch.ts` — the browser window every headless run is given.
  */
 import { describe, expect, it } from 'vitest';
-import { windowFor, withWindowSize } from '../../../../scripts/e2e/browser-launch';
+import {
+    windowFor,
+    withDesktopPointer,
+    withWindowSize
+} from '../../../../scripts/e2e/browser-launch';
 import { VIEWPORTS } from '../../../../scripts/e2e/viewports';
 
 const SIZE = { width: 1280, height: 844 };
@@ -61,6 +65,32 @@ describe('withWindowSize', () => {
     it('leaves Firefox alone', () => {
         expect(
             withWindowSize({ name: 'firefox', family: 'firefox', isHeadless: true }, EMPTY, SIZE)
+        ).toBe(EMPTY);
+    });
+});
+
+describe('withDesktopPointer', () => {
+    it('gives a Chromium that is not Electron a hovering, fine pointer', () => {
+        const options = withDesktopPointer(
+            { name: 'chromium', family: 'chromium', isHeadless: true },
+            EMPTY
+        );
+
+        expect(options.args).toEqual([
+            '--existing',
+            '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4'
+        ]);
+    });
+
+    it('leaves Electron alone: it already reports a mouse', () => {
+        expect(
+            withDesktopPointer({ name: 'electron', family: 'chromium', isHeadless: true }, EMPTY)
+        ).toBe(EMPTY);
+    });
+
+    it('leaves Firefox alone', () => {
+        expect(
+            withDesktopPointer({ name: 'firefox', family: 'firefox', isHeadless: true }, EMPTY)
         ).toBe(EMPTY);
     });
 });

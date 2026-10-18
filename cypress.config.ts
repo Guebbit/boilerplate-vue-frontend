@@ -39,7 +39,7 @@ import { recordSpecDuration } from './scripts/e2e/spec-durations';
 import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
 import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
 import { VIEWPORTS } from './scripts/e2e/viewports';
-import { windowFor, withWindowSize } from './scripts/e2e/browser-launch';
+import { windowFor, withDesktopPointer, withWindowSize } from './scripts/e2e/browser-launch';
 import { totpCode } from './scripts/e2e/totp';
 import { declaredStatuses } from './scripts/e2e/declared-statuses';
 import {
@@ -150,11 +150,15 @@ export default defineConfig({
              * The one `before:browser:launch` handler: Cypress keeps only the last registered, so
              * every launch tweak composes here (see `scripts/e2e/browser-launch.ts`).
              * The headless window must hold the tallest and widest viewport of the matrix, or a
-             * viewport-sized screenshot is clipped to the default 1280x720 window.
+             * viewport-sized screenshot is clipped to the default 1280x720 window. A headless
+             * Chromium also gets a mouse to report, as Electron has one.
              * https://docs.cypress.io/api/node-events/browser-launch-api
              */
             on('before:browser:launch', (browser, launchOptions) =>
-                withWindowSize(browser, launchOptions, windowFor(VIEWPORTS))
+                withDesktopPointer(
+                    browser,
+                    withWindowSize(browser, launchOptions, windowFor(VIEWPORTS))
+                )
             );
             on('before:run', () => {
                 if (process.env.E2E_SHARDED !== 'true') resetFlakyReport();
