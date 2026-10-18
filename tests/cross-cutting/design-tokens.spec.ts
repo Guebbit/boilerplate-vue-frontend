@@ -13,6 +13,8 @@
  * 4. Every width media query uses a breakpoint `main.css` declares.
  * 5. The names `scripts/design-policy.ts` derives equal the names Vuetify computes, so a Vuetify
  *    upgrade that adds or renames a generated colour fails here, not as a false lint finding.
+ * 6. The boot surfaces (`index.html`'s splash and meta tags, the manifest, `browserconfig.xml`)
+ *    show only colours the theme has, and the address bar has a light and a dark colour.
  */
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -171,5 +173,56 @@ describe('design tokens, the stylesheet half', () => {
         // `src/ui/types.ts` writes the levels as `1 | 2`; a third step added to `variations`
         // must be added there too.
         expect([variations.lighten, variations.darken]).toEqual([2, 2]);
+    });
+});
+
+/** Reads a file at the repo root. */
+const readRoot = (file: string): string => readFileSync(path.resolve(ROOT, file), 'utf8');
+
+/** Every colour value the theme declares, either theme, lower case. */
+const themeValues = (): Set<string> =>
+    new Set(
+        [...Object.values(light.colors), ...Object.values(dark.colors)].map((value) =>
+            value.toLowerCase()
+        )
+    );
+
+/** Hex colours written in a boot file, lower case. */
+const hexColorsIn = (text: string): string[] =>
+    [...text.matchAll(/#(?:[\da-f]{8}|[\da-f]{6}|[\da-f]{3,4})(?![\w-])/gi)].map((match) =>
+        match[0].toLowerCase()
+    );
+
+describe('design tokens, the boot surfaces', () => {
+    const bootFiles = [
+        'index.html',
+        'public/favicon/site.webmanifest',
+        'public/favicon/browserconfig.xml'
+    ];
+
+    it.each(bootFiles)('shows only theme colours in %s', (file) => {
+        const values = themeValues();
+        const found = hexColorsIn(readRoot(file));
+        expect(found.length).toBeGreaterThan(0);
+        expect(found.filter((color) => !values.has(color))).toEqual([]);
+    });
+
+    it("gives the address bar a light and a dark colour, each the theme's surface", () => {
+        const html = readRoot('index.html');
+        const colorFor = (scheme: string): string | undefined =>
+            new RegExp(
+                String.raw`<meta name="theme-color" media="\(prefers-color-scheme: ${scheme}\)" content="(#[\da-f]+)"`,
+                'i'
+            ).exec(html)?.[1];
+        expect(colorFor('light')).toBe(light.colors.surface);
+        expect(colorFor('dark')).toBe(dark.colors.surface);
+    });
+
+    it("paints the splash with the theme's background and text colours", () => {
+        const html = readRoot('index.html');
+        expect(html).toContain(`color: ${light.colors['on-background']};`);
+        expect(html).toContain(`background: ${light.colors.background};`);
+        expect(html).toContain(`color: ${dark.colors['on-background']};`);
+        expect(html).toContain(`background: ${dark.colors.background};`);
     });
 });
