@@ -30,6 +30,7 @@ flowchart LR
     subgraph Testing["Testing & Docs"]
         Vitest[Vitest\nunit tests]
         Cypress[Cypress\ne2e tests]
+        Touch[Touch\nCDP emulation]
         Realtime[Realtime\nSSE clients]
         VitePress[VitePress\ndocs site]
     end
@@ -41,7 +42,7 @@ flowchart LR
     class Runtime,Security,StateRouting core;
     class Orval,Axios,Zod,Validate api;
     class Faro,Umami obs;
-    class Vitest,Cypress,Realtime,VitePress test;
+    class Vitest,Cypress,Touch,Realtime,VitePress test;
 ```
 
 ## Read by intent
@@ -60,5 +61,6 @@ flowchart LR
 | Observability | **[Umami](./umami.md)**                               | Product analytics events and the event taxonomy used in this repo.                                                            |
 | Interface     | **[Guided tours](./tours.md)**                        | The first-login welcome tour and the page tours: how a module adds steps, the version bump, the switch.                       |
 | Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                         |
+| Testing       | **[Touch testing](./touch-testing.md)**               | Cypress as a phone: CDP touch emulation, real taps and swipes, and the scan for what a finger cannot reach.                   |
 | Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__test` control surface.             |
 | API           | **[API](../api/)**                                    | Orval, Spectral, generated client, and contract-first workflow.                                                               |

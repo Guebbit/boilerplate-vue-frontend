@@ -138,6 +138,7 @@ point.
 | Follow one request end-to-end                       | [Request Flow](./request-flow.md)                   |
 | Know what may show a spinner                        | [Loading State](./loading-state.md)                 |
 | See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)            |
+| Know what a finger can and cannot reach             | [Design system](./design-system.md)                 |
 | Know every attack a site can receive                | [Web Attack Catalog](./web-attack-catalog.md)       |
 | Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)     |
 | Understand dependency choices                       | [Tools](../tools/)                                  |

@@ -38,6 +38,7 @@ export default withMermaid(
                             { text: 'Request Flow', link: '/theory/request-flow' },
                             { text: 'Loading State', link: '/theory/loading-state' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
+                            { text: 'Design system', link: '/theory/design-system' },
                             { text: 'Web Attack Catalog', link: '/theory/web-attack-catalog' },
                             { text: 'Web Attack Defences', link: '/theory/web-attack-defences' },
                             { text: 'Roadmap', link: '/theory/roadmap' }
@@ -168,6 +169,7 @@ export default withMermaid(
                             { text: 'Component Testing', link: '/tools/component-testing' },
                             { text: 'Property Testing', link: '/tools/property-testing' },
                             { text: 'Accessibility Testing', link: '/tools/accessibility-testing' },
+                            { text: 'Touch Testing', link: '/tools/touch-testing' },
                             { text: 'Visual Regression', link: '/tools/visual-regression' },
                             { text: 'Mutation Testing', link: '/tools/mutation-testing' },
                             { text: 'AI Auditing', link: '/tools/ai-auditing' }

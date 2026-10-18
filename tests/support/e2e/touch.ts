@@ -216,13 +216,46 @@ Cypress.Commands.add(
     })
 );
 
+/** Frames an element's box must hold still for before a finger lands on it. */
+const STABLE_FRAMES = 2;
+
+/** How many times a still-moving element is re-measured before the tap goes ahead anyway. */
+const SETTLE_ATTEMPTS = 20;
+
+/** Whether two boxes sit in the same place at the same size. */
+const sameBox = (a?: DOMRect, b?: DOMRect): boolean =>
+    a?.x === b?.x && a?.y === b?.y && a?.width === b?.width && a?.height === b?.height;
+
+/**
+ * Resolves with the subject once its box has not moved for {@link STABLE_FRAMES} frames.
+ *
+ * Cypress' own `.click()` waits for an element to stop animating; `realTouch` does not, and a
+ * bar that re-flows when a late icon (the bell) arrives would send the finger to the neighbour.
+ * https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
+ */
+const settled = (subject: JQuery): Cypress.Chainable<JQuery> =>
+    cy.window({ log: false }).then(
+        (win) =>
+            new Cypress.Promise<JQuery>((resolve) => {
+                const check = (before: DOMRect | undefined, frames: number, attempts: number) =>
+                    win.requestAnimationFrame(() => {
+                        const now = subject.get(0)?.getBoundingClientRect();
+                        if (!sameBox(before, now) && attempts > 0)
+                            check(now, STABLE_FRAMES, attempts - 1);
+                        else if (frames > 1) check(now, frames - 1, attempts);
+                        else resolve(subject);
+                    });
+                check(subject.get(0)?.getBoundingClientRect(), STABLE_FRAMES, SETTLE_ATTEMPTS);
+            })
+    );
+
 Cypress.Commands.add(
     'tap',
     { prevSubject: true },
     asStub<Cypress.CommandFn<'tap'>>((subject: JQuery) =>
         // `realTouch` (cypress-real-events) sends CDP touch input but checks nothing itself,
-        // so the actionability checks come first.
-        cy.wrap(subject, { log: false }).shouldBeTappable().realTouch()
+        // so the actionability checks come first, then a wait for the box to hold still.
+        cy.wrap(subject, { log: false }).shouldBeTappable().then(settled).realTouch()
     )
 );
 

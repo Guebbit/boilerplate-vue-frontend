@@ -26,7 +26,7 @@ touched recently is still a gap.
 
 ## Step 0 — establish what is already covered, before hunting
 
-Read these three, in order, and do not report anything they already gate:
+Read these four, in order, and do not report anything they already gate:
 
 1. `docs/tools/accessibility-testing.md` — the full picture of what's automated and why.
 2. `tests/support/e2e/commands.ts` — the pinned axe tag set (`runOnly`). At the time this prompt
@@ -38,6 +38,8 @@ Read these three, in order, and do not report anything they already gate:
    proven with real keystrokes (skip link, drawer, menus, dialog, chips, nav focus). A custom
    interactive component NOT in that list is a real gap; one that IS in that list is not — don't
    re-litigate it.
+4. `docs/tools/touch-testing.md` — the touch scan already gates a control only a hover reveals,
+   data only a `title` holds and a tooltip on a non-control. Do not re-report those as manual findings.
 
 ## Step 1 — the residual checklist
 
