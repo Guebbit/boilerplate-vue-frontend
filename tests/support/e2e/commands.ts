@@ -5,6 +5,7 @@ import { loadScenario, seedAccount } from './scenario';
 import { withScenario } from '../../../scripts/e2e/reset-command';
 import { asStub } from '../stub';
 import { parseMailpitMessage, type MailedEmail } from '../../../scripts/e2e/mail-message';
+import { answerChallengePage } from './login-challenge';
 
 /*
  * A demo restore empties the in-memory database and puts a scenario back inside the backend
@@ -392,6 +393,8 @@ Cypress.Commands.add(
             })
             // A replayed `GET /products/categories` would still carry the old data's chips.
             .then(() => clearBrowserHttpCache())
+            // The restore reset the replay mark of every authenticator code too.
+            .then(() => cy.task('forgetLoginCodes', null, { log: false }))
             // Re-read rather than kept: a different scenario promises different rows, and
             // under the live profile the reset that just ran is what WROTE the description.
             .then(() => loadScenario())
@@ -886,15 +889,17 @@ Cypress.Commands.add('enrollEmailTwoFactor', (email: string) => {
 
 /**
  * Fills and submits the login form already on screen — the half `loginAs` and `switchUser` share.
+ * A staff account asks a code next: the challenge page is answered with the one its app would show.
  *
- * @param credentials - the seeded account's email and password
+ * @param credentials - the seeded account's email and password, and its authenticator secret if it has one
  */
-const submitLoginForm = (credentials: { email: string; password: string }) => {
+const submitLoginForm = (credentials: { email: string; password: string; totpSecret?: string }) => {
     cy.get('[type=email]').clear();
     cy.get('[type=email]').type(credentials.email);
     cy.get('[type=password]').clear();
     cy.get('[type=password]').type(credentials.password);
     cy.get('form').submit();
+    if (credentials.totpSecret) answerChallengePage(credentials.totpSecret);
     cy.url().should('not.include', '/login');
 };
 
@@ -904,9 +909,22 @@ Cypress.Commands.add('loginAs', (role: E2ERole = 'user') => {
 });
 
 Cypress.Commands.add('loginAsFast', (role: E2ERole = 'user') => {
-    const { email, password } = seedAccount(role);
+    const { email, password, totpSecret } = seedAccount(role);
     cy.env(['apiUrl']).then(({ apiUrl }) => {
-        cy.request('POST', `${String(apiUrl)}/account/login`, { email, password });
+        cy.request('POST', `${String(apiUrl)}/account/login`, { email, password }).then((login) => {
+            const { data } = login.body as { data?: { mfaRequired?: boolean; challenge?: string } };
+            if (!totpSecret || data?.mfaRequired !== true) return;
+
+            // A staff account answers a challenge: finish it, so the session cookie is set.
+            cy.task<string>('loginTotpCode', { secret: totpSecret, apiUrl: String(apiUrl) }).then(
+                (code) => {
+                    cy.request('POST', `${String(apiUrl)}/account/login/2fa`, {
+                        challenge: data.challenge,
+                        code
+                    });
+                }
+            );
+        });
     });
     cy.setCookie('isAuth', 'true');
 });

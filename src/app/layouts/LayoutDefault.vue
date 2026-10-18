@@ -21,6 +21,7 @@ import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
 import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
+import AppStaffEnrollmentBanner from '@/app/components/AppStaffEnrollmentBanner.vue';
 import AppAnalyticsConsentBanner from '@/app/components/AppAnalyticsConsentBanner.vue';
 import {
     isAnalyticsConsentEnabled,
@@ -286,6 +287,10 @@ watch(abilitiesSignal, () => {
                 unclickable.
             -->
             <AppVerificationBanner />
+
+            <!-- Same reasoning: a staff menu that is missing for want of an authenticator app
+                 needs saying so on whatever page the person is on. -->
+            <AppStaffEnrollmentBanner />
 
             <!-- Page hero: every view gets a consistent, accessible title area, unless its own
                  route opted out (`meta.customHero`) to render `ui/molecules/PageHeader.vue`

@@ -11,6 +11,7 @@
  * the server on the demo clock. Demo only. Not walked: the passive polls and the cross-tab
  * activity share, which unit and integration tests pin and which a test cannot compress.
  */
+import { answerChallengePage } from '../../../support/e2e/login-challenge';
 import { loginDevice, refreshDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** Just past the staff idle default (`NODE_SESSION_IDLE_TIME_STAFF`, 1800 s). */
@@ -86,10 +87,12 @@ describe('AT11 · A staff member walks away', () => {
         cy.contains(ENDED).should('exist');
         cy.url().should('include', '/login').and('include', 'continue');
         cy.get('[data-test=user-menu]').should('not.exist');
-        cy.accountOf('warehouse').then(({ email, password }) => {
+        cy.accountOf('warehouse').then(({ email, password, totpSecret }) => {
             cy.get('[type=email]').should('not.be.disabled').type(email);
             cy.get('[type=password]').should('not.be.disabled').type(password);
             cy.get('form').submit();
+            // A staff account asks the code of its authenticator app next.
+            if (totpSecret) answerChallengePage(totpSecret);
         });
         cy.location('pathname').should('equal', '/en/orders');
 

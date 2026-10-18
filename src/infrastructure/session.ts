@@ -336,6 +336,13 @@ export const useSessionStore = defineStore('session', () => {
      */
     const grantableRoles = ref<string[]>([]);
 
+    /**
+     * Whether the caller holds a staff role that grants nothing yet, because no authenticator app is
+     * armed — as last published by `GET /account/abilities`. The rules above are then the account's
+     * customer ones; the shell shows an "enrol to use your staff tools" prompt. Emptied with the rest.
+     */
+    const secondFactorRequired = ref(false);
+
     /** Subjects already warned about, so a route repeatedly asking about the same typo logs once. */
     const warnedSubjects = new Set<string>();
 
@@ -346,11 +353,15 @@ export const useSessionStore = defineStore('session', () => {
      *  returns them, plus its declared subject set and grantable roles; omit `tenant`/`platform` to empty them
      */
     const setAbilities = (
-        rules: Pick<Partial<Abilities>, 'tenant' | 'platform' | 'subjects' | 'grantableRoles'> = {}
+        rules: Pick<
+            Partial<Abilities>,
+            'tenant' | 'platform' | 'subjects' | 'grantableRoles' | 'secondFactorRequired'
+        > = {}
     ) => {
         tenantAbility.value = createMongoAbility(unpackAbilityRules(rules.tenant ?? []));
         platformAbility.value = createMongoAbility(unpackAbilityRules(rules.platform ?? []));
         grantableRoles.value = rules.grantableRoles ?? [];
+        secondFactorRequired.value = rules.secondFactorRequired ?? false;
         if (rules.subjects) declaredSubjects.value = new Set(rules.subjects);
     };
 
@@ -926,6 +937,7 @@ export const useSessionStore = defineStore('session', () => {
         platformAbility,
         declaredSubjects,
         grantableRoles,
+        secondFactorRequired,
         setAbilities,
         can,
         accessToken,

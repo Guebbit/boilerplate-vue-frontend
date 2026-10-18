@@ -32,7 +32,7 @@ import {
 import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
-import { adminApi, guestApi } from './tests/support/e2e/admin-api-task';
+import { adminApi, forgetAdminTokens, guestApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 import { recordLayoutFindings, type LayoutRecordRequest } from './tests/support/e2e/layout-task';
 import { recordTouchFindings } from './tests/support/e2e/touch-task';
@@ -49,7 +49,7 @@ import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-
 import { postPaymentWebhook } from './scripts/e2e/payment-webhook';
 import { VIEWPORTS } from './scripts/e2e/viewports';
 import { windowFor, withDesktopPointer, withWindowSize } from './scripts/e2e/browser-launch';
-import { totpCode } from './scripts/e2e/totp';
+import { forgetLoginCodes, loginTotpCodeFor, totpCode } from './scripts/e2e/totp';
 import { declaredStatuses } from './scripts/e2e/declared-statuses';
 import {
     SINGLE_PROCESS_SINK_PORT,
@@ -238,6 +238,13 @@ export default defineConfig({
                  * library for it.
                  */
                 totpCode: (request: Parameters<typeof totpCode>[0]) => totpCode(request),
+                // A staff login's code: the earliest step no earlier login of this secret used.
+                loginTotpCode: (request: { secret: string; apiUrl: string }) =>
+                    loginTotpCodeFor(request.secret, request.apiUrl),
+                forgetLoginCodes: () => {
+                    forgetAdminTokens();
+                    return forgetLoginCodes();
+                },
 
                 /*
                  * The statuses the synced root `openapi.yaml` declares for one operation, so a

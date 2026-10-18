@@ -12,6 +12,11 @@ export interface ScenarioAccount {
     password: string;
     /** Single-use backup codes, published only for the two-factor persona. */
     backupCodes?: string[];
+    /**
+     * The base32 secret of the authenticator app a staff account is armed with. A staff role grants
+     * nothing without one, so the login asks a code on top of the password; absent for a shopper.
+     */
+    totpSecret?: string;
 }
 
 /** The whole answer — see this module's own docblock. */
