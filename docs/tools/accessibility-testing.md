@@ -182,7 +182,9 @@ The whole set, nothing switched off. The rules that look at native `<label>`/`<i
 | `tests/e2e/specs/a11y.cy.ts`                | The shell's own routes — home, the prose pages, the error page — and the chrome's states: drawer, language menu, tooltip, account and administration menus, dark theme, Italian |
 | `tests/e2e/specs/keyboard.cy.ts`            | The keyboard contract: skip link, focus on navigation, tooltip, menus, drawer, dialog, chips                                                                                    |
 | `tests/support/e2e/apply-viewport.ts`       | `applyViewport(name)`: the one seam that sets a device size from the matrix, checks the page got it, and switches touch emulation                                               |
-| `tests/support/e2e/a11y-sweep.ts`           | `sweepA11y()`: the describe, the login, the wait-for-content, the optional viewport / theme / `prepare`, the axe call. Names no domain                                          |
+| `tests/support/e2e/a11y-sweep.ts`           | `sweepA11y()`: the describe, the login, the optional viewport / theme / `prepare`, the axe call, then the [layout matrix](./layout-sweep.md). Names no domain                   |
+| `tests/support/e2e/sweep-state.ts`          | `reachState()` and `switchToDarkTheme()`: getting a page into the state a sweep audits, shared with the layout and visual cases                                                 |
+| `tests/support/e2e/layout-checks.ts`        | The layout checks and the 44 px comfort pass: see [Layout Sweep](./layout-sweep.md)                                                                                             |
 | `tests/cross-cutting/a11y-coverage.spec.ts` | Parses every `routes.ts` against its sweep; fails on an unswept route, a swept path no route serves, or a sweep that outlives its module. Holds `EXEMPT`                        |
 | `tests/support/e2e/commands.ts`             | `cy.checkPageA11y()`: the single axe pass with pinned tags, the impact threshold, the report task call                                                                          |
 | `tests/support/e2e/a11y-task.ts`            | The Node side: writes every finding to `reports/a11y/<spec>.json`. Registered in `cypress.config.ts`                                                                            |
@@ -223,10 +225,13 @@ A page with a state worth auditing separately — a dialog, a submitted form, a 
 
 Add a route to the relevant list in the spec. If it needs a session, it goes in the user or admin list, which handle login.
 
+**Tap size has two tiers.** The 24 px floor (WCAG 2.5.8) is already inside this gate: axe's `target-size` runs in every pass. The 44 px comfort tier a finger wants runs at phone widths, from the [layout sweep](./layout-sweep.md#the-tap-target-tiers). It is the same axe algorithm with a larger size, with the same spacing allowance, and it is not WCAG 2.5.5.
+
 If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command — and expect to fix things, because the lighter findings are already being logged and are therefore already known.
 
 ## Related pages
 
+- [Layout Sweep](./layout-sweep.md) — the checks that ride on this sweep: overflow, clipping, covered controls and tap size at five widths
 - [Visual Regression](./visual-regression.md) — the other layer that looks at the rendered page; it records appearance, this one judges it
 - [Lighthouse](./lighthouse.md) — its own accessibility category is switched off: it is a subset of the same `axe-core`, and this sweep covers more
 - [The demo profile](./demo-profile.md) — the backend these run against

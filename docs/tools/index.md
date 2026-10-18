@@ -63,6 +63,7 @@ flowchart LR
 | Interface     | **[Guided tours](./tours.md)**                        | The first-login welcome tour and the page tours: how a module adds steps, the version bump, the switch.                                 |
 | Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                                   |
 | Testing       | **[Design lint](./design-lint.md)**                   | ESLint and Vitest reading the source for design drift: tokens, arbitrary values, dialogs, hover-only cues.                              |
+| Testing       | **[Layout sweep](./layout-sweep.md)**                 | The a11y sweep at five device sizes: what overflows, is cut off, is covered, or is too small for a finger.                              |
 | Testing       | **[Touch testing](./touch-testing.md)**               | Cypress as a phone: CDP touch emulation, real taps and swipes, and the scan for what a finger cannot reach.                             |
 | Testing       | **[Lighthouse](./lighthouse.md)**                     | The lab half of performance: a phone-profile run over six routes, what gates and what only reports, and why nothing leaves the machine. |
 | Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__test` control surface.                       |

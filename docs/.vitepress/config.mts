@@ -169,6 +169,7 @@ export default withMermaid(
                             { text: 'Component Testing', link: '/tools/component-testing' },
                             { text: 'Property Testing', link: '/tools/property-testing' },
                             { text: 'Accessibility Testing', link: '/tools/accessibility-testing' },
+                            { text: 'Layout Sweep', link: '/tools/layout-sweep' },
                             { text: 'Touch Testing', link: '/tools/touch-testing' },
                             { text: 'Design Lint', link: '/tools/design-lint' },
                             { text: 'Visual Regression', link: '/tools/visual-regression' },

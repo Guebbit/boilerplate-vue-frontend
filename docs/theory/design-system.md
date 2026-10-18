@@ -162,9 +162,58 @@ instead of floating in it. A Vuetify data table is rendered through the `DataTab
 owns `mobile-breakpoint`, and a `v-table` carries a **named** `v-focusable-scroll`, so its sideways
 scroll region is reachable by keyboard. `local/mobile-strategy` enforces all three.
 
-## Layout at phone widths
+## Breakpoints, viewport bands and layout invariants
 
-_The viewport matrix and the layout invariants are written here by the layout sweep._
+Where the layout changes, and the rules a page has to keep at every width. The sweep that checks
+them is [Layout Sweep](../tools/layout-sweep.md).
+
+### The bands
+
+Vuetify and Tailwind share one set of thresholds (`src/ui/vuetify/breakpoints.ts`), so `useDisplay()`
+and `sm:`/`md:`/`lg:` agree. `useDisplay().mobile` is true **below `sm`** (600 px): Vuetify's own
+default is `lg`, which would give a 1024 px tablet fullscreen dialogs and finger-sized row buttons.
+
+```mermaid
+flowchart LR
+    xs["xs · 0–599<br/>mobile = true<br/>phone, phone-small"] --> sm["sm · 600–959<br/>mobile = false<br/>phone-landscape"]
+    sm --> md["md · 960–1279<br/>nav still in the drawer<br/>tablet"]
+    md --> lg["lg · 1280+<br/>full bar<br/>desktop"]
+```
+
+One matrix size per band is enough, because the layout only changes at a threshold. Two more sizes
+are stress cases: 320 px wide (WCAG 1.4.10 reflow) and 390 px tall (a sticky bar and a dialog
+fighting for the height).
+
+### A resize equals a load
+
+The sweep loads a page once and resizes it in place. That is sound while nothing reads the width at
+mount: the app reads it through Vuetify (which listens to `resize`) and CSS only. A component that
+sized itself once, from `innerWidth` or a `ResizeObserver` at setup, would break the premise, and
+this is where it would show.
+
+### The invariants, and the standards behind them
+
+| Invariant                                                   | Standard                                                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Content reflows at 320 px with no loss                      | WCAG 1.4.10 Reflow                                                                                |
+| Text spacing can be raised without losing content           | WCAG 1.4.12                                                                                       |
+| Text can be resized to 200 % (met by zoom)                  | WCAG 1.4.4                                                                                        |
+| A focused control is not entirely hidden                    | WCAG 2.4.11 Focus Not Obscured                                                                    |
+| A target is 24 px, or has 24 px of room around it           | WCAG 2.5.8 Target Size (Minimum)                                                                  |
+| A finger target is 44 px (or has the room) at a phone width | the comfort tier: Apple HIG, Vuetify `large`; **not** 2.5.5 (AAA), which has no spacing exception |
+| A field is 16 px or more on a phone                         | iOS Safari zooms the page on focus below 16 px                                                    |
+
+### Geometry, not scroll
+
+Vuetify clips `html` sideways, so an overflowing element is hidden, not scrolled to. The checks read
+boxes: an **escape point** is an element past the edge whose parent is not, which is where the
+content leaves its container and where the fix goes.
+
+### Fix it in the app
+
+A finding is fixed through Vuetify's props and config (`mobileBreakpoint`, `size`, `scrollable`,
+`fullscreen`), or with Tailwind classes on our own markup. Never by overriding Vuetify's internals.
+An allowance names one element, for one check, and carries a reason.
 
 ## Pointer vs touch
 

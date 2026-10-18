@@ -265,7 +265,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Unit tests cover logic; e2e tests cover the full user journey — navigating, filling forms, checking what's rendered. Cypress catches integration failures that unit tests miss.
 
-**In this repo.** E2E specs live in two places: a domain's own under `src/modules/<name>/tests/e2e/`, the cross-cutting ones under `tests/e2e/specs/`. `npm run test:e2e` builds the bundle, serves it with `vite preview`, boots one demo backend per shard and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
+**In this repo.** E2E specs live in two places: a domain's own under `src/modules/<name>/tests/e2e/`, the cross-cutting ones under `tests/e2e/specs/`. `npm run test:e2e` builds the bundle, serves it with `vite preview`, boots one demo backend per shard and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI. The accessibility sweep doubles as the layout sweep: every page it visits is laid out at five device sizes and checked for what overflows, is cut off or is covered ([Layout Sweep](./layout-sweep.md)).
 
 → [Testing](./testing-and-docs.md)
 

@@ -11,6 +11,7 @@ flowchart TB
     Demo["E2E — Demo Profile\nCypress + the real API, in-memory\nexact values"]
     Live["E2E — Live\nCypress + real backend\nrequired CI job"]
     A11y["Accessibility\ncypress-axe\nis it usable?"]
+    Layout["Layout\nthe a11y sweep, at five sizes\ndoes it fit?"]
     Visual["Visual Regression\nCypress + pixelmatch\ndoes it still look right?"]
     Lighthouse["Lighthouse\nlab performance\nis the first load sound?"]
     Mutation["Mutation\nStryker\nchecks the checkers"]
@@ -18,6 +19,7 @@ flowchart TB
     Unit --> Demo
     Demo --> Live
     Demo --> A11y
+    A11y --> Layout
     Demo --> Visual
     Demo --> Lighthouse
     Mutation -.mutates.-> Unit
@@ -28,7 +30,7 @@ flowchart TB
     classDef meta fill:#dcfce7,stroke:#16a34a,color:#111827;
     class Unit fast;
     class Demo e2e;
-    class A11y,Visual,Lighthouse e2e;
+    class A11y,Layout,Visual,Lighthouse e2e;
     class Live live;
     class Mutation meta;
 ```
@@ -40,6 +42,7 @@ flowchart TB
 | Property           | Does the rule hold for _every_ input, not just the ones someone thought of? | fast-check                                           | `npm run test:unit` (same suite)         | [Property Testing](./property-testing.md)                                                                     |
 | Cross-cutting      | Is the repository still the shape it claims to be?                          | Vitest, reading the filesystem                       | `npm run test:unit` (same suite)         | [Unit Testing](./unit-testing.md#the-cross-cutting-layer)                                                     |
 | Accessibility      | Are there mechanical a11y failures on the routes a user reaches?            | cypress-axe                                          | `npm run test:e2e` (same suite)          | [Accessibility Testing](./accessibility-testing.md)                                                           |
+| Layout             | Does every page fit, and stay usable, at every width?                       | Cypress + the a11y sweep's own checks                | `npm run test:e2e` (same suite)          | [Layout Sweep](./layout-sweep.md)                                                                             |
 | Touch              | Can a finger reach everything a mouse can?                                  | Cypress + CDP touch emulation + cypress-real-events  | `npm run test:e2e` (same suite)          | [Touch Testing](./touch-testing.md)                                                                           |
 | Visual Regression  | Does the page still **look** the way it did?                                | Cypress + pixelmatch                                 | `npm run test:e2e:visual`                | [Visual Regression](./visual-regression.md)                                                                   |
 | Lab performance    | Is a phone's first load stable and structurally sound?                      | Lighthouse (Node API) + puppeteer-core               | `npm run test:lighthouse` (nightly)      | [Lighthouse](./lighthouse.md)                                                                                 |
@@ -54,6 +57,37 @@ None of these layers replaces another — each closes a gap the others structura
 - **Demo profile** runs the whole app against the real API — the paired backend's [demo profile](./demo-profile.md), one in-memory instance per shard — deterministic because the seeds are, so it can assert exact counts and values. The awkward shapes it needs (a soft-deleted product, an inactive one, one whose optional fields are all at their schema defaults) are records in the backend's demo dataset rather than generated: a named record can be asserted on, and it is a shape the real API actually answers with, because the real API is answering.
 - **Live** runs the same specs against the fully-composed stack — the real cache, the real broker, a cookie over a real network — everything the demo profile deliberately disables. It needs both repos plus a Mongo and a Redis, so it is minutes rather than seconds; it still gates every PR, after the fast layers have had their say.
 - **Mutation** doesn't test the app at all — it tests the _tests_, and only for the layer it's pointed at (unit).
+
+## Design and mobile checks
+
+A screen can pass every test above and still break on a phone, drift off the design tokens, or work
+only with a mouse. These checks cover that: automated where a rule can decide, a person where only
+judgement can.
+
+```mermaid
+flowchart TB
+    subgraph source["At the source: ESLint and Vitest, in the gate"]
+        Lint["Design lint<br/>tokens · arbitrary values · dialogs"]
+    end
+    subgraph browser["In the browser: Cypress, in the gate"]
+        Layout["Layout sweep<br/>overflow · clipped · covered · tap size"]
+        Touch["Touch testing<br/>hover-only · gestures"]
+    end
+    subgraph report["Reports: nightly, not a gate"]
+        Visual["Visual regression<br/>how it looks"]
+        Lighthouse["Lighthouse<br/>how a phone loads it"]
+    end
+    VP[("scripts/e2e/viewports.ts")]
+    VP --> Layout & Touch & Visual & Lighthouse
+```
+
+| Check             | Question                                                     | Page                                        |
+| ----------------- | ------------------------------------------------------------ | ------------------------------------------- |
+| Design lint       | Is the style on the design's tokens, with a reason when not? | [Design Lint](./design-lint.md)             |
+| Layout sweep      | Does every page fit at every width?                          | [Layout Sweep](./layout-sweep.md)           |
+| Touch testing     | Can a finger reach everything a mouse can?                   | [Touch Testing](./touch-testing.md)         |
+| Visual regression | Does it still look the way it did?                           | [Visual Regression](./visual-regression.md) |
+| Lighthouse        | Is a phone's first load stable and sound?                    | [Lighthouse](./lighthouse.md)               |
 
 ## Reading a run
 
