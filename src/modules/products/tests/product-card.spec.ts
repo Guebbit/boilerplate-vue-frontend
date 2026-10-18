@@ -104,6 +104,20 @@ describe('ProductCard — what a shopper reads', () => {
         expect(badge.attributes('data-shelf')).toBe('preorder');
     });
 
+    it('tells a backorder from sold out, always with its promise', () => {
+        const dated = mountCard(
+            aProduct({ backorder: true, inStock: false, restockDate: '2027-03-15T12:00:00.000Z' })
+        );
+        const undated = mountCard(aProduct({ backorder: true, inStock: false }));
+
+        const badge = dated.get('[data-test=product-card-availability]');
+        expect(badge.text()).toMatch(/^Backorder · ships by .*2027/);
+        expect(badge.attributes('data-shelf')).toBe('backorder');
+        expect(undated.get('[data-test=product-card-availability]').text()).toBe(
+            'Backorder · ships within 30 days'
+        );
+    });
+
     it.each([[3], [undefined]])(
         'marks an in-stock product with %j available as in stock — the flag decides, not the count',
         (available) => {

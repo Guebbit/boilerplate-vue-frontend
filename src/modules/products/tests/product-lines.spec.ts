@@ -156,10 +156,19 @@ describe('useProductLines', () => {
     it('words a preorder line with the date it ships from, and without one when the date is unknown', () => {
         const lines = mountLines();
 
-        expect(lines.availabilityLabel('preorder', '2027-03-15T12:00:00.000Z')).toMatch(
-            /^Preorder · ships .*2027/
-        );
+        expect(
+            lines.availabilityLabel('preorder', { releaseDate: '2027-03-15T12:00:00.000Z' })
+        ).toMatch(/^Preorder · ships .*2027/);
         expect(lines.availabilityLabel('preorder')).toBe('Preorder');
+    });
+
+    it('words a backorder line with the date it ships by, and always with a promise even without one', () => {
+        const lines = mountLines();
+
+        expect(
+            lines.availabilityLabel('backorder', { restockDate: '2027-03-15T12:00:00.000Z' })
+        ).toMatch(/^Backorder · ships by .*2027/);
+        expect(lines.availabilityLabel('backorder')).toBe('Backorder · ships within 30 days');
     });
 
     it('tells a product the shopper cannot see from one that is loaded, once the read has settled', () => {

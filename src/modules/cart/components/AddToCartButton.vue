@@ -16,6 +16,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Product } from '@types';
 import { shelfStateOf } from '@/modules/products';
+import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useCartStore } from '../store';
 
 /**
@@ -63,7 +64,8 @@ const { loading } = storeToRefs(cartStore);
 /**
  * The shelf as the shopper reads it, from the flags every reader gets (`purchasable`, `inStock`;
  * the exact counters are for stock readers only). Off sale and sold out both hold the button back;
- * a preorder does not, it is bought now and ships from its release date.
+ * a preorder does not, it is bought now and ships from its release date, and a backorder is bought
+ * now and ships by its restock date (or within 30 days), which the button states under itself.
  */
 const shelf = computed(() => shelfStateOf(product));
 
@@ -73,10 +75,20 @@ const shelf = computed(() => shelfStateOf(product));
 const label = computed(() => {
     if (shelf.value === 'off-sale') return t('add-to-cart-button.off-sale');
     if (shelf.value === 'preorder') return t('add-to-cart-button.preorder');
+    if (shelf.value === 'backorder') return t('add-to-cart-button.backorder');
     return shelf.value === 'out-of-stock'
         ? t('add-to-cart-button.out-of-stock')
         : t('add-to-cart-button.label');
 });
+
+/**
+ * What a backorder promises, always: the restock date, or "within 30 days" when the shop named none.
+ */
+const promise = computed(() =>
+    product.restockDate
+        ? t('add-to-cart-button.backorder-ships-by', { date: formatDate(product.restockDate) })
+        : t('add-to-cart-button.backorder-ships-undated')
+);
 
 /**
  * The button's own blocked state — see docs/theory/request-flow.md.
@@ -117,12 +129,21 @@ const handleAddToCart = () => {
         <v-btn
             color="primary"
             data-test="add-to-cart"
-            :disabled="(shelf !== 'in-stock' && shelf !== 'preorder') || loading"
+            :disabled="
+                (shelf !== 'in-stock' && shelf !== 'preorder' && shelf !== 'backorder') || loading
+            "
             @click="handleAddToCart"
         >
             <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />
             {{ label }}
         </v-btn>
+        <p
+            v-if="shelf === 'backorder'"
+            class="m-0 text-sm opacity-75"
+            data-test="add-to-cart-promise"
+        >
+            {{ promise }}
+        </p>
         <InlineErrorAlert :message="error" data-test="add-to-cart-error" />
     </div>
 </template>

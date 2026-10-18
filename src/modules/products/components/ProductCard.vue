@@ -47,6 +47,7 @@ const productActions = useSlot('product-actions');
 const SHELF_LABELS: Record<ShelfState, string> = {
     'in-stock': 'product-card.in-stock',
     preorder: 'product-card.preorder',
+    backorder: 'product-card.backorder',
     'out-of-stock': 'product-card.out-of-stock',
     'off-sale': 'product-card.off-sale'
 };
@@ -57,6 +58,7 @@ const SHELF_LABELS: Record<ShelfState, string> = {
 const SHELF_COLORS = {
     'in-stock': 'success',
     preorder: 'info',
+    backorder: 'warning',
     'out-of-stock': 'error',
     'off-sale': 'error'
 } satisfies Record<ShelfState, ThemeColor>;
@@ -65,6 +67,20 @@ const SHELF_COLORS = {
  * The shelf as the shopper reads it: off sale outranks a preorder with allowance left, which outranks the stock badge.
  */
 const shelf = computed(() => shelfStateOf(product));
+
+/**
+ * The badge text. A preorder names its release date; a backorder always names its promise: the
+ * restock date, or "within 30 days" when the shop named none.
+ */
+const shelfText = computed(() =>
+    shelf.value === 'backorder' && !product.restockDate
+        ? t('product-card.backorder-undated')
+        : t(SHELF_LABELS[shelf.value], {
+              date: formatDate(
+                  shelf.value === 'backorder' ? product.restockDate : product.releaseDate
+              )
+          })
+);
 </script>
 
 <template>
@@ -102,7 +118,7 @@ const shelf = computed(() => shelfStateOf(product));
                 :data-shelf="shelf"
                 data-test="product-card-availability"
             >
-                {{ t(SHELF_LABELS[shelf], { date: formatDate(product.releaseDate) }) }}
+                {{ shelfText }}
             </v-chip>
             <div class="mt-auto flex flex-wrap items-start gap-2 pt-2">
                 <component

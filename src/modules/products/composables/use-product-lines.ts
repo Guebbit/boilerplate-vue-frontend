@@ -45,10 +45,14 @@ export interface ProductLines {
      * `in_stock`, which needs none.
      *
      * @param availability - The line's `availability` from the server.
-     * @param releaseDate - The line's product's release date, for the `preorder` label's date.
+     * @param dates - The line's product's dates, read once its record has loaded: the release date
+     *  for a `preorder` label, the restock date for a `backorder` label.
      * @returns The label, or `undefined` for a line that can be bought as it stands.
      */
-    availabilityLabel: (availability: LineAvailability, releaseDate?: string) => string | undefined;
+    availabilityLabel: (
+        availability: LineAvailability,
+        dates?: Pick<Product, 'releaseDate' | 'restockDate'>
+    ) => string | undefined;
 
     /**
      * Whether a line's product is gone for this shopper: its read has settled without it, which
@@ -65,6 +69,7 @@ export interface ProductLines {
  */
 const LABEL_KEYS: Record<Exclude<LineAvailability, 'in_stock'>, string> = {
     preorder: 'product-lines.preorder',
+    backorder: 'product-lines.backorder',
     insufficient_stock: 'product-lines.insufficient-stock',
     out_of_stock: 'product-lines.out-of-stock',
     unavailable: 'product-lines.unavailable',
@@ -89,12 +94,19 @@ export const useProductLines = (): ProductLines => {
         productOf,
         titleOf: (productId) =>
             productOf(productId)?.title ?? (loading.value ? '' : t('product-lines.removed')),
-        availabilityLabel: (availability, releaseDate) => {
+        availabilityLabel: (availability, dates) => {
             if (availability === 'in_stock') return undefined;
             // The date is the product's, read once its record has loaded; until then say what is known.
-            if (availability === 'preorder' && !releaseDate)
+            if (availability === 'preorder' && !dates?.releaseDate)
                 return t('product-lines.preorder-undated');
-            return t(LABEL_KEYS[availability], { date: formatDate(releaseDate) });
+            // A backorder always carries its promise: a date, or 30 days when the shop named none.
+            if (availability === 'backorder' && !dates?.restockDate)
+                return t('product-lines.backorder-undated');
+            return t(LABEL_KEYS[availability], {
+                date: formatDate(
+                    availability === 'backorder' ? dates?.restockDate : dates?.releaseDate
+                )
+            });
         },
         isRemoved: (productId) => !loading.value && productOf(productId) === undefined
     };

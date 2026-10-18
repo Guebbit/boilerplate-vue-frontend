@@ -700,6 +700,22 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             }}
                                         </p>
                                         <p
+                                            v-if="item.backorderedQuantity"
+                                            class="m-0 mb-2 text-sm opacity-75"
+                                            data-test="order-item-owed"
+                                        >
+                                            {{
+                                                item.promiseDated
+                                                    ? t('order-target-page.owed-line', {
+                                                          count: item.backorderedQuantity,
+                                                          date: formatDate(item.promisedAt)
+                                                      })
+                                                    : t('order-target-page.owed-line-undated', {
+                                                          count: item.backorderedQuantity
+                                                      })
+                                            }}
+                                        </p>
+                                        <p
                                             v-if="item.product.noWithdrawal"
                                             class="m-0 mb-2 text-sm opacity-75"
                                             data-test="order-item-no-withdrawal"

@@ -126,6 +126,22 @@ describe('the shelf', () => {
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Preorder');
     });
 
+    it('lets a backorder be bought and states its promise, a date or 30 days', () => {
+        signIn();
+        const dated = mountButton({
+            ...IN_STOCK,
+            inStock: false,
+            backorder: true,
+            restockDate: '2027-03-15T12:00:00.000Z'
+        });
+        const undated = mountButton({ ...IN_STOCK, inStock: false, backorder: true });
+
+        expect(dated.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
+        expect(dated.get('[data-test=add-to-cart]').text()).toContain('Backorder');
+        expect(dated.get('[data-test=add-to-cart-promise]').text()).toMatch(/Ships by .*2027/);
+        expect(undated.get('[data-test=add-to-cart-promise]').text()).toContain('within 30 days');
+    });
+
     it('shuts a preorder whose allowance is full, as out of stock', () => {
         signIn();
         const wrapper = mountButton({ ...IN_STOCK, inStock: false, preorder: true });

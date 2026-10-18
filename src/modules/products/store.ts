@@ -238,7 +238,7 @@ export const useProductsStore = defineStore('products', () => {
             // no way to guess them ahead of the response, so they stay whatever they were until
             // the real one arrives.
             //
-            // `weight`/`imageUrl`/`taxClass`/`rateType`/`sku`/`releaseDate` accept `null` on the wire (clears the
+            // `weight`/`imageUrl`/`taxClass`/`rateType`/`sku`/`releaseDate`/`restockDate` accept `null` on the wire (clears the
             // field) but the LOCAL `Product` never does; `null` reads as "leave the optimistic
             // guess alone" here, same as omitting the field, since the real clear only takes
             // visible effect once the response the two lines above already wait for lands.
@@ -251,17 +251,22 @@ export const useProductsStore = defineStore('products', () => {
                 rateType,
                 sku,
                 releaseDate,
+                restockDate,
                 ...productData
             }) => ({
                 ...productData,
-                ...omitNulls({ weight, imageUrl, taxClass, rateType, sku, releaseDate }, [
-                    'weight',
-                    'imageUrl',
-                    'taxClass',
-                    'rateType',
-                    'sku',
-                    'releaseDate'
-                ])
+                ...omitNulls(
+                    { weight, imageUrl, taxClass, rateType, sku, releaseDate, restockDate },
+                    [
+                        'weight',
+                        'imageUrl',
+                        'taxClass',
+                        'rateType',
+                        'sku',
+                        'releaseDate',
+                        'restockDate'
+                    ]
+                )
             })
         },
         {

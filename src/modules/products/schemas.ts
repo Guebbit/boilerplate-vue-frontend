@@ -75,6 +75,8 @@ export const productsSchema = z.object({
     purchasable: z.boolean().nullish(),
     // The `datetime-local` field's own string; the wire spelling is `fromDateTimeLocal`'s.
     releaseDate: z.string().nullish(),
+    allowBackorder: z.boolean().nullish(),
+    restockDate: z.string().nullish(),
     requiresShipping: z.boolean().nullish(),
     noWithdrawal: z.boolean().nullish(),
     weight: z.number().nullish(),
