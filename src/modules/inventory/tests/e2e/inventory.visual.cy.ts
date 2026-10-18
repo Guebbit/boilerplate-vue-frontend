@@ -15,4 +15,16 @@ import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
 // The ready selector is a board row, not the page shell — a baseline of the loading state
 // would be stable, meaningless, and never fail.
-sweepVisual('inventory', [['inventory-ledger', '/en/inventory', '[data-test=level-row]']], 'admin');
+sweepVisual(
+    'inventory',
+    [
+        // One staff screen on a phone, the warehouse floor: stacked table plus the movement form.
+        {
+            name: 'inventory-ledger',
+            route: '/en/inventory',
+            readySelector: '[data-test=level-row]',
+            viewports: ['desktop', 'phone']
+        }
+    ],
+    'admin'
+);

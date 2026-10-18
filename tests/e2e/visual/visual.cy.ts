@@ -13,14 +13,69 @@
 import { sweepVisual } from '../../support/e2e/visual-sweep';
 
 sweepVisual('the shell', [
-    ['home', '/en', '#home-page'],
+    // Hamburger bar, hero and cards stacking: the phone and tablet are the two layouts that differ.
+    {
+        name: 'home',
+        route: '/en',
+        readySelector: '#home-page',
+        viewports: ['desktop', 'phone', 'tablet']
+    },
+    {
+        name: 'home',
+        route: '/en',
+        readySelector: '#home-page',
+        viewports: ['phone'],
+        theme: 'dark'
+    },
+    {
+        // The drawer exists only below `lg`, so it has no desktop photograph.
+        name: 'drawer',
+        route: '/en',
+        readySelector: '#home-page',
+        viewports: ['phone'],
+        prepare: () => {
+            cy.get('[aria-controls=app-drawer]').click();
+            cy.get('#app-drawer').should('be.visible');
+        }
+    },
     ['about', '/en/about', '#static-page-about'],
     ['faq', '/en/faq', '#static-page-faq'],
     ['not-found', '/en/this-route-does-not-exist', '#error-page']
 ]);
 
 // The signed-in header: the cart pinned beside the account menu, count and total on it.
-sweepVisual('the shell, signed in', [['home-signed-in', '/en', '#home-page']], 'user');
+sweepVisual(
+    'the shell, signed in',
+    [
+        // The pinned cart and the account menu share 390 px on a phone.
+        {
+            name: 'home-signed-in',
+            route: '/en',
+            readySelector: '#home-page',
+            viewports: ['desktop', 'phone']
+        }
+    ],
+    'user'
+);
+
+// The longest drawer there is: every staff section on top of the shopper's.
+sweepVisual(
+    'the shell, staff drawer',
+    [
+        {
+            name: 'drawer, every section',
+            route: '/en',
+            readySelector: '#home-page',
+            viewports: ['phone'],
+            prepare: () => {
+                cy.get('[aria-controls=app-drawer]').click();
+                cy.get('#app-drawer').should('be.visible');
+                cy.get('[data-test=drawer-section-admin]').should('be.visible');
+            }
+        }
+    ],
+    'admin'
+);
 
 /*
  * Sentinel: the visual run hides scrollbars (`ELECTRON_EXTRA_LAUNCH_ARGS=--hide-scrollbars` in the

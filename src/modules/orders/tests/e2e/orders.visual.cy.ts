@@ -21,6 +21,14 @@ sweepVisual(
                 '#orders-list-page tbody td:nth-child(5)',
                 '#orders-list-page tbody td:nth-child(6)'
             ]
+        },
+        {
+            // The page after checkout: payment panel and transfer instructions.
+            name: 'order, awaiting transfer',
+            route: () => cy.subjectId('order.awaitingTransfer').then((id) => `/en/orders/${id}`),
+            readySelector: '#order-target',
+            viewports: ['phone'],
+            redact: ['[data-test=order-number]']
         }
     ],
     'user'
