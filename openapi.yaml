@@ -79,6 +79,8 @@ tags:
     description: The signed-in user's in-app notifications and their delivery preferences.
   - name: Shop
     description: The shop itself — who it is, where it ships, and what it trades in.
+  - name: StockAlerts
+    description: Requests to be told once when a product the caller cannot order can be again.
 paths:
   /:
     get:
@@ -6204,7 +6206,7 @@ paths:
       description: |
         One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
         board: the fulfillment orders of preorders, where they stand with their buyer, and which are late.
-        `preorder=true` keeps those made from a preorder line (the ones that carry an agreed date).
+        `cause` keeps one kind of wait: `preorder`, `backorder`, or `any` that carries an agreed date.
 
         `late=true` is the Late view: the expected date has passed and units remain, whether still waiting
         for stock, allocated and not yet shipped, or part shipped. `dueWithin=N` is its warning: still
@@ -6220,12 +6222,16 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/PageSizeParam"
-        - name: preorder
+        - name: cause
           in: query
           required: false
           schema:
-            type: boolean
-          description: "`true` keeps fulfillment orders made from a preorder line, `false` the others; absent keeps both."
+            type: string
+            enum:
+              - preorder
+              - backorder
+              - any
+          description: "Why it waits: `preorder` (not released yet), `backorder` (out of stock), or `any` wait that carries a promised date; absent keeps all."
         - name: state
           in: query
           required: false
@@ -6958,16 +6964,16 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
-  /inventory/levels/{productId}/preorder-limit:
+  /inventory/levels/{productId}/backorder-limit:
     put:
       tags:
         - Inventory
       summary: Set a product's preorder limit
       description: |
-        Sets how many units of the product may be preordered at once: the allowance an order claims when it is placed. `0` closes preordering. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
+        Sets how many units of the product may be backordered at once: the allowance an order claims when it is placed. `0` closes it; `null` removes the cap, so the shop keeps selling whatever the date promises. Lowering it below what is already outstanding is allowed and leaves those orders alone; only new ones are refused. Absolute and idempotent, so a retry is safe.
 
         Not a stock movement: nothing on the shelf changes, so it leaves no ledger row (it is audited).
-      operationId: setPreorderLimit
+      operationId: setBackorderLimit
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -6983,7 +6989,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PreorderLimitRequest"
+              $ref: "#/components/schemas/BackorderLimitRequest"
       responses:
         "200":
           description: The counters after the change
@@ -7018,7 +7024,7 @@ paths:
         - Inventory
       summary: Preorder allowances
       description: |
-        Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `preordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
+        Every product with a preorder allowance or an outstanding preorder, for the admin's preorder board: the cap, what is outstanding against it and how that splits between orders still unpaid and orders already paid. `backordered` is OUTSTANDING units, not units ever sold: it falls when stock arrives and is allocated, and when an order is cancelled or expires. `ordered` is the lifetime count, read off the ledger.
 
         The release date and the title come from the catalogue. Never public: exact counts are what a competitor wants.
       operationId: listPreorderLevels
@@ -8414,6 +8420,63 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
+  /delivery/fulfillment-orders/restock-date-impact:
+    get:
+      tags:
+        - Delivery
+      summary: What moving a product's restock date would tell the buyers
+      description: |
+        A preview for staff about to save a restock date, so the save is never a surprise. Counts the
+        orders whose backordered units for this product would get a notice (`notify`: a short first
+        slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
+        by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+        the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
+        preview and the save can shift them.
+
+        `restockDate` absent or blank previews a CLEARED date, which asks every buyer who was promised that date. A buyer promised the 30-day default is left alone. The same
+        format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
+        nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
+        is never cached.
+      operationId: previewRestockDateImpact
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: productId
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The product whose restock date would move.
+        - name: restockDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: The date to preview, an ISO 8601 date-time with a zone. Absent or blank means cleared.
+      responses:
+        "200":
+          description: How many orders the move would notify and how many it would ask
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReleaseDateImpactEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
   /stats/sales:
     get:
       tags:
@@ -9221,6 +9284,97 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: shop
+  /stock-alerts:
+    get:
+      tags:
+        - StockAlerts
+      summary: List my back-in-stock requests
+      description: "Returns the authenticated user's open requests, newest first. A request is used once: when it is answered it is deleted, so an answered one never appears here. Absence and emptiness are the same state, so this never answers 404."
+      operationId: listStockAlerts
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: The caller's open requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockAlertsResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: stock-alerts
+  /stock-alerts/{productId}:
+    post:
+      tags:
+        - StockAlerts
+      summary: Ask to be told when a product is back
+      description: Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+      operationId: createStockAlert
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProductIdPathParam"
+      responses:
+        "200":
+          description: The caller's open requests, including this one
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockAlertsResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: stock-alerts
+    delete:
+      tags:
+        - StockAlerts
+      summary: Cancel a back-in-stock request
+      description: Cancels the caller's own request before it is answered. A request the caller does not hold is a 404, because the client's view is stale and it needs to know.
+      operationId: deleteStockAlert
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProductIdPathParam"
+      responses:
+        "200":
+          description: The caller's remaining open requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockAlertsResponseEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: stock-alerts
 components:
   securitySchemes:
     bearerAuth:
@@ -12933,6 +13087,10 @@ components:
       type: string
       format: date-time
       description: When a product ships from, as an ISO 8601 date-time with a zone. A product with a future date that is active and purchasable is a preorder. At most one year ahead (Google's `availability_date` rule); a date in the past is accepted and simply means "released". Moving it later notifies the buyers who already paid (`delivery`).
+    RestockDate:
+      type: string
+      format: date-time
+      description: When stock is expected back, as an ISO 8601 date-time with a zone, for a product that allows backorder. At most one year ahead. Without one the shop promises delivery within 30 days. A date in the past is accepted and the product then reads sold out until staff set a new date or clear it. Moving it later notifies the buyers who already paid (`delivery`).
     Product:
       type: object
       additionalProperties: false
@@ -12995,10 +13153,18 @@ components:
           default: true
         releaseDate:
           $ref: "#/components/schemas/ReleaseDate"
+        allowBackorder:
+          type: boolean
+        restockDate:
+          $ref: "#/components/schemas/RestockDate"
         preorder:
           type: boolean
           readOnly: true
           description: "The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`."
+        backorder:
+          type: boolean
+          readOnly: true
+          description: "The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise."
         requiresShipping:
           type: boolean
           default: true
@@ -13115,6 +13281,11 @@ components:
           default: true
         releaseDate:
           $ref: "#/components/schemas/ReleaseDate"
+        allowBackorder:
+          type: boolean
+          default: false
+        restockDate:
+          $ref: "#/components/schemas/RestockDate"
         requiresShipping:
           type: boolean
           default: true
@@ -13171,6 +13342,13 @@ components:
           type: string
           allOf:
             - $ref: "#/components/schemas/ReleaseDate"
+        allowBackorder:
+          type: boolean
+          default: false
+        restockDate:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/RestockDate"
         requiresShipping:
           type: boolean
           default: true
@@ -13308,6 +13486,12 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReleaseDate"
             - type: "null"
+        allowBackorder:
+          type: boolean
+        restockDate:
+          oneOf:
+            - $ref: "#/components/schemas/RestockDate"
+            - type: "null"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -13373,6 +13557,12 @@ components:
           type: string
           allOf:
             - $ref: "#/components/schemas/ReleaseDate"
+        allowBackorder:
+          type: boolean
+        restockDate:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/RestockDate"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -13454,6 +13644,12 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReleaseDate"
             - type: "null"
+        allowBackorder:
+          type: boolean
+        restockDate:
+          oneOf:
+            - $ref: "#/components/schemas/RestockDate"
+            - type: "null"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -13511,6 +13707,12 @@ components:
           type: string
           allOf:
             - $ref: "#/components/schemas/ReleaseDate"
+        allowBackorder:
+          type: boolean
+        restockDate:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/RestockDate"
         requiresShipping:
           type: boolean
         noWithdrawal:
@@ -13605,10 +13807,18 @@ components:
           type: boolean
         releaseDate:
           $ref: "#/components/schemas/ReleaseDate"
+        allowBackorder:
+          type: boolean
+        restockDate:
+          $ref: "#/components/schemas/RestockDate"
         preorder:
           type: boolean
           readOnly: true
           description: "The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`."
+        backorder:
+          type: boolean
+          readOnly: true
+          description: "The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise."
         requiresShipping:
           type: boolean
           default: true
@@ -13709,6 +13919,11 @@ components:
         - `in_stock`: buyable, enough stock. - `preorder`: buyable before its release date; it ships from `releaseDate`. Judged
           against the preorder allowance, so `out_of_stock` and `insufficient_stock` mean
           the allowance is full or short, not that the shelf is empty.
+        - `backorder`: a released product the shop keeps selling while it is out of stock.
+          The shelf covers less than the line asks for (or nothing, for a wishlist line), and
+          the rest is owed, to arrive by the product's `restockDate` or within 30 days. Judged
+          against the shelf and the room under the cap together, so `out_of_stock` and
+          `insufficient_stock` mean both are used up.
         - `insufficient_stock`: some left, fewer than the line wants (cart lines only). - `out_of_stock`: none left. - `unavailable`: the product is taken off sale (`purchasable: false`). - `removed`: the product is hidden (`active: false`) or deleted. The line is kept,
           and returns to a stock value if the product is shown again.
 
@@ -13716,6 +13931,7 @@ components:
       enum:
         - in_stock
         - preorder
+        - backorder
         - insufficient_stock
         - out_of_stock
         - unavailable
@@ -14049,6 +14265,17 @@ components:
           minimum: 1
         locale:
           $ref: "#/components/schemas/Locale"
+        backorderedQuantity:
+          type: integer
+          minimum: 1
+          description: How many of `quantity` were owed rather than on the shelf when the order was placed. Absent when the shelf covered the whole line.
+        promisedAt:
+          type: string
+          format: date-time
+          description: "When the owed units were promised: the product's `restockDate`, or the day the order was placed plus 30 days when it had none. Present with `backorderedQuantity` and frozen with it, so a later change to the catalogue moves no promise."
+        promiseDated:
+          type: boolean
+          description: Whether `promisedAt` was a date the product named. `false` means the buyer was promised delivery "within 30 days" of the order. Present with `promisedAt`.
         current:
           oneOf:
             - $ref: "#/components/schemas/OrderLineCurrent"
@@ -16062,8 +16289,8 @@ components:
         - onHand
         - reserved
         - available
-        - preorderLimit
-        - preordered
+        - backorderLimit
+        - backordered
       properties:
         productId:
           $ref: "#/components/schemas/Id"
@@ -16079,11 +16306,13 @@ components:
         available:
           type: integer
           minimum: 0
-        preorderLimit:
-          type: integer
+        backorderLimit:
+          type:
+            - integer
+            - "null"
           minimum: 0
-          description: How many units may be preordered at once. `0` means preordering is closed.
-        preordered:
+          description: How many units may be backordered at once. `0` means it is closed; `null` means there is no cap.
+        backordered:
           type: integer
           minimum: 0
           description: Preorder units outstanding against the limit, paid or not, until stock arrives and is allocated to them.
@@ -16117,16 +16346,18 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/InventoryLevelsResponse"
-    PreorderLimitRequest:
+    BackorderLimitRequest:
       type: object
       additionalProperties: false
       required:
-        - preorderLimit
+        - backorderLimit
       properties:
-        preorderLimit:
-          type: integer
+        backorderLimit:
+          type:
+            - integer
+            - "null"
           minimum: 0
-          description: The new allowance. `0` closes preordering.
+          description: "The new allowance. `0` closes it. `null` removes the cap: set a cap equal to the incoming quantity if the date must hold for everyone."
     InventoryLevelEnvelope:
       type: object
       additionalProperties: false
@@ -16150,11 +16381,10 @@ components:
       required:
         - productId
         - title
-        - preorderLimit
-        - preordered
+        - backorderLimit
+        - backordered
         - held
         - paid
-        - left
         - ordered
       properties:
         productId:
@@ -16163,10 +16393,13 @@ components:
           type: string
         releaseDate:
           $ref: "#/components/schemas/ReleaseDate"
-        preorderLimit:
-          type: integer
+        backorderLimit:
+          type:
+            - integer
+            - "null"
           minimum: 0
-        preordered:
+          description: The cap on owed units. `null` means there is no cap.
+        backordered:
           type: integer
           minimum: 0
           description: Outstanding units, `held + paid`. Drops when stock is allocated, so it is not "units sold".
@@ -16179,9 +16412,11 @@ components:
           minimum: 0
           description: Outstanding units on paid orders, waiting for stock oldest payment first.
         left:
-          type: integer
+          type:
+            - integer
+            - "null"
           minimum: 0
-          description: "`preorderLimit - preordered`, never below zero: how many more may be ordered."
+          description: "`backorderLimit - backordered`, never below zero: how many more may be ordered. `null` when there is no cap. Absent while the product is neither a preorder nor open to backorder: its cap then promises nothing."
         ordered:
           type: integer
           minimum: 0
@@ -16226,7 +16461,7 @@ components:
         - receive
         - adjust
         - restock
-        - preorder
+        - backorder
         - allocate
       description: |
         * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
@@ -16236,10 +16471,10 @@ components:
         * `receive` — a supplier delivery. `onHand` up.
         * `adjust` — a stocktake correction, signed. `onHand` moves either way.
         * `restock` — returned goods were received back on the shelf. `onHand` up.
-        * `preorder` — an order claimed units that do not exist yet. `preordered` up; the shelf is untouched.
-        * `allocate` — stock arrived for a paid preorder. `preordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
+        * `preorder` — an order claimed units that do not exist yet. `backordered` up; the shelf is untouched.
+        * `allocate` — stock arrived for a paid preorder. `backordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
 
-        `release` and `expire` of a preorder claim give back the allowance (`preordered` down) instead of `reserved`.
+        `release` and `expire` of a preorder claim give back the allowance (`backordered` down) instead of `reserved`.
     StockMovement:
       type: object
       additionalProperties: false
@@ -16249,7 +16484,7 @@ components:
         - reason
         - onHandDelta
         - reservedDelta
-        - preorderedDelta
+        - backorderedDelta
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -16261,7 +16496,7 @@ components:
           type: integer
         reservedDelta:
           type: integer
-        preorderedDelta:
+        backorderedDelta:
           type: integer
         reference:
           type: string
@@ -17525,7 +17760,7 @@ components:
         createdAt:
           type: string
           format: date-time
-    PreorderDelayedParams:
+    FulfillmentDelayedParams:
       type: object
       additionalProperties: false
       required:
@@ -17533,7 +17768,7 @@ components:
         - fulfillmentOrderId
         - titles
         - agreedAt
-      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised, the date now expected (absent when there is none) and, for `notifications.preorder-confirm-wait`, by when silence cancels."
+      description: "What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised, the date now expected (absent when there is none) and, for `notifications.fulfillment-confirm-wait`, by when silence cancels."
       properties:
         orderId:
           $ref: "#/components/schemas/Id"
@@ -17553,7 +17788,7 @@ components:
         answerBy:
           type: string
           format: date-time
-    NotificationPreorderDelayed:
+    NotificationFulfillmentDelayed:
       type: object
       additionalProperties: false
       description: A preorder the caller paid for will arrive later than promised; cancelling is open and silence keeps waiting.
@@ -17569,9 +17804,9 @@ components:
         code:
           type: string
           enum:
-            - notifications.preorder-delayed
+            - notifications.fulfillment-delayed
         params:
-          $ref: "#/components/schemas/PreorderDelayedParams"
+          $ref: "#/components/schemas/FulfillmentDelayedParams"
         severity:
           $ref: "#/components/schemas/NotificationSeverity"
         readAt:
@@ -17581,7 +17816,7 @@ components:
         createdAt:
           type: string
           format: date-time
-    NotificationPreorderConfirmWait:
+    NotificationFulfillmentConfirmWait:
       type: object
       additionalProperties: false
       description: A preorder the caller paid for is late and the shop needs an answer — keep waiting, or cancel; silence until `answerBy` cancels and refunds.
@@ -17597,9 +17832,9 @@ components:
         code:
           type: string
           enum:
-            - notifications.preorder-confirm-wait
+            - notifications.fulfillment-confirm-wait
         params:
-          $ref: "#/components/schemas/PreorderDelayedParams"
+          $ref: "#/components/schemas/FulfillmentDelayedParams"
         severity:
           $ref: "#/components/schemas/NotificationSeverity"
         readAt:
@@ -17658,23 +17893,65 @@ components:
         createdAt:
           type: string
           format: date-time
+    NotificationStockAlert:
+      type: object
+      additionalProperties: false
+      description: A product the caller asked to be told about can be ordered again. Sent once, then the request is gone.
+      required:
+        - id
+        - code
+        - params
+        - severity
+        - createdAt
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        code:
+          type: string
+          enum:
+            - notifications.stock-alert
+        params:
+          $ref: "#/components/schemas/CartLineRemovedParams"
+        severity:
+          $ref: "#/components/schemas/NotificationSeverity"
+        readAt:
+          type: string
+          format: date-time
+          description: When the owner opened the bell past it; absent while unread. The badge counts the ones without it.
+        createdAt:
+          type: string
+          format: date-time
     Notification:
       oneOf:
         - $ref: "#/components/schemas/NotificationCartLineRemoved"
         - $ref: "#/components/schemas/NotificationWishlistItemRemoved"
         - $ref: "#/components/schemas/NotificationCartMergeRefused"
-        - $ref: "#/components/schemas/NotificationPreorderDelayed"
-        - $ref: "#/components/schemas/NotificationPreorderConfirmWait"
+        - $ref: "#/components/schemas/NotificationFulfillmentDelayed"
+        - $ref: "#/components/schemas/NotificationFulfillmentConfirmWait"
         - $ref: "#/components/schemas/NotificationFulfillmentHeld"
+        - $ref: "#/components/schemas/NotificationStockAlert"
       discriminator:
         propertyName: code
         mapping:
           notifications.cart-line-removed: "#/components/schemas/NotificationCartLineRemoved"
           notifications.wishlist-item-removed: "#/components/schemas/NotificationWishlistItemRemoved"
           notifications.cart-merge-refused: "#/components/schemas/NotificationCartMergeRefused"
-          notifications.preorder-delayed: "#/components/schemas/NotificationPreorderDelayed"
-          notifications.preorder-confirm-wait: "#/components/schemas/NotificationPreorderConfirmWait"
+          notifications.fulfillment-delayed: "#/components/schemas/NotificationFulfillmentDelayed"
+          notifications.fulfillment-confirm-wait: "#/components/schemas/NotificationFulfillmentConfirmWait"
           notifications.fulfillment-held: "#/components/schemas/NotificationFulfillmentHeld"
+          notifications.stock-alert: "#/components/schemas/NotificationStockAlert"
+    StockAlert:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - createdAt
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        createdAt:
+          type: string
+          format: date-time
     AccountExportResponse:
       type: object
       additionalProperties: false
@@ -17698,6 +17975,7 @@ components:
         - roles
         - examples
         - notifications
+        - stockAlerts
       properties:
         exportedAt:
           type: string
@@ -17798,6 +18076,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Notification"
+        stockAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockAlert"
     MergeCartRequest:
       type: object
       additionalProperties: false
@@ -18960,6 +19242,33 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/Shop"
+    StockAlertsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockAlert"
+    StockAlertsResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/StockAlertsResponse"
 x-error-codes:
   ADDRESS_BOOK_FULL:
     status: 409
@@ -19228,6 +19537,9 @@ x-error-codes:
   SESSION_IDLE:
     status: 401
     description: A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this.
+  STOCK_ALERT_PRODUCT_BUYABLE:
+    status: 409
+    description: The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot.
   TWO_FACTOR_RESEND_TOO_SOON:
     status: 429
     description: A two-factor code was already sent recently — carries `details.retryAfter`.

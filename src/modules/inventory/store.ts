@@ -15,7 +15,7 @@ import {
     listPreorderLevels,
     listStockMovements,
     receiveStock,
-    setPreorderLimit,
+    setBackorderLimit,
     sweepReservations
 } from '@api';
 import type {
@@ -170,16 +170,16 @@ export const useInventoryStore = defineStore('inventory', () => {
         });
 
     /**
-     * Sets how many units of a product may be preordered at once, then reloads the board.
+     * Sets how many units of a product may be backordered at once, then reloads the board.
      *
      * @param productId - The product.
-     * @param preorderLimit - The new allowance; `0` closes preordering. Lowering it below what is
+     * @param backorderLimit - The new allowance; `0` closes preordering. Lowering it below what is
      *  outstanding is allowed: only new preorders are refused.
      * @returns A promise resolving with the level after the write.
      */
-    const setLimit = (productId: string, preorderLimit: number) =>
+    const setLimit = (productId: string, backorderLimit: number | null) =>
         fetchAny(() =>
-            setPreorderLimit(productId, { preorderLimit }).then((response) =>
+            setBackorderLimit(productId, { backorderLimit }).then((response) =>
                 fetchLevels().then(() => response.data)
             )
         );

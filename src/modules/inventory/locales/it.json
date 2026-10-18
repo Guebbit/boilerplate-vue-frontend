@@ -45,11 +45,12 @@
         "button-history-named": "Storico di {name}",
         "pagination-board": "Pagine della giacenza",
         "pagination-ledger": "Pagine del registro",
-        "reason-preorder": "Preordinato",
+        "reason-backorder": "Preordinato",
         "reason-allocate": "Assegnato",
-        "column-preorder-limit": "Limite preordini",
-        "column-preordered": "Preordinati",
-        "button-preorder-limit-named": "Imposta il limite di preordini di {name}"
+        "column-backorder-limit": "Limite su esaurito",
+        "column-backordered": "Preordinati",
+        "button-backorder-limit-named": "Imposta il limite su esaurito di {name}",
+        "unlimited": "Illimitato"
     },
     "opening-stock-field": {
         "label": "Scorta iniziale",
@@ -60,12 +61,14 @@
         "label-inventory": "Magazzino",
         "label-preorders": "Preordini"
     },
-    "preorder-limit-dialog": {
-        "title": "Limite di preordini di {name}",
-        "label-limit": "Unità preordinabili in una volta",
-        "hint-limit": "0 chiude i preordini. Ora ne risultano {outstanding}; un limite più basso lascia quegli ordini e rifiuta solo i nuovi.",
+    "backorder-limit-dialog": {
+        "title": "Limite di ordini su esaurito di {name}",
+        "label-limit": "Unità che si possono dovere in una volta",
         "button-save": "Salva limite",
-        "success": "Limite di preordini salvato."
+        "success": "Limite salvato.",
+        "label-unlimited": "Nessun limite",
+        "hint-unlimited": "Imposta un tetto pari alla quantità in arrivo se la data deve valere per tutti.",
+        "hint-limit": "0 lo chiude. Ora ne risultano {outstanding}; un limite più basso lascia quegli ordini e rifiuta solo i nuovi."
     },
     "preorders-page": {
         "page-title": "Preordini",

@@ -38,7 +38,7 @@ const movement = (id: string, productId: string): StockMovement =>
         productId,
         onHandDelta: 1,
         reservedDelta: 0,
-        preorderedDelta: 0,
+        backorderedDelta: 0,
         reason: 'receipt',
         reference: null,
         note: null,
@@ -102,14 +102,14 @@ beforeEach(() => {
 });
 
 describe('MovementLedger preorder movements', () => {
-    it('shows the preordered counter’s own signed delta, and words an allocation', () => {
+    it('shows the backordered counter’s own signed delta, and words an allocation', () => {
         const wrapper = mountLedger([
             {
                 ...movement('m1', 'p1'),
                 reason: 'allocate',
                 onHandDelta: 0,
                 reservedDelta: 2,
-                preorderedDelta: -2
+                backorderedDelta: -2
             }
         ]);
 

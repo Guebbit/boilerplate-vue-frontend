@@ -1,0 +1,15 @@
+{
+    "notify-me": {
+        "button": "Avvisami",
+        "button-told": "Ti avviseremo"
+    },
+    "stock-alerts-page": {
+        "page-title": "Avvisi di rifornimento",
+        "empty": "Non stai aspettando nessun prodotto.",
+        "button-cancel": "Annulla",
+        "success-cancelled": "Richiesta annullata."
+    },
+    "navigation": {
+        "label-stock-alerts": "Avvisi di rifornimento"
+    }
+}

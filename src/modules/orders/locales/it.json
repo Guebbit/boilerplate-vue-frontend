@@ -111,7 +111,9 @@
         "return-status-returned": "Reso",
         "no-withdrawal": "Nessun diritto di recesso per questo articolo.",
         "button-history": "Cronologia",
-        "preorder-line": "Preordine: spedizione dal {date}."
+        "preorder-line": "Preordine: spedizione dal {date}.",
+        "owed-line": "{count} di questi sono su ordinazione e partiranno entro il {date}.",
+        "owed-line-undated": "{count} di questi sono su ordinazione e partiranno entro 30 giorni dal tuo ordine."
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",
@@ -178,7 +180,7 @@
         "type-invoice_issued": "Fattura emessa",
         "type-credit_note_issued": "Nota di credito emessa",
         "type-release_date_moved": "Data di uscita cambiata",
-        "type-delay_notice_sent": "Avviso di ritardo inviato all'acquirente",
+        "type-delay_notice_sent": "Avviso di ritardo inviato",
         "type-wait_confirmed": "L'acquirente ha scelto di aspettare",
         "type-address_corrected": "Indirizzo di spedizione corretto dal personale",
         "type-wait_expired": "Attesa scaduta senza risposta",
@@ -192,7 +194,7 @@
         "detail-tracking": "Tracking {value}",
         "detail-number": "N. {value}",
         "detail-expected": "Ora prevista il {value}",
-        "detail-needs-answer": "Annullato se senza risposta entro 30 giorni",
+        "detail-needs-answer": "Annullato se senza risposta in tempo",
         "date-none": "nessuna data",
         "by-customer": "il cliente",
         "by-admin": "lo staff",

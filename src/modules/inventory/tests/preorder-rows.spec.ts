@@ -47,10 +47,10 @@ describe('preorderRows', () => {
     it('lists the most late first, then the most outstanding, then by name', () => {
         const rows = preorderRows(
             [
-                aPreorderLevel({ productId: 'a', title: 'Alpha', preordered: 9 }),
-                aPreorderLevel({ productId: 'b', title: 'Bravo', preordered: 1 }),
-                aPreorderLevel({ productId: 'c', title: 'Charlie', preordered: 1 }),
-                aPreorderLevel({ productId: 'd', title: 'Delta', preordered: 1 })
+                aPreorderLevel({ productId: 'a', title: 'Alpha', backordered: 9 }),
+                aPreorderLevel({ productId: 'b', title: 'Bravo', backordered: 1 }),
+                aPreorderLevel({ productId: 'c', title: 'Charlie', backordered: 1 }),
+                aPreorderLevel({ productId: 'd', title: 'Delta', backordered: 1 })
             ],
             [aPreorderSummary({ productId: 'd', late: 2 })]
         );

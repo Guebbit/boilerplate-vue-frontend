@@ -47,7 +47,7 @@ describe('PS4 · The preorder board through a delay', () => {
                     .find('[data-test=preorder-slipped]')
                     .should('exist');
                 cy.accountOf('user').then(({ email }) => {
-                    cy.emailTo(email, byTemplate('delivery.preorder-delayed'));
+                    cy.emailTo(email, byTemplate('delivery.fulfillment-delayed'));
                 });
 
                 cy.step('past the new date the sweep asks the buyer to keep waiting');

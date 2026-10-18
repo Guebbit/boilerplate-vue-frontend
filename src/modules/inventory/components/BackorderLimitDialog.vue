@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * @module
- * Staff set how many units of one product may be preordered at once. The dialog owns its call and
- * reports a refusal in place. The number is absolute (`0` closes preordering), and may sit below
- * what is already outstanding: those orders stay, only new ones are refused — the hint says so.
+ * Staff set how many units of one product may be owed at once (a preorder's or a backorder's). The
+ * dialog owns its call and reports a refusal in place. The number is absolute (`0` closes it), and may
+ * sit below what is already outstanding: those orders stay, only new ones are refused — the hint says
+ * so. "Unlimited" sends no cap at all.
  */
 import { ref, watch, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -66,7 +67,12 @@ const { loading } = storeToRefs(inventoryStore);
 /**
  * The limit being typed; `undefined` while the field is empty.
  */
-const limit = ref<number | undefined>(props.level.preorderLimit);
+const limit = ref<number | undefined>(props.level.backorderLimit ?? undefined);
+
+/**
+ * Whether the product has no cap at all.
+ */
+const unlimited = ref(props.level.backorderLimit === null);
 
 /**
  * This dialog's own blocked state.
@@ -82,7 +88,8 @@ const {
  */
 watch(isOpen, (open) => {
     if (!open) return;
-    limit.value = props.level.preorderLimit;
+    limit.value = props.level.backorderLimit ?? undefined;
+    unlimited.value = props.level.backorderLimit === null;
     clearLimitError();
 });
 
@@ -92,12 +99,12 @@ watch(isOpen, (open) => {
  * @returns A promise settling once the call finished; a refusal blocks the dialog in place.
  */
 const submit = () => {
-    if (limit.value === undefined) return Promise.resolve();
+    if (!unlimited.value && limit.value === undefined) return Promise.resolve();
     clearLimitError();
     return inventoryStore
-        .setLimit(props.level.productId, limit.value)
+        .setLimit(props.level.productId, unlimited.value ? null : (limit.value ?? 0))
         .then(() => {
-            addMessage(t('preorder-limit-dialog.success'));
+            addMessage(t('backorder-limit-dialog.success'));
             isOpen.value = false;
         })
         .catch((error: unknown) => reportLimitError(error));
@@ -110,32 +117,44 @@ const submit = () => {
         max-width="480"
         :fullscreen="fullscreen"
         :aria-labelledby="titleId"
-        data-test="preorder-limit-dialog"
+        data-test="backorder-limit-dialog"
     >
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
-                {{ t('preorder-limit-dialog.title', { name: level.title }) }}
+                {{ t('backorder-limit-dialog.title', { name: level.title }) }}
             </h2>
 
             <form class="flex flex-col gap-3" novalidate @submit.prevent="submit">
+                <v-checkbox
+                    v-model="unlimited"
+                    :label="t('backorder-limit-dialog.label-unlimited')"
+                    :hint="t('backorder-limit-dialog.hint-unlimited')"
+                    persistent-hint
+                    density="compact"
+                    data-test="backorder-limit-unlimited"
+                />
+
                 <v-number-input
                     v-model="limit"
-                    :label="t('preorder-limit-dialog.label-limit')"
-                    :hint="t('preorder-limit-dialog.hint-limit', { outstanding: level.preordered })"
+                    :label="t('backorder-limit-dialog.label-limit')"
+                    :hint="
+                        t('backorder-limit-dialog.hint-limit', { outstanding: level.backordered })
+                    "
                     persistent-hint
+                    :disabled="unlimited"
                     :min="0"
                     :step="1"
                     :precision="0"
                     control-variant="stacked"
-                    data-test="preorder-limit-field"
+                    data-test="backorder-limit-field"
                 />
 
-                <InlineErrorAlert :message="limitError" data-test="preorder-limit-error" />
+                <InlineErrorAlert :message="limitError" data-test="backorder-limit-error" />
 
                 <div class="mt-2 flex justify-end gap-2">
                     <v-btn
                         variant="tonal"
-                        data-test="preorder-limit-cancel"
+                        data-test="backorder-limit-cancel"
                         @click="isOpen = false"
                     >
                         {{ t('generic.cancel') }}
@@ -143,10 +162,10 @@ const submit = () => {
                     <v-btn
                         type="submit"
                         color="primary"
-                        :disabled="loading || limit === undefined"
-                        data-test="preorder-limit-submit"
+                        :disabled="loading || (!unlimited && limit === undefined)"
+                        data-test="backorder-limit-submit"
                     >
-                        {{ t('preorder-limit-dialog.button-save') }}
+                        {{ t('backorder-limit-dialog.button-save') }}
                     </v-btn>
                 </div>
             </form>

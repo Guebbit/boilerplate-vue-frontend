@@ -54,7 +54,7 @@ export const preorderRows = (
     return [...byProduct.values()].toSorted(
         (a, b) =>
             (b.summary?.late ?? 0) - (a.summary?.late ?? 0) ||
-            (b.level?.preordered ?? 0) - (a.level?.preordered ?? 0) ||
+            (b.level?.backordered ?? 0) - (a.level?.backordered ?? 0) ||
             a.title.localeCompare(b.title)
     );
 };

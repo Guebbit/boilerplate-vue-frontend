@@ -184,6 +184,8 @@ export const ERROR_CODES = {
     SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
     /** 401 — A staff or admin session saw no real request for longer than `NODE_SESSION_IDLE_TIME_STAFF`, and ended. Sign in again. A shopper never gets this. */
     SESSION_IDLE: 'SESSION_IDLE',
+    /** 409 — The product can be ordered now, so there is nothing to wait for. The button is only offered while it cannot. */
+    STOCK_ALERT_PRODUCT_BUYABLE: 'STOCK_ALERT_PRODUCT_BUYABLE',
     /** 429 — A two-factor code was already sent recently — carries `details.retryAfter`. */
     TWO_FACTOR_RESEND_TOO_SOON: 'TWO_FACTOR_RESEND_TOO_SOON',
     /** 401 — No valid session — log in and retry. */

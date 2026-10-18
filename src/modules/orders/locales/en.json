@@ -111,7 +111,9 @@
         "return-status-returned": "Returned",
         "no-withdrawal": "No right of withdrawal for this item.",
         "button-history": "History",
-        "preorder-line": "Preorder: ships from {date}."
+        "preorder-line": "Preorder: ships from {date}.",
+        "owed-line": "{count} of these are on backorder and will ship by {date}.",
+        "owed-line-undated": "{count} of these are on backorder and will ship within 30 days of your order."
     },
     "order-edit-page": {
         "page-title": "Edit order",
@@ -178,7 +180,7 @@
         "type-invoice_issued": "Invoice issued",
         "type-credit_note_issued": "Credit note issued",
         "type-release_date_moved": "Release date changed",
-        "type-delay_notice_sent": "Delay notice sent to the buyer",
+        "type-delay_notice_sent": "Delay notice sent",
         "type-wait_confirmed": "Buyer chose to keep waiting",
         "type-address_corrected": "Shipping address corrected by staff",
         "type-wait_expired": "Waiting period ended without an answer",
@@ -192,7 +194,7 @@
         "detail-tracking": "Tracking {value}",
         "detail-number": "No. {value}",
         "detail-expected": "Now expected {value}",
-        "detail-needs-answer": "Cancels if not answered in 30 days",
+        "detail-needs-answer": "Cancels if not answered in time",
         "date-none": "no date",
         "by-customer": "the customer",
         "by-admin": "staff",

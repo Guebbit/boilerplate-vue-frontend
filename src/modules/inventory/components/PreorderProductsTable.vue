@@ -205,11 +205,15 @@ const editLink = (productId: string) => {
                 {{ formatDate(item.summary?.firstAgreedAt) }}
             </template>
             <template v-slot:[`item.limit`]="{ item }">
-                {{ item.level?.preorderLimit ?? EMPTY_VALUE }}
+                {{
+                    item.level
+                        ? (item.level.backorderLimit ?? t('inventory-page.unlimited'))
+                        : EMPTY_VALUE
+                }}
             </template>
             <template v-slot:[`item.outstanding`]="{ item }">
                 <template v-if="item.level">
-                    <strong data-test="preorder-outstanding">{{ item.level.preordered }}</strong>
+                    <strong data-test="preorder-outstanding">{{ item.level.backordered }}</strong>
                     <span class="ml-1 text-xs opacity-70">
                         {{
                             t('preorders-page.outstanding-split', {

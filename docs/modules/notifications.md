@@ -88,13 +88,13 @@ after 1, 2, 4 ... seconds (capped at 30), and every open is followed by a fresh 
 `Notification` is a union on `code`, and each variant carries its own typed `params`
 (`@types`), so the sentence builder narrows them with a plain `switch` and parses nothing:
 
-| Code                                  | `params`                                                                      |
-| ------------------------------------- | ----------------------------------------------------------------------------- |
-| `notifications.cart-line-removed`     | `{ productId, titles }`                                                       |
-| `notifications.wishlist-item-removed` | `{ productId, titles }`                                                       |
-| `notifications.cart-merge-refused`    | `{ lines: [{ productId, requested, titles }] }`                               |
-| `notifications.preorder-delayed`      | `{ orderId, fulfillmentOrderId, titles[], agreedAt, expectedAt?, answerBy? }` |
-| `notifications.preorder-confirm-wait` | the same                                                                      |
+| Code                                     | `params`                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------- |
+| `notifications.cart-line-removed`        | `{ productId, titles }`                                                       |
+| `notifications.wishlist-item-removed`    | `{ productId, titles }`                                                       |
+| `notifications.cart-merge-refused`       | `{ lines: [{ productId, requested, titles }] }`                               |
+| `notifications.fulfillment-delayed`      | `{ orderId, fulfillmentOrderId, titles[], agreedAt, expectedAt?, answerBy? }` |
+| `notifications.fulfillment-confirm-wait` | the same                                                                      |
 
 The refused-merge sentence lists each line as "name × quantity the guest held": every line in it
 is a product that is no longer available, so the sentence says that once and the lines carry no
@@ -102,7 +102,7 @@ reason of their own.
 
 The two preorder codes carry names already resolved (`titles` is a list, not a map) and dates, which
 the store spells in the reader's locale (`formatDate`); each has a variant for a missing date
-(`preorder-delayed-undated`, `preorder-confirm-wait-bare`). They also name their order, so the bell
+(`fulfillment-delayed-undated`, `fulfillment-confirm-wait-bare`). They also name their order, so the bell
 links to it by route name (`OrderTarget`, resolved with `linkIfRouted`, since `orders` is not a
 sibling this module imports): that is where the reader presses "Keep waiting" or cancels.
 
