@@ -52,6 +52,8 @@ services:
             VITE_SECURITY_CONTACT: '${VITE_SECURITY_CONTACT:-}'
             VITE_SECURITY_EXPIRES: '${VITE_SECURITY_EXPIRES:-}'
             VITE_SECURITY_POLICY_URL: '${VITE_SECURITY_POLICY_URL:-}'
+            # Search indexing — off unless this is `true`; see docs/tools/environment.md.
+            VITE_ROBOTS_INDEX: '${VITE_ROBOTS_INDEX:-}'
 
         restart: unless-stopped
 

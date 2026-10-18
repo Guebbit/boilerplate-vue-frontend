@@ -363,6 +363,19 @@ router.afterEach((to, from, failure) => {
     document.title = title ? `${title} — ${appName}` : appName;
     void announceRouteChange(title);
 
+    // A page behind a sign-in, or the error page, must never be listed: the route table is the one
+    // source, so a route with `meta.access` is kept out and a public one is not. Google renders the
+    // page and honours a `noindex` added by script; it only misses one that script later removes,
+    // and this never removes it from a page that has it.
+    // https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag
+    const robots = document.head.querySelector('meta[name="robots"]');
+    if (to.meta.access !== undefined || to.name === 'Error') {
+        const tag = robots ?? document.createElement('meta');
+        tag.setAttribute('name', 'robots');
+        tag.setAttribute('content', 'noindex');
+        if (!robots) document.head.append(tag);
+    } else robots?.remove();
+
     const isPageChange = from !== START_LOCATION && to.path !== from.path && !isAnchorHash(to.hash);
     if (!isPageChange) return;
 

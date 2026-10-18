@@ -92,7 +92,8 @@ for `docker run -e`.
 
 `VITE_SECURITY_*` is a third case: `docker/docker-entrypoint.d/41-generate-security-txt.sh` reads
 them from the container at start, but it writes a file for nginx, not `config.js`
-(see [`security.txt`](#security-txt)).
+(see [`security.txt`](#security-txt)). `VITE_ROBOTS_INDEX` is a fourth, the same way
+(see [Robots and indexing](#robots-and-indexing)).
 
 ## Application
 
@@ -175,3 +176,27 @@ The production container writes `/.well-known/security.txt` (RFC 9116) at start,
 Both of the first two must be set; otherwise nothing is written and nginx answers 404. `Expires`
 is a renewal duty: set a date and renew it before it passes. The backend serves its own copy;
 see its "Reporting a vulnerability" section.
+
+## Robots and indexing
+
+The production container decides at start whether the site may appear in search, from
+`VITE_ROBOTS_INDEX` (default `false`), through `docker/docker-entrypoint.d/42-generate-robots.sh`.
+
+| `VITE_ROBOTS_INDEX` | `X-Robots-Tag` on every response | `/robots.txt`                                              |
+| ------------------- | -------------------------------- | ---------------------------------------------------------- |
+| unset or `false`    | `noindex, nofollow`              | `User-agent: *` / `Allow: /`                               |
+| `true`              | none                             | the same, plus `Sitemap: <VITE_API_URL>/sitemap/index.xml` |
+
+- **Off allows crawling on purpose.** `Disallow: /` would stop a crawler from reading the
+  `noindex`, and a URL it cannot fetch can still be listed from links elsewhere. A `noindex` the
+  crawler can read is the documented way to keep a whole site out of Google.
+- **The sitemap is on the API host.** A `Sitemap:` line may name another host (sitemaps.org,
+  "cross submits"); the backend builds it from the catalogue, see its `sitemap` module.
+- **Private pages carry `noindex` in the page**, not in robots.txt: the router adds
+  `<meta name="robots" content="noindex">` to every route with a `meta.access` and to the error
+  page, and removes it on a public route. The route table is the one list.
+- **Not a secret.** robots.txt is public and advisory; it hides nothing.
+
+The header is one nginx `map` the script writes into nginx's include folder at every start; `nginx.conf` adds
+`add_header X-Robots-Tag $robots_tag always;` to the server and to every `location` (the file's own
+repeat rule for `add_header`). nginx omits a header whose value is empty, which is the "on" case.

@@ -100,7 +100,7 @@ A case is `{ name, route, persona?, prepare?, seo?, exceptions? }` (`tests/suppo
 | `cart/checkout`      | `/en/cart` after one add              | `user`    | no  | the signed-in checkout                 |
 | `orders/sales`       | `/en/sales/orders`                    | `manager` | no  | a staff data table                     |
 
-Known exceptions: `robots-txt` (site-wide, until the sitemap lane writes a `robots.txt`), and `image-size-responsive` on the two product cases (the API stores one image size; the thumbnails backlog removes it).
+Known exception: `image-size-responsive` on the two product cases (the API stores one image size; the thumbnails backlog removes it).
 
 ```mermaid
 flowchart TB

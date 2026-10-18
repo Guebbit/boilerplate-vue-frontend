@@ -77,6 +77,10 @@ COPY docker/docker-entrypoint.d/40-generate-runtime-config.sh /docker-entrypoint
 # Same hook: writes `/.well-known/security.txt` when the operator opts in, and nothing otherwise.
 COPY docker/docker-entrypoint.d/41-generate-security-txt.sh /docker-entrypoint.d/
 
+# Same hook: writes `robots.txt` and the `X-Robots-Tag` switch nginx reads. The site stays out of
+# search until VITE_ROBOTS_INDEX=true.
+COPY docker/docker-entrypoint.d/42-generate-robots.sh /docker-entrypoint.d/
+
 # Only the build output. Nothing that produced it comes along.
 COPY --from=build /app/dist /usr/share/nginx/html
 

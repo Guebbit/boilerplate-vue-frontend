@@ -14,7 +14,4 @@ export const siteCases: readonly LighthouseCase[] = [
  * Audits every case accepts, audit id → why. A stale one fails the run, so each goes when its
  * cause does.
  */
-export const SITE_EXCEPTIONS: Readonly<Record<string, string>> = {
-    'robots-txt':
-        'no robots.txt is written until the sitemap lane lands 42-generate-robots-txt.sh; /robots.txt is the SPA fallback until then'
-};
+export const SITE_EXCEPTIONS: Readonly<Record<string, string>> = {};

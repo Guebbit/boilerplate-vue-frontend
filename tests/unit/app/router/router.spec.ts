@@ -142,6 +142,62 @@ describe('document title and announcer', () => {
         }));
 });
 
+/** The page's robots meta content, or `null` when it has none. */
+const robotsContent = () =>
+    document.head.querySelector('meta[name="robots"]')?.getAttribute('content') ?? null;
+
+/**
+ * Pages that must stay out of search: any route behind `meta.access`, and the error page. The
+ * robots meta is written by the same `afterEach` as the title, from the route table alone.
+ */
+describe('robots meta', () => {
+    afterEach(() => {
+        document.head.querySelector('meta[name="robots"]')?.remove();
+    });
+
+    it('marks a route with meta.access as noindex', () =>
+        loadRouter().then((router) =>
+            router.push('/en/login').then(() => {
+                expect(robotsContent()).toBe('noindex');
+            })
+        ));
+
+    it('marks the error page as noindex', () =>
+        loadRouter().then((router) =>
+            router.push('/en/error/404').then(() => {
+                expect(robotsContent()).toBe('noindex');
+            })
+        ));
+
+    it('leaves a public route without one', () =>
+        loadRouter().then((router) =>
+            router.push('/en/about').then(() => {
+                expect(robotsContent()).toBeNull();
+            })
+        ));
+
+    it('removes it again when the visitor goes back to a public route', () =>
+        loadRouter().then((router) =>
+            router
+                .push('/en/login')
+                .then(() => router.push('/en/faq'))
+                .then(() => {
+                    expect(robotsContent()).toBeNull();
+                    expect(document.head.querySelectorAll('meta[name="robots"]')).toHaveLength(0);
+                })
+        ));
+
+    it('keeps a single tag across several private pages', () =>
+        loadRouter().then((router) =>
+            router
+                .push('/en/login')
+                .then(() => router.push('/en/error/500'))
+                .then(() => {
+                    expect(document.head.querySelectorAll('meta[name="robots"]')).toHaveLength(1);
+                })
+        ));
+});
+
 describe('locale handling', () => {
     it('redirects the bare root to the locale-prefixed home', () =>
         loadRouter().then((router) => {

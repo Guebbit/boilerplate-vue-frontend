@@ -242,13 +242,38 @@ jobs:
                     http://localhost:8080/en/products/42)
                   test "$status" = '200'
 
+                  echo 'indexing is off by default: noindex on every kind of response, crawling allowed:'
+                  for path in / /assets/does-not-exist.js /robots.txt /config.js; do
+                    curl --silent --include "http://localhost:8080$path" \
+                      | grep -qi '^x-robots-tag: noindex, nofollow'
+                  done
+                  curl --fail --silent --include http://localhost:8080/robots.txt | tee /tmp/robots.txt
+                  grep -qi '^content-type: text/plain' /tmp/robots.txt
+                  grep -q '^Allow: /' /tmp/robots.txt
+                  # `! grep` would not fail the step under `set -e`, so the refusal is spelled out.
+                  if grep -qi '^Sitemap:' /tmp/robots.txt; then exit 1; fi
+
+            - name: Run it with indexing on and prove the header goes and the sitemap is named
+              run: |
+                  docker run -d --name frontend-indexed -p 8081:80 \
+                    -e VITE_API_URL=http://localhost:3000 \
+                    -e VITE_ROBOTS_INDEX=true \
+                    boilerplate-frontend:ci
+                  sleep 2
+
+                  curl --fail --silent --include http://localhost:8081/ | tee /tmp/indexed-headers.txt
+                  if grep -qi '^x-robots-tag:' /tmp/indexed-headers.txt; then exit 1; fi
+
+                  curl --fail --silent http://localhost:8081/robots.txt | tee /tmp/indexed-robots.txt
+                  grep -qx 'Sitemap: http://localhost:3000/sitemap/index.xml' /tmp/indexed-robots.txt
+
             - name: Container logs (always, for debugging a failed smoke test)
               if: always()
-              run: docker logs frontend-smoke
+              run: docker logs frontend-smoke && docker logs frontend-indexed
 
             - name: Clean up
               if: always()
-              run: docker rm -f frontend-smoke || true
+              run: docker rm -f frontend-smoke frontend-indexed || true
 
     audit:
         # Scoped to the production dependency tree only: devDependencies (build tooling, codegen,
