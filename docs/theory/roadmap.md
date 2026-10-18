@@ -74,8 +74,6 @@ Genuinely undecided, listed so the idea is not lost.
 - Extend `useI18n` — or add a sibling composable — to carry the custom helpers currently in the
   i18n utilities.
 - A Bootstrap variant from the skeleton.
-- Lighthouse metrics as a test layer. It would sit next to the accessibility and visual suites,
-  and the open question is whether a score threshold is stable enough in CI to gate on.
 - EPC QR / GiroCode on `TransferInstructionsPanel`, so the customer's own banking app fills in the
   transfer instead of them retyping the IBAN and RF reference by hand. Needs a QR library — left
   undecided rather than picked now, since the panel it renders into may still change shape.

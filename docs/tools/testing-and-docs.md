@@ -12,12 +12,14 @@ flowchart TB
     Live["E2E — Live\nCypress + real backend\nrequired CI job"]
     A11y["Accessibility\ncypress-axe\nis it usable?"]
     Visual["Visual Regression\nCypress + pixelmatch\ndoes it still look right?"]
+    Lighthouse["Lighthouse\nlab performance\nis the first load sound?"]
     Mutation["Mutation\nStryker\nchecks the checkers"]
 
     Unit --> Demo
     Demo --> Live
     Demo --> A11y
     Demo --> Visual
+    Demo --> Lighthouse
     Mutation -.mutates.-> Unit
 
     classDef fast fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -26,7 +28,7 @@ flowchart TB
     classDef meta fill:#dcfce7,stroke:#16a34a,color:#111827;
     class Unit fast;
     class Demo e2e;
-    class A11y,Visual e2e;
+    class A11y,Visual,Lighthouse e2e;
     class Live live;
     class Mutation meta;
 ```
@@ -39,6 +41,7 @@ flowchart TB
 | Cross-cutting      | Is the repository still the shape it claims to be?                          | Vitest, reading the filesystem                       | `npm run test:unit` (same suite)         | [Unit Testing](./unit-testing.md#the-cross-cutting-layer)                                                     |
 | Accessibility      | Are there mechanical a11y failures on the routes a user reaches?            | cypress-axe                                          | `npm run test:e2e` (same suite)          | [Accessibility Testing](./accessibility-testing.md)                                                           |
 | Visual Regression  | Does the page still **look** the way it did?                                | Cypress + pixelmatch                                 | `npm run test:e2e:visual`                | [Visual Regression](./visual-regression.md)                                                                   |
+| Lab performance    | Is a phone's first load stable and structurally sound?                      | Lighthouse (Node API) + puppeteer-core               | `npm run test:lighthouse` (nightly)      | [Lighthouse](./lighthouse.md)                                                                                 |
 | E2E — Demo Profile | Does the app behave correctly against **known** data?                       | Cypress + the real API on an in-memory Mongo, seeded | `npm run test:e2e`                       | [The demo profile](./demo-profile.md), [Journeys](../reference/tests.md#journeys--stories-that-cross-modules) |
 | E2E — Live         | Does the frontend agree with the **actual** backend?                        | Cypress + real API                                   | `npm run test:e2e:live` (required in CI) | [Live E2E](./live-e2e.md), [Journeys](../reference/tests.md#journeys--stories-that-cross-modules)             |
 | Mutation           | Do the tests **notice** when the source is wrong?                           | Stryker + vitest-runner                              | `npm run test:mutation`                  | [Mutation Testing](./mutation-testing.md)                                                                     |
@@ -242,6 +245,31 @@ flowchart LR
 - [Cypress best practices](https://docs.cypress.io/guides/references/best-practices) — selector and assertion guidance
 - [Mermaid diagram syntax](https://mermaid.js.org/intro/syntax-reference.html) — for adding new diagrams to these docs
 
+## Delivery performance: lab, field, and what may gate
+
+Performance has two halves, and they answer different questions.
+
+- **Field** is what real visitors felt. Faro reports their Web Vitals to your own collector, behind consent. It is the truth and it arrives after shipping.
+- **Lab** is one emulated phone, measured the same way every time. [Lighthouse](./lighthouse.md) is the lab half, run nightly over six routes.
+
+What may fail a build follows from how noisy the number is:
+
+| Measurement                                                | Gates?                 | Why                                                                                                      |
+| ---------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| Entry-chunk bytes                                          | yes, in the unit suite | deterministic, cheap, catches the commonest regression (an import pulling a library into the main chunk) |
+| Weighted best-practices and SEO audits, no outside request | yes, the nightly       | structure does not depend on data volume or CPU speed                                                    |
+| LCP, TBT, Speed Index, score, layout shift                 | no, a warning row      | these move with the machine's load; a hard threshold is a flake that gets disabled                       |
+
+This answers the two reasons performance testing was once rejected here. A threshold measured on fixtures would be inherited by forks as authoritative: timing now **reports and never gates**, so a fork inherits numbers, not a verdict. Timing noise on a shared runner is what gets a job disabled: a median of five runs, a baseline taken in the same pinned image (1.4 × headroom, the backend's load-test rule), and timing demoted to a report.
+
+```mermaid
+flowchart LR
+    Field["Field: Faro Web Vitals<br/>real users"] --> Decide["what users felt"]
+    Lab["Lab: Lighthouse<br/>one phone, medians"] --> Structure["structure → may fail the nightly"]
+    Lab --> Timing["timing → warning row"]
+    Bytes["Entry-chunk bytes"] --> Unit["unit suite gate"]
+```
+
 ## Gate or hunter
 
 Worth naming explicitly, because it decides where a suite runs and how a failure is read.
@@ -262,25 +290,20 @@ Recorded rather than dropped silently, because "absent" and "rejected for a reas
 a codebase. The backend keeps the same list, in its own `docs/tools/testing-and-docs.md`, and the
 reasoning is shared; what differs is the frontend-specific shape of each.
 
-### Performance testing
+### Runtime performance testing
 
-**What it is.** Every layer above asks "is the answer correct?". This one asks "is it _fast enough_",
-and on a frontend that splits into two unrelated questions:
-
-| Kind         | Question                                                                                      | Typical tool              |
-| ------------ | --------------------------------------------------------------------------------------------- | ------------------------- |
-| **Runtime**  | Does this list still render in one frame with 500 rows, or did a `computed` become quadratic? | a benchmark harness       |
-| **Delivery** | Did the bundle grow 400 KB, and did Largest Contentful Paint move?                            | Lighthouse CI, size-limit |
+**What it is.** The _delivery_ half of performance (bytes, first paint, layout shift) is covered: see
+[Delivery performance](#delivery-performance-lab-field-and-what-may-gate). This entry is the other
+half, the _runtime_ one: does this list still render in one frame with 500 rows, or did a `computed`
+become quadratic? The tool for it is a benchmark harness.
 
 **Why it is not here.** The demo's data volumes are fixtures — a handful of products and orders — so
 any threshold measured against them is inherited by forks as authoritative while describing nothing
 they will experience. Timing numbers are also a property of the machine, and on a shared CI runner a
 render benchmark largely measures the runner; that flakiness is what gets a job disabled.
 
-**What would change it.** In a fork with real page weights and a real device profile, the **delivery**
-half is the one to add first — a bundle-size budget is deterministic, cheap, and catches the single
-most common frontend regression (an accidental import pulling a library into the main chunk). It does
-not need the load rig that runtime benchmarking does.
+**What would change it.** A fork with real page weights and a real device profile, and a render path
+slow enough that users notice.
 
 ### Diff coverage as a separate gate
 

@@ -51,11 +51,12 @@ The REST and realtime specs, the Orval config and the Spectral ruleset are on
 
 ## Mutation testing
 
-| File                               | What it is                                                                                                                                                               | Read next                                                                      |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `stryker.config.json`              | Which files are mutated, the concurrency, and the incremental settings.                                                                                                  | [Mutation Testing](../tools/mutation-testing.md)                               |
-| `mutation-baseline.json`           | The per-file ratchet's record: what each file scored on a real run. A drop fails the check; an improvement is rewritten upward.                                          | [Mutation Testing](../tools/mutation-testing.md)                               |
-| `reports/stryker-incremental.json` | **Not committed** — `.gitignore` excludes `reports/*`. It is Stryker's per-mutant cache: a local run reuses its own copy, and the nightly passes `--force` to ignore it. | [Incremental mode](../tools/mutation-testing.md#incremental-mode-—-what-it-is) |
+| File                               | What it is                                                                                                                                                                        | Read next                                                                      |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `stryker.config.json`              | Which files are mutated, the concurrency, and the incremental settings.                                                                                                           | [Mutation Testing](../tools/mutation-testing.md)                               |
+| `lighthouse-baseline.json`         | The Lighthouse timing baseline: medians per case, taken in the pinned CI image. A report, never a gate; it only ever improves. Absent until the first measured nightly is pulled. | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)                      |
+| `mutation-baseline.json`           | The per-file ratchet's record: what each file scored on a real run. A drop fails the check; an improvement is rewritten upward.                                                   | [Mutation Testing](../tools/mutation-testing.md)                               |
+| `reports/stryker-incremental.json` | **Not committed** — `.gitignore` excludes `reports/*`. It is Stryker's per-mutant cache: a local run reuses its own copy, and the nightly passes `--force` to ignore it.          | [Incremental mode](../tools/mutation-testing.md#incremental-mode-—-what-it-is) |
 
 ## Git
 

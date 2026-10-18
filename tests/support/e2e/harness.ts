@@ -14,7 +14,7 @@ import type { Device, DeviceResponse, SessionMode } from '../../../scripts/e2e/d
 import type { PaymentWebhookEvent } from '../../../scripts/e2e/payment-webhook';
 import type { SinkRequest } from '../../../scripts/e2e/webhook-sink';
 import type { ReceivedWebhook } from '../../../scripts/e2e/webhook-tester';
-import type { E2ERole } from './scenario';
+import type { E2ERole } from '../scenario-description';
 
 export type { Device, DeviceResponse, SessionMode } from '../../../scripts/e2e/device-session';
 export type { PaymentWebhookEvent } from '../../../scripts/e2e/payment-webhook';

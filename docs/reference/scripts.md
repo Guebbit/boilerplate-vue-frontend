@@ -25,6 +25,7 @@ scripts/
 ├── demo/        booting the paired backend's demo profile from here
 ├── e2e/         the Cypress shard runner, its balancer and the spec globs
 ├── mutation/    the Stryker run and the per-file ratchet
+├── lighthouse/  the lab-performance run, its judgement and its baseline
 ├── testing/     everything else that reads a test suite
 └── audit/       AI audit prompts, each with the scripts it runs
 ```
@@ -94,11 +95,30 @@ second, deeper scope that this repo has no equivalent for.
 | `scripts/mutation/baseline.ts`       | The per-file ratchet: the recorded score for each file, and the comparison that fails when one drops. Nothing here ever lowers a baseline on its own.               | [Mutation Testing](../tools/mutation-testing.md) |
 | `scripts/mutation/check-baseline.ts` | Its CLI — compare, or record a new floor with `--update`.                                                                                                           | [Mutation Testing](../tools/mutation-testing.md) |
 
+## Lab performance — `scripts/lighthouse/`
+
+| File                                                        | What it is                                                                                                      | Read next                                                        |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `scripts/lighthouse/build.ts`                               | The audit build: `vite build` into `dist-lighthouse`, then every container-start generator run into it.         | [Lighthouse](../tools/lighthouse.md)                             |
+| `scripts/lighthouse/audit-environment.ts`                   | The environment that build gets (every URL loopback) and which generators it runs.                              | [Lighthouse](../tools/lighthouse.md)                             |
+| `scripts/lighthouse/analytics-sink.ts`                      | A local 204 server standing in for Faro and Umami, so the audit shows the consent banner and sends nothing out. | [Lighthouse](../tools/lighthouse.md#no-byte-leaves-the-machine)  |
+| `scripts/lighthouse/chrome.ts`                              | Launches Chrome with the egress lock and attaches Puppeteer.                                                    | [Lighthouse](../tools/lighthouse.md#no-byte-leaves-the-machine)  |
+| `scripts/lighthouse/settings.ts`                            | The Lighthouse flags: the phone profile, the categories, error reporting off.                                   | [Lighthouse](../tools/lighthouse.md#the-phone-profile)           |
+| `scripts/lighthouse/route.ts`                               | Fills `{subject:x}` in a case's route from the backend's published ids.                                         | [Lighthouse](../tools/lighthouse.md#cases-live-with-modules)     |
+| `scripts/lighthouse/collect.ts`                             | Drives every case: sign in, prepare, then N Lighthouse runs.                                                    | [Lighthouse](../tools/lighthouse.md#signed-in-routes)            |
+| `scripts/lighthouse/evaluate.ts`                            | Pure: medians, the hard set, the warnings. Exit code logic lives in `run.ts`.                                   | [Lighthouse](../tools/lighthouse.md#what-gates-and-what-reports) |
+| `scripts/lighthouse/summary.ts`                             | Renders the Markdown summary.                                                                                   | [Lighthouse](../tools/lighthouse.md#reading-the-report)          |
+| `scripts/lighthouse/run.ts`                                 | `npm run test:lighthouse`'s runner.                                                                             | [Lighthouse](../tools/lighthouse.md#running-it)                  |
+| `scripts/lighthouse/baseline.ts`                            | The timing baseline's shape and its only-improves ratchet.                                                      | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)        |
+| `scripts/lighthouse/update-baseline.ts`, `pull-baseline.ts` | `npm run test:lighthouse:baseline` and `:pull`.                                                                 | [Lighthouse](../tools/lighthouse.md#baseline-and-ratchet)        |
+
 ## Testing — `scripts/testing/`
 
-| File                                | What it is                                                                                       | Read next                                          |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| `scripts/testing/report-results.ts` | Turns a runner's JSON report into which **module** a failure belongs to and where the time went. | [Testing (overview)](../tools/testing-and-docs.md) |
+| File                                  | What it is                                                                                             | Read next                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `scripts/testing/report-results.ts`   | Turns a runner's JSON report into which **module** a failure belongs to and where the time went.       | [Testing (overview)](../tools/testing-and-docs.md)                                 |
+| `scripts/testing/github-artifacts.ts` | Which uploaded baseline a `pull-baseline` script takes: the newest unexpired one from a run on `main`. | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind the mutation and Lighthouse baseline pulls.                                      | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
 
 ## AI audits — `scripts/audit/`
 

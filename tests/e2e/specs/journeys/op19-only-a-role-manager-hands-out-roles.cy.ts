@@ -15,7 +15,7 @@
  */
 import { adminMenuLinks, eventually, refusedWith } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
-import type { E2ERole } from '../../../support/e2e/scenario';
+import type { E2ERole } from '../../../support/scenario-description';
 
 /** The slice of a user this story reads: a plain customer has no `role` at all. */
 interface UserLike {
