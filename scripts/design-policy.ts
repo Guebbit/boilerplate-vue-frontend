@@ -68,8 +68,16 @@ export const DESIGN_POLICY = {
         // `rounded` is `rounded-sm`, which is the wrong size once `sm` means 2px.
         deprecatedClasses: 'off',
         duplicateClasses: 'error',
-        themeToken: 'error'
+        themeToken: 'error',
+        unknownClasses: 'error'
     } satisfies Record<string, DesignSeverity>,
+
+    /**
+     * Class names that Vuetify, not Tailwind, generates and a template may use by name
+     * (regular expressions, matched against the whole class). Tailwind's shadow namespace is
+     * wiped, so `elevation-N` is the one way to a shadow that follows the theme.
+     */
+    vuetifyOwnedClasses: [String.raw`^elevation-\d{1,2}$`],
 
     /** The theme's stylesheet entry, read live by the Tailwind plugin. */
     tailwindEntryPoint: 'src/styles/main.css',

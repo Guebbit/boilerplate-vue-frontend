@@ -69,4 +69,17 @@ describe('design lint, Tailwind class rules', () => {
         );
         expect(ids.length).toBeGreaterThan(0);
     });
+
+    it("reports a class nothing defines, and passes the app's own and Vuetify's elevation", async () => {
+        expect(await ruleIdsOf('<div class="text-red-500" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<div class="skip-link elevation-4" />')).toEqual([]);
+    });
+
+    it('does not know a Vuetify utility Tailwind spells differently', async () => {
+        expect(await ruleIdsOf('<div class="position-fixed" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+    });
 });
