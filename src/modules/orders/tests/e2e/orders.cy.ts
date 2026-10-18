@@ -35,14 +35,25 @@ describe('Orders', () => {
                 });
         });
 
-        it('shows View, Edit and Delete actions per row for admin users', () => {
+        it('shows View and Edit per row for admin users, and Delete only on a cancelled order', () => {
             cy.get('[data-test=list-row]')
                 .eq(0)
                 .within(() => {
                     cy.get('[data-test=row-view]').should('exist');
                     cy.get('[data-test=row-edit]').should('exist');
+                });
+            cy.subjectId('order.cancelled').then((cancelledId) => {
+                cy.visit(`/en/sales/orders?id=${cancelledId}`);
+                cy.get('[data-test=list-row]').within(() => {
                     cy.get('[data-test=row-delete]').should('exist');
                 });
+            });
+            cy.subjectId('order.paid').then((paidId) => {
+                cy.visit(`/en/sales/orders?id=${paidId}`);
+                cy.get('[data-test=list-row]').within(() => {
+                    cy.get('[data-test=row-delete]').should('not.exist');
+                });
+            });
         });
 
         it('offers Hard delete on a cancelled unpaid order only', () => {

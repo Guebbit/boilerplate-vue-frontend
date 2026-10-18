@@ -36,7 +36,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
-import { canHardDelete, exportRefusalOf } from '../domain';
+import { canHardDelete, canSoftDelete, exportRefusalOf } from '../domain';
 import {
     OrderFulfillmentStatus,
     OrderPaymentStatus,
@@ -778,7 +778,7 @@ const handleExport = () => {
                         {{ t('orders-list-page.button-restore') }}
                     </v-btn>
                     <v-btn
-                        v-else-if="session.can('delete', 'Order')"
+                        v-else-if="session.can('delete', 'Order') && canSoftDelete(item)"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

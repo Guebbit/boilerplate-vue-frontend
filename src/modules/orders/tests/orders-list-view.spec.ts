@@ -169,7 +169,10 @@ describe('OrdersList — a soft-deleted row', () => {
         vi.mocked(searchOrders).mockResolvedValue(
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
                 contractResponse(schemas.SearchOrdersResponse, {
-                    items: [order('live'), order('gone', '2026-02-01T00:00:00Z')],
+                    items: [
+                        { ...order('live'), status: 'cancelled' },
+                        order('gone', '2026-02-01T00:00:00Z')
+                    ],
                     meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
                 })
             )
@@ -185,6 +188,7 @@ describe('OrdersList — a soft-deleted row', () => {
         await flushPromises();
 
         expect(wrapper.findAll('[data-test="row-restore"]')).toHaveLength(1);
+        // Delete only on the cancelled live row: the open one is cancelled first.
         expect(wrapper.findAll('[data-test="row-delete"]')).toHaveLength(1);
 
         await wrapper.get('[data-test="row-restore"]').trigger('click');
@@ -195,7 +199,7 @@ describe('OrdersList — a soft-deleted row', () => {
 
 /**
  * The permanent delete is offered only where the API will accept it: a cancelled order that was
- * never paid. Every other row keeps the soft Delete alone.
+ * never paid. The soft Delete is offered on a cancelled order, paid or not, and on no open one.
  */
 describe('OrdersList — the permanent-delete action', () => {
     it('shows it on a cancelled unpaid row and on no other', async () => {
@@ -220,7 +224,9 @@ describe('OrdersList — the permanent-delete action', () => {
         const withHardDelete = rows.filter((row) =>
             row.find('[data-test="row-hard-delete"]').exists()
         );
+        const withDelete = rows.filter((row) => row.find('[data-test="row-delete"]').exists());
         expect(rows).toHaveLength(3);
+        expect(withDelete).toHaveLength(2);
         expect(withHardDelete).toHaveLength(1);
         expect(withHardDelete[0]?.find('[data-test="row-view"]').attributes('href')).toMatch(
             /\/void$/
