@@ -21,7 +21,7 @@ defineProps<{
 </script>
 
 <template>
-    <header class="page-hero py-8 lg:py-10">
+    <header class="py-8 lg:py-10">
         <div class="mx-auto w-full max-w-7xl px-4">
             <slot>
                 <h1 class="text-3xl font-bold tracking-tight lg:text-4xl">

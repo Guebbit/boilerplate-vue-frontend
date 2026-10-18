@@ -30,21 +30,15 @@ const slots = useSlots();
         :style="{ '--detail-accent': `var(--v-theme-${accent ?? 'primary'})` }"
     >
         <!-- hero + stat cards -->
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <div class="grid gap-6 lg:grid-cols-detail">
             <slot name="hero" />
-            <div
-                v-if="slots.stats"
-                class="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4"
-            >
+            <div v-if="slots.stats" class="grid grid-cols-tiles gap-4">
                 <slot name="stats" />
             </div>
         </div>
 
         <!-- main card + optional aside -->
-        <div
-            class="grid gap-6"
-            :class="slots.aside && 'lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]'"
-        >
+        <div class="grid gap-6" :class="slots.aside && 'lg:grid-cols-detail'">
             <div class="min-w-0">
                 <slot />
             </div>

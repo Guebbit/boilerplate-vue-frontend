@@ -199,7 +199,7 @@ const handleRefund = () => {
                 </v-btn>
             </div>
 
-            <dl class="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+            <dl class="mb-4 grid grid-cols-term gap-x-4 gap-y-1 text-sm">
                 <dt class="opacity-70">{{ t('payments-list-page.column-order') }}</dt>
                 <dd>{{ payment.orderNumber ?? payment.orderId }}</dd>
                 <dt class="opacity-70">{{ t('payments-list-page.column-email') }}</dt>
@@ -246,7 +246,7 @@ const handleRefund = () => {
                 <li
                     v-for="refund in payment.refunds"
                     :key="refund.id"
-                    class="rounded border p-2 text-sm"
+                    class="rounded-md border p-2 text-sm"
                 >
                     <div class="flex flex-wrap items-center gap-2">
                         <strong>{{ formatCurrency(refund.amount, refund.currency) }}</strong>

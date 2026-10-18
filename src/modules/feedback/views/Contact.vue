@@ -205,6 +205,7 @@ const submitForm = () =>
                     filling in something that marks their own message as spam. `autocomplete="off"`
                     keeps a browser from ever offering to fill it for a real visitor either.
                 -->
+                <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the honeypot must sit off-screen yet stay filled by bots: not sr-only, not hidden -->
                 <div class="absolute left-[-9999px] size-0 overflow-hidden" aria-hidden="true">
                     <input
                         v-model="form.website"

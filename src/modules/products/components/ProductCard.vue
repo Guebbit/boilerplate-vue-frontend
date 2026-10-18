@@ -79,8 +79,8 @@ const shelf = computed(() => shelfStateOf(product));
             alt=""
             :width="320"
             :height="240"
-            rounded="rounded-none"
-            style="width: 100%"
+            fill
+            rounded-class="rounded-none"
         />
         <div class="flex flex-1 flex-col gap-2 p-4">
             <h3 class="text-base font-semibold">

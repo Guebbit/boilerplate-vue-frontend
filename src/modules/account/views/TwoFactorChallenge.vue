@@ -200,7 +200,7 @@ onUnmounted(twoFactor.clearChallenge);
                 />
                 <RouterLink
                     :to="routerLinkI18n({ name: 'Login' })"
-                    class="text-link block text-center text-sm hover:underline"
+                    class="text-link block text-center text-sm underline"
                     data-test="two-factor-challenge-back-to-login"
                 >
                     {{ t('two-factor-challenge-page.link-back-to-login') }}
@@ -284,7 +284,7 @@ onUnmounted(twoFactor.clearChallenge);
 
                     <RouterLink
                         :to="routerLinkI18n({ name: 'Login' })"
-                        class="text-link mb-4 block text-sm hover:underline"
+                        class="text-link mb-4 block text-sm underline"
                         data-test="two-factor-challenge-back-to-login"
                     >
                         {{ t('two-factor-challenge-page.link-back-to-login') }}

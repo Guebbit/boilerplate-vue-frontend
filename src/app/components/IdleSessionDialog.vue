@@ -11,12 +11,18 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * Translation function.
  */
 const { t } = useI18n();
+
+/**
+ * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
+ */
+const fullscreen = useFullscreenDialog();
 
 /**
  * The session store: the idle clock to count down, and the two ways this prompt can end a session.
@@ -97,6 +103,7 @@ onUnmounted(() => {
 
 <template>
     <v-dialog
+        :fullscreen="fullscreen"
         :model-value="isOpen"
         persistent
         max-width="420"

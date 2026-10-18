@@ -45,7 +45,8 @@ describe('design lint, Tailwind class rules', () => {
 
     it('asks for the canonical spelling of an arbitrary value the scale already has', async () => {
         expect(await ruleIdsOf('<div class="max-w-[1280px]" />')).toEqual([
-            'better-tailwindcss/enforce-canonical-classes'
+            'better-tailwindcss/enforce-canonical-classes',
+            'better-tailwindcss/no-restricted-classes'
         ]);
     });
 
@@ -68,5 +69,86 @@ describe('design lint, Tailwind class rules', () => {
             '<div><!-- eslint-disable-next-line better-tailwindcss/no-duplicate-classes -- nothing here --><p class="p-4" /></div>'
         );
         expect(ids.length).toBeGreaterThan(0);
+    });
+
+    it("reports a class nothing defines, and passes the app's own and Vuetify's elevation", async () => {
+        expect(await ruleIdsOf('<div class="text-red-500" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<div class="skip-link elevation-4" />')).toEqual([]);
+    });
+
+    it('does not know a Vuetify utility Tailwind spells differently', async () => {
+        expect(await ruleIdsOf('<div class="position-fixed" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+    });
+
+    it("wipes Tailwind's shadow scale, so elevation is the way to a shadow", async () => {
+        expect(await ruleIdsOf('<div class="shadow-lg" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<div class="elevation-4" />')).toEqual([]);
+    });
+
+    it("gives a radius name Vuetify's value and refuses the v3 bare `rounded`", async () => {
+        for (const radius of ['rounded-md', 'rounded-xl', 'rounded-2xl'])
+            expect(await ruleIdsOf(`<div class="${radius}" />`)).toEqual([]);
+        expect(await ruleIdsOf('<div class="rounded-3xl" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<div class="rounded" />')).not.toEqual([]);
+    });
+
+    it('reads the classes a component prop carries', async () => {
+        expect(await ruleIdsOf('<LazyImage rounded-class="rounded-3xl" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<LazyImage rounded-class="rounded-full" />')).toEqual([]);
+    });
+
+    it('refuses what must not be improvised, each with its own way out', async () => {
+        const refused = [
+            'w-[13px]',
+            'min-h-[60vh]',
+            'bg-white',
+            'text-black/50',
+            'z-999',
+            'hover:underline',
+            'w-100',
+            'h-screen',
+            'order-first',
+            'text-wrap',
+            'md:align-baseline'
+        ];
+        const unrefused: string[] = [];
+        for (const name of refused) {
+            const ids = await ruleIdsOf(`<div class="${name}" />`);
+            if (!ids.includes('better-tailwindcss/no-restricted-classes')) unrefused.push(name);
+        }
+        expect(unrefused).toEqual([]);
+    });
+
+    it('lets a token, a scale step and a refinement through', async () => {
+        const refusedWrongly: string[] = [];
+        for (const name of [
+            'z-toast',
+            'w-toast',
+            'grid-cols-tiles',
+            'w-1/2',
+            'underline hover:text-primary'
+        ]) {
+            const ids = await ruleIdsOf(`<div class="${name}" />`);
+            if (ids.length > 0) refusedWrongly.push(name);
+        }
+        expect(refusedWrongly).toEqual([]);
+    });
+
+    it('takes a reasoned disable for a one-off arbitrary value', async () => {
+        expect(
+            await ruleIdsOf(
+                '<div><!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- off-screen honeypot -->\n<p class="left-[-9999px]" /></div>'
+            )
+        ).toEqual([]);
     });
 });

@@ -584,7 +584,7 @@ onMounted(() =>
             </template>
         </v-empty-state>
 
-        <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-cart">
             <div class="flex justify-end lg:col-span-2">
                 <TourButton tour="checkout" />
             </div>
@@ -802,7 +802,7 @@ onMounted(() =>
                     class="p-5 lg:sticky lg:top-20"
                 >
                     <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
-                    <dl class="mt-3 grid grid-cols-[1fr_auto] gap-y-1">
+                    <dl class="mt-3 grid grid-cols-summary gap-y-1">
                         <dt class="opacity-70">{{ t('cart-page.label-items-count') }}</dt>
                         <dd class="text-right font-medium">{{ cartSummary.itemsCount }}</dd>
                         <dt class="opacity-70">{{ t('cart-page.label-total-quantity') }}</dt>
@@ -863,7 +863,7 @@ onMounted(() =>
                         data-tour="checkout-notes"
                     />
                     <v-divider class="my-3" />
-                    <dl class="grid grid-cols-[1fr_auto] gap-y-1">
+                    <dl class="grid grid-cols-summary gap-y-1">
                         <dt class="opacity-70">{{ t('cart-page.label-items-total') }}</dt>
                         <dd class="text-right font-medium" data-test="cart-items-total">
                             {{ formatCurrency(cartSummary.itemsTotal, cartSummary.currency) }}

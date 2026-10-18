@@ -144,6 +144,17 @@ The design review keeps its programs in `scripts/audit/design-manual/scripts/`:
 The design system's ESLint rules and the policy they read. How they fit together, and the commands:
 [Design Lint](../tools/design-lint.md).
 
+| File                                               | What it is                                                                                             | Read next                              |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| `scripts/design-policy.ts`                         | The knobs: severities, refused class patterns, ambiguous utilities, the phone strategy.                | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/index.ts`                          | The local rule plugin, one export per rule.                                                            | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/design-config.ts`                  | The Tailwind rule blocks `eslint.config.ts` spreads in, with the app's own classes as the ignore list. | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/stylesheet-classes.ts`             | Reads the class names the app's stylesheets and SFC style blocks define.                               | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/theme-token.ts`                    | `local/theme-token`: colours are theme names.                                                          | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/mobile-strategy.ts`                | `local/mobile-strategy`: dialogs, data tables and `v-table` carry their phone strategy.                | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/no-hover-only.ts`                  | `local/no-hover-only`: nothing is reachable by hover or gesture alone.                                 | [Design Lint](../tools/design-lint.md) |
+| `scripts/eslint/template-directive-description.ts` | `local/template-directive-description`: a template disable says why.                                   | [Design Lint](../tools/design-lint.md) |
+
 ## Git hooks
 
 | File                | What it is                                                           | Read next                                      |

@@ -20,6 +20,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -38,6 +39,11 @@ import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
  * Generics
  */
 const { t, locale } = useI18n();
+
+/**
+ * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
+ */
+const fullscreen = useFullscreenDialog();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -170,6 +176,7 @@ const handleSecretDone = () => {
 <template>
     <div id="webhook-create-page">
         <v-dialog
+            :fullscreen="fullscreen"
             :model-value="!!revealedSecret"
             persistent
             max-width="640"

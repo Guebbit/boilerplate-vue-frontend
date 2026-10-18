@@ -35,14 +35,13 @@ const consent = useAnalyticsConsentStore();
     -->
     <div
         v-if="isAnalyticsConsentEnabled() && consent.promptOpen"
-        class="bg-surface position-fixed bottom-0 inset-x-0 elevation-8"
-        style="z-index: 2000"
+        class="bg-surface elevation-8 fixed inset-x-0 bottom-0 z-banner"
     >
         <v-alert
             type="info"
             variant="tonal"
             density="compact"
-            class="rounded-0"
+            class="rounded-none"
             role="region"
             :aria-label="t('analytics-consent.banner-label')"
             data-test="analytics-consent-banner"

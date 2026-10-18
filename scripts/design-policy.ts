@@ -49,8 +49,38 @@ export const themeColorNames = (): ReadonlySet<string> => {
     return new Set([...base, ...[...base].map((name) => `on-${name}`), ...declaredOn]);
 };
 
+/**
+ * A class name both Vuetify and Tailwind generate that does not mean the same in each.
+ * `tests/cross-cutting/utility-collisions.spec.ts` computes the real set and holds this list to it.
+ */
+export interface AmbiguousUtility {
+    /** A regular expression, anchored, over the bare class name (no variants). */
+    pattern: string;
+    /** `true`: the class is refused in source and `message` names the safe spelling. */
+    restrict: boolean;
+    /** What differs and what to write instead (restricted), or why both can apply (allowed). */
+    message: string;
+}
+
+/**
+ * A class pattern the lint refuses, with the reason and what to write instead.
+ * First match wins, so a specific refusal goes before the general arbitrary-value one.
+ */
+export interface RestrictedClass {
+    /** A regular expression over the class as written, variants (`md:`, `hover:`) included. */
+    pattern: string;
+    /** What is wrong and the way out; shown as the lint message. */
+    message: string;
+}
+
 /** The design policy object. */
 export const DESIGN_POLICY = {
+    /**
+     * How many places one arbitrary class may appear in, disabled or not. A second use is a
+     * token, so a copied disable cannot become a habit.
+     */
+    arbitraryRepeatLimit: 1,
+
     /** Rem to px for the canonicaliser, so `max-w-[1280px]` can map to `max-w-7xl`. */
     rootFontSize: 16,
 
@@ -64,12 +94,112 @@ export const DESIGN_POLICY = {
     severity: {
         canonicalClasses: 'error',
         conflictingClasses: 'error',
-        // Off until the radius scale is realigned to Vuetify's: the plugin's fix for a bare
-        // `rounded` is `rounded-sm`, which is the wrong size once `sm` means 2px.
-        deprecatedClasses: 'off',
+        deprecatedClasses: 'error',
         duplicateClasses: 'error',
-        themeToken: 'error'
+        hoverOnly: 'error',
+        mobileStrategy: 'error',
+        restrictedClasses: 'error',
+        themeToken: 'error',
+        unknownClasses: 'error'
     } satisfies Record<string, DesignSeverity>,
+
+    /**
+     * Class names that Vuetify, not Tailwind, generates and a template may use by name
+     * (regular expressions, matched against the whole class). Tailwind's shadow namespace is
+     * wiped, so `elevation-N` is the one way to a shadow that follows the theme.
+     */
+    vuetifyOwnedClasses: [String.raw`^elevation-\d{1,2}$`],
+
+    /**
+     * The names both libraries generate with different meanings, from the last measurement of
+     * Vuetify's utilities against `src/styles/main.css`. A radius name is not here: `main.css`
+     * gives Tailwind's radius scale Vuetify's values, so `rounded-xl` is one thing.
+     */
+    ambiguousUtilities: [
+        {
+            pattern: '^[wh]-(?:25|33|50|66|75|100)$',
+            restrict: true,
+            message:
+                'Vuetify reads this as a percentage, Tailwind as a fixed length (`w-100` is 400px). Use a fraction: `w-1/4`, `w-1/2`, `w-3/4`, `w-full` (same for `h-`).'
+        },
+        {
+            pattern: '^h-screen$',
+            restrict: true,
+            message:
+                'Vuetify sets 100dvh, Tailwind 100vh. Use `h-dvh`: `vh` ignores the mobile URL bar.'
+        },
+        {
+            pattern: '^order-(?:first|last)$',
+            restrict: true,
+            message: 'Vuetify orders -1 and 13, Tailwind -9999 and 9999. Use an explicit `order-N`.'
+        },
+        {
+            pattern: '^align-baseline$',
+            restrict: true,
+            message:
+                'Vuetify sets `align-items`, Tailwind `vertical-align`. Use `items-baseline` or `align-baseline` deliberately through a token.'
+        },
+        {
+            pattern: '^text-wrap$',
+            restrict: true,
+            message:
+                'Vuetify sets `white-space: normal`, Tailwind `text-wrap: wrap`. Use `whitespace-normal`.'
+        },
+        {
+            pattern: '^bg-(?:black|white|transparent)$',
+            restrict: false,
+            message:
+                'Vuetify also sets the text colour; Tailwind the background. Both applying is harmless for `bg-transparent`. `bg-black` and `bg-white` are refused as theme-blind colours.'
+        }
+    ] satisfies AmbiguousUtility[],
+
+    /**
+     * The classes the lint refuses. A token added to `@theme` in `main.css` is a legitimate class
+     * at once; these are the ones that must not be improvised. A true one-off takes
+     * `eslint-disable-next-line better-tailwindcss/no-restricted-classes -- <why>`.
+     */
+    restrictedClasses: [
+        {
+            pattern: String.raw`\[[^\]]*?\d(?:\.\d+)?vh`,
+            message:
+                '`vh` ignores the mobile URL bar. Use `dvh` or `svh`; a repeated size becomes a token in `@theme`.'
+        },
+        {
+            pattern: String.raw`(?:^|:)(?:bg|text|border|from|to|via|ring|outline|fill|stroke|divide|shadow)-(?:white|black)(?:/\d+)?$`,
+            message:
+                '`white` and `black` do not follow the theme (invisible on the dark surface). Use `on-surface` or `surface`, with an opacity if needed.'
+        },
+        {
+            pattern: String.raw`(?:^|:)-?z-\d{3,}$`,
+            message:
+                'A bare z-index of 100 or more is improvised. Name it as a `--z-index-*` token in `main.css`.'
+        },
+        {
+            pattern: String.raw`(?:^|:)(?:group-|peer-)?hover:(?:underline|opacity-|visible|invisible|block|flex|grid|inline|hidden)`,
+            message:
+                "Tailwind's `hover:` never fires on touch. Give the resting state the cue, and keep `hover:` for a refinement on top of it."
+        },
+        {
+            pattern: String.raw`\[`,
+            message:
+                'An arbitrary value is not on the scale. Use the scale, or add a token to `@theme` in `src/styles/main.css` (then `npm run lint:fix`). A true one-off takes `eslint-disable-next-line better-tailwindcss/no-restricted-classes -- <why>`.'
+        }
+    ] satisfies RestrictedClass[],
+
+    /**
+     * The phone strategy for the pieces that need one. `local/mobile-strategy` refuses a dialog
+     * that does not bind `fullscreen`, a Vuetify data table outside the wrapper that owns
+     * `mobile-breakpoint`, and a `v-table` whose scroll region has no accessible name.
+     */
+    mobileStrategy: {
+        dialogTag: 'v-dialog',
+        dialogBinding: 'fullscreen',
+        tableTags: ['v-data-table', 'v-data-table-server', 'v-data-table-virtual'],
+        /** The one file allowed to render a Vuetify data table. */
+        tableOwner: 'src/ui/organisms/DataTable.vue',
+        plainTableTag: 'v-table',
+        scrollDirective: 'focusable-scroll'
+    },
 
     /** The theme's stylesheet entry, read live by the Tailwind plugin. */
     tailwindEntryPoint: 'src/styles/main.css',

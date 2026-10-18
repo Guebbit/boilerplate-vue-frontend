@@ -784,7 +784,10 @@ export default defineConfigWithVueTs(
         plugins: { local: localPlugin },
         rules: {
             'vue/comment-directive': ['error', { reportUnusedDisableDirectives: true }],
-            'local/template-directive-description': 'error'
+            'local/template-directive-description': 'error',
+            // A static `style="…"` is a Tailwind class or a token. A bound style stays legal: it
+            // hands over a computed value (a CSS variable, a measured box) a class cannot.
+            'vue/no-static-inline-styles': ['error', { allowBinding: true }]
         }
     },
 
@@ -803,6 +806,21 @@ export default defineConfigWithVueTs(
         ignores: ['src/ui/vuetify/theme.ts', 'src/**/tests/**', 'src/**/*.spec.ts'],
         plugins: { local: localPlugin },
         rules: { 'local/theme-token': DESIGN_POLICY.severity.themeToken }
+    },
+
+    /**
+     * The phone strategy and touch, at the template: a dialog binds `fullscreen`, a data table is
+     * the wrapper's, a `v-table` scroll region is named (`local/mobile-strategy`), and nothing is
+     * reachable by hover or gesture alone (`local/no-hover-only`).
+     */
+    {
+        files: ['src/**/*.vue'],
+        ignores: ['src/**/tests/**'],
+        plugins: { local: localPlugin },
+        rules: {
+            'local/mobile-strategy': DESIGN_POLICY.severity.mobileStrategy,
+            'local/no-hover-only': DESIGN_POLICY.severity.hoverOnly
+        }
     },
 
     /**

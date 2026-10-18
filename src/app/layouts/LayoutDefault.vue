@@ -71,6 +71,13 @@ const customHero = computed(() => route.meta.customHero === true);
 const centered = computed(() => route.meta.centered === true);
 
 /**
+ * What a centered route's content column adds: the column fills most of the viewport and centers
+ * its content. `dvh`, not `vh`, so the mobile URL bar does not push the content off-screen.
+ */
+// eslint-disable-next-line better-tailwindcss/no-restricted-classes -- a share of the viewport, not a scale step; used here only
+const CENTERED_CLASSES = 'flex min-h-[60dvh] flex-col items-center justify-center text-center';
+
+/**
  * The skip link, by hand: a bare `href` is a hash navigation to the router, which
  * does not move focus — and focus is the whole point of the link.
  */
@@ -285,12 +292,7 @@ watch(abilitiesSignal, () => {
                  itself, further down in its own body. -->
             <PageHeader v-if="!customHero && heroTitle" :title="heroTitle" />
 
-            <div
-                class="mx-auto w-full max-w-7xl px-4 pb-12"
-                :class="
-                    centered && 'flex min-h-[60vh] flex-col items-center justify-center text-center'
-                "
-            >
+            <div class="mx-auto w-full max-w-7xl px-4 pb-12" :class="centered && CENTERED_CLASSES">
                 <RouterView />
             </div>
         </v-main>
@@ -342,7 +344,7 @@ watch(abilitiesSignal, () => {
             to be re-announced.
         -->
         <div
-            class="fixed bottom-4 right-4 z-9999 flex w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
+            class="fixed bottom-4 right-4 z-toast flex w-toast flex-col gap-2"
             role="region"
             :aria-label="t('generic.notifications')"
         >
@@ -381,7 +383,7 @@ watch(abilitiesSignal, () => {
         <v-fade-transition>
             <div
                 v-show="showSideLoading"
-                class="fixed bottom-4 left-4 z-9998"
+                class="fixed bottom-4 left-4 z-activity"
                 role="status"
                 data-test="activity-indicator"
                 :aria-label="t('generic.loading-state')"

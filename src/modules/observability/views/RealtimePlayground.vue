@@ -115,7 +115,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                     <h3 class="text-sm font-semibold">
                         {{ t('realtime-playground-page.section-current') }}
                     </h3>
-                    <div class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
+                    <div class="grid grid-cols-tiles gap-4">
                         <CardMaterialStat
                             :title="t('realtime-playground-page.stat-uptime')"
                             :value="formatUptime(latestEntry.payload.uptimeSeconds)"

@@ -140,6 +140,7 @@ point.
 | Know why a performance number never fails a build   | [Delivery performance](../tools/testing-and-docs.md#delivery-performance-lab-field-and-what-may-gate) |
 | See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)                                                              |
 | Know what a finger can and cannot reach             | [Design system](./design-system.md)                                                                   |
+| Know which library owns a style token               | [Design system](./design-system.md#who-owns-which-token)                                              |
 | Know every attack a site can receive                | [Web Attack Catalog](./web-attack-catalog.md)                                                         |
 | Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)                                                       |
 | Understand dependency choices                       | [Tools](../tools/)                                                                                    |

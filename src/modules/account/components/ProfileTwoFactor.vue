@@ -25,6 +25,7 @@ import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useTwoFactorStore } from '../stores/two-factor.ts';
 import { useMethodLabel } from '../composables/use-method-label.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -39,6 +40,11 @@ import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
  * Translation function.
  */
 const { t } = useI18n();
+
+/**
+ * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
+ */
+const fullscreen = useFullscreenDialog();
 
 /**
  * Translates a second-factor method name into its label.
@@ -442,6 +448,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
 
         <!-- Enrollment dialog -->
         <v-dialog
+            :fullscreen="fullscreen"
             :model-value="!!enrolling"
             max-width="480"
             persistent
@@ -457,6 +464,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
 
         <!-- Backup codes — blocking, shown once, right after the first factor is confirmed -->
         <v-dialog
+            :fullscreen="fullscreen"
             :model-value="!!revealedBackupCodes"
             max-width="480"
             persistent
@@ -471,6 +479,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
 
         <!-- The shared code prompt, for remove-one and disable-all -->
         <v-dialog
+            :fullscreen="fullscreen"
             :model-value="!!codePrompt"
             max-width="420"
             persistent

@@ -2,34 +2,77 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Global stylesheet: Tailwind v4 (utilities only) beside Vuetify.
  *
- * The contract (strict boundary):
- * - Vuetify owns components, colors, typography and the CSS reset.
- *   All design tokens live in src/ui/vuetify/index.ts.
- * - Tailwind provides layout/spacing/flex/grid utilities ONLY:
- *   • Preflight is NOT imported (it would fight Vuetify's reset).
- *   • Its default palette and fonts are wiped; the semantic colors below
- *     alias Vuetify's runtime theme variables, so `text-primary` and
- *     `<v-btn color="primary">` can never drift apart — and they follow
- *     light/dark theme switches automatically.
- *   • Breakpoints are re-aligned to Vuetify's grid (sm 600 / md 960 /
- *     lg 1280 / xl 1920) so `md:flex` and `v-col md="6"` agree.
+ * Who owns which token — the table and the reasons are in `docs/theory/design-system.md`:
+ * - Vuetify owns colour, font family, radius names and elevation. Tailwind's own palette, fonts,
+ *   radius scale and shadow scales are wiped below, so the names that remain mean what Vuetify's
+ *   mean. `src/ui/vuetify/theme.ts` holds the colours; `src/ui/vuetify/index.ts` the component
+ *   defaults.
+ * - Tailwind owns spacing, type size, weight and leading, z-index names and the layout tokens
+ *   declared below (`--container-*`, `--grid-template-columns-*`).
+ * - Preflight is NOT imported (it would fight Vuetify's reset).
+ * - Breakpoints are re-aligned to Vuetify's grid (sm 600 / md 960 / lg 1280 / xl 1920) so
+ *   `md:flex` and `v-col md="6"` agree.
  *
- * The @layer statement below fixes the cascade order once and for all:
- * Tailwind utilities beat Vuetify component styles when both target the
- * same element, while Vuetify's deliberate finals (transitions, trumps)
- * stay on top.
+ * What Tailwind reads: `src/` only (`source(none)` plus `@source` below). A doc, a wiki page or a
+ * plan that names a class must never change the app's CSS.
+ *
+ * The @layer statement below fixes the cascade order once and for all: Tailwind utilities beat
+ * Vuetify component styles when both target the same element, while Vuetify's deliberate finals
+ * (transitions, trumps) stay on top.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 @layer vuetify-core, vuetify-components, vuetify-overrides, vuetify-utilities,
     theme, base, components, utilities, vuetify-final;
 
 @import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities);
+/*
+ * source(none): do not auto-detect sources from the working directory. @source names the one
+ * folder whose files may generate CSS.
+ * https://tailwindcss.com/docs/detecting-classes-in-source-files
+ */
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@source '../';
 
 @theme {
     /* Vuetify owns color & typography — wipe Tailwind's own palettes */
     --color-*: initial;
     --font-*: initial;
+
+    /*
+     * Vuetify owns radius and elevation. The radius names carry Vuetify's values, so a class both
+     * libraries generate (`rounded-xl`) means one thing; `2xl` is the one Tailwind-only step. A
+     * shadow comes from `elevation-N`, which follows the theme.
+     */
+    --radius-*: initial;
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 8px;
+    --radius-xl: 24px;
+    --radius-2xl: 1rem;
+    /*
+     * Layout tokens: a value more than one place needs gets a name here, and the canonicaliser
+     * (`npm run lint:fix`) then rewrites an equal arbitrary value into it.
+     */
+    --container-toast: min(420px, calc(100vw - 2rem));
+
+    /* Above Vuetify's overlays: the consent banner, then the corner activity loader, then toasts. */
+    --z-index-banner: 2000;
+    --z-index-activity: 9998;
+    --z-index-toast: 9999;
+
+    --tracking-eyebrow: 0.12em;
+    --tracking-label: 0.08em;
+
+    --grid-template-columns-term: auto minmax(0, 1fr);
+    --grid-template-columns-summary: 1fr auto;
+    --grid-template-columns-cart: minmax(0, 1fr) 280px;
+    --grid-template-columns-detail: minmax(0, 2fr) minmax(280px, 1fr);
+    --grid-template-columns-tiles: repeat(auto-fit, minmax(180px, 1fr));
+
+    --shadow-*: initial;
+    --inset-shadow-*: initial;
+    --drop-shadow-*: initial;
+    --text-shadow-*: initial;
 
     /* unambiguous constants are allowed back in */
     --color-white: #ffffff;
@@ -68,6 +111,14 @@
     --color-warning: rgb(var(--v-theme-warning));
     --color-info: rgb(var(--v-theme-info));
     --color-link: rgb(var(--v-theme-link));
+
+    /* Vuetify's generated darker variants (the theme's `variations`), for gradients. */
+    --color-primary-darken-1: rgb(var(--v-theme-primary-darken-1));
+    --color-secondary-darken-1: rgb(var(--v-theme-secondary-darken-1));
+    --color-tertiary-darken-1: rgb(var(--v-theme-tertiary-darken-1));
+
+    /* The accent an item detail page sets on itself (`ItemDetailLayout`). */
+    --color-detail-accent: rgb(var(--detail-accent));
 }
 
 /**

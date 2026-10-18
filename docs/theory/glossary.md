@@ -168,10 +168,10 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 
 Not a module's vocabulary but the styling rules'. What they enforce: [Design System](./design-system.md).
 
-| Term                  | What it means here                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Design token**      | A named value the design is built from: a theme colour, a `@theme` variable. A custom value added to `@theme` is a token at once.          |
-| **Arbitrary value**   | A Tailwind class with a bracket, like `max-w-[1280px]`. Legal only as a reasoned one-off; a repeated one becomes a token.                  |
-| **Canonical class**   | The one spelling Tailwind prefers for a meaning (`size-12` for `h-12 w-12`). The lint rewrites the long form.                              |
-| **Ambiguous utility** | A class name both Vuetify and Tailwind generate with different meaning (`w-100`, `rounded-xl`). Which one wins depends on the layer order. |
-| **Reasoned disable**  | An `eslint-disable` comment that says why (`-- reason`). An unused one, or one with no reason, is an error.                                |
+| Term                  | What it means here                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Design token**      | A named value the design is built from: a theme colour, a `@theme` variable. A custom value added to `@theme` is a token at once.        |
+| **Arbitrary value**   | A Tailwind class with a bracket, like `max-w-[1280px]`. Legal only as a reasoned one-off; a repeated one becomes a token.                |
+| **Canonical class**   | The one spelling Tailwind prefers for a meaning (`size-12` for `h-12 w-12`). The lint rewrites the long form.                            |
+| **Ambiguous utility** | A class name both Vuetify and Tailwind generate with different meaning (`w-100`, `h-screen`). Which one wins depends on the layer order. |
+| **Reasoned disable**  | An `eslint-disable` comment that says why (`-- reason`). An unused one, or one with no reason, is an error.                              |

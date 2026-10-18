@@ -8,6 +8,10 @@
   `src/styles/main.css` `@theme`.
 - MUST NOT write a colour literal outside `src/ui/vuetify/theme.ts`. Use theme names (`primary`,
   `on-surface`…); `local/theme-token` refuses the rest.
+- A one-off arbitrary value takes `eslint-disable-next-line better-tailwindcss/no-restricted-classes -- <why>`;
+  a value used twice is a token.
+- Every `v-dialog` binds `:fullscreen` from `useFullscreenDialog()`. No hover-only cue: `hover:` refines
+  a visible resting state, never replaces it.
 - Every `eslint-disable`, in a script or a template, carries ` -- <why>`; an unused one fails.
 - See `docs/theory/design-system.md`.
 

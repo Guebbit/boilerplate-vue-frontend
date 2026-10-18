@@ -411,7 +411,7 @@ const handleDelete = (requestId: string, subject: string) => {
                             "
                             density="compact"
                             hide-details
-                            style="max-width: 180px"
+                            class="max-w-45"
                             data-test="feedback-status"
                             @update:model-value="
                                 (status) =>

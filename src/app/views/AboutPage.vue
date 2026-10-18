@@ -146,6 +146,7 @@ const hasSignUp = computed(() => router.hasRoute(SIGN_UP_ROUTE_NAME));
                     {{ t('static-pages.about.stack.title') }}
                 </h2>
                 <v-card class="p-6">
+                    <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- a term column sized to its longest label; used on this page only -->
                     <dl class="grid gap-4 sm:grid-cols-[minmax(10rem,auto)_1fr] sm:gap-x-8">
                         <template v-for="key in STACK" :key="'stack-' + key">
                             <dt class="font-semibold">

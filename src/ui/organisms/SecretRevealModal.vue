@@ -98,7 +98,7 @@ const copySecret = () =>
             <p class="mb-4">{{ intro ?? t('generic.secret-reveal-intro') }}</p>
             <div class="mb-4 flex items-center gap-2">
                 <code
-                    class="flex-1 overflow-x-auto rounded bg-black/5 p-3 font-mono text-sm"
+                    class="flex-1 overflow-x-auto rounded-md bg-on-surface/5 p-3 font-mono text-sm"
                     data-test="secret-reveal-value"
                 >
                     {{ secret }}

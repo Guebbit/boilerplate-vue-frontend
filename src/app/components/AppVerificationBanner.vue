@@ -104,7 +104,7 @@ const handleResendVerification = () => {
         type="warning"
         variant="tonal"
         density="compact"
-        class="rounded-0"
+        class="rounded-none"
         data-test="verify-banner"
     >
         {{ t('verification-banner.message') }}

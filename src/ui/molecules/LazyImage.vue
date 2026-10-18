@@ -41,7 +41,8 @@ const {
     width = 96,
     height = 96,
     eager,
-    rounded = 'rounded'
+    fill,
+    roundedClass = 'rounded-md'
 } = defineProps<{
     /**
      * The record's `imageUrl`, exactly as the API returned it — resolving it is this component's
@@ -84,9 +85,16 @@ const {
      */
     eager?: boolean;
     /**
-     * Corner rounding, as a Tailwind class. `rounded-full` makes it an avatar.
+     * Stretches the box to its container's width instead of `width`. For a card cover, where the
+     * container, not the caller, decides how wide the picture is.
      */
-    rounded?: string;
+    fill?: boolean;
+    /**
+     * Corner rounding, as a Tailwind class. `rounded-full` makes it an avatar. Named for what it
+     * carries: Vuetify's own `rounded` prop takes a size, and the same name meaning two things
+     * is the drift the design lint exists to stop.
+     */
+    roundedClass?: string;
 }>();
 
 /**
@@ -141,17 +149,22 @@ const displayedSource = computed(() => fullSource.value ?? placeholderImageUrl()
 
 /**
  * The box, reserved before anything loads so a late image cannot reflow the row around it.
+ *
+ * `max-width: 100%` lets it shrink inside a narrow container instead of being clipped by it, and
+ * the box still holds its size in a flex row because it is `shrink-0`. `fill` drops the cap: the
+ * container's width is the width.
  */
-const boxStyle = computed(() => ({
-    width: `${width}px`,
-    aspectRatio: `${width} / ${height}`
-}));
+const boxStyle = computed(() =>
+    fill
+        ? { width: '100%', aspectRatio: `${width} / ${height}` }
+        : { width: `${width}px`, maxWidth: '100%', aspectRatio: `${width} / ${height}` }
+);
 </script>
 
 <template>
     <div
         class="relative shrink-0 overflow-hidden bg-surface-variant"
-        :class="rounded"
+        :class="roundedClass"
         :style="boxStyle"
         :data-placeholder="isPlaceholder ? 'true' : undefined"
         data-test="lazy-image"

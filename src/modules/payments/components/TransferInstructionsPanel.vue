@@ -89,6 +89,7 @@ const groupedReference = computed(
                 })
             }}
         </p>
+        <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- label, value, copy button: three columns, this panel only -->
         <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
             <dt class="opacity-70">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>
             <dd class="font-medium" data-test="transfer-beneficiary">

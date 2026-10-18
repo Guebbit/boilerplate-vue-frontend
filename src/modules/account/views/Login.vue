@@ -225,7 +225,7 @@ const submitForm = () => {
                     />
                     <RouterLink
                         :to="routerLinkI18n({ name: 'PasswordResetRequest' })"
-                        class="text-sm text-link hover:underline"
+                        class="text-sm text-link underline"
                     >
                         {{ t('login-page.link-password-reset') }}
                     </RouterLink>

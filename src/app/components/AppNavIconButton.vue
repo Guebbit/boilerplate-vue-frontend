@@ -150,7 +150,7 @@ const accessibleName = () =>
                         alt=""
                         :width="28"
                         :height="28"
-                        rounded="rounded-full"
+                        rounded-class="rounded-full"
                     />
                     <component :is="icon" v-else :size="20" aria-hidden="true" />
                 </v-btn>
