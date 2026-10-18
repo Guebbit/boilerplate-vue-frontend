@@ -30,38 +30,105 @@ flowchart LR
   a light/dark switch.
 - **The cascade is fixed once.** The `@layer` statement at the top of `main.css` puts Tailwind's
   `utilities` after Vuetify's component styles. When both libraries generate the same class name
-  (`rounded-lg` is the live example), the later layer wins.
-- **Tailwind's class scan is not scoped yet.** It reads every tracked file, `docs/` included, so a
-  page that merely writes a class name can add that class to the app's CSS. The scan is narrowed to
-  `src/` in the next stage of this work.
+  (`rounded-xl` was the live example), the later layer wins, so the two must agree on what a name
+  means: see [Names that mean two things](#names-that-mean-two-things).
+- **Tailwind reads `src/` only.** See [What Tailwind reads](#what-tailwind-reads).
 
 ## Who owns which token
 
 One owner per kind of token, so nobody has to ask which library to use.
 
-| Token                                  | Owner    | Where it lives                                   |
-| -------------------------------------- | -------- | ------------------------------------------------ |
-| Colour                                 | Vuetify  | `src/ui/vuetify/theme.ts`                        |
-| Font family                            | Vuetify  | The Vuetify theme                                |
-| Component defaults (rounded, variant…) | Vuetify  | `defaults` in `src/ui/vuetify/index.ts`          |
-| Spacing, type size, weight, leading    | Tailwind | The default scale                                |
-| z-index names, layout tokens           | Tailwind | `@theme` in `src/styles/main.css`                |
-| Breakpoints                            | Both     | `@theme` `--breakpoint-*` and the display config |
+| Token                                  | Owner    | Where it lives                                    |
+| -------------------------------------- | -------- | ------------------------------------------------- |
+| Colour                                 | Vuetify  | `src/ui/vuetify/theme.ts`                         |
+| Font family                            | Vuetify  | The Vuetify theme                                 |
+| Radius names (`sm` `md` `lg` `xl`)     | Vuetify  | `--radius-*` in `@theme`, set to Vuetify's values |
+| Elevation (shadows)                    | Vuetify  | `elevation-N`; Tailwind's shadow scales are wiped |
+| Component defaults (rounded, variant…) | Vuetify  | `defaults` in `src/ui/vuetify/index.ts`           |
+| Spacing, type size, weight, leading    | Tailwind | The default scale                                 |
+| z-index names, layout tokens           | Tailwind | `@theme` in `src/styles/main.css`                 |
+| Breakpoints                            | Both     | `@theme` `--breakpoint-*` and the display config  |
+
+Ownership is enforced by **wiping the Tailwind namespace** (`--color-*`, `--font-*`, `--radius-*`,
+`--shadow-*`, `--inset-shadow-*`, `--drop-shadow-*`, `--text-shadow-*`), the way colours and fonts
+already were. A class from a wiped namespace is unknown to Tailwind, so `no-unknown-classes` says so
+with no extra rule.
 
 A custom value added to `@theme` is a token at once: it becomes a valid class, and the lint
 accepts it. There is no second list to keep.
+
+## The radius scale
+
+Cards are 24 px, Vuetify's own `xl`, and Tailwind's radius names carry Vuetify's values, so a name
+both libraries generate is one thing.
+
+| Name  | Size  | Used by                            |
+| ----- | ----- | ---------------------------------- |
+| `sm`  | 2 px  | Vuetify                            |
+| `md`  | 4 px  | Vuetify; the default for images    |
+| `lg`  | 8 px  | `VBtn`, `VAlert` defaults          |
+| `xl`  | 24 px | `VCard` default                    |
+| `2xl` | 16 px | Tailwind only (nothing in between) |
+
+`rounded-full` and `rounded-none` are static utilities and unchanged. A bare `rounded` (Tailwind v3)
+is refused: write `rounded-md`.
+
+## Adding a custom Tailwind token
+
+1. Add the variable to `@theme` in `src/styles/main.css`, in the namespace the utility reads:
+   `--container-*` (widths), `--z-index-*`, `--tracking-*`, `--grid-template-columns-*`. A colour that
+   follows the theme goes in `@theme inline` as an alias of a `--v-theme-*` variable.
+2. Run `npm run lint:fix`. The canonicaliser rewrites every arbitrary value equal to the new token
+   into the token.
+3. The class is valid, and nothing else needs registering.
+
+Worked example: `--container-toast: min(420px, calc(100vw - 2rem))` made `w-[min(420px,calc(100vw-2rem))]`
+into `w-toast` in two files.
+
+## What Tailwind reads
+
+`main.css` imports the utilities with `source(none)` and names one folder: `@source '../'`, which is
+`src/`. Without it Tailwind scans every tracked file, so a doc, a wiki page or a plan that merely
+writes a class name could change the app's CSS (the root of the card-radius bug below). The index
+page uses no Tailwind class, and `node_modules` was never scanned.
+
+## Names that mean two things
+
+Vuetify and Tailwind generate 411 class names between them that overlap. After the radius scale
+was aligned, a small set still means something different in each. `tests/cross-cutting/utility-collisions.spec.ts`
+measures the set from the real stylesheets, and `ambiguousUtilities` in `scripts/design-policy.ts`
+holds it to a list.
+
+| Name                        | Vuetify               | Tailwind                           | Write instead              |
+| --------------------------- | --------------------- | ---------------------------------- | -------------------------- |
+| `w-25` … `w-100`, `h-25` …  | a percentage          | a fixed length (`w-100` is 400 px) | `w-1/4`, `w-1/2`, `w-full` |
+| `h-screen`                  | `100dvh`              | `100vh`                            | `h-dvh`                    |
+| `order-first`, `order-last` | `-1`, `13`            | `-9999`, `9999`                    | an explicit `order-N`      |
+| `align-baseline`            | `align-items`         | `vertical-align`                   | `items-baseline`           |
+| `text-wrap`                 | `white-space: normal` | `text-wrap: wrap`                  | `whitespace-normal`        |
+
+A new collision, or a listed one that stops colliding, fails the spec by name.
+
+## The reasoned escape hatch
 
 ## The reasoned escape hatch
 
 A one-off that no token covers takes an inline disable, and the disable has to say why:
 
 ```vue
-<!-- eslint-disable-next-line vue/no-v-html -- the string is sanitised in the store -->
+<!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the honeypot must sit off-screen yet stay filled by bots -->
+<div class="absolute left-[-9999px]" aria-hidden="true">
 ```
+
+In a script the same disable goes above the line as `// eslint-disable-next-line … -- why`. Hoist a
+class string that spans several lines into a top-level `*_CLASSES` constant so the disable covers
+one line exactly.
 
 It cannot rot:
 
 - An **unused** disable is an error (`reportUnusedDisableDirectives`), in scripts and in templates.
+- A second use of the same arbitrary class is an error (`arbitraryRepeatLimit`, checked by
+  `tests/cross-cutting/design-arbitrary-values.spec.ts`): a repeated value is a token.
 - A disable with **no reason** is an error: `@eslint-community/eslint-comments/require-description`
   for scripts, `local/template-directive-description` for `<!-- eslint-disable… -->`.
 
@@ -77,6 +144,23 @@ prop (`color`, `bg-color`…) takes a theme name; so does a status map in a scri
 The boot surfaces use the same colours. The splash is painted before any JavaScript runs, so
 `index.html` repeats the theme's `background` and `on-background` as literals, and a spec holds them
 to the theme's values. The address bar follows the theme through `useThemeColorMeta`.
+
+## Hover is not a cue on touch
+
+Tailwind v4 wraps `hover:` in `@media (hover: hover)`, so on a phone a hover-only underline, reveal
+or colour shift never happens. A link that is underlined only on hover is a plain word on touch.
+
+- Give the **resting** state the cue (`underline`); keep `hover:` for a refinement on top of it.
+- `hover:underline`, `hover:opacity-*` and the reveal utilities (`hover:block`, `hover:visible`…)
+  are refused as classes; `local/no-hover-only` refuses the handler forms (hover with no click,
+  `open-on-hover` without `open-on-click`, gesture-only handlers, a native `title` on clipped text).
+
+## Phone strategy
+
+A dialog binds `:fullscreen="fullscreen"` from `useFullscreenDialog()`, so it fills a phone
+instead of floating in it. A Vuetify data table is rendered through the `DataTable` wrapper, which
+owns `mobile-breakpoint`, and a `v-table` carries a **named** `v-focusable-scroll`, so its sideways
+scroll region is reachable by keyboard. `local/mobile-strategy` enforces all three.
 
 ## Layout at phone widths
 
