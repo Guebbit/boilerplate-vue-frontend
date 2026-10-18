@@ -1194,6 +1194,14 @@ export type PackedRules = PackedRulesItemItem[][];
  */
 export interface Abilities {
     /**
+     * `true` when the caller holds a staff role that grants nothing yet because no
+     * authenticator app is armed. The rules above are then the account's customer
+     * ones; a client shows an "enrol to use your staff tools" prompt instead of
+     * a staff menu. `false` for everyone else, an anonymous caller and an API key
+     * included.
+     */
+    secondFactorRequired: boolean;
+    /**
      * Every CASL subject a declared key names, deduplicated and sorted — the
      * `Order`/`Product`/`ApiKey`/... a rule's second element may be. Published so
      * a client's own `meta.can` rules are typed against the real set rather than

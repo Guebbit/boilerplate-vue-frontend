@@ -1924,6 +1924,7 @@ export const GetMyAbilitiesResponse = zod.strictObject({
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
+        secondFactorRequired: zod.boolean(),
         subjects: zod.array(zod.string()),
         grantableRoles: zod.array(zod.string()),
         tenantId: zod.string().optional(),

@@ -179,7 +179,14 @@ const server = setupServer(
             : HttpResponse.json({
                   success: true,
                   status: 200,
-                  data: { platform: [], tenant: [], version: 1, subjects: [], grantableRoles: [] }
+                  data: {
+                      platform: [],
+                      tenant: [],
+                      version: 1,
+                      subjects: [],
+                      grantableRoles: [],
+                      secondFactorRequired: false
+                  }
               });
     }),
 

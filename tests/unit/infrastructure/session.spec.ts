@@ -100,7 +100,8 @@ beforeEach(() => {
             tenant: [],
             version: 1,
             subjects: [],
-            grantableRoles: []
+            grantableRoles: [],
+            secondFactorRequired: false
         })
     );
     logoutMock.mockResolvedValue(undefined);
@@ -341,7 +342,8 @@ describe('loadViewer', () => {
                 tenant: [['delete', 'Product']],
                 version: 1,
                 subjects: ['Product'],
-                grantableRoles: ['customer']
+                grantableRoles: ['customer'],
+                secondFactorRequired: false
             })
         );
         const store = useSessionStore();
@@ -370,7 +372,8 @@ describe('loadViewer', () => {
                 tenant: [['checkout', 'Cart']],
                 version: 1,
                 subjects: ['Cart'],
-                grantableRoles: ['customer']
+                grantableRoles: ['customer'],
+                secondFactorRequired: false
             })
         );
         const store = useSessionStore();
@@ -425,7 +428,8 @@ describe('loadViewer', () => {
                 tenant: [],
                 version: 1,
                 subjects: ['Order', 'Product'],
-                grantableRoles: ['customer']
+                grantableRoles: ['customer'],
+                secondFactorRequired: false
             })
         );
         const store = useSessionStore();
@@ -537,7 +541,8 @@ const rules = (tenant: string[][]) =>
         tenant,
         version: 1,
         subjects: ['Product'],
-        grantableRoles: []
+        grantableRoles: [],
+        secondFactorRequired: false
     });
 
 describe('reloadAbilities', () => {
