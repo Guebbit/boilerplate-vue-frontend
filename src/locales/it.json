@@ -69,6 +69,10 @@
         "button-resend-wait": "Riprova tra {seconds}s",
         "sent": "Email di verifica inviata, controlla la posta."
     },
+    "staff-enrollment-banner": {
+        "message": "Il tuo ruolo di staff è disattivato finché non configuri un'app di autenticazione. Puoi comunque acquistare come cliente.",
+        "button": "Configura ora"
+    },
     "analytics-consent": {
         "banner-label": "Consenso analitico",
         "message": "Vorremmo misurare come viene usato il sito: pagine visitate, e come viene cercato e sfogliato il catalogo. Nulla viene misurato finché non accetti. Le segnalazioni di errore vengono sempre inviate, così possiamo correggere i problemi. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",

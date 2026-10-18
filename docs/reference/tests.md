@@ -269,6 +269,12 @@ flowchart LR
 - **`totpCodeFor(secret, stepsFromNow)`** is the code an authenticator app shows for a TOTP secret, computed in
   Cypress' Node process with `otplib` (the backend's own library and major). Step 0 confirms an
   enrolment; the backend takes a step once, so every later code is a step further on.
+- **Staff logins answer a code.** A staff role grants nothing without an authenticator app, so every
+  seeded staff account is armed and its `cy.accountOf` login carries `totpSecret`. `cy.loginAs`,
+  `loginAsFast`, `switchUser`, `loginDevice` and the `adminApi` task type the code after the password.
+  The `loginTotpCode` task hands out the earliest step the backend still accepts and no earlier login
+  used (two per half-minute per account; a third waits for the clock), and `cy.restore` forgets
+  what it handed out, because the restore resets the replay mark too.
 - **`webhookSink`** (demo only): `clear()` starts the listener and forgets, `requests()` reads what
   arrived, each with `signatureValid` against the seeded subscription's known secret. Clear first,
   then trigger the replay. On live the `webhook-tester` service plays this part.

@@ -545,6 +545,36 @@ const rules = (tenant: string[][]) =>
         secondFactorRequired: false
     });
 
+describe('secondFactorRequired', () => {
+    it('keeps what the abilities answer said, and empties with the rest', () => {
+        const store = useSessionStore();
+
+        store.setAbilities({ tenant: [], platform: [], secondFactorRequired: true });
+        expect(store.secondFactorRequired).toBe(true);
+
+        store.setAbilities();
+        expect(store.secondFactorRequired).toBe(false);
+    });
+
+    it('is re-read after a 403 on a signed-in request, which is how a refusal reaches the banner', async () => {
+        getMyAbilitiesMock.mockResolvedValue(
+            contractResponse(schemas.GetMyAbilitiesResponse, {
+                platform: [],
+                tenant: [],
+                version: 1,
+                subjects: [],
+                grantableRoles: [],
+                secondFactorRequired: true
+            })
+        );
+        const store = signedIn();
+
+        await store.reloadAbilities();
+
+        expect(store.secondFactorRequired).toBe(true);
+    });
+});
+
 describe('reloadAbilities', () => {
     it('replaces the rules and bumps the signal, so a taken-away right disappears', () => {
         getMyAbilitiesMock.mockResolvedValue(rules([['delete', 'Product']]));

@@ -17,6 +17,8 @@
  * browser. The `cy.task` wiring is in `cypress.config.ts`.
  */
 
+import { loginTotpCodeFor } from './totp';
+
 /** How the deployment keeps people signed in: `NODE_SESSION_MODE`. */
 export type SessionMode = 'jwt' | 'cookie';
 
@@ -47,6 +49,8 @@ export interface DeviceCredentials {
     apiUrl: string;
     email: string;
     password: string;
+    /** The account's authenticator secret: a staff login answers a challenge it has to meet. */
+    totpSecret?: string;
 }
 
 /** What {@link deviceRequest} takes. */
@@ -131,30 +135,71 @@ const readSessionMode = (apiUrl: string): Promise<SessionMode> =>
         });
 
 /**
+ * The second step of a login that answered a challenge: posts the code the account's app would
+ * show. A response that is not a challenge (or an account with no secret given) comes back as is.
+ *
+ * @param apiUrl - the API base URL
+ * @param response - the answer to the password step
+ * @param totpSecret - the account's base32 authenticator secret
+ */
+const answerChallenge = (
+    apiUrl: string,
+    response: Response,
+    totpSecret: string | undefined
+): Promise<Response> => {
+    if (!totpSecret || !response.ok) return Promise.resolve(response);
+
+    return response
+        .clone()
+        .text()
+        .then(parseJson)
+        .then((body) => {
+            const data = (body as { data?: { mfaRequired?: boolean; challenge?: string } } | null)
+                ?.data;
+            if (data?.mfaRequired !== true) return response;
+
+            return loginTotpCodeFor(totpSecret, apiUrl).then((code) =>
+                fetch(`${apiUrl}/account/login/2fa`, {
+                    method: 'POST',
+                    headers: JSON_HEADERS,
+                    body: JSON.stringify({ challenge: data.challenge, code })
+                })
+            );
+        });
+};
+
+/**
  * Sign in as a new device.
  *
  * @param credentials - the API and the account
  * @returns the device, with the session cookie (and in `jwt` mode the access token) the login issued
  * @throws {Error} when the login is refused, or issues no session (a two-factor account answers a challenge instead)
  */
-export const deviceLogin = ({ apiUrl, email, password }: DeviceCredentials): Promise<Device> =>
+export const deviceLogin = ({
+    apiUrl,
+    email,
+    password,
+    totpSecret
+}: DeviceCredentials): Promise<Device> =>
     readSessionMode(apiUrl).then((mode) =>
         fetch(`${apiUrl}/account/login`, {
             method: 'POST',
             headers: JSON_HEADERS,
             body: JSON.stringify({ email, password })
-        }).then((response) =>
-            jsonOf(response).then((body) => {
-                // `cookie` mode hands no token back: the cookie IS the session.
-                const token = mode === 'jwt' ? tokenIn(body) : '';
-                const cookie = sessionCookieFrom(response.headers);
-                if (!response.ok || token === undefined || cookie === null)
-                    throw new Error(
-                        `deviceLogin: ${email} got ${String(response.status)} and ${token === undefined ? 'no token' : 'no session cookie'}`
-                    );
-                return { apiUrl, mode, token, cookie };
-            })
-        )
+        })
+            .then((response) => answerChallenge(apiUrl, response, totpSecret))
+            .then((response) =>
+                jsonOf(response).then((body) => {
+                    // `cookie` mode hands no token back: the cookie IS the session.
+                    const token = mode === 'jwt' ? tokenIn(body) : '';
+                    const cookie = sessionCookieFrom(response.headers);
+                    if (!response.ok || token === undefined || cookie === null)
+                        throw new Error(
+                            `deviceLogin: ${email} got ${String(response.status)} and ${token === undefined ? 'no token' : 'no session cookie'}`
+                        );
+                    return { apiUrl, mode, token, cookie };
+                })
+            )
     );
 
 /**

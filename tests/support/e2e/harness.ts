@@ -40,12 +40,17 @@ export const skipUnlessSessionMode = (context: Mocha.Context, mode: SessionMode)
  *
  * @param email - the account's address
  * @param password - its password
+ * @param totpSecret - its authenticator secret, for a staff account whose login asks a code
  */
-export const loginDeviceWith = (email: string, password: string): Cypress.Chainable<Device> =>
+export const loginDeviceWith = (
+    email: string,
+    password: string,
+    totpSecret?: string
+): Cypress.Chainable<Device> =>
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) =>
-            cy.task<Device>('deviceLogin', { apiUrl: String(apiUrl), email, password })
+            cy.task<Device>('deviceLogin', { apiUrl: String(apiUrl), email, password, totpSecret })
         );
 
 /**
@@ -56,7 +61,9 @@ export const loginDeviceWith = (email: string, password: string): Cypress.Chaina
  * @param role - which seeded account; `user` by default
  */
 export const loginDevice = (role: E2ERole = 'user'): Cypress.Chainable<Device> =>
-    cy.accountOf(role).then(({ email, password }) => loginDeviceWith(email, password));
+    cy
+        .accountOf(role)
+        .then(({ email, password, totpSecret }) => loginDeviceWith(email, password, totpSecret));
 
 /**
  * Renews the device's own session: `POST /account/refresh` in `jwt` mode, and in `cookie` mode
