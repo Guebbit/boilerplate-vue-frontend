@@ -809,6 +809,21 @@ export default defineConfigWithVueTs(
     },
 
     /**
+     * The phone strategy and touch, at the template: a dialog binds `fullscreen`, a data table is
+     * the wrapper's, a `v-table` scroll region is named (`local/mobile-strategy`), and nothing is
+     * reachable by hover or gesture alone (`local/no-hover-only`).
+     */
+    {
+        files: ['src/**/*.vue'],
+        ignores: ['src/**/tests/**'],
+        plugins: { local: localPlugin },
+        rules: {
+            'local/mobile-strategy': DESIGN_POLICY.severity.mobileStrategy,
+            'local/no-hover-only': DESIGN_POLICY.severity.hoverOnly
+        }
+    },
+
+    /**
      * Every `eslint-disable` must say why — matching the paired backend.
      */
     comments.recommended,

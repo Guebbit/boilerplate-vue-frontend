@@ -276,7 +276,7 @@ const handlePageChange = (page: number) => {
             </template>
 
             <template v-slot:[`item.error`]="{ item }">
-                <span v-if="item.error" :title="item.error" class="line-clamp-1 max-w-48 text-xs">
+                <span v-if="item.error" class="max-w-48 wrap-break-word text-xs">
                     {{ item.error }}
                 </span>
                 <span v-else>{{ EMPTY_VALUE }}</span>

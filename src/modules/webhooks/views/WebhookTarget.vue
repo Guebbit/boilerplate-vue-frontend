@@ -18,6 +18,7 @@ export default {
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
+import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -46,6 +47,11 @@ import {
  * Translations helper.
  */
 const { t } = useI18n();
+
+/**
+ * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
+ */
+const fullscreen = useFullscreenDialog();
 
 /**
  * Router instance, for the navigation once the rotate-secret reveal modal is dismissed.
@@ -230,6 +236,7 @@ const handleDelete = () => {
 <template>
     <div id="webhook-target">
         <v-dialog
+            :fullscreen="fullscreen"
             :model-value="!!revealedSecret"
             persistent
             max-width="640"
@@ -327,7 +334,10 @@ const handleDelete = () => {
                         data-test="webhook-target-remove-secret-error"
                     />
 
-                    <v-table v-focusable-scroll density="comfortable">
+                    <v-table
+                        v-focusable-scroll="t('webhook-target-page.secrets-table-label')"
+                        density="comfortable"
+                    >
                         <thead>
                             <tr>
                                 <th>{{ t('webhook-target-page.column-secret-id') }}</th>

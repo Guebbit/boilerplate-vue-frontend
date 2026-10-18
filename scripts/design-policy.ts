@@ -96,6 +96,8 @@ export const DESIGN_POLICY = {
         conflictingClasses: 'error',
         deprecatedClasses: 'error',
         duplicateClasses: 'error',
+        hoverOnly: 'error',
+        mobileStrategy: 'error',
         restrictedClasses: 'error',
         themeToken: 'error',
         unknownClasses: 'error'
@@ -183,6 +185,21 @@ export const DESIGN_POLICY = {
                 'An arbitrary value is not on the scale. Use the scale, or add a token to `@theme` in `src/styles/main.css` (then `npm run lint:fix`). A true one-off takes `eslint-disable-next-line better-tailwindcss/no-restricted-classes -- <why>`.'
         }
     ] satisfies RestrictedClass[],
+
+    /**
+     * The phone strategy for the pieces that need one. `local/mobile-strategy` refuses a dialog
+     * that does not bind `fullscreen`, a Vuetify data table outside the wrapper that owns
+     * `mobile-breakpoint`, and a `v-table` whose scroll region has no accessible name.
+     */
+    mobileStrategy: {
+        dialogTag: 'v-dialog',
+        dialogBinding: 'fullscreen',
+        tableTags: ['v-data-table', 'v-data-table-server', 'v-data-table-virtual'],
+        /** The one file allowed to render a Vuetify data table. */
+        tableOwner: 'src/ui/organisms/DataTable.vue',
+        plainTableTag: 'v-table',
+        scrollDirective: 'focusable-scroll'
+    },
 
     /** The theme's stylesheet entry, read live by the Tailwind plugin. */
     tailwindEntryPoint: 'src/styles/main.css',
