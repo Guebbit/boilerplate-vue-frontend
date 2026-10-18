@@ -74,6 +74,8 @@ Genuinely undecided, listed so the idea is not lost.
 - Extend `useI18n` — or add a sibling composable — to carry the custom helpers currently in the
   i18n utilities.
 - A Bootstrap variant from the skeleton.
+- An `AppDialog` wrapper owning `max-width`, `fullscreen` and labelling, so no dialog binds them by
+  hand. Left out of the design lint on purpose: it is a refactor, not a rule.
 - Lighthouse metrics as a test layer. It would sit next to the accessibility and visual suites,
   and the open question is whether a score threshold is stable enough in CI to gate on.
 - EPC QR / GiroCode on `TransferInstructionsPanel`, so the customer's own banking app fills in the

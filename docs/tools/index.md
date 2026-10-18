@@ -61,4 +61,5 @@ flowchart LR
 | Interface     | **[Guided tours](./tours.md)**                        | The first-login welcome tour and the page tours: how a module adds steps, the version bump, the switch.                       |
 | Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                         |
 | Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__test` control surface.             |
+| Testing       | **[Design lint](./design-lint.md)**                   | ESLint and Vitest holding the source to the theme: Tailwind classes, colour names, boot surfaces, and reasoned disables.      |
 | API           | **[API](../api/)**                                    | Orval, Spectral, generated client, and contract-first workflow.                                                               |

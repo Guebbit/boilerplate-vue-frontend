@@ -223,6 +223,30 @@ this diagram exists to prevent.
 
 ## Testing tools
 
+### Tailwind CSS v4 (beside Vuetify)
+
+**What it is.** A utility-class CSS framework. Version 4 is configured in CSS (`@theme` in `src/styles/main.css`) rather than in a JavaScript config file.
+
+**Problem it solves.** Layout and spacing in a template without a stylesheet per component.
+
+**In this repo.** Tailwind provides layout, spacing and type utilities only. Vuetify owns colour, font family and the components, and Tailwind's colours are aliases of Vuetify's runtime theme variables, so the two cannot drift. Who owns which token: [Design System](../theory/design-system.md).
+
+→ [Design System](../theory/design-system.md)
+
+---
+
+### eslint-plugin-better-tailwindcss
+
+**What it is.** An ESLint plugin that understands Tailwind v4: it loads the project's stylesheet and checks every class against it.
+
+**Problem it solves.** A token added to the theme should count at once, and a class that is spelled the long way, duplicated or contradicted should fail the edit, not review.
+
+**In this repo.** Wired in `scripts/eslint/design-config.ts`, reading `src/styles/main.css` live. Canonical spelling, conflicts and duplicates are errors; stylistic rules (class order, line wrapping) are off.
+
+→ [Design Lint](./design-lint.md)
+
+---
+
 ### Vitest + @vue/test-utils
 
 **What it is.** Vitest is a fast unit test runner built on Vite. `@vue/test-utils` provides Vue-specific mounting and assertion helpers for testing SFC components.

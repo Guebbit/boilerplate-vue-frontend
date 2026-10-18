@@ -137,6 +137,7 @@ point.
 | Understand the domain-modelling stance              | [Strategic DDD](./strategic-ddd.md)                 |
 | Follow one request end-to-end                       | [Request Flow](./request-flow.md)                   |
 | Know what may show a spinner                        | [Loading State](./loading-state.md)                 |
+| Know which library owns a style token               | [Design System](./design-system.md)                 |
 | See all routes and access levels at a glance        | [Sitemap & Access Control](./sitemap.md)            |
 | Know every attack a site can receive                | [Web Attack Catalog](./web-attack-catalog.md)       |
 | Know which of those attacks this app stops, and how | [Web Attack Defences](./web-attack-defences.md)     |

@@ -109,6 +109,19 @@ and follows, and a `scripts/` folder for anything it runs.
 | -------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | `scripts/audit/*/SKILL.md` | The four audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
 
+## Lint rules — `scripts/eslint/`
+
+The design system's ESLint rules and the policy they read. How they fit together, and the commands:
+[Design Lint](../tools/design-lint.md).
+
+| File                                               | What it is                                                                                                        | Read next                                   |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `scripts/design-policy.ts`                         | The design checks' knobs in one file: severities, root font size, the colour props, and the theme colour names.   | [Design Lint](../tools/design-lint.md)      |
+| `scripts/eslint/index.ts`                          | The local rule plugin (`local/*`).                                                                                | [Design Lint](../tools/design-lint.md)      |
+| `scripts/eslint/design-config.ts`                  | The Tailwind rule blocks `eslint.config.ts` spreads in: entry stylesheet, root font size, the class-map selector. | [Design Lint](../tools/design-lint.md)      |
+| `scripts/eslint/theme-token.ts`                    | `local/theme-token`: a colour is a named theme colour or a finding.                                               | [Design System](../theory/design-system.md) |
+| `scripts/eslint/template-directive-description.ts` | `local/template-directive-description`: a template `eslint-disable` must say why.                                 | [Design System](../theory/design-system.md) |
+
 ## Git hooks
 
 | File                | What it is                                                           | Read next                                      |
