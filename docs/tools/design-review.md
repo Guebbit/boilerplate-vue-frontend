@@ -66,15 +66,19 @@ routes (and a deleted module takes its captures with it). Sizes come from `scrip
 and always go through `applyViewport`, so phone and tablet shots run with touch emulation on and
 show Vuetify's touch-only CSS.
 
-| Sweep case shape                                 | Shots                                                  | Why                                                                                  |
-| ------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Plain route                                      | phone·light, phone·dark, tablet·light, desktop·light   | Phone is where design breaks. Dark parity is judged where it is densest              |
-| Only a size and/or theme, no `prepare`           | none                                                   | A layout variant of a plain case; shooting it twice wastes context                   |
-| `prepare` with a pinned size                     | that size, light (dark too if the case is pinned dark) | The state only exists at that size                                                   |
-| `prepare`, no size (menus, dialogs, empty forms) | phone·light, desktop·light                             | A dialog is fullscreen on a phone and floats on a desktop, so the two look different |
-| `E2E_DESIGN_CAPTURE_LOCALES=en,it`               | adds phone·light under `/it` to plain routes           | Italian strings run longer: this is where truncation that loses meaning shows up     |
+| Sweep case shape                                 | Shots                                                     | Why                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Plain route                                      | phone·light, phone·dark, tablet·light, desktop·light      | Phone is where design breaks. Dark parity is judged where it is densest              |
+| Only a size and/or theme, no `prepare`           | none                                                      | A layout variant of a plain case; shooting it twice wastes context                   |
+| `prepare` with a pinned size                     | that size, light (dark too if the case is pinned dark)    | The state only exists at that size                                                   |
+| `prepare`, no size (menus, dialogs, empty forms) | phone·light, desktop·light                                | A dialog is fullscreen on a phone and floats on a desktop, so the two look different |
+| `E2E_DESIGN_CAPTURE_LOCALES=en,it`               | adds phone·light under `/it` to plain routes              | Italian strings run longer: this is where truncation that loses meaning shows up     |
+| Action-table `read` row                          | loading then error, each at phone·light and desktop·light | The request is held open for the loading shot, then answered with the failure        |
+| Action-table `empty` row                         | loading then empty, each at phone·light and desktop·light | Same hold, ended with the schema-checked empty page                                  |
+| Action-table `form`, `dialog` or `row` row       | error at phone·light and desktop·light                    | The shot is taken once the stubbed failure shows its alert                           |
 
-A shot's id is `<module>--<case>--<viewport>--<theme>[--<locale>]`. The theme is asserted before
+A shot's id is `<module>--<case>--<viewport>--<theme>[--<locale>]`. An action-table row's case part
+is `row-<index>-<first 48 characters of its name>-<state>`, so two rows that open alike stay apart. The theme is asserted before
 the shot (`.v-theme--light` or `.v-theme--dark`), because the default is the visitor's stored
 choice, else the OS's: a shot must never record whatever the host prefers.
 

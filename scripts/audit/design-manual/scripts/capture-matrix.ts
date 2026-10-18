@@ -164,3 +164,94 @@ export const expandCaptureCases = (
     }
     return expanded;
 };
+
+/**
+ * The states an action-table row is photographed in: the others (`first-paint`, `prepared`) belong
+ * to the sweeps.
+ */
+export type ActionState = 'loading' | 'error' | 'empty';
+
+/**
+ * The slice of an action-table row the matrix needs.
+ */
+export interface ActionRowShape {
+    /** The row's position in its table: names are long sentences, so the index keeps ids apart. */
+    index: number;
+    /** The row's `name`. */
+    name: string;
+    /** What the row exercises (`ActionKind` in `action-table.ts`). */
+    kind: 'form' | 'dialog' | 'row' | 'read' | 'empty' | 'slow';
+}
+
+/**
+ * One planned shot of an action-table row.
+ */
+export interface PlannedActionShot extends PlannedShot {
+    /** Which state the shot holds the page in. */
+    state: ActionState;
+}
+
+/**
+ * How much of a row's name goes into a shot id: file names stay short enough for every file
+ * system, and the index in front keeps two rows with the same opening words apart.
+ */
+const ACTION_SLUG_LENGTH = 48;
+
+/**
+ * The states a row is photographed in.
+ *
+ * A `read` or `empty` row holds its request open for a loading shot first. A `form`, `dialog` or
+ * `row` row has no read of its own to hold, so it gives only its error. A `slow` row is a read
+ * held back on purpose to test typing, not a state a reviewer judges, so it gives nothing.
+ *
+ * @param kind - the row's kind
+ */
+export const statesOfAction = (kind: ActionRowShape['kind']): ActionState[] => {
+    if (kind === 'read') return ['loading', 'error'];
+    if (kind === 'empty') return ['loading', 'empty'];
+    if (kind === 'slow') return [];
+    return ['error'];
+};
+
+/**
+ * The shots one action-table row becomes: each state at phone and desktop, light only.
+ *
+ * Phone and desktop because a dialog is fullscreen on one and floats on the other; light only
+ * because a state's colours are the sweeps' business, not the row's.
+ *
+ * @param shape - the row
+ * @param module - the module slug that starts every id
+ */
+export const expandActionRow = (shape: ActionRowShape, module: string): PlannedActionShot[] => {
+    const slug = slugOf(shape.name).slice(0, ACTION_SLUG_LENGTH).replaceAll(/-$/g, '');
+    return statesOfAction(shape.kind).flatMap((state) =>
+        PREPARED_SIZES.map((viewport): PlannedActionShot => ({
+            id: `${module}--row-${String(shape.index)}-${slug}-${state}--${viewport}--light`,
+            viewport,
+            theme: 'light',
+            locale: DEFAULT_LOCALE,
+            state
+        }))
+    );
+};
+
+/**
+ * Expands every row of an action table and checks that no two shots share an id.
+ *
+ * @param rows - the table's rows, in order
+ * @param module - the module slug that starts every id
+ * @throws {RangeError} when two shots would share an id, so one would overwrite the other
+ */
+export const expandActionRows = (
+    rows: readonly Omit<ActionRowShape, 'index'>[],
+    module: string
+): PlannedActionShot[][] => {
+    const expanded = rows.map((row, index) => expandActionRow({ ...row, index }, module));
+
+    const seen = new Set<string>();
+    for (const { id } of expanded.flat()) {
+        if (seen.has(id)) throw new RangeError(`two capture shots share the id ${id}`);
+        seen.add(id);
+    }
+    return expanded;
+};

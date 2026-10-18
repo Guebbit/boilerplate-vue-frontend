@@ -3,10 +3,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+    expandActionRow,
+    expandActionRows,
     expandCase,
     expandCaptureCases,
     moduleOfSpec,
     slugOf,
+    statesOfAction,
     withLocale
 } from '../../../../scripts/audit/design-manual/scripts/capture-matrix';
 
@@ -110,5 +113,72 @@ describe('slugOf, moduleOfSpec and withLocale', () => {
         expect(withLocale('/en/en-things', 'it')).toBe('/it/en-things');
         expect(withLocale('/en', 'it')).toBe('/it');
         expect(withLocale('/en/orders', 'en')).toBe('/en/orders');
+    });
+});
+
+describe('statesOfAction', () => {
+    it.each([
+        ['read', ['loading', 'error']],
+        ['empty', ['loading', 'empty']],
+        ['form', ['error']],
+        ['dialog', ['error']],
+        ['row', ['error']],
+        ['slow', []]
+    ] as const)('a %s row is photographed in %j', (kind, states) => {
+        expect(statesOfAction(kind)).toEqual(states);
+    });
+});
+
+describe('expandActionRow', () => {
+    it('shoots each state at phone and desktop, light only', () => {
+        const shots = expandActionRow(
+            { index: 3, name: 'A list read fails', kind: 'read' },
+            'orders'
+        );
+
+        expect(shots.map(({ state, viewport, theme }) => `${state}·${viewport}·${theme}`)).toEqual([
+            'loading·phone·light',
+            'loading·desktop·light',
+            'error·phone·light',
+            'error·desktop·light'
+        ]);
+    });
+
+    it('puts the module, the row index and the state in the id', () => {
+        const [shot] = expandActionRow(
+            { index: 3, name: 'A failed edit!', kind: 'form' },
+            'orders'
+        );
+
+        expect(shot?.id).toBe('orders--row-3-a-failed-edit-error--phone--light');
+    });
+
+    it('cuts a long name at 48 characters and drops a dash left at the cut', () => {
+        // 47 letters, a space (a dash once slugged), then more: the cut lands on the dash.
+        const [shot] = expandActionRow(
+            { index: 0, name: `${'a'.repeat(47)} tail`, kind: 'form' },
+            'm'
+        );
+
+        expect(shot?.id).toBe(`m--row-0-${'a'.repeat(47)}-error--phone--light`);
+    });
+
+    it('gives a slow row no shots', () => {
+        expect(expandActionRow({ index: 0, name: 'Slow', kind: 'slow' }, 'm')).toEqual([]);
+    });
+});
+
+describe('expandActionRows', () => {
+    it('keeps two rows with the same opening words apart by their index', () => {
+        const rows = expandActionRows(
+            [
+                { name: 'x'.repeat(60), kind: 'form' },
+                { name: 'x'.repeat(60), kind: 'form' }
+            ],
+            'm'
+        );
+        const ids = rows.flat().map(({ id }) => id);
+
+        expect(new Set(ids).size).toBe(ids.length);
     });
 });
