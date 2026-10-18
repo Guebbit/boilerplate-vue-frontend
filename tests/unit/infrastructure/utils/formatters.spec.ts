@@ -124,7 +124,7 @@ describe('formatCurrency', () => {
 });
 
 describe('currencyDigits', () => {
-    it('reads the common two-decimal case from Intl', () => {
+    it('reads the common two-decimal case', () => {
         expect(currencyDigits('EUR')).toBe(2);
         expect(currencyDigits('USD')).toBe(2);
     });
@@ -142,8 +142,28 @@ describe('currencyDigits', () => {
         expect(currencyDigits('NOT-A-CURRENCY')).toBe(2);
     });
 
-    it('caches per currency code rather than re-resolving Intl on every call', () => {
-        expect(currencyDigits('EUR')).toBe(currencyDigits('EUR'));
+    /**
+     * The pinned ISO 4217 table, not `Intl`'s: CLDR answers 0 for these six, where the standard
+     * (and the backend's table) says 2, 2, 2, 2, 2 and 3.
+     */
+    it.each([
+        ['HUF', 2],
+        ['IDR', 2],
+        ['COP', 2],
+        ['PKR', 2],
+        ['LBP', 2],
+        ['IQD', 3]
+    ])('agrees with ISO 4217 for %s, where Intl would say 0', (code, digits) => {
+        expect(currencyDigits(code)).toBe(digits);
+    });
+
+    it('is case-insensitive about the code', () => {
+        expect(currencyDigits('jpy')).toBe(0);
+    });
+
+    it('shows an amount with the places the server stores', () => {
+        expect(formatCurrency(1234.5, 'HUF')).toMatch(/1.234[,.]50/);
+        expect(formatCurrency(1234, 'IQD')).toMatch(/1.234[,.]000/);
     });
 });
 
