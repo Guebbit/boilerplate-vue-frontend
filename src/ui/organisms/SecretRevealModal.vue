@@ -19,8 +19,7 @@ export default {
  */
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { copyToClipboard } from '@guebbit/js-toolkit';
+import { useCopyToClipboard } from '@/ui/composables/use-copy-to-clipboard.ts';
 import { Copy } from 'lucide-vue-next';
 
 /**
@@ -54,11 +53,6 @@ const emit = defineEmits<{ done: [] }>();
 const { t } = useI18n();
 
 /**
- * Toast dispatcher, used for the copy-to-clipboard confirmation.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
  * Whether the visitor has ticked "I have saved this secret" — required before `Continue` is
  * reachable. Reset whenever a fresh secret is shown, so a leftover tick from a previous reveal can
  * never wave this one through unread.
@@ -75,18 +69,13 @@ watch(
 /**
  * Copies the secret to the clipboard, and toasts either way: the secret shown here is only ever
  * shown once, so a visitor who thinks they copied it and did not has no way back to it.
- *
- * `@guebbit/js-toolkit`'s `copyToClipboard` tries the async Clipboard API first (which the
- * browser can still refuse — a denied permission, a non-secure embed) and falls back to a hidden
- * textarea + `execCommand('copy')` when that API is unavailable at all; it never rejects, only
- * resolves `false` on failure. https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
  */
-const copySecret = () =>
-    copyToClipboard(secret).then((succeeded) =>
-        succeeded
-            ? addMessage(t('generic.secret-reveal-copied'))
-            : addMessage(t('generic.secret-reveal-copy-failed'), EToastType.DANGER)
-    );
+const copyText = useCopyToClipboard('generic.secret-reveal-copy-failed');
+
+/**
+ * Copies the secret as it is now (the prop can change while the dialog stays mounted).
+ */
+const copySecret = () => copyText(secret);
 </script>
 
 <template>

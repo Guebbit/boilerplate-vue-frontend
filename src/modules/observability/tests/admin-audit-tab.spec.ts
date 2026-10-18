@@ -6,13 +6,17 @@
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { listObservabilityAuditEntries, listAuditEntries } from '@api';
 import * as schemas from '@api/schemas';
 import AdminAuditTab from '../components/AdminAuditTab.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import {
+    contractEnvelope,
+    contractResponse
+} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -29,8 +33,12 @@ vi.mock('@api', () => ({
 }));
 
 /** Mounts the audit tab for the platform or the shop trail, optionally filtered to one target. */
-const mountTab = (props: { endpoint: 'platform' | 'shop'; target?: string }) =>
-    mount(AdminAuditTab, { props, global: { plugins: [vuetify, i18n] } });
+const mountTab = (props: { endpoint: 'platform' | 'shop'; target?: string }) => {
+    // The copy buttons toast through the notifications store, which needs an active Pinia.
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    return mount(AdminAuditTab, { props, global: { plugins: [vuetify, i18n, pinia] } });
+};
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -83,5 +91,43 @@ describe('the filter form', () => {
                     expect.objectContaining({ actor: 'ada@example.com', page: 1 })
                 );
             });
+    });
+});
+
+describe('the correlation ids', () => {
+    /** An audit row carrying ids longer than the 8 characters the cell shows. */
+    const ROW = {
+        actorUserId: 'u1',
+        actorRole: 'admin',
+        actorScope: 'tenant',
+        action: 'orders.update',
+        outcome: 'success',
+        timestamp: '2026-10-18T08:00:00.000Z',
+        level: 'info',
+        requestId: 'req-0123456789abcdef',
+        traceId: 'trace-0123456789abcdef'
+    };
+
+    it('gives each id a copy button that names the full id, and puts no title on the cell', () => {
+        vi.mocked(listAuditEntries).mockResolvedValueOnce(
+            contractEnvelope<Awaited<ReturnType<typeof listAuditEntries>>>(
+                schemas.ListAuditEntriesResponse,
+                {
+                    items: [ROW],
+                    meta: { page: 1, pageSize: 50, totalItems: 1, totalPages: 1 }
+                }
+            )
+        );
+        const wrapper = mountTab({ endpoint: 'shop' });
+
+        return flushPromises().then(() => {
+            expect(wrapper.get('[data-test=audit-copy-requestId]').attributes('aria-label')).toBe(
+                'Copy request ID req-0123456789abcdef'
+            );
+            expect(wrapper.get('[data-test=audit-copy-traceId]').attributes('aria-label')).toBe(
+                'Copy trace ID trace-0123456789abcdef'
+            );
+            expect(wrapper.find('[title]').exists()).toBe(false);
+        });
     });
 });

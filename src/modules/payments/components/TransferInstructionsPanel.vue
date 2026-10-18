@@ -18,8 +18,7 @@ export default {
 
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { copyToClipboard } from '@guebbit/js-toolkit';
+import { useCopyToClipboard } from '@/ui/composables/use-copy-to-clipboard.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import type { PaymentBankTransferAction } from '@types';
 
@@ -39,26 +38,12 @@ const { instructions } = defineProps<{
 const { t } = useI18n();
 
 /**
- * Toast dispatcher, used for the copy-to-clipboard confirmation.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
  * Copies one field to the clipboard and toasts either way: a customer who thinks they copied the
  * IBAN and did not would send a transfer to nowhere.
  *
- * `@guebbit/js-toolkit`'s `copyToClipboard` tries the async Clipboard API first and falls back to
- * a hidden textarea + `execCommand('copy')`; it never rejects, only resolves `false` on failure.
- * https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
- *
  * @param value - The text to copy.
  */
-const copy = (value: string) =>
-    copyToClipboard(value).then((succeeded) =>
-        succeeded
-            ? addMessage(t('generic.secret-reveal-copied'))
-            : addMessage(t('transfer-instructions-panel.copy-failed'), EToastType.DANGER)
-    );
+const copy = useCopyToClipboard('transfer-instructions-panel.copy-failed');
 
 /**
  * How many characters make up one visual group of the grouped reference below.
