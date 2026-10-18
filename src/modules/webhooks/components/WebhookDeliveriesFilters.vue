@@ -9,6 +9,7 @@
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Search, RotateCw } from 'lucide-vue-next';
+import type { ThemeColor } from '@/ui/types.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
@@ -159,7 +160,7 @@ const statusLabel = (status: WebhookDeliveryStatus) =>
  *
  * @param status - The delivery row's `status`.
  */
-const statusColor = (status: WebhookDeliveryStatus) => {
+const statusColor = (status: WebhookDeliveryStatus): ThemeColor => {
     if (status === 'succeeded') return 'success';
     if (status === 'exhausted') return 'error';
     return 'secondary';

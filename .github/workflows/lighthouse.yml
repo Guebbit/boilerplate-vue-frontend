@@ -1,0 +1,95 @@
+name: Lighthouse (nightly)
+
+# A phone-profile Lighthouse run over six representative routes — see docs/tools/lighthouse.md.
+#
+# Inside the SAME pinned image as visual.yml, so a timing jump is never a silent Chrome upgrade.
+# Nothing leaves the machine: the Chrome is launched with an egress lock and the run fails when any
+# request names a host other than loopback.
+#
+# Nightly and advisory rather than a merge gate: only structural findings (layout shift, weighted
+# best-practices and SEO audits, no outside request) turn it red. Timing is a warning row.
+
+on:
+    schedule:
+        # 04:15 UTC — after the 02:30 / 03:15 / 03:30 nightlies.
+        - cron: '15 4 * * *'
+    workflow_dispatch:
+        inputs:
+            mode:
+                description: >-
+                    compare: the nightly run, by hand. measure: every finding is a warning, and the
+                    proposed baseline is uploaded (the way a first baseline is taken).
+                type: choice
+                options:
+                    - compare
+                    - measure
+                default: compare
+
+permissions:
+    contents: read
+
+concurrency:
+    group: lighthouse-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    lighthouse:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            contents: read
+        container:
+            # Pinned by tag AND digest, the same as visual.yml: one Chrome build for every nightly
+            # that measures a browser. Bump both workflows together (the unit suite refuses a split).
+            image: cypress/included:15.18.1@sha256:d133bd7549adb28f82ea4a8c90e8cb73fc28657b8eb32656c771b1d0c5afe047
+        env:
+            CYPRESS_CACHE_FOLDER: /root/.cache/Cypress
+            BACKEND_PATH: ${{ github.workspace }}/.backend
+            BACKEND_DEMO_COMMAND: npm --prefix {backend} run demo
+            # The image's Chrome; chrome-launcher would otherwise search for one.
+            CHROME_PATH: /usr/bin/google-chrome
+            LIGHTHOUSE_RUNS: 5
+            LIGHTHOUSE_MODE: ${{ inputs.mode || 'compare' }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+              with:
+                  persist-credentials: false
+
+            - name: Checkout and install paired backend
+              uses: ./.github/actions/paired-backend
+              with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+                  path: .backend
+
+            - name: Install dependencies
+              run: CYPRESS_INSTALL_BINARY=0 npm ci
+
+            - name: Audit the six routes
+              run: npm run test:lighthouse
+
+            - name: Show the summary
+              if: always()
+              run: |
+                  if [ -f reports/lighthouse/summary.md ]; then
+                      cat reports/lighthouse/summary.md >> "$GITHUB_STEP_SUMMARY"
+                  fi
+
+            - name: Upload the reports
+              if: always()
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              with:
+                  name: lighthouse-reports
+                  path: reports/lighthouse/
+                  retention-days: 14
+                  if-no-files-found: ignore
+
+            - name: Upload the proposed baseline
+              if: always()
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              with:
+                  name: lighthouse-baseline
+                  path: reports/lighthouse/lighthouse-baseline.json
+                  retention-days: 90
+                  if-no-files-found: ignore

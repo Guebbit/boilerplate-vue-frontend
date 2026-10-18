@@ -52,14 +52,14 @@ const displayValue = computed(() => {
         :class="props.fullWidth && 'col-span-full'"
     >
         <div
-            class="detail-field-icon grid h-12 w-12 place-items-center rounded-2xl"
+            class="detail-field-icon grid size-12 place-items-center rounded-2xl"
             aria-hidden="true"
         >
             <component :is="props.icon" v-if="props.icon" :size="20" />
         </div>
         <div class="min-w-0">
             <p class="text-xs uppercase tracking-[0.08em] opacity-80">{{ props.label }}</p>
-            <div class="mt-1.5 leading-relaxed [overflow-wrap:anywhere]">
+            <div class="mt-1.5 leading-relaxed wrap-anywhere">
                 <slot>{{ displayValue }}</slot>
             </div>
         </div>

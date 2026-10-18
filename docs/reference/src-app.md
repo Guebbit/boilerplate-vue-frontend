@@ -86,6 +86,6 @@ Generated contract types only — a module's own view-model types live in that m
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | `src/locales/*.json` | App-level translation bundles — the strings that belong to no module: navigation, generic errors, the shared chrome. One file per language. Module-owned strings live in `src/modules/*/locales/*.json` instead. | [Modules](./src-modules.md) |
 
-| File                  | What it is                                                                                                | Read next             |
-| --------------------- | --------------------------------------------------------------------------------------------------------- | --------------------- |
-| `src/styles/main.css` | The global stylesheet: the Tailwind entry point and the handful of app-wide rules Vuetify does not cover. | [UI Kit](./src-ui.md) |
+| File                  | What it is                                                                                                                                                                                         | Read next             |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `src/styles/main.css` | The global stylesheet: the Tailwind entry point and the handful of app-wide rules Vuetify does not cover. Colours are aliases of Vuetify's theme; see [Design System](../theory/design-system.md). | [UI Kit](./src-ui.md) |

@@ -2,6 +2,15 @@
 
 - MUST NOT use `any` — use `unknown` plus type narrowing.
 
+## Styling
+
+- MUST use a Tailwind scale class or a token. A repeated custom value becomes a token in
+  `src/styles/main.css` `@theme`.
+- MUST NOT write a colour literal outside `src/ui/vuetify/theme.ts`. Use theme names (`primary`,
+  `on-surface`…); `local/theme-token` refuses the rest.
+- Every `eslint-disable`, in a script or a template, carries ` -- <why>`; an unused one fails.
+- See `docs/theory/design-system.md`.
+
 ## Function design
 
 - MUST apply SOLID principles.

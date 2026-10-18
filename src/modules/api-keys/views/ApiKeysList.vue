@@ -28,6 +28,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDate, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { ApiKey } from '@types';
 
+import type { ThemeColor } from '@/ui/types.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -115,7 +116,7 @@ const statusColor = {
     active: 'success',
     expired: 'warning',
     revoked: 'error'
-} as const;
+} as const satisfies Record<'active' | 'expired' | 'revoked', ThemeColor>;
 
 /**
  * The row action's own blocked state — revoke is the table's only write action, behind a confirm

@@ -31,6 +31,7 @@ import { useOrdersStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { OrderReferenceSearch } from '@/modules/payments';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
@@ -224,7 +225,7 @@ const STATUS_COLORS = {
     shipped: 'secondary',
     delivered: 'success',
     cancelled: 'error'
-} satisfies Record<OrderStatus, string>;
+} satisfies Record<OrderStatus, ThemeColor>;
 
 /**
  * Maps an order status onto a semantic theme color.

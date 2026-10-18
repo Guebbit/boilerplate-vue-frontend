@@ -166,7 +166,7 @@ const boxStyle = computed(() => ({
             alt=""
             aria-hidden="true"
             data-test="lazy-image-thumbnail"
-            class="absolute inset-0 h-full w-full scale-105 object-cover blur-sm"
+            class="absolute inset-0 size-full scale-105 object-cover blur-sm"
         />
 
         <!--
@@ -179,7 +179,7 @@ const boxStyle = computed(() => ({
             :alt="isPlaceholder && alt !== '' ? t('image.placeholder-alt') : alt"
             :loading="eager ? 'eager' : 'lazy'"
             decoding="async"
-            class="relative h-full w-full object-cover transition-opacity duration-300"
+            class="relative size-full object-cover transition-opacity duration-300"
             :class="thumbnailSource && !loaded ? 'opacity-0' : 'opacity-100'"
             @load="loaded = true"
             @error="failed = true"

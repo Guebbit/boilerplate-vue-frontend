@@ -18,7 +18,8 @@
  *   pre-hidden fixture only tests a tableau.
  */
 
-import { seedAccount, type E2ERole } from './scenario';
+import type { E2ERole } from '../scenario-description';
+import { seedAccount } from './scenario';
 import { asStub } from '../stub';
 import { sinkEndpoint } from './integrator';
 

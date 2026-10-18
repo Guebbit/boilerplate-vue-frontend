@@ -5,12 +5,17 @@
         "vitest.config.*",
         "orval.config.*",
         "scripts/**/*.ts",
+        "src/ui/vuetify/theme.ts",
         "cypress.config.*",
         "tests/support/e2e/visual-task.ts",
         "tests/support/e2e/a11y-task.ts",
         "tests/support/e2e/touch-task.ts",
         "tests/support/e2e/spec-report.ts",
-        "tests/support/e2e/admin-api-task.ts"
+        "tests/support/e2e/admin-api-task.ts",
+        "tests/support/lighthouse/**/*.ts",
+        "tests/support/scenario-description.ts",
+        "tests/lighthouse/**/*.ts",
+        "src/modules/*/tests/lighthouse.ts"
     ],
     "compilerOptions": {
         "composite": true,

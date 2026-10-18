@@ -11,11 +11,17 @@
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
         <link rel="manifest" href="/favicon/site.webmanifest" />
-        <link rel="mask-icon" href="/favicon/safari-pinned-tab.svg" color="#5bbad5" />
+        <link rel="mask-icon" href="/favicon/safari-pinned-tab.svg" color="#ff9800" />
         <link rel="shortcut icon" href="/favicon/favicon.ico" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="msapplication-config" content="/favicon/browserconfig.xml" />
-        <meta name="theme-color" content="#ffffff" />
+        <!--
+          The address-bar colour is the app bar's (`surface`). The media pair covers the first paint
+          and the `system` theme; `useThemeColorMeta` rewrites both once the app is up, so a forced
+          theme reaches the browser chrome too.
+        -->
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171b23" />
         <!-- Replaced on every navigation by the router (`<page> — <app name>`); this is the pre-boot default. -->
         <title>%APP_NAME%</title>
         <!--
@@ -25,6 +31,7 @@
           piece of UI that exists before any JavaScript has run. Plain CSS, no framework: Vuetify
           and Tailwind are what is still loading.
         -->
+        <!-- The splash colours are the theme's `background` and `on-background` (src/ui/vuetify/theme.ts). -->
         <style>
             #app-splash {
                 display: flex;
@@ -32,13 +39,13 @@
                 justify-content: center;
                 min-height: 100vh;
                 font-family: system-ui, sans-serif;
-                color: #616161;
-                background: #fafafa;
+                color: #1d2433;
+                background: #f6f7fb;
             }
             @media (prefers-color-scheme: dark) {
                 #app-splash {
-                    color: #e0e0e0;
-                    background: #121212;
+                    color: #e7eaf1;
+                    background: #0e1116;
                 }
             }
             #app-splash__spinner {
