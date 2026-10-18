@@ -978,7 +978,7 @@ const A11Y_REPORT_TASK = 'recordA11yViolations';
  * spinner) never reaches a finished state, so waiting on every `getAnimations()` entry would hang
  * on any page still showing a loader.
  */
-const waitForTransitions = () => {
+export const waitForTransitions = () => {
     cy.window().should((win) => {
         const running = win.document
             .getAnimations()

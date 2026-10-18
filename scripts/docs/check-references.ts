@@ -83,6 +83,10 @@ const ALLOWED: { prefix: string; reason: string }[] = [
         prefix: 'reports/a11y/',
         reason: 'written by the accessibility sweep, absent until one runs'
     },
+    {
+        prefix: 'reports/touch/',
+        reason: 'written by `cy.checkTouchReachable()`, absent until a run'
+    },
     { prefix: 'reports/e2e/', reason: 'written by the sharded e2e runner, absent until one runs' },
     { prefix: 'reports/mutation/', reason: 'written by a Stryker run, absent until one happens' },
     { prefix: 'reports/visual-diff/', reason: 'written by a visual-regression run' },

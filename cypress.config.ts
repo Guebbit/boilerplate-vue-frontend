@@ -34,6 +34,8 @@ import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi, guestApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
+import { recordTouchFindings } from './tests/support/e2e/touch-task';
+import type { TouchRecordRequest } from './tests/support/e2e/touch-task';
 import { flakyTestsIn, recordFlakyTests, resetFlakyReport } from './scripts/e2e/flaky-report';
 import { recordSpecDuration } from './scripts/e2e/spec-durations';
 import { deviceLogin, deviceRefresh, deviceRequest } from './scripts/e2e/device-session';
@@ -88,6 +90,12 @@ const A11Y_REPORT_TASK = 'recordA11yViolations';
 
 /** Where the a11y task writes its per-spec reports. */
 const A11Y_REPORT_DIRECTORY = path.resolve('reports/a11y');
+
+/** Name shared with `cy.checkTouchReachable()` in `tests/support/e2e/touch.ts`. */
+const TOUCH_REPORT_TASK = 'recordTouchFindings';
+
+/** Where the touch task writes its per-spec reports. */
+const TOUCH_REPORT_DIRECTORY = path.resolve('reports/touch');
 
 /**
  * The Cypress config; `defineConfig` only adds typing and editor completion.
@@ -269,6 +277,12 @@ export default defineConfig({
                  */
                 [A11Y_REPORT_TASK]: (request: A11yRecordRequest) =>
                     recordA11yViolations(request, A11Y_REPORT_DIRECTORY),
+                /*
+                 * Every touch-reachability finding `cy.checkTouchReachable()` saw, to
+                 * `reports/touch/<spec>.json` — see `tests/support/e2e/touch-task.ts`.
+                 */
+                [TOUCH_REPORT_TASK]: (request: TouchRecordRequest) =>
+                    recordTouchFindings(request, TOUCH_REPORT_DIRECTORY),
 
                 /*
                  * A line on the terminal from inside a spec, for the things that are worth
