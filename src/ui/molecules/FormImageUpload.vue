@@ -170,7 +170,7 @@ const previewSource = computed(() => resolveImageUrl(objectUrl.value ?? currentI
             v-if="previewSource"
             :src="previewSource"
             :alt="t('image-upload-form.preview-alt')"
-            class="max-h-40 w-auto self-start rounded object-contain"
+            class="max-h-40 w-auto self-start rounded-md object-contain"
         />
 
         <!--

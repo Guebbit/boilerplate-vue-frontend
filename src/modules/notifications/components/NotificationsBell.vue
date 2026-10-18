@@ -195,7 +195,7 @@ const focusPanel = () => {
                         />
                     </template>
 
-                    <v-list-item-title class="text-wrap">{{ item.text }}</v-list-item-title>
+                    <v-list-item-title class="whitespace-normal">{{ item.text }}</v-list-item-title>
                     <v-list-item-subtitle>
                         <time :datetime="item.createdAt">{{ formatDateTime(item.createdAt) }}</time>
                         <v-chip

@@ -246,7 +246,7 @@ const handleRefund = () => {
                 <li
                     v-for="refund in payment.refunds"
                     :key="refund.id"
-                    class="rounded border p-2 text-sm"
+                    class="rounded-md border p-2 text-sm"
                 >
                     <div class="flex flex-wrap items-center gap-2">
                         <strong>{{ formatCurrency(refund.amount, refund.currency) }}</strong>

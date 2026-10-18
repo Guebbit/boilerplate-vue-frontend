@@ -144,7 +144,7 @@ const markDelivered = () =>
 </script>
 
 <template>
-    <li class="flex flex-col gap-2 rounded border border-solid p-3" data-test="shipment-row">
+    <li class="flex flex-col gap-2 rounded-md border border-solid p-3" data-test="shipment-row">
         <div class="flex flex-wrap items-center gap-3">
             <span class="text-sm font-semibold" data-test="shipment-number">
                 {{ t('shipment-row.title', { number: shipment.number }) }}

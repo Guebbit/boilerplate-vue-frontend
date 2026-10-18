@@ -82,4 +82,20 @@ describe('design lint, Tailwind class rules', () => {
             'better-tailwindcss/no-unknown-classes'
         );
     });
+
+    it("wipes Tailwind's shadow scale, so elevation is the way to a shadow", async () => {
+        expect(await ruleIdsOf('<div class="shadow-lg" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<div class="elevation-4" />')).toEqual([]);
+    });
+
+    it("gives a radius name Vuetify's value and refuses the v3 bare `rounded`", async () => {
+        for (const radius of ['rounded-md', 'rounded-xl', 'rounded-2xl'])
+            expect(await ruleIdsOf(`<div class="${radius}" />`)).toEqual([]);
+        expect(await ruleIdsOf('<div class="rounded-3xl" />')).toContain(
+            'better-tailwindcss/no-unknown-classes'
+        );
+        expect(await ruleIdsOf('<div class="rounded" />')).not.toEqual([]);
+    });
 });

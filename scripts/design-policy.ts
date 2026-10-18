@@ -49,6 +49,19 @@ export const themeColorNames = (): ReadonlySet<string> => {
     return new Set([...base, ...[...base].map((name) => `on-${name}`), ...declaredOn]);
 };
 
+/**
+ * A class name both Vuetify and Tailwind generate that does not mean the same in each.
+ * `tests/cross-cutting/utility-collisions.spec.ts` computes the real set and holds this list to it.
+ */
+export interface AmbiguousUtility {
+    /** A regular expression, anchored, over the bare class name (no variants). */
+    pattern: string;
+    /** `true`: the class is refused in source and `message` names the safe spelling. */
+    restrict: boolean;
+    /** What differs and what to write instead (restricted), or why both can apply (allowed). */
+    message: string;
+}
+
 /** The design policy object. */
 export const DESIGN_POLICY = {
     /** Rem to px for the canonicaliser, so `max-w-[1280px]` can map to `max-w-7xl`. */
@@ -64,9 +77,7 @@ export const DESIGN_POLICY = {
     severity: {
         canonicalClasses: 'error',
         conflictingClasses: 'error',
-        // Off until the radius scale is realigned to Vuetify's: the plugin's fix for a bare
-        // `rounded` is `rounded-sm`, which is the wrong size once `sm` means 2px.
-        deprecatedClasses: 'off',
+        deprecatedClasses: 'error',
         duplicateClasses: 'error',
         themeToken: 'error',
         unknownClasses: 'error'
@@ -78,6 +89,49 @@ export const DESIGN_POLICY = {
      * wiped, so `elevation-N` is the one way to a shadow that follows the theme.
      */
     vuetifyOwnedClasses: [String.raw`^elevation-\d{1,2}$`],
+
+    /**
+     * The names both libraries generate with different meanings, from the last measurement of
+     * Vuetify's utilities against `src/styles/main.css`. A radius name is not here: `main.css`
+     * gives Tailwind's radius scale Vuetify's values, so `rounded-xl` is one thing.
+     */
+    ambiguousUtilities: [
+        {
+            pattern: '^[wh]-(?:25|33|50|66|75|100)$',
+            restrict: true,
+            message:
+                'Vuetify reads this as a percentage, Tailwind as a fixed length (`w-100` is 400px). Use a fraction: `w-1/4`, `w-1/2`, `w-3/4`, `w-full` (same for `h-`).'
+        },
+        {
+            pattern: '^h-screen$',
+            restrict: true,
+            message:
+                'Vuetify sets 100dvh, Tailwind 100vh. Use `h-dvh`: `vh` ignores the mobile URL bar.'
+        },
+        {
+            pattern: '^order-(?:first|last)$',
+            restrict: true,
+            message: 'Vuetify orders -1 and 13, Tailwind -9999 and 9999. Use an explicit `order-N`.'
+        },
+        {
+            pattern: '^align-baseline$',
+            restrict: true,
+            message:
+                'Vuetify sets `align-items`, Tailwind `vertical-align`. Use `items-baseline` or `align-baseline` deliberately through a token.'
+        },
+        {
+            pattern: '^text-wrap$',
+            restrict: true,
+            message:
+                'Vuetify sets `white-space: normal`, Tailwind `text-wrap: wrap`. Use `whitespace-normal`.'
+        },
+        {
+            pattern: '^bg-(?:black|white|transparent)$',
+            restrict: false,
+            message:
+                'Vuetify also sets the text colour; Tailwind the background. Both applying is harmless for `bg-transparent`. `bg-black` and `bg-white` are refused as theme-blind colours.'
+        }
+    ] satisfies AmbiguousUtility[],
 
     /** The theme's stylesheet entry, read live by the Tailwind plugin. */
     tailwindEntryPoint: 'src/styles/main.css',

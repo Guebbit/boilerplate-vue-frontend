@@ -41,7 +41,7 @@ const {
     width = 96,
     height = 96,
     eager,
-    rounded = 'rounded'
+    rounded = 'rounded-md'
 } = defineProps<{
     /**
      * The record's `imageUrl`, exactly as the API returned it — resolving it is this component's
