@@ -3,6 +3,8 @@
  * Cypress end-to-end spec driving the real app: logs in, visits the orders
  * list, and asserts on the rendered rows and their actions.
  */
+import { applyViewport } from '../../../../../tests/support/e2e/apply-viewport';
+
 describe('Orders', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -115,6 +117,27 @@ describe('Orders', () => {
                     cy.get('[data-test=row-delete]').should('not.exist');
                     cy.get('[data-test=row-hard-delete]').should('not.exist');
                 });
+        });
+    });
+    /*
+     * Appended last: touch emulation leaks into whatever the browser runs next in live Chromium
+     * (the desktop pointer is lost), so nothing may follow it.
+     */
+    describe('Orders list — on a touch screen', () => {
+        it('sizes the row actions to a finger on a touch tablet, and not on desktop', () => {
+            cy.loginAs('admin');
+            // The pointer is read when the list mounts, so the device is chosen before the visit.
+            applyViewport('tablet');
+            cy.visit('/en/sales/orders');
+            cy.get('[data-test=row-view]', { timeout: 10_000 })
+                .first()
+                .should('have.class', 'v-btn--size-large');
+
+            applyViewport('desktop');
+            cy.visit('/en/sales/orders');
+            cy.get('[data-test=row-view]', { timeout: 10_000 })
+                .first()
+                .should('have.class', 'v-btn--size-small');
         });
     });
 });
