@@ -2435,7 +2435,7 @@ export const UndoEmailChangeResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
+ * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account. Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
  * @summary Confirm account deletion
  */
 export const confirmAccountDeleteBodyTokenMax = 128;
