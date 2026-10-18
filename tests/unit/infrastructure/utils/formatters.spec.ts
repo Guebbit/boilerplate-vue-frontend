@@ -12,6 +12,7 @@ import {
     formatText,
     formatDate,
     formatDateTime,
+    formatUtcDate,
     formatCurrency,
     currencyDigits,
     formatPercent,
@@ -73,6 +74,31 @@ describe('formatDate', () => {
         expect(formatDate()).toBe(EMPTY_VALUE);
         expect(formatDate(null)).toBe(EMPTY_VALUE);
         expect(formatDate('')).toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatUtcDate', () => {
+    const originalZone = process.env.TZ;
+
+    afterEach(() => {
+        // Node re-reads `TZ` on assignment; `undefined` would write the string "undefined".
+        if (originalZone === undefined) delete process.env.TZ;
+        else process.env.TZ = originalZone;
+    });
+
+    it('prints the UTC day of a deadline east of UTC, where the local date is already the next', () => {
+        process.env.TZ = 'Pacific/Auckland';
+        const deadline = '2026-10-30T23:59:59.999Z';
+
+        expect(formatDate(deadline)).toContain('31');
+        expect(formatUtcDate(deadline)).toContain('30');
+        expect(formatUtcDate(deadline)).not.toContain('31');
+    });
+
+    it('falls back for undefined, null and empty input', () => {
+        expect(formatUtcDate()).toBe(EMPTY_VALUE);
+        expect(formatUtcDate(null)).toBe(EMPTY_VALUE);
+        expect(formatUtcDate('')).toBe(EMPTY_VALUE);
     });
 });
 

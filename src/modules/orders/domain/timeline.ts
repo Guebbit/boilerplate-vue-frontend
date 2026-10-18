@@ -68,8 +68,10 @@ export interface TimelineTools {
     has: (key: string) => boolean;
     /** Formats an amount in a currency. */
     money: (amount: number, currency: string) => string;
-    /** Formats an ISO date, no time. */
+    /** Formats an ISO date, no time, in the reader's zone. */
     date: (iso: string) => string;
+    /** Formats an ISO date, no time, as the UTC day it names: the withdrawal deadline. */
+    utcDate: (iso: string) => string;
 }
 
 /**
@@ -273,7 +275,7 @@ const DETAILS: Readonly<Partial<Record<OrderTimelineType, DetailBuilder>>> = {
         const until = textOf(data, 'withdrawUntil');
         return [
             until
-                ? tools.t('order-timeline.detail-withdraw-until', { value: tools.date(until) })
+                ? tools.t('order-timeline.detail-withdraw-until', { value: tools.utcDate(until) })
                 : undefined
         ];
     },

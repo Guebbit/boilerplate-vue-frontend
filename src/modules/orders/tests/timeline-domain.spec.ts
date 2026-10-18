@@ -18,7 +18,8 @@ const tools: TimelineTools = {
     t: (key, parameters) => (parameters ? `${key}(${Object.values(parameters).join(',')})` : key),
     has: (key) => !key.includes('unknown'),
     money: (amount, currency) => `${amount} ${currency}`,
-    date: (iso) => `date:${iso}`
+    date: (iso) => `date:${iso}`,
+    utcDate: (iso) => `utc:${iso}`
 };
 
 describe('describeTimelineEntry', () => {
@@ -77,14 +78,14 @@ describe('describeTimelineEntry', () => {
         );
     });
 
-    it('formats the withdrawal deadline as a date', () => {
+    it('formats the withdrawal deadline as the UTC day it names', () => {
         const line = describeTimelineEntry(
             { type: 'delivered', data: { withdrawUntil: '2026-10-30T00:00:00.000Z' } },
             tools
         );
 
         expect(line.detail).toBe(
-            'order-timeline.detail-withdraw-until(date:2026-10-30T00:00:00.000Z)'
+            'order-timeline.detail-withdraw-until(utc:2026-10-30T00:00:00.000Z)'
         );
     });
 
