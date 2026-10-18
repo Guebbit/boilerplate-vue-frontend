@@ -102,6 +102,16 @@ Those two, the authorization keys and the demo webhook sink's three TLS files (`
 | `docs:build`   | Build the docs site for production | [Testing](./testing-and-docs.md) |
 | `docs:preview` | Preview the built docs site        | [Testing](./testing-and-docs.md) |
 
+## Audit scripts
+
+The programs an AI audit runs (`scripts/audit/*/scripts/`). The audits themselves are prompts, not
+scripts: see [AI Auditing](./ai-auditing.md).
+
+| Script               | Job                                                                                            | Read more                       |
+| -------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------- |
+| `audit:design:plan`  | Splits the last design capture into batches small enough for one reviewer's context            | [AI Auditing](./ai-auditing.md) |
+| `audit:design:check` | Checks that every tile and `file:line` a design review cites exists; exits 1 when one does not | [AI Auditing](./ai-auditing.md) |
+
 ## Related pages
 
 - [Docker & Podman](./docker-and-podman.md)

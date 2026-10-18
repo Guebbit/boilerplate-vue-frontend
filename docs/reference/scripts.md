@@ -109,6 +109,15 @@ and follows, and a `scripts/` folder for anything it runs.
 | -------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | `scripts/audit/*/SKILL.md` | The four audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
 
+The design review keeps its programs in `scripts/audit/design-manual/scripts/`:
+
+| File                                                  | What it is                                                                                                                | Read next                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `scripts/audit/design-manual/scripts/stitch.ts`       | Pure: scroll offsets, the stitcher that lays viewport shots onto one tall page, and the tile cutter with its size limits. | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/manifest.ts`     | The types of one capture run (what was shot, from which commit, at which sizes) and the merge of its parts.               | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/plan-batches.ts` | Pure: splits a manifest into batches small enough for one reviewer. `plan.ts` is its CLI, `npm run audit:design:plan`.    | [AI Auditing](../tools/ai-auditing.md) |
+| `scripts/audit/design-manual/scripts/check-report.ts` | Pure: checks every tile and `file:line` a findings table cites. `check.ts` is its CLI, `npm run audit:design:check`.      | [AI Auditing](../tools/ai-auditing.md) |
+
 ## Git hooks
 
 | File                | What it is                                                           | Read next                                      |
