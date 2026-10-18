@@ -36,6 +36,7 @@ import { useCoreStore, useIsLoading, useNotificationsStore } from '@guebbit/vue-
 import { MAIN_CONTENT } from '@/app/router/announcer.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { shopRecord } from '@/infrastructure/shop.ts';
 import { enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { collectModuleLoadingKeys } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
@@ -120,7 +121,7 @@ watch(
 
 /**
  * The shop's prose pages, cross-linked from the footer so a `contentinfo` landmark exists on every
- * page. Same four the router declares; the names are computed the same way.
+ * page. Same five the router declares; the names are computed the same way.
  */
 const legalLinks = STATIC_PAGES.map((page) => ({
     page,
@@ -179,6 +180,19 @@ const analyticsConsentEnabled = isAnalyticsConsentEnabled();
  * The guest consent store, whose `reopen()` the footer link calls.
  */
 const analyticsConsent = useAnalyticsConsentStore();
+
+/**
+ * The footer's seller line: "© legal name · VAT number", or the name alone for a shop with no VAT
+ * number. Empty until the shop has loaded, and then the line is not drawn.
+ */
+const sellerLine = computed(() =>
+    shopRecord.value?.vatNumber
+        ? t('footer.seller', {
+              legalName: shopRecord.value.legalName,
+              vatNumber: shopRecord.value.vatNumber
+          })
+        : t('footer.seller-no-vat', { legalName: shopRecord.value?.legalName ?? '' })
+);
 
 /**
  * Reactive toast queue, rendered below as one `v-alert` per visible message.
@@ -304,9 +318,9 @@ watch(abilitiesSignal, () => {
 
         <!--
             Minimal footer, so every page has a `contentinfo` landmark to jump to. The links are
-            the same four prose pages the About page cross-links; nothing else belongs here.
+            the same five prose pages the About page cross-links, plus the seller line; nothing else belongs here.
         -->
-        <v-footer tag="footer" border="t" class="justify-center py-4 text-sm">
+        <v-footer tag="footer" border="t" class="flex-col justify-center gap-2 py-4 text-sm">
             <nav
                 class="flex flex-wrap justify-center gap-4"
                 :aria-label="t('navigation.label-legal')"
@@ -330,6 +344,10 @@ watch(abilitiesSignal, () => {
                     {{ t('analytics-consent.privacy-choices') }}
                 </button>
             </nav>
+            <!-- The seller, on every page (e-Commerce Directive Art. 5; Italy also wants the VAT number in view). -->
+            <p v-if="shopRecord" class="w-full text-center opacity-80" data-test="footer-seller">
+                {{ sellerLine }}
+            </p>
         </v-footer>
 
         <!-- The one confirmation dialog, fed by `useDialogStore().confirm(...)` -->

@@ -42,7 +42,7 @@ import { brandName } from '@/app/utils/branding.ts';
 const moduleRoutes = collectModuleRoutes(enabledModules);
 
 /**
- * The shop's own routes under `/:locale` — Home, the four prose pages, and the Error shell —
+ * The shop's own routes under `/:locale` — Home, the five prose pages, and the Error shell —
  * named separately from `moduleRoutes` so {@link assertUniqueRoutes} can check both against each
  * other below, and shared with `router.spec.ts`'s "app + module" duplicate-route cases.
  */
@@ -81,6 +81,12 @@ const shellChildRoutes: RouteRecordRaw[] = [
         name: staticPageRouteName('privacy'),
         meta: { title: 'static-pages.privacy.title' },
         component: () => import('@/app/views/PrivacyPage.vue')
+    },
+    {
+        path: 'legal',
+        name: staticPageRouteName('legal'),
+        meta: { title: 'static-pages.legal.title' },
+        component: () => import('@/app/views/LegalPage.vue')
     },
     {
         path: 'error/:status/:message?',

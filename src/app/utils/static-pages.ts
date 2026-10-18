@@ -1,6 +1,6 @@
 /**
  * @module
- * Shared list of the shop's prose pages (about/FAQ/terms/privacy) and the one formula that
+ * Shared list of the shop's prose pages (about/FAQ/terms/privacy/legal) and the one formula that
  * turns a page name into its route name. The router, the footer and every page that cross-links
  * its siblings all read from here, so the mapping lives in exactly one place.
  */
@@ -8,7 +8,7 @@
 /**
  * The shop's prose pages, in the order they are linked everywhere (footer, cross-links).
  */
-export const STATIC_PAGES = ['about', 'faq', 'terms', 'privacy'] as const;
+export const STATIC_PAGES = ['about', 'faq', 'terms', 'privacy', 'legal'] as const;
 
 /**
  * One of the shop's prose pages.

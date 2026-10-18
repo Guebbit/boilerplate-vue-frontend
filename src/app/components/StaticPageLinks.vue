@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * @module
- * The cross-links at the bottom of every prose page (about/FAQ/terms/privacy): the other three
- * pages of `STATIC_PAGES`, so one nav entry (About) reaches all four. One component, so the
- * four pages cannot drift on which siblings they link.
+ * The cross-links at the bottom of every prose page (about/FAQ/terms/privacy/legal): the other four
+ * pages of `STATIC_PAGES`, so one nav entry (About) reaches all five. One component, so the
+ * five pages cannot drift on which siblings they link.
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

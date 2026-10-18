@@ -140,7 +140,7 @@ watch(drawer, (isOpen) => {
  */
 const shellNavEntries: AppNavigationEntry[] = [
     { name: 'Home', label: 'navigation.label-home', plural: 1, order: 10, icon: House },
-    // One entry reaches all four prose pages — they cross-link at the bottom.
+    // One entry reaches all five prose pages — they cross-link at the bottom.
     { name: 'StaticAbout', label: 'navigation.label-about', plural: 1, order: 99, icon: Info }
 ];
 

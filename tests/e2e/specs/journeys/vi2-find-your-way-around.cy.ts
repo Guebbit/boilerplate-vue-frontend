@@ -11,12 +11,13 @@
  * the API says is gone used to leave the product page on its loading placeholders for good.
  */
 
-/** The four prose pages the footer links, with the id each page renders. */
+/** The five prose pages the footer links, with the id each page renders. */
 const STATIC_PAGES = [
     ['about', '#static-page-about'],
     ['faq', '#static-page-faq'],
     ['terms', '#static-page-terms'],
-    ['privacy', '#static-page-privacy']
+    ['privacy', '#static-page-privacy'],
+    ['legal', '#static-page-legal']
 ] as const;
 
 describe('VI2 · Find your way around', () => {
