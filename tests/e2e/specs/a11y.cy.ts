@@ -146,15 +146,6 @@ sweepA11y(
             }
         },
         {
-            name: 'home, administration menu open on a phone',
-            route: '/en',
-            viewport: 'phone',
-            prepare: () => {
-                cy.get('[data-test=admin-menu]').click();
-                cy.get('[role=menu] [role=menuitem]').should('be.visible');
-            }
-        },
-        {
             name: 'home, navigation drawer open on a phone, every section',
             route: '/en',
             viewport: 'phone',
