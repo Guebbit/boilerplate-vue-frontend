@@ -78,6 +78,8 @@ sweepA11y('the shell', [
 - **`theme: 'dark'`** clicks the app bar's toggle (`data-test="theme-toggle"`) and waits for `.v-theme--dark` — the way the visitor switches, not a direct write to Vuetify, so the audited state is one a click can reach.
 - **`prepare`** runs after the content wait and before axe: plain Cypress commands, enqueued in order.
 
+The same cases feed the design review: with `E2E_DESIGN_CAPTURE=true` the sweep photographs each one instead of auditing it ([Design Review](./design-review.md)).
+
 The states audited this way, and why each one:
 
 | State                                   | Where                      | What it guards                                                                        |
@@ -237,5 +239,6 @@ If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command �
 - [The demo profile](./demo-profile.md) — the backend these run against
 - [Component Testing](./component-testing.md) — the layer below, where markup is asserted directly
 - [Testing & Docs](./testing-and-docs.md) — the map
+- [Design Review](./design-review.md) — the same cases, photographed instead of audited, for a judgement of the design
 - [AI Auditing](./ai-auditing.md) — `scripts/audit/accessibility-manual/SKILL.md`, the judgement layer for
   the ~60–70% this suite's own honesty above says axe/eslint cannot reach

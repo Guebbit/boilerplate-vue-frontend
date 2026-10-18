@@ -370,5 +370,6 @@ revisiting if mutation ever moves from nightly onto pull requests.
 - [Component Testing](./component-testing.md) — resources, boundaries, and why not to select on vendor classes
 - [Property Testing](./property-testing.md) — generation over enumeration
 - [Accessibility Testing](./accessibility-testing.md) — what automated a11y can and cannot tell you
+- [Judging a Design](../theory/design-judgement.md) — what replaces an oracle when the question is "is it right?"
 - [Mutation Testing](./mutation-testing.md)
 - [API](../api/)

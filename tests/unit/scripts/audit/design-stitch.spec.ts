@@ -4,9 +4,13 @@
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
 import {
+    bandsOf,
+    classifyFixed,
+    stepsFor
+} from '../../../../scripts/audit/design-manual/scripts/bands';
+import {
     cutTiles,
     MAX_TILE_EDGE,
-    stepsFor,
     stitchSegments,
     tileHeightFor
 } from '../../../../scripts/audit/design-manual/scripts/stitch';
@@ -191,5 +195,64 @@ describe('tileHeightFor', () => {
     it('caps a tablet and a desktop by their pixel budget', () => {
         expect(tileHeightFor(1024)).toBe(1123);
         expect(tileHeightFor(1280)).toBe(898);
+    });
+});
+
+describe('classifyFixed', () => {
+    const phone = { width: 390, height: 844 };
+
+    it('calls a wide element on the top edge a top band', () => {
+        expect(classifyFixed({ selector: '.bar', top: 0, height: 56, width: 390 }, phone)).toBe(
+            'band-top'
+        );
+    });
+
+    it('calls a wide element on the bottom edge a bottom band', () => {
+        expect(classifyFixed({ selector: '.nav', top: 788, height: 56, width: 390 }, phone)).toBe(
+            'band-bottom'
+        );
+    });
+
+    it('leaves a narrow element, a toast or a floating button, as other', () => {
+        expect(classifyFixed({ selector: '.toast', top: 0, height: 48, width: 120 }, phone)).toBe(
+            'other'
+        );
+        expect(classifyFixed({ selector: '.fab', top: 760, height: 56, width: 56 }, phone)).toBe(
+            'other'
+        );
+    });
+
+    it('leaves a wide element away from both edges as other', () => {
+        expect(classifyFixed({ selector: '.strip', top: 300, height: 40, width: 390 }, phone)).toBe(
+            'other'
+        );
+    });
+
+    it('does not treat a full-height overlay as a band', () => {
+        expect(classifyFixed({ selector: '.scrim', top: 0, height: 844, width: 390 }, phone)).toBe(
+            'other'
+        );
+    });
+});
+
+describe('bandsOf', () => {
+    it('takes the tallest band on each edge and ignores the rest', () => {
+        const phone = { width: 390, height: 844 };
+
+        expect(
+            bandsOf(
+                [
+                    { selector: '.bar', top: 0, height: 56, width: 390 },
+                    { selector: '.banner', top: 0, height: 80, width: 390 },
+                    { selector: '.cookie', top: 764, height: 80, width: 390 },
+                    { selector: '.toast', top: 20, height: 40, width: 100 }
+                ],
+                phone
+            )
+        ).toEqual({ bandTop: 80, bandBottom: 80 });
+    });
+
+    it('is zero for a page with no fixed chrome', () => {
+        expect(bandsOf([], { width: 1280, height: 800 })).toEqual({ bandTop: 0, bandBottom: 0 });
     });
 });

@@ -29,6 +29,7 @@ import './commands';
 import './fixtures';
 import './journey';
 import './touch';
+import './design-capture';
 import './layout-checks';
 
 registerCypressGrep();

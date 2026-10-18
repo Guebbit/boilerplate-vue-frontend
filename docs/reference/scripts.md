@@ -127,18 +127,23 @@ second, deeper scope that this repo has no equivalent for.
 One folder per audit, in the [Agent Skills](https://agentskills.io) layout: a `SKILL.md` an AI reads
 and follows, and a `scripts/` folder for anything it runs.
 
-| File                       | What it is                                                                                        | Read next                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `scripts/audit/*/SKILL.md` | The four audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
+| File                       | What it is                                                                                       | Read next                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| `scripts/audit/*/SKILL.md` | The six audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
 
 The design review keeps its programs in `scripts/audit/design-manual/scripts/`:
 
-| File                                                  | What it is                                                                                                                | Read next                              |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `scripts/audit/design-manual/scripts/stitch.ts`       | Pure: scroll offsets, the stitcher that lays viewport shots onto one tall page, and the tile cutter with its size limits. | [AI Auditing](../tools/ai-auditing.md) |
-| `scripts/audit/design-manual/scripts/manifest.ts`     | The types of one capture run (what was shot, from which commit, at which sizes) and the merge of its parts.               | [AI Auditing](../tools/ai-auditing.md) |
-| `scripts/audit/design-manual/scripts/plan-batches.ts` | Pure: splits a manifest into batches small enough for one reviewer. `plan.ts` is its CLI, `npm run audit:design:plan`.    | [AI Auditing](../tools/ai-auditing.md) |
-| `scripts/audit/design-manual/scripts/check-report.ts` | Pure: checks every tile and `file:line` a findings table cites. `check.ts` is its CLI, `npm run audit:design:check`.      | [AI Auditing](../tools/ai-auditing.md) |
+| File                                                    | What it is                                                                                                                                      | Read next                                                             |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `scripts/audit/design-manual/scripts/stitch.ts`         | Pure: the stitcher that lays viewport shots onto one tall page, and the tile cutter with its size limits.                                       | [AI Auditing](../tools/ai-auditing.md)                                |
+| `scripts/audit/design-manual/scripts/bands.ts`          | Pure and browser-safe: the scroll offsets of a capture, and which fixed elements are bands to cut from every piece.                             | [Design Review](../tools/design-review.md#how-a-page-is-photographed) |
+| `scripts/audit/design-manual/scripts/manifest.ts`       | The types of one capture run (what was shot, from which commit, at which sizes) and the merge of its parts.                                     | [AI Auditing](../tools/ai-auditing.md)                                |
+| `scripts/audit/design-manual/scripts/plan-batches.ts`   | Pure: splits a manifest into batches small enough for one reviewer. `plan.ts` is its CLI, `npm run audit:design:plan`.                          | [AI Auditing](../tools/ai-auditing.md)                                |
+| `scripts/audit/design-manual/scripts/check-report.ts`   | Pure: checks every tile and `file:line` a findings table cites. `check.ts` is its CLI, `npm run audit:design:check`.                            | [AI Auditing](../tools/ai-auditing.md)                                |
+| `scripts/audit/design-manual/scripts/capture-matrix.ts` | Pure: which shots a sweep case becomes (sizes, themes, locales), their stable ids, and the module a spec belongs to.                            | [Design Review](../tools/design-review.md)#the-capture-matrix         |
+| `scripts/audit/design-manual/scripts/capture-scope.ts`  | Pure: turns a typed scope (module, `shell`, path, `--diff`) into the sweep specs a capture runs.                                                | [Design Review](../tools/design-review.md)#running-it                 |
+| `scripts/audit/design-manual/scripts/capture-task.ts`   | The Node tasks behind `cy.captureDesign()`: stitch a page's screenshots into tiles, and keep its manifest row.                                  | [Design Review](../tools/design-review.md)#how-a-page-is-photographed |
+| `scripts/audit/design-manual/scripts/capture.ts`        | The CLI: runs the sweeps in capture mode through `test:e2e:spec` and merges the rows into the capture manifest, `npm run audit:design:capture`. | [Design Review](../tools/design-review.md)#running-it                 |
 
 ## Lint rules — `scripts/eslint/`
 

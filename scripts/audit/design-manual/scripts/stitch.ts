@@ -72,36 +72,6 @@ export const tileHeightFor = (width: number): number =>
     Math.min(MAX_TILE_EDGE, Math.floor(MAX_TILE_PIXELS / width));
 
 /**
- * The scroll offsets to shoot a page of `pageHeight` px with a viewport of `viewportHeight` px.
- *
- * Each step advances by what is left after the fixed bands are cut. The last offset is the
- * browser's own maximum (`pageHeight - viewportHeight`), so it overlaps the one before; the
- * stitcher overwrites that overlap with identical rows.
- *
- * @throws {RangeError} when the bands leave no room to advance
- */
-export const stepsFor = (
-    pageHeight: number,
-    viewportHeight: number,
-    bandTop: number,
-    bandBottom: number
-): number[] => {
-    const maxScroll = pageHeight - viewportHeight;
-    if (maxScroll <= 0) return [0];
-
-    const advance = viewportHeight - bandTop - bandBottom;
-    if (advance <= 0)
-        throw new RangeError(
-            `the fixed bands (${String(bandTop)} + ${String(bandBottom)} px) fill the ${String(viewportHeight)} px viewport`
-        );
-
-    const offsets: number[] = [];
-    for (let offset = 0; offset < maxScroll; offset += advance) offsets.push(offset);
-    offsets.push(maxScroll);
-    return offsets;
-};
-
-/**
  * Copies `height` rows of `source`, starting at `sourceY`, onto `canvas` at `canvasY`.
  * Rows that would fall outside the canvas are dropped.
  */
