@@ -5594,7 +5594,7 @@ export const CheckoutResponse = zod.strictObject({
     })
 });
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Admins are scoped to their own orders too — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorderPathOrderIdMax = 64;
@@ -6445,7 +6445,7 @@ export const CreateOrderResponse = zod.strictObject({
     })
 });
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
 export const DeleteOrderQueryParams = zod.strictObject({
@@ -7550,7 +7550,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
     })
 });
 /**
- * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid). A soft delete is one-way and safe to repeat — undo it with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderByIdPathIdMax = 64;

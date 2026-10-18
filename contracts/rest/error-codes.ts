@@ -124,7 +124,7 @@ export const ERROR_CODES = {
     ORDER_LINE_LIMIT_EXCEEDED: 'ORDER_LINE_LIMIT_EXCEEDED',
     /** 409 — The order is not in a state that can still be cancelled. */
     ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
-    /** 409 — A hard delete needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`). */
+    /** 409 — A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
     ORDER_NOT_CANCELLED: 'ORDER_NOT_CANCELLED',
     /** 409 — The order must be paid before this delivery action. */
     ORDER_NOT_PAID: 'ORDER_NOT_PAID',
