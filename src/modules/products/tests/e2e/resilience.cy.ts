@@ -9,8 +9,9 @@
  * naming a title or a count stays green.
  */
 
+import { applyViewport } from '../../../../../tests/support/e2e/apply-viewport';
 import {
-    assertNoHorizontalOverflow,
+    assertFitsTheScreen,
     assertRouteIsHealthy
 } from '../../../../../tests/support/e2e/resilience';
 
@@ -51,7 +52,16 @@ describe('the catalogue renders whatever the dataset holds', () => {
                 for (const href of hrefs) {
                     cy.visit(href);
                     cy.get('#product-target').should('exist');
-                    assertNoHorizontalOverflow();
+                    assertFitsTheScreen(href);
+                    // Long titles and unbroken tokens are what break at 320 px: this loop is the
+                    // one place that walks sparse and rich records alike.
+                    applyViewport('phone-small');
+                    cy.checkLayout(href, {
+                        viewport: 'phone-small',
+                        checks: ['overflow', 'clipped'],
+                        narrow: true
+                    });
+                    applyViewport('desktop');
                 }
             });
     });
@@ -80,7 +90,7 @@ describe('lists tolerate being empty', () => {
         // A guest is served the grid, never the staff table, so the rows to look for are cards.
         cy.get('[data-test=products-empty]').should('exist');
         cy.get('[data-test=product-card]').should('not.exist');
-        assertNoHorizontalOverflow();
+        assertFitsTheScreen('/en/products (empty)');
     });
 });
 

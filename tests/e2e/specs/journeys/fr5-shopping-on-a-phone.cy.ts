@@ -10,14 +10,12 @@
  * sections, login and signup for a guest, logout for a customer). The same purchase as CU1's,
  * with a seeded customer so it needs no mailbox.
  */
+import { applyViewport } from '../../../support/e2e/apply-viewport';
 import {
     addOpenProductToCart,
     fillAddressDialog,
     openProductCard
 } from '../../../support/e2e/steps';
-
-/** iPhone 14-class portrait: the breakpoint below which the bar collapses into the drawer. */
-const PHONE = { width: 390, height: 844 } as const;
 
 /** The drawer's own id (`AppNavigation.vue`), which the hamburger names in `aria-controls`. */
 const DRAWER = '#app-drawer';
@@ -39,19 +37,23 @@ const dismissToasts = (): void => {
     cy.get('.v-alert').should('not.exist');
 };
 
-/** Fails when the page is wider than the screen, i.e. it would scroll sideways. */
-const fitsTheScreen = (): void => {
-    cy.document().should((document_) => {
-        expect(
-            document_.documentElement.scrollWidth,
-            'the page is no wider than the viewport'
-        ).to.be.at.most(PHONE.width);
+/**
+ * Fails when something on the page escapes the screen, is cut off, or opens off it: the layout
+ * checks, by element, at the phone size.
+ *
+ * @param step - what the report calls this state
+ */
+const fitsTheScreen = (step: string): void => {
+    cy.checkLayout(step, {
+        viewport: 'phone',
+        checks: ['overflow', 'overlay-fit', 'clipped'],
+        narrow: true
     });
 };
 
 describe('FR5 · Shopping on a phone', () => {
     beforeEach(() => {
-        cy.viewport(PHONE.width, PHONE.height);
+        applyViewport('phone');
         cy.visit('/en');
         cy.restore();
         cy.visit('/en');
@@ -59,7 +61,7 @@ describe('FR5 · Shopping on a phone', () => {
 
     it('a guest signs in through the drawer, buys by card with a new address, and logs out through it', () => {
         cy.step('a guest’s drawer offers login and signup');
-        fitsTheScreen();
+        fitsTheScreen('a guest’s start page');
         openDrawer();
         cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).should('be.visible');
         cy.get(`${DRAWER} a[href^="/en/signup"]`).should('be.visible');
@@ -67,7 +69,7 @@ describe('FR5 · Shopping on a phone', () => {
         cy.step('signs in through it');
         cy.get(`${DRAWER} [data-test=nav-login-link-mobile]`).click();
         cy.get('#login-page').should('exist');
-        fitsTheScreen();
+        fitsTheScreen('the login page');
         cy.accountOf('user').then(({ email, password }) => {
             cy.get('[type=email]').should('not.be.disabled').clear();
             cy.get('[type=email]').type(email);
@@ -86,24 +88,21 @@ describe('FR5 · Shopping on a phone', () => {
 
         cy.step('finds a product and puts it in the cart');
         cy.get('#products-list-page').should('exist');
-        fitsTheScreen();
+        fitsTheScreen('the product list');
         cy.filterByNarrowestCategoryOf('product.rich');
         openProductCard('product.rich');
         cy.get('#product-target').should('exist');
-        fitsTheScreen();
+        fitsTheScreen('the product page');
         addOpenProductToCart();
 
         cy.step('the cart and checkout fit, and the address dialog fits inside the screen');
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 1);
-        fitsTheScreen();
+        fitsTheScreen('the cart');
         cy.get('[data-test=shipping-method-standard]').click();
         cy.get('[data-test=address-picker-add]').click();
-        cy.get('[data-test=address-dialog]').should(($dialog) => {
-            const box = $dialog[0]?.getBoundingClientRect();
-            expect(box?.left, 'inside on the left').to.be.at.least(0);
-            expect(box?.right, 'inside on the right').to.be.at.most(PHONE.width);
-        });
+        cy.get('[data-test=address-dialog]').should('be.visible');
+        fitsTheScreen('the address dialog');
         fillAddressDialog({
             label: 'Phone',
             fullName: 'Gino Pino',
@@ -113,7 +112,7 @@ describe('FR5 · Shopping on a phone', () => {
             country: 'Italy'
         });
         cy.get('[data-test=address-dialog]').should('not.exist');
-        fitsTheScreen();
+        fitsTheScreen('the cart with an address');
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
 
         cy.step('pays by card on the order page');
@@ -121,7 +120,7 @@ describe('FR5 · Shopping on a phone', () => {
         cy.payWith('Card that pays');
         cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
         cy.get('[data-test=order-shipping-address]').should('contain.text', 'Via Mobile 5');
-        fitsTheScreen();
+        fitsTheScreen('the paid order');
 
         cy.step('logs out through the drawer, which then offers login again');
         dismissToasts();

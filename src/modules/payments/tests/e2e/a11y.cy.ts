@@ -7,14 +7,10 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 sweepA11y(
     'payments',
     [
         ['payments, all', '/en/sales/payments'],
-        { name: 'payments, phone viewport', route: '/en/sales/payments', viewport: PHONE },
         ['payments, refunds', '/en/sales/payments?tab=refunds'],
         ['payments, needs attention', '/en/sales/payments?tab=attention'],
         ['payments, awaiting transfer', '/en/sales/payments?tab=awaiting'],

@@ -309,7 +309,7 @@ watch(abilitiesSignal, () => {
                 <RouterLink
                     v-for="link in legalLinks"
                     :key="'footer-' + link.page"
-                    class="underline opacity-80"
+                    class="inline-flex min-h-11 items-center underline opacity-80 sm:min-h-0"
                     :to="link.to"
                 >
                     {{ t(`static-pages.${link.page}.title`) }}
@@ -318,7 +318,7 @@ watch(abilitiesSignal, () => {
                 <button
                     v-if="analyticsConsentEnabled"
                     type="button"
-                    class="cursor-pointer border-0 bg-transparent p-0 text-on-surface underline opacity-80"
+                    class="inline-flex min-h-11 cursor-pointer items-center border-0 bg-transparent p-0 text-on-surface underline opacity-80 sm:min-h-0"
                     data-test="privacy-choices-link"
                     @click="analyticsConsent.reopen()"
                 >

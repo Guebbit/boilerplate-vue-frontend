@@ -2,21 +2,12 @@
 
 /**
  * The two assertions that hold whatever a page happens to render: it logs nothing unexpected, and
- * it does not scroll sideways. Shared by the central resilience spec and by each shop module's own,
+ * it fits its screen (nothing escapes it or is cut off: the layout checks, by element). Shared by the central resilience spec and by each shop module's own,
  * so every route is held to the same pair without any of them naming a value.
  *
- * Why no random data: a console spy and `document.body.scrollWidth` answer the question against ANY
+ * Why no random data: a console spy and a geometry check answer the question against ANY
  * dataset, and a generated one would only make a failure unreproducible.
  */
-
-/**
- * How much horizontal slack a page gets before it counts as overflowing.
- *
- * One pixel, not zero: sub-pixel layout rounding can leave `scrollWidth` a fraction above
- * `clientWidth` on a page that is visually fine, and a spec that fails on that teaches everyone to
- * ignore it.
- */
-const MAX_HORIZONTAL_OVERFLOW_PX = 1;
 
 /**
  * Console output that is known noise rather than a regression, filtered so it cannot mask a real
@@ -102,15 +93,12 @@ export const assertNoConsoleNoise = (): void => {
 };
 
 /**
- * Fails when the page is wider than the viewport.
+ * Fails when the page does not fit its screen, naming the element that escapes or is cut off.
+ *
+ * @param label - what the report calls this state, such as the route's path
  */
-export const assertNoHorizontalOverflow = (): void => {
-    cy.document().then((pageDocument) => {
-        expect(
-            pageDocument.body.scrollWidth,
-            'page scrolls sideways — something is wider than the viewport'
-        ).to.be.at.most(pageDocument.documentElement.clientWidth + MAX_HORIZONTAL_OVERFLOW_PX);
-    });
+export const assertFitsTheScreen = (label: string): void => {
+    cy.checkLayout(label, { viewport: 'desktop', checks: ['overflow', 'clipped'] });
 };
 
 /**
@@ -123,5 +111,5 @@ export const assertRouteIsHealthy = (path: string, pageAnchor: string): void => 
     visitCapturingConsole(path);
     cy.get(pageAnchor).should('exist');
     assertNoConsoleNoise();
-    assertNoHorizontalOverflow();
+    assertFitsTheScreen(path);
 };

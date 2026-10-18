@@ -34,11 +34,12 @@ const siblings = computed(() => STATIC_PAGES.filter((name) => name !== current))
 
 <template>
     <v-divider class="my-6" />
-    <nav class="flex flex-wrap gap-4 text-sm" :aria-label="t('static-pages.related')">
+    <!-- Each link is 44 px tall below `sm`, a finger's size; from `sm` up it is the text line. -->
+    <nav class="flex flex-wrap gap-x-4 text-sm" :aria-label="t('static-pages.related')">
         <RouterLink
             v-for="name in siblings"
             :key="'link-' + name"
-            class="underline opacity-80"
+            class="inline-flex min-h-11 items-center underline opacity-80 sm:min-h-0"
             :to="routerLinkI18n({ name: staticPageRouteName(name) })"
         >
             {{ t(`static-pages.${name}.title`) }}

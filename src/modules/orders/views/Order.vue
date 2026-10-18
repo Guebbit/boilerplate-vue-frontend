@@ -684,7 +684,12 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             class="mb-2 flex items-center justify-between gap-3 font-semibold"
                                         >
                                             <span>{{ item.product.title || item.product.id }}</span>
-                                            <v-chip size="small" variant="tonal" color="tertiary">
+                                            <v-chip
+                                                size="small"
+                                                variant="tonal"
+                                                color="tertiary"
+                                                class="shrink-0"
+                                            >
                                                 × {{ item.quantity }}
                                             </v-chip>
                                         </div>
@@ -726,7 +731,9 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             <p class="m-0 opacity-75">
                                                 {{ t('order-target-page.label-product-id') }}
                                             </p>
-                                            <strong>{{ item.product.id }}</strong>
+                                            <strong class="min-w-0 wrap-anywhere">{{
+                                                item.product.id
+                                            }}</strong>
                                         </div>
                                         <!-- The response already carries the frozen unit
                                              price and this order's own currency — line total is
@@ -785,7 +792,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             <div
                                 v-for="row in currentOrder.taxSummary"
                                 :key="'tax-rate-' + row.rate"
-                                class="flex items-center justify-between gap-3 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-3"
+                                class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-3"
                                 data-test="order-tax-row"
                             >
                                 <v-chip size="small" variant="tonal" color="tertiary">

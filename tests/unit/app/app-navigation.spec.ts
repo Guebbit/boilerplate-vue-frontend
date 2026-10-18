@@ -29,6 +29,7 @@ import { ref } from 'vue';
 import { createPinia } from 'pinia';
 import { deleteCookie } from '@guebbit/js-toolkit';
 import AppNavigation from '@/app/components/AppNavigation.vue';
+import { supportedLanguages } from '@/i18n';
 import { SLOTS_KEY } from '@/kernel/slots';
 import type { Slots } from '@/kernel/slots';
 import vuetify from '@/ui/vuetify';
@@ -44,7 +45,8 @@ const held = ref<string[]>([]);
 const session = {
     isAuth: ref(false),
     viewer: ref<{ email: string } | undefined>(undefined),
-    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`)
+    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`),
+    persistLocalePreference: vi.fn()
 };
 
 /**
@@ -199,6 +201,9 @@ vi.mock('vue-i18n', async (importOriginal) => {
  */
 const pushSpy = vi.fn();
 
+/** `router.replace` calls: a language switch re-enters the current route under the new locale. */
+const replaceSpy = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('vue-router', () => ({
     RouterLink: {
         template: '<a><slot /></a>'
@@ -206,7 +211,7 @@ vi.mock('vue-router', () => ({
     useRoute: () => ({ ...currentRoute.value, params: {}, query: {} }),
     useRouter: () => ({
         push: pushSpy,
-        replace: vi.fn(),
+        replace: replaceSpy,
         resolve: ({ name }: { name: string }) => ({
             meta: {
                 access: routeAccess[name],
@@ -637,7 +642,9 @@ describe('Navigation', () => {
         expect(admin.findAll('#app-drawer .v-list-subheader').map((h) => h.text())).toEqual([
             'navigation.section-main',
             'navigation.section-account',
-            'navigation.section-admin'
+            'navigation.section-admin',
+            // Below `sm` the drawer also carries the language choices (the bar has no room).
+            'navigation.label-language'
         ]);
     });
 
@@ -712,6 +719,17 @@ describe('Navigation', () => {
     describe('the theme toggle', () => {
         beforeEach(() => deleteCookie('themePreference'));
 
+        it('is in the drawer too, because the bar drops it below `sm`', () => {
+            const { wrapper } = mountNav();
+
+            return wrapper
+                .find('#app-drawer [data-test=drawer-theme-toggle]')
+                .trigger('click')
+                .then(() => {
+                    expect(document.cookie).toContain('themePreference=');
+                });
+        });
+
         it('persists the pinned theme, so a click survives a reload', () => {
             const { wrapper } = mountNav();
 
@@ -724,6 +742,40 @@ describe('Navigation', () => {
                         .find((pair) => pair.startsWith('themePreference='));
 
                     expect(cookie).toBeDefined();
+                });
+        });
+    });
+
+    /**
+     * The bar has no room for the language menu below `sm`, so the drawer lists every language
+     * itself. The switch is the same one the menu makes: the current route, under the new locale.
+     */
+    describe('the languages in the drawer', () => {
+        it('list every supported language, the active one marked', () => {
+            const { wrapper } = mountNav();
+            const options = wrapper.findAll('#app-drawer [data-test^=drawer-language-]');
+
+            expect(options.map((option) => option.attributes('data-test'))).toEqual(
+                supportedLanguages.map((language) => `drawer-language-${language}`)
+            );
+            expect(
+                options.filter((option) => option.attributes('aria-current') === 'true')
+            ).toHaveLength(1);
+        });
+
+        it('switch the language by re-entering the current route', () => {
+            replaceSpy.mockClear();
+            const { wrapper } = mountNav();
+            const other = supportedLanguages.find((language) => language !== 'en') ?? 'it';
+
+            return wrapper
+                .find(`#app-drawer [data-test=drawer-language-${other}]`)
+                .trigger('click')
+                .then(() => {
+                    expect(replaceSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ params: { locale: other } })
+                    );
+                    expect(session.persistLocalePreference).toHaveBeenCalledWith(other);
                 });
         });
     });

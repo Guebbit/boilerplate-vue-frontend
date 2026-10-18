@@ -26,6 +26,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useTwoFactorStore } from '../stores/two-factor.ts';
 import { useMethodLabel } from '../composables/use-method-label.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -45,6 +46,11 @@ const { t } = useI18n();
  * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
  */
 const fullscreen = useFullscreenDialog();
+
+/**
+ * The buttons' size: compact from `sm` up, a finger's 44 px below it.
+ */
+const actionSize = useTouchFriendlySize();
 
 /**
  * Translates a second-factor method name into its label.
@@ -352,7 +358,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                     <template #append>
                         <v-btn
                             variant="text"
-                            size="small"
+                            :size="actionSize"
                             :data-test="`two-factor-replace-${row.method}`"
                             @click="openEnroll(row.method)"
                         >
@@ -365,7 +371,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                         <v-btn
                             variant="text"
                             color="error"
-                            size="small"
+                            :size="actionSize"
                             :aria-label="
                                 t('two-factor.button-remove-named', {
                                     method: methodLabel(row.method)
@@ -391,7 +397,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                     <template #append>
                         <v-btn
                             variant="tonal"
-                            size="small"
+                            :size="actionSize"
                             :data-test="`two-factor-add-${row.method}`"
                             @click="openEnroll(row.method)"
                         >
@@ -427,7 +433,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
             </p>
             <v-btn
                 variant="text"
-                size="small"
+                :size="actionSize"
                 data-test="two-factor-regenerate-codes"
                 @click="handleRegenerate"
             >
@@ -439,7 +445,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
             v-if="status?.enabled"
             variant="text"
             color="error"
-            size="small"
+            :size="actionSize"
             data-test="two-factor-disable-all"
             @click="handleDisableAll"
         >
@@ -494,7 +500,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                     <v-btn
                         v-if="deliveredMethod"
                         variant="tonal"
-                        size="small"
+                        :size="actionSize"
                         class="mb-2"
                         :disabled="secondsUntilResend > 0"
                         :loading="sendingCode"

@@ -108,7 +108,7 @@ const accessibleName = () =>
                 <v-btn
                     v-bind="buttonProps(tooltipProps)"
                     variant="text"
-                    class="px-2"
+                    class="min-h-11 min-w-11 px-2 sm:min-h-0 sm:min-w-16"
                     :to="to"
                     :aria-label="accessibleName()"
                 >

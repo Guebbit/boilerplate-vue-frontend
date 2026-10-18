@@ -41,16 +41,19 @@ const readReport = (file: string, spec: string): SpecReport => {
  * @param spec - `Cypress.spec.relative`: what the file is named after
  * @param context - the label of the audited state; a second write with the same label replaces it
  * @param entry - what to store under that label
+ * @param suffix - added to the file name before `.json`, such as `.layout`, to keep a second report
+ *  of one spec beside the first
  * @returns The absolute path of the report file
  */
 export const recordSpecEntry = (
     directory: string,
     spec: string,
     context: string,
-    entry: unknown
+    entry: unknown,
+    suffix = ''
 ): string => {
     mkdirSync(directory, { recursive: true });
-    const file = path.join(directory, `${specSafeName(spec)}.json`);
+    const file = path.join(directory, `${specSafeName(spec)}${suffix}.json`);
     const report = readReport(file, spec);
     report.entries[context] = entry;
     writeFileSync(file, JSON.stringify(report, null, 2) + '\n');

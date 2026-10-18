@@ -127,6 +127,11 @@ sharp(buffer).resize(
 
 ## UI and design
 
+- Viewport sizes come only from `scripts/e2e/viewports.ts`; `viewport-matrix.spec.ts` refuses a size
+  typed anywhere else.
+- A layout finding is fixed in the app, through Vuetify's props or config, never by overriding
+  Vuetify's internals. An allowance names one element, for one check, and carries a reason.
+
 - MUST NOT put information only in a `title` attribute or a tooltip: a finger cannot hover. A tooltip
   repeats a visible label or the accessible name; truncated data gets a tap route (an expansion row,
   a copy button). The touch scan gates it: `docs/tools/touch-testing.md`.

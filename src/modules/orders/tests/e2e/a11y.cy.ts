@@ -9,9 +9,6 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 /*
  * The order is named by ROLE, resolved inside the test off whichever backend the profile started.
  * `cancellable` is the admin's own pending one, and pending is the status that puts every action
@@ -28,22 +25,13 @@ const orderDetail = () => cy.subjectId('order.otherPending').then((id) => `/en/o
  */
 const orderEdit = () => cy.subjectId('order.otherPending').then((id) => `/en/orders/${id}/edit`);
 
-sweepA11y(
-    'orders — signed in',
-    [
-        ['orders list', '/en/orders'],
-        // The 7-column ledger stacked into cards below `sm` — the layout the desktop sweep never sees.
-        { name: 'orders list, phone viewport', route: '/en/orders', viewport: PHONE }
-    ],
-    'user'
-);
+sweepA11y('orders — signed in', [['orders list', '/en/orders']], 'user');
 
 // As the admin: the staff list over every order, then the detail page is reachable by its owner only, and the edit page is admin-only.
 sweepA11y(
     'orders — admin',
     [
         ['sales orders', '/en/sales/orders'],
-        { name: 'sales orders, phone viewport', route: '/en/sales/orders', viewport: PHONE },
         ['order detail', orderDetail],
         ['order edit', orderEdit]
     ],

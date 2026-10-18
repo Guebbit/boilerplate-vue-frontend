@@ -100,7 +100,7 @@ const search = () => {
             :hint="t('order-reference-search.hint-reference')"
             persistent-hint
             density="compact"
-            class="min-w-64 flex-1"
+            class="w-full flex-1 sm:w-auto sm:min-w-64"
             data-test="order-reference-search-input"
             @update:model-value="clearSearchError"
             @keyup.enter="search"

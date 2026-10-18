@@ -29,9 +29,6 @@
  */
 import { sweepA11y } from '../../support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait: the breakpoint below which the nav collapses into the drawer. */
-const PHONE = [390, 844] as const;
-
 sweepA11y('the shell', [
     ['home', '/en'],
     ['about', '/en/about'],
@@ -53,7 +50,7 @@ sweepA11y('the shell', [
     {
         name: 'home, navigation drawer open on a phone',
         route: '/en',
-        viewport: PHONE,
+        viewport: 'phone',
         prepare: () => {
             cy.get('[aria-controls=app-drawer]').click();
             cy.get('#app-drawer').should('be.visible');
@@ -66,6 +63,12 @@ sweepA11y('the shell', [
             // The switcher's accessible name is "Language: EN" — label, colon, current code.
             cy.get('[data-test=language-switcher]').click();
             cy.get('[role=menu] [role=menuitem]').should('be.visible');
+        },
+        layout: {
+            only: {
+                viewports: ['desktop'],
+                reason: 'an open menu is placed once, against its activator: a resize cannot carry it (the same menu is audited open at a phone below)'
+            }
         }
     }
 ]);
@@ -104,6 +107,21 @@ sweepA11y(
             prepare: () => {
                 cy.get('[data-test=user-menu]').click();
                 cy.get('[role=menu] [role=menuitem]').should('be.visible');
+            },
+            layout: {
+                only: {
+                    viewports: ['desktop'],
+                    reason: 'an open menu is placed once, against its activator: a resize cannot carry it (the same menu is audited open at a phone below)'
+                }
+            }
+        },
+        {
+            name: 'home, account menu open on a phone',
+            route: '/en',
+            viewport: 'phone',
+            prepare: () => {
+                cy.get('[data-test=user-menu]').click();
+                cy.get('[role=menu] [role=menuitem]').should('be.visible');
             }
         }
     ],
@@ -119,12 +137,18 @@ sweepA11y(
             prepare: () => {
                 cy.get('[data-test=admin-menu]').click();
                 cy.get('[role=menu] [role=menuitem]').should('be.visible');
+            },
+            layout: {
+                only: {
+                    viewports: ['desktop'],
+                    reason: 'an open menu is placed once, against its activator: a resize cannot carry it (the same menu is audited open at a phone below)'
+                }
             }
         },
         {
             name: 'home, navigation drawer open on a phone, every section',
             route: '/en',
-            viewport: PHONE,
+            viewport: 'phone',
             prepare: () => {
                 cy.get('[aria-controls=app-drawer]').click();
                 cy.get('#app-drawer').should('be.visible');

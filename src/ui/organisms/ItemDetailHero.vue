@@ -77,10 +77,10 @@ const { hasImage } = defineProps<{
         >
             <slot name="icon" />
         </div>
-        <div>
+        <div class="min-w-0">
             <p
                 v-if="eyebrow !== undefined && eyebrow !== null"
-                class="mb-1 text-xs uppercase tracking-eyebrow opacity-80"
+                class="mb-1 text-xs uppercase tracking-eyebrow opacity-80 wrap-anywhere"
             >
                 {{ eyebrow }}
             </p>

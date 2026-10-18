@@ -65,7 +65,7 @@ sweepA11y('the shell', [
     {
         name: 'home, navigation drawer open on a phone',
         route: '/en',
-        viewport: [390, 844],
+        viewport: 'phone',
         prepare: () => {
             cy.get('[aria-controls=app-drawer]').click();
             cy.get('#app-drawer').should('be.visible');
@@ -74,7 +74,7 @@ sweepA11y('the shell', [
 ]);
 ```
 
-- **`viewport`** is applied before the visit, so the page lays itself out for a phone from the start.
+- **`viewport`** is a name from the layout matrix (`scripts/e2e/viewports.ts`), applied through `applyViewport` before the visit, so the page lays itself out for a phone from the start. No size is typed in a spec: `tests/cross-cutting/viewport-matrix.spec.ts` refuses one.
 - **`theme: 'dark'`** clicks the app bar's toggle (`data-test="theme-toggle"`) and waits for `.v-theme--dark` — the way the visitor switches, not a direct write to Vuetify, so the audited state is one a click can reach.
 - **`prepare`** runs after the content wait and before axe: plain Cypress commands, enqueued in order.
 
@@ -82,12 +82,12 @@ The states audited this way, and why each one:
 
 | State                                   | Where                      | What it guards                                                                        |
 | --------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
-| Navigation drawer open, 390×844         | shell, home                | The drawer's landmark label, its list, focus inside it                                |
+| Navigation drawer open, `phone`         | shell, home                | The drawer's landmark label, its list, focus inside it                                |
 | Language menu open                      | shell, home                | `role="menu"` / `menuitem` and the activator's name                                   |
 | Navigation tooltip shown (signed in)    | shell, home                | The pinned cart entry's name, its tooltip, and the `aria-describedby` between them    |
 | Account menu open                       | shell, home, as `user`     | The account menu's `menu` / `menuitem` roles and its activator's name, email included |
 | Administration menu open                | shell, home, as `admin`    | Same, for the administration menu                                                     |
-| Drawer open with every section, 390×844 | shell, home, as `admin`    | The three section headings and their entries                                          |
+| Drawer open with every section, `phone` | shell, home, as `admin`    | The three section headings and their entries                                          |
 | Dark theme                              | home, products list, login | Every colour pair, measured on the other surface                                      |
 | Italian                                 | shell, `/it`               | A translated label that lost its `aria-` counterpart                                  |
 | Entry form dialog open                  | locales, `/en/locales/it`  | A modal named by its title, the page behind it hidden                                 |
@@ -181,7 +181,10 @@ The whole set, nothing switched off. The rules that look at native `<label>`/`<i
 | `src/modules/<name>/tests/e2e/a11y.cy.ts`   | One per routed module: the route list, and the auth level to read it at                                                                                                         |
 | `tests/e2e/specs/a11y.cy.ts`                | The shell's own routes — home, the prose pages, the error page — and the chrome's states: drawer, language menu, tooltip, account and administration menus, dark theme, Italian |
 | `tests/e2e/specs/keyboard.cy.ts`            | The keyboard contract: skip link, focus on navigation, tooltip, menus, drawer, dialog, chips                                                                                    |
-| `tests/support/e2e/a11y-sweep.ts`           | `sweepA11y()`: the describe, the login, the wait-for-content, the optional viewport / theme / `prepare`, the axe call. Names no domain                                          |
+| `tests/support/e2e/apply-viewport.ts`       | `applyViewport(name)`: the one seam that sets a device size from the matrix, checks the page got it, and switches touch emulation                                               |
+| `tests/support/e2e/a11y-sweep.ts`           | `sweepA11y()`: the describe, the login, the optional viewport / theme / `prepare`, the axe call, then the [layout matrix](./layout-sweep.md). Names no domain                   |
+| `tests/support/e2e/sweep-state.ts`          | `reachState()` and `switchToDarkTheme()`: getting a page into the state a sweep audits, shared with the layout and visual cases                                                 |
+| `tests/support/e2e/layout-checks.ts`        | The layout checks and the 44 px comfort pass: see [Layout Sweep](./layout-sweep.md)                                                                                             |
 | `tests/cross-cutting/a11y-coverage.spec.ts` | Parses every `routes.ts` against its sweep; fails on an unswept route, a swept path no route serves, or a sweep that outlives its module. Holds `EXEMPT`                        |
 | `tests/support/e2e/commands.ts`             | `cy.checkPageA11y()`: the single axe pass with pinned tags, the impact threshold, the report task call                                                                          |
 | `tests/support/e2e/a11y-task.ts`            | The Node side: writes every finding to `reports/a11y/<spec>.json`. Registered in `cypress.config.ts`                                                                            |
@@ -222,10 +225,13 @@ A page with a state worth auditing separately — a dialog, a submitted form, a 
 
 Add a route to the relevant list in the spec. If it needs a session, it goes in the user or admin list, which handle login.
 
+**Tap size has two tiers.** The 24 px floor (WCAG 2.5.8) is already inside this gate: axe's `target-size` runs in every pass. The 44 px comfort tier a finger wants runs at phone widths, from the [layout sweep](./layout-sweep.md#the-tap-target-tiers). It is the same axe algorithm with a larger size, with the same spacing allowance, and it is not WCAG 2.5.5.
+
 If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command — and expect to fix things, because the lighter findings are already being logged and are therefore already known.
 
 ## Related pages
 
+- [Layout Sweep](./layout-sweep.md) — the checks that ride on this sweep: overflow, clipping, covered controls and tap size at five widths
 - [Visual Regression](./visual-regression.md) — the other layer that looks at the rendered page; it records appearance, this one judges it
 - [Lighthouse](./lighthouse.md) — its own accessibility category is switched off: it is a subset of the same `axe-core`, and this sweep covers more
 - [The demo profile](./demo-profile.md) — the backend these run against

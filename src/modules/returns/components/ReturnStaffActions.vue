@@ -232,7 +232,7 @@ const submitReceive = () =>
                 :label="t('return-staff-actions.label-reason')"
                 :error-messages="showDeclineErrors ? (declineErrors.reason ?? []) : []"
                 maxlength="500"
-                class="min-w-64 grow"
+                class="w-full grow sm:w-auto sm:min-w-64"
                 hide-details="auto"
                 data-test="return-decline-reason"
             />

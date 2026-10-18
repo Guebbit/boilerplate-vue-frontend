@@ -6,6 +6,7 @@
  * from under it.
  */
 import { ref, watch, nextTick } from 'vue';
+import { useDisplay } from 'vuetify';
 
 /**
  * Component props — see each field's own doc comment below.
@@ -32,6 +33,17 @@ const {
      */
     focusFallback?: string;
 }>();
+
+/**
+ * Below `sm` the pager shows fewer pages: seven plus the arrows are 447 px wide, and a phone
+ * screen is 320-390. From `sm` up it keeps seven.
+ */
+const { mobile } = useDisplay();
+
+/**
+ * Pages shown at once on a phone: with the two arrows and an ellipsis each side, five buttons.
+ */
+const MOBILE_PAGES = 3;
 
 /**
  * The current page, one-based.
@@ -63,7 +75,7 @@ watch(
         <v-pagination
             v-model="modelValue"
             :length="length"
-            :total-visible="7"
+            :total-visible="mobile ? MOBILE_PAGES : 7"
             :aria-label="ariaLabel"
             data-test="pagination"
             density="comfortable"

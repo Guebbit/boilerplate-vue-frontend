@@ -163,7 +163,7 @@ void fetchPage({ ...filters });
 </script>
 
 <template>
-    <div class="grid gap-4">
+    <div class="grid grid-cols-1 gap-4">
         <v-card class="p-5" variant="flat" border>
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
