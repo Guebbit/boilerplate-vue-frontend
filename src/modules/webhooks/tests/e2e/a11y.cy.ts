@@ -14,9 +14,6 @@
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 import { sinkEndpoint } from '../../../../../tests/support/e2e/integrator';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 /**
  * Detail-page URL for a freshly created subscription.
  */
@@ -65,7 +62,7 @@ sweepA11y(
         {
             name: 'subscriptions list, phone viewport',
             route: '/en/webhooks/subscriptions',
-            viewport: PHONE
+            viewport: 'phone'
         },
         ['subscription create', '/en/webhooks/subscriptions/create'],
         {

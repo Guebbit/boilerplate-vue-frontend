@@ -24,9 +24,7 @@
  *
  * Runs under the demo profile like every other spec in `ci.yml`.
  */
-
-/** iPhone 14-class portrait: the breakpoint below which the nav collapses into the drawer. */
-const PHONE = [390, 844] as const;
+import { applyViewport } from '../../support/e2e/apply-viewport';
 
 /**
  * The tooltip currently showing, by Vuetify's active class rather than by Cypress visibility:
@@ -88,7 +86,7 @@ describe('keyboard', () => {
     });
 
     it('opens the drawer onto its first entry and returns focus to the hamburger on Escape', () => {
-        cy.viewport(PHONE[0], PHONE[1]);
+        applyViewport('phone');
         cy.visit('/en');
         cy.get('h1').should('exist');
 

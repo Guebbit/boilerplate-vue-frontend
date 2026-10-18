@@ -17,6 +17,7 @@ import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
 import { en, it } from 'vuetify/locale';
 import { lucideAliases, lucideIconSet } from './icons.ts';
+import { display } from './breakpoints.ts';
 import { dark, light, variations } from './theme.ts';
 import { readThemePreference } from '@/infrastructure/theme-preference.ts';
 
@@ -25,19 +26,8 @@ import { readThemePreference } from '@/infrastructure/theme-preference.ts';
  * `src/main.ts`.
  */
 export default createVuetify({
-    // Mirror Tailwind's breakpoints (src/styles/main.css) exactly, so `useDisplay()` /
-    // `VRow`/`VCol` and Tailwind's `sm:`/`md:`/`lg:`/`xl:` utilities agree on where
-    // "mobile"/"tablet"/"desktop" start. Vuetify's own defaults don't line up with these.
-    display: {
-        thresholds: {
-            xs: 0,
-            sm: 600,
-            md: 960,
-            lg: 1280,
-            xl: 1920,
-            xxl: 2560
-        }
-    },
+    // Thresholds mirror Tailwind's: src/ui/vuetify/breakpoints.ts.
+    display,
 
     theme: {
         // A visitor who has explicitly toggled the theme before gets that choice back on the

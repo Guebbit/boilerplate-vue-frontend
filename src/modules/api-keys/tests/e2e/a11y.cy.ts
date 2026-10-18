@@ -14,9 +14,6 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 /**
  * The list, after minting one credential — the row-rendering state the bare route never reaches.
  */
@@ -31,7 +28,7 @@ sweepA11y(
         {
             name: 'list, phone viewport',
             route: apiKeysListWithRow,
-            viewport: PHONE
+            viewport: 'phone'
         },
         ['create', '/en/api-keys/create'],
         {

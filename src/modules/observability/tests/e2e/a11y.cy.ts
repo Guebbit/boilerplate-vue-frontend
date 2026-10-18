@@ -11,9 +11,6 @@
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 import { refuseALogin } from '../../../../../tests/support/e2e/steps';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 sweepA11y(
     'observability',
     [
@@ -26,7 +23,7 @@ sweepA11y(
             // sweep never sees, and a tab the default sweep never opens.
             name: 'admin dashboard, audit tab, phone viewport',
             route: '/en/admin',
-            viewport: PHONE,
+            viewport: 'phone',
             prepare: () => {
                 // The platform trail lists incidents only, so one is made for the table to show.
                 refuseALogin();

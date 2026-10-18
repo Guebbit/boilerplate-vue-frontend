@@ -7,14 +7,11 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width the dashboard's tables must still fit. */
-const PHONE = [390, 844] as const;
-
 sweepA11y(
     'stats',
     [
         ['sales dashboard', '/en/sales/stats'],
-        { name: 'sales dashboard, phone viewport', route: '/en/sales/stats', viewport: PHONE },
+        { name: 'sales dashboard, phone viewport', route: '/en/sales/stats', viewport: 'phone' },
         ['product sales', '/en/sales/stats/products/demo-product']
     ],
     'admin'

@@ -9,9 +9,6 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 /*
  * The order is named by ROLE, resolved inside the test off whichever backend the profile started.
  * `cancellable` is the admin's own pending one, and pending is the status that puts every action
@@ -33,7 +30,7 @@ sweepA11y(
     [
         ['orders list', '/en/orders'],
         // The 7-column ledger stacked into cards below `sm` — the layout the desktop sweep never sees.
-        { name: 'orders list, phone viewport', route: '/en/orders', viewport: PHONE }
+        { name: 'orders list, phone viewport', route: '/en/orders', viewport: 'phone' }
     ],
     'user'
 );
@@ -43,7 +40,7 @@ sweepA11y(
     'orders — admin',
     [
         ['sales orders', '/en/sales/orders'],
-        { name: 'sales orders, phone viewport', route: '/en/sales/orders', viewport: PHONE },
+        { name: 'sales orders, phone viewport', route: '/en/sales/orders', viewport: 'phone' },
         ['order detail', orderDetail],
         ['order edit', orderEdit]
     ],

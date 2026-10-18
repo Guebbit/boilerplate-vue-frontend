@@ -10,14 +10,13 @@
  * sections, login and signup for a guest, logout for a customer). The same purchase as CU1's,
  * with a seeded customer so it needs no mailbox.
  */
+import { VIEWPORTS } from '../../../../scripts/e2e/viewports';
+import { applyViewport } from '../../../support/e2e/apply-viewport';
 import {
     addOpenProductToCart,
     fillAddressDialog,
     openProductCard
 } from '../../../support/e2e/steps';
-
-/** iPhone 14-class portrait: the breakpoint below which the bar collapses into the drawer. */
-const PHONE = { width: 390, height: 844 } as const;
 
 /** The drawer's own id (`AppNavigation.vue`), which the hamburger names in `aria-controls`. */
 const DRAWER = '#app-drawer';
@@ -45,13 +44,13 @@ const fitsTheScreen = (): void => {
         expect(
             document_.documentElement.scrollWidth,
             'the page is no wider than the viewport'
-        ).to.be.at.most(PHONE.width);
+        ).to.be.at.most(VIEWPORTS.phone.width);
     });
 };
 
 describe('FR5 · Shopping on a phone', () => {
     beforeEach(() => {
-        cy.viewport(PHONE.width, PHONE.height);
+        applyViewport('phone');
         cy.visit('/en');
         cy.restore();
         cy.visit('/en');
@@ -102,7 +101,7 @@ describe('FR5 · Shopping on a phone', () => {
         cy.get('[data-test=address-dialog]').should(($dialog) => {
             const box = $dialog[0]?.getBoundingClientRect();
             expect(box?.left, 'inside on the left').to.be.at.least(0);
-            expect(box?.right, 'inside on the right').to.be.at.most(PHONE.width);
+            expect(box?.right, 'inside on the right').to.be.at.most(VIEWPORTS.phone.width);
         });
         fillAddressDialog({
             label: 'Phone',

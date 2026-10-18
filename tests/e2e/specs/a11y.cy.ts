@@ -29,9 +29,6 @@
  */
 import { sweepA11y } from '../../support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait: the breakpoint below which the nav collapses into the drawer. */
-const PHONE = [390, 844] as const;
-
 sweepA11y('the shell', [
     ['home', '/en'],
     ['about', '/en/about'],
@@ -53,7 +50,7 @@ sweepA11y('the shell', [
     {
         name: 'home, navigation drawer open on a phone',
         route: '/en',
-        viewport: PHONE,
+        viewport: 'phone',
         prepare: () => {
             cy.get('[aria-controls=app-drawer]').click();
             cy.get('#app-drawer').should('be.visible');
@@ -124,7 +121,7 @@ sweepA11y(
         {
             name: 'home, navigation drawer open on a phone, every section',
             route: '/en',
-            viewport: PHONE,
+            viewport: 'phone',
             prepare: () => {
                 cy.get('[aria-controls=app-drawer]').click();
                 cy.get('#app-drawer').should('be.visible');

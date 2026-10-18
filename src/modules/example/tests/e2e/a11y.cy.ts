@@ -14,9 +14,6 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 /** The customer's seeded published example. */
 const CUSTOMER_PUBLISHED = '65e1a0000000000000000e01';
 
@@ -28,7 +25,7 @@ sweepA11y(
     [
         ['list', '/en/examples'],
         // The table stacked into cards below `sm` — the layout the desktop sweep never sees.
-        { name: 'list, phone viewport', route: '/en/examples', viewport: PHONE },
+        { name: 'list, phone viewport', route: '/en/examples', viewport: 'phone' },
         ['create', '/en/examples/create'],
         {
             // Submitted empty: every field shows its error, and an error message has to be

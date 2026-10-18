@@ -10,18 +10,15 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
-const PHONE = [390, 844] as const;
-
 sweepA11y(
     'inventory',
     [
         ['inventory ledger', '/en/inventory'],
         // `StockBoard` and the 7-column `MovementLedger` stacked into cards below `sm`.
-        { name: 'inventory ledger, phone viewport', route: '/en/inventory', viewport: PHONE },
+        { name: 'inventory ledger, phone viewport', route: '/en/inventory', viewport: 'phone' },
         ['preorders board, products', '/en/sales/preorders'],
         ['preorders board, fulfillment orders', '/en/sales/preorders?tab=orders'],
-        { name: 'preorders board, phone viewport', route: '/en/sales/preorders', viewport: PHONE }
+        { name: 'preorders board, phone viewport', route: '/en/sales/preorders', viewport: 'phone' }
     ],
     'admin'
 );

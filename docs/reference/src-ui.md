@@ -37,7 +37,7 @@ Four more composables carry logic several screens shared, so it is written once:
 `use-list-url-state.ts` and `use-list-search.ts` are a filtered list page's whole search wiring —
 filters and page kept in the URL, and the apply and reset handlers — `use-server-sort.ts` binds
 `filters.sort` to a table's header or a select and re-searches from page 1, and `use-fullscreen-dialog.ts`
-is the one flag every dialog binds so it fills the screen on a phone.
+is the one flag every dialog binds so it fills the screen below 600 px.
 
 `use-return-focus.ts` hands focus back to the control that opened a dialog once it closes. A dialog
 with no `activator` has nobody for Vuetify to return focus to, so Escape would otherwise drop a
@@ -80,9 +80,10 @@ translated, so the store holds a queue and the promises and nothing else.
 
 ## Vuetify
 
-| File                          | What it is                                                                                                                                                        | Read next                                                |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `src/ui/vuetify/index.ts`     | The Vuetify instance: the theme, its accent colours, and the defaults every component inherits. Changing the palette is one edit here.                            | [Runtime](../tools/runtime.md)                           |
-| `src/ui/vuetify/theme.ts`     | The light and dark colour maps and the generated variations, as plain data. The lint, the specs and `ThemeColor` read it; `index.ts` builds the instance from it. | [Design System](../theory/design-system.md)              |
-| `src/ui/vuetify/icons.ts`     | The icon set registration, kept apart so the icon library can be swapped without touching the theme.                                                              | [Package Dependencies](../tools/package-dependencies.md) |
-| `src/ui/vuetify/selectors.ts` | CSS selectors describing Vuetify's own generated markup — `VUETIFY_INVALID_FIELD_SELECTOR`, the field `useStructureFormValidation` focuses after a failed submit. | [UI Kit](./src-ui.md)                                    |
+| File                            | What it is                                                                                                                                                                                          | Read next                                                |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `src/ui/vuetify/index.ts`       | The Vuetify instance: the theme, its accent colours, and the defaults every component inherits. Changing the palette is one edit here.                                                              | [Runtime](../tools/runtime.md)                           |
+| `src/ui/vuetify/breakpoints.ts` | The breakpoint thresholds (Tailwind's, mirrored) and the width under which `useDisplay().mobile` is true (`sm`, 600 px). The one home for display config; the layout matrix imports the thresholds. | [Design System](../theory/design-system.md)              |
+| `src/ui/vuetify/theme.ts`       | The light and dark colour maps and the generated variations, as plain data. The lint, the specs and `ThemeColor` read it; `index.ts` builds the instance from it.                                   | [Design System](../theory/design-system.md)              |
+| `src/ui/vuetify/icons.ts`       | The icon set registration, kept apart so the icon library can be swapped without touching the theme.                                                                                                | [Package Dependencies](../tools/package-dependencies.md) |
+| `src/ui/vuetify/selectors.ts`   | CSS selectors describing Vuetify's own generated markup — `VUETIFY_INVALID_FIELD_SELECTOR`, the field `useStructureFormValidation` focuses after a failed submit.                                   | [UI Kit](./src-ui.md)                                    |

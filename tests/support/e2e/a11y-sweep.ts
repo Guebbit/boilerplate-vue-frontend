@@ -36,6 +36,9 @@
  * Every finding, the lighter ones included, is written to `reports/a11y/` by the same command.
  */
 
+import type { ViewportName } from '../../../scripts/e2e/viewports';
+import { applyViewport } from './apply-viewport';
+
 /** One audited state of one route. */
 export interface A11ySweepCase {
     /** What a failure reports. */
@@ -58,8 +61,8 @@ export interface A11ySweepCase {
      * toggle. A sweep that set Vuetify's theme directly would audit a state no click can reach.
      */
     theme?: 'dark';
-    /** `[width, height]`, for the layouts a phone gets — the drawer, the stacked forms. */
-    viewport?: readonly [width: number, height: number];
+    /** A size from the layout matrix, for the layouts a phone gets — the drawer, the stacked forms. */
+    viewport?: ViewportName;
 }
 
 /** A path, or a way to find one once the backend can be asked. */
@@ -112,7 +115,7 @@ export const sweepA11y = (
                 // Before the visit, so the page lays itself out for that size from the start
                 // rather than reflowing under axe. Cypress restores the configured viewport
                 // between tests on its own.
-                if (viewport) cy.viewport(viewport[0], viewport[1]);
+                if (viewport) applyViewport(viewport);
                 // Before the visit, so the page's very first fetch is counted — see the command.
                 cy.trackNetwork();
                 resolveRoute(route).then((path) => {
