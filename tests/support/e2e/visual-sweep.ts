@@ -1,5 +1,9 @@
 /// <reference types="cypress" />
 
+import type { ViewportName } from '../../../scripts/e2e/viewports';
+import { applyViewport } from './apply-viewport';
+import { resolveRoute, switchToDarkTheme, type SweepRoute } from './sweep-state';
+
 /**
  * One visual-regression sweep over a set of screens, at one authentication level.
  *
@@ -18,6 +22,10 @@
  * (the demo profile serves the same seeded dataset), and auth state — the navigation gains a whole
  * column when signed in, so the ROLE changes the layout and not merely the content.
  *
+ * A case expands to one test per viewport, and the viewport is half of what a baseline means:
+ * `<name>.<viewport>[.dark].png`, desktop included. Phone and tablet cases record with touch on
+ * (`applyViewport`), because Vuetify ships CSS that exists only under `hover: none`.
+ *
  * Even with all five pinned, fonts and antialiasing move pixels between machines. That is why
  * `test:e2e:visual` is its own script and deliberately outside `npm run complete`: a suite that
  * answers to the machine that recorded it is a report, not a gate.
@@ -27,8 +35,11 @@
 export interface VisualSweepCase {
     /** Becomes the baseline/diff PNG's filename. */
     name: string;
-    /** Locale-prefixed path to visit. */
-    route: string;
+    /**
+     * Locale-prefixed path to visit, or a lookup that yields one once the backend can be asked
+     * (`/products/:id`, `/orders/:id` through `cy.subjectId()`).
+     */
+    route: SweepRoute;
     /** Selector `cy.compareSnapshot()` waits to exist before it is safe to photograph. */
     readySelector: string;
     /**
@@ -37,6 +48,20 @@ export interface VisualSweepCase {
      * order. Absent, the screen is photographed at its first paint, same as before this existed.
      */
     prepare?: () => void;
+    /**
+     * Sizes from the layout matrix, one test (and one baseline) each. Absent, `['desktop']`.
+     * A `prepare` that clicks leaves the page where Cypress' `scrollBehavior: 'top'` scrolled it,
+     * which is deterministic; a case that wants the top again adds `scrollTo` or `cy.scrollTo`.
+     */
+    viewports?: readonly ViewportName[];
+    /** Photograph under the dark theme, switched the way the visitor does it. */
+    theme?: 'dark';
+    /**
+     * Selector of an element to scroll to just under the app bar after `prepare`: the content
+     * below the fold, as a phone shows it after scrolling. Not `fullPage`, which would repeat the
+     * fixed bar in every stitched segment.
+     */
+    scrollTo?: string;
     /**
      * Selectors whose text differs between two runs of an unchanged app — ids minted at boot,
      * dates relative to today, freshly random codes — replaced by one fixed placeholder before the
@@ -52,6 +77,72 @@ const REDACTED = 'redacted';
 /** The terse spelling for the common case — a route, loaded, photographed. */
 type VisualSweepEntry =
     readonly [name: string, route: string, readySelector: string] | VisualSweepCase;
+
+/** The size a case without `viewports` is photographed at. */
+const DEFAULT_VIEWPORTS: readonly ViewportName[] = ['desktop'];
+
+/** The baseline's name: one screen's variants sit together, `<name>.<viewport>[.dark]`. */
+const snapshotName = (name: string, viewport: ViewportName, theme?: 'dark'): string =>
+    `${name}.${viewport}${theme ? '.dark' : ''}`;
+
+/**
+ * Retries until every image the viewport shows, or is about to, has finished loading.
+ *
+ * Images further down are skipped: a lazy one is never fetched until it is near, so waiting on it
+ * would wait forever. `complete` is also true for a broken image, so a failed load cannot hang
+ * the shot either.
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/complete
+ */
+const imagesLoaded = (): void => {
+    cy.document({ log: false }).should((document_) => {
+        const reach = document_.documentElement.clientHeight * 2;
+        const pending = [...document_.images].filter(
+            (image) => !image.complete && image.getBoundingClientRect().top < reach
+        );
+        expect(
+            pending.map((image) => image.currentSrc),
+            'images still loading'
+        ).to.deep.equal([]);
+    });
+};
+
+/**
+ * Switches to the dark theme with transitions already killed, then drops the focus the switch
+ * left behind.
+ *
+ * Vuetify fades colours between themes, and a shot taken during the fade has half-dark text; the
+ * toggle (or the drawer that holds it) leaves a focus ring on a button that a mouse visitor would
+ * not see.
+ */
+const switchDarkAndSettle = (): void => {
+    cy.freezeAnimations();
+    switchToDarkTheme();
+    cy.document({ log: false }).then((document_) => {
+        // `activeElement` is typed `Element`; every focusable one is an HTMLElement, and the
+        // `instanceof` check would compare against the spec window's constructor, not the page's.
+        (document_.activeElement as HTMLElement | null)?.blur();
+    });
+};
+
+/**
+ * Scrolls an element to just under the fixed app bar, with no animation.
+ *
+ * @param selector - the element to bring up
+ */
+const scrollUnderBar = (selector: string): void => {
+    cy.get('header')
+        .first()
+        .invoke('outerHeight')
+        .then((barHeight) => {
+            // `offset.top` is negative to stop short of the element; duration 0 is no animation,
+            // so the freeze that follows sees a settled page.
+            // https://docs.cypress.io/api/commands/scrollintoview
+            cy.get(selector).scrollIntoView({
+                offset: { top: -(barHeight ?? 0), left: 0 },
+                duration: 0
+            });
+        });
+};
 
 /**
  * Normalizes either spelling to the object form. `'name' in entry` rather than `Array.isArray`:
@@ -90,35 +181,68 @@ export const sweepVisual = (
             if (role) cy.loginAs(role);
         });
 
-        for (const { name, route, readySelector, prepare, redact } of screens.map((entry) =>
-            toCase(entry)
-        ))
-            it(`${name} matches its baseline`, () => {
-                // Before the visit, so the page's very first fetch is counted — see the command.
-                cy.trackNetwork();
-                cy.visit(route);
+        for (const {
+            name,
+            route,
+            readySelector,
+            prepare,
+            redact,
+            viewports,
+            theme,
+            scrollTo
+        } of screens.map((entry) => toCase(entry)))
+            for (const viewport of viewports ?? DEFAULT_VIEWPORTS)
+                it(
+                    `${snapshotName(name, viewport, theme)} matches its baseline`,
+                    {
+                        // Namespaced: a plain `@phone` in any other spec would make the grep
+                        // plugin's static pre-filter drop every visual spec.
+                        tags: ['@visual', `@visual-${viewport}`, ...(theme ? ['@visual-dark'] : [])]
+                    },
+                    () => {
+                        // Before any visit of the test, so the page lays out at its size from the
+                        // first paint instead of reflowing under the photograph.
+                        applyViewport(viewport);
 
-                // Wait for real content before freezing: photographing a loading skeleton would
-                // produce a stable, meaningless baseline.
-                cy.get(readySelector).should('exist');
-                cy.get('h1').should('be.visible');
-                // Substantive content, not just the shell — the blank-page failure above passed
-                // both assertions before this one.
-                cy.get('main, [role=main], #app').should('be.visible');
+                        // Before the visit, so the page's very first fetch is counted.
+                        cy.trackNetwork();
+                        resolveRoute(route).then((path) => {
+                            cy.visit(path);
+                        });
 
-                /*
-                 * Every request the page fired has answered. The shell assertions above pass
-                 * before any data arrives, and a baseline of a loading screen is stable,
-                 * meaningless and never fails — the worst outcome this suite can produce.
-                 */
-                cy.settleNetwork();
+                        // Wait for real content before freezing: photographing a loading skeleton
+                        // would produce a stable, meaningless baseline.
+                        cy.get(readySelector).should('exist');
+                        cy.get('h1').should('be.visible');
+                        // Substantive content, not just the shell: the blank-page failure above
+                        // passed both assertions before this one.
+                        cy.get('main, [role=main], #app').should('be.visible');
 
-                prepare?.();
+                        /*
+                         * Every request the page fired has answered. The shell assertions above
+                         * pass before any data arrives, and a baseline of a loading screen is
+                         * stable, meaningless and never fails.
+                         */
+                        cy.settleNetwork();
 
-                for (const selector of redact ?? []) cy.get(selector).invoke('text', REDACTED);
+                        // The theme default is 'system': on a dark OS a light case would record
+                        // dark pixels with no error, so the light cases say so out loud.
+                        if (theme === 'dark') switchDarkAndSettle();
+                        else cy.get('.v-application.v-theme--light').should('exist');
 
-                cy.freezeForVisual();
-                cy.compareSnapshot(name);
-            });
+                        // Every image loaded: a picture that lands after the scroll below moves
+                        // the page under it, and the shot differs from itself between runs.
+                        imagesLoaded();
+
+                        prepare?.();
+                        if (scrollTo) scrollUnderBar(scrollTo);
+
+                        for (const selector of redact ?? [])
+                            cy.get(selector).invoke('text', REDACTED);
+
+                        cy.freezeForVisual();
+                        cy.compareSnapshot(snapshotName(name, viewport, theme));
+                    }
+                );
     });
 };

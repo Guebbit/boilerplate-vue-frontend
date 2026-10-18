@@ -10,13 +10,32 @@
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 
-sweepVisual('account', [['login', '/en/login', '#login-page']]);
+sweepVisual('account', [
+    // The narrow-form family, at full width on a phone.
+    {
+        name: 'login',
+        route: '/en/login',
+        readySelector: '#login-page',
+        viewports: ['desktop', 'phone']
+    }
+]);
 
 sweepVisual(
     'account — signed in',
     [
         // Off by default — the 2FA panel in its ordinary, nothing-armed state.
         ['profile, 2FA panel off', '/en/profile', '#profile-page'],
+        {
+            // The fullscreen-dialog family.
+            name: 'profile, add-address dialog',
+            route: '/en/profile',
+            readySelector: '#profile-page',
+            viewports: ['phone'],
+            prepare: () => {
+                cy.get('[data-test=address-add]').click();
+                cy.get('[data-test=address-dialog]').should('be.visible');
+            }
+        },
         {
             // Reached through a real enrollment, not `cy.visit` — the code comes from the demo
             // outbox, and the backup codes only exist once the confirm call has actually armed

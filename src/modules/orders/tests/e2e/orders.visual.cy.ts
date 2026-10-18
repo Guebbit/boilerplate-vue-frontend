@@ -15,12 +15,23 @@ sweepVisual(
             name: 'orders-list',
             route: '/en/orders',
             readySelector: '#orders-list-page',
+            // The DataTable stacks one card per row on a phone and stays a table on a tablet.
+            viewports: ['desktop', 'phone', 'tablet'],
             // The demo's orders are produced at boot: fresh ids, and dates relative to today.
             redact: [
                 '#orders-list-page tbody td:nth-child(1)',
                 '#orders-list-page tbody td:nth-child(5)',
                 '#orders-list-page tbody td:nth-child(6)'
             ]
+        },
+        {
+            // The page after checkout: payment panel and transfer instructions.
+            name: 'order, awaiting transfer',
+            route: () => cy.subjectId('order.awaitingTransfer').then((id) => `/en/orders/${id}`),
+            readySelector: '#order-target',
+            viewports: ['phone'],
+            // The hero shows the order's id twice, minted per run.
+            redact: ['#order-target .detail-hero p.uppercase', '#order-target .detail-hero h2']
         }
     ],
     'user'

@@ -43,7 +43,7 @@ flowchart TB
     class D,Size,Budget,Guard dec;
 ```
 
-## One screen per module, and why not more
+## One main screen per module, plus a phone set by layout family
 
 Visual testing is the classic flake generator, and its failure mode is **social** rather than technical:
 
@@ -54,23 +54,63 @@ Visual testing is the classic flake generator, and its failure mode is **social*
 
 Screens that are genuinely looked at beat a crowd that is rubber-stamped. The rule is **one main screen per module, plus the shell's own** — a module gains a second baseline (a state that is a layout of its own: a modal, a challenge step) by a decision, not a habit, which keeps the count tied to the architecture rather than to somebody's enthusiasm.
 
-| Screen                                                                        | Owner           | Layout family it stands for            |
-| ----------------------------------------------------------------------------- | --------------- | -------------------------------------- |
-| `home`, `home-signed-in`                                                      | shell           | marketing content, cards, hero         |
-| `about`, `faq`                                                                | shell           | long-form prose, accordions            |
-| `not-found`                                                                   | shell           | error state, empty state               |
-| `login`, `login, 2FA challenge`                                               | `account`       | centred narrow form, second step       |
-| `profile, 2FA panel off`, `profile, 2FA backup codes`                         | `account`       | settings card, modal over a page       |
-| `products-list`                                                               | `products`      | filter form, product grid              |
-| `cart`                                                                        | `cart`          | empty state, line items, totals        |
-| `orders-list`                                                                 | `orders`        | data table, authenticated              |
-| `wishlist`                                                                    | `wishlist`      | card list, authenticated               |
-| `users-list`                                                                  | `users`         | admin data table                       |
-| `inventory-ledger`                                                            | `inventory`     | admin forms + table                    |
-| `contact`                                                                     | `feedback`      | public form                            |
-| `locales-list`, `locales-dictionary`, `locale-entries`, `entity-translations` | `locales`       | admin tables, wide matrix, tabbed form |
-| `admin-dashboard`                                                             | `observability` | KPI tiles, dense numbers               |
-| `realtime-playground`                                                         | `observability` | live-updating panels                   |
+The same argument settles what has **no** photograph: reflow at 320 px (WCAG 1.4.10) and landscape overflow are invariants, and an assertion that nothing scrolls sideways beats a picture of it — those are the [layout sweep's](./layout-sweep.md) job. A phone photograph exists only where a layout family changes shape on a phone, and the table below is the list: the pull-request review keeps it, not a coverage spec.
+
+| Screen                                                                        | Owner           | Viewports                          | Layout family it stands for                        |
+| ----------------------------------------------------------------------------- | --------------- | ---------------------------------- | -------------------------------------------------- |
+| `home`                                                                        | shell           | desktop, phone, tablet; phone dark | marketing content, cards, hero; the hamburger bar  |
+| `home-signed-in`                                                              | shell           | desktop, phone                     | the pinned cart and the account menu share 390 px  |
+| `drawer`, `drawer, every section`                                             | shell           | phone                              | the drawer exists only below `lg`; the longest one |
+| `about`, `faq`                                                                | shell           | desktop                            | long-form prose, accordions                        |
+| `not-found`                                                                   | shell           | desktop                            | error state, empty state                           |
+| `login`                                                                       | `account`       | desktop, phone                     | centred narrow form at full width                  |
+| `login, 2FA challenge`                                                        | `account`       | desktop                            | second step                                        |
+| `profile, 2FA panel off`, `profile, 2FA backup codes`                         | `account`       | desktop                            | settings card, modal over a page                   |
+| `profile, add-address dialog`                                                 | `account`       | phone                              | the fullscreen-dialog family                       |
+| `products-list`                                                               | `products`      | desktop, phone, tablet; phone dark | filter form, product grid                          |
+| `product`                                                                     | `products`      | desktop, phone                     | the storefront's main page                         |
+| `cart`                                                                        | `cart`          | desktop                            | empty state                                        |
+| `cart, one line`                                                              | `cart`          | phone, phone dark                  | lines and totals stack                             |
+| `cart, checkout`                                                              | `cart`          | phone                              | below the fold: pickers, payment method, button    |
+| `cart, clear confirm`                                                         | `cart`          | phone                              | the app-wide confirm, fullscreen                   |
+| `orders-list`                                                                 | `orders`        | desktop, phone, tablet             | data table, stacked on a phone                     |
+| `order, awaiting transfer`                                                    | `orders`        | phone                              | the page after checkout: payment panel             |
+| `wishlist`                                                                    | `wishlist`      | desktop                            | card list, authenticated                           |
+| `users-list`                                                                  | `users`         | desktop                            | admin data table                                   |
+| `inventory-ledger`                                                            | `inventory`     | desktop, phone                     | admin forms + table, on the warehouse floor        |
+| `contact`                                                                     | `feedback`      | desktop                            | public form                                        |
+| `locales-list`, `locales-dictionary`, `locale-entries`, `entity-translations` | `locales`       | desktop                            | admin tables, wide matrix, tabbed form             |
+| `admin-dashboard`                                                             | `observability` | desktop                            | KPI tiles, dense numbers                           |
+| `realtime-playground`                                                         | `observability` | desktop                            | live-updating panels                               |
+
+That is 43 images: 23 desktop, 14 phone, 3 tablet and 3 dark phone.
+
+## Phone, tablet and dark baselines
+
+A case expands to one test per viewport and theme, and each is its own file, `<name>.<viewport>[.dark].png`, desktop included, so one screen's variants sit together in a pull request's file list.
+
+```mermaid
+flowchart TB
+    Case["a case: name, route,\nviewports, theme, scrollTo"] --> Expand["one test per viewport"]
+    Expand --> Apply["applyViewport\nsize + touch on or off"]
+    Apply --> Visit["visit the route\n(a lookup resolves first)"]
+    Visit --> Settle["ready selector · h1 · network settled"]
+    Settle --> Theme{"theme: dark?"}
+    Theme -- yes --> Dark["switch through the toggle\nassert .v-theme--dark"]
+    Theme -- no --> Light["assert .v-theme--light"]
+    Dark --> Prep["prepare"]
+    Light --> Prep
+    Prep --> Scroll["scrollTo: element\nunder the app bar"]
+    Scroll --> Freeze["redact · freeze"]
+    Freeze --> Shot["screenshot → task"]
+```
+
+- **Touch is on for phone and tablet.** Vuetify ships CSS that exists only under `hover: none` (the `clearable` icon, for one), so a phone shot taken with a mouse is not what a phone shows. Desktop cases run with touch off.
+- **Segments, not `fullPage`.** Content below the fold is a named `scrollTo` element scrolled just under the app bar, which is what a phone shows after scrolling. A stitched full page repeats the fixed bar in every segment, and a tall viewport changes the layout it is meant to photograph.
+- **The light theme is asserted.** The default theme is `system`, so on a dark OS a light case would otherwise record dark pixels without any error.
+- **The dark set** is three phone shots (`home`, `products-list`, `cart, one line`).
+- **Same thresholds at every size.** `MAX_DIFFERING_RATIO` is a share of the image, and a phone holds about as much text per pixel as a desktop, so the share is the right unit.
+- **Device pixel ratio 1**, enforced by the size guard rather than a browser flag.
 
 ## Where the baselines live
 
@@ -79,7 +119,8 @@ Beside the spec that takes them:
 ```
 src/modules/products/tests/e2e/
   products.visual.cy.ts
-  __snapshots__/products-list.png
+  __snapshots__/products-list.desktop.png
+  __snapshots__/products-list.phone.png
 ```
 
 `cy.compareSnapshot()` resolves the directory from `Cypress.spec.relative`, so nothing is configured per module — a new module's first baseline lands in the right place by existing. **The point is deletion**: `rm -rf src/modules/products` takes its photographs with it, where a central folder would be left holding a picture of a screen the app no longer serves and nothing would ever notice.
@@ -195,6 +236,14 @@ When a change to the design is intended:
 npm run test:e2e:visual:update
 ```
 
+One viewport at a time goes through the tag filter, not a new script. Tags are namespaced `@visual-*` (`@visual-desktop`, `@visual-phone`, `@visual-tablet`, `@visual-dark`), so no other spec can match them statically; the grep plugin then always takes its run-everything-and-filter path.
+
+```bash
+E2E_GREP_TAGS=@visual-phone npm run test:e2e:visual:update
+```
+
+The workflow's `tags` input does the same: `update-baselines` with `@visual-phone` re-records only the phone images, and empty means everything.
+
 Then **look at the resulting image diff in the pull request**. That review is the entire point of the layer; skipping it turns the baselines into rubber stamps and the suite into decoration.
 
 ## Proving the suite actually works
@@ -237,6 +286,8 @@ too — never on a host:
 | The diff images        | uploaded as the `visual-diff` artefact on every run                                  |
 | The baselines          | recorded in that same image, committed beside each spec                              |
 
+One image digest serves every job that photographs or measures a page: `visual.yml`'s two jobs share it, so a bump changes both and re-records the baselines in the same commit.
+
 It stays a nightly rather than a merge gate: a red run means "go and look at the picture", and the
 artefact is that picture.
 
@@ -266,10 +317,12 @@ the same image; never mount them read-write, because the image's Node would rebu
 and the demo backend (3100) both live inside it, and a host-network container would collide with
 any other Cypress run using those ports.
 
+From a worktree the backend sits at no fixed relative path, so `BACKEND_PATH` names the committed backend checkout explicitly. The engine is rootless podman (`podman` for `docker`), and `rm -f` can take over a minute to tear down: prove the ports are free before the next run.
+
 ```bash
-IMAGE=cypress/included:15.18.1   # the tag pinned in visual.yml; pin by digest when recording baselines
+IMAGE=cypress/included:15.18.1@sha256:d133bd7549adb28f82ea4a8c90e8cb73fc28657b8eb32656c771b1d0c5afe047   # the digest pinned in visual.yml
 docker run -d --name visual \
-  -v "$PWD:/src/frontend:ro" -v "$PWD/../boilerplate-node-backend:/src/backend:ro" \
+  -v "$PWD:/src/frontend:ro" -v "$BACKEND_PATH:/src/backend:ro" \
   --entrypoint sleep "$IMAGE" infinity
 docker exec visual bash -c '
   mkdir -p /work/frontend /work/backend
@@ -312,14 +365,17 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 
 | Path                                               | Contents                                                                                                                                       |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/e2e/visual/visual.cy.ts`                    | The shell's five screens, the readiness selectors, the determinism `beforeEach`                                                                |
+| `tests/e2e/visual/visual.cy.ts`                    | The shell's screens, the readiness selectors, the determinism `beforeEach`                                                                     |
+| `tests/support/e2e/visual-sweep.ts`                | `sweepVisual`: a case expands over viewports and theme, then drives the shot                                                                   |
+| `tests/support/e2e/apply-viewport.ts`              | `applyViewport(name)`: size and touch for a `VIEWPORTS` entry                                                                                  |
+| `tests/support/e2e/sweep-state.ts`                 | The route type, `resolveRoute` and `switchToDarkTheme`, shared with the other sweeps                                                           |
 | `tests/support/e2e/visual-task.ts`                 | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
 | `tests/support/e2e/commands.ts`                    | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token                                              |
 | `cypress.config.ts`                                | Registers the `compareSnapshot` task, pins the desktop viewport and registers the one `before:browser:launch` handler                          |
 | `scripts/e2e/viewports.ts`                         | The device sizes (`VIEWPORTS`), cy-free, so Node tools can import them                                                                         |
 | `scripts/e2e/browser-launch.ts`                    | Pure: `windowFor` and `withWindowSize`, the headless window size                                                                               |
 | `scripts/e2e/shot-size.ts`                         | Pure: `shotSizeProblem`, the guard against a clamped screenshot                                                                                |
-| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines — reviewed as images, in the PR diff                                                                                   |
+| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines, `<name>.<viewport>[.dark].png` — reviewed as images, in the PR diff                                                   |
 | `reports/visual-diff/`                             | Diff images written on failure. Not committed                                                                                                  |
 
 Note the directory split: the visual spec lives under `tests/e2e/visual/` rather than `tests/e2e/specs/`, because the ordinary `npm run test:e2e` run must not record or compare screenshots. Each npm script scopes itself with `--spec`.
