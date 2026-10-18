@@ -30,19 +30,21 @@ const props = defineProps<{
 }>();
 
 /**
+ * Top-border classes per theme accent. A top-level `*_CLASSES` const, so the Tailwind lint reads
+ * the strings.
+ */
+const ACCENT_BORDER_CLASSES = {
+    primary: 'border-t-primary',
+    secondary: 'border-t-secondary',
+    tertiary: 'border-t-tertiary'
+} as const;
+
+/**
  * Colored top border keyed to the theme accent.
  *
- * @returns The border utility class for the requested accent, falling back to
- *  `primary`.
+ * @returns The border utility class for the requested accent, falling back to `primary`.
  */
-const accentBorderClass = computed(
-    () =>
-        ({
-            primary: 'border-t-primary',
-            secondary: 'border-t-secondary',
-            tertiary: 'border-t-tertiary'
-        })[props.accent ?? 'primary']
-);
+const accentBorderClass = computed(() => ACCENT_BORDER_CLASSES[props.accent ?? 'primary']);
 </script>
 
 <template>

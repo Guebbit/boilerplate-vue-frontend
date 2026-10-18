@@ -167,24 +167,28 @@ const kpiCards = computed<AdminKpiCard[]>(() => [
 ]);
 
 /**
- * Maps a KPI status onto the status dot's background class.
+ * The status dot's background class per KPI status.
  *
- * Returns the full literal class name rather than interpolating `bg-${color}`: Tailwind's
- * scanner only generates a utility for a class name it can see written out somewhere in the
- * source, and a template-literal-built name is invisible to it — the dot would carry no
- * background at all.
+ * Full literal class names rather than an interpolated `bg-${color}`: Tailwind's scanner only
+ * generates a utility for a class name it can see written out somewhere in the source, and a
+ * template-literal-built name is invisible to it — the dot would carry no background at all.
+ * A top-level `*_CLASSES` const, so the Tailwind lint reads the strings too.
+ */
+const KPI_DOT_CLASSES = {
+    ok: 'bg-success',
+    warn: 'bg-warning',
+    error: 'bg-error',
+    loading: 'bg-info',
+    unknown: 'bg-secondary'
+} as const;
+
+/**
+ * Maps a KPI status onto the status dot's background class.
  *
  * @param status - Status of the card, possibly unset.
  * @returns The Tailwind background class, defaulting to `bg-secondary`.
  */
-const kpiDotClass = (status: AdminKpiCard['status']) =>
-    ({
-        ok: 'bg-success',
-        warn: 'bg-warning',
-        error: 'bg-error',
-        loading: 'bg-info',
-        unknown: 'bg-secondary'
-    })[status ?? 'unknown'];
+const kpiDotClass = (status: AdminKpiCard['status']) => KPI_DOT_CLASSES[status ?? 'unknown'];
 
 /**
  * Names a KPI status for a reader who cannot see the dot's colour.

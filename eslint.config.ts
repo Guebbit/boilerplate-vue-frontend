@@ -22,6 +22,7 @@ import { assertAcyclicModuleEdges, MODULE_EDGES } from './scripts/module-edges';
 import { MODULE_GROUPS } from './scripts/module-groups';
 import localRules from './scripts/eslint/index';
 import { DESIGN_POLICY } from './scripts/design-policy';
+import { designLintConfig } from './scripts/eslint/design-config';
 
 /**
  * The project-local rules as one plugin object. Flat config refuses two different objects under
@@ -784,6 +785,12 @@ export default defineConfigWithVueTs(
             'local/template-directive-description': 'error'
         }
     },
+
+    /**
+     * Tailwind classes against the theme: canonical spelling, conflicts, duplicates, deprecations.
+     * The wiring and the knobs are in `scripts/eslint/design-config.ts` and `scripts/design-policy.ts`.
+     */
+    ...designLintConfig(),
 
     /**
      * Colours are named theme colours, never literals: `local/theme-token`. The theme file is

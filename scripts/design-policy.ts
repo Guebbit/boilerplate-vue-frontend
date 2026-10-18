@@ -64,7 +64,9 @@ export const DESIGN_POLICY = {
     severity: {
         canonicalClasses: 'error',
         conflictingClasses: 'error',
-        deprecatedClasses: 'error',
+        // Off until the radius scale is realigned to Vuetify's: the plugin's fix for a bare
+        // `rounded` is `rounded-sm`, which is the wrong size once `sm` means 2px.
+        deprecatedClasses: 'off',
         duplicateClasses: 'error',
         themeToken: 'error'
     } satisfies Record<string, DesignSeverity>,
