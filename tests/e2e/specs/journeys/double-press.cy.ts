@@ -14,11 +14,13 @@ interface PressRow {
     /** What the row says when it fails. */
     name: string;
     /** Who is signed in. */
-    persona: 'user' | 'admin';
+    persona: 'user' | 'admin' | 'warehouse';
     /** The subject whose order page is opened. */
     subject: string;
     /** The page to open for the order id. */
     page: (orderId: string) => string;
+    /** Puts the page in the state to press: open a dialog, fill it. */
+    prepare?: () => void;
     /** The control to press. */
     trigger: string;
     /** A `cy.intercept` pattern for the operation's request. */
@@ -42,7 +44,10 @@ interface OrderStatus {
  * @param persona - whose view
  * @param orderId - the order
  */
-const statusOf = (persona: 'user' | 'admin', orderId: string): Cypress.Chainable<string> =>
+const statusOf = (
+    persona: 'user' | 'admin' | 'warehouse',
+    orderId: string
+): Cypress.Chainable<string> =>
     cy
         .apiAs<OrderStatus>(persona, 'GET', `/orders/${orderId}`)
         .then((order) => String(order?.status));
@@ -100,6 +105,36 @@ const ROWS: readonly PressRow[] = [
         done: 'refunded'
     },
     {
+        name: 'the warehouse’s ship, pressed twice, ships once',
+        persona: 'warehouse',
+        subject: 'order.paidExpress',
+        page: (orderId) => `/en/orders/${orderId}`,
+        prepare: () => {
+            cy.get('[data-test=mark-started]').click();
+            cy.get('[data-test=open-ship]').click();
+            cy.get('[data-test=ship-tracking-code] input').type('FR19-TRACK-001');
+        },
+        trigger: '[data-test=ship-submit]',
+        operation: '**/delivery/fulfillment-orders/*/shipments',
+        confirms: false,
+        effect: (orderId) => statusOf('warehouse', orderId),
+        done: 'shipped'
+    },
+    {
+        name: 'the operator’s recorded transfer, pressed twice, records one payment',
+        persona: 'admin',
+        subject: 'order.awaitingTransfer',
+        page: (orderId) => `/en/orders/${orderId}/edit`,
+        prepare: () => {
+            cy.get('[data-test=record-offline-reference] input').type('FR19-REF-001');
+        },
+        trigger: '[data-test=record-offline-submit]',
+        operation: '**/payments/order/*/offline',
+        confirms: false,
+        effect: (orderId) => statusOf('admin', orderId),
+        done: 'paid'
+    },
+    {
         name: 'the customer’s withdrawal, asked and confirmed twice, withdraws once',
         persona: 'user',
         subject: 'order.paid',
@@ -129,6 +164,7 @@ describe('FR19 · A double press on a money button', () => {
             cy.subjectId(row.subject).then((orderId) => {
                 cy.loginAs(row.persona);
                 cy.visit(row.page(orderId));
+                row.prepare?.();
 
                 const seen: Seen = { keys: [] };
                 cy.intercept('POST', row.operation, (request) => {
@@ -151,9 +187,9 @@ describe('FR19 · A double press on a money button', () => {
                 }
 
                 cy.step('the server shows one effect and the page no error');
-                cy.get('[data-test=order-edit-actions-error], [data-test=withdraw-error]').should(
-                    'not.exist'
-                );
+                cy.get(
+                    '[data-test=order-edit-actions-error], [data-test=withdraw-error], [data-test=record-offline-payment-error]'
+                ).should('not.exist');
                 row.effect(orderId).should('equal', row.done);
                 cy.then(() => {
                     expect(seen.keys.length, 'requests sent').to.be.within(1, 2);
