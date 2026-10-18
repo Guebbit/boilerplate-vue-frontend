@@ -14,11 +14,14 @@ export default {
  * Public contact form, validated with `useStructureFormValidation` against a Zod schema and
  * submitted through the feedback store; success resets the form in place.
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useFeedbackStore } from '../store.ts';
+import { FeedbackCategory } from '@/types/enums.ts';
+import type { FeedbackCategory as TFeedbackCategory } from '@types';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -34,6 +37,10 @@ interface ContactForm {
     email?: string;
     subject?: string;
     message?: string;
+    /** What the message is about; optional, and filled from `?category=` when an order page links here. */
+    category?: TFeedbackCategory;
+    /** The order the visitor says this is about, free text; filled from `?order=`. */
+    orderNumber?: string;
     /**
      * Honeypot. A real visitor never sees or reaches this field — see the template — so it
      * stays empty; a bot's generic autofill often populates it by name. The BE writes a non-empty
@@ -46,6 +53,43 @@ interface ContactForm {
  * Translation function.
  */
 const { t, locale } = useI18n();
+
+/**
+ * The address the visitor arrived on, whose `?category=` and `?order=` pre-fill the form (an order
+ * page links here so the visitor does not retype what the shop already knows).
+ */
+const route = useRoute();
+
+/**
+ * The category a link named, when it is one the contract knows; anything else is ignored.
+ *
+ * @returns the category, or `undefined`.
+ */
+const categoryFromLink = (): TFeedbackCategory | undefined => {
+    const wanted = route.query.category;
+    return Object.values(FeedbackCategory).find((category) => category === wanted);
+};
+
+/**
+ * The order number a link named, when it is plain text.
+ *
+ * @returns the order number, or an empty string.
+ */
+const orderFromLink = (): string => {
+    const wanted = route.query.order;
+    return typeof wanted === 'string' ? wanted.slice(0, 40) : '';
+};
+
+/**
+ * The category choices, labelled in the visitor's language, led by "no category".
+ */
+const categoryOptions = computed(() => [
+    { value: undefined, title: t('contact-page.category-none') },
+    ...Object.values(FeedbackCategory).map((category) => ({
+        value: category,
+        title: t(`contact-page.category-${category}`)
+    }))
+]);
 
 /**
  * Toast dispatcher.
@@ -80,12 +124,22 @@ const {
     resetForm,
     applyServerErrors
 } = useStructureFormValidation<ContactForm>(
-    { name: '', email: '', subject: '', message: '', website: '' },
+    {
+        name: '',
+        email: '',
+        subject: '',
+        message: '',
+        category: categoryFromLink(),
+        orderNumber: orderFromLink(),
+        website: ''
+    },
     z.object({
         name: z.string().optional(),
         email: z.email({ error: () => t('contact-page.email-invalid') }),
         subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
         message: z.string().min(10, { error: () => t('contact-page.message-min') }),
+        category: z.enum(FeedbackCategory).optional(),
+        orderNumber: z.string().max(40).optional(),
         // Never shown to a visitor, so never validated — the BE decides what a filled value
         // means; this form only has to carry it through unedited.
         website: z.string().optional()
@@ -123,6 +177,8 @@ const submitForm = () =>
                 email: form.value.email ?? '',
                 subject: form.value.subject ?? '',
                 message: form.value.message ?? '',
+                category: form.value.category || undefined,
+                orderNumber: form.value.orderNumber?.trim() || undefined,
                 website: form.value.website || undefined
             },
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof HumanCheck>), even with `token` explicitly exposed via HumanCheck.vue's own defineExpose
@@ -183,6 +239,23 @@ const submitForm = () =>
                     data-test="contact-subject"
                     :label="t('contact-page.label-subject')"
                     :error-messages="showFormErrors ? (formErrors.subject ?? []) : []"
+                    class="mb-2"
+                />
+                <v-select
+                    v-model="form.category"
+                    data-test="contact-category"
+                    :label="t('contact-page.label-category')"
+                    :items="categoryOptions"
+                    item-title="title"
+                    item-value="value"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.orderNumber"
+                    type="text"
+                    maxlength="40"
+                    data-test="contact-order-number"
+                    :label="t('contact-page.label-order-number')"
                     class="mb-2"
                 />
                 <v-textarea

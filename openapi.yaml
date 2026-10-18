@@ -3675,6 +3675,11 @@ paths:
           required: false
           schema:
             $ref: "#/components/schemas/FeedbackRequestStatus"
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/FeedbackCategory"
       responses:
         "200":
           description: Feedback request list
@@ -12699,6 +12704,16 @@ components:
           type: boolean
         deleted:
           type: boolean
+    FeedbackCategory:
+      type: string
+      enum:
+        - order
+        - cancellation
+        - return
+        - payment
+        - account
+        - privacy
+        - other
     CreateFeedbackRequest:
       type: object
       additionalProperties: false
@@ -12721,6 +12736,13 @@ components:
           type: string
           minLength: 1
           maxLength: 5000
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: The order the visitor says this is about, free text. Not checked against any order.
         website:
           type: string
           maxLength: 200
@@ -12754,6 +12776,11 @@ components:
           type: string
         message:
           type: string
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
+          type: string
+          description: The order the visitor said this is about, as they typed it. Not checked against any order.
         status:
           $ref: "#/components/schemas/FeedbackRequestStatus"
         adminNotes:
@@ -12841,6 +12868,8 @@ components:
           $ref: "#/components/schemas/Text"
         status:
           $ref: "#/components/schemas/FeedbackRequestStatus"
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
         email:
           $ref: "#/components/schemas/Email"
     ReplaceFeedbackRequestStatusRequest:
@@ -14128,6 +14157,13 @@ components:
         - partially_returned
         - returned
       description: "Where any return on the order stands — Shopify's `returnStatus`. `none` when no return holds goods; `requested` while one awaits staff; `in_progress` once approved and awaiting its goods; `partially_returned` / `returned` once received goods cover some / every unit on the order. Read-only: `returns` stamps it, and `delivered` stays terminal — a return is its own object, not an order status."
+    WithdrawBlockedReason:
+      type: string
+      enum:
+        - all_excluded
+        - window_closed
+        - nothing_left
+      description: "Why the buyer's withdrawal button is not offered, first reason that applies. `all_excluded`: every line is goods Art. 16 CRD takes the right of withdrawal away from (made to order, perishable), so there is nothing to withdraw from — an unpaid or paid order can still be cancelled with the ordinary cancel. `window_closed`: the withdrawal period ended. `nothing_left`: every unit is already back with the shop."
     OrderActions:
       type: object
       additionalProperties: false
@@ -14177,7 +14213,10 @@ components:
           description: "Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and nothing has shipped."
         withdraw:
           type: boolean
-          description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`."
+          description: "Whether the \"withdraw from contract here\" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked."
+        withdrawBlocked:
+          $ref: "#/components/schemas/WithdrawBlockedReason"
+          description: Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it.
         withdrawUntil:
           type: string
           format: date-time
@@ -16998,6 +17037,10 @@ components:
         subject:
           type: string
         message:
+          type: string
+        category:
+          $ref: "#/components/schemas/FeedbackCategory"
+        orderNumber:
           type: string
         status:
           $ref: "#/components/schemas/FeedbackRequestStatus"

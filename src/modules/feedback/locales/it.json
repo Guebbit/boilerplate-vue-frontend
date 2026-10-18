@@ -10,7 +10,17 @@
         "success": "Messaggio inviato, grazie!",
         "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
         "subject-required": "Serve un oggetto",
-        "message-min": "Raccontaci qualcosa in più — almeno 10 caratteri"
+        "message-min": "Raccontaci qualcosa in più — almeno 10 caratteri",
+        "label-category": "Di cosa si tratta? (facoltativo)",
+        "label-order-number": "Numero d'ordine (facoltativo)",
+        "category-none": "Non so",
+        "category-order": "Il mio ordine",
+        "category-cancellation": "Annullare un ordine",
+        "category-return": "Un reso",
+        "category-payment": "Pagamento",
+        "category-account": "Il mio account",
+        "category-privacy": "I miei dati personali",
+        "category-other": "Altro"
     },
     "feedback-inbox-page": {
         "page-title": "Casella feedback",
@@ -41,7 +51,10 @@
         "button-delete": "Elimina",
         "button-delete-named": "Elimina \"{subject}\"",
         "confirm-delete": "Eliminare definitivamente \"{subject}\"? L'operazione non può essere annullata.",
-        "success-delete": "Ticket eliminato."
+        "success-delete": "Ticket eliminato.",
+        "filter-category": "Categoria",
+        "filter-category-any": "Qualsiasi categoria",
+        "label-order": "Ordine {number}"
     },
     "navigation": {
         "label-contact": "Contatti",

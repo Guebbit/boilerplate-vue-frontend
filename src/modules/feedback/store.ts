@@ -80,6 +80,7 @@ export const useFeedbackStore = defineStore('feedback', () => {
                     text: filters.text,
                     sort: sortTokensOf(filters.sort, FeedbackRequestSortItem),
                     status: filters.status,
+                    category: filters.category,
                     email: filters.email
                 }).then((response) => ({
                     items: response.data.items,

@@ -27,7 +27,7 @@ export { RecordOfflinePaymentRequestMethod } from '@api';
 export { TranslationOrigin } from '@api';
 
 // Feedback request lifecycle: an inbox's status filter and status-change options.
-export { FeedbackRequestStatus } from '@api';
+export { FeedbackRequestStatus, FeedbackCategory } from '@api';
 
 // Return lifecycle and reasons: the returns list's filter selects.
 export { ReturnStatus, ReturnReason } from '@api';

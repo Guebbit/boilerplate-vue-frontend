@@ -76,7 +76,11 @@
         "success": "Recesso ricevuto. Una conferma sta arrivando alla tua email.",
         "cancel-line": "Non ancora spedito: gruppo n. {number}",
         "button-cancel-rest": "Annulla ciò che non è stato spedito",
-        "cancel-hint": "Il periodo di recesso inizia quando arriva l'ultima spedizione."
+        "cancel-hint": "Il periodo di recesso inizia quando arriva l'ultima spedizione.",
+        "blocked-all_excluded": "Tutto in questo ordine è stato realizzato su tua richiesta, quindi il diritto di recesso non si applica. Se nulla è stato spedito, puoi comunque annullare l'ordine.",
+        "blocked-window_closed": "Il periodo di recesso per questo ordine è terminato.",
+        "blocked-nothing_left": "Tutto in questo ordine è già stato restituito.",
+        "contact-us": "Contattaci"
     },
     "cancel-remainder-dialog": {
         "title": "Annulla ciò che non è stato spedito: gruppo n. {number}",

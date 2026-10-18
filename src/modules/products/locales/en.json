@@ -88,7 +88,9 @@
         "login-to-buy": "Sign in to check out or save this product.",
         "image-alt": "Photo of {name}",
         "preorder": "Preorder: ships {date}",
-        "label-release-date": "Ships from"
+        "label-release-date": "Ships from",
+        "label-no-withdrawal": "Right of withdrawal",
+        "no-withdrawal-notice": "Made to order or perishable: there is no right of withdrawal for this item once you order it. Defects are still covered by the legal guarantee."
     },
     "product-create-page": {
         "page-title": "Create product",

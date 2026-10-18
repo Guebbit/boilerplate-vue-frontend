@@ -10,7 +10,17 @@
         "success": "Message sent, thank you!",
         "email-invalid": "Check your email address for typos or a missing domain",
         "subject-required": "A subject is required",
-        "message-min": "Tell us a little more — at least 10 characters"
+        "message-min": "Tell us a little more — at least 10 characters",
+        "label-category": "What is it about? (optional)",
+        "label-order-number": "Order number (optional)",
+        "category-none": "Not sure",
+        "category-order": "My order",
+        "category-cancellation": "Cancelling an order",
+        "category-return": "A return",
+        "category-payment": "Payment",
+        "category-account": "My account",
+        "category-privacy": "My personal data",
+        "category-other": "Something else"
     },
     "feedback-inbox-page": {
         "page-title": "Feedback inbox",
@@ -41,7 +51,10 @@
         "button-delete": "Delete",
         "button-delete-named": "Delete \"{subject}\"",
         "confirm-delete": "Permanently delete \"{subject}\"? This cannot be undone.",
-        "success-delete": "Ticket deleted."
+        "success-delete": "Ticket deleted.",
+        "filter-category": "Category",
+        "filter-category-any": "Any category",
+        "label-order": "Order {number}"
     },
     "navigation": {
         "label-contact": "Contact",

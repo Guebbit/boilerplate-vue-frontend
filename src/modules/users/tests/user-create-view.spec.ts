@@ -4,7 +4,7 @@
  * refuses before anything is sent, the exact payload it sends, where a success lands, and that an
  * API refusal blocks the form in place. `createUser` is spied at the store.
  */
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
@@ -73,6 +73,11 @@ beforeEach(() => {
         router.push('/en/users/create').then(() => router.isReady())
     );
 });
+
+// A create that succeeds navigates to the new user, and that navigation resolves a lazy route
+// component after the test body has returned. Left running it can land after the environment is
+// torn down (`history is not defined`), so each test ends by superseding it with a settled one.
+afterEach(() => router.push('/en/users/create').then(() => undefined));
 
 describe('UserCreate', () => {
     it('starts with the "Active" switch on, as the server defaults it', () => {

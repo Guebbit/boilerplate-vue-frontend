@@ -258,6 +258,14 @@ const stockLabel = computed(() => {
                         data-test="product-release-date"
                     />
                     <ItemDetailField
+                        v-if="currentProduct.noWithdrawal"
+                        :label="t('product-target-page.label-no-withdrawal')"
+                        :value="t('product-target-page.no-withdrawal-notice')"
+                        :icon="Circle"
+                        full-width
+                        data-test="product-no-withdrawal"
+                    />
+                    <ItemDetailField
                         :label="t('product-target-page.label-description')"
                         :value="formatText(currentProduct.description)"
                         :icon="FileText"

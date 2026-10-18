@@ -88,7 +88,9 @@
         "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto.",
         "image-alt": "Foto di {name}",
         "preorder": "Preordine: spedizione dal {date}",
-        "label-release-date": "Spedizione dal"
+        "label-release-date": "Spedizione dal",
+        "label-no-withdrawal": "Diritto di recesso",
+        "no-withdrawal-notice": "Realizzato su ordinazione o deperibile: una volta ordinato non c'è diritto di recesso per questo articolo. I difetti restano coperti dalla garanzia legale."
     },
     "product-create-page": {
         "page-title": "Crea prodotto",

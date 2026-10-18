@@ -3606,12 +3606,17 @@ export const createFeedbackRequestBodyNameMax = 120;
 export const createFeedbackRequestBodyEmailMax = 254;
 export const createFeedbackRequestBodySubjectMax = 200;
 export const createFeedbackRequestBodyMessageMax = 5000;
+export const createFeedbackRequestBodyOrderNumberMax = 40;
 export const createFeedbackRequestBodyWebsiteMax = 200;
 export const CreateFeedbackRequestBody = zod.strictObject({
     name: zod.string().min(1).max(createFeedbackRequestBodyNameMax).optional(),
     email: zod.email().max(createFeedbackRequestBodyEmailMax),
     subject: zod.string().min(1).max(createFeedbackRequestBodySubjectMax),
     message: zod.string().min(1).max(createFeedbackRequestBodyMessageMax),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
+    orderNumber: zod.string().min(1).max(createFeedbackRequestBodyOrderNumberMax).optional(),
     website: zod.string().max(createFeedbackRequestBodyWebsiteMax).optional()
 });
 export const createFeedbackRequestResponseDataIdMax = 64;
@@ -3631,6 +3636,10 @@ export const CreateFeedbackRequestResponse = zod.strictObject({
         email: zod.email().max(createFeedbackRequestResponseDataEmailMax),
         subject: zod.string(),
         message: zod.string(),
+        category: zod
+            .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+            .optional(),
+        orderNumber: zod.string().optional(),
         status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
         adminNotes: zod.string().optional(),
         respondedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3667,7 +3676,10 @@ export const ListFeedbackRequestsQueryParams = zod.strictObject({
         .optional(),
     text: zod.string().min(1).max(listFeedbackRequestsQueryTextMax).optional(),
     email: zod.email().max(listFeedbackRequestsQueryEmailMax).optional(),
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional()
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional()
 });
 export const listFeedbackRequestsResponseDataItemsItemIdMax = 64;
 export const listFeedbackRequestsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -3694,6 +3706,18 @@ export const ListFeedbackRequestsResponse = zod.strictObject({
                 email: zod.email().max(listFeedbackRequestsResponseDataItemsItemEmailMax),
                 subject: zod.string(),
                 message: zod.string(),
+                category: zod
+                    .enum([
+                        'order',
+                        'cancellation',
+                        'return',
+                        'payment',
+                        'account',
+                        'privacy',
+                        'other'
+                    ])
+                    .optional(),
+                orderNumber: zod.string().optional(),
                 status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
                 adminNotes: zod.string().optional(),
                 respondedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3746,6 +3770,9 @@ export const SearchFeedbackRequestsBody = zod.strictObject({
         .optional(),
     text: zod.string().min(1).max(searchFeedbackRequestsBodyTextMax).optional(),
     status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
+    category: zod
+        .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+        .optional(),
     email: zod.email().max(searchFeedbackRequestsBodyEmailMax).optional()
 });
 export const searchFeedbackRequestsResponseDataItemsItemIdMax = 64;
@@ -3773,6 +3800,18 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
                 email: zod.email().max(searchFeedbackRequestsResponseDataItemsItemEmailMax),
                 subject: zod.string(),
                 message: zod.string(),
+                category: zod
+                    .enum([
+                        'order',
+                        'cancellation',
+                        'return',
+                        'payment',
+                        'account',
+                        'privacy',
+                        'other'
+                    ])
+                    .optional(),
+                orderNumber: zod.string().optional(),
                 status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
                 adminNotes: zod.string().optional(),
                 respondedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3831,6 +3870,10 @@ export const ReplaceFeedbackRequestStatusResponse = zod.strictObject({
         email: zod.email().max(replaceFeedbackRequestStatusResponseDataEmailMax),
         subject: zod.string(),
         message: zod.string(),
+        category: zod
+            .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+            .optional(),
+        orderNumber: zod.string().optional(),
         status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
         adminNotes: zod.string().optional(),
         respondedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3873,6 +3916,10 @@ export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
         email: zod.email().max(updateFeedbackRequestStatusResponseDataEmailMax),
         subject: zod.string(),
         message: zod.string(),
+        category: zod
+            .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+            .optional(),
+        orderNumber: zod.string().optional(),
         status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
         adminNotes: zod.string().optional(),
         respondedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -5492,6 +5539,9 @@ export const CheckoutResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -6066,6 +6116,9 @@ export const ListOrdersResponse = zod.strictObject({
                         ),
                         correctAddress: zod.boolean(),
                         withdraw: zod.boolean(),
+                        withdrawBlocked: zod
+                            .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                            .optional(),
                         withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                         invoice: zod.boolean()
                     })
@@ -6326,6 +6379,9 @@ export const CreateOrderResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -6716,6 +6772,9 @@ export const SearchOrdersResponse = zod.strictObject({
                         ),
                         correctAddress: zod.boolean(),
                         withdraw: zod.boolean(),
+                        withdrawBlocked: zod
+                            .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                            .optional(),
                         withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                         invoice: zod.boolean()
                     })
@@ -6945,6 +7004,9 @@ export const GetOrderByIdResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -7176,6 +7238,9 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -7407,6 +7472,9 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -7655,6 +7723,9 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -7900,6 +7971,9 @@ export const CancelOrderByIdResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -8140,6 +8214,9 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -8729,6 +8806,9 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -9757,6 +9837,9 @@ export const StartFulfilmentResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })
@@ -12728,6 +12811,18 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 email: zod.email().max(downloadAccountExportResponseFeedbackItemEmailMax),
                 subject: zod.string(),
                 message: zod.string(),
+                category: zod
+                    .enum([
+                        'order',
+                        'cancellation',
+                        'return',
+                        'payment',
+                        'account',
+                        'privacy',
+                        'other'
+                    ])
+                    .optional(),
+                orderNumber: zod.string().optional(),
                 status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
                 respondedAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional()
@@ -12967,6 +13062,9 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     ),
                     correctAddress: zod.boolean(),
                     withdraw: zod.boolean(),
+                    withdrawBlocked: zod
+                        .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                        .optional(),
                     withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                     invoice: zod.boolean()
                 })
@@ -14020,6 +14118,9 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                 ),
                 correctAddress: zod.boolean(),
                 withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
                 invoice: zod.boolean()
             })

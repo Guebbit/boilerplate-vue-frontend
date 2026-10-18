@@ -2082,6 +2082,18 @@ export interface SearchUsersRequest {
     deleted?: boolean;
 }
 
+export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
+
+export const FeedbackCategory = {
+    order: 'order',
+    cancellation: 'cancellation',
+    return: 'return',
+    payment: 'payment',
+    account: 'account',
+    privacy: 'privacy',
+    other: 'other'
+} as const;
+
 export interface CreateFeedbackRequest {
     /**
      * @minLength 1
@@ -2099,6 +2111,13 @@ export interface CreateFeedbackRequest {
      * @maxLength 5000
      */
     message: string;
+    category?: FeedbackCategory;
+    /**
+     * The order the visitor says this is about, free text. Not checked against any order.
+     * @minLength 1
+     * @maxLength 40
+     */
+    orderNumber?: string;
     /**
      * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
      * @maxLength 200
@@ -2122,6 +2141,9 @@ export interface FeedbackRequest {
     email: Email;
     subject: string;
     message: string;
+    category?: FeedbackCategory;
+    /** The order the visitor said this is about, as they typed it. Not checked against any order. */
+    orderNumber?: string;
     status: FeedbackRequestStatus;
     adminNotes?: string;
     respondedAt?: string;
@@ -2172,6 +2194,7 @@ export interface SearchFeedbackRequestsRequest {
     sort?: FeedbackRequestSort;
     text?: Text;
     status?: FeedbackRequestStatus;
+    category?: FeedbackCategory;
     email?: Email;
 }
 
@@ -3011,6 +3034,18 @@ export const OrderReturnStatus = {
 } as const;
 
 /**
+ * Why the buyer's withdrawal button is not offered, first reason that applies. `all_excluded`: every line is goods Art. 16 CRD takes the right of withdrawal away from (made to order, perishable), so there is nothing to withdraw from — an unpaid or paid order can still be cancelled with the ordinary cancel. `window_closed`: the withdrawal period ended. `nothing_left`: every unit is already back with the shop.
+ */
+export type WithdrawBlockedReason =
+    (typeof WithdrawBlockedReason)[keyof typeof WithdrawBlockedReason];
+
+export const WithdrawBlockedReason = {
+    all_excluded: 'all_excluded',
+    window_closed: 'window_closed',
+    nothing_left: 'nothing_left'
+} as const;
+
+/**
  * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included.
  */
 export interface OrderActions {
@@ -3028,8 +3063,10 @@ export interface OrderActions {
     override: OrderStatus[];
     /** Whether `PUT /orders/{id}/shipping-address` would be accepted for this caller: they hold `update:Order`, the order has a shipping address, and nothing has shipped. */
     correctAddress: boolean;
-    /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. */
+    /** Whether the "withdraw from contract here" button is offered — EU Consumer Rights Directive Art. 11a. `true` for the order's own buyer while the order is withdrawable (paid or awaiting payment, in the shop's hands or on its way, or delivered) and the withdrawal window has not closed. Always `false` for anyone else, an operator included: the right is the consumer's. The client never counts the days — the server says when. Made with `POST /returns` and `reason: withdrawal`. A mixed order is not a reason to hide it: before dispatch the withdrawal takes the eligible goods (the whole order while it is unpaid or paid, the eligible shipment groups once it is `processing`); only an order made wholly of excluded goods is blocked. */
     withdraw: boolean;
+    /** Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it. */
+    withdrawBlocked?: WithdrawBlockedReason;
     /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
     withdrawUntil?: string;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
@@ -4791,6 +4828,8 @@ export interface ExportFeedbackTicket {
     email: Email;
     subject: string;
     message: string;
+    category?: FeedbackCategory;
+    orderNumber?: string;
     status: FeedbackRequestStatus;
     respondedAt?: string;
     createdAt?: string;
@@ -6221,6 +6260,7 @@ export type ListFeedbackRequestsParams = {
     text?: TextParamParameter;
     email?: Email;
     status?: FeedbackRequestStatus;
+    category?: FeedbackCategory;
 };
 
 export type ListProductsParams = {

@@ -34,7 +34,7 @@ import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
-import { FeedbackRequestStatus } from '@/types/enums.ts';
+import { FeedbackCategory, FeedbackRequestStatus } from '@/types/enums.ts';
 import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 
 /**
@@ -110,6 +110,28 @@ const statusChoice = useAnyFilterChoice(
 );
 
 /**
+ * The category filter's choices: a leading "any category" row (value `null`, for the same reason
+ * as {@link filterStatusOptions}) and one row per category the contact form offers.
+ */
+const filterCategoryOptions = computed(() => [
+    { value: null, title: t('feedback-inbox-page.filter-category-any') },
+    ...Object.values(FeedbackCategory).map((category) => ({
+        value: category,
+        title: t(`contact-page.category-${category}`)
+    }))
+]);
+
+/**
+ * The category select's model: `null` (the "any" row) on screen, no `category` filter in the store.
+ */
+const categoryChoice = useAnyFilterChoice(
+    () => filters.value.category,
+    (value) => {
+        filters.value.category = value;
+    }
+);
+
+/**
  * Whether any filter is narrowing the inbox — picks the empty state's wording.
  */
 const isFiltered = computed(() =>
@@ -127,6 +149,7 @@ const { sync: syncUrl } = useListUrlState({
         text: 'string',
         email: 'string',
         status: Object.values(FeedbackRequestStatus),
+        category: Object.values(FeedbackCategory),
         sort: 'string'
     }
 });
@@ -283,6 +306,15 @@ const handleDelete = (requestId: string, subject: string) => {
                         item-value="value"
                         hide-details
                     />
+                    <v-select
+                        v-model="categoryChoice"
+                        data-test="filter-category"
+                        :label="t('feedback-inbox-page.filter-category')"
+                        :items="filterCategoryOptions"
+                        item-title="title"
+                        item-value="value"
+                        hide-details
+                    />
                     <SortSelect
                         v-model="sortChoice"
                         :label="t('feedback-inbox-page.sort-label')"
@@ -339,6 +371,22 @@ const handleDelete = (requestId: string, subject: string) => {
                         <p class="text-sm opacity-70">
                             {{ request.name || t('feedback-inbox-page.anonymous') }} —
                             {{ request.email }} · {{ formatDateTime(request.createdAt) }}
+                        </p>
+                        <p
+                            v-if="request.category || request.orderNumber"
+                            class="text-sm opacity-70"
+                            data-test="feedback-category"
+                        >
+                            <v-chip v-if="request.category" size="x-small" variant="tonal" label>
+                                {{ t(`contact-page.category-${request.category}`) }}
+                            </v-chip>
+                            <span v-if="request.orderNumber" class="ml-2">
+                                {{
+                                    t('feedback-inbox-page.label-order', {
+                                        number: request.orderNumber
+                                    })
+                                }}
+                            </span>
                         </p>
                         <p
                             v-if="request.respondedAt"

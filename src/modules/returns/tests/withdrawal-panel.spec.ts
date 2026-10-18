@@ -18,7 +18,7 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
-import type { ReturnOptions } from '@types';
+import type { ReturnOptions, WithdrawBlockedReason } from '@types';
 
 wireModulesIntoCore();
 
@@ -28,7 +28,8 @@ wireModulesIntoCore();
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-        { path: '/:locale/returns/:id', name: 'ReturnTarget', component: { template: '<i />' } }
+        { path: '/:locale/returns/:id', name: 'ReturnTarget', component: { template: '<i />' } },
+        { path: '/:locale/contact', name: 'Contact', component: { template: '<i />' } }
     ]
 });
 
@@ -55,6 +56,7 @@ const NO_OPTIONS: ReturnOptions = {
 const mountPanel = (
     props: {
         canWithdraw?: boolean;
+        withdrawBlocked?: WithdrawBlockedReason;
         withdrawUntil?: string;
     },
     existing = [],
@@ -158,6 +160,39 @@ describe('WithdrawalPanel', () => {
 
         expect(wrapper.emitted('opened')).toBeUndefined();
         expect(wrapper.find('[data-test=withdraw-error]').exists()).toBe(true);
+    });
+
+    it.each([
+        ['all_excluded', /made to your specifications/i],
+        ['window_closed', /has ended/i],
+        ['nothing_left', /already been returned/i]
+    ] as const)('shows the button disabled with the server’s reason %s', async (reason, text) => {
+        const { wrapper } = mountPanel({ canWithdraw: false, withdrawBlocked: reason });
+        await flushPromises();
+
+        const button = wrapper.get('[data-test=withdraw-button]');
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(wrapper.get('[data-test=withdraw-blocked-reason]').text()).toMatch(text);
+        expect(wrapper.find('[data-test=withdraw-blocked-contact]').exists()).toBe(true);
+    });
+
+    it('never sends a withdrawal from the disabled button', async () => {
+        const { wrapper, store } = mountPanel({
+            canWithdraw: false,
+            withdrawBlocked: 'window_closed'
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-test=withdraw-button]').trigger('click');
+
+        expect(store.openReturn).not.toHaveBeenCalled();
+    });
+
+    it('offers the enabled button, not the reason, when the server allows it', async () => {
+        const { wrapper } = mountPanel({ canWithdraw: true });
+        await flushPromises();
+
+        expect(wrapper.find('[data-test=withdraw-blocked-reason]').exists()).toBe(false);
     });
 
     it('lists what became of a withdrawal already opened', async () => {
