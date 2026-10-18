@@ -86,6 +86,45 @@ const snapshotName = (name: string, viewport: ViewportName, theme?: 'dark'): str
     `${name}.${viewport}${theme ? '.dark' : ''}`;
 
 /**
+ * Retries until every image the viewport shows, or is about to, has finished loading.
+ *
+ * Images further down are skipped: a lazy one is never fetched until it is near, so waiting on it
+ * would wait forever. `complete` is also true for a broken image, so a failed load cannot hang
+ * the shot either.
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/complete
+ */
+const imagesLoaded = (): void => {
+    cy.document({ log: false }).should((document_) => {
+        const reach = document_.documentElement.clientHeight * 2;
+        const pending = [...document_.images].filter(
+            (image) => !image.complete && image.getBoundingClientRect().top < reach
+        );
+        expect(
+            pending.map((image) => image.currentSrc),
+            'images still loading'
+        ).to.deep.equal([]);
+    });
+};
+
+/**
+ * Switches to the dark theme with transitions already killed, then drops the focus the switch
+ * left behind.
+ *
+ * Vuetify fades colours between themes, and a shot taken during the fade has half-dark text; the
+ * toggle (or the drawer that holds it) leaves a focus ring on a button that a mouse visitor would
+ * not see.
+ */
+const switchDarkAndSettle = (): void => {
+    cy.freezeAnimations();
+    switchToDarkTheme();
+    cy.document({ log: false }).then((document_) => {
+        // `activeElement` is typed `Element`; every focusable one is an HTMLElement, and the
+        // `instanceof` check would compare against the spec window's constructor, not the page's.
+        (document_.activeElement as HTMLElement | null)?.blur();
+    });
+};
+
+/**
  * Scrolls an element to just under the fixed app bar, with no animation.
  *
  * @param selector - the element to bring up
@@ -188,8 +227,12 @@ export const sweepVisual = (
 
                         // The theme default is 'system': on a dark OS a light case would record
                         // dark pixels with no error, so the light cases say so out loud.
-                        if (theme === 'dark') switchToDarkTheme();
+                        if (theme === 'dark') switchDarkAndSettle();
                         else cy.get('.v-application.v-theme--light').should('exist');
+
+                        // Every image loaded: a picture that lands after the scroll below moves
+                        // the page under it, and the shot differs from itself between runs.
+                        imagesLoaded();
 
                         prepare?.();
                         if (scrollTo) scrollUnderBar(scrollTo);

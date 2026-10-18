@@ -465,7 +465,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `components/GuestCart.vue`                  | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
 | `routes.ts`                                 | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
 | `store.ts`                                  | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |
-| `tests/e2e/__snapshots__/cart.png`          | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
+| `tests/e2e/__snapshots__/cart.desktop.png`  | A committed visual-regression baseline.                                                                                                                                             | [read](../tools/visual-regression.md) |
 | `tests/e2e/a11y.cy.ts`                      | Cypress accessibility sweep — an axe run over this domain's routes, at each authentication level.                                                                                   | [read](../tools/component-testing.md) |
 | `tests/e2e/analytics.cy.ts`                 | Cypress suite — the `analytics` screens, in a browser.                                                                                                                              | [read](../tools/component-testing.md) |
 | `tests/e2e/cart.cy.ts`                      | Cypress suite — the `cart` screens, in a browser.                                                                                                                                   | [read](../tools/component-testing.md) |
@@ -506,7 +506,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | ---------------- | ----- | ------------------------------------------- |
 | Vitest           | 23    | `src/modules/cart/tests/`                   |
 | Cypress          | 4     | `src/modules/cart/tests/e2e/`               |
-| Visual baselines | 1     | `src/modules/cart/tests/e2e/__snapshots__/` |
+| Visual baselines | 5     | `src/modules/cart/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites
