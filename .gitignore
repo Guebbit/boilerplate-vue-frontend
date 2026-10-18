@@ -35,6 +35,7 @@ node_modules
 .DS_Store
 dist
 dist-e2e
+dist-lighthouse
 dist-ssr
 *.local
 *.zip
