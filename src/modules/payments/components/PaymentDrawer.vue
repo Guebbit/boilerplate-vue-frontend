@@ -15,9 +15,10 @@ export default {
  * references and the card's last digits — and the actions the server allows. The provider ids and
  * a refund's failure reason arrive only for a caller holding `display:Payment`, so this renders
  * them whenever they are present and never asks who is looking. Refunding is the existing
- * `POST /payments/order/{orderId}/refund`, offered only when `actions.refund` says it would work.
+ * `POST /payments/order/{orderId}/refund`, offered only when `actions.refund` says it would work
+ * (read from the order's own payment when the list row carries none).
  */
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -93,6 +94,35 @@ const {
  * True while the refund request is out, to block a double click.
  */
 const refunding = ref(false);
+
+/**
+ * What the server lets this caller do, read from the order's own payment when the picked row
+ * carries no `actions` (the staff list's rows do not). Reset on every pick.
+ */
+const readActions = ref<Payment['actions']>();
+
+/**
+ * Whether the server would take a refund of this payment from this caller.
+ */
+const canRefund = computed(() => (props.payment?.actions ?? readActions.value)?.refund === true);
+
+// A pick without actions asks the payment's own read; a failure shows in the drawer, where the
+// refund button's absence would otherwise be unexplained.
+watch(
+    () => (open.value ? props.payment : undefined),
+    (picked) => {
+        readActions.value = undefined;
+        if (!picked || picked.actions) return;
+        return store
+            .fetchActionsForOrder(picked.orderId)
+            .then((actions) => {
+                // The visitor may have picked another row while the read was out.
+                if (props.payment?.id === picked.id) readActions.value = actions;
+            })
+            .catch(reportRefundError);
+    },
+    { immediate: true }
+);
 
 /**
  * The order's own page — where partial refunds and the offline form live — or nothing when this
@@ -241,7 +271,7 @@ const handleRefund = () => {
 
             <div class="flex flex-wrap gap-2">
                 <v-btn
-                    v-if="payment.actions?.refund"
+                    v-if="canRefund"
                     color="error"
                     variant="tonal"
                     :disabled="refunding"

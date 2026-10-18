@@ -213,9 +213,8 @@ export const sweepRoles = (
         for (const persona of personas)
             it(`${persona} gets the pages its rules allow and none else`, () => {
                 const refusals: number[] = [];
-                cy.visit('/en');
                 cy.restore();
-                cy.loginAs(persona);
+                cy.loginAsFast(persona);
                 cy.env(['apiUrl']).then(({ apiUrl }) => {
                     // One intercept on the API origin: it only listens, every request continues.
                     cy.intercept(`${String(apiUrl)}/**`, (request) => {

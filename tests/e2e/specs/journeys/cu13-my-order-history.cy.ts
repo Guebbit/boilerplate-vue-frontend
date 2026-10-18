@@ -9,9 +9,13 @@
  * the invoice do — by number, never the database id. Every claim is read against the API for the
  * same account. Nothing here pays, so card budgets are untouched.
  */
+import { resetSearch } from '../../../support/e2e/steps';
 
 /** The page size the list offers that shows the most rows. */
 const LARGEST_PAGE = '50';
+
+/** The page size that makes the history spill onto a second page. */
+const SMALLEST_PAGE = '10';
 
 /** One order as the API lists it, as far as this journey reads. */
 interface ListedOrder {
@@ -88,6 +92,27 @@ describe('CU13 · My order history', () => {
                 expect($row.text()).to.contain('Delivered');
             });
         });
+
+        cy.step('page two of a short page is still only mine');
+        resetSearch();
+        cy.pickOption('[data-test=page-size]', SMALLEST_PAGE);
+        cy.settleNetwork();
+        cy.get('[data-test=pagination]').contains('button', '2').click();
+        cy.settleNetwork();
+        cy.apiAs<{ items: ListedOrder[] }>('user', 'GET', `/orders?pageSize=${LARGEST_PAGE}`).then(
+            (listed) => {
+                const mine = new Set((listed?.items ?? []).map((order) => order.id));
+                rowIds().should((shown) => {
+                    expect(shown, 'a second page exists').to.have.length.greaterThan(0);
+                    expect(
+                        shown.filter((id) => !mine.has(id)),
+                        'no foreign row'
+                    ).to.have.length(0);
+                });
+            }
+        );
+        cy.pickOption('[data-test=page-size]', LARGEST_PAGE);
+        cy.settleNetwork();
 
         cy.step('opens the delivered order and reads the whole page');
         cy.subjectId('order.delivered').then((orderId) => {

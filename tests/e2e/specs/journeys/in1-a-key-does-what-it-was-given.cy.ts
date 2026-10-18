@@ -12,6 +12,8 @@
  */
 import { requestAsGuest, requestWithKey } from '../../../support/e2e/harness';
 import { datetimeLocalIn } from '../../../support/e2e/integrator';
+import { byTemplate } from '../../../../scripts/e2e/mail-filters';
+import { mailMentions } from '../../../../scripts/e2e/mail-message';
 import { eventually } from '../../../support/e2e/steps';
 
 /** The one read the key is given. */
@@ -65,6 +67,21 @@ describe('IN1 · A key can do exactly what it was given', () => {
                 });
                 cy.get('body').should('not.contain.text', secret);
 
+                cy.step(
+                    'the owner is mailed that a key was made, and the mail never carries the secret'
+                );
+                cy.accountOf('admin').then(({ email }) => {
+                    cy.emailTo(
+                        email,
+                        (mail) =>
+                            byTemplate('api-keys.minted')(mail) && mailMentions(mail, KEY_NAME)
+                    ).then((mail) => {
+                        expect(mailMentions(mail, secret), 'the secret in the mail').to.equal(
+                            false
+                        );
+                    });
+                });
+
                 cy.step('the script reads with it, and a guest cannot');
                 requestAsGuest('GET', '/webhooks/subscriptions').should('equal', 401);
                 requestWithKey(secret, 'GET', '/webhooks/subscriptions')
@@ -108,6 +125,34 @@ describe('IN1 · A key can do exactly what it was given', () => {
                 requestWithKey(secret, 'GET', '/webhooks/subscriptions')
                     .its('status')
                     .should('equal', 401);
+
+                cy.step('logging out everywhere revokes the keys the admin minted, and says so');
+                const secondName = `in1-second-${String(Date.now())}`;
+                cy.mintApiKey({ name: secondName, permissions: [GIVEN] }).then((second) => {
+                    requestWithKey(second?.secret ?? '', 'GET', '/webhooks/subscriptions')
+                        .its('status')
+                        .should('equal', 200);
+                    cy.visit('/en/profile');
+                    cy.get('[data-test=sessions-logout-everywhere]').click();
+                    cy.get('[data-test=app-dialog-confirm]').click();
+                    cy.location('pathname').should('equal', '/en');
+                    requestWithKey(second?.secret ?? '', 'GET', '/webhooks/subscriptions')
+                        .its('status')
+                        .should('equal', 401);
+                    cy.accountOf('admin').then(({ email }) => {
+                        cy.emailTo(
+                            email,
+                            (mail) =>
+                                byTemplate('api-keys.revoked')(mail) &&
+                                mailMentions(mail, secondName)
+                        );
+                    });
+                    cy.loginAs('admin');
+                    cy.visit('/en/api-keys');
+                    cy.contains('[data-test=list-row]', secondName)
+                        .find('[data-test=api-key-status]')
+                        .should('have.attr', 'data-status', 'revoked');
+                });
             });
     });
 });

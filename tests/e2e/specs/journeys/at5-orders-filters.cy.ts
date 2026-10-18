@@ -4,8 +4,27 @@
  * AT5 · Orders list filters. Each staff filter narrows the list to rows that really match, and
  * "reset" brings the full list back. Status and deleted are read off the rows themselves; id,
  * email and awaiting-transfer are held to a seeded order that must, or must not, be among them.
+ * The payment, fulfilment and return statuses, the created and paid windows, and the product are
+ * held the same way: a subject that matches is in, a subject that does not is out.
  */
-import { listedIds, resetSearch, submitSearch } from '../../../support/e2e/steps';
+import { dayShifted, listedIds, resetSearch, submitSearch } from '../../../support/e2e/steps';
+
+/**
+ * Applies one filter and asserts which seeded orders the list then holds and lacks.
+ *
+ * @param apply - fills the filter in
+ * @param included - orders that must be listed
+ * @param excluded - orders that must not be
+ */
+const narrowedTo = (apply: () => unknown, included: string[], excluded: string[]): void => {
+    apply();
+    submitSearch();
+    listedIds().should((ids) => {
+        for (const id of included) expect(ids, `holds ${id}`).to.include(id);
+        for (const id of excluded) expect(ids, `lacks ${id}`).to.not.include(id);
+    });
+    resetSearch();
+};
 
 describe('AT5 · Orders list filters', () => {
     beforeEach(() => {
@@ -67,6 +86,152 @@ describe('AT5 · Orders list filters', () => {
                         cy.get('[data-test=row-deleted]').should('not.exist');
                         resetSearch();
                         listedIds().should('deep.equal', all);
+                    });
+                });
+            });
+        });
+    });
+
+    it('payment, fulfilment and return status, the created and paid windows and the product each narrow the list', () => {
+        cy.subjectId('order.paid').then((paidId) => {
+            cy.subjectId('payment.refunded').then((refundedId) => {
+                cy.subjectId('order.partiallyFulfilled').then((partialId) => {
+                    cy.subjectId('order.onHold').then((heldId) => {
+                        cy.subjectId('return.requested').then((returnId) => {
+                            cy.subjectId('order.deliveredLongAgo').then((oldId) => {
+                                cy.step('payment status: refunded orders only');
+                                narrowedTo(
+                                    () =>
+                                        cy.pickOption(
+                                            '[data-test=filter-payment-status]',
+                                            'Refunded'
+                                        ),
+                                    [refundedId],
+                                    [paidId]
+                                );
+
+                                cy.step('fulfilment status: partly shipped, then on hold');
+                                narrowedTo(
+                                    () =>
+                                        cy.pickOption(
+                                            '[data-test=filter-fulfillment-status]',
+                                            'Partly shipped'
+                                        ),
+                                    [partialId],
+                                    [heldId, paidId]
+                                );
+                                narrowedTo(
+                                    () =>
+                                        cy.pickOption(
+                                            '[data-test=filter-fulfillment-status]',
+                                            'On hold'
+                                        ),
+                                    [heldId],
+                                    [partialId, paidId]
+                                );
+
+                                cy.step('return status: a requested return');
+                                // The subject is a return; the list holds its order.
+                                cy.apiAs<{ orderId: string }>(
+                                    'admin',
+                                    'GET',
+                                    `/returns/${returnId}`
+                                ).then((request) => {
+                                    narrowedTo(
+                                        () =>
+                                            cy.pickOption(
+                                                '[data-test=filter-return-status]',
+                                                'Requested'
+                                            ),
+                                        [request?.orderId ?? ''],
+                                        [paidId]
+                                    );
+                                });
+
+                                cy.step('created window: around the old order, not today’s');
+                                cy.apiAs<{ createdAt: string; paidAt?: string }>(
+                                    'admin',
+                                    'GET',
+                                    `/orders/${oldId}`
+                                ).then((old) => {
+                                    const created = old?.createdAt ?? '';
+                                    narrowedTo(
+                                        () => {
+                                            cy.get('[data-test=filter-created-from] input').type(
+                                                dayShifted(created, -1)
+                                            );
+                                            cy.get('[data-test=filter-created-to] input').type(
+                                                dayShifted(created, 1)
+                                            );
+                                        },
+                                        [oldId],
+                                        [paidId]
+                                    );
+
+                                    cy.step(
+                                        'paid window: a future window holds nothing, one around the payment holds rows'
+                                    );
+                                    const now = new Date().toISOString();
+                                    cy.get('[data-test=filter-paid-from] input').type(
+                                        dayShifted(now, 2)
+                                    );
+                                    cy.get('[data-test=filter-paid-to] input').type(
+                                        dayShifted(now, 3)
+                                    );
+                                    submitSearch();
+                                    cy.get('[data-test=list-row]').should('not.exist');
+                                    resetSearch();
+                                    const paid = old?.paidAt ?? created;
+                                    cy.get('[data-test=filter-paid-from] input').type(
+                                        dayShifted(paid, -1)
+                                    );
+                                    cy.get('[data-test=filter-paid-to] input').type(
+                                        dayShifted(paid, 1)
+                                    );
+                                    submitSearch();
+                                    cy.get('[data-test=list-row]').should(
+                                        'have.length.greaterThan',
+                                        0
+                                    );
+                                    resetSearch();
+                                });
+
+                                cy.step(
+                                    'product: the filler line of a two-line order lists that order, each confirmed by the API'
+                                );
+                                cy.subjectId('order.deliveredTwoLines').then((twoLinesId) => {
+                                    cy.apiAs<{ items: { product: { id: string } }[] }>(
+                                        'admin',
+                                        'GET',
+                                        `/orders/${twoLinesId}`
+                                    ).then((order) => {
+                                        const productId = order?.items[1]?.product.id ?? '';
+                                        cy.get('[data-test=filter-product-id] input').type(
+                                            productId
+                                        );
+                                        submitSearch();
+                                        listedIds().then((ids) => {
+                                            expect(ids).to.include(twoLinesId);
+                                            expect(ids).to.not.include(paidId);
+                                            for (const id of ids)
+                                                cy.apiAs<{
+                                                    items: { product: { id: string } }[];
+                                                }>('admin', 'GET', `/orders/${id}`).should(
+                                                    (listed) => {
+                                                        expect(
+                                                            listed?.items.map(
+                                                                (item) => item.product.id
+                                                            ),
+                                                            `order ${id} holds the product`
+                                                        ).to.include(productId);
+                                                    }
+                                                );
+                                        });
+                                        resetSearch();
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });

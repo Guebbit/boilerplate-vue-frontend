@@ -20,9 +20,11 @@ In every row the DOM assertions pass. Only the appearance is wrong, and only a p
 flowchart TB
     Visit["cy.visit(route)"] --> Ready["wait for the page's own id\n#home-page · #login-page · …"]
     Ready --> Freeze["cy.freezeForVisual()\nclock · animations · caret · overlay"]
-    Freeze --> Shot["cy.screenshot()\npinned 1280×800 viewport"]
+    Freeze --> Shot["cy.screenshot()\n1280×800 viewport, window sized from viewports.ts"]
     Shot --> Task["cy.task('compareSnapshot')\nruns in Node — can read files"]
-    Task --> D{"baseline exists?"}
+    Task --> Guard{"shot size == viewport?"}
+    Guard -- no --> FailWindow["FAIL — the window is smaller\nthan the viewport (or DPR 2)"]
+    Guard -- yes --> D{"baseline exists?"}
     D -- no --> Create["write it · PASS\n(review it in the PR diff)"]
     D -- yes --> Size{"same dimensions?"}
     Size -- no --> FailSize["FAIL — a size change\nIS a layout change"]
@@ -37,8 +39,8 @@ flowchart TB
     classDef dec fill:#fef9c3,stroke:#ca8a04,color:#111827;
     class Visit,Ready,Freeze,Shot,Task,Match proc;
     class Create,Pass good;
-    class Fail,FailSize bad;
-    class D,Size,Budget dec;
+    class Fail,FailSize,FailWindow bad;
+    class D,Size,Budget,Guard dec;
 ```
 
 ## One screen per module, and why not more
@@ -113,11 +115,26 @@ Both are deliberately loose. A visual test that fails on noise is worse than no 
 
 A screenshot is only useful if an unchanged app produces identical pixels twice. Five things break that, and the last one is the one nobody expects:
 
-1. **Viewport** — pinned to 1280×800 in `cypress.config.ts`. Image size is part of the diff.
+1. **Viewport and window** — the viewport is pinned to 1280×800 in `cypress.config.ts` (the `desktop` entry of `scripts/e2e/viewports.ts`), in a browser window sized from the same matrix. Image size is part of the diff. See [The browser window](#the-browser-window).
 2. **Clock** — frozen by `cy.freezeForVisual()`. Anything rendering a date or a relative time changes by the minute.
 3. **Animations** — killed by the same command, via an injected stylesheet that zeroes every `transition` and `animation`. A screenshot caught mid-transition differs from itself between runs.
 4. **Data** — the demo profile, whose backend puts the same dataset back on every restore. `cy.restore()` in the `beforeEach` guarantees identical data and a signed-out session; the navigation gains a whole column (Cart, Orders, the account email, Logout) when signed in, so auth state changes the layout, not just the content.
 5. **The page actually being the page.** See below — this one was a real bug.
+
+### The browser window
+
+A headless browser opens a 1280×720 window, and `cy.screenshot({ capture: 'viewport' })` clips to it. So every baseline was 1280×720 while the configured viewport said 1280×800, and a phone viewport (taller than 720) would have been clipped the same way.
+
+- **One launch handler.** `cypress.config.ts` registers a single `before:browser:launch`, because Cypress keeps only the last one registered. It calls `withWindowSize` from `scripts/e2e/browser-launch.ts` with `windowFor(VIEWPORTS)`: the widest width and the tallest height of the matrix, taken independently (today 1280×844).
+- **Headless only.** `cypress open` keeps the developer's window; Firefox has no visual run.
+- **The guard.** `compareSnapshot` hands the task the page's own `innerWidth × innerHeight`. `shotSizeProblem` (`scripts/e2e/shot-size.ts`) runs before any baseline logic, update mode included: a clamped shot, or a double-density one, fails with its own message and can never be recorded as a baseline. It is a different failure from "size changed vs the baseline".
+- **The real path.** The PNG's path comes from `cy.screenshot`'s `onAfterScreenshot`, not from a rebuilt string, so a single-spec run (`test:e2e:spec`) finds its file too.
+
+Touch emulation (`tests/support/e2e/touch.ts`, switched by `applyViewport`) is a separate seam that the next lanes document.
+
+### Scrollbars
+
+The two visual scripts set `ELECTRON_EXTRA_LAUNCH_ARGS=--hide-scrollbars`, so a page that scrolls lays out at the viewport's full width. Without it a phone shot would lay out at 375 px under a 15 px bar: a layout no phone shows. The flag is scoped to the visual process, so the layout sweeps keep real scrollbars. A sentinel test at the end of `tests/e2e/visual/visual.cy.ts` checks `clientWidth` equals the viewport width on a scrolling page.
 
 ### The bug this suite found in the test harness
 
@@ -243,14 +260,14 @@ flowchart LR
 - `contents: write` is granted to that one job; the comparison job keeps `contents: read`.
 - Nothing changed means nothing committed.
 
-To record locally instead (say, to look before pushing), copy both checkouts into a container of
+To record locally instead (say, to look before pushing), take the one e2e lock (`flock /tmp/claude-e2e.lock`; the engine here is rootless podman) and copy both checkouts into a container of
 the same image; never mount them read-write, because the image's Node would rebuild the host's
 `node_modules`. Leave the container on its own network (no `--network host`): the preview (8085)
 and the demo backend (3100) both live inside it, and a host-network container would collide with
 any other Cypress run using those ports.
 
 ```bash
-IMAGE=cypress/included:15.18.1   # the tag pinned in visual.yml
+IMAGE=cypress/included:15.18.1   # the tag pinned in visual.yml; pin by digest when recording baselines
 docker run -d --name visual \
   -v "$PWD:/src/frontend:ro" -v "$PWD/../boilerplate-node-backend:/src/backend:ro" \
   --entrypoint sleep "$IMAGE" infinity
@@ -298,7 +315,10 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 | `tests/e2e/visual/visual.cy.ts`                    | The shell's five screens, the readiness selectors, the determinism `beforeEach`                                                                |
 | `tests/support/e2e/visual-task.ts`                 | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
 | `tests/support/e2e/commands.ts`                    | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token                                              |
-| `cypress.config.ts`                                | Registers the `compareSnapshot` task and pins the 1280×800 viewport                                                                            |
+| `cypress.config.ts`                                | Registers the `compareSnapshot` task, pins the desktop viewport and registers the one `before:browser:launch` handler                          |
+| `scripts/e2e/viewports.ts`                         | The device sizes (`VIEWPORTS`), cy-free, so Node tools can import them                                                                         |
+| `scripts/e2e/browser-launch.ts`                    | Pure: `windowFor` and `withWindowSize`, the headless window size                                                                               |
+| `scripts/e2e/shot-size.ts`                         | Pure: `shotSizeProblem`, the guard against a clamped screenshot                                                                                |
 | `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines — reviewed as images, in the PR diff                                                                                   |
 | `reports/visual-diff/`                             | Diff images written on failure. Not committed                                                                                                  |
 

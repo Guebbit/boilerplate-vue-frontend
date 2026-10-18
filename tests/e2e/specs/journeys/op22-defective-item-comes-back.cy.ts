@@ -6,11 +6,12 @@
  * with a reason the customer will read); the warehouse, which holds the parcel, receives it. Each
  * role does only its own part — support is never offered "receive", the warehouse never "approve".
  *
- * Two seeded requests, since opening one is rate-limited and the story is about the answering.
+ * Two seeded requests, since the story is about the answering. Opening one is CU31's story.
  * Faulty goods are the seller's own doing, so the delivery charge goes back too: the refund is
  * everything the payment took, less the deduction.
  */
-import { centsOf, eventually } from '../../../support/e2e/steps';
+import { mailMentions } from '../../../../scripts/e2e/mail-message';
+import { centsOf, eventually, orderMailTo } from '../../../support/e2e/steps';
 
 /** What the warehouse keeps back for handling, in cents. */
 const DEDUCTION_CENTS = 200;
@@ -25,6 +26,12 @@ const SEEDED_CANCELLATIONS = 1;
 interface ReturnLike {
     status: string;
     orderId: string;
+    lines: { productId: string; quantity: number }[];
+}
+
+/** The slice of the options read this story compares the form with. */
+interface OptionsLike {
+    returnable: { productId: string; quantity: number }[];
 }
 
 /** The slice of a payment this story reads. */
@@ -191,6 +198,39 @@ describe('OP22 · A defective item comes back', () => {
                 cy.visit(`/en/returns/${approvedId}`);
                 cy.get('[data-test=return-refund]').should('exist');
                 cy.get('[data-test=return-decline-reason-text]').should('not.exist');
+
+                cy.step('the customer was mailed each answer, and the decline carries its reason');
+                cy.apiAs<ReturnLike>('user', 'GET', `/returns/${approvedId}`).then((approved) => {
+                    orderMailTo('user', String(approved?.orderId), 'Your return was approved');
+                    orderMailTo('user', String(approved?.orderId), 'Your return was refunded');
+                });
+                cy.apiAs<ReturnLike>('user', 'GET', `/returns/${declinedId}`).then((declined) => {
+                    orderMailTo('user', String(declined?.orderId), 'Your return was declined').then(
+                        (mail) => {
+                            expect(
+                                mailMentions(mail, DECLINE_REASON),
+                                'the reason is mailed'
+                            ).to.equal(true);
+                        }
+                    );
+
+                    cy.step('a declined request gives its quantity back: the form offers it again');
+                    cy.apiAs<OptionsLike>(
+                        'user',
+                        'GET',
+                        `/returns/options?orderId=${declined?.orderId}`
+                    ).then((options) => {
+                        for (const { productId } of declined?.lines ?? [])
+                            expect(
+                                options?.returnable.map((line) => line.productId),
+                                'the declined line is offered again'
+                            ).to.include(productId);
+                    });
+                    cy.visit(`/en/orders/${declined?.orderId}`);
+                    cy.get('[data-test=return-request-open]').click();
+                    for (const { productId } of declined?.lines ?? [])
+                        cy.get(`[data-test=return-line-pick-${productId}]`).should('exist');
+                });
             });
         });
     });

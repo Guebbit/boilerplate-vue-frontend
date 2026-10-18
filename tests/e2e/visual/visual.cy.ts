@@ -21,3 +21,23 @@ sweepVisual('the shell', [
 
 // The signed-in header: the cart pinned beside the account menu, count and total on it.
 sweepVisual('the shell, signed in', [['home-signed-in', '/en', '#home-page']], 'user');
+
+/*
+ * Sentinel: the visual run hides scrollbars (`ELECTRON_EXTRA_LAUNCH_ARGS=--hide-scrollbars` in the
+ * two visual scripts), so a page that scrolls lays out at the viewport's full width. A phone shot
+ * laid out at 375 px under a 15 px bar would be a layout no phone shows.
+ */
+describe('visual run determinism', () => {
+    it('lays a scrolling page out at the full viewport width', () => {
+        cy.visit('/en/faq');
+        cy.get('#static-page-faq').should('be.visible');
+        cy.document().then((document) => {
+            expect(document.documentElement.scrollHeight, 'the page scrolls').to.be.greaterThan(
+                document.documentElement.clientHeight
+            );
+            expect(document.documentElement.clientWidth, 'no scrollbar takes width').to.equal(
+                Cypress.config('viewportWidth')
+            );
+        });
+    });
+});

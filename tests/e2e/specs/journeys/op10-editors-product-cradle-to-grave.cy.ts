@@ -13,12 +13,28 @@
  * hour on live, and every product write invalidates that cache, so the guest steps prove it there.
  */
 
+import { eventually, refusedWith } from '../../../support/e2e/steps';
+import { loginDevice } from '../../../support/e2e/harness';
+
 /** A value unique per run, so two specs on one backend cannot collide. */
 const unique = (): string => `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 /** The slice of a product this story reads. */
 interface ProductLike {
     id: string;
+}
+
+/** One audit row, as far as the opening count story reads it. */
+interface AuditRowLike {
+    action: string;
+    actorRole: string;
+    metadata?: { permission?: string };
+}
+
+/** The slice of a stock movement the opening count story reads. */
+interface MovementLike {
+    reason: string;
+    onHandDelta: number;
 }
 
 /**
@@ -140,5 +156,70 @@ describe("OP10 · An editor's product, cradle to grave", () => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=order-number]').should('exist');
         });
+    });
+    it('the opening count is the stock room’s: an editor is never offered it, the administrator is', () => {
+        cy.step('the editor’s create form has no opening count');
+        cy.loginAs('editor');
+        cy.visit('/en/products/create');
+        cy.get('#product-create-page').should('exist');
+        cy.get('[data-test=product-on-hand-field]').should('not.exist');
+
+        cy.step('by hand a receipt from the editor or the manager is refused by the stock door');
+        cy.subjectId('product.rich').then((productId) => {
+            for (const persona of ['editor', 'manager'] as const)
+                loginDevice(persona).then((device) => {
+                    refusedWith(
+                        device,
+                        'POST',
+                        '/inventory/receipts',
+                        { productId, quantity: 3 },
+                        403,
+                        'FORBIDDEN'
+                    );
+                });
+        });
+
+        cy.step('the administrator’s form shows the field, and the count lands as a receipt');
+        cy.switchUser('admin');
+        cy.visit('/en/products/create');
+        cy.get('#translation-panel-en [data-test=translation-title-field] input').type(
+            `OP10 counted ${unique()}`
+        );
+        cy.get('[data-test=product-price-field] input').clear();
+        cy.get('[data-test=product-price-field] input').type('9.90');
+        cy.get('[data-test=product-on-hand-field] input').clear();
+        cy.get('[data-test=product-on-hand-field] input').type('3');
+        cy.get('input[type=file]').selectFile('tests/e2e/fixtures/sample-image.png', {
+            force: true
+        });
+        cy.get('form').first().submit();
+        cy.url().should('include', '/products/').and('not.include', '/create');
+        cy.location('pathname').then((path) => {
+            const id = (path.split('/products/')[1] ?? '').replace(/\/$/, '');
+            cy.apiAs<{ items: MovementLike[] }>(
+                'admin',
+                'GET',
+                `/inventory/movements?productId=${id}`
+            ).should((list) => {
+                expect(
+                    (list?.items ?? []).map((movement) => [movement.reason, movement.onHandDelta])
+                ).to.deep.equal([['receive', 3]]);
+            });
+        });
+
+        cy.step('the editor’s refusal is on record, naming the missing permission');
+        eventually(
+            () =>
+                cy
+                    .apiAs<{ items: AuditRowLike[] }>('admin', 'GET', '/audit?pageSize=100')
+                    .then((list) => list?.items ?? []),
+            (rows) =>
+                rows.some(
+                    (row) =>
+                        row.action === 'security.forbidden' &&
+                        row.actorRole === 'editor' &&
+                        row.metadata?.permission === 'create:StockMovement'
+                )
+        );
     });
 });

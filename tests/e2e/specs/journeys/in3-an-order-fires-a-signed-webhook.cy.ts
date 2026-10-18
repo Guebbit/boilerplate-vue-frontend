@@ -7,8 +7,8 @@
  * under both the old and the new; after the old one is removed, only the new.
  *
  * Two profiles, one story. Live, the broker delivers at once to a real `webhook-tester`, and the
- * journey only reads it. Demo has no broker: the delivery row waits as `pending` and the admin's
- * Replay is what sends it, to a listener Cypress hosts. A replay signs with the ring as it stands
+ * journey only reads it. Demo has no broker: the delivery row waits as `pending` and the retry
+ * sweep (pulled with the job lever) is what sends it, to a listener Cypress hosts. A replay signs with the ring as it stands
  * NOW, which is also what makes the rotation steps cheap: no second order is needed.
  *
  * The receiver is the backend's own seeded subscription: an ordinary `https://` one, whose fixed
@@ -76,7 +76,7 @@ describe('IN3 · An order fires a webhook, and it arrives signed', () => {
                                 );
                                 return;
                             }
-                            cy.step('demo: nothing sends it until the admin replays it');
+                            cy.step('demo: nothing sends it until the retry sweep runs');
                             rowOf(delivery.id).within(() => {
                                 cy.get('[data-test=webhook-delivery-status]').should(
                                     'have.attr',
@@ -84,11 +84,8 @@ describe('IN3 · An order fires a webhook, and it arrives signed', () => {
                                     'pending'
                                 );
                             });
-                            cy.intercept('POST', '**/webhooks/deliveries/*/replay').as('replay');
-                            cy.get(
-                                `[data-test=webhook-delivery-replay][aria-label*="${delivery.id}"]`
-                            ).click();
-                            cy.wait('@replay').its('response.statusCode').should('equal', 200);
+                            cy.runJob('sweep-webhook-retries');
+                            cy.reload();
                             rowOf(delivery.id).within(() => {
                                 cy.get('[data-test=webhook-delivery-status]').should(
                                     'have.attr',

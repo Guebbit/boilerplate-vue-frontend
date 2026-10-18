@@ -13,19 +13,22 @@
  * The second story is the other half of the rule: an account that holds a role is changed only by a
  * role manager, so a moderator is shown no way to demote an administrator.
  */
-import { adminMenuLinks, eventually } from '../../../support/e2e/steps';
+import { adminMenuLinks, eventually, refusedWith } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 import type { E2ERole } from '../../../support/e2e/scenario';
 
 /** The slice of a user this story reads: a plain customer has no `role` at all. */
 interface UserLike {
     role?: string;
+    phone?: string;
+    active?: boolean;
 }
 
 /** One audit row, as far as this story reads it. */
 interface AuditRowLike {
     action: string;
     actorRole: string;
+    metadata?: { reason?: string };
 }
 
 /**
@@ -142,6 +145,93 @@ describe('OP19 · Nobody hands out more than they hold', () => {
                     .should('equal', 403);
             });
             roleIs(adminId, 'admin');
+        });
+    });
+    it('only a role manager changes a staff account, whoever else may edit people', () => {
+        cy.accountInRole('warehouse').then(({ id: warehouseId }) => {
+            cy.accountInRole('operator').then(({ id: operatorId }) => {
+                cy.apiAs<UserLike>('admin', 'GET', `/users/${warehouseId}`).then((before) => {
+                    cy.step('support opens the warehouse page: no edit door, no access dialog');
+                    cy.loginAs('support');
+                    cy.visit(`/en/users/${warehouseId}`);
+                    cy.get('[data-test=user-go-to-edit]').should('not.exist');
+                    cy.get('[data-test=user-manage-access]').should('not.exist');
+
+                    cy.step(
+                        'by hand the server answers the same, for a warehouse and the operator'
+                    );
+                    loginDevice('support').then((device) => {
+                        for (const target of [warehouseId, operatorId])
+                            refusedWith(
+                                device,
+                                'PATCH',
+                                `/users/${target}`,
+                                { phone: '+39 02 0000 0000' },
+                                403,
+                                'ROLE_MANAGEMENT_REQUIRED'
+                            );
+                    });
+                    cy.apiAs<UserLike>('admin', 'GET', `/users/${warehouseId}`).should((user) => {
+                        expect(user?.phone).to.equal(before?.phone);
+                    });
+
+                    cy.step('the moderator may ban a customer but is shown no door for staff');
+                    cy.switchUser('moderator');
+                    cy.visit(`/en/users/${warehouseId}`);
+                    cy.get('[data-test=user-manage-access]').should('not.exist');
+                    loginDevice('moderator').then((device) => {
+                        refusedWith(
+                            device,
+                            'PATCH',
+                            `/users/${warehouseId}`,
+                            { active: false },
+                            403,
+                            'ROLE_MANAGEMENT_REQUIRED'
+                        );
+                    });
+                    cy.apiAs<UserLike>('admin', 'GET', `/users/${warehouseId}`).should((user) => {
+                        expect(user?.active).to.not.equal(false);
+                    });
+
+                    cy.step('the moderator creates a customer, and is offered no role to give it');
+                    cy.visit('/en/users/create');
+                    cy.get('[data-test=user-email] input').type('walk-in@example.test');
+                    cy.get('[data-test=user-username] input').type('walk-in');
+                    cy.get('[data-test=user-role]').should('not.exist');
+                    cy.get('#user-create-page form').submit();
+                    cy.location('pathname').should('match', /\/en\/users\/[\da-f]{24}$/);
+
+                    cy.step('the administrator fixes the warehouse phone: allowed');
+                    cy.switchUser('admin');
+                    cy.apiAs('admin', 'PATCH', `/users/${warehouseId}`, {
+                        phone: '+39 02 1111 1111'
+                    });
+                    cy.apiAs<UserLike>('admin', 'GET', `/users/${warehouseId}`).should((user) => {
+                        expect(user?.phone).to.equal('+39 02 1111 1111');
+                    });
+
+                    cy.step('both refusals are on record as protected-role attempts');
+                    eventually(
+                        () =>
+                            cy
+                                .apiAs<{ items: AuditRowLike[] }>(
+                                    'admin',
+                                    'GET',
+                                    `/audit?target=${warehouseId}&pageSize=100`
+                                )
+                                .then((list) => list?.items ?? []),
+                        (rows) =>
+                            ['support', 'moderator'].every((role) =>
+                                rows.some(
+                                    (row) =>
+                                        row.action === 'security.forbidden' &&
+                                        row.actorRole === role &&
+                                        row.metadata?.reason === 'role_protected'
+                                )
+                            )
+                    );
+                });
+            });
         });
     });
 });

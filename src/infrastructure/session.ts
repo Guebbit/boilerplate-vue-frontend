@@ -284,6 +284,12 @@ export const useSessionStore = defineStore('session', () => {
     const idle = ref<{ timeoutMs: number; lastActiveAt: number }>();
 
     /**
+     * Whether this signed-in stretch has asked the server for its idle clock. A shopper's answer
+     * leaves {@link idle} empty, so "empty" alone cannot say "already asked".
+     */
+    let idleRead = false;
+
+    /**
      * Bumped when the session ended for inactivity — the server answered `SESSION_IDLE`, or the
      * clock ran out here first. `LayoutDefault.vue` turns it into its own toast and a redirect.
      */
@@ -546,7 +552,11 @@ export const useSessionStore = defineStore('session', () => {
             return Promise.resolve();
         }
 
-        return reloadAbilities(false);
+        // Read the idle clock once per signed-in stretch, from the server's numbers. Not on
+        // every viewer load: a touch counts as activity, and a silent token refresh is not the
+        // person acting. Here and not in `loadViewer`, so a form sign-in (which never reloads the
+        // viewer) is asked too.
+        return reloadAbilities(false).then(() => (idleRead ? undefined : touchSession()));
     };
     /**
      * The one refresh attempt in flight, or `undefined` between attempts — single-flight (several
@@ -638,25 +648,18 @@ export const useSessionStore = defineStore('session', () => {
                 thumbnailUrl?: string;
                 verifiedAt?: string | null;
             }>(data);
-            return (
-                setViewer(
-                    payload && {
-                        id: payload.id,
-                        email: payload.email,
-                        // Absent for a plain customer: only a staff role is ever stored.
-                        role: payload.role,
-                        imageUrl: payload.imageUrl,
-                        thumbnailUrl: payload.thumbnailUrl,
-                        // Absent means unverified: the backend sends the field only once it's set.
-                        verified: payload.verifiedAt != null
-                    }
-                )
-                    // Read the idle clock once per signed-in stretch, from the server's numbers. Not on
-                    // every viewer load: a touch counts as activity, and a silent token refresh is not
-                    // the person acting.
-                    .then(() => (idle.value ? undefined : touchSession()))
-                    .then(() => payload)
-            );
+            return setViewer(
+                payload && {
+                    id: payload.id,
+                    email: payload.email,
+                    // Absent for a plain customer: only a staff role is ever stored.
+                    role: payload.role,
+                    imageUrl: payload.imageUrl,
+                    thumbnailUrl: payload.thumbnailUrl,
+                    // Absent means unverified: the backend sends the field only once it's set.
+                    verified: payload.verifiedAt != null
+                }
+            ).then(() => payload);
         });
 
     /**
@@ -703,6 +706,7 @@ export const useSessionStore = defineStore('session', () => {
         // The record versions the last person read are theirs; the next one must not send them.
         clearEtags();
         idle.value = undefined;
+        idleRead = false;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         clearCookie('isAuth');
         clearCookie('rememberMe');
@@ -739,8 +743,9 @@ export const useSessionStore = defineStore('session', () => {
      *
      * @returns A promise resolving once the clock reflects the server's answer.
      */
-    const touchSession = (): Promise<void> =>
-        apiTouchSession()
+    const touchSession = (): Promise<void> => {
+        idleRead = true;
+        return apiTouchSession()
             .then((data) => {
                 const clock = getPayloadFromResponse<{
                     lastActiveAt: string;
@@ -754,7 +759,11 @@ export const useSessionStore = defineStore('session', () => {
                     : undefined;
                 if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });
             })
-            .catch(() => undefined);
+            .catch(() => {
+                // Quiet, and asked again by the next viewer load.
+                idleRead = false;
+            });
+    };
 
     /**
      * Takes up the session another tab just opened: renews the token or the cookie marker from

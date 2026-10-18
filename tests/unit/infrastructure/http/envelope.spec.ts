@@ -63,6 +63,14 @@ describe('getFirstApiError', () => {
         );
     });
 
+    it('reads the error off a body that arrived as a JSON string', () => {
+        // A `responseType: 'text'` request (the orders CSV export) delivers even its refusal so.
+        expect(getFirstApiError(JSON.stringify({ errors: [{ code: 'REAUTH_REQUIRED' }] }))).toEqual(
+            { code: 'REAUTH_REQUIRED' }
+        );
+        expect(getFirstApiError('<html>not json</html>')).toBeUndefined();
+    });
+
     it('carries `details` through untouched', () => {
         // The 429 branch of the 2FA store reads `details.retryAfter` off exactly this.
         expect(

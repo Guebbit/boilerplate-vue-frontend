@@ -9,7 +9,7 @@
  * The customer is the witness: their own order page shows the refund and the credit note that
  * goes with it. The order is `order.delivered`, paid by card weeks ago, so nothing is spent.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { eventually, orderMailTo } from '../../../support/e2e/steps';
 
 /** The slice of a payment this story reads: where the money stands. */
 interface PaymentLike {
@@ -84,6 +84,9 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.get('[data-test=payment-status]').should('contain.text', 'Refunded');
             cy.get('[data-test=order-fulfillment-status]').should('exist');
             cy.get('[data-test=order-credit-note-row]').should('have.length', 1);
+
+            cy.step('and is mailed that the refund was issued');
+            orderMailTo('user', orderId, 'Your refund has been issued');
         });
     });
 });

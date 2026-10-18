@@ -11,6 +11,9 @@
  * "not offered yet" check is made as a guest, not from the editor's own switcher.
  */
 
+import { loginDevice } from '../../../support/e2e/harness';
+import { refusedWith } from '../../../support/e2e/steps';
+
 /** The language this story launches: a tag the seed does not know and the app ships no file for. */
 const TAG = 'de';
 
@@ -97,6 +100,18 @@ describe('AT1 · Launch a new language', () => {
         cy.get('[data-test=language-form]').should('not.exist');
         cy.get(`[data-test=row-entries][href$="/locales/${TAG}"]`).should('exist');
 
+        cy.step('registering the same tag again is refused, in place');
+        cy.get('[data-test=language-create]').click();
+        cy.get('[data-test=language-tag] input').type(TAG);
+        cy.get('[data-test=language-name] input').type('German again');
+        cy.get('[data-test=language-native-name] input').type('Deutsch');
+        cy.get('[data-test=language-save]').click();
+        cy.get('[data-test=language-form]').should('exist');
+        cy.get('[data-test=language-form-error]').should('contain.text', 'already registered');
+        cy.get(`[data-test=row-entries][href$="/locales/${TAG}"]`).should('have.length', 1);
+        cy.get('body').type('{esc}');
+        cy.get('[data-test=language-form]').should('not.exist');
+
         cy.step('a guest is not offered it yet');
         offeredToGuests().should('equal', 'absent');
 
@@ -165,8 +180,45 @@ describe('AT1 · Launch a new language', () => {
         cy.url().should('include', `/${TAG}`);
         cy.get('h2').should('contain.text', IMPORTED['home-page']['hero-title']);
 
-        cy.step('the fallback language refuses deletion, the new one is deleted');
+        cy.step('with German on, the fallback title of a product cannot be cleared');
         cy.loginAs('editor');
+        cy.createProduct({ title: `AT1 product ${String(Date.now())}` }).then((product) => {
+            cy.visit(`/en/locales/translations/product/${product.id}`);
+            cy.get(
+                '#translation-panel-en [data-test=entity-translation-field][data-field=title] textarea'
+            ).should('not.have.value', '');
+            cy.get(
+                '#translation-panel-en [data-test=entity-translation-field][data-field=title] textarea'
+            ).clear();
+            cy.get('[data-test=entity-translations-save]').click();
+            cy.get('[data-test=entity-translations-save-error]').should('not.be.empty');
+            cy.apiAs<{ title: string }>('editor', 'GET', `/products/${product.id}`)
+                .its('title')
+                .should('not.equal', '');
+
+            cy.step('with German switched off, a German write is refused');
+            cy.visit('/en/locales');
+            cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();
+            cy.get('[data-test=language-active] input').uncheck({ force: true });
+            cy.get('[data-test=language-save]').click();
+            cy.get('[data-test=language-form]').should('not.exist');
+            loginDevice('editor').then((device) => {
+                refusedWith(
+                    device,
+                    'PATCH',
+                    `/locales/translations/product/${product.id}`,
+                    { [TAG]: { fields: { title: 'Hundekorb 2' } } },
+                    422
+                );
+            });
+            // Switched back on so the deletion below keeps its place in the story.
+            cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();
+            cy.get('[data-test=language-active] input').check({ force: true });
+            cy.get('[data-test=language-save]').click();
+            cy.get('[data-test=language-form]').should('not.exist');
+        });
+
+        cy.step('the fallback language refuses deletion, the new one is deleted');
         cy.visit('/en/locales');
         cy.get('[data-language=en] [data-test=row-delete]').click();
         cy.get('[data-test=app-dialog-confirm]').click();

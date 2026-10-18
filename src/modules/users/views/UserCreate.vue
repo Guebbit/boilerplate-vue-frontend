@@ -221,7 +221,7 @@ const submitForm = () => {
             />
             <div class="flex flex-wrap gap-x-8">
                 <!-- One list, not a free-text field: the server's `grantableRoles`. Hidden when the
-                     caller may assign none, so the account gets the server's default role. -->
+                     caller may assign none: the account is then a plain customer. -->
                 <v-select
                     v-if="grantableRoles().length > 0"
                     v-model="form.role"

@@ -10,6 +10,7 @@
  */
 
 import { extractErrorMessage } from '@guebbit/js-toolkit';
+import { ERROR_CODES } from '@api/error-codes';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/i18n';
 
@@ -99,6 +100,25 @@ export const absentIs = (error: unknown, ...statuses: number[]): boolean =>
  */
 export const isRetryableFailure = (error: unknown): boolean =>
     isTransportFailure(error) || (error as { status: number }).status >= 500;
+
+/**
+ * Whether the SAME `Idempotency-Key` should go out again after this failure.
+ *
+ * Only when the first attempt may still be running or never arrived: a transport failure (no
+ * answer at all), or the API's own `409 IDEMPOTENCY_IN_FLIGHT`. Any other answer, a 5xx included,
+ * is final for that key: the API stores it and replays it for the retention window, so resending
+ * the key would only replay the failure. The caller re-reads what the call was about instead.
+ *
+ * Not {@link isRetryableFailure}: the cart's checkout still resends its key after a 5xx.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @returns `true` when the next attempt is the same attempt.
+ */
+export const keepsIdempotencyKey = (error: unknown): boolean => {
+    if (isTransportFailure(error)) return true;
+    const { status, errors } = error as { status: number; errors?: { code?: unknown }[] };
+    return status === 409 && errors?.[0]?.code === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT;
+};
 
 /**
  * Lets an "absent" answer through and rethrows everything else.

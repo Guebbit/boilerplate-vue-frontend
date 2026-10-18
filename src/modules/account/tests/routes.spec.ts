@@ -24,7 +24,7 @@ describe('account route access', () => {
         ['Signup', 'guest'],
         ['TwoFactorChallenge', 'guest'],
         ['PasswordResetRequest', 'guest'],
-        ['PasswordResetConfirm', 'guest'],
+        ['PasswordResetConfirm', undefined],
         ['AccountDeleteConfirm', undefined],
         ['VerifyEmailConfirm', undefined],
         ['EmailChangeConfirm', undefined],

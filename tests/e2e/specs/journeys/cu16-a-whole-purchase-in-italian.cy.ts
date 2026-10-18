@@ -16,6 +16,8 @@ import {
     shouldShowCents,
     sumCents
 } from '../../../support/e2e/steps';
+import { byTemplate, inLocale } from '../../../support/e2e/commands';
+import { requestReset } from '../../../support/e2e/security-steps';
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 
 /**
@@ -120,7 +122,15 @@ describe('CU16 · A whole purchase in Italian', () => {
         cy.step('the shop’s mails arrive in Italian, and link to the Italian order page');
         cy.accountOf('user').then(({ email }) => {
             // Found BY the Italian subject: the mail only turns up if it was sent in Italian.
-            cy.emailTo(email, (mail) => mail.subject.includes('Ordine ricevuto'));
+            cy.emailTo(email, (mail) => mail.subject.includes('Ordine ricevuto')).then(
+                (received) => {
+                    const body = [...(received.lines ?? []), received.text ?? ''].join(' ');
+                    expect(
+                        body,
+                        'the total is written as Italian money, not a bare number'
+                    ).to.match(/\d,\d{2}\s*€/);
+                }
+            );
             cy.emailTo(email, (mail) => mail.subject.includes('Pagamento ricevuto')).then(
                 (paid) => {
                     expect(
@@ -129,6 +139,21 @@ describe('CU16 · A whole purchase in Italian', () => {
                     ).to.equal(true);
                 }
             );
+        });
+
+        cy.step('a mail sent while signed out follows the language stored on the account');
+        cy.logout();
+        cy.accountOf('user').then(({ email }) => {
+            requestReset(email);
+            cy.emailTo(
+                email,
+                (mail) => byTemplate('account.reset-request')(mail) && inLocale('it')(mail)
+            ).then((reset) => {
+                expect(
+                    mailMentions(reset, '/it/'),
+                    'the reset link follows the stored language'
+                ).to.equal(true);
+            });
         });
     });
 });
