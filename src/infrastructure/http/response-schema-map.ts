@@ -68,14 +68,16 @@ export interface ResponseSchemaRoute {
  * config/challenge (rendered by whichever form is being guarded, not a module of its own),
  * `shop`'s public record (read once by the shell's shop store, `infrastructure/shop.ts`) and
  * `audit-logs`' shop-scoped trail (`GET /audit`: `observability`'s `use-audit-trail` reads it, but
- * no module's own `response-schemas.ts` claims it, so it stays on this shelf). A row here moves
+ * no module's own `response-schemas.ts` claims it, so it stays on this shelf) and `sitemap`'s XML
+ * files (read by search engines, never by this app's own client). A row here moves
  * out the day some module's own file starts claiming it.
  */
 const UNCLAIMED_BACKEND_MODULES: ReadonlySet<string> = new Set([
     'analytics',
     'antibot',
     'audit-logs',
-    'shop'
+    'shop',
+    'sitemap'
 ]);
 
 /**

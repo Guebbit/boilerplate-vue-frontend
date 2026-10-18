@@ -80,15 +80,22 @@ const isOperation = (value: unknown): value is OpenApiOperation =>
 const REGEX_METACHARACTERS = /[$()*+.?[\\\]^{|}]/g;
 
 /**
- * One `{param}` segment becomes `[^/]+` — the map matches a SEGMENT, never the param's own name.
- * A literal segment is escaped, then every row is joined on an explicit `\/`, since an
- * unescaped `/` would otherwise close the regex LITERAL this generator writes out as text.
+ * Every `{param}` becomes `[^/]+` — the map matches a SEGMENT, never the param's own name — and the
+ * text around it is escaped, so `products-{page}.xml` keeps its literal prefix and suffix. Every
+ * row is joined on an explicit `\/`, since an unescaped `/` would otherwise close the regex
+ * LITERAL this generator writes out as text.
  *
  * @param segment One `/`-delimited piece of an OpenAPI path template.
  * @returns That segment's own regex source, unescaped-slash-free.
  */
 const segmentToPatternSource = (segment: string): string =>
-    /^{[^}]+}$/.test(segment) ? '[^/]+' : segment.replaceAll(REGEX_METACHARACTERS, String.raw`\$&`);
+    segment
+        .split(/({[^}]+})/)
+        .map((part, index) =>
+            // `split` with a capture group puts every `{param}` at an odd index.
+            index % 2 === 1 ? '[^/]+' : part.replaceAll(REGEX_METACHARACTERS, String.raw`\$&`)
+        )
+        .join('');
 
 /**
  * An OpenAPI path template, anchored at both ends — see this file's own header for why anchoring
@@ -156,8 +163,7 @@ for (const [openApiPath, pathItem] of Object.entries(document.paths ?? {}))
         rows.push({
             method: method.toUpperCase(),
             patternSource: pathToPatternSource(openApiPath),
-            paramCount: openApiPath.split('/').filter((segment) => /^{[^}]+}$/.test(segment))
-                .length,
+            paramCount: openApiPath.split('/').filter((segment) => /{[^}]+}/.test(segment)).length,
             schemaName: schemaNameFor(operation.operationId),
             bodySchemaName: bodySchemaNameFor(operation),
             moduleName: operation['x-module']

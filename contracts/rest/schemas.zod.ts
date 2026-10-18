@@ -16040,6 +16040,24 @@ export const GetShopResponse = zod.strictObject({
     })
 });
 /**
+ * The one address a search engine needs: it lists `pages.xml` and one `products-{page}.xml` per run of public products. Always an index, so the address the frontend's `robots.txt` names never changes as the catalogue grows. Public; built from the live catalogue on each request and cacheable for an hour.
+ * @summary Sitemap index
+ */
+export const GetSitemapIndexResponse = zod.unknown();
+/**
+ * The static pages (home, about, FAQ, terms, privacy, contact, the catalogue), one `url` per active language, each with `xhtml:link` alternates for every language and `x-default`. No `lastmod`: nothing dates a prose page.
+ * @summary Sitemap of the shop pages
+ */
+export const GetSitemapPagesResponse = zod.unknown();
+/**
+ * One run of the public catalogue (active and not deleted), oldest id first, one `url` per active language with alternates and `x-default`. `lastmod` is the product's `updatedAt`, which a translation edit also moves and a sale does not. A run holds as many products as keep the file at or under 50,000 `url` entries. A number the index does not list answers `404`.
+ * @summary Sitemap of the public products
+ */
+export const GetSitemapProductsParams = zod.strictObject({
+    page: zod.number().min(1)
+});
+export const GetSitemapProductsResponse = zod.unknown();
+/**
  * Returns the authenticated user's open requests, newest first. A request is used once: when it is answered it is deleted, so an answered one never appears here. Absence and emptiness are the same state, so this never answers 404.
  * @summary List my back-in-stock requests
  */
