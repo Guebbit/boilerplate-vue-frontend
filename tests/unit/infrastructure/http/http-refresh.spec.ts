@@ -229,7 +229,7 @@ const loadHttp = () => {
 };
 
 /**
- * Clears the `isAuth` cookie through the prototype setter, the way `stores/session.ts` writes it.
+ * Clears the `isAuth` cookie through the prototype setter, the way `stores/session.ts` clears it.
  *
  * @returns Nothing; the cookie is cleared as a side effect.
  */
@@ -369,18 +369,6 @@ describe('401 refresh flow', () => {
                     expect(useSessionStore().accessToken).toBe(FRESH_TOKEN);
                 })
             ));
-
-        /**
-         * `setAccessToken` is the only writer of the JS-readable `isAuth` cookie, and
-         * `tryRestoreAuth` reads it on the next boot: without it a signed-in visitor looks like a
-         * guest after a reload.
-         */
-        it('restores the isAuth cookie, not just the in-memory token', () =>
-            loadHttp()
-                .then(({ orvalMutator }) => orvalMutator({ url: '/orders', method: 'GET' }))
-                .then(() => {
-                    expect(document.cookie).toContain('isAuth=true');
-                }));
 
         /**
          * Single-flight: two 401s in the same tick must not race the refresh cookie against

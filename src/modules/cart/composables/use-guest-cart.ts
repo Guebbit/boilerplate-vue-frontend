@@ -38,9 +38,12 @@ export const useGuestCart = () => {
      */
     const hasGuestLines = computed(() => guestLines.value.length > 0);
 
-    // Vue `watch`: persists every replacement of the list.
+    // Vue `watch`: persists every replacement of the list. The callback is wrapped because `watch`
+    // would otherwise hand the previous list to `writeGuestCart`'s clock parameter.
     // https://vuejs.org/api/reactivity-core.html#watch
-    watch(guestLines, writeGuestCart);
+    watch(guestLines, (lines) => {
+        writeGuestCart(lines);
+    });
 
     /**
      * Another tab changed the guest cart: this one takes its copy, so two tabs never save over

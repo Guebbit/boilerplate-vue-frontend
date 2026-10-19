@@ -11,7 +11,9 @@ import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import {
     GUEST_CART_STORAGE_KEY,
-    GUEST_MERGE_ATTEMPT_STORAGE_KEY
+    GUEST_MERGE_ATTEMPT_STORAGE_KEY,
+    readGuestCart,
+    writeGuestCart
 } from '../composables/guest-cart-storage';
 import { getCart, getCartSummary, mergeCart } from '@api';
 import * as schemas from '@api/schemas';
@@ -111,10 +113,7 @@ afterEach(() => {
 
 describe('the guest list', () => {
     it('starts from what an earlier visit saved', () => {
-        localStorage.setItem(
-            GUEST_CART_STORAGE_KEY,
-            JSON.stringify([{ productId: 'p1', quantity: 2 }])
-        );
+        writeGuestCart([{ productId: 'p1', quantity: 2 }]);
 
         expect(freshStore().guestLines).toEqual([{ productId: 'p1', quantity: 2 }]);
     });
@@ -126,9 +125,7 @@ describe('the guest list', () => {
         store.updateGuestItem('p1', 5);
         await Promise.resolve();
 
-        expect(JSON.parse(localStorage.getItem(GUEST_CART_STORAGE_KEY) ?? 'null')).toEqual([
-            { productId: 'p1', quantity: 5 }
-        ]);
+        expect(readGuestCart()).toEqual([{ productId: 'p1', quantity: 5 }]);
         expect(mergeCart).not.toHaveBeenCalled();
         expect(getCart).not.toHaveBeenCalled();
     });
@@ -191,7 +188,11 @@ describe('the guest list', () => {
  * @param key - The key the event reports; `null` means the storage was cleared.
  */
 const otherTabSaves = (lines: unknown[], key: string | null = GUEST_CART_STORAGE_KEY) => {
-    if (lines.length > 0) localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(lines));
+    if (lines.length > 0)
+        localStorage.setItem(
+            GUEST_CART_STORAGE_KEY,
+            JSON.stringify({ savedAt: Date.now(), lines })
+        );
     else localStorage.removeItem(GUEST_CART_STORAGE_KEY);
     globalThis.dispatchEvent(new StorageEvent('storage', { key }));
 };
@@ -606,9 +607,7 @@ describe('lines the guest changes while a merge is out', () => {
         await Promise.resolve();
 
         expect(store.guestLines).toEqual([{ productId: 'p8', quantity: 5 }]);
-        expect(JSON.parse(localStorage.getItem(GUEST_CART_STORAGE_KEY) ?? 'null')).toEqual([
-            { productId: 'p8', quantity: 5 }
-        ]);
+        expect(readGuestCart()).toEqual([{ productId: 'p8', quantity: 5 }]);
     });
 
     it('lose nothing when the call fails', async () => {

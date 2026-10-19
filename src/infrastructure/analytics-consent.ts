@@ -1,7 +1,7 @@
 /**
  * @module
  * Guest analytics consent: unknown / granted / denied, persisted in a first-party cookie
- * the same way `session.ts` persists `isAuth`/`rememberMe` — through `@guebbit/js-toolkit`'s
+ * the same way `session.ts` persists `rememberMe` — through `@guebbit/js-toolkit`'s
  * `getCookie`/`setCookie`, already a dependency here, rather than a new one or `localStorage`.
  * Gated by Umami or Faro being configured (`isAnalyticsConsentEnabled`): the banner, the footer link
  * and `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
@@ -15,6 +15,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { getCookie, setCookie } from '@guebbit/js-toolkit';
+import { BROWSER_STORAGE_NAME, SIX_MONTHS_DAYS } from '@/infrastructure/browser-storage.ts';
 import { readFaroConfig, readUmamiConfig } from '@/infrastructure/observability/config.ts';
 import { createAnalyticsEvent } from '@api';
 import type { AnalyticsEventRequest } from '@types';
@@ -25,14 +26,14 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 /**
  * Name of the first-party cookie holding the visitor's own choice.
  */
-const COOKIE_NAME = 'analyticsConsent';
+const COOKIE_NAME = BROWSER_STORAGE_NAME.analyticsConsent;
 
 /**
- * How long the choice survives a closed browser — long enough that answering the banner once is
- * the common case, short enough that a stale opt-in does not outlive most people's own memory of
- * having granted it.
+ * How long the choice survives a closed browser — about six months, after which the visitor is
+ * asked again (the CNIL and Garante guidance): long enough that answering the banner once is the
+ * common case, short enough that a stale opt-in does not outlive anyone's memory of giving it.
  */
-const COOKIE_DAYS = 365;
+const COOKIE_DAYS = SIX_MONTHS_DAYS;
 
 /**
  * A guest's answer to the consent banner, or the absence of one.

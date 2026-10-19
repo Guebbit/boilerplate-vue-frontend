@@ -26,7 +26,7 @@ flowchart LR
     Host --> Use["useTour().startTour(id)"]
     Catalogue --> Use
     Use -->|anchors on screen| Driver["driver.js popover\n(lazy chunk)"]
-    Use -->|on open| Seen["tour-seen cookie\naccount:tour:version"]
+    Use -->|on open| Seen["tour-seen record\n(localStorage)\naccount:tour:version"]
 ```
 
 - **A module adds steps** with `tours` on its `AppModule` (beside `navigation`): `{ tour, id,
@@ -42,9 +42,12 @@ target, title, body, order }`. `target` is the value of a `data-tour="…"` attr
 
 ## Seen, and bumping a version
 
-"Already seen" is a first-party cookie (`toursSeen`), the same kind as the theme choice
-(`infrastructure/theme-preference.ts`) and exempt from consent as a remembered interface choice.
-It holds a list of `accountId:tourId:version` keys, newest last, capped at 40.
+"Already seen" is a first-party `localStorage` record (`toursSeen`), exempt from consent as a
+remembered interface choice and listed on the privacy page like every other item the browser holds
+(`infrastructure/browser-storage.ts`). It is `{ savedAt, keys }`: a list of
+`accountId:tourId:version` keys, newest last, capped at 40. It is dropped six months after its last
+change, so a browser asks again rather than remembering forever. It is a storage key, not a cookie,
+because nothing on the server needs it and it should not travel with every request.
 
 - It is **per browser**: a new browser or device shows the tour again. Storing it on the account
   was the alternative; it would need a field on `PATCH /account`, and is not built.
@@ -66,7 +69,7 @@ per visit.
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `tests/unit/app/tours.spec.ts`                | step order, absent anchors dropped, copy exists in both languages, axe on the popover, Esc and focus |
 | `tests/unit/app/tour-host.spec.ts`            | when the welcome tour opens, `?tour=` handling                                                       |
-| `tests/unit/infrastructure/tour-seen.spec.ts` | the seen key includes account and version; damaged cookie                                            |
+| `tests/unit/infrastructure/tour-seen.spec.ts` | the seen key includes account and version; damaged record; six months                                |
 | `tests/e2e/specs/tours.cy.ts`                 | first sight, skip, stays closed, replay from the menu, `?tour=`                                      |
 
 ## Why driver.js

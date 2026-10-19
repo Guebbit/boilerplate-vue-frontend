@@ -25,7 +25,10 @@ sweepA11y('cart — guest', [
                 cy.window().then((win) => {
                     win.localStorage.setItem(
                         'guest-cart',
-                        JSON.stringify([{ productId, quantity: 2 }])
+                        JSON.stringify({
+                            savedAt: Date.now(),
+                            lines: [{ productId, quantity: 2 }]
+                        })
                     );
                 });
                 cy.reload();

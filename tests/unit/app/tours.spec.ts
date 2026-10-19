@@ -18,7 +18,6 @@ import { enabledModules } from '@/modules';
 import { i18n, loadLocale } from '@/i18n';
 import { tourSeenKey, hasSeenTour } from '@/infrastructure/tour-seen.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { deleteCookie } from '@guebbit/js-toolkit';
 import enShell from '@/locales/en.json';
 import itShell from '@/locales/it.json';
 
@@ -147,7 +146,7 @@ const mountTour = () => {
 
 beforeEach(async () => {
     setActivePinia(createPinia());
-    deleteCookie('toursSeen');
+    localStorage.removeItem('toursSeen');
     await loadLocale('en');
 });
 

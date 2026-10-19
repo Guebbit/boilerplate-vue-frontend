@@ -15,6 +15,7 @@ export {
     addGuestLine,
     guestCartQuantity,
     parseGuestCart,
+    parseStoredGuestCart,
     parseMergeAttempt,
     removeGuestLines,
     setGuestLineQuantity,

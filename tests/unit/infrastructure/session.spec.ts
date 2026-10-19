@@ -163,7 +163,7 @@ const cookieJar = () =>
             .map((pair) => pair.split('=') as [string, string])
     );
 
-describe('setAccessToken — the isAuth/rememberMe cookie pair', () => {
+describe('setAccessToken — the rememberMe marker, with the isAuth hint left to the backend', () => {
     beforeEach(() => {
         // Tests earlier in this file call `signedIn()`, which sets these cookies as a side
         // effect; jsdom keeps `document.cookie` for the whole file, not per test. Cleared through
@@ -171,36 +171,31 @@ describe('setAccessToken — the isAuth/rememberMe cookie pair', () => {
         useSessionStore().clearSession();
     });
 
-    it('sets a session-only isAuth cookie when remember was not chosen', () => {
-        useSessionStore().setAccessToken('token', false);
-
-        const jar = cookieJar();
-        expect(jar.isAuth).toBe('true');
-        expect(jar.rememberMe).toBeUndefined();
-    });
-
-    it('sets a persistent isAuth cookie when remember was chosen', () => {
+    it('writes no isAuth cookie of its own: the backend sets it beside the session cookie', () => {
         useSessionStore().setAccessToken('token', true);
 
-        const jar = cookieJar();
-        expect(jar.isAuth).toBe('true');
-        expect(jar.rememberMe).toBe('true');
+        expect(cookieJar().isAuth).toBeUndefined();
     });
 
-    /*
-     * The bug this closes: a silent refresh does not know the original login's choice, so it
-     * must read it back from `rememberMe` rather than defaulting to session-only — otherwise a
-     * "remember me" visitor's isAuth hint would still die at the next browser restart.
-     */
-    it('keeps the isAuth cookie persistent across a refresh that does not pass `remember`', () => {
+    it('sets no marker when remember was not chosen', () => {
+        useSessionStore().setAccessToken('token', false);
+
+        expect(cookieJar().rememberMe).toBeUndefined();
+    });
+
+    it('sets the marker when remember was chosen', () => {
+        useSessionStore().setAccessToken('token', true);
+
+        expect(cookieJar().rememberMe).toBe('true');
+    });
+
+    it('keeps the marker across a refresh that does not pass `remember`', () => {
         const store = useSessionStore();
         store.setAccessToken('token', true);
 
         store.setAccessToken('refreshed-token');
 
         expect(cookieJar().rememberMe).toBe('true');
-        // Presence is what `tryRestoreAuth` reads; jsdom does not expose max-age back out.
-        expect(cookieJar().isAuth).toBe('true');
     });
 
     it('does not start a rememberMe marker for a login that never opts in', () => {
@@ -911,7 +906,7 @@ describe('session modes', () => {
 
             expect(store.hasSession).toBe(true);
             expect(store.accessToken).toBeUndefined();
-            expect(cookieJar().isAuth).toBe('true');
+            expect(cookieJar().isAuth).toBeUndefined();
             expect(cookieJar().rememberMe).toBe('true');
         });
 

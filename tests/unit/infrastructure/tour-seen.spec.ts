@@ -1,14 +1,14 @@
 /**
  * @module
  * `tour-seen.ts` — the "this browser already showed that tour" record: keyed by account, tour and
- * version, kept in one first-party cookie, capped, and harmless when damaged.
+ * version, kept in one `localStorage` record, capped, expiring after six months, and harmless
+ * when damaged.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { deleteCookie, setCookie } from '@guebbit/js-toolkit';
 import { hasSeenTour, markTourSeen, tourSeenKey } from '@/infrastructure/tour-seen.ts';
 
 beforeEach(() => {
-    deleteCookie('toursSeen');
+    localStorage.clear();
 });
 
 describe('tourSeenKey', () => {
@@ -54,17 +54,33 @@ describe('markTourSeen / hasSeenTour', () => {
         expect(hasSeenTour('a:tour44:1')).toBe(true);
     });
 
-    it('reads a damaged cookie as empty instead of throwing', () => {
-        setCookie('toursSeen', '{not json');
+    it('reads a damaged record as empty instead of throwing', () => {
+        localStorage.setItem('toursSeen', '{not json');
 
         expect(hasSeenTour('a:one:1')).toBe(false);
         markTourSeen('a:one:1');
         expect(hasSeenTour('a:one:1')).toBe(true);
     });
 
-    it('ignores a cookie that parses to something other than a list', () => {
-        setCookie('toursSeen', '{"a":1}');
+    it.each([
+        ['an object that is not a record', '{"a":1}'],
+        ['a record without a time', '{"keys":["a:one:1"]}'],
+        ['a record whose keys are not a list', '{"savedAt":1,"keys":"a:one:1"}']
+    ])('ignores %s', (_label, raw) => {
+        localStorage.setItem('toursSeen', raw);
 
-        expect(hasSeenTour('a:one:1')).toBe(false);
+        expect(hasSeenTour('a:one:1', 2)).toBe(false);
+    });
+
+    it('forgets a record six months after its last change, and a change restarts the clock', () => {
+        const day = 24 * 60 * 60 * 1000;
+        markTourSeen('a:one:1', 0);
+
+        expect(hasSeenTour('a:one:1', 182 * day)).toBe(true);
+        expect(hasSeenTour('a:one:1', 184 * day)).toBe(false);
+
+        markTourSeen('a:two:1', 100 * day);
+
+        expect(hasSeenTour('a:one:1', 250 * day)).toBe(true);
     });
 });

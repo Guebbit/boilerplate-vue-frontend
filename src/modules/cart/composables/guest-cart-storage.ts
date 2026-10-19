@@ -9,18 +9,19 @@
  * expects the cart to be there. Every access is guarded, because the storage may be blocked or
  * full, and a cart that cannot be saved still works for as long as the page lives.
  */
-import { parseGuestCart, parseMergeAttempt } from '../domain';
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
+import { parseGuestCart, parseMergeAttempt, parseStoredGuestCart } from '../domain';
 import type { GuestCartLine, MergeAttempt } from '../domain';
 
 /**
  * The storage key. Also what the `storage` event names when another tab changes the cart.
  */
-export const GUEST_CART_STORAGE_KEY = 'guest-cart';
+export const GUEST_CART_STORAGE_KEY = BROWSER_STORAGE_NAME.guestCart;
 
 /**
  * The storage key of the merge attempt still waiting for an answer.
  */
-export const GUEST_MERGE_ATTEMPT_STORAGE_KEY = 'guest-cart-merge-attempt';
+export const GUEST_MERGE_ATTEMPT_STORAGE_KEY = BROWSER_STORAGE_NAME.guestCartMergeAttempt;
 
 /**
  * Parses JSON text.
@@ -99,19 +100,29 @@ export const writeMergeAttempt = (attempt: MergeAttempt | undefined): void => {
 };
 
 /**
- * Reads the saved guest cart.
+ * Reads the saved guest cart. A cart not changed for thirty days is not returned, and its key is
+ * removed.
  *
- * @returns The valid lines, or none when nothing is saved, the value is not JSON, or storage is
- *  unavailable.
+ * @param now - The current time, epoch milliseconds.
+ * @returns The valid lines, or none when nothing is saved, the value is not JSON, it expired, or
+ *  storage is unavailable.
  */
-export const readGuestCart = (): GuestCartLine[] =>
-    parseGuestCart(readStoredJson(GUEST_CART_STORAGE_KEY));
+export const readGuestCart = (now: number = Date.now()): GuestCartLine[] => {
+    const lines = parseStoredGuestCart(readStoredJson(GUEST_CART_STORAGE_KEY), now);
+    if (lines.length === 0) writeStoredJson(GUEST_CART_STORAGE_KEY);
+    return lines;
+};
 
 /**
- * Saves the guest cart; an empty one removes the key instead of leaving `[]` behind.
+ * Saves the guest cart with the time of this change; an empty one removes the key instead of
+ * leaving an empty list behind.
  *
  * @param lines - The cart to keep.
+ * @param now - The current time, epoch milliseconds.
  */
-export const writeGuestCart = (lines: readonly GuestCartLine[]): void => {
-    writeStoredJson(GUEST_CART_STORAGE_KEY, lines.length === 0 ? undefined : lines);
+export const writeGuestCart = (lines: readonly GuestCartLine[], now: number = Date.now()): void => {
+    writeStoredJson(
+        GUEST_CART_STORAGE_KEY,
+        lines.length === 0 ? undefined : { savedAt: now, lines }
+    );
 };

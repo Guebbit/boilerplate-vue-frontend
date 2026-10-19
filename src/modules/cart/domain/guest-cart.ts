@@ -167,6 +167,29 @@ export const parseGuestCart = (stored: unknown): GuestCartLine[] => {
 };
 
 /**
+ * How long a saved guest cart is kept: thirty days after the last change. A cart left alone
+ * longer is dropped when it is next read, so a browser does not hold a forgotten basket forever.
+ */
+export const GUEST_CART_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Reads a guest cart back from its stored envelope, `{ savedAt, lines }`, and drops it once it
+ * outlived {@link GUEST_CART_MAX_AGE_MS}. Anything that is not that envelope reads as empty,
+ * a bare list from another build included.
+ *
+ * @param stored - The parsed storage value, of any type.
+ * @param now - The current time, epoch milliseconds.
+ * @returns A valid cart; empty when nothing usable, current and stored is there.
+ */
+export const parseStoredGuestCart = (stored: unknown, now: number): GuestCartLine[] => {
+    if (typeof stored !== 'object' || stored === null) return [];
+    const { savedAt, lines } = stored as { savedAt?: unknown; lines?: unknown };
+    if (typeof savedAt !== 'number' || !Number.isFinite(savedAt)) return [];
+    if (now - savedAt > GUEST_CART_MAX_AGE_MS) return [];
+    return parseGuestCart(lines);
+};
+
+/**
  * A merge call that has not answered conclusively yet: the `Idempotency-Key` it carried and the
  * exact lines it sent. The key only means "the same merge" while the body is the same.
  */

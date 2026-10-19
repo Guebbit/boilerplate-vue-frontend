@@ -132,7 +132,8 @@ describe('login', () => {
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => {
                 expect(useSessionStore().isAuth).toBe(true);
-                expect(document.cookie).toContain('isAuth=true');
+                // The `isAuth` hint is the backend's cookie; the frontend writes none.
+                expect(document.cookie).not.toContain('isAuth=');
             });
     });
 

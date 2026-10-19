@@ -45,10 +45,35 @@ describe('readGuestCart', () => {
     it('keeps the valid lines of a value somebody edited', () => {
         localStorage.setItem(
             GUEST_CART_STORAGE_KEY,
-            JSON.stringify([{ productId: 'p1', quantity: 2 }, { productId: 'p2' }, 'junk'])
+            JSON.stringify({
+                savedAt: Date.now(),
+                lines: [{ productId: 'p1', quantity: 2 }, { productId: 'p2' }, 'junk']
+            })
         );
 
         expect(readGuestCart()).toEqual([{ productId: 'p1', quantity: 2 }]);
+    });
+
+    it('reads a cart changed 29 days ago, and drops one changed 31 days ago with its key', () => {
+        const day = 24 * 60 * 60 * 1000;
+        const now = Date.UTC(2026, 9, 19);
+        const lines = [{ productId: 'p1', quantity: 2 }];
+
+        writeGuestCart(lines, now - 29 * day);
+        expect(readGuestCart(now)).toEqual(lines);
+
+        writeGuestCart(lines, now - 31 * day);
+        expect(readGuestCart(now)).toEqual([]);
+        expect(localStorage.getItem(GUEST_CART_STORAGE_KEY)).toBeNull();
+    });
+
+    it('is empty for a bare list, the shape no build writes any more', () => {
+        localStorage.setItem(
+            GUEST_CART_STORAGE_KEY,
+            JSON.stringify([{ productId: 'p1', quantity: 2 }])
+        );
+
+        expect(readGuestCart()).toEqual([]);
     });
 
     it('is empty, not an error, when the browser blocks storage', () => {
@@ -61,12 +86,13 @@ describe('readGuestCart', () => {
 });
 
 describe('writeGuestCart', () => {
-    it('saves under the one key', () => {
-        writeGuestCart([{ productId: 'p1', quantity: 2 }]);
+    it('saves under the one key, with the time of the change', () => {
+        writeGuestCart([{ productId: 'p1', quantity: 2 }], 1234);
 
-        expect(JSON.parse(localStorage.getItem(GUEST_CART_STORAGE_KEY) ?? 'null')).toEqual([
-            { productId: 'p1', quantity: 2 }
-        ]);
+        expect(JSON.parse(localStorage.getItem(GUEST_CART_STORAGE_KEY) ?? 'null')).toEqual({
+            savedAt: 1234,
+            lines: [{ productId: 'p1', quantity: 2 }]
+        });
     });
 
     it('removes the key for an empty cart instead of leaving an empty list behind', () => {
@@ -135,12 +161,16 @@ describe('the pending merge attempt', () => {
     });
 });
 
-describe('a saved guest cart that is not a list', () => {
+describe('a saved guest cart that is not an envelope', () => {
     it.each([
         ['null', 'null'],
         ['a number', '7'],
         ['a string', '"p1"'],
-        ['one line, not a list of lines', JSON.stringify({ productId: 'p1', quantity: 1 })]
+        ['one line, not an envelope', JSON.stringify({ productId: 'p1', quantity: 1 })],
+        [
+            'an envelope without a time',
+            JSON.stringify({ lines: [{ productId: 'p1', quantity: 1 }] })
+        ]
     ])('reads as empty when it is %s', (_label, raw) => {
         localStorage.setItem(GUEST_CART_STORAGE_KEY, raw);
 

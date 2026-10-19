@@ -3,7 +3,7 @@
         "page-title": "Login",
         "label-email": "Email",
         "label-password": "Password",
-        "label-remember": "Ricorda il mio accesso",
+        "label-remember": "Ricorda il mio accesso (usa un cookie)",
         "link-password-reset": "Password dimenticata?",
         "button-submit": "Login",
         "label-toggle-password": "Mostra o nascondi la password"
