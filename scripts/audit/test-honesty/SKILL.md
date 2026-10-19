@@ -74,7 +74,7 @@ rg -c "\bexpect\(" <paths>                               # a file whose count is
 
 Add the two priors, in this order:
 
-- `reports/mutation/mutation.json` and `reports/stryker-incremental.json` — a test that covers a
+- every `mutation.json` under `reports/` (step 3 says how to find them) — a test that covers a
   line whose mutants all **survive** is the strongest candidate there is. A survived mutant on a
   covered line is, by definition, a line some test runs and none checks.
 - `git log -p --follow -- <test file>` — for **Bent to fit**: a commit that changes only an
@@ -112,13 +112,14 @@ working tree. With `coverageAnalysis: "perTest"` (`stryker.config.json`), its re
 for every mutant which tests ran it (`coveredBy`) and which failed on it (`killedBy`). Read that
 report; never edit `src/` to check.
 
-- The report is `reports/mutation/mutation.json`. When it is missing, or older than the last
-  commit touching the scope:
-    - `npm run test:mutation:pull` fetches the latest sweep
-    - `npm run test:mutation -- --mutate <file>` re-runs it for one file
-
-    Both write only under the gitignored `reports/`.
-    If neither covers the scope, say so at the top and mark every row UNVERIFIED.
+- The report is `reports/mutation/mutation.json`; `find reports -name mutation.json` finds any
+  other run. Use the newest one whose `files` holds the source file under audit. A file's entry is
+  stale when that source changed after the report was written (`git log -1 --format=%cI --
+<file>` against the report's date): say so in the row.
+- No usable report: `npm run test:mutation -- --mutate <file>` re-runs Stryker for one file and
+  writes only under the gitignored `reports/`. Never `test:mutation:pull` — it writes over the
+  tracked `mutation-baseline.json`, and fetches scores, not a report. If nothing covers the scope,
+  say so at the top and mark every row UNVERIFIED.
 
 - Match each break to a mutant: same location, same effect — a `ConditionalExpression` forced to
   `true` for a deleted guard, an emptied `BlockStatement` for a deleted call, an `EqualityOperator`
