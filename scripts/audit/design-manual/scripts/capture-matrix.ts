@@ -20,6 +20,8 @@ export interface CaptureCaseShape {
     viewport?: ViewportName;
     /** The theme the case is pinned to, if any. */
     theme?: 'dark';
+    /** The only sizes the case makes sense at (its activator is hidden at the others), if narrowed. */
+    only?: readonly ViewportName[];
 }
 
 /**
@@ -125,8 +127,13 @@ export const expandCase = (
         locale
     });
 
+    // A case narrowed to some sizes has nothing to click at the others (a desktop-only menu).
+    const fits = (size: ViewportName): boolean => !shape.only || shape.only.includes(size);
+
     if (shape.hasPrepare) {
-        const sizes = shape.viewport ? [shape.viewport] : PREPARED_SIZES;
+        const sizes = shape.viewport
+            ? [shape.viewport]
+            : PREPARED_SIZES.filter((size) => fits(size));
         return sizes.flatMap((size) => [
             planned(size, 'light'),
             ...(shape.theme === 'dark' ? [planned(size, 'dark')] : [])
@@ -137,8 +144,10 @@ export const expandCase = (
 
     const extra = locales.filter((locale) => locale !== DEFAULT_LOCALE);
     return [
-        ...PLAIN_SHOTS.map(({ viewport, theme }) => planned(viewport, theme)),
-        ...extra.map((locale) => planned('phone', 'light', locale))
+        ...PLAIN_SHOTS.filter(({ viewport }) => fits(viewport)).map(({ viewport, theme }) =>
+            planned(viewport, theme)
+        ),
+        ...(fits('phone') ? extra.map((locale) => planned('phone', 'light', locale)) : [])
     ];
 };
 

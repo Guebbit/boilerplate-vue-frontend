@@ -52,6 +52,21 @@ describe('expandCase', () => {
         expect(shots.map(({ viewport }) => viewport)).toEqual(['phone', 'desktop']);
     });
 
+    it('shoots a prepared case narrowed to desktop only at desktop', () => {
+        const shots = expandCase({ name: 'Menu', hasPrepare: true, only: ['desktop'] }, 'shell');
+
+        expect(shots.map(({ viewport }) => viewport)).toEqual(['desktop']);
+    });
+
+    it('keeps only the sizes a plain case is narrowed to, and no locale shot without phone', () => {
+        const shots = expandCase({ name: 'Cart', hasPrepare: false, only: ['desktop'] }, 'cart', [
+            'en',
+            'it'
+        ]);
+
+        expect(shots.map(({ id }) => id)).toEqual(['cart--cart--desktop--light']);
+    });
+
     it('adds one phone shot per extra locale to a plain case', () => {
         const shots = expandCase({ name: 'Cart', hasPrepare: false }, 'cart', ['en', 'it']);
 

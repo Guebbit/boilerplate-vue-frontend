@@ -241,7 +241,8 @@ const captureA11y = (
             name: sweepCase.name,
             hasPrepare: sweepCase.prepare !== undefined,
             viewport: sweepCase.viewport,
-            theme: sweepCase.theme
+            theme: sweepCase.theme,
+            only: sweepCase.layout?.only?.viewports
         })),
         module,
         locales

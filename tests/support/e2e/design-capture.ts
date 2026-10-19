@@ -123,8 +123,8 @@ const ownScroller = (element: Element, win: Window): Element | null => {
  * The element that scrolls the page being photographed.
  *
  * An active overlay that fills the viewport (a fullscreen dialog) scrolls inside itself, not the
- * window, so its scroller is used. Any other overlay leaves the document blocked and the page
- * is one piece. Otherwise the document scrolls.
+ * window, so its scroller is used. Any other overlay (a menu, an open drawer) leaves the document
+ * blocked and the page is one piece. Otherwise the document scrolls.
  */
 const findScroller = (win: Window): Scroller | null => {
     const document_ = win.document;
@@ -133,7 +133,13 @@ const findScroller = (win: Window): Scroller | null => {
         return box.width >= win.innerWidth - 1 && box.height >= win.innerHeight - 1;
     };
 
-    const overlays = [...document_.querySelectorAll('.v-overlay--active')];
+    // An open temporary navigation drawer blocks the page behind its scrim like an overlay does,
+    // but it is not a `.v-overlay`.
+    const overlays = [
+        ...document_.querySelectorAll(
+            '.v-overlay--active, .v-navigation-drawer--temporary.v-navigation-drawer--active'
+        )
+    ];
     if (overlays.length > 0) {
         const scroller = overlays
             .flatMap((overlay) => [overlay, ...overlay.querySelectorAll('*')])
