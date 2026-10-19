@@ -7,11 +7,12 @@
  * `AppNavigation.vue`'s toggle.
  */
 import { getCookie, setCookie } from '@guebbit/js-toolkit';
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 
 /**
  * Name of the first-party cookie holding the visitor's own choice.
  */
-const COOKIE_NAME = 'themePreference';
+const COOKIE_NAME = BROWSER_STORAGE_NAME.themePreference;
 
 /**
  * How long the choice survives a closed browser — long enough that toggling once is the common

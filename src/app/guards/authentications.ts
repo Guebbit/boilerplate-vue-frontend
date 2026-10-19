@@ -8,6 +8,7 @@ import { storeToRefs } from 'pinia';
 import { useSessionStore, type PermissionAction } from '@/infrastructure/session';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import { signInLocation } from '@/app/router/navigation';
 import { translate } from '@/i18n';
 import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
@@ -135,7 +136,7 @@ export const canAccess = (
  */
 const restoreSessionIfNeeded = () => {
     const store = useSessionStore();
-    if (store.hasSession || !getCookie('isAuth')) return Promise.resolve();
+    if (store.hasSession || !getCookie(BROWSER_STORAGE_NAME.isAuth)) return Promise.resolve();
     return store
         .loadSessionMode()
         .then(() => store.restoreFromCookies())

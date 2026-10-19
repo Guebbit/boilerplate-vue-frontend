@@ -7,11 +7,12 @@
  * Every access is guarded: storage may be blocked, and an attempt that cannot be saved still works
  * for as long as the page lives.
  */
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 
 /**
  * The storage key.
  */
-export const CHECKOUT_ATTEMPT_STORAGE_KEY = 'checkout-attempt';
+export const CHECKOUT_ATTEMPT_STORAGE_KEY = BROWSER_STORAGE_NAME.checkoutAttempt;
 
 /**
  * A checkout attempt that has not ended yet.

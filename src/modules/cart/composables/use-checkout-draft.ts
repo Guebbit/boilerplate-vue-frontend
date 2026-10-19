@@ -5,6 +5,7 @@
  * so a reload (or a crashed tab) puts it back, a second user on the same tab never reads it, and it
  * dies with the tab. The delivery method is not here: the server's cart holds that.
  */
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import type { PaymentMethodId } from '@types';
 
 /** The fields a checkout remembers. */
@@ -18,7 +19,7 @@ export interface CheckoutDraft {
 }
 
 /** Every draft's key starts with this, so all of them can be dropped at once. */
-const KEY_PREFIX = 'checkout-draft:';
+const KEY_PREFIX = BROWSER_STORAGE_NAME.checkoutDraft;
 
 /**
  * @param userId - the signed-in user

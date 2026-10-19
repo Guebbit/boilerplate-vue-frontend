@@ -6,13 +6,14 @@
  * ACTUALLY broken still reaches the error page instead of reloading forever.
  * https://vitejs.dev/guide/build.html#load-error-handling
  */
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 
 /**
  * `sessionStorage` key marking "this tab already retried once" — a full page load clears nothing
  * in `sessionStorage`, which is exactly why it, not a module-level flag, is what survives the
  * reload the first attempt performs.
  */
-const RELOADED_ONCE_KEY = 'app:stale-deploy-reloaded';
+const RELOADED_ONCE_KEY = BROWSER_STORAGE_NAME.staleDeployReloaded;
 
 /**
  * Whether the failure `router.onError` is handling right now started life as a Vite

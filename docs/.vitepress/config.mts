@@ -156,7 +156,10 @@ export default withMermaid(
                     {
                         text: 'Interface',
                         collapsed: false,
-                        items: [{ text: 'Guided tours', link: '/tools/tours' }]
+                        items: [
+                            { text: 'Guided tours', link: '/tools/tours' },
+                            { text: 'Cookies and storage', link: '/tools/browser-storage' }
+                        ]
                     },
                     {
                         text: 'Testing & Mocking',

@@ -22,6 +22,7 @@
  */
 
 import { defineStore } from 'pinia';
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import { ref } from 'vue';
 import { mapValues } from 'lodash-es';
 import type { Faro, Instrumentation, TransportItem } from '@grafana/faro-web-sdk';
@@ -140,7 +141,7 @@ interface UmamiTracker {
  * The `localStorage` key the Umami tracker checks before every send: any truthy value silences it.
  * https://umami.is/docs/tracker-configuration
  */
-const UMAMI_OPT_OUT_KEY = 'umami.disabled';
+const UMAMI_OPT_OUT_KEY = BROWSER_STORAGE_NAME.umamiDisabled;
 
 /**
  * Sets or clears the tracker's own opt-out switch. Storage can be blocked (private mode, a

@@ -372,7 +372,7 @@
                     "I diritti della persona (accesso, rettifica, cancellazione, opposizione, portabilità)",
                     "Come revocare il consenso",
                     "Il diritto di presentare reclamo all'autorità di controllo",
-                    "Cookie e archiviazione (la forma di questa sezione è ancora da decidere)"
+                    "Cookie e archiviazione (la tabella sotto il segnaposto è generata dall'app; aggiungi ciò che non può sapere, come una terza parte che hai aggiunto)"
                 ]
             },
             "paragraphs": [
@@ -382,6 +382,120 @@
         "legal": {
             "title": "Note legali",
             "intro": "Chi gestisce questo negozio."
+        }
+    },
+    "browser-storage": {
+        "title": "Cookie e archiviazione",
+        "intro": "Tutto ciò che questo sito lascia nel tuo browser. Gli elementi strettamente necessari ti tengono connesso, conservano il carrello o ricordano una scelta che hai fatto, quindi non richiedono il tuo consenso.",
+        "columns": {
+            "name": "Nome",
+            "kind": "Tipo",
+            "setter": "Impostato da",
+            "party": "Parte",
+            "purpose": "Scopo",
+            "lifetime": "Durata",
+            "necessity": "Consenso"
+        },
+        "turnstile": "Il controllo anti-bot su alcuni moduli è Cloudflare Turnstile, una terza parte: carica uno script da Cloudflare e Cloudflare vede la tua visita a quel modulo.",
+        "checkout-draft-suffix": "seguito dall'id del tuo account",
+        "kind": {
+            "cookie": "Cookie",
+            "localStorage": "Archiviazione locale",
+            "sessionStorage": "Archiviazione di sessione"
+        },
+        "setter": {
+            "backend": "Il server del negozio",
+            "frontend": "Le pagine del negozio",
+            "library": "Una libreria nella pagina"
+        },
+        "party": {
+            "first": "Prima parte"
+        },
+        "necessity": {
+            "necessary": "Strettamente necessario",
+            "consent": "Solo dopo il tuo consenso"
+        },
+        "rows": {
+            "session": {
+                "purpose": "Ti mantiene connesso. Il negozio lo legge a ogni richiesta; lo script della pagina no.",
+                "lifetime": "Finché resti connesso: la sessione del browser, o 30 giorni se hai spuntato «Ricorda il mio accesso»"
+            },
+            "isAuth": {
+                "purpose": "Un indizio che eri connesso, così la pagina mostra il menu giusto prima che arrivi la prima risposta. Non contiene credenziali.",
+                "lifetime": "Quanto il cookie di sessione"
+            },
+            "rememberMe": {
+                "purpose": "Registra che hai spuntato «Ricorda il mio accesso» all'accesso.",
+                "lifetime": "30 giorni"
+            },
+            "device": {
+                "purpose": "Permette a un browser da cui hai già effettuato l'accesso di continuare ad accedere mentre qualcun altro prova a indovinare la tua password. Contiene un token firmato per account.",
+                "lifetime": "180 giorni"
+            },
+            "oauthState": {
+                "purpose": "Protegge un accesso con un provider esterno dalla falsificazione.",
+                "lifetime": "5 minuti"
+            },
+            "oauthVerifier": {
+                "purpose": "Dimostra che è lo stesso browser ad aver avviato un accesso con un provider esterno.",
+                "lifetime": "5 minuti"
+            },
+            "oauthContinue": {
+                "purpose": "Ricorda la pagina a cui tornare dopo l'accesso con un provider esterno.",
+                "lifetime": "5 minuti"
+            },
+            "oauthLocale": {
+                "purpose": "Ricorda la tua lingua durante un accesso con un provider esterno.",
+                "lifetime": "5 minuti"
+            },
+            "oauthLink": {
+                "purpose": "Ricorda che stai collegando un provider al tuo account già connesso.",
+                "lifetime": "5 minuti"
+            },
+            "oauthMfaChallenge": {
+                "purpose": "Porta il controllo del secondo passaggio di un accesso con un provider esterno.",
+                "lifetime": "Finché il controllo resta aperto, al massimo pochi minuti"
+            },
+            "themePreference": {
+                "purpose": "Ricorda se hai scelto l'aspetto chiaro o scuro.",
+                "lifetime": "1 anno"
+            },
+            "analyticsConsent": {
+                "purpose": "Ricorda la tua risposta al banner sulle analisi.",
+                "lifetime": "6 mesi, poi ti viene chiesto di nuovo"
+            },
+            "toursSeen": {
+                "purpose": "Ricorda quali percorsi guidati sono già stati mostrati in questo browser.",
+                "lifetime": "6 mesi dall'ultima modifica"
+            },
+            "guestCart": {
+                "purpose": "Conserva il carrello creato prima di accedere, solo in questo browser.",
+                "lifetime": "30 giorni dall'ultima modifica"
+            },
+            "guestCartMergeAttempt": {
+                "purpose": "Completa il passaggio del carrello al tuo account se la pagina è stata chiusa a metà.",
+                "lifetime": "Finché il passaggio non è confermato"
+            },
+            "checkoutDraft": {
+                "purpose": "Conserva ciò che hai scritto al checkout se la pagina si ricarica.",
+                "lifetime": "Finché non chiudi la scheda"
+            },
+            "checkoutAttempt": {
+                "purpose": "Evita che un checkout ritentato effettui l'ordine due volte.",
+                "lifetime": "Finché non chiudi la scheda"
+            },
+            "staleDeployReloaded": {
+                "purpose": "Evita che la pagina si ricarichi da sola più di una volta dopo la messa online di una nuova versione.",
+                "lifetime": "Finché non chiudi la scheda"
+            },
+            "umamiDisabled": {
+                "purpose": "L'interruttore «non inviare» del tracker di analisi, impostato quando rifiuti o ritiri il consenso.",
+                "lifetime": "Finché non accetti di nuovo"
+            },
+            "faroNavigation": {
+                "purpose": "Usato dalla libreria dei report di errore per collegare le visite alle pagine in un report. Impostato solo dopo che accetti le analisi.",
+                "lifetime": "Finché non cancelli i dati del sito"
+            }
         }
     },
     "tours": {

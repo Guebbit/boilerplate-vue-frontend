@@ -61,6 +61,7 @@ flowchart LR
 | Observability | **[Observability](./observability.md)**               | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store.                                    |
 | Observability | **[Umami](./umami.md)**                               | Product analytics events and the event taxonomy used in this repo.                                                                        |
 | Interface     | **[Guided tours](./tours.md)**                        | The first-login welcome tour and the page tours: how a module adds steps, the version bump, the switch.                                   |
+| Interface     | **[Cookies and storage](./browser-storage.md)**       | The one list of every cookie and storage key, and the privacy-page table rendered from it.                                                |
 | Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                                     |
 | Testing       | **[Design lint](./design-lint.md)**                   | ESLint and Vitest reading the source for design drift: tokens, arbitrary values, dialogs, hover-only cues.                                |
 | Testing       | **[Layout sweep](./layout-sweep.md)**                 | The a11y sweep at five device sizes: what overflows, is cut off, is covered, or is too small for a finger.                                |
