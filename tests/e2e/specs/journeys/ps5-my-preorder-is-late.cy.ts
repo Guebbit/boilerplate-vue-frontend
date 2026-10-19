@@ -80,7 +80,7 @@ describe('PS5 · My preorder is late', () => {
                     cy.apiAs('editor', 'PATCH', `/products/${productId}`, {
                         releaseDate: new Date(Date.now() + 24 * DAY_MS).toISOString()
                     });
-                    mailedToCustomer('Your preorder will arrive later than planned');
+                    mailedToCustomer('Part of your order will arrive later than planned');
                     cy.visit(`/en/orders/${first}`);
                     cy.get('[data-test=fulfillment-order-last-notice]').should('exist');
                     cy.get('[data-test=confirm-wait]').should('not.exist');
@@ -97,7 +97,7 @@ describe('PS5 · My preorder is late', () => {
                     cy.travel(25 * DAY_MS);
                     cy.runJob('sweep-preorders');
                     cy.loginAs('user');
-                    mailedToCustomer('Your preorder is late: do you want to keep waiting?');
+                    mailedToCustomer('Part of your order is late: do you want to keep waiting?');
                     cy.visit('/en');
                     cy.get('[data-test=notifications-bell]').click();
                     cy.get('[data-test=notifications-panel]')

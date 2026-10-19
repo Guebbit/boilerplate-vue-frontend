@@ -583,13 +583,13 @@ const submitForm = () => {
                             data-test="product-allow-backorder-field"
                         />
                         <v-text-field
+                            v-if="form.allowBackorder"
                             v-model="form.restockDate"
                             type="datetime-local"
                             :label="t('product-edit-page.label-restock-date')"
                             :hint="t('product-edit-page.hint-restock-date')"
                             persistent-hint
                             clearable
-                            :disabled="!form.allowBackorder"
                             data-test="product-restock-date-field"
                         />
                         <v-select

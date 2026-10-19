@@ -344,18 +344,39 @@
         },
         "terms": {
             "title": "Terms of service",
-            "paragraphs": [
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
-            ]
+            "placeholder": {
+                "notice": "Placeholder: this shop has not supplied its terms of sale. The operator must replace this text before going live.",
+                "checklist-title": "The real text must cover:",
+                "sections": [
+                    "Seller identity",
+                    "Prices and payment",
+                    "Delivery",
+                    "Preorder and backorder",
+                    "The 14-day right of withdrawal, with its model form",
+                    "The 2-year legal guarantee",
+                    "Complaints"
+                ]
+            }
         },
         "privacy": {
             "title": "Privacy",
+            "placeholder": {
+                "notice": "Placeholder: this shop has not supplied its privacy notice. The operator must replace this text before going live.",
+                "checklist-title": "The real text must cover:",
+                "sections": [
+                    "Who is responsible for the data, and how to reach them",
+                    "What data is collected, why, and on which legal basis",
+                    "Who receives the data (processors and other recipients)",
+                    "Transfers outside the EU",
+                    "How long the data is kept",
+                    "The rights of the person (access, correction, erasure, objection, portability)",
+                    "How to withdraw consent",
+                    "The right to complain to the supervisory authority",
+                    "Cookies and storage (the shape of this section is still to be decided)"
+                ]
+            },
             "paragraphs": [
-                "Analytics: when it is configured, this site measures pageviews with a self-hosted Umami tracker, but only after you accept the analytics banner. That includes the address of each page, your browser language and screen size, and the page you came from. Decline, or withdraw from \"Privacy choices\" in the footer, and the tracker does not load or stops sending. If you are signed in, your account id is attached to what is recorded.",
-                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
+                "Analytics: when it is configured, this site measures pageviews with a self-hosted Umami tracker, but only after you accept the analytics banner. That includes the address of each page, your browser language and screen size, and the page you came from. Decline, or withdraw from \"Privacy choices\" in the footer, and the tracker does not load or stops sending. If you are signed in, your account id is attached to what is recorded."
             ]
         },
         "legal": {

@@ -130,7 +130,9 @@ describe('N2 · Withdraw after delivery', () => {
             cy.switchUser('user');
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=order-return]').should('have.length', 1);
-            cy.get('[data-test=withdraw-button]').should('not.exist');
+            // Nothing is left to withdraw: the button stays, switched off, with the reason beside it.
+            cy.get('[data-test=withdraw-button]').should('be.disabled');
+            cy.get('[data-test=withdraw-blocked-reason]').should('exist');
             cy.get('[data-test=payment-partially-refunded]').should('exist');
             cy.get('[data-test=order-credit-note-row]').should('have.length', 1);
             idFromLocation().should('equal', orderId);

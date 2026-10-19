@@ -12,6 +12,7 @@
  * clock lets the page's countdown notice.
  */
 import { skipUnlessSessionMode } from '../../../support/e2e/harness';
+import { answerChallengePage } from '../../../support/e2e/login-challenge';
 
 /** One minute, in milliseconds. */
 const MINUTE_MS = 60_000;
@@ -37,9 +38,6 @@ describe('FR20 · My staff session idled out with a form open', () => {
             const editPath = `/en/products/${productId}/edit`;
 
             cy.step('the editor opens the edit form and types a price');
-            // The browser clock starts as a Date-only clock before the page loads, as
-            // `travelEverywhere` expects.
-            cy.clock(Date.now(), ['Date']);
             cy.loginAs('editor');
             cy.visit(editPath);
             cy.get('[data-test=product-price-field] input').should('not.have.value', '');
@@ -49,20 +47,37 @@ describe('FR20 · My staff session idled out with a form open', () => {
             cy.step('at 28.5 idle minutes the dialog opens and holds focus');
             cy.travelEverywhere(28.5 * MINUTE_MS);
             cy.get('[data-test=idle-session-dialog]').should('be.visible');
-            cy.focused().closest('[data-test=idle-session-dialog]').should('exist');
+            // Vuetify moves focus to the overlay's content element, which carries the dialog's role
+            // and wraps the card.
+            cy.focused().closest('[role=alertdialog]').should('exist');
 
             cy.step('Stay counts the session active, closes the dialog and keeps the value');
-            cy.intercept('POST', '**/account/session/touch').as('touch');
+            const touched: number[] = [];
+            cy.intercept('POST', '**/account/session/touch', (request) => {
+                request.continue((response) => {
+                    touched.push(response.statusCode);
+                });
+            });
             cy.get('[data-test=idle-session-stay]').click();
-            cy.wait('@touch').its('response.statusCode').should('be.within', 200, 299);
+            // The jump aged the access token too, so the first touch may be a 401 that the app
+            // refreshes and repeats: one of the answers must be a success.
+            cy.wrap(touched).should('satisfy', (codes: number[]) =>
+                codes.some((code) => code >= 200 && code < 300)
+            );
             cy.get('[data-test=idle-session-dialog]').should('not.exist');
             cy.get('[data-test=product-price-field] input').should('have.value', FIRST_PRICE);
 
             cy.step('ten minutes later the save still lands');
             cy.travelEverywhere(10 * MINUTE_MS);
-            cy.intercept('PATCH', `**/products/${productId}`).as('save');
+            const saved: number[] = [];
+            cy.intercept('PATCH', `**/products/${productId}`, (request) => {
+                request.continue((response) => {
+                    saved.push(response.statusCode);
+                });
+            });
             cy.get('form').first().submit();
-            cy.wait('@save').its('response.statusCode').should('equal', 200);
+            // Again the access token has aged: a 401 is refreshed and repeated, and the repeat saves.
+            cy.wrap(saved).should('include', 200);
 
             cy.step('left alone past the staff limit the session ends and the page is remembered');
             cy.get('[data-test=product-price-field] input').clear();
@@ -74,12 +89,14 @@ describe('FR20 · My staff session idled out with a form open', () => {
             });
 
             cy.step('signing in again lands on the same edit page');
-            cy.accountOf('editor').then(({ email, password }) => {
+            cy.accountOf('editor').then(({ email, password, totpSecret }) => {
                 cy.get('[type=email]').should('not.be.disabled').clear();
                 cy.get('[type=email]').type(email);
                 cy.get('[type=password]').clear();
                 cy.get('[type=password]').type(password);
                 cy.get('form').submit();
+                // A staff account asks the code of its authenticator app next.
+                if (totpSecret) answerChallengePage(totpSecret);
             });
             cy.location('pathname').should('equal', editPath);
         });
