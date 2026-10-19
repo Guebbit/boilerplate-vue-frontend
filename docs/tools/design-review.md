@@ -205,10 +205,24 @@ its scope changed since.
 
 ## Does it work?
 
-Not measured yet. The first full run on the whole app is the calibration: shots, tiles, wall time,
-the batch budgets, the counts (proposed → refuted → confirmed) and whether a planted defect (a
-`text` submit beside a filled cancel on a create form) is caught. This section holds those numbers
-once they exist.
+The capture is measured; the review that reads it is not. First full capture, 2026-10-20, whole app:
+
+| What      | Measured                                                        |
+| --------- | --------------------------------------------------------------- |
+| Specs     | 31, all passing (432 tests)                                     |
+| Shots     | 428: 214 phone, 70 tablet, 144 desktop                          |
+| States    | 280 first paint, 46 prepared, 62 error, 20 loading, 20 empty    |
+| Tiles     | 800 (68 MB of PNG)                                              |
+| Wall time | 29 minutes, holding the e2e lock                                |
+| Batches   | 52, each about 3,000 to 24,000 tokens by the planner's estimate |
+
+The first run failed on 5 shots and found two capture bugs, both fixed: a desktop-only menu was
+shot at a phone, where its button is hidden, and an open navigation drawer was stitched as a
+scrolling page whose fixed bands filled the viewport. Neither was a design defect.
+
+Not measured yet: the counts (proposed → refuted → confirmed) and whether the planted defect (a
+`text` submit beside a filled cancel on a create form) is caught. They need a run of the review
+itself over these batches.
 
 ## Related pages
 
