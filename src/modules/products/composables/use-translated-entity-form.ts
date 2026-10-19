@@ -109,7 +109,7 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
     });
 
     /** Form state and the server-error helper, taken off the toolkit's validation handle. */
-    const { form, showFormErrors, applyServerErrors } = validation;
+    const { form, showFormErrors, applyServerErrors, isDirty, setInitialData } = validation;
 
     /**
      * Which language tabs are open, fallback first — derived from `form.translations` itself, so a
@@ -133,15 +133,19 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
     );
 
     // A create's fallback slot is only ever ADDED, never re-checked: it cannot be removed.
+    // On a form nobody has touched the seeded slot is part of the baseline too, or a pristine
+    // create would read dirty and ask before the visitor leaves.
     if (options.seedFallback)
         watch(
             options.fallbackLocale,
             (fallback) => {
                 if (!fallback || fallback in form.value.translations) return;
+                const wasClean = !isDirty.value;
                 form.value.translations = {
                     ...form.value.translations,
                     [fallback]: blankTranslation()
                 };
+                if (wasClean) setInitialData(form.value);
             },
             { immediate: true }
         );
