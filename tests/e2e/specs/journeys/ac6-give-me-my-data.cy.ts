@@ -9,9 +9,18 @@
  * The file is read from disk, and compared with what the API sent, so the proof is about the
  * thing the person actually receives and not only the response behind it. Needs the mail outbox
  * for the link.
+ *
+ * On the demo backend a second story ages the link: a week on, the kept file is swept, the same
+ * link answers that the export is gone, and asking again mails a new one.
  */
 import { expectMailTemplate, mailedLinkUrl } from '../../../support/e2e/commands';
 import type { MailedEmail } from '../../../../scripts/e2e/mail-message';
+
+/** One hour, in milliseconds. */
+const HOUR_MS = 60 * 60 * 1000;
+
+/** One day, in milliseconds. */
+const DAY_MS = 24 * HOUR_MS;
 
 /** The shapes a secret would take as a key name: none of them may appear anywhere in the export. */
 const SECRET_KEY = /password|token|secret|hash/i;
@@ -138,6 +147,52 @@ describe('AC6 · Give me my data', () => {
         cy.visit('/en/profile');
         cy.get('[data-test=profile-export-data] button').click();
         cy.wait('@export').its('response.statusCode').should('equal', 202);
+        cy.get<string>('@email').then((email) => {
+            cy.get<string>('@firstLink').then((firstLink) => {
+                cy.emailTo(email, (mail) => exportLinkOf(mail) !== firstLink).then((mail) => {
+                    cy.visit(exportLinkOf(mail));
+                });
+            });
+        });
+        cy.get('[data-test=account-export-download]').click();
+        cy.wait('@download').its('response.statusCode').should('equal', 200);
+    });
+
+    it('a link older than a week finds its file gone, and a new request mails a new link', () => {
+        cy.skipUnlessDemo();
+        cy.skipUnlessMailbox();
+        cy.step('the customer asks for the export and opens the mailed link once');
+        cy.loginAs('user');
+        cy.visit('/en/profile');
+        cy.intercept('POST', '**/account/export').as('export');
+        cy.get('[data-test=profile-export-data] button').click();
+        cy.wait('@export').its('response.statusCode').should('equal', 202);
+        cy.accountOf('user').then(({ email }) => {
+            cy.wrap(email).as('email');
+            cy.emailTo(email).then((mail) => {
+                cy.wrap(exportLinkOf(mail)).as('firstLink');
+            });
+        });
+
+        cy.step('a week and an hour pass, and the sweep removes the kept file');
+        cy.travel(7 * DAY_MS + HOUR_MS);
+        cy.runJob('reap-account-exports').its('job').should('equal', 'reap-account-exports');
+
+        cy.step('signed in again, the old link says the export is gone');
+        cy.logout();
+        cy.loginAs('user');
+        cy.get<string>('@firstLink').then((firstLink) => {
+            cy.visit(firstLink);
+        });
+        cy.get('[data-test=account-export-download]').click();
+        cy.get('[data-test=account-export-error]').should('be.visible');
+        cy.contains('An export is kept for a few days').should('be.visible');
+
+        cy.step('asking again mails a new link, and that file downloads');
+        cy.visit('/en/profile');
+        cy.get('[data-test=profile-export-data] button').click();
+        cy.wait('@export').its('response.statusCode').should('equal', 202);
+        cy.intercept('GET', '**/account/export/*').as('download');
         cy.get<string>('@email').then((email) => {
             cy.get<string>('@firstLink').then((firstLink) => {
                 cy.emailTo(email, (mail) => exportLinkOf(mail) !== firstLink).then((mail) => {

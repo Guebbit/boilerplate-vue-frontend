@@ -7,6 +7,9 @@
  * the deadline is read off the order (`actions.withdrawUntil`), so a deployment that offers longer
  * than the law's fourteen days changes nothing in the story.
  *
+ * The legal guarantee outlives the withdrawal, so after the last day the form is still there for
+ * faulty goods, without the withdrawal among its reasons.
+ *
  * Two parts. An order delivered long ago is shut on any profile. The walk up to the deadline moves the
  * demo backend's clock, so it runs on the demo profile only.
  */
@@ -141,6 +144,12 @@ describe('CU23 · The days run out', () => {
                 'withdrawal period'
             );
             apiRefusesWithdrawal(orderId);
+
+            cy.step('a faulty item can still come back: the form offers it, but not a withdrawal');
+            cy.get('[data-test=return-request-open]').click();
+            cy.get('[data-test=return-reason]').click();
+            cy.get('[role=listbox] [role=option]').should('contain.text', 'Defective goods');
+            cy.get('[role=listbox] [role=option]').should('not.contain.text', 'Withdrawal');
         });
     });
 });

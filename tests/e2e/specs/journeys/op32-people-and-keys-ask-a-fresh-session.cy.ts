@@ -3,10 +3,10 @@
  * @module
  * OP32 · People and keys ask a fresh session. Handing out a role, creating an
  * account with a role and minting an API key all ask the administrator for the password once the
- * sign-in is older than five minutes (the critical window). Editing a phone and revoking a key do
- * not. (Taking a role away asks too: the route reads any body that names `role`, `null` included.
- * It is not walked here.) The dialog opens in the middle of the action: a wrong
- * password keeps it up, the right one carries on with the same action once.
+ * sign-in is older than five minutes (the critical window), and so does taking a role away (the
+ * route reads any body that names `role`, `null` included). Editing a phone and revoking a key do
+ * not. The dialog opens in the middle of the action: a wrong password keeps it up, the right one
+ * carries on with the same action once.
  *
  * Time passes by moving the demo backend's clock, so this is a demo-only journey. Each jump is
  * past the window and inside the staff idle limit, which the requests between jumps reset.
@@ -63,7 +63,7 @@ describe('OP32 · People and keys ask a fresh session', () => {
         cy.visit('/en');
     });
 
-    it('a role grant, an account with a role and a key each ask; a phone and a revoke do not', () => {
+    it('a role grant or removal, an account with a role and a key each ask; a phone and a revoke do not', () => {
         cy.skipUnlessDemo();
 
         cy.accountInRole('unverified').then(({ id: targetId }) => {
@@ -87,6 +87,16 @@ describe('OP32 · People and keys ask a fresh session', () => {
             cy.get('[data-test=user-edit-phone] input').type('+39 02 0000 1111');
             cy.get('#user-edit-page form').submit();
             cy.get('[data-test=reauth-dialog]').should('not.exist');
+
+            // No jump of its own: the phone edit above never asked, so the password given for the
+            // grant is still 400 s old here, past the critical window.
+            cy.step('taking the role away asks too, and the person is a customer again');
+            pickRole(targetId, 'No staff role (customer)');
+            wrongThenRight();
+            eventually(
+                () => cy.apiAs<UserLike>('admin', 'GET', `/users/${targetId}`),
+                (user) => user?.role !== 'warehouse'
+            );
 
             cy.step('creating an account with a role asks');
             cy.travel(PAST_CRITICAL_MS);

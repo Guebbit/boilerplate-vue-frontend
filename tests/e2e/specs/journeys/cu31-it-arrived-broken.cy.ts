@@ -156,6 +156,11 @@ describe('CU31 · It arrived broken', () => {
                     );
                     orderMailTo('user', orderId, 'Your return was approved');
 
+                    cy.step('support reading the same order is not offered the customer’s form');
+                    cy.visit(`/en/orders/${orderId}`);
+                    cy.get('#order-target').should('exist');
+                    cy.get('[data-test=return-request-open]').should('not.exist');
+
                     cy.step(
                         'the warehouse receives it with a deduction: the goods only, no shipping'
                     );
