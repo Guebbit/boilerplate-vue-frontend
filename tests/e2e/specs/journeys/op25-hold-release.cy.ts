@@ -3,12 +3,17 @@
  * @module
  * OP25 · Hold a group back, then let it go. The seeded order sits on a staff hold ("High risk"):
  * its card says so, offers no ship button and a release one. Releasing makes it shippable again;
- * holding it once more asks for a reason and an optional note, and the card and the order's
- * fulfilment status follow.
+ * holding it once more asks for a reason, an optional note and an optional message for the buyer,
+ * and the card and the order's fulfilment status follow. The buyer reads a notice, never the
+ * staff reason, and is mailed when they can act on it.
  *
  * The staff reasons are three (`awaiting_stock` belongs to the stock itself and is never offered),
  * and the buttons come from the card's own actions — the screen holds no rule of its own.
  */
+import { mailMentions } from '../../../../scripts/e2e/mail-message';
+
+/** What staff write for the buyer when they hold the group back. */
+const BUYER_MESSAGE = 'Is the flat number right?';
 
 /** The slice of an order this story reads. */
 interface OrderLike {
@@ -61,6 +66,7 @@ describe('OP25 · Hold a group back, then let it go', () => {
             cy.get('[role=listbox] [role=option]').should('have.length', 3);
             cy.get('[role=listbox] [role=option]').contains('Incorrect address').click();
             cy.get('[data-test=hold-note] textarea').type('call the buyer first');
+            cy.get('[data-test=hold-message] textarea').type(BUYER_MESSAGE);
             cy.get('[data-test=hold-submit]').should('not.be.disabled').click();
             cy.get('[data-test=hold-dialog]').should('not.exist');
 
@@ -78,6 +84,16 @@ describe('OP25 · Hold a group back, then let it go', () => {
             cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
                 .its('fulfillmentStatus')
                 .should('equal', 'on_hold');
+
+            cy.step('an address the buyer can fix is mailed to them, with the shop’s message');
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(
+                    email,
+                    (mail) =>
+                        mail.subject.includes('check the delivery address') &&
+                        mailMentions(mail, BUYER_MESSAGE)
+                );
+            });
 
             cy.step('the hold dialog’s Cancel writes nothing');
             cy.get('[data-test=release]').click();
@@ -126,6 +142,12 @@ describe('OP25 · Hold a group back, then let it go', () => {
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=order-timeline]').should('exist');
             cy.get('[data-test=fulfillment-order-note]').should('not.exist');
+
+            cy.step('the buyer reads a notice, never the staff reason');
+            cy.get('[data-test=fulfillment-order-hold-reason]').should('not.exist');
+            cy.get('[data-test=fulfillment-order-hold-notice]')
+                .should('have.attr', 'data-notice', 'delayed')
+                .and('contain.text', 'held back for a moment');
             cy.get('[data-test=order-timeline-entry][data-type=fulfillment_held]').should(
                 'not.exist'
             );

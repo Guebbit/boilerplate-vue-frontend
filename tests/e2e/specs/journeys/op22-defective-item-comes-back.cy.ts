@@ -228,8 +228,16 @@ describe('OP22 · A defective item comes back', () => {
                     });
                     cy.visit(`/en/orders/${declined?.orderId}`);
                     cy.get('[data-test=return-request-open]').click();
-                    for (const { productId } of declined?.lines ?? [])
+                    for (const { productId, quantity } of declined?.lines ?? []) {
                         cy.get(`[data-test=return-line-pick-${productId}]`).should('exist');
+                        cy.get(`[data-test=return-line-pick-${productId}] input`).check({
+                            force: true
+                        });
+                        cy.get(`[data-test=return-line-quantity-${productId}]`).should(
+                            'contain.text',
+                            `up to ${String(quantity)}`
+                        );
+                    }
                 });
             });
         });

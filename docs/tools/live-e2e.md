@@ -72,7 +72,7 @@ flowchart LR
 
 ## The role sweep
 
-`sweepRoles(label, cases)` (`tests/support/e2e/role-sweep.ts`) signs each persona in once, with `cy.loginAsFast` (one `POST /account/login` and the `isAuth` hint, no form), and walks a module's pages. Each module's `roles.cy.ts` holds its case list. What a persona may open is derived from its own `GET /account/abilities`, evaluated like `session.can` (both scopes), never typed. An allowed page must render, keep its path and call no door that answers 401 or 403; a refused one turns the visitor back.
+`sweepRoles(label, cases)` (`tests/support/e2e/role-sweep.ts`) signs each persona in once, with `cy.loginAsFast` (one `POST /account/login` and the `isAuth` hint, no form), and walks a module's pages. Each module's `roles.cy.ts` holds its case list. What a persona may open is derived from its own `GET /account/abilities`, evaluated like `session.can` (both scopes), never typed. An allowed page must render, keep its path and call no door that answers 401 or 403; a refused one turns the visitor back. The jwt leg only: the doors a page calls do not depend on how the session is kept.
 
 ## A backend with a boot-time knob
 

@@ -118,6 +118,16 @@ describe('OP30 · Ship in part, correct a tracking code', () => {
                     false
             );
 
+            cy.step('the buyer is mailed the right code, under its own subject');
+            cy.accountOf('user').then(({ email }) => {
+                cy.emailTo(
+                    email,
+                    (mail) =>
+                        mail.subject.includes('tracking code of your shipment changed') &&
+                        mailMentions(mail, FIXED)
+                );
+            });
+
             cy.step('the dialog goes stale: someone else ships the rest first');
             cy.get('[data-test=open-ship]').click();
             fulfilmentOf(orderId).then((fulfilment) => {

@@ -7,8 +7,7 @@
  * banned the key reads nothing, lifting the ban brings it back, and a demoted minter's key floors
  * to the customer rules they hold now.
  *
- * The status a banned minter's key answers is asserted as "not a success" on purpose: it is a
- * guest-level refusal today and a 401 once a banned minter's key is refused like a revoked one.
+ * A banned minter's key is refused like a revoked one: 401.
  */
 import { requestWithKey, loginDevice } from '../../../support/e2e/harness';
 import { datetimeLocalIn } from '../../../support/e2e/integrator';
@@ -91,7 +90,7 @@ describe('IN2 · A key follows its minter', () => {
                     cy.step('while banned the key reads nothing');
                     requestWithKey(secret, 'GET', '/webhooks/subscriptions')
                         .its('status')
-                        .should('not.be.within', 200, 299);
+                        .should('equal', 401);
 
                     cy.step('lifting the ban brings the key back');
                     cy.apiAs('admin', 'PATCH', `/users/${minterId}`, { active: true });

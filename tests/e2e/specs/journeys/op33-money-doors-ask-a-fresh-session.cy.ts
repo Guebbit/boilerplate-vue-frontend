@@ -3,8 +3,9 @@
  * @module
  * OP33 · The shop's money doors ask a fresh session. A manager exporting the orders asks for the
  * password after fifteen minutes (the sensitive window), and cancelling someone's paid order or a
- * moderator recording an offline payment ask after five (the critical window). A customer
- * cancelling their own order never asks, however old the sign-in.
+ * moderator recording an offline payment or cancelling the rest of a part-shipped order ask after
+ * five (the critical window). A customer cancelling their own order never asks, however old the
+ * sign-in.
  *
  * Time passes by moving the demo backend's clock, so this is a demo-only journey.
  */
@@ -21,6 +22,12 @@ const BANK_REFERENCE = 'OP33-TRANSFER-1';
 
 /** The slice of an order this story reads. */
 interface OrderLike {
+    status: string;
+}
+
+/** The slice of a return this story reads: that the remainder was cancelled. */
+interface CancellationLike {
+    kind: string;
     status: string;
 }
 
@@ -45,7 +52,7 @@ describe('OP33 · The money doors ask a fresh session', () => {
         cy.visit('/en');
     });
 
-    it('the export, a staff cancel and an offline payment ask; a customer’s own cancel does not', () => {
+    it('the export, a staff cancel, an offline payment and a remainder cancel ask; a customer’s own cancel does not', () => {
         cy.skipUnlessDemo();
 
         cy.step('the manager’s sign-in grows past the sensitive window: the export asks');
@@ -99,6 +106,28 @@ describe('OP33 · The money doors ask a fresh session', () => {
             eventually(
                 () => cy.apiAs<OrderLike>('moderator', 'GET', `/orders/${orderId}`),
                 (order) => order?.status === 'paid'
+            );
+        });
+
+        cy.step('a stale moderator cancelling the rest of a part-shipped order asks too');
+        cy.travel(PAST_CRITICAL_MS);
+        cy.subjectId('order.partiallyFulfilled').then((orderId) => {
+            cy.visit(`/en/orders/${orderId}`);
+            cy.get('[data-test=cancel-remainder-open]').click();
+            cy.get('[data-test=cancel-remainder-confirm]').click();
+            answerAs('moderator');
+            cy.get('[data-test=cancel-remainder-dialog]').should('not.exist');
+            eventually(
+                () =>
+                    cy.apiAs<{ items: CancellationLike[] }>(
+                        'moderator',
+                        'GET',
+                        `/returns?orderId=${orderId}`
+                    ),
+                (page) =>
+                    page?.items.some(
+                        ({ kind, status }) => kind === 'cancellation' && status === 'closed'
+                    ) ?? false
             );
         });
     });

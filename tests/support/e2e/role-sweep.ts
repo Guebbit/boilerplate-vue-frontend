@@ -3,6 +3,7 @@
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
 import type { E2ERole } from '../scenario-description';
+import { skipUnlessSessionMode } from './harness';
 import { adminMenuLinks, isTurnedBack } from './steps';
 
 /**
@@ -211,7 +212,10 @@ export const sweepRoles = (
 ): void => {
     describe(`roles — ${label}`, () => {
         for (const persona of personas)
-            it(`${persona} gets the pages its rules allow and none else`, () => {
+            it(`${persona} gets the pages its rules allow and none else`, function () {
+                // The jwt leg only: the pages and the doors they call do not depend on how the
+                // session is kept, so the cookie leg would repeat the same walk.
+                skipUnlessSessionMode(this, 'jwt');
                 const refusals: number[] = [];
                 cy.restore();
                 cy.loginAsFast(persona);
