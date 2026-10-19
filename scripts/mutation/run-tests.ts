@@ -2,7 +2,7 @@
 /**
  * Runs Stryker — `npm run test:mutation`.
  *
- * A wrapper rather than a bare `stryker run`, for three jobs a JSON config cannot do.
+ * A wrapper rather than a bare `stryker run`, for four jobs a JSON config cannot do.
  *
  * The backend has the same wrapper at `scripts/mutation/run-tests.ts` — same shape, not the same
  * bytes. It cleans a different scratch root, because its runner starts an in-memory MongoDB per
@@ -34,11 +34,20 @@
  * so caches nothing per mutant. The guard is here anyway because the property that keeps it true is
  * a configuration choice rather than a law: see
  * `docs/tools/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop`.
+ *
+ * ── 4. A PARTIAL RUN KEEPS THE REPORT WHOLE ──────────────────────────────────────────────────────
+ * Stryker writes `reports/mutation/mutation.json` from scratch, so `--mutate <file>` would leave a
+ * report of one file. Instead the run is laid over the report that was there (`overlay.ts`): that
+ * file takes the new result, the rest keep theirs — a pulled nightly stays whole.
+ * See `docs/tools/mutation-testing.md#which-file-is-what`.
  */
 import { spawn } from 'node:child_process';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { MUTATION_REPORT_PATH } from './baseline';
+import { overlayReport, renderHtml, type StrykerReport } from './overlay';
 
 /*
  * Two levels: this file is `scripts/mutation/run-tests.ts`, so one `..` reaches `scripts/` and
@@ -143,6 +152,43 @@ const childEnvironment = {
         : {})
 };
 
+/** The report Stryker writes. */
+const reportFile = path.join(REPO_ROOT, MUTATION_REPORT_PATH);
+
+/** Stryker's HTML page, beside the report. */
+const pageFile = path.join(path.dirname(reportFile), 'index.html');
+
+/** Reads a Stryker JSON report. */
+const readStrykerReport = (file: string): StrykerReport =>
+    JSON.parse(readFileSync(file, 'utf8')) as StrykerReport;
+
+/** Whether this run mutates only some files — Stryker's `--mutate`, long or short. */
+const partial = passthrough.some(
+    (argument) => argument === '--mutate' || argument === '-m' || argument.startsWith('--mutate=')
+);
+
+/** The report on disk before a partial run, and when it was written; a full run replaces it. */
+const previous =
+    partial && existsSync(reportFile)
+        ? { report: readStrykerReport(reportFile), writtenAt: statSync(reportFile).mtimeMs }
+        : undefined;
+
+/**
+ * Lays a partial run's report over the one that was on disk, and redraws the page from the result.
+ * Skipped when Stryker wrote no new report.
+ */
+const keepReportWhole = (): void => {
+    if (!previous || statSync(reportFile).mtimeMs === previous.writtenAt) return;
+
+    const merged = overlayReport(previous.report, readStrykerReport(reportFile));
+    writeFileSync(reportFile, JSON.stringify(merged));
+    writeFileSync(pageFile, renderHtml(readFileSync(pageFile, 'utf8'), merged));
+    console.log(
+        `[mutation] ${MUTATION_REPORT_PATH}: this run laid over the report already there, ` +
+            `${Object.keys(merged.files).length} files in it.`
+    );
+};
+
 /** Runs Stryker, watches its output for the OOM restart loop and mirrors its exit code. */
 const main = async () => {
     await rm(SANDBOX_ROOT, { recursive: true, force: true });
@@ -187,7 +233,9 @@ const main = async () => {
     });
 
     stryker.on('exit', (code) => {
-        process.exit(abortedForOom ? 1 : (code ?? 1));
+        if (abortedForOom) process.exit(1);
+        keepReportWhole();
+        process.exit(code ?? 1);
     });
 };
 

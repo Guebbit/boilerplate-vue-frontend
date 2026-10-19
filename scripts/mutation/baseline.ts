@@ -43,8 +43,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-/** Where `stryker.config.json`'s `jsonReporter` writes, and where the baseline is committed. */
-const MUTATION_REPORT_PATH = 'reports/mutation/mutation.json';
+/** Where `stryker.config.json`'s `jsonReporter` writes. */
+export const MUTATION_REPORT_PATH = 'reports/mutation/mutation.json';
 
 /** Where the committed baseline lives, relative to the repo root. */
 export const MUTATION_BASELINE_PATH = 'mutation-baseline.json';
