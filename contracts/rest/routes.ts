@@ -222,6 +222,8 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "DELETE", pattern: /^\/stock-alerts\/[^/]+$/, schemaName: "DeleteStockAlertResponse", bodySchemaName: undefined, module: "stock-alerts" },
     { method: "POST", pattern: /^\/stock-alerts\/[^/]+$/, schemaName: "CreateStockAlertResponse", bodySchemaName: undefined, module: "stock-alerts" },
     { method: "DELETE", pattern: /^\/users\/[^/]+\/hard$/, schemaName: "HardDeleteUserByIdResponse", bodySchemaName: undefined, module: "users" },
+    { method: "DELETE", pattern: /^\/users\/[^/]+\/purchase-hold$/, schemaName: "LiftUserPurchaseHoldResponse", bodySchemaName: undefined, module: "users" },
+    { method: "PUT", pattern: /^\/users\/[^/]+\/purchase-hold$/, schemaName: "SetUserPurchaseHoldResponse", bodySchemaName: "SetUserPurchaseHoldBody", module: "users" },
     { method: "POST", pattern: /^\/users\/[^/]+\/restore$/, schemaName: "RestoreUserByIdResponse", bodySchemaName: undefined, module: "users" },
     { method: "DELETE", pattern: /^\/users\/[^/]+$/, schemaName: "DeleteUserByIdResponse", bodySchemaName: "DeleteUserByIdBody", module: "users" },
     { method: "GET", pattern: /^\/users\/[^/]+$/, schemaName: "GetUserByIdResponse", bodySchemaName: undefined, module: "users" },

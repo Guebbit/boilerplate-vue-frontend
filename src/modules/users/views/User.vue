@@ -18,7 +18,7 @@ export default {
  * alone, so there is no staff control for a password or a second factor.
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
@@ -29,7 +29,7 @@ import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { Calendar, Circle, Clock, Hash, Mail, Shield, User } from 'lucide-vue-next';
+import { Calendar, Circle, Clock, Hash, Mail, CirclePause, Shield, User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -38,6 +38,9 @@ import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
+import UserPurchaseHoldDialog from '../components/UserPurchaseHoldDialog.vue';
+import { useDialogStore } from '@/ui/dialog.ts';
+import type { SetPurchaseHoldRequest } from '@types';
 import { formatText, formatDateTime, formatFlag } from '@/infrastructure/utils/formatters.ts';
 
 /**
@@ -190,6 +193,80 @@ const handleManageAccess = () => {
             .catch((error: unknown) => reportAccessError(error));
     });
 };
+
+/**
+ * The purchase-hold writes, and the confirm dialog that guards lifting one.
+ */
+const { setPurchaseHold, liftPurchaseHold } = useUsersStore();
+
+/**
+ * The shared confirmation dialog.
+ */
+const dialog = useDialogStore();
+
+/**
+ * Whether the "pause checkout" form is open.
+ */
+const holdDialogOpen = ref(false);
+
+/**
+ * This action's own blocked state, next to the buttons that start it.
+ */
+const { message: holdError, report: reportHoldError, clear: clearHoldError } = useBlockingError();
+
+/**
+ * The hold line shown under the details: what holds checkout, and until when. `undefined` when
+ * the account is free to buy (the API leaves an ended or lifted hold out of the record).
+ */
+const holdSummary = computed(() => {
+    const hold = currentUser.value?.purchaseHold;
+    if (!hold) return;
+    return t(
+        hold.reason === 'staff'
+            ? 'user-target-page.purchase-hold-staff'
+            : 'user-target-page.purchase-hold-automatic',
+        { date: formatDateTime(hold.until) }
+    );
+});
+
+/**
+ * Pauses checkout with what the dialog collected.
+ *
+ * @param hold - The end date and optional note.
+ * @returns A promise settling once the write finished; a failure blocks in place ({@link holdError}).
+ */
+const handleSetHold = (hold: SetPurchaseHoldRequest) => {
+    const target = currentUser.value;
+    holdDialogOpen.value = false;
+    if (!target) return;
+    clearHoldError();
+    return setPurchaseHold(target.id, hold)
+        .then(() => addMessage(t('user-target-page.success-hold-set')))
+        .catch((error: unknown) => reportHoldError(error));
+};
+
+/**
+ * Lifts the hold after a confirmation that names the account: this is also the staff review, and
+ * it restarts the count of cancellations.
+ *
+ * @returns A promise settling once the dialog closed and, if accepted, the write finished.
+ */
+const handleLiftHold = () => {
+    const target = currentUser.value;
+    if (!target) return;
+    return dialog
+        .confirm({
+            message: t('user-target-page.confirm-lift-hold', { name: target.username }),
+            confirmLabel: t('user-target-page.button-lift-hold')
+        })
+        .then((accepted) => {
+            if (!accepted) return;
+            clearHoldError();
+            return liftPurchaseHold(target.id)
+                .then(() => addMessage(t('user-target-page.success-hold-lifted')))
+                .catch((error: unknown) => reportHoldError(error));
+        });
+};
 </script>
 
 <template>
@@ -254,6 +331,13 @@ const handleManageAccess = () => {
                         </v-chip>
                     </ItemDetailField>
                     <ItemDetailField
+                        :label="t('user-target-page.label-purchase-hold')"
+                        :value="holdSummary ?? t('user-target-page.purchase-hold-none')"
+                        :icon="CirclePause"
+                        data-test="user-purchase-hold"
+                        full-width
+                    />
+                    <ItemDetailField
                         :label="t('user-target-page.label-updated-at')"
                         :value="formatDateTime(currentUser.updatedAt)"
                         :icon="Clock"
@@ -301,6 +385,27 @@ const handleManageAccess = () => {
                 >
                     {{ t('user-target-page.button-history') }}
                 </v-btn>
+                <div v-if="currentUser?.actions?.ban" class="flex flex-col gap-2">
+                    <v-btn
+                        v-if="currentUser.purchaseHold"
+                        variant="tonal"
+                        color="secondary"
+                        data-test="user-lift-hold"
+                        @click="handleLiftHold"
+                    >
+                        {{ t('user-target-page.button-lift-hold') }}
+                    </v-btn>
+                    <v-btn
+                        v-else
+                        variant="tonal"
+                        color="secondary"
+                        data-test="user-pause-checkout"
+                        @click="holdDialogOpen = true"
+                    >
+                        {{ t('user-target-page.button-pause-checkout') }}
+                    </v-btn>
+                    <InlineErrorAlert :message="holdError" data-test="user-purchase-hold-error" />
+                </div>
                 <div
                     v-if="currentUser?.actions?.update || currentUser?.actions?.ban"
                     class="flex flex-col gap-2"
@@ -317,6 +422,13 @@ const handleManageAccess = () => {
                 </div>
             </template>
         </ItemDetailLayout>
+
+        <UserPurchaseHoldDialog
+            v-model="holdDialogOpen"
+            :target="currentUser && { id: currentUser.id, name: currentUser.username }"
+            @confirm="handleSetHold"
+            @cancel="holdDialogOpen = false"
+        />
 
         <UserAccessDialog
             v-model="accessDialogOpen"

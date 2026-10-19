@@ -228,6 +228,21 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: [] });
     });
 
+    it("reads CART_PURCHASE_HOLD as a hold, leaving the reason and date to the buyer's own record", () => {
+        expect(
+            classifyCheckoutError({
+                status: 409,
+                errors: [
+                    {
+                        code: 'CART_PURCHASE_HOLD',
+                        message: 'x',
+                        details: { until: '2999-01-01T00:00:00.000Z', reason: 'staff' }
+                    }
+                ]
+            })
+        ).toEqual({ kind: 'purchase-hold' });
+    });
+
     it('reads CART_EMPTY as the sign a lost answer hid an order', () => {
         expect(
             classifyCheckoutError({ status: 409, errors: [{ code: 'CART_EMPTY', message: 'x' }] })

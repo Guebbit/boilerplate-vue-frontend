@@ -1663,6 +1663,7 @@ export const getAccountResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getAccountResponseDataEmailMax = 254;
 export const getAccountResponseDataLocaleMax = 35;
 export const getAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getAccountResponseDataPurchaseHoldNoteMax = 500;
 export const GetAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -1701,6 +1702,14 @@ export const GetAccountResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(getAccountResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -1742,6 +1751,7 @@ export const replaceAccountResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$')
 export const replaceAccountResponseDataEmailMax = 254;
 export const replaceAccountResponseDataLocaleMax = 35;
 export const replaceAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceAccountResponseDataPurchaseHoldNoteMax = 500;
 export const ReplaceAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -1780,6 +1790,14 @@ export const ReplaceAccountResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(replaceAccountResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -1822,6 +1840,7 @@ export const updateAccountResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const updateAccountResponseDataEmailMax = 254;
 export const updateAccountResponseDataLocaleMax = 35;
 export const updateAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateAccountResponseDataPurchaseHoldNoteMax = 500;
 export const UpdateAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -1860,6 +1879,14 @@ export const UpdateAccountResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(updateAccountResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -2527,6 +2554,7 @@ export const signupResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const signupResponseDataEmailMax = 254;
 export const signupResponseDataLocaleMax = 35;
 export const signupResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const signupResponseDataPurchaseHoldNoteMax = 500;
 export const SignupResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -2561,6 +2589,14 @@ export const SignupResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(signupResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -2991,13 +3027,15 @@ export const ListUsersQueryParams = zod.strictObject({
     email: zod.email().max(listUsersQueryEmailMax).optional(),
     username: zod.string().max(listUsersQueryUsernameMax).optional(),
     active: zod.boolean().optional(),
-    deleted: zod.boolean().optional()
+    deleted: zod.boolean().optional(),
+    purchaseHold: zod.literal(true).optional()
 });
 export const listUsersResponseDataItemsItemIdMax = 64;
 export const listUsersResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listUsersResponseDataItemsItemEmailMax = 254;
 export const listUsersResponseDataItemsItemLocaleMax = 35;
 export const listUsersResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const listUsersResponseDataItemsItemPurchaseHoldNoteMax = 500;
 export const listUsersResponseDataMetaPageDefault = 1;
 export const listUsersResponseDataMetaPageMax = 10000;
 export const listUsersResponseDataMetaPageSizeDefault = 10;
@@ -3045,6 +3083,17 @@ export const ListUsersResponse = zod.strictObject({
                         ban: zod.boolean(),
                         delete: zod.boolean()
                     })
+                    .optional(),
+                purchaseHold: zod
+                    .strictObject({
+                        until: zod.iso.datetime({ offset: true }),
+                        reason: zod.enum(['repeated_cancellations', 'staff']),
+                        note: zod
+                            .string()
+                            .max(listUsersResponseDataItemsItemPurchaseHoldNoteMax)
+                            .optional(),
+                        setAt: zod.iso.datetime({ offset: true })
+                    })
                     .optional()
             })
         ),
@@ -3088,6 +3137,7 @@ export const createUserResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const createUserResponseDataEmailMax = 254;
 export const createUserResponseDataLocaleMax = 35;
 export const createUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createUserResponseDataPurchaseHoldNoteMax = 500;
 export const CreateUserResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -3127,6 +3177,14 @@ export const CreateUserResponse = zod.strictObject({
                 ban: zod.boolean(),
                 delete: zod.boolean()
             })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(createUserResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
+            })
             .optional()
     })
 });
@@ -3163,6 +3221,7 @@ export const getUserByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const getUserByIdResponseDataEmailMax = 254;
 export const getUserByIdResponseDataLocaleMax = 35;
 export const getUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getUserByIdResponseDataPurchaseHoldNoteMax = 500;
 export const GetUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -3201,6 +3260,14 @@ export const GetUserByIdResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(getUserByIdResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -3247,6 +3314,7 @@ export const replaceUserByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$'
 export const replaceUserByIdResponseDataEmailMax = 254;
 export const replaceUserByIdResponseDataLocaleMax = 35;
 export const replaceUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceUserByIdResponseDataPurchaseHoldNoteMax = 500;
 export const ReplaceUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -3285,6 +3353,14 @@ export const ReplaceUserByIdResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(replaceUserByIdResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -3335,6 +3411,7 @@ export const updateUserByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$')
 export const updateUserByIdResponseDataEmailMax = 254;
 export const updateUserByIdResponseDataLocaleMax = 35;
 export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateUserByIdResponseDataPurchaseHoldNoteMax = 500;
 export const UpdateUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -3373,6 +3450,14 @@ export const UpdateUserByIdResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(updateUserByIdResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -3416,6 +3501,7 @@ export const restoreUserByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$'
 export const restoreUserByIdResponseDataEmailMax = 254;
 export const restoreUserByIdResponseDataLocaleMax = 35;
 export const restoreUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const restoreUserByIdResponseDataPurchaseHoldNoteMax = 500;
 export const RestoreUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -3454,6 +3540,14 @@ export const RestoreUserByIdResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod.string().max(restoreUserByIdResponseDataPurchaseHoldNoteMax).optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     })
@@ -3512,7 +3606,8 @@ export const SearchUsersBody = zod.strictObject({
     email: zod.email().max(searchUsersBodyEmailMax).optional(),
     username: zod.string().max(searchUsersBodyUsernameMax).optional(),
     active: zod.boolean().optional(),
-    deleted: zod.boolean().optional()
+    deleted: zod.boolean().optional(),
+    purchaseHold: zod.literal(true).optional()
 });
 export const searchUsersResponseDataItemsItemIdMax = 64;
 export const searchUsersResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -3521,6 +3616,7 @@ export const searchUsersResponseDataItemsItemLocaleMax = 35;
 export const searchUsersResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const searchUsersResponseDataItemsItemPurchaseHoldNoteMax = 500;
 export const searchUsersResponseDataMetaPageDefault = 1;
 export const searchUsersResponseDataMetaPageMax = 10000;
 export const searchUsersResponseDataMetaPageSizeDefault = 10;
@@ -3567,6 +3663,17 @@ export const SearchUsersResponse = zod.strictObject({
                         update: zod.boolean(),
                         ban: zod.boolean(),
                         delete: zod.boolean()
+                    })
+                    .optional(),
+                purchaseHold: zod
+                    .strictObject({
+                        until: zod.iso.datetime({ offset: true }),
+                        reason: zod.enum(['repeated_cancellations', 'staff']),
+                        note: zod
+                            .string()
+                            .max(searchUsersResponseDataItemsItemPurchaseHoldNoteMax)
+                            .optional(),
+                        setAt: zod.iso.datetime({ offset: true })
                     })
                     .optional()
             })
@@ -12575,6 +12682,7 @@ export const downloadAccountExportResponseProfileLocaleMax = 35;
 export const downloadAccountExportResponseProfileLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
+export const downloadAccountExportResponseProfilePurchaseHoldNoteMax = 500;
 export const downloadAccountExportResponseSessionsItemIdMax = 64;
 export const downloadAccountExportResponseSessionsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const downloadAccountExportResponseAddressesItemIdMax = 64;
@@ -12829,6 +12937,17 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 update: zod.boolean(),
                 ban: zod.boolean(),
                 delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod
+                    .string()
+                    .max(downloadAccountExportResponseProfilePurchaseHoldNoteMax)
+                    .optional(),
+                setAt: zod.iso.datetime({ offset: true })
             })
             .optional()
     }),
@@ -13710,6 +13829,153 @@ export const DownloadAccountExportResponse = zod.strictObject({
             createdAt: zod.iso.datetime({ offset: true })
         })
     )
+});
+/**
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+ * @summary Put a purchase hold on a user
+ */
+export const setUserPurchaseHoldPathIdMax = 64;
+export const setUserPurchaseHoldPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const SetUserPurchaseHoldParams = zod.strictObject({
+    id: zod.string().min(1).max(setUserPurchaseHoldPathIdMax).regex(setUserPurchaseHoldPathIdRegExp)
+});
+export const setUserPurchaseHoldBodyNoteMax = 500;
+export const SetUserPurchaseHoldBody = zod.strictObject({
+    until: zod.iso.datetime({ offset: true }),
+    note: zod.string().max(setUserPurchaseHoldBodyNoteMax).optional()
+});
+export const setUserPurchaseHoldResponseDataIdMax = 64;
+export const setUserPurchaseHoldResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const setUserPurchaseHoldResponseDataEmailMax = 254;
+export const setUserPurchaseHoldResponseDataLocaleMax = 35;
+export const setUserPurchaseHoldResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const setUserPurchaseHoldResponseDataPurchaseHoldNoteMax = 500;
+export const SetUserPurchaseHoldResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(setUserPurchaseHoldResponseDataIdMax)
+            .regex(setUserPurchaseHoldResponseDataIdRegExp),
+        email: zod.email().max(setUserPurchaseHoldResponseDataEmailMax),
+        username: zod.string(),
+        role: zod.string().optional(),
+        active: zod.boolean().optional(),
+        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        pendingEmail: zod.email().optional(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        locale: zod
+            .string()
+            .max(setUserPurchaseHoldResponseDataLocaleMax)
+            .regex(setUserPurchaseHoldResponseDataLocaleRegExp)
+            .optional(),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
+        analyticsConsent: zod.boolean().optional(),
+        analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+        termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+        termsVersion: zod.string().optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod
+                    .string()
+                    .max(setUserPurchaseHoldResponseDataPurchaseHoldNoteMax)
+                    .optional(),
+                setAt: zod.iso.datetime({ offset: true })
+            })
+            .optional()
+    })
+});
+/**
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force.
+ * @summary Lift a user's purchase hold
+ */
+export const liftUserPurchaseHoldPathIdMax = 64;
+export const liftUserPurchaseHoldPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const LiftUserPurchaseHoldParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(liftUserPurchaseHoldPathIdMax)
+        .regex(liftUserPurchaseHoldPathIdRegExp)
+});
+export const liftUserPurchaseHoldResponseDataIdMax = 64;
+export const liftUserPurchaseHoldResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const liftUserPurchaseHoldResponseDataEmailMax = 254;
+export const liftUserPurchaseHoldResponseDataLocaleMax = 35;
+export const liftUserPurchaseHoldResponseDataLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const liftUserPurchaseHoldResponseDataPurchaseHoldNoteMax = 500;
+export const LiftUserPurchaseHoldResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(liftUserPurchaseHoldResponseDataIdMax)
+            .regex(liftUserPurchaseHoldResponseDataIdRegExp),
+        email: zod.email().max(liftUserPurchaseHoldResponseDataEmailMax),
+        username: zod.string(),
+        role: zod.string().optional(),
+        active: zod.boolean().optional(),
+        verifiedAt: zod.iso.datetime({ offset: true }).nullish(),
+        pendingEmail: zod.email().optional(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        locale: zod
+            .string()
+            .max(liftUserPurchaseHoldResponseDataLocaleMax)
+            .regex(liftUserPurchaseHoldResponseDataLocaleRegExp)
+            .optional(),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
+        analyticsConsent: zod.boolean().optional(),
+        analyticsConsentAt: zod.iso.datetime({ offset: true }).optional(),
+        termsAcceptedAt: zod.iso.datetime({ offset: true }).optional(),
+        termsVersion: zod.string().optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                update: zod.boolean(),
+                ban: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional(),
+        purchaseHold: zod
+            .strictObject({
+                until: zod.iso.datetime({ offset: true }),
+                reason: zod.enum(['repeated_cancellations', 'staff']),
+                note: zod
+                    .string()
+                    .max(liftUserPurchaseHoldResponseDataPurchaseHoldNoteMax)
+                    .optional(),
+                setAt: zod.iso.datetime({ offset: true })
+            })
+            .optional()
+    })
 });
 /**
  * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.

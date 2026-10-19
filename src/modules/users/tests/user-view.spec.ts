@@ -7,12 +7,13 @@
  * the dictionary instead.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import User from '../views/User.vue';
 import { useUsersStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -136,6 +137,85 @@ describe('the "History" link', () => {
                 });
 
                 expect(wrapper.find('[data-test=user-history]').exists()).toBe(false);
+            });
+    });
+});
+
+describe('the purchase hold', () => {
+    /** An hour-long hold, as the API leaves it on a record while it is in force. */
+    const HELD: UserType = {
+        ...A_USER,
+        actions: { update: true, ban: true, delete: true },
+        purchaseHold: {
+            until: '2999-01-01T00:00:00.000Z',
+            reason: 'repeated_cancellations',
+            setAt: '2026-10-19T10:00:00.000Z'
+        }
+    };
+
+    it('offers "Pause checkout" to a caller who may ban, and no lift button', () => {
+        signIn(false);
+        const wrapper = mountUser({
+            ...A_USER,
+            actions: { update: true, ban: true, delete: true }
+        });
+
+        expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=user-lift-hold]').exists()).toBe(false);
+        expect(wrapper.get('[data-test=user-purchase-hold]').text()).toContain('None');
+    });
+
+    it('offers neither button to a caller who may not ban', () => {
+        signIn(false);
+        const wrapper = mountUser({
+            ...A_USER,
+            actions: { update: true, ban: false, delete: false }
+        });
+
+        expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(false);
+        expect(wrapper.find('[data-test=user-lift-hold]').exists()).toBe(false);
+    });
+
+    it('says why and until when a hold is in force, and offers to lift it', () => {
+        signIn(false);
+        const wrapper = mountUser(HELD);
+
+        expect(wrapper.get('[data-test=user-purchase-hold]').text()).toContain(
+            'Paused after repeated cancellations'
+        );
+        expect(wrapper.find('[data-test=user-lift-hold]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(false);
+    });
+
+    it('lifts the hold once the confirmation is accepted', () => {
+        signIn(false);
+        const store = useUsersStore();
+        const lift = vi.spyOn(store, 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
+        const wrapper = mountUser(HELD);
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+
+        return wrapper
+            .get('[data-test=user-lift-hold]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                expect(lift).toHaveBeenCalledWith('u1');
+            });
+    });
+
+    it('leaves the hold alone when the confirmation is declined', () => {
+        signIn(false);
+        const store = useUsersStore();
+        const lift = vi.spyOn(store, 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
+        const wrapper = mountUser(HELD);
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
+
+        return wrapper
+            .get('[data-test=user-lift-hold]')
+            .trigger('click')
+            .then(flushPromises)
+            .then(() => {
+                expect(lift).not.toHaveBeenCalled();
             });
     });
 });

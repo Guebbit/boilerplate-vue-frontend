@@ -16,7 +16,7 @@ import { useCartStore } from '../store.ts';
 import type { MergeReportLine } from '../domain';
 import { useProductsStore } from '@/modules/products';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { checkout as apiCheckout } from '@api';
+import { checkout as apiCheckout, getAccount } from '@api';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { sendKeepalive } from '@/infrastructure/http/keepalive.ts';
@@ -44,7 +44,12 @@ vi.mock('@/infrastructure/http/keepalive.ts', () => ({ sendKeepalive: vi.fn() })
  */
 vi.mock('@api', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@api')>();
-    return { ...actual, checkout: vi.fn(actual.checkout) };
+    return {
+        ...actual,
+        checkout: vi.fn(actual.checkout),
+        // The purchase-hold banner reads the buyer's own record; offline here unless a case says otherwise.
+        getAccount: vi.fn(() => Promise.reject(new Error('offline')))
+    };
 });
 
 /**
@@ -379,6 +384,32 @@ describe('the checkout refusals', () => {
                         '/en/orders/o1',
                         '/en/orders/o2'
                     ]);
+                });
+        }));
+
+    it("says checkout is paused on CART_PURCHASE_HOLD and reads the buyer's own record again for the banner", () =>
+        mountCart().then(({ wrapper, checkoutSpy }) => {
+            vi.mocked(getAccount).mockClear();
+            checkoutSpy.mockRejectedValueOnce(
+                checkoutRejection(409, 'CART_PURCHASE_HOLD', {
+                    until: '2999-01-01T00:00:00.000Z',
+                    reason: 'repeated_cancellations'
+                })
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(
+                        useNotificationsStore().messages.map(({ message }) => message)
+                    ).toContain(i18n.global.t('cart-page.error-purchase-hold'));
+                    // Read again, not served from the cache: the cached record predates the hold.
+                    expect(getAccount).toHaveBeenCalledTimes(1);
+                    // Not rendered as a stock or order-limit refusal.
+                    expect(wrapper.findAll('[data-test=checkout-shortfall-line]')).toHaveLength(0);
+                    expect(wrapper.find('[data-test=cart-open-orders]').exists()).toBe(false);
                 });
         }));
 

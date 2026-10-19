@@ -34,6 +34,8 @@ export const ERROR_CODES = {
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
     /** 409 — A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`. */
     CART_PRODUCT_UNAVAILABLE: 'CART_PRODUCT_UNAVAILABLE',
+    /** 409 — The account is under a purchase hold: a protective pause after repeated cancellations, or one set by staff. `errors[].details` carries `until` (when checkout opens again), `reason` (`repeated_cancellations` or `staff`) and, for a staff hold, the `note` written for the buyer. Paying an existing order, cancelling, a withdrawal and a return are never blocked; the buyer can contest it through the contact form. */
+    CART_PURCHASE_HOLD: 'CART_PURCHASE_HOLD',
     /** 422 — The requested quantity exceeds the per-line limit. */
     CART_QUANTITY_LIMIT: 'CART_QUANTITY_LIMIT',
     /** 404 — The named shipping method does not exist or is not offered. */

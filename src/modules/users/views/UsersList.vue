@@ -123,6 +123,29 @@ const activeChoice = useAnyFilterChoice(
 );
 
 /**
+ * Options of the "purchase hold" filter select: everyone, or only the accounts whose checkout is
+ * paused right now. There is no "not held" row — the API offers none.
+ *
+ * @returns The localized options, re-translated on locale change.
+ */
+const holdOptions = computed(() => [
+    { value: null, label: t('users-list-page.filter-purchase-hold-all') },
+    { value: true, label: t('users-list-page.filter-purchase-hold-yes') }
+]);
+
+/**
+ * The "purchase hold" select's model: `null` (the "any" row) on screen, no `purchaseHold` filter
+ * in {@link filters}.
+ */
+const holdChoice = useAnyFilterChoice(
+    () => filters.value.purchaseHold,
+    (value) => {
+        // The API accepts `true` only; the "any" row clears the filter.
+        filters.value.purchaseHold = value === true ? true : undefined;
+    }
+);
+
+/**
  * The "Deleted" select's model: `null` (the "any" row) on screen, no `deleted` filter in
  * {@link filters}.
  */
@@ -168,6 +191,7 @@ const { sync: syncUrl } = useListUrlState({
         username: 'string',
         active: 'boolean',
         deleted: 'boolean',
+        purchaseHold: 'boolean',
         sort: 'string'
     }
 });
@@ -346,6 +370,15 @@ const handleHardDelete = (userId: string, username: string) =>
                         hide-details
                     />
                     <v-select
+                        v-model="holdChoice"
+                        :label="t('users-list-page.filter-purchase-hold')"
+                        :items="holdOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-purchase-hold"
+                        hide-details
+                    />
+                    <v-select
                         v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
                         :items="deletedOptions"
@@ -414,6 +447,16 @@ const handleHardDelete = (userId: string, username: string) =>
             <template v-slot:[`item.active`]="{ item }">
                 <v-chip size="small" variant="tonal" :color="item.active ? 'success' : 'error'">
                     {{ item.active ? t('generic.enabled') : t('generic.disabled') }}
+                </v-chip>
+                <v-chip
+                    v-if="item.purchaseHold"
+                    size="small"
+                    variant="tonal"
+                    color="warning"
+                    class="ml-1"
+                    data-test="row-purchase-hold"
+                >
+                    {{ t('users-list-page.chip-purchase-hold') }}
                 </v-chip>
                 <v-chip
                     v-if="item.deletedAt"

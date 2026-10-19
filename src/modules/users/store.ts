@@ -3,7 +3,8 @@
  * Pinia store built on `useStructureCrudApi` for users CRUD and paginated
  * search, with a multipart branch for create/update when an avatar is
  * attached, plus two hand-written actions: `hardDeleteUser` for the
- * irreversible delete and `restoreUser` for undoing a soft one.
+ * irreversible delete and `restoreUser` for undoing a soft one, and the two purchase-hold
+ * writes (`setPurchaseHold`, `liftPurchaseHold`).
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -21,6 +22,8 @@ import {
     deleteUserById,
     hardDeleteUserById,
     restoreUserById,
+    setUserPurchaseHold,
+    liftUserPurchaseHold,
     UserSortItem
 } from '@api';
 import type { AxiosRequestConfig } from 'axios';
@@ -28,7 +31,8 @@ import type {
     User,
     CreateUserRequestMultipart,
     UpdateUserByIdRequest,
-    SearchUsersRequest
+    SearchUsersRequest,
+    SetPurchaseHoldRequest
 } from '@types';
 
 /**
@@ -112,7 +116,8 @@ export const useUsersStore = defineStore('users', () => {
                     email: filters.email,
                     username: filters.username,
                     active: filters.active,
-                    deleted: filters.deleted
+                    deleted: filters.deleted,
+                    purchaseHold: filters.purchaseHold
                 }).then((response) => ({
                     items: response.data.items,
                     totalItems: response.data.meta.totalItems
@@ -208,6 +213,37 @@ export const useUsersStore = defineStore('users', () => {
             })
         );
 
+    /**
+     * Pauses checkout for one account — `PUT /users/{id}/purchase-hold`. The answered user
+     * (hold included) replaces the cached one.
+     *
+     * @param userId - Identifier of the account.
+     * @param hold - When checkout opens again, and an optional note the buyer reads.
+     * @returns A promise resolving with the user.
+     */
+    const setPurchaseHold = (userId: string, hold: SetPurchaseHoldRequest) =>
+        fetchAny(() =>
+            setUserPurchaseHold(userId, hold).then((response) => {
+                addUser(response.data);
+                return response.data;
+            })
+        );
+
+    /**
+     * Ends a purchase hold now — `DELETE /users/{id}/purchase-hold`. This is the staff review: it
+     * also restarts the count of cancellations. Safe to repeat.
+     *
+     * @param userId - Identifier of the account.
+     * @returns A promise resolving with the user.
+     */
+    const liftPurchaseHold = (userId: string) =>
+        fetchAny(() =>
+            liftUserPurchaseHold(userId).then((response) => {
+                addUser(response.data);
+                return response.data;
+            })
+        );
+
     return {
         users,
         usersList,
@@ -231,6 +267,8 @@ export const useUsersStore = defineStore('users', () => {
         updateUser,
         deleteUser,
         hardDeleteUser,
-        restoreUser
+        restoreUser,
+        setPurchaseHold,
+        liftPurchaseHold
     };
 });

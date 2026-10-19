@@ -117,6 +117,44 @@ describe('UsersList — sorting from the header', () => {
     });
 });
 
+describe('UsersList — the purchase-hold filter', () => {
+    it('sends purchaseHold: true to the API once picked, and nothing for "Any"', async () => {
+        const wrapper = await mountWithRows();
+        const store = useUsersStore();
+
+        expect(store.filters.purchaseHold).toBeUndefined();
+
+        store.filters.purchaseHold = true;
+        await wrapper.get('form').trigger('submit');
+        await flushPromises();
+
+        expect(searchUsers).toHaveBeenLastCalledWith(
+            expect.objectContaining({ purchaseHold: true })
+        );
+    });
+
+    it('marks a row whose checkout is paused', async () => {
+        const wrapper = await mountWithRows([
+            aUser({
+                id: 'u9',
+                purchaseHold: {
+                    until: '2999-01-01T00:00:00.000Z',
+                    reason: 'staff',
+                    setAt: '2026-10-19T10:00:00.000Z'
+                }
+            })
+        ]);
+
+        expect(wrapper.get('[data-test=row-purchase-hold]').text()).toBe('Checkout paused');
+    });
+
+    it('marks no row that is free to buy', async () => {
+        const wrapper = await mountWithRows();
+
+        expect(wrapper.find('[data-test=row-purchase-hold]').exists()).toBe(false);
+    });
+});
+
 /**
  * The row actions are the server's answer for THIS admin on THIS account (the route's key and the
  * rank rule together), not the session's: a moderator may edit, ban and erase a customer and none

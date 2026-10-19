@@ -3210,6 +3210,13 @@ paths:
           description: "`true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`."
           schema:
             type: boolean
+        - name: purchaseHold
+          in: query
+          description: "`true` lists only the accounts under a purchase hold right now; absent lists everyone. There is no `false`: a lifted or expired hold is not a state to search for."
+          schema:
+            type: boolean
+            enum:
+              - true
       responses:
         "200":
           description: Users list page
@@ -7951,6 +7958,85 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
+  /users/{id}/purchase-hold:
+    put:
+      tags:
+        - Users
+      summary: Put a purchase hold on a user
+      description: Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+      operationId: setUserPurchaseHold
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPurchaseHoldRequest"
+      responses:
+        "200":
+          description: The user, now holding the hold
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
+    delete:
+      tags:
+        - Users
+      summary: Lift a user's purchase hold
+      description: "Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force."
+      operationId: liftUserPurchaseHold
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The user, with no hold
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
   /cart/merge:
     post:
       tags:
@@ -10053,6 +10139,32 @@ components:
           format: date-time
         actions:
           $ref: "#/components/schemas/UserActions"
+        purchaseHold:
+          $ref: "#/components/schemas/PurchaseHold"
+    PurchaseHold:
+      type: object
+      additionalProperties: false
+      required:
+        - until
+        - reason
+        - setAt
+      properties:
+        until:
+          type: string
+          format: date-time
+          description: When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window; staff can lift it earlier.
+        reason:
+          type: string
+          enum:
+            - repeated_cancellations
+            - staff
+        note:
+          type: string
+          maxLength: 500
+          description: Staff text shown to the buyer with the refusal. Absent on an automatic hold.
+        setAt:
+          type: string
+          format: date-time
     UserActions:
       type: object
       additionalProperties: false
@@ -13004,6 +13116,10 @@ components:
           type: boolean
         deleted:
           type: boolean
+        purchaseHold:
+          type: boolean
+          enum:
+            - true
     FeedbackCategory:
       type: string
       enum:
@@ -18226,6 +18342,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StockAlert"
+    SetPurchaseHoldRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - until
+      properties:
+        until:
+          type: string
+          format: date-time
+          description: When checkout opens again. Must be in the future.
+        note:
+          type: string
+          maxLength: 500
+          description: "Shown to the buyer with the refusal, so write it as if they read it (GDPR Art. 22(3): the reason and how to contest it)."
     MergeCartRequest:
       type: object
       additionalProperties: false
@@ -19467,6 +19597,9 @@ x-error-codes:
   CART_PRODUCT_UNAVAILABLE:
     status: 409
     description: "A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`."
+  CART_PURCHASE_HOLD:
+    status: 409
+    description: "The account is under a purchase hold: a protective pause after repeated cancellations, or one set by staff. `errors[].details` carries `until` (when checkout opens again), `reason` (`repeated_cancellations` or `staff`) and, for a staff hold, the `note` written for the buyer. Paying an existing order, cancelling, a withdrawal and a return are never blocked; the buyer can contest it through the contact form."
   CART_QUANTITY_LIMIT:
     status: 422
     description: The requested quantity exceeds the per-line limit.

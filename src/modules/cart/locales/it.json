@@ -66,7 +66,8 @@
         "error-cart-empty": "Il carrello è già vuoto. Se hai appena effettuato un ordine è andato a buon fine: controlla i tuoi ordini.",
         "error-checkout-in-flight": "Il tuo ordine è ancora in elaborazione. Controlla i tuoi ordini tra un momento prima di riprovare.",
         "order-placed-after-error": "Il tuo ordine è stato effettuato, ma la conferma non ci è arrivata. Ecco i tuoi ordini.",
-        "label-no-withdrawal": "Nessun diritto di recesso"
+        "label-no-withdrawal": "Nessun diritto di recesso",
+        "error-purchase-hold": "Il checkout è in pausa per il tuo account, vedi l'avviso qui sopra."
     },
     "guest-cart-page": {
         "intro": "Questo carrello è salvato su questo dispositivo. Accedi per completare l'acquisto: il suo contenuto viene aggiunto al carrello del tuo account.",
