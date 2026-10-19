@@ -11,6 +11,7 @@
  * the moderator's.
  */
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
+import { answerChallengePage } from '../../../support/e2e/login-challenge';
 
 /**
  * Walks the moderator through the access dialog for one account: open it, flip the switch, go to
@@ -70,10 +71,12 @@ describe('OP11 · A moderator bans a customer', () => {
 
                 cy.step('the moderator switches it back on');
                 cy.visit('/en/login');
-                cy.accountOf('moderator').then(({ email, password }) => {
+                cy.accountOf('moderator').then(({ email, password, totpSecret }) => {
                     cy.get('[type=email]').should('not.be.disabled').type(email);
                     cy.get('[type=password]').should('not.be.disabled').type(password);
                     cy.get('form').submit();
+                    // A staff sign-in answers its authenticator code next.
+                    answerChallengePage(String(totpSecret));
                 });
                 cy.url().should('not.include', '/login');
                 setAccessActive(customerId, true);

@@ -12,6 +12,7 @@
  * own: no seed knows it, so it is logged into through the form, not `cy.loginAs`.
  */
 import { mailedLinkUrl, expectMailTemplate } from '../../../support/e2e/commands';
+import { enrolAuthenticatorApp } from '../../../support/e2e/security-steps';
 import { adminMenuLinks, signInWith } from '../../../support/e2e/steps';
 
 /** The new staff member, and the password the mailed link sets. */
@@ -63,6 +64,11 @@ describe('AT7 · Staff accounts', () => {
 
         cy.step('the new staff member sees the warehouse menu and nothing of the rest');
         signInWith(STAFF.email, STAFF.password);
+        // A staff role grants nothing until an authenticator app is armed: the banner says so.
+        cy.get('[data-test=staff-enrollment-banner]').should('exist');
+        cy.get('[data-test=admin-menu]').should('not.exist');
+        enrolAuthenticatorApp();
+        cy.reload();
         // Their own language (Italian), so the links are read by where they lead, not by prefix.
         adminMenuLinks().should((links) => {
             const leadsTo = (page: string): boolean => links.some((href) => href.endsWith(page));

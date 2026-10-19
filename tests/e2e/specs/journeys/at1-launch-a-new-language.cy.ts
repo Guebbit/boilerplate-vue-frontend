@@ -11,8 +11,7 @@
  * "not offered yet" check is made as a guest, not from the editor's own switcher.
  */
 
-import { loginDevice } from '../../../support/e2e/harness';
-import { refusedWith } from '../../../support/e2e/steps';
+import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
 
 /** The language this story launches: a tag the seed does not know and the app ships no file for. */
 const TAG = 'de';
@@ -196,20 +195,19 @@ describe('AT1 · Launch a new language', () => {
                 .its('title')
                 .should('not.equal', '');
 
-            cy.step('with German switched off, a German write is refused');
+            cy.step('with German switched off, an editor can still draft German text');
             cy.visit('/en/locales');
             cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();
             cy.get('[data-test=language-active] input').uncheck({ force: true });
             cy.get('[data-test=language-save]').click();
             cy.get('[data-test=language-form]').should('not.exist');
+            // A draft: the write is taken, and the public reads leave an inactive language out.
             loginDevice('editor').then((device) => {
-                refusedWith(
-                    device,
-                    'PATCH',
-                    `/locales/translations/product/${product.id}`,
-                    { [TAG]: { fields: { title: 'Hundekorb 2' } } },
-                    422
-                );
+                requestAsDevice(device, 'PATCH', `/locales/translations/product/${product.id}`, {
+                    [TAG]: { fields: { title: 'Hundekorb 2' } }
+                })
+                    .its('status')
+                    .should('equal', 200);
             });
             // Switched back on so the deletion below keeps its place in the story.
             cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();

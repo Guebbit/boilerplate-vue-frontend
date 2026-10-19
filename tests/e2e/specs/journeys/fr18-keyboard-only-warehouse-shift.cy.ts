@@ -37,12 +37,25 @@ describe('FR18 · A warehouse shift by keyboard only', () => {
     it('signs in, starts, ships with a code, backs out once, and delivers, with no pointer', () => {
         cy.step('the warehouse signs in with Tab, typing and Enter');
         cy.visit('/en/login');
-        cy.accountOf('warehouse').then(({ email, password }) => {
+        cy.accountOf('warehouse').then(({ email, password, totpSecret }) => {
             cy.get('[type=email]').should('not.be.disabled').focus();
             cy.realType(email);
             cy.realPress('Tab');
             cy.realType(password);
             cy.realPress('Enter');
+
+            // A staff account answers its authenticator code next, typed and sent by keys too.
+            cy.get('#two-factor-challenge-page').should('exist');
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.task<string>('loginTotpCode', {
+                    secret: String(totpSecret),
+                    apiUrl: String(apiUrl)
+                }).then((code) => {
+                    cy.get('[data-test=two-factor-challenge-code] input').focus();
+                    cy.realType(code);
+                    cy.realPress('Enter');
+                });
+            });
         });
         cy.get('[data-test=admin-menu]').should('exist');
 

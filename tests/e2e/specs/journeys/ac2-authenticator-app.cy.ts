@@ -13,43 +13,16 @@
  */
 import { loginDevice, refreshDevice, totpCodeFor } from '../../../support/e2e/harness';
 import {
+    confirmEnrolment,
     dismissBackupCodes,
     loginToChallenge,
     revealedBackupCodes,
+    secretOnScreen,
     submitLoginForm
 } from '../../../support/e2e/security-steps';
 
 /** Longer than one TOTP step, so the next code is genuinely newer than the last one used. */
 const ONE_STEP_MS = 31_000;
-
-/** Where the TOTP secret sits inside the enrolment dialog's manual-entry sentence. */
-const SECRET_PATTERN = /[2-7A-Z]{16,}/;
-
-/**
- * Reads the base32 secret off the open enrolment dialog.
- *
- * @returns a chain yielding the secret
- */
-const secretOnScreen = (): Cypress.Chainable<string> =>
-    cy
-        .get('[data-test=two-factor-enroll-secret]')
-        .invoke('text')
-        .then((text) => {
-            const secret = SECRET_PATTERN.exec(text)?.[0];
-            expect(secret, 'a base32 secret in the manual-entry text').to.be.a('string');
-            return String(secret);
-        });
-
-/**
- * Types a code into the enrolment dialog and confirms it.
- *
- * @param code - the six digits
- */
-const confirmEnrolment = (code: string): void => {
-    cy.get('[data-test=two-factor-enroll-code] input').clear();
-    cy.get('[data-test=two-factor-enroll-code] input').type(code);
-    cy.get('[data-test=two-factor-enroll-confirm]').click();
-};
 
 /**
  * Signs in to the challenge page and answers it with one code.

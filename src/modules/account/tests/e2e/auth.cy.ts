@@ -4,8 +4,28 @@
  * `/admin` and `/users`, logout, and a live-only session-refresh case that crosses the app/API
  * origin boundary.
  */
-import { seedAccount } from '../../../../../tests/support/e2e/scenario';
 import { skipUnlessSessionMode } from '../../../../../tests/support/e2e/harness';
+import { answerChallengePage } from '../../../../../tests/support/e2e/login-challenge';
+
+/**
+ * Signs the administrator in through the login form already on screen, and answers the
+ * authenticator code the sign-in asks next (the administrator is staff).
+ *
+ * The account is read when the command runs, after this test's reset: a live run has no
+ * description before its first reset, so a test body cannot read it synchronously.
+ *
+ * @param remember - tick "remember me" before submitting
+ */
+const signInAsAdmin = (remember = false) =>
+    cy.accountOf('admin').then(({ email, password, totpSecret }) => {
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').type(email);
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').type(password);
+        if (remember) cy.get('[type=checkbox]').check({ force: true });
+        cy.get('form').submit();
+        answerChallengePage(String(totpSecret));
+    });
 
 describe('Authentication', () => {
     beforeEach(() => {
@@ -40,11 +60,7 @@ describe('Authentication', () => {
         });
 
         it('logs in successfully and redirects to home', () => {
-            cy.get('[type=email]').should('not.be.disabled').clear();
-            cy.get('[type=email]').should('not.be.disabled').type(seedAccount('admin').email);
-            cy.get('[type=password]').should('not.be.disabled').clear();
-            cy.get('[type=password]').should('not.be.disabled').type(seedAccount('admin').password);
-            cy.get('form').submit();
+            signInAsAdmin();
 
             cy.url().should('not.include', '/login');
             cy.get('#home-page').should('exist');
@@ -58,19 +74,14 @@ describe('Authentication', () => {
          * page script could not.
          */
         it('keeps the session only until the browser closes unless asked to remember', () => {
-            cy.get('[type=email]').should('not.be.disabled').type(seedAccount('admin').email);
-            cy.get('[type=password]').should('not.be.disabled').type(seedAccount('admin').password);
-            cy.get('form').submit();
+            signInAsAdmin();
             cy.get('#home-page').should('exist');
 
             cy.getCookie('__Host-session').should('exist').and('not.have.property', 'expiry');
         });
 
         it('remember me keeps the session for 30 days', () => {
-            cy.get('[type=email]').should('not.be.disabled').type(seedAccount('admin').email);
-            cy.get('[type=password]').should('not.be.disabled').type(seedAccount('admin').password);
-            cy.get('[type=checkbox]').check({ force: true });
-            cy.get('form').submit();
+            signInAsAdmin(true);
             cy.get('#home-page').should('exist');
 
             // The `long` tier (30 days, ASVS 4.0.3 V3.3.2), give or take an hour of test latency.

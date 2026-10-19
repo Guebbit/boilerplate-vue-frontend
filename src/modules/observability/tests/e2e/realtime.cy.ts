@@ -22,8 +22,9 @@ describe('Realtime observability stream', () => {
         cy.get('[data-test=realtime-status]').should('contain.text', 'open');
         cy.get('[data-test=realtime-feed-summary]').should('contain.text', 'snapshot');
 
-        // The number the snapshot showed, before this spec sends anything.
-        cy.get('[data-test=realtime-requests] .text-3xl')
+        // The number the snapshot showed, before this spec sends anything. The value is the stat
+        // card's only semibold line: its size class is a Tailwind spelling that changes.
+        cy.get('[data-test=realtime-requests] .font-semibold')
             .invoke('text')
             .then((text) => {
                 const before = Number(text.trim());
@@ -36,7 +37,7 @@ describe('Realtime observability stream', () => {
                 });
 
                 // The server pushes `metrics.updated` every 5s; allow a few ticks under load.
-                cy.get('[data-test=realtime-requests] .text-3xl', { timeout: 20_000 }).should(
+                cy.get('[data-test=realtime-requests] .font-semibold', { timeout: 20_000 }).should(
                     ($value) => {
                         expect(Number($value.text().trim())).to.be.at.least(before + TRAFFIC);
                     }

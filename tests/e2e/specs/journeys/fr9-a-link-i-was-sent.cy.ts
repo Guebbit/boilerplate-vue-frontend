@@ -9,6 +9,7 @@
  * The API answers 404, not 403, for a record another customer owns, so the visitor learns nothing
  * about whether it exists; the page says so through the shell's Error page.
  */
+import { answerChallengePage } from '../../../support/e2e/login-challenge';
 
 /**
  * Fills the login form on the page it is shown and submits it.
@@ -16,12 +17,14 @@
  * @param role - the seeded persona to sign in as
  */
 const signIn = (role: 'user' | 'manager') => {
-    cy.accountOf(role).then(({ email, password }) => {
+    cy.accountOf(role).then(({ email, password, totpSecret }) => {
         cy.get('[type=email]').should('not.be.disabled').clear();
         cy.get('[type=email]').type(email);
         cy.get('[type=password]').clear();
         cy.get('[type=password]').type(password);
         cy.get('form').submit();
+        // A staff sign-in answers its authenticator code next.
+        if (totpSecret) answerChallengePage(totpSecret);
     });
 };
 

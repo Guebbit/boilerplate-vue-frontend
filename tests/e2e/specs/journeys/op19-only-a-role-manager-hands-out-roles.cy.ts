@@ -15,6 +15,7 @@
  */
 import { adminMenuLinks, eventually, refusedWith } from '../../../support/e2e/steps';
 import { loginDevice, requestAsDevice } from '../../../support/e2e/harness';
+import { enrolAuthenticatorApp } from '../../../support/e2e/security-steps';
 import type { E2ERole } from '../../../support/scenario-description';
 
 /** The slice of a user this story reads: a plain customer has no `role` at all. */
@@ -105,8 +106,14 @@ describe('OP19 · Nobody hands out more than they hold', () => {
             cy.get('[data-test=user-manage-access-error]').should('not.exist');
             roleIs(targetId, 'warehouse');
 
-            cy.step('the promoted person’s next sign-in shows the warehouse menu');
+            cy.step('the promoted person has no staff menu until an authenticator app is armed');
             cy.switchUser('unverified');
+            cy.get('[data-test=staff-enrollment-banner]').should('exist');
+            cy.get('[data-test=admin-menu]').should('not.exist');
+
+            cy.step('armed, the same sign-in shows the warehouse menu');
+            enrolAuthenticatorApp();
+            cy.reload();
             adminMenuLinks().should((links) => {
                 expect(links).to.include('/en/inventory');
                 expect(links).to.not.include('/en/users');

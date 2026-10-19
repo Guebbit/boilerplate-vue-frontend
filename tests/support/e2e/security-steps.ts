@@ -6,7 +6,7 @@
  *
  * Plain functions over `cy`, like `steps.ts`; they name no state of their own.
  */
-import type { Device } from './harness';
+import { totpCodeFor, type Device } from './harness';
 
 /**
  * Types credentials into the login form and submits, without asserting where it leads — a
@@ -125,4 +125,52 @@ export const submitReset = (password: string): void => {
     cy.get('#password-reset-confirm-page [type=password]').eq(1).clear();
     cy.get('#password-reset-confirm-page [type=password]').eq(1).type(password);
     cy.get('#password-reset-confirm-page button[type=submit]').click();
+};
+
+/** Where the TOTP secret sits inside the enrolment dialog's manual-entry sentence. */
+const SECRET_PATTERN = /[2-7A-Z]{16,}/;
+
+/**
+ * Reads the base32 secret off the open enrolment dialog.
+ *
+ * @returns a chain yielding the secret
+ */
+export const secretOnScreen = (): Cypress.Chainable<string> =>
+    cy
+        .get('[data-test=two-factor-enroll-secret]')
+        .invoke('text')
+        .then((text) => {
+            const secret = SECRET_PATTERN.exec(text)?.[0];
+            expect(secret, 'a base32 secret in the manual-entry text').to.be.a('string');
+            return String(secret);
+        });
+
+/**
+ * Types a code into the enrolment dialog and confirms it.
+ *
+ * @param code - the six digits
+ */
+export const confirmEnrolment = (code: string): void => {
+    cy.get('[data-test=two-factor-enroll-code] input').clear();
+    cy.get('[data-test=two-factor-enroll-code] input').type(code);
+    cy.get('[data-test=two-factor-enroll-confirm]').click();
+};
+
+/**
+ * Arms an authenticator app for the signed-in account, through its profile page: a staff role
+ * grants nothing until one is armed, so a journey that promotes someone walks this as them.
+ * Arming ends the account's other sessions and keeps this tab.
+ *
+ * @returns a chain yielding the base32 secret, to answer later sign-ins with
+ */
+export const enrolAuthenticatorApp = (): Cypress.Chainable<string> => {
+    cy.visit('/en/profile');
+    cy.get('[data-test=two-factor-add-totp]').click();
+    return secretOnScreen().then((secret) => {
+        totpCodeFor(secret, 0).then(confirmEnrolment);
+        cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
+        dismissBackupCodes();
+        cy.get('[data-test=two-factor-armed]').should('exist');
+        return cy.wrap(secret, { log: false });
+    });
 };

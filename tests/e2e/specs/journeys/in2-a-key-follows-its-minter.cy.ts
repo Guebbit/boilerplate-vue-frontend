@@ -12,6 +12,7 @@
  */
 import { requestWithKey, loginDevice } from '../../../support/e2e/harness';
 import { datetimeLocalIn } from '../../../support/e2e/integrator';
+import { enrolAuthenticatorApp } from '../../../support/e2e/security-steps';
 import { eventually, refusedWith } from '../../../support/e2e/steps';
 
 /** The one read the key is given. */
@@ -38,6 +39,9 @@ describe('IN2 · A key follows its minter', () => {
             cy.step('a shopper is promoted to administrator and mints a read key');
             cy.apiAs('admin', 'PATCH', `/users/${minterId}`, { role: 'admin' });
             cy.loginAs('secondShopper');
+            // A staff role grants nothing until an authenticator app is armed, and a key lends only
+            // what its minter holds.
+            enrolAuthenticatorApp();
             cy.visit('/en/api-keys/create');
             cy.get('[data-test=api-key-name] input').type('in2-reader');
             cy.get('[data-test=api-key-permissions] input').type(`${GIVEN}{enter}`);
