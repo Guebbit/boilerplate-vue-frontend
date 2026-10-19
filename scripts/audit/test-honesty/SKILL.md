@@ -74,7 +74,7 @@ rg -c "\bexpect\(" <paths>                               # a file whose count is
 
 Add the two priors, in this order:
 
-- every `mutation.json` under `reports/` (step 3 says how to find them) — a test that covers a
+- `reports/mutation/mutation.json` (step 3 says what it holds) — a test that covers a
   line whose mutants all **survive** is the strongest candidate there is. A survived mutant on a
   covered line is, by definition, a line some test runs and none checks.
 - `git log -p --follow -- <test file>` — for **Bent to fit**: a commit that changes only an
@@ -112,13 +112,15 @@ working tree. With `coverageAnalysis: "perTest"` (`stryker.config.json`), its re
 for every mutant which tests ran it (`coveredBy`) and which failed on it (`killedBy`). Read that
 report; never edit `src/` to check.
 
-- The report is `reports/mutation/mutation.json`; `find reports -name mutation.json` finds any
-  other run. Use the newest one whose `files` holds the source file under audit. A file's entry is
-  stale when that source changed after the report was written (`git log -1 --format=%cI --
-<file>` against the report's date): say so in the row.
+- The report is `reports/mutation/mutation.json` — see
+  `docs/tools/mutation-testing.md#which-file-is-what`. After `npm run test:mutation:pull` it holds
+  the whole nightly; after `npm run test:mutation -- --mutate <file>`, that file's fresh result
+  laid over it.
+- A file's entry is stale when that source changed after the report was written
+  (`git log -1 --format=%cI -- <file>` against the report's date): say so in the row.
 - No usable report: `npm run test:mutation -- --mutate <file>` re-runs Stryker for one file and
-  writes only under the gitignored `reports/`. Never `test:mutation:pull` — it writes over the
-  tracked `mutation-baseline.json`, and fetches scores, not a report. If nothing covers the scope,
+  writes only under the gitignored `reports/`. Never run `test:mutation:pull` yourself — it writes
+  the tracked `mutation-baseline.json`. Ask the user to pull instead. If nothing covers the scope,
   say so at the top and mark every row UNVERIFIED.
 
 - Match each break to a mutant: same location, same effect — a `ConditionalExpression` forced to
