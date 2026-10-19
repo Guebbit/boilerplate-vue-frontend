@@ -1,14 +1,14 @@
 /**
  * @module
- * Brings the newest baseline a nightly uploaded home: the GitHub half of the `pull-baseline`
- * scripts. The nightlies hold no write access, so they upload the updated baseline as an artifact
- * instead of committing it.
+ * Brings the newest artifact a nightly uploaded home: the GitHub half of the `pull-*` scripts.
+ * The nightlies hold no write access, so they upload what they measured as an artifact instead of
+ * committing it.
  *
  * Needs the GitHub CLI, logged in (`gh auth login`).
  * See: docs/tools/mutation-testing.md#the-nightly-holds-no-write-access
  */
 import { execFile } from 'node:child_process';
-import { copyFile, mkdtemp, rm } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -34,18 +34,25 @@ const listArtifacts = (name: string): Promise<GitHubArtifact[]> =>
 const download = (runId: number, name: string, directory: string): Promise<unknown> =>
     run('gh', ['run', 'download', String(runId), '--name', name, '--dir', directory]);
 
+/** One file to copy out of an unzipped artifact. */
+export interface PulledFile {
+    /** Its path inside the artifact. */
+    inArtifact: string;
+    /** Where to write it, relative to the repo root; missing folders are created. */
+    target: string;
+}
+
 /**
- * Downloads the newest unexpired `name` artifact of a run on `main` and copies one file out of it.
+ * Downloads the newest unexpired `name` artifact of a run on `main` and copies files out of it.
  *
  * @param artifact - what to fetch
  * @param artifact.name - the artifact's name
- * @param artifact.fileInArtifact - the file inside the unzipped artifact
- * @param artifact.targetPath - where to write it, relative to the repo root
+ * @param artifact.files - the files to copy out
  * @param log - the tag the message is printed under, e.g. `mutation-pull`
  * @throws when no run on `main` has uploaded one, or GitHub cannot be reached
  */
 export const pullArtifact = (
-    artifact: { name: string; fileInArtifact: string; targetPath: string },
+    artifact: { name: string; files: readonly PulledFile[] },
     log: string
 ): Promise<void> =>
     listArtifacts(artifact.name).then((artifacts) => {
@@ -54,13 +61,19 @@ export const pullArtifact = (
         return mkdtemp(path.join(tmpdir(), `${artifact.name}-`)).then((directory) =>
             download(chosen.workflow_run.id, artifact.name, directory)
                 .then(() =>
-                    copyFile(path.join(directory, artifact.fileInArtifact), artifact.targetPath)
+                    Promise.all(
+                        artifact.files.map(({ inArtifact, target }) =>
+                            mkdir(path.dirname(target), { recursive: true }).then(() =>
+                                copyFile(path.join(directory, inArtifact), target)
+                            )
+                        )
+                    )
                 )
                 .finally(() => rm(directory, { recursive: true, force: true }))
                 .then(() => {
                     console.log(
-                        `[${log}] ${artifact.targetPath} ← run ${String(chosen.workflow_run.id)} ` +
-                            `(${chosen.created_at}). Review it with \`git diff\`, then commit it.`
+                        `[${log}] ${artifact.files.map(({ target }) => target).join(', ')} ← ` +
+                            `run ${String(chosen.workflow_run.id)} (${chosen.created_at}).`
                     );
                 })
         );

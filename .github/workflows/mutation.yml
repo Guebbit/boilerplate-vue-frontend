@@ -17,8 +17,8 @@ name: Mutation
 # Scope and thresholds live in stryker.config.json.
 #
 # Read-only, on purpose: the job runs `npm ci`, and every package's install script runs with
-# whatever token the job holds. The updated baseline leaves as the `mutation-baseline` artifact;
-# `npm run test:mutation:pull` fetches it, and you commit it.
+# whatever token the job holds. The run leaves as the `mutation-report` artifact;
+# `npm run test:mutation:pull` fetches it and records the baseline from it, and you commit that.
 
 on:
     schedule:
@@ -87,37 +87,19 @@ jobs:
               continue-on-error: true
               run: npm run test:mutation:check
 
-            - name: Record this run's baseline
-              # The check above only reads; this step WRITES a new or improved score into the
-              # checkout's `mutation-baseline.json`. `--update` never lowers a regressed file (see
-              # scripts/mutation/baseline.ts's `nextBaseline`), so running it regardless of the
-              # check's outcome is safe — a regression stays failing above, it just also gets an
-              # honest record of tonight's number.
-              id: record
-              if: always()
-              run: npm run test:mutation:baseline
-
-            - name: Upload this run's baseline
-              # The record leaves as an artifact, never as a commit: `npm run test:mutation:pull`
-              # fetches the newest one, and a person commits it. Name and path are what
-              # scripts/testing/github-artifacts.ts and pull-artifact.ts expect.
-              # https://github.com/actions/upload-artifact
-              if: always() && steps.record.outcome == 'success'
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-              with:
-                  name: mutation-baseline
-                  path: mutation-baseline.json
-                  retention-days: 90
-
             - name: Upload mutation report
               # Uploaded even on failure: a run that trips the break threshold is exactly the
-              # run whose report someone needs to read.
+              # run whose report someone needs to read. It is also the record: `npm run
+              # test:mutation:pull` fetches `mutation.json` and `index.html` and records the
+              # baseline from them, the step the job would otherwise run here. Name and contents
+              # are what scripts/mutation/pull-report.ts expects.
+              # https://github.com/actions/upload-artifact
               if: always()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: mutation-report
                   path: reports/mutation/
-                  retention-days: 30
+                  retention-days: 90
                   if-no-files-found: warn
 
             - name: Fail if either gate tripped

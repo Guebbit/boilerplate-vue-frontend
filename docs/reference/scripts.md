@@ -91,11 +91,13 @@ whose Artisan command classes are the StudlyCase spelling of these names. Abbrev
 All three have a backend counterpart of the same shape. None is byte-identical: the backend runs a
 second, deeper scope that this repo has no equivalent for.
 
-| File                                 | What it is                                                                                                                                                          | Read next                                        |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `scripts/mutation/run-tests.ts`      | Runs Stryker — `npm run test:mutation`. A wrapper rather than a bare invocation, so machine-specific settings come from `.env` and an explicit CLI flag still wins. | [Mutation Testing](../tools/mutation-testing.md) |
-| `scripts/mutation/baseline.ts`       | The per-file ratchet: the recorded score for each file, and the comparison that fails when one drops. Nothing here ever lowers a baseline on its own.               | [Mutation Testing](../tools/mutation-testing.md) |
-| `scripts/mutation/check-baseline.ts` | Its CLI — compare, or record a new floor with `--update`.                                                                                                           | [Mutation Testing](../tools/mutation-testing.md) |
+| File                                 | What it is                                                                                                                                                          | Read next                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `scripts/mutation/run-tests.ts`      | Runs Stryker — `npm run test:mutation`. A wrapper rather than a bare invocation, so machine-specific settings come from `.env` and an explicit CLI flag still wins. | [Mutation Testing](../tools/mutation-testing.md)                                   |
+| `scripts/mutation/baseline.ts`       | The per-file ratchet: the recorded score for each file, and the comparison that fails when one drops. Nothing here ever lowers a baseline on its own.               | [Mutation Testing](../tools/mutation-testing.md)                                   |
+| `scripts/mutation/check-baseline.ts` | Its CLI — compare, or record a new floor with `--update`.                                                                                                           | [Mutation Testing](../tools/mutation-testing.md)                                   |
+| `scripts/mutation/pull-report.ts`    | `npm run test:mutation:pull` — the newest nightly's report into `reports/mutation/`, and the baseline recorded from it.                                             | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
+| `scripts/mutation/overlay.ts`        | Lays a partial run (`--mutate <file>`) over the report on disk, so the report stays whole.                                                                          | [Mutation Testing](../tools/mutation-testing.md#which-file-is-what)                |
 
 ## Lab performance — `scripts/lighthouse/`
 
@@ -116,11 +118,11 @@ second, deeper scope that this repo has no equivalent for.
 
 ## Testing — `scripts/testing/`
 
-| File                                  | What it is                                                                                             | Read next                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `scripts/testing/report-results.ts`   | Turns a runner's JSON report into which **module** a failure belongs to and where the time went.       | [Testing (overview)](../tools/testing-and-docs.md)                                 |
-| `scripts/testing/github-artifacts.ts` | Which uploaded baseline a `pull-baseline` script takes: the newest unexpired one from a run on `main`. | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
-| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind the mutation and Lighthouse baseline pulls.                                      | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
+| File                                  | What it is                                                                                       | Read next                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `scripts/testing/report-results.ts`   | Turns a runner's JSON report into which **module** a failure belongs to and where the time went. | [Testing (overview)](../tools/testing-and-docs.md)                                 |
+| `scripts/testing/github-artifacts.ts` | Which uploaded artifact a `pull-*` script takes: the newest unexpired one from a run on `main`.  | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind the mutation report and Lighthouse baseline pulls.                         | [Mutation Testing](../tools/mutation-testing.md#the-nightly-holds-no-write-access) |
 
 ## AI audits — `scripts/audit/`
 

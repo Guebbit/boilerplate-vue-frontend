@@ -2,6 +2,55 @@
 
 Every other layer on this site answers "does the code do the right thing?" This one answers a different question: **do the _tests_ actually notice when it doesn't?** Line coverage can be satisfied by executing a line without asserting anything about its result; mutation testing can't — it edits the source thousands of times (`>` to `>=`, `&&` to `||`, a function body emptied out) and reports every edit the suite failed to catch. A **surviving mutant** is a bug the tests are structurally blind to.
 
+## Which file is what {#which-file-is-what}
+
+Three files matter. One is the source; the other two are made from it.
+
+| File                               | What it is                                                                                      | Tracked | Made by                                |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- | ------- | -------------------------------------- |
+| `stryker.config.json`              | The settings: what to mutate, which tests run, where the results go                             | yes     | a person                               |
+| `reports/mutation/mutation.json`   | **The source.** Every mutant, its status, and per test which mutants it ran and which it caught | no      | a run, or `npm run test:mutation:pull` |
+| `mutation-baseline.json`           | One score per file, nothing else: the bar a file must not drop below                            | yes     | recorded from `mutation.json`          |
+| `reports/mutation/index.html`      | A viewer: `mutation.json` drawn as a page. Disposable                                           | no      | drawn from `mutation.json`             |
+| `reports/stryker-incremental.json` | A cache, so the next local run skips unchanged mutants. Speed only — never read as a result     | no      | Stryker                                |
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
+flowchart LR
+    GH["nightly run<br/><i>mutation-report artifact</i>"] -->|npm run test:mutation:pull| J
+    Full["npm run test:mutation<br/><i>every file</i>"] -->|replaces it| J
+    Part["npm run test:mutation<br/>-- --mutate &lt;file&gt;"] -->|laid over it| J
+    J["mutation.json<br/><b>the source</b>"] --> H["index.html<br/><i>viewer</i>"]
+    J -->|recorded| B["mutation-baseline.json<br/><i>committed scores</i>"]
+
+    classDef src fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef run fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef out fill:#dcfce7,stroke:#16a34a,color:#111827;
+    class J src;
+    class GH,Full,Part run;
+    class H,B out;
+```
+
+A partial run, `--mutate <file>`, is laid over the report already on disk (`scripts/mutation/overlay.ts`):
+that file takes the new result, every other file keeps the one that was there. A full run replaces
+the report.
+
+::: warning When GitHub runs your mutations
+After a partial run, the report on disk is no longer the nightly's. It is a mix:
+
+- **the files you mutated** — this run, on your machine, against your uncommitted or unpushed code
+- **every other file** — the nightly, as pulled, against the code `main` had that night
+
+`mutation-baseline.json` is not touched by a run. So:
+
+- **Pull first, then run.** `npm run test:mutation:pull` before a partial run, or the mix is laid
+  over an older report, or over nothing.
+- **Never record a baseline from the mix.** `npm run test:mutation:baseline` after a partial run
+  records your machine's numbers for those files. The baseline comes from the nightly, through the
+  pull.
+- **To get the nightly back**, pull again. It replaces the mix.
+  :::
+
 ## Glossary
 
 Read this first. The rest of the page uses these words precisely, and several of them mean something narrower than they sound.
@@ -182,12 +231,13 @@ token the job holds. A token that can push to `main`, next to hundreds of packag
 scripts, is the supply-chain shape GitHub's own hardening guide warns against
 ([GitHub Security Lab](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/)).
 
-So the job is `contents: read`, its checkout sets `persist-credentials: false`, and the updated
-baseline leaves as the `mutation-baseline` artifact (kept 90 days). Bringing it home is one
-command and a commit:
+So the job is `contents: read`, its checkout sets `persist-credentials: false`, and the run
+leaves as the `mutation-report` artifact (kept 90 days): `mutation.json` and `index.html`.
+Bringing it home is one command and a commit. The pull puts both in `reports/mutation/` and
+records `mutation-baseline.json` from the report — the same `--update` the job would run:
 
 ```bash
-npm run test:mutation:pull   # newest unexpired baseline from a run on main; needs `gh auth login`
+npm run test:mutation:pull   # newest unexpired report from a run on main; needs `gh auth login`
 git diff mutation-baseline.json
 ```
 
@@ -398,28 +448,30 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 
 ## File map
 
-| Path                                  | Contents                                                                                |
-| ------------------------------------- | --------------------------------------------------------------------------------------- |
-| `stryker.config.json`                 | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
-| `scripts/mutation/run-tests.ts`       | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
-| `mutation-baseline.json`              | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
-| `scripts/mutation/baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                             |
-| `scripts/mutation/check-baseline.ts`  | CLI for the two commands below                                                          |
-| `scripts/mutation/pull-baseline.ts`   | `npm run test:mutation:pull` — the newest uploaded baseline, written over the file      |
-| `scripts/testing/github-artifacts.ts` | Which uploaded baseline that is: the newest unexpired one from a run on `main`          |
-| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind it, shared with the Lighthouse baseline pull                      |
-| `.github/workflows/mutation.yml`      | Nightly schedule + dispatch, read-only; uploads the report and the baseline             |
-| `reports/mutation/index.html`         | Human-readable report (generated per run)                                               |
-| `reports/mutation/mutation.json`      | Machine-readable report the ratchet reads                                               |
+| Path                                  | Contents                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `stryker.config.json`                 | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters   |
+| `scripts/mutation/run-tests.ts`       | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`          |
+| `mutation-baseline.json`              | Per-file scores. Committed. The ratchet's memory. Absent until the first run.             |
+| `scripts/mutation/baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                               |
+| `scripts/mutation/check-baseline.ts`  | CLI for the two commands below                                                            |
+| `scripts/mutation/pull-report.ts`     | `npm run test:mutation:pull` — the newest nightly's report, the baseline recorded from it |
+| `scripts/mutation/overlay.ts`         | A partial run laid over the report on disk, and its page redrawn                          |
+| `scripts/testing/github-artifacts.ts` | Which uploaded artifact that is: the newest unexpired one from a run on `main`            |
+| `scripts/testing/pull-artifact.ts`    | The `gh` calls behind it, shared with the Lighthouse baseline pull                        |
+| `.github/workflows/mutation.yml`      | Nightly schedule + dispatch, read-only; uploads the report                                |
+| `reports/mutation/index.html`         | Human-readable report, drawn from `mutation.json`                                         |
+| `reports/mutation/mutation.json`      | The source: every mutant, per-test results — [which file is what](#which-file-is-what)    |
 
 ## Commands
 
-| Command                          | Effect                                                                           |
-| -------------------------------- | -------------------------------------------------------------------------------- |
-| `npm run test:mutation`          | Full run — slow, meant for a nightly or before a refactor, never mid-PR          |
-| `npm run test:mutation:check`    | Compare the last run against the per-file baseline. Fails naming what regressed. |
-| `npm run test:mutation:baseline` | Record the last run (improvements only). Use when `mutate` changed, and say why. |
-| `npm run test:mutation:pull`     | Download the newest baseline the nightly uploaded. Review the diff, then commit. |
+| Command                                    | Effect                                                                                                                       |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:mutation`                    | Full run — slow, meant for a nightly or before a refactor, never mid-PR                                                      |
+| `npm run test:mutation -- --mutate <file>` | One file, laid over the report on disk — see the warning in [which file is what](#which-file-is-what)                        |
+| `npm run test:mutation:check`              | Compare the last run against the per-file baseline. Fails naming what regressed.                                             |
+| `npm run test:mutation:baseline`           | Record the last run (improvements only). Use when `mutate` changed, and say why.                                             |
+| `npm run test:mutation:pull`               | Download the newest nightly's report into `reports/mutation/` and record the baseline from it. Review the diff, then commit. |
 
 ## Related pages
 

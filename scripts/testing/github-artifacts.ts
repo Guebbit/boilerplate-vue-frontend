@@ -1,13 +1,13 @@
 /**
  * @module
  * Which uploaded artifact a `pull-*` script downloads: the newest unexpired one of a name, from a
- * run on `main`. Shared by the mutation baseline and the Lighthouse baseline.
+ * run on `main`. Shared by the mutation report and the Lighthouse baseline.
  *
- * Pure: `pull-artifact.ts` does the GitHub calls and the file write.
+ * Pure: `pull-artifact.ts` does the GitHub calls and the file writes.
  * See: docs/tools/mutation-testing.md#the-nightly-holds-no-write-access
  */
 
-/** The branch whose runs measure the code a baseline belongs to. */
+/** The branch whose runs measure the code this checkout compares against. */
 export const ARTIFACT_BRANCH = 'main';
 
 /**
@@ -35,7 +35,7 @@ export interface GitHubArtifact {
  * The newest artifact called `name` that a run on {@link ARTIFACT_BRANCH} uploaded and that can
  * still be downloaded.
  *
- * A run on another branch is skipped: its baseline scores that branch's code, not `main`'s.
+ * A run on another branch is skipped: it measured that branch's code, not `main`'s.
  *
  * @param artifacts - every artifact GitHub listed, in any order
  * @param name - the artifact to look for

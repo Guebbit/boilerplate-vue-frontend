@@ -17,11 +17,16 @@ const BASELINE_ARTIFACT = 'lighthouse-baseline';
 pullArtifact(
     {
         name: BASELINE_ARTIFACT,
-        fileInArtifact: 'lighthouse-baseline.json',
-        targetPath: LIGHTHOUSE_BASELINE_PATH
+        files: [{ inArtifact: 'lighthouse-baseline.json', target: LIGHTHOUSE_BASELINE_PATH }]
     },
     'lighthouse-pull'
-).catch((error: unknown) => {
-    console.error(`[lighthouse-pull] ${error instanceof Error ? error.message : String(error)}`);
-    process.exitCode = 1;
-});
+)
+    .then(() => {
+        console.log('[lighthouse-pull] Review it with `git diff`, then commit it.');
+    })
+    .catch((error: unknown) => {
+        console.error(
+            `[lighthouse-pull] ${error instanceof Error ? error.message : String(error)}`
+        );
+        process.exitCode = 1;
+    });
