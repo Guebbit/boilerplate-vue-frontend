@@ -393,8 +393,16 @@ Cypress.Commands.add(
             })
             // A replayed `GET /products/categories` would still carry the old data's chips.
             .then(() => clearBrowserHttpCache())
-            // The restore reset the replay mark of every authenticator code too.
-            .then(() => cy.task('forgetLoginCodes', null, { log: false }))
+            // A demo restore reset the replay mark of every authenticator code too; a live reseed
+            // did not, and its own staff logins spent the current step.
+            .then(() => cy.env(['liveProfile']))
+            .then(({ liveProfile }) =>
+                cy.task(
+                    'forgetLoginCodes',
+                    liveProfile === true ? { seededAt: Date.now() } : null,
+                    { log: false }
+                )
+            )
             // Re-read rather than kept: a different scenario promises different rows, and
             // under the live profile the reset that just ran is what WROTE the description.
             .then(() => loadScenario())

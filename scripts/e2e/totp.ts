@@ -45,6 +45,13 @@ const CLOCK_MARGIN_MS = 1500;
 const lastLoginStep = new Map<string, number>();
 
 /**
+ * The step a live reseed's own staff logins may have used, for every secret at once: the seeder
+ * answers the challenge with the current step, and that mark survives in the backend's data, where
+ * the demo backend's restore wipes it. Nothing at or before it is minted again.
+ */
+let seededThrough = Number.NEGATIVE_INFINITY;
+
+/**
  * Waits `ms` — a seam of its own so the unit test can pass a fake instead of a real 30 seconds.
  *
  * @param ms - how long, in milliseconds
@@ -79,7 +86,7 @@ export const loginTotpCode = (
     // A mark from the future belongs to a clock that has since been put back (a restore): forget it.
     if ((lastLoginStep.get(secret) ?? Number.NEGATIVE_INFINITY) > current + 1)
         lastLoginStep.delete(secret);
-    const used = lastLoginStep.get(secret) ?? Number.NEGATIVE_INFINITY;
+    const used = Math.max(lastLoginStep.get(secret) ?? Number.NEGATIVE_INFINITY, seededThrough);
     const step = [current, current + 1].find((candidate) => candidate > used);
 
     if (step === undefined) {
@@ -93,11 +100,18 @@ export const loginTotpCode = (
 };
 
 /**
- * Forgets which steps were used. Called when the backend's data is restored: the restore resets
- * the replay mark too, so the memory would only make the next login wait for nothing.
+ * Forgets which steps were used. Called when the backend's data is restored: the demo restore
+ * resets the replay mark too, so the memory would only make the next login wait for nothing.
+ * A live reseed does not reset it, and its own staff logins have spent the current step.
+ *
+ * @param seededAt - the clock in milliseconds when a live reseed finished; omit for a demo restore
  */
-export const forgetLoginCodes = (): null => {
+export const forgetLoginCodes = (seededAt?: number): null => {
     lastLoginStep.clear();
+    seededThrough =
+        seededAt === undefined
+            ? Number.NEGATIVE_INFINITY
+            : Math.floor((seededAt - CLOCK_MARGIN_MS) / 1000 / STEP_SECONDS);
     return null;
 };
 

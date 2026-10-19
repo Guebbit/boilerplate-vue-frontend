@@ -80,6 +80,14 @@ describe('loginTotpCode', () => {
         expect(code).toMatch(/^\d{6}$/);
     });
 
+    it('skips the step a live reseed spent, so the first login takes the next one', async () => {
+        forgetLoginCodes(AT);
+
+        expect(await loginTotpCode(SECRET, () => AT, noSleep)).toBe(
+            await totpCode({ secret: SECRET, stepsFromNow: 1 }, AT)
+        );
+    });
+
     it('starts over once the memory is forgotten', async () => {
         forgetLoginCodes();
         const first = await loginTotpCode(SECRET, () => AT, noSleep);
