@@ -11,7 +11,6 @@
  * Both clocks move together: the server's decides when the session ends, a Date-only browser
  * clock lets the page's countdown notice.
  */
-import { skipUnlessSessionMode } from '../../../support/e2e/harness';
 import { answerChallengePage } from '../../../support/e2e/login-challenge';
 
 /** One minute, in milliseconds. */
@@ -32,7 +31,6 @@ describe('FR20 · My staff session idled out with a form open', () => {
     // A regular `function`, so Mocha's `this.skip()` works.
     it('warns, extends on Stay, and ends with the page remembered', function () {
         cy.skipUnlessDemo();
-        skipUnlessSessionMode(this, 'jwt');
 
         cy.subjectId('product.inStock').then((productId) => {
             const editPath = `/en/products/${productId}/edit`;

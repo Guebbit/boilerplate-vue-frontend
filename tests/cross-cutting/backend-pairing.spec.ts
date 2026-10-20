@@ -89,6 +89,7 @@ const UNPAIRED_BACKEND_MODULES: Readonly<Partial<Record<string, string>>> = {
         'The relay for browsing events has no screen: the consent store (`infrastructure/analytics-consent.ts`) sends them from the product pages, once the visitor has agreed.',
     antibot:
         'A shared widget (`infrastructure/http/antibot.ts` + `ui/organisms/HumanCheck.vue`), used by account, feedback and payments — not a screen of its own.',
+    shop: 'The seller and its settings are read once, through `GET /shop`, into the shop store (`infrastructure/shop.ts`) that every module draws on, not a module of its own on this side.',
     sitemap:
         'Search engines read its XML files; this app never calls them. It only points at them, from `robots.txt` (`VITE_ROBOTS_INDEX`), which the container writes.',
     invoicing:

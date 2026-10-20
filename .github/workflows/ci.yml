@@ -578,8 +578,10 @@ jobs:
             - name: Upload failing-shard logs
               # `run-e2e-shards.ts` writes a failed shard's full Cypress output here. Uploaded because
               # stderr is the one copy that can be lost to a truncated log, and once it is the
-              # failure is undiagnosable.
-              if: failure()
+              # failure is undiagnosable. `cancelled()` too: the job's 75-minute budget cancels it, and
+              # a plain `failure()` skips the upload on exactly the run that most needs the logs
+              # (which shard was still running, and on which spec).
+              if: failure() || cancelled()
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
               with:
                   name: e2e-shard-logs-${{ matrix.session-mode }}

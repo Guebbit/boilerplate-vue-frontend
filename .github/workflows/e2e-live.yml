@@ -152,6 +152,20 @@ env:
     NODE_AUTH_RATE_LIMIT_ADDRESS_MAX: '1000'
     NODE_SIGNUP_RATE_LIMIT_MAX: '1000'
     NODE_RESET_RATE_LIMIT_MAX: '1000'
+    # The shop's identity and its VAT pair: `orders` and `products` refuse to boot without them
+    # (the seed step, the running backend and every `cy.restore()` reseed all boot the app). The
+    # demo profile's own values (scenarios/run-server.ts REQUIRED_DEFAULTS in the backend),
+    # throwaway like everything above.
+    NODE_SHOP_COUNTRY: IT
+    NODE_SHOP_TIMEZONE: Europe/Rome
+    NODE_SHOP_LEGAL_NAME: Guebbit Demo Shop Srl
+    NODE_SHOP_STREET: Via Roma 1
+    NODE_SHOP_CITY: Milano
+    NODE_SHOP_ZIP: '20100'
+    NODE_SHOP_EMAIL: shop@example.com
+    NODE_SHOP_PHONE: '+39 02 1234567'
+    NODE_VAT_RATE_DEFAULT: '0.22'
+    NODE_VAT_RATE_REDUCED: '0.10'
     # Throwaway, NOT A SECRET (32-byte hex, like the keys above).
     NODE_METRICS_TOKEN: 786f2f6930240de02a0ad3f60d875d62cb01b6e1122c45b82382f877b398d8e9
     # The provider's webhook signing secret. Known, so a spec can sign a delivery itself
@@ -355,15 +369,32 @@ jobs:
             # https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set/
             - name: Start Mongo as a single-node replica set
               run: |
+                  # Both waits are bounded (30 tries x 2 s = 60 s) and dump what the container says on
+                  # failure: an unbounded `until` sat here until the job budget cancelled it, and left
+                  # nothing in the log to say whether mongod never started or never won the election.
+                  wait_for() {
+                      description="$1"; shift
+                      for _ in $(seq 1 30); do
+                          if "$@" >/dev/null 2>&1; then return 0; fi
+                          sleep 2
+                      done
+                      echo "::error::Mongo: $description did not happen within 60 s"
+                      docker ps -a --filter name=mongo
+                      docker logs --tail 100 mongo || true
+                      docker exec mongo mongosh --quiet --eval 'JSON.stringify(rs.status())' || true
+                      return 1
+                  }
+                  primary() { docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; }
                   # mongo:8
                   docker run -d --name mongo -p 27017:27017 \
                       mongo@sha256:5d7043a4ffe02b9ed1b6e0bab057546981af5ca0a79107e9c461e49bc44c0a7b \
                       --replSet rs0 --bind_ip_all
-                  until docker exec mongo mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' >/dev/null 2>&1; do sleep 2; done
+                  wait_for 'the server answering a ping' \
+                      docker exec mongo mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'
                   docker exec mongo mongosh --quiet --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "127.0.0.1:27017" }] })'
                   # Wait for the election: a seed that starts before there is a primary fails on its
                   # first write.
-                  until docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true; do sleep 2; done
+                  wait_for 'the election of a primary' primary
 
             # The TLS door in front of `webhook-tester`: Caddy serving the backend's committed demo
             # certificate (its `scenarios/support/tls/`, a test CA the backend's dev preload
