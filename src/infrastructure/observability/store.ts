@@ -16,6 +16,9 @@
  * Guidelines 2/2023), and fault finding is no "strictly necessary" exemption (WP29 04/2012 §4.3,
  * Criterion B), so Faro follows consent. See `docs/tools/observability.md`.
  *
+ * Neither SDK is told who the visitor is: Faro's `setUser` and Umami's `identify` are never called, so
+ * nothing either one keeps is keyed to an account (data minimisation, GDPR Art. 5(1)(c) and 25(2)).
+ *
  * Umami writes the PAGEVIEWS itself, including SPA route changes. The only custom events this app
  * sends are browsing ones (`trackBrowsing` in `analytics-consent.ts`), through the backend's relay
  * and only after consent; every business fact is reported by the backend, from the handler that
@@ -159,19 +162,6 @@ const describeApiRejectError = (envelope: ApiRejectEnvelope): string =>
         .filter((part): part is string => typeof part === 'string' && part.length > 0)
         .join(' ');
 
-// The Umami tracker script attaches a `umami` object to `window` once loaded. Only `identify` is
-// declared: pageviews need no call, and this app sends no custom events.
-
-/**
- * The subset of Umami's global tracker this app calls.
- *
- * Declared rather than imported: the script is loaded from a `<script>` tag at runtime, so
- * there is no package to take a type from.
- */
-interface UmamiTracker {
-    identify?: (data: Record<string, unknown>) => void;
-}
-
 /**
  * The `localStorage` key the Umami tracker checks before every send: any truthy value silences it.
  * https://umami.is/docs/tracker-configuration
@@ -194,13 +184,6 @@ const setUmamiOptOut = (disabled: boolean): void => {
         logger.debug('observability', '[Umami] localStorage unavailable, opt-out not persisted');
     }
 };
-
-/**
- * Augments the global scope: `umami` exists once the tracker script above has loaded.
- */
-declare global {
-    var umami: UmamiTracker | undefined;
-}
 
 /**
  * Store instance: see the module doc above for the overall shape.
@@ -365,40 +348,6 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Identifies the current user — id only, in both Faro and Umami (when its v2.11+ `identify`
-     * is available). Neither ever gets an email: Faro is a diagnostics identity, not a contact
-     * book, and Umami markets itself as privacy-respecting, cookieless analytics — handing it an
-     * email would contradict that on this deployment's behalf.
-     *
-     * Callers gate this on the visitor's own analytics consent (`payload.analyticsConsent`) —
-     * this function does not ask, since it has no way to tell an unset consent from a withdrawn
-     * one and no business fetching the profile itself.
-     *
-     * @param userId - Stable user identifier.
-     */
-    const identifyUser = (userId: string): void => {
-        if (faroReady.value && faro) {
-            faro.api.setUser({ id: userId });
-        }
-
-        // Umami has a lightweight identify (v2.11+); best-effort.
-        globalThis.umami?.identify?.({ id: userId });
-    };
-
-    /**
-     * Clears the user identity from Faro and Umami. Call on logout / account deletion.
-     */
-    const unidentifyUser = (): void => {
-        if (faroReady.value && faro) {
-            faro.api.resetUser();
-        }
-
-        // Umami has no reset call: identifying with a null id is how a later pageview stops
-        // carrying the previous user's id (best-effort, same v2.11+ caveat as `identifyUser`).
-        globalThis.umami?.identify?.({ id: null });
-    };
-
-    /**
      * Reports an exception to Faro (visible in Grafana → Loki).
      *
      * an {@link ApiRejectEnvelope} — what every failed API call actually throws — is named
@@ -517,8 +466,6 @@ export const useObservabilityStore = defineStore('observability', () => {
         setFaroConsent,
 
         // Unified API
-        identifyUser,
-        unidentifyUser,
         captureException
     };
 });

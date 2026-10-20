@@ -19,8 +19,6 @@ import { asStub } from '../../../support/stub.ts';
 
 /** The `faro.api` surface this store calls, spied so each call can be asserted. */
 const faroApi = {
-    setUser: vi.fn(),
-    resetUser: vi.fn(),
     pushError: vi.fn()
 };
 
@@ -461,24 +459,6 @@ describe('stripTokensFromTelemetry on events', () => {
                 fakeTransportItem({ type: 'event', payload: { name: 'faro.navigation' } })
             )
         ).not.toThrow();
-    });
-});
-
-describe('identifyUser, once Faro is up', () => {
-    it('sets the user on Faro — id only, it takes no email', async () => {
-        const store = useObservabilityStore();
-        await store.initFaro();
-        store.identifyUser('u1');
-
-        expect(faroApi.setUser).toHaveBeenCalledWith({ id: 'u1' });
-    });
-
-    it('clears the identity on unidentify', async () => {
-        const store = useObservabilityStore();
-        await store.initFaro();
-        store.unidentifyUser();
-
-        expect(faroApi.resetUser).toHaveBeenCalledOnce();
     });
 });
 

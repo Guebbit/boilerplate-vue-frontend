@@ -145,7 +145,9 @@
     "translation-tabs": {
         "error-count": "{count} errore/i",
         "button-remove-language": "Rimuovi {name}",
-        "label-add-language": "Aggiungi lingua"
+        "label-add-language": "Aggiungi lingua",
+        "draft": "Bozza",
+        "draft-hint": "Bozza — non visibile ai clienti"
     },
     "image": {
         "placeholder-alt": "Nessuna immagine disponibile — immagine segnaposto"
@@ -380,7 +382,7 @@
             },
             "paragraphs": [
                 "Analisi: quando è configurato, questo sito misura le visualizzazioni di pagina con un tracker Umami self-hosted, ma solo dopo che accetti il banner sulle analisi. Sono inclusi l'indirizzo di ogni pagina, la lingua e la dimensione dello schermo del browser e la pagina di provenienza. Se rifiuti, o ritiri il consenso da \"Scelte sulla privacy\" nel piè di pagina, il tracker non viene caricato o smette di inviare. Se hai effettuato l'accesso, l'id del tuo account viene associato a ciò che viene registrato.",
-                "Segnalazioni di errore e velocità delle pagine: quando è configurato, questo sito invia errori, errori della console, la velocità di caricamento delle pagine e una traccia di ogni richiesta al proprio collettore (Grafana Faro, gestito dall'operatore, non da terzi), ma solo dopo che accetti lo stesso banner. Sono inclusi l'indirizzo di ogni pagina senza ciò che segue un ? o un #, il browser, il sistema operativo, la lingua e la dimensione dello schermo, e il tuo indirizzo IP così come lo riceve il collettore. Se hai effettuato l'accesso e hai accettato, l'id del tuo account viene associato. Se rifiuti, o ritiri il consenso, non viene inviato nulla. Una sola chiave, com.grafana.faro.lastNavigationId, resta in sessionStorage finché non chiudi la scheda."
+                "Segnalazioni di errore e velocità delle pagine: quando è configurato, questo sito invia errori, errori della console, la velocità di caricamento delle pagine e una traccia di ogni richiesta al proprio collettore (Grafana Faro, gestito dall'operatore, non da terzi), ma solo dopo che accetti lo stesso banner. Sono inclusi l'indirizzo di ogni pagina senza ciò che segue un ? o un #, il browser, il sistema operativo, la lingua e la dimensione dello schermo, e il tuo indirizzo IP così come lo riceve il collettore. Se rifiuti, o ritiri il consenso, non viene inviato nulla. Una sola chiave, com.grafana.faro.lastNavigationId, resta in sessionStorage finché non chiudi la scheda."
             ]
         },
         "legal": {

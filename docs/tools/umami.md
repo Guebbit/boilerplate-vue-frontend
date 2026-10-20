@@ -47,7 +47,7 @@ Umami waits for the visitor, the same private-by-default rule as the backend's
 | Guest declines / withdraws    | Cookie = `denied`, `umami.disabled` set, the tag (if loaded) goes silent                                                              |
 | Signed in, profile loaded     | The account's own `analyticsConsent` rules, over the guest cookie; the banner stays hidden while the account holds an answer          |
 | Signed in, banner or link     | Its buttons write the account (`PATCH /account`), never the guest cookie                                                              |
-| Logout / account deletion     | `identify` is reset and the guest cookie's answer applies again                                                                       |
+| Logout / account deletion     | the guest cookie's answer applies again                                                                                               |
 | Footer "Privacy choices" link | Reopens the banner for any visitor, so withdrawing is as easy as agreeing (GDPR Art. 7(3)); signed in, its answer goes to the account |
 
 The banner and the link show whenever Umami (`VITE_UMAMI_WEBSITE_ID`) or Faro (`VITE_FARO_URL`) is
@@ -55,9 +55,9 @@ configured; there is no separate flag. Faro follows the same answer
 (`setFaroConsent`): it is not loaded, so no crash report is sent, until the visitor agrees, and the banner says so. `VITE_UMAMI_REQUIRE_CONSENT=false` makes the tracker load unasked, for a deployer
 with their own legal basis. That also makes the banner's promise untrue, so change its copy too.
 
-The tag sends the page URL, the full referrer, screen size and language, and for a signed-in,
-consenting user the account id (`identify`). The backend writes into the same Umami website, so a
-consenting user's pageviews and events join under that id. The shipped Umami v2.14 cannot meet
+The tag sends the page URL, the full referrer, screen size and language, and no account id: the
+browser never calls `identify`. The backend writes into the same Umami website, and its own events do
+carry the account id of a consenting signed-in caller. The shipped Umami v2.14 cannot meet
 CNIL's audience-measurement exemption, so consent is the basis, not an exemption.
 
 ## Who sends which event

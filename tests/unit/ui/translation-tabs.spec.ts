@@ -97,3 +97,46 @@ describe('TranslationTabs — the tab/panel link a caller completes', () => {
         expect(tab.attributes('aria-controls')).toBe('translation-panel-it');
     });
 });
+
+describe('TranslationTabs — a draft language', () => {
+    const WITH_DRAFT = [
+        ...LOCALES,
+        { tag: 'fr', nativeName: 'Français', direction: 'ltr' as const, active: false }
+    ];
+
+    it('marks an open draft tab, with its real name and not the bare code', () => {
+        wrapper = mount(TranslationTabs, {
+            props: {
+                locales: WITH_DRAFT,
+                openTags: ['en', 'fr'],
+                fallbackTag: 'en',
+                modelValue: 'en'
+            },
+            global: { plugins: [vuetify, i18n] },
+            attachTo: document.body
+        });
+
+        const tab = wrapper.get('[data-test="translation-tab-fr"]');
+        expect(tab.text()).toContain('Français');
+        expect(wrapper.find('[data-test="translation-tab-draft-fr"]').exists()).toBe(true);
+        expect(wrapper.find('[data-test="translation-tab-draft-en"]').exists()).toBe(false);
+    });
+
+    it('still nests no focusable control inside a draft tab', async () => {
+        wrapper = mount(TranslationTabs, {
+            props: {
+                locales: WITH_DRAFT,
+                openTags: ['en', 'fr'],
+                fallbackTag: 'en',
+                modelValue: 'fr'
+            },
+            global: { plugins: [vuetify, i18n] },
+            attachTo: document.body
+        });
+
+        // Cast for the same `.vue` typing limit as the first case's.
+        const results = await auditTablist(wrapper.element as Element);
+
+        expect(results.violations).toEqual([]);
+    });
+});

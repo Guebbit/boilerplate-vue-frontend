@@ -26,7 +26,7 @@ import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useProductsStore } from '../store';
 import { useSlot } from '@/kernel/slots.ts';
 import { productsSchema } from '../schemas.ts';
-import { useActiveLocales } from '../composables/use-active-locales.ts';
+import { useTranslationLocales } from '../composables/use-translation-locales.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
@@ -86,8 +86,8 @@ const registerAfterCreate = (step: (productId: string) => Promise<void>) => {
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers.
  */
-const { locales, fallbackLocale, fetchActiveLocales } = useActiveLocales();
-void fetchActiveLocales();
+const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocales();
+void fetchTranslationLocales();
 
 /**
  * Form definition. `translations` mirrors the write body's own shape (`ProductTranslationsWrite`)

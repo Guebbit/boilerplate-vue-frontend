@@ -5,7 +5,7 @@
  * (`GET /delivery/fulfillment-orders/release-date-impact`, or `restock-date-impact` for the owed
  * units of a backorder) and puts the answer in a confirm dialog. It informs and never refuses.
  *
- * Calls `previewReleaseDateImpact` from `@api` directly, as `use-active-locales.ts` does for the
+ * Calls `previewReleaseDateImpact` from `@api` directly, as `use-translation-locales.ts` does for the
  * locales: `delivery` is a sibling module, and the generated client is infrastructure.
  */
 import { useI18n } from 'vue-i18n';

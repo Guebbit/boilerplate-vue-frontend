@@ -1,7 +1,9 @@
 /**
  * @module
- * The active-locale list a product form needs for its language tabs: every locale
- * `GET /locales` reports `active`, plus the deployment's fallback tag.
+ * The locale list a product form needs for its language tabs: every locale `GET /locales` offers
+ * the caller, plus the deployment's fallback tag. For staff holding `display:Locale` that includes
+ * the languages switched off, so an editor can start a DRAFT in one — saved, kept, and not shown to
+ * shoppers until the language goes live. A caller without that read is only ever sent the live ones.
  *
  * Calls `getLocales` from `@api` directly rather than reaching `useLocalesStore` — the `locales`
  * module publishes no barrel (no `src/modules/locales/index.ts`), on purpose, mirroring the
@@ -43,10 +45,10 @@ const fallbackOnlyManifest = (tag: string): LocaleCapability => ({
 /**
  * Fetches and holds the locales a product's translations may target.
  */
-export const useActiveLocales = () => {
+export const useTranslationLocales = () => {
     /**
-     * Every active locale, tag/nativeName/direction — what
-     * `TranslationTabs`'s `locales` prop renders.
+     * Every locale the caller was offered — live ones and, for staff, draft ones (`active: false`).
+     * What `TranslationTabs`'s `locales` prop renders.
      */
     const locales = ref<LocaleCapability[]>([]);
 
@@ -61,7 +63,8 @@ export const useActiveLocales = () => {
     const loading = ref(false);
 
     /**
-     * Loads the manifest and narrows it to what this composable exposes.
+     * Loads the manifest. The request carries the caller's session, so a staff member who signed in
+     * after the screen first loaded gets the draft languages on the next call.
      *
      * A failed fetch (`locales` uninstalled, or genuinely unreachable) still leaves a WORKING
      * form: one tab, for the deployment's configured fallback language, rather than an empty
@@ -70,11 +73,11 @@ export const useActiveLocales = () => {
      *
      * @returns A promise resolving once `locales`/`fallbackLocale` are populated. Never rejects.
      */
-    const fetchActiveLocales = () => {
+    const fetchTranslationLocales = () => {
         loading.value = true;
         return getLocales()
             .then((response) => {
-                locales.value = response.data.locales.filter((locale) => locale.active);
+                locales.value = response.data.locales;
                 fallbackLocale.value = response.data.fallback;
             })
             .catch(() => {
@@ -87,5 +90,5 @@ export const useActiveLocales = () => {
             });
     };
 
-    return { locales, fallbackLocale, loading, fetchActiveLocales };
+    return { locales, fallbackLocale, loading, fetchTranslationLocales };
 };

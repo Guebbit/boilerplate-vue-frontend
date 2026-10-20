@@ -129,8 +129,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const guestConsentSyncSettled = ref(false);
 
     /**
-     * Loads the authenticated user's profile and identifies them in the
-     * observability tools.
+     * Loads the authenticated user's profile and applies their analytics
+     * consent answer to the trackers.
      *
      * Requires authentication, but an expired or missing access token triggers
      * an automatic refresh (using the jwt refresh cookie) and a retry.
@@ -147,16 +147,14 @@ export const useProfileStore = defineStore('accountProfile', () => {
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
-                    // Umami/Faro identity follows the visitor's own analytics consent, checked
-                    // fresh on every fetch — this store also refetches right after a consent
-                    // toggle (`updateProfile`), which is what turns a withdrawal into an unidentify.
+                    // Both trackers follow the visitor's own analytics consent, checked fresh on
+                    // every fetch — this store also refetches right after a consent toggle
+                    // (`updateProfile`), which is what turns a withdrawal into a pause.
                     const obs = useObservabilityStore();
                     // The account's own answer rules Umami while signed in, over the guest cookie.
                     obs.setUmamiConsent(payload.analyticsConsent === true);
                     obs.setFaroConsent(payload.analyticsConsent === true);
                     useAnalyticsConsentStore().setAccountChoice(payload.analyticsConsent);
-                    if (payload.analyticsConsent === true) obs.identifyUser(payload.id);
-                    else obs.unidentifyUser();
                     // Keep the shell's projection in step with the record just loaded, rules
                     // included: a screen that renders before them hides what it should show.
                     return publishViewer(payload).then(() => payload);
@@ -443,11 +441,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Local teardown once the server has ended every session of this account (a deletion, an
-     * email-change undo, a password reset): observability identity, consent answer, cached record and session.
+     * email-change undo, a password reset): consent answer, cached record and session.
      */
     const endLocalSession = () => {
-        // Clear user identity from observability tools
-        useObservabilityStore().unidentifyUser();
         // Back to the guest cookie's answer: the account's no longer applies.
         useAnalyticsConsentStore().setAccountChoice(undefined);
         useAnalyticsConsentStore().syncTracker();
@@ -498,7 +494,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *
      * @param token - Confirmation token received by email.
      * @returns A promise resolving once the account is deleted and the local
-     *  session, cached record and observability identity have been cleared.
+     *  session and cached record have been cleared.
      */
     const confirmAccountDelete = (token: string) =>
         fetchAny(() => apiConfirmAccountDelete({ token }).then(endLocalSession));

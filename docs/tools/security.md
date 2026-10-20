@@ -159,7 +159,7 @@ slow network greys things out rather than opening them.
 - **Bearer transport**: access token is not auto-attached by the browser; every protected request must explicitly include it.
 - **HttpOnly refresh cookie**: the refresh token is inaccessible to JavaScript, reducing XSS exposure.
 - **`sameSite=lax`** (set by backend): reduces cross-site cookie sending in common CSRF scenarios.
-- **No PII in Umami**: `identifyUser()` passes the email to Faro (this deployment's own error/session tool, for triage) but strips it before calling Umami's `identify()` — Umami markets itself as privacy-respecting, cookieless analytics, and gets the user id only.
+- **No PII in the trackers**: the browser never identifies the visitor to Faro or Umami (`setUser` and `identify` are never called), so neither the email nor the account id leaves it through them.
 
 ## The human-challenge widget (rung 3)
 

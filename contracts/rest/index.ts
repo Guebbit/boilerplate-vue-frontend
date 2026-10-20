@@ -640,7 +640,7 @@ export interface UpsertTranslationRequest {
 }
 
 /**
- * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean.
+ * One or more locales for one entity, keyed by locale tag. See the operation description for what an object, a `null`, and an absent key each mean. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on. A `PUT` deletes the stored locales it leaves out, drafts included.
  */
 export interface UpsertTranslationsRequest {
     [key: string]: UpsertTranslationRequest | null;
@@ -2383,7 +2383,7 @@ export interface ProductTranslationFieldsWrite {
 }
 
 /**
- * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`.
+ * One or more locales, keyed by BCP 47 tag, each stated WHOLE: a `PUT` replaces the set, so a stored locale this map omits is deleted and a `description` a locale omits is cleared, drafts included. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null on create and on `PUT`. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
 export interface ProductTranslationsWrite {
     [key: string]: ProductTranslationFieldsWrite | null;
@@ -2587,7 +2587,7 @@ export interface ProductTranslationFieldsPatch {
 }
 
 /**
- * One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST NOT be null.
+ * One or more locales, keyed by BCP 47 tag. A key absent from this map leaves that locale untouched; a key mapped to an object merges into it field by field (the fields it names change, the others keep what they have); a key mapped to null deletes it. An empty object is an error. The fallback locale (`NODE_FALLBACK_LOCALE`) MUST NOT be null. A tag this deployment has no language for is a 422. A registered language that is switched off is accepted and stored as a draft: it is not served, searched or copied into a message until the language is switched on.
  */
 export interface ProductTranslationsPatch {
     [key: string]: ProductTranslationFieldsPatch | null;
