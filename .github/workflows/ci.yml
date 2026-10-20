@@ -435,7 +435,7 @@ jobs:
 
             - name: Upload test report
               if: always()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: test-report-unit
                   path: reports/test-report.json
@@ -582,7 +582,7 @@ jobs:
               # a plain `failure()` skips the upload on exactly the run that most needs the logs
               # (which shard was still running, and on which spec).
               if: failure() || cancelled()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: e2e-shard-logs-${{ matrix.session-mode }}
                   path: reports/e2e/
@@ -594,7 +594,7 @@ jobs:
               # gates on serious/critical and writes the rest to `reports/a11y/`. Uploaded on
               # success as well, because the point is the data a green run still produced.
               if: always()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: a11y-reports-${{ matrix.session-mode }}
                   path: reports/a11y/
@@ -603,7 +603,7 @@ jobs:
 
             - name: Upload Cypress screenshots
               if: failure()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: cypress-screenshots-${{ matrix.session-mode }}
                   path: tests/e2e/screenshots
@@ -612,7 +612,7 @@ jobs:
 
             - name: Upload Cypress videos
               if: failure()
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               with:
                   name: cypress-videos-${{ matrix.session-mode }}
                   path: tests/e2e/videos
