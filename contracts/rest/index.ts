@@ -3847,6 +3847,8 @@ export interface FulfillmentOrder {
     consent?: FulfillmentConsent;
     /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
     consentDeadline?: string;
+    /** The definite revised shipping date (16 CFR 435.2 (b)), meaning the one offered while `consent` is `awaiting`, otherwise the one the buyer accepted, by answering or by silence. Absent with `consent` `confirmed` when the buyer agreed to wait with no end date and can still cancel any time before it ships. */
+    revisedShipDate?: string;
     /** When the buyer was last told the date had moved or passed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
@@ -3977,6 +3979,8 @@ export interface PreorderFulfillmentOrder {
     holdReason?: FulfillmentHoldReason;
     consent?: FulfillmentConsent;
     consentDeadline?: string;
+    /** The definite revised shipping date (16 CFR 435.2 (b)), meaning the one offered while `consent` is `awaiting`, otherwise the one the buyer accepted, by answering or by silence. Absent with `consent` `confirmed` when the buyer agreed to wait with no end date and can still cancel any time before it ships. */
+    revisedShipDate?: string;
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
     createdAt: string;
@@ -5062,6 +5066,8 @@ export interface ExportFulfillmentOrder {
     consent?: FulfillmentConsent;
     /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
     consentDeadline?: string;
+    /** The definite revised shipping date (16 CFR 435.2 (b)), meaning the one offered while `consent` is `awaiting`, otherwise the one the buyer accepted, by answering or by silence. Absent with `consent` `confirmed` when the buyer agreed to wait with no end date and can still cancel any time before it ships. */
+    revisedShipDate?: string;
     /** When the buyer was last told the date had moved or passed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
@@ -5579,12 +5585,12 @@ export interface ReleaseDateImpact {
      */
     notify: number;
     /**
-     * Orders that get a question; silence until `answerBy` cancels and refunds. Includes an order that also has a notice.
+     * Orders that get a question; silence until the buyer's deadline cancels and refunds. Includes an order that also has a notice.
      * @minimum 0
      */
     ask: number;
-    /** When silence would turn into a cancel, were the question asked now. Meaningful when `ask` is above 0. */
-    answerBy: string;
+    /** The earliest date by which a buyer who gets a question must say yes, if the move were saved now; each buyer's own deadline is 28 days after the date they were promised, or the date they already accepted. Absent when `ask` is 0. */
+    answerBy?: string;
 }
 
 export interface ReleaseDateImpactEnvelope {
@@ -11068,8 +11074,7 @@ export const listPaymentAttention = (
 /**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the
  * orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
- * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
@@ -11092,8 +11097,7 @@ export const previewReleaseDateImpact = (
 /**
  * A preview for staff about to save a restock date, so the save is never a surprise. Counts the
  * orders whose backordered units for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
- * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *

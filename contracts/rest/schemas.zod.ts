@@ -9746,6 +9746,7 @@ export const GetFulfillmentByOrderResponse = zod.strictObject({
                 expectedAt: zod.iso.datetime({ offset: true }).optional(),
                 consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
                 consentDeadline: zod.iso.datetime({ offset: true }).optional(),
+                revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
                 lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
                 cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
                 actions: zod.strictObject({
@@ -10181,6 +10182,7 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                     .optional(),
                 consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
                 consentDeadline: zod.iso.datetime({ offset: true }).optional(),
+                revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
                 lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
                 cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
                 createdAt: zod.iso.datetime({ offset: true })
@@ -10552,6 +10554,7 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
         expectedAt: zod.iso.datetime({ offset: true }).optional(),
         consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
         consentDeadline: zod.iso.datetime({ offset: true }).optional(),
+        revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
         lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
         cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
         actions: zod.strictObject({
@@ -10639,6 +10642,7 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
         expectedAt: zod.iso.datetime({ offset: true }).optional(),
         consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
         consentDeadline: zod.iso.datetime({ offset: true }).optional(),
+        revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
         lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
         cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
         actions: zod.strictObject({
@@ -10729,6 +10733,7 @@ export const ConfirmFulfillmentOrderWaitResponse = zod.strictObject({
         expectedAt: zod.iso.datetime({ offset: true }).optional(),
         consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
         consentDeadline: zod.iso.datetime({ offset: true }).optional(),
+        revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
         lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
         cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
         actions: zod.strictObject({
@@ -13544,6 +13549,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
             expectedAt: zod.iso.datetime({ offset: true }).optional(),
             consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
             consentDeadline: zod.iso.datetime({ offset: true }).optional(),
+            revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
             cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional()
         })
@@ -15117,8 +15123,7 @@ export const ListPaymentAttentionResponse = zod.strictObject({
 /**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the
  * orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
- * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
@@ -15147,14 +15152,13 @@ export const PreviewReleaseDateImpactResponse = zod.strictObject({
     data: zod.strictObject({
         notify: zod.number().min(previewReleaseDateImpactResponseDataNotifyMin),
         ask: zod.number().min(previewReleaseDateImpactResponseDataAskMin),
-        answerBy: zod.iso.datetime({ offset: true })
+        answerBy: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
  * A preview for staff about to save a restock date, so the save is never a surprise. Counts the
  * orders whose backordered units for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence for 30 days cancels and refunds,
- * by `answerBy`). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
@@ -15183,7 +15187,7 @@ export const PreviewRestockDateImpactResponse = zod.strictObject({
     data: zod.strictObject({
         notify: zod.number().min(previewRestockDateImpactResponseDataNotifyMin),
         ask: zod.number().min(previewRestockDateImpactResponseDataAskMin),
-        answerBy: zod.iso.datetime({ offset: true })
+        answerBy: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
