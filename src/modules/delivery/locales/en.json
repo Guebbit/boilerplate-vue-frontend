@@ -45,6 +45,8 @@
         "consent-awaiting-buyer": "This is late. Do you still want to wait for it?",
         "consent-awaiting-staff": "Waiting for the buyer to say whether to keep waiting",
         "consent-confirmed": "Keep waiting confirmed",
+        "agreed-until": "Waiting agreed until {date}",
+        "agreed-open-ended": "Waiting agreed with no fixed date; it can be cancelled any time before it ships",
         "consent-expired": "No answer in time: being cancelled and refunded",
         "answer-by": "Answer by {date}, or what remains of it is cancelled and refunded.",
         "last-notice": "Last notice sent {date}",

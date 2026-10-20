@@ -395,6 +395,34 @@ describe('a late preorder', () => {
         expect(wrapper.find('[data-test=fulfillment-order-answer-by]').exists()).toBe(false);
     });
 
+    it.each([
+        [
+            'a date agreed to by silence',
+            { consent: undefined, revisedShipDate: '2027-04-19T00:00:00.000Z' },
+            'Waiting agreed until'
+        ],
+        [
+            'a date the buyer said yes to',
+            { consent: 'confirmed', revisedShipDate: '2027-04-19T00:00:00.000Z' },
+            'Waiting agreed until'
+        ],
+        ['a yes with no end date', { consent: 'confirmed' }, 'Waiting agreed with no fixed date']
+    ] as const)('says what was agreed for %s', (_name, state, words) => {
+        const { wrapper } = mountCard(aFulfillmentOrder(state));
+
+        expect(wrapper.get('[data-test=fulfillment-order-agreed-wait]').text()).toContain(words);
+    });
+
+    it.each([
+        ['an open question', { consent: 'awaiting', revisedShipDate: '2027-04-19T00:00:00.000Z' }],
+        ['an expired one', { consent: 'expired', revisedShipDate: '2027-04-19T00:00:00.000Z' }],
+        ['nothing agreed', {}]
+    ] as const)('says nothing about an agreed wait for %s', (_name, state) => {
+        const { wrapper } = mountCard(aFulfillmentOrder(state));
+
+        expect(wrapper.find('[data-test=fulfillment-order-agreed-wait]').exists()).toBe(false);
+    });
+
     it('says who cancelled what was left, and when the buyer was last told', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({

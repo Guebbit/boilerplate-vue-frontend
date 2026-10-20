@@ -284,19 +284,23 @@ describe('ProductEdit — the preview before a later or cleared date', () => {
             expect(confirmSpy).toHaveBeenCalledOnce();
             const request = confirmSpy.mock.calls[0][0] as { message: string; color: string };
             expect(request.message).toContain('12 orders get a notice');
-            expect(request.message).toContain('3 orders must say yes by');
+            expect(request.message).toContain('3 orders must say yes, the first by');
             expect(request.message).toContain('silence cancels and refunds');
             expect(request.color).toBe('warning');
             expect(patched()).toBe(true);
         }));
 
     it('names only the notices when nobody has to answer', () =>
-        submitWith(
-            { notify: 1, ask: 0, answerBy: '2027-11-16T00:00:00.000Z' },
-            '2027-04-01T10:00'
-        ).then(() => {
+        submitWith({ notify: 1, ask: 0 }, '2027-04-01T10:00').then(() => {
             const request = confirmSpy.mock.calls[0][0] as { message: string };
             expect(request.message).toBe('1 order gets a notice');
+        }));
+
+    it('names no date when the preview gives none', () =>
+        submitWith({ notify: 0, ask: 2 }, '2027-04-01T10:00').then(() => {
+            const request = confirmSpy.mock.calls[0][0] as { message: string };
+            expect(request.message).toContain('2 orders must say yes');
+            expect(request.message).not.toContain(' by ');
         }));
 
     it('asks for a cleared date without sending a releaseDate', () =>
@@ -320,7 +324,7 @@ describe('ProductEdit — the preview before a later or cleared date', () => {
     });
 
     it('saves without a dialog when nobody is reached', () =>
-        submitWith({ notify: 0, ask: 0, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(() => {
+        submitWith({ notify: 0, ask: 0 }, '').then(() => {
             expect(confirmSpy).not.toHaveBeenCalled();
             expect(patched()).toBe(true);
         }));

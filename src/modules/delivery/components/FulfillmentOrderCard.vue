@@ -14,7 +14,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { OrderStatus } from '@/types/enums.ts';
 import { useDeliveryStore } from '../store.ts';
@@ -149,6 +149,19 @@ const consentKey = computed(() => {
     return consent === 'confirmed'
         ? 'fulfillment-order-card.consent-confirmed'
         : 'fulfillment-order-card.consent-expired';
+});
+
+/**
+ * What the buyer agreed to wait for, once no question is open: the definite revised date (accepted
+ * by answering or by silence), or, after a "yes" to a question that offered no date, an open-ended
+ * wait that stays cancellable until it ships. Absent while a question is open or expired, and when
+ * nothing was ever agreed.
+ */
+const agreedWait = computed(() => {
+    const { consent, revisedShipDate } = props.fulfillmentOrder;
+    if (consent === 'awaiting' || consent === 'expired') return undefined;
+    if (revisedShipDate) return { key: 'agreed-until', date: formatDate(revisedShipDate) };
+    return consent === 'confirmed' ? { key: 'agreed-open-ended', date: '' } : undefined;
 });
 
 /**
@@ -302,6 +315,9 @@ const release = () =>
                 }}
             </p>
         </div>
+        <p v-if="agreedWait" class="m-0 text-sm" data-test="fulfillment-order-agreed-wait">
+            {{ t(`fulfillment-order-card.${agreedWait.key}`, { date: agreedWait.date }) }}
+        </p>
         <p
             v-if="fulfillmentOrder.lastNoticeAt"
             class="m-0 text-sm opacity-75"

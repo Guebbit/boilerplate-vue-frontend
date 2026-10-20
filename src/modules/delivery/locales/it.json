@@ -45,6 +45,8 @@
         "consent-awaiting-buyer": "È in ritardo. Vuoi ancora aspettarlo?",
         "consent-awaiting-staff": "In attesa che l'acquirente dica se continuare ad aspettare",
         "consent-confirmed": "Attesa confermata",
+        "agreed-until": "Attesa concordata fino al {date}",
+        "agreed-open-ended": "Attesa concordata senza una data fissa: si può annullare in qualsiasi momento prima della spedizione",
         "consent-expired": "Nessuna risposta in tempo: annullamento e rimborso in corso",
         "answer-by": "Rispondi entro il {date}, altrimenti ciò che resta viene annullato e rimborsato.",
         "last-notice": "Ultimo avviso inviato il {date}",

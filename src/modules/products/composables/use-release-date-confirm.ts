@@ -28,9 +28,10 @@ interface ReleaseDateImpact {
      */
     ask: number;
     /**
-     * When silence would cancel, were the question asked now.
+     * The earliest date a buyer who gets a question must answer by, were the move saved now. Absent
+     * when nobody is asked.
      */
-    answerBy: string;
+    answerBy?: string;
 }
 
 /**
@@ -57,7 +58,13 @@ export const useReleaseDateConfirm = (
         [
             notify > 0 && t('product-edit-page.impact-notify', { count: notify }, notify),
             ask > 0 &&
-                t('product-edit-page.impact-ask', { count: ask, date: formatDate(answerBy) }, ask),
+                (answerBy === undefined
+                    ? t('product-edit-page.impact-ask-undated', { count: ask }, ask)
+                    : t(
+                          'product-edit-page.impact-ask',
+                          { count: ask, date: formatDate(answerBy) },
+                          ask
+                      )),
             ask > 0 && t('product-edit-page.impact-silence')
         ]
             .filter(Boolean)
