@@ -29,6 +29,7 @@ import { isAnalyticsConsentEnabled } from '@/infrastructure/analytics-consent.ts
 import { readFaroConfig } from '@/infrastructure/observability/config.ts';
 import { fetchAntibotConfig } from '@/infrastructure/http/antibot.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
+import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 
 /**
  * Translation function for the column labels, the cell wording and the rows' own keys.
