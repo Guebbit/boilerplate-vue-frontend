@@ -22,6 +22,9 @@ actionTable('webhooks', [
             cy.get('[data-test=webhook-description] input').type('typed before the fault');
             cy.pickOption('[data-test=webhook-event-types]', 'order.created');
             cy.get('body').type('{esc}');
+            // The runner reads every input on the page as the form's typed values: the picker's list
+            // (a checkbox per event) must have left the page first, or a slow close is read as typing.
+            cy.get('[role=listbox]').should('not.exist');
         },
         trigger: () => {
             cy.get('form').submit();
