@@ -102,7 +102,7 @@ Vue I18n externalises all user-facing strings into locale message files. Switchi
 ### Locale flow
 
 1. URL contains `/:locale` segment (e.g. `/en/products`).
-2. The `localeChoice` guard validates the locale against `supportedLanguages` — the bundled dictionaries, plus whatever `GET /locales` added at boot.
+2. The `localeChoice` guard validates the locale against `supportedLanguages` — the bundled dictionaries, plus whatever `GET /locales` added at boot, minus a bundled language the shop has switched off.
 3. If invalid or absent, the default locale from `VITE_APP_DEFAULT_LOCALE` is injected.
 4. Vue I18n's active locale is set to match; translations are loaded lazily.
 

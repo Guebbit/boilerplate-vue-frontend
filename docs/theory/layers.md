@@ -311,7 +311,8 @@ Three sources, one job each, and no fourth:
    offline floor.
 2. **`GET /locales`** — what the deployment offers right now, with `nativeName`, `direction` and
    per-language `scopes`. `mergeRemoteLocales` unions it into `supportedLanguages` at boot, which
-   is how a language an editor adds appears in the switcher with no frontend deploy.
+   is how a language an editor adds appears in the switcher with no frontend deploy, and removes a
+   bundled language the shop has switched off (`active: false`).
 3. **`GET /locales/{locale}/messages`** — what has been edited for one of them.
 
 There is deliberately no env list. Naming a language in `.env` claimed support without supplying

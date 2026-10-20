@@ -57,16 +57,21 @@ let snapshot: string[] = [];
  *
  * @param tag - the language tag
  * @param apps - which apps have words in that language
+ * @param state - `active` and `source`; a deployed file the shop switched off reads `static` and off
  * @returns the capability row
  */
-const capability = (tag: string, apps: string[] = ['demo-be', 'demo-fe']) => ({
+const capability = (
+    tag: string,
+    apps: string[] = ['demo-be', 'demo-fe'],
+    { active = true, source = 'both' }: { active?: boolean; source?: string } = {}
+) => ({
     tag,
     name: tag,
     nativeName: tag,
     direction: 'ltr',
-    active: true,
+    active,
     apps,
-    source: 'both',
+    source,
     entryCount: 0,
     revision: 1
 });
@@ -118,6 +123,37 @@ describe('fetchRemoteLocales', () => {
             })
         );
         return expect(fetchRemoteLocales()).resolves.toEqual(['es']);
+    });
+
+    // A deployed file the shop has switched off keeps its row in every caller's manifest, as off.
+    // A visitor gets the deployed file alone (`static`); there is nothing of theirs to preview.
+    it('leaves out a deployed language the shop has switched off', () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('it', ['demo-be'], { active: false, source: 'static' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+        return expect(fetchRemoteLocales()).resolves.toEqual(['en']);
+    });
+
+    // Staff who may read drafts get the language's own row too (`both`): a draft to preview.
+    it('keeps a switched-off language a staff member can preview', () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('it', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+        return expect(fetchRemoteLocales()).resolves.toEqual(['en', 'it']);
     });
 
     it('drops a language that claims no app at all', () => {
@@ -221,6 +257,67 @@ describe('mergeRemoteLocales', () => {
             .then(() => {
                 expect(supportedLanguages.filter((locale) => locale === 'es')).toHaveLength(1);
             });
+    });
+
+    // The frontend bundles its own copy of `it`; only the manifest's `active: false` tells it to
+    // stop. Taken out of the list, the switcher stops offering it and the locale guard redirects
+    // an `/it/…` address to the default language.
+    it('takes a bundled language away once the shop has switched it off', () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('it', ['demo-be'], { active: false, source: 'static' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+        expect(supportedLanguages).toContain('it');
+
+        return mergeRemoteLocales().then(() => {
+            expect(supportedLanguages).not.toContain('it');
+            expect(supportedLanguages).toContain('en');
+        });
+    });
+
+    it('keeps a bundled language a staff member can still preview', () => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en'),
+                    capability('it', ['demo-be', 'demo-fe'], { active: false, source: 'both' })
+                ],
+                default: 'en',
+                fallback: 'en'
+            })
+        );
+
+        return mergeRemoteLocales().then(() => {
+            expect(supportedLanguages).toContain('it');
+        });
+    });
+
+    // The default language is the target of every redirect: taking it away would leave the locale
+    // guard redirecting to an address it then redirects again.
+    it.each([
+        ['default', 'it', 'en'],
+        ['fallback', 'en', 'it']
+    ])("never takes away the deployment's %s language", (_label, defaultTag, fallbackTag) => {
+        getLocalesMock.mockResolvedValue(
+            contractResponse(schemas.GetLocalesResponse, {
+                locales: [
+                    capability('en', ['demo-be'], { active: false, source: 'static' }),
+                    capability('it', ['demo-be'], { active: false, source: 'static' })
+                ],
+                default: defaultTag,
+                fallback: fallbackTag
+            })
+        );
+
+        return mergeRemoteLocales().then(() => {
+            expect(supportedLanguages).toEqual(expect.arrayContaining(['en', 'it']));
+        });
     });
 
     it('leaves the bundled languages alone when the API is unreachable', () => {
