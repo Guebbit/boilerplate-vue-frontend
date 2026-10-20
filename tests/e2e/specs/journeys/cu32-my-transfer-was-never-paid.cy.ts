@@ -6,6 +6,9 @@
  * out with no money: the order is cancelled, the customer's page offers nothing to pay or cancel,
  * and the order leaves the awaiting list.
  *
+ * Then the money turns up late. The admin finds the cancelled order by the reference the customer
+ * was given, records the transfer, and the payment lists it as money to hand back.
+ *
  * Demo only: the hold is a clock jump and the sweep is pulled with the job lever. The mail, the
  * stock count and the ledger row that follow are the sweep's integration test's.
  */
@@ -44,6 +47,10 @@ describe('CU32 · My transfer was never paid', () => {
         cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();
         cy.get('#order-target').should('exist');
         cy.get('[data-test=transfer-deadline]').invoke('text').should('not.be.empty');
+        cy.get('[data-test=transfer-reference]')
+            .invoke('text')
+            .then((text) => text.replaceAll(/\s+/g, ''))
+            .as('reference');
         idFromLocation().then((orderId) => {
             cy.step('the admin finds it on the awaiting-transfer list');
             cy.switchUser('admin');
@@ -73,6 +80,28 @@ describe('CU32 · My transfer was never paid', () => {
             cy.get('form button[type=submit]').click();
             cy.settleNetwork();
             cy.get(`[data-test=row-view][href$="/orders/${orderId}"]`).should('not.exist');
+
+            cy.step('the money arrives late: the reference still finds the cancelled order');
+            cy.get<string>('@reference').then((reference) => {
+                cy.visit('/en/sales/orders');
+                cy.get('[data-test=order-reference-search-input] input').type(reference);
+                cy.get('[data-test=order-reference-search-submit]').click();
+                cy.url().should('match', new RegExp(`/orders/${orderId}/edit$`));
+            });
+
+            cy.step('recording the transfer settles the payment, which is then owed back');
+            cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, {
+                method: 'bank_transfer',
+                reference: 'LATE-TRANSFER-1'
+            });
+
+            cy.step('and the payments page lists it as money to hand back');
+            cy.visit('/en/sales/payments');
+            cy.get('[data-test=payments-tab-attention]').click();
+            cy.contains('Money to hand back outside the system').should('exist');
+            cy.apiAs<OrderLike>('admin', 'GET', `/orders/${orderId}`)
+                .its('status')
+                .should('equal', 'cancelled');
         });
     });
 });

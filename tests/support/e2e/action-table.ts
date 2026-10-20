@@ -124,7 +124,7 @@ const apiRequest = (intercept: ActionIntercept) => ({
 /** Fallback for the `alert` selector. */
 const ANY_ALERT = '[role=alert]';
 
-/** The activity indicator in the app shell; `read` rows wait for it to go. */
+/** The activity indicator in the app shell; `read` rows wait for it to hide (the shell keeps it in the page with `v-show`). */
 const ACTIVITY_INDICATOR = '[data-test=activity-indicator]';
 
 /** How long a `read` row waits for the spinner to go: the page must not spin forever on a failure. */
@@ -259,7 +259,7 @@ const runReadFailure = (row: ActionRow): void => {
     cy.get(row.alert ? `[data-test=${row.alert}]` : ANY_ALERT)
         .should('be.visible')
         .and('contain.text', row.message ?? row.code ?? DEFAULT_CODE);
-    cy.get(ACTIVITY_INDICATOR, { timeout: SPINNER_TIMEOUT_MS }).should('not.exist');
+    cy.get(ACTIVITY_INDICATOR, { timeout: SPINNER_TIMEOUT_MS }).should('not.be.visible');
     cy.intercept(apiRequest(row.intercept), (request) => {
         request.continue();
     });

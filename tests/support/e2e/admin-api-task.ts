@@ -46,16 +46,29 @@ const unwrap = <T>(response: Response, context: string): Promise<T> =>
             return payload.data as T;
         });
 
+/** What a finished login answers with: a bearer, or a session id in cookie mode. */
+interface LoginTokens {
+    token?: string;
+    sessionToken?: string;
+}
+
 /**
- * Logs in as the given account and resolves its bearer credential. Asks for `transport: bearer`
- * so cookie mode answers with a `sessionToken` instead of a cookie nobody here can hold.
+ * Logs in as the given account and resolves its credential. Asks for `transport: bearer` so
+ * cookie mode answers with a `sessionToken` instead of a cookie nobody here can hold.
+ *
+ * A staff code the backend refuses (422) is tried once more: the step it was minted for had
+ * already been spent, by the backend's own staff sign-in at boot or by another call, and minting
+ * it marked that step used here, so the second code is for the next one.
+ *
+ * @param retriesLeft - how many more times a refused code may be replaced
  */
-const login = (
+const loginTokens = (
     apiUrl: string,
     email: string,
     password: string,
-    totpSecret?: string
-): Promise<string> =>
+    totpSecret: string | undefined,
+    retriesLeft: number
+): Promise<LoginTokens> =>
     fetch(`${apiUrl}/account/login`, {
         method: 'POST',
         headers: jsonHeaders,
@@ -81,15 +94,26 @@ const login = (
                               transport: 'bearer'
                           })
                       }).then((response) =>
-                          unwrap<{ token?: string; sessionToken?: string }>(
-                              response,
-                              'POST /account/login/2fa'
-                          )
+                          response.status === 422 && retriesLeft > 0
+                              ? loginTokens(apiUrl, email, password, totpSecret, retriesLeft - 1)
+                              : unwrap<LoginTokens>(response, 'POST /account/login/2fa')
                       )
                   )
                 : data
-        )
-        .then(({ token, sessionToken }) => token ?? sessionToken ?? '');
+        );
+
+/**
+ * Logs in as the given account and resolves its bearer credential.
+ */
+const login = (
+    apiUrl: string,
+    email: string,
+    password: string,
+    totpSecret?: string
+): Promise<string> =>
+    loginTokens(apiUrl, email, password, totpSecret, 1).then(
+        ({ token, sessionToken }) => token ?? sessionToken ?? ''
+    );
 
 /**
  * The bearer of each staff account already signed in, by API and address.

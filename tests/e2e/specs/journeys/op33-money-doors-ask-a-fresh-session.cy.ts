@@ -5,11 +5,11 @@
  * password after fifteen minutes (the sensitive window), and cancelling someone's paid order or a
  * moderator recording an offline payment or cancelling the rest of a part-shipped order ask after
  * five (the critical window). A customer cancelling their own order never asks, however old the
- * sign-in.
+ * sign-in; a manager cancelling their own order does, because the guard asks the role, not the owner.
  *
  * Time passes by moving the demo backend's clock, so this is a demo-only journey.
  */
-import { eventually } from '../../../support/e2e/steps';
+import { checkoutAs, eventually } from '../../../support/e2e/steps';
 
 /** Past the sensitive window (900 s). */
 const PAST_SENSITIVE_MS = 1_000_000;
@@ -129,6 +129,39 @@ describe('OP33 · The money doors ask a fresh session', () => {
                         ({ kind, status }) => kind === 'cancellation' && status === 'closed'
                     ) ?? false
             );
+        });
+
+        cy.step(
+            'a stale manager cancelling their OWN order asks too: the role counts, not the owner'
+        );
+        cy.switchUser('manager');
+        cy.subjectId('product.rich').then((productId) => {
+            cy.apiAs('manager', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('manager', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
+            // A staff account has no address on file, and every order needs a billing one.
+            cy.apiAs<{ id: string }>('manager', 'POST', '/account/addresses', {
+                label: 'Work',
+                fullName: 'Staff Buyer',
+                street: 'Via Emilia 2',
+                zip: '41121',
+                city: 'Modena',
+                country: 'IT'
+            }).then((address) => {
+                checkoutAs<{ id: string }>('manager', { billingAddressId: address?.id }).then(
+                    (order) => {
+                        const orderId = String(order?.id);
+                        cy.travel(PAST_CRITICAL_MS);
+                        cy.visit(`/en/orders/${orderId}`);
+                        cy.get('[data-test=order-cancel]').click();
+                        cy.get('[data-test=app-dialog-confirm]').click();
+                        answerAs('manager');
+                        eventually(
+                            () => cy.apiAs<OrderLike>('manager', 'GET', `/orders/${orderId}`),
+                            (own) => own?.status === 'cancelled'
+                        );
+                    }
+                );
+            });
         });
     });
 });

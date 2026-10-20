@@ -181,7 +181,7 @@
         "type-credit_note_issued": "Credit note issued",
         "type-release_date_moved": "Release date changed",
         "type-delay_notice_sent": "Delay notice sent",
-        "type-wait_confirmed": "Buyer chose to keep waiting",
+        "type-wait_confirmed": "Waiting confirmed",
         "type-address_corrected": "Shipping address corrected by staff",
         "type-wait_expired": "Waiting period ended without an answer",
         "detail-method": "Paid by {value}",
