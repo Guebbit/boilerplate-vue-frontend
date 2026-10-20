@@ -5,8 +5,9 @@
  * `getCookie`/`setCookie`, already a dependency here, rather than a new one or `localStorage`.
  * Gated by Umami or Faro being configured (`isAnalyticsConsentEnabled`): the banner, the footer link
  * and `http/interceptors.ts`'s `X-Analytics-Consent` header all follow it. The answer also drives
- * Umami (it loads only after `granted`, a withdrawal silences it), Faro's measurement
- * instrumentations, and the browsing events the page reports to the backend (`trackBrowsing`).
+ * Umami (it loads only after `granted`, a withdrawal silences it), Faro (it loads only after
+ * `granted`, a withdrawal pauses it), and the browsing events the page reports to the backend
+ * (`trackBrowsing`).
  *
  * While signed in the account's own answer is the effective one (`accountChoice`), the banner
  * opens only when that answer is unknown, and the buttons write the account (the profile store
@@ -122,13 +123,24 @@ export const useAnalyticsConsentStore = defineStore('analyticsConsent', () => {
     const promptOpen = computed(() => effective.value === 'unknown' || reopened.value);
 
     /**
+     * Whether a signed-in visitor's own answer is still on its way: a session is held (or its hint
+     * cookie says one can be restored) and the profile has not pushed {@link accountChoice} yet.
+     * The guest cookie says nothing about this account, so it must not start a tracker meanwhile.
+     */
+    const awaitingAccountAnswer = (): boolean =>
+        accountChoice.value === undefined &&
+        (useSessionStore().hasSession || Boolean(getCookie(BROWSER_STORAGE_NAME.isAuth)));
+
+    /**
      * Pushes the current answer to the trackers: Umami loads on `granted` and is silenced
-     * otherwise, and Faro's measurement follows. Called at boot, on every answer and after a
-     * logout (the account's own answer stops applying then).
+     * otherwise, and Faro follows. Called at boot, on every answer and after a logout (the
+     * account's own answer stops applying then). While a signed-in account's answer has not
+     * arrived, nothing starts: a stale `granted` guest cookie must not boot a tracker for an
+     * account that declined.
      */
     const syncTracker = () => {
         const observability = useObservabilityStore();
-        const granted = effective.value === 'granted';
+        const granted = effective.value === 'granted' && !awaitingAccountAnswer();
         observability.setUmamiConsent(granted);
         observability.setFaroConsent(granted);
     };

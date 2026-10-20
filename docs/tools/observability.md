@@ -44,32 +44,51 @@ obs.setUmamiConsent(granted); // loads Umami on a yes; no-op if VITE_UMAMI_WEBSI
 
 ### What it captures
 
-Faro is **not loaded until the visitor consents**: crash reports are browser requests to a third party, so
-they fall under ePrivacy Art. 5(3) like the rest (EDPB Guidelines 2/2023), and legitimate interest is not an
-exemption. Once it boots it has **no session id** (`sessionTracking` is off, so nothing like
-`com.grafana.faro.session` is written to `sessionStorage`) and captures:
+Faro is **not loaded until the visitor consents**. Its reports are sent from the visitor's browser to the
+operator's own collector (Grafana Alloy), and that is in scope of ePrivacy Art. 5(3) (EDPB Guidelines
+2/2023, ¶33 and ¶39). Fault finding is not "strictly necessary": the site works fully without it (WP29
+Opinion 04/2012 §4.3, Criterion B), so there is no exemption, and legitimate interest cannot replace the
+consent. Where a regime exempts it (the UK's PECR Schedule A1 ¶4(2)(d) exempts "prevent or detect technical
+faults"), an operator can decide differently; this boilerplate asks everywhere.
+
+Once it boots it has **no session id** (`sessionTracking` is off, so nothing like `com.grafana.faro.session`
+is written). The one key it stores is `com.grafana.faro.lastNavigationId`, in `sessionStorage`, gone when the
+tab closes. It captures:
 
 - Uncaught errors + unhandled promise rejections
 - Console errors
 - Content Security Policy violations
 - Views (which screen an error happened on)
+- Core Web Vitals and performance timing, with the URL of each timed page or resource (query and fragment
+  stripped)
 - Tracing (below)
+- Browser metadata (browser, operating system, language, viewport) and the page URL (query and fragment
+  stripped), on every item
+- For a signed-in visitor who consented, their user id (`setUser`, id only, never an email)
 
-**The answer drives it.** `setFaroConsent(true)` boots Faro, lets its transport send and adds Core Web
-Vitals, performance and navigation timing. `setFaroConsent(false)` pauses the transport, which drops what
-is reported from then on, and removes the measurement. It is called next to every `setUmamiConsent` (the
-consent store's `syncTracker`, and the profile store once the account's own answer arrives). It is
-idempotent, and a withdrawal that lands while Faro is still loading wins.
+The receiver sees the visitor's IP address: it is the operator's own Alloy, not a third party.
+
+**The answer drives it.** `setFaroConsent(true)` boots Faro (Core Web Vitals and performance timing
+included) and lets its transport send. `setFaroConsent(false)` pauses the transport, which drops what is
+reported from then on; a later grant unpauses it. Nothing is removed on a withdrawal, because the SDK's
+`instrumentations.remove` only takes out the last instrumentation added. It is called next to every
+`setUmamiConsent` (the consent store's `syncTracker`, and the profile store once the account's own answer
+arrives). It is idempotent, and a withdrawal that lands while Faro is still loading wins: the transport is
+paused the moment Faro exists.
+
+While a signed-in visitor's own answer has not arrived yet (a session is held, the profile is not
+loaded), `syncTracker` starts nothing, so a stale guest `granted` cookie cannot boot Faro or Umami for
+an account that declined.
 
 ```mermaid
 flowchart LR
     Answer["The visitor's answer"] -->|granted| Boot["Faro boots once, transport sends"]
-    Answer -->|denied or withdrawn| Pause["Transport paused, measurement removed"]
+    Answer -->|denied or withdrawn| Pause["Transport paused"]
     Boot -->|withdrawn| Pause
     Pause -->|granted again| Boot
 ```
 
-The `TracingInstrumentation` opens a span for every `fetch`/XHR and **propagates the W3C `traceparent` header to the API origin** (`VITE_API_URL`). Because the header is propagated, a single trace spans _"button click in the browser → API handler → Mongoose query"_ inside Grafana/Tempo.
+The `TracingInstrumentation` opens a span for every `fetch`/XHR and **propagates the W3C `traceparent` header to the API origin** (`VITE_API_URL`). The API links its own request span to the browser span instead of continuing its trace, so a request's two halves are findable from each other in Grafana/Tempo but stay two separate traces.
 
 Manual exceptions go through `captureException()` — called from `src/infrastructure/http/index.ts` on `5xx` responses and from `router.onError`. Faro pushes them via `faro.api.pushError()`.
 

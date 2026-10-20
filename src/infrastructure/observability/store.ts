@@ -10,10 +10,11 @@
  * `VITE_UMAMI_REQUIRE_CONSENT=false`.
  *
  * Before consent nothing identifies, measures or reports the visitor: Faro is not even loaded.
- * `setFaroConsent(true)` boots it (crash reports, tracing, and the measurement instrumentations,
- * with no session id); withdrawal pauses its transport and removes the measurement. Crash
- * reports are browser requests to a third party, so they follow consent too (EDPB Guidelines
- * 2/2023 on ePrivacy Art. 5(3)).
+ * `setFaroConsent(true)` boots it (crash reports, tracing, web vitals and performance timing, with
+ * no session id); withdrawal pauses its transport, and a later grant unpauses it. Reaching the
+ * operator's own collector from the visitor's browser is in scope of ePrivacy Art. 5(3) (EDPB
+ * Guidelines 2/2023), and fault finding is no "strictly necessary" exemption (WP29 04/2012 §4.3,
+ * Criterion B), so Faro follows consent. See `docs/tools/observability.md`.
  *
  * Umami writes the PAGEVIEWS itself, including SPA route changes. The only custom events this app
  * sends are browsing ones (`trackBrowsing` in `analytics-consent.ts`), through the backend's relay
@@ -25,7 +26,7 @@ import { defineStore } from 'pinia';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import { ref } from 'vue';
 import { mapValues } from 'lodash-es';
-import type { Faro, Instrumentation, TransportItem } from '@grafana/faro-web-sdk';
+import type { Faro, TransportItem } from '@grafana/faro-web-sdk';
 import {
     readFaroConfig,
     readUmamiConfig,
@@ -53,8 +54,9 @@ export const stripSensitiveUrlParts = (url: string): string => {
 /**
  * Faro `beforeSend` hook: strips one-time email tokens (verification, password reset, account
  * deletion, email change all pass them as a `#token=` fragment — which `stripSensitiveUrlParts` drops along with any query) out of every telemetry item
- * before it leaves the browser — the page URL every item's `meta.page` carries, and the URL
- * attribute OpenTelemetry's HTTP instrumentation puts on a trace span.
+ * before it leaves the browser — the page URL every item's `meta.page` carries, the URL
+ * attribute OpenTelemetry's HTTP instrumentation puts on a trace span, and the URLs the
+ * performance and navigation events carry (a staff `?email=` filter is a customer's address).
  * https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/configuration/#beforesend
  *
  * @param item - One outgoing telemetry item, of whichever kind Faro is about to send.
@@ -80,7 +82,40 @@ export const stripTokensFromTelemetry = (item: TransportItem): TransportItem => 
                         kv.value.stringValue = stripSensitiveUrlParts(kv.value.stringValue);
                 }
 
+    stripEventUrls(item.payload as EventPayload);
+
     return item;
+};
+
+/**
+ * The part of a Faro event payload {@link stripEventUrls} reads: the event's own name and the
+ * free-form attributes the SDK's instrumentations attach to it.
+ */
+interface EventPayload {
+    name?: unknown;
+    attributes?: Record<string, unknown>;
+}
+
+/**
+ * Strips the URLs a Faro event carries in its attributes (any payload without an `attributes`
+ * object, an exception or a trace for instance, is left alone): `name` on the `faro.performance.*`
+ * events (the navigation or resource the browser timed) and `fromUrl`/`toUrl` on the navigation
+ * event. Any other event's `name` attribute is left alone: it is not necessarily a URL.
+ *
+ * @param payload - The event payload, changed in place.
+ */
+const stripEventUrls = (payload: EventPayload): void => {
+    const { attributes } = payload;
+    if (!attributes) return;
+
+    const keys = ['fromUrl', 'toUrl'];
+    if (typeof payload.name === 'string' && payload.name.startsWith('faro.performance'))
+        keys.push('name');
+
+    for (const key of keys) {
+        const value = attributes[key];
+        if (typeof value === 'string') attributes[key] = stripSensitiveUrlParts(value);
+    }
 };
 
 /**
@@ -198,48 +233,22 @@ export const useObservabilityStore = defineStore('observability', () => {
     let faroInitPromise: Promise<boolean> | undefined;
 
     /**
-     * Builds the measurement instrumentations (web vitals, performance, navigation) once Faro's SDK
-     * is loaded. Set by {@link initFaro}; absent until then.
+     * Whether the visitor currently consents. Remembered so a consent that changes while Faro is
+     * still loading is applied the moment it has: a withdrawal then pauses the transport as soon
+     * as it exists.
      */
-    let makeMeasurement: (() => Instrumentation[]) | undefined;
-
-    /**
-     * The measurement instrumentations currently attached to Faro: empty before consent and after
-     * a withdrawal.
-     */
-    let measurement: Instrumentation[] = [];
-
-    /**
-     * Whether the visitor currently consents to measurement. Remembered so a consent given before
-     * Faro finished loading is applied the moment it has.
-     */
-    let measurementConsent = false;
-
-    /**
-     * Attaches or detaches the measurement instrumentations to match {@link measurementConsent}.
-     * Idempotent, and a no-op until Faro is ready (`initFaro` calls it again once it is).
-     */
-    const applyMeasurementConsent = (): void => {
-        if (!faro || !makeMeasurement) return;
-
-        if (measurementConsent && measurement.length === 0) {
-            measurement = makeMeasurement();
-            faro.instrumentations.add(...measurement);
-        } else if (!measurementConsent && measurement.length > 0) {
-            faro.instrumentations.remove(...measurement);
-            measurement = [];
-        }
-    };
+    let faroConsent = false;
 
     // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────
 
     /**
      * Initialise Grafana Faro. Only {@link setFaroConsent} calls it, once the visitor has agreed.
      *
-     * Boots with uncaught errors and rejections, console errors, CSP violations and views, plus
-     * tracing. Session tracking is off (no session id is generated or stored) and the measurement
-     * instrumentations (Core Web Vitals, performance, navigation) are added by
-     * {@link applyMeasurementConsent}. The tracing instrumentation opens a span per
+     * Boots with uncaught errors and rejections, console errors, CSP violations and views, Core
+     * Web Vitals and performance timing, plus tracing. Session tracking is off (no session id is
+     * generated or stored). Everything boots together because Faro only ever loads after consent,
+     * and a withdrawal pauses the transport rather than removing instrumentations (the SDK's
+     * `instrumentations.remove` only takes out the last one added). The tracing instrumentation opens a span per
      * fetch/XHR and propagates `traceparent` to the API origin. The API links its request span to that
      * browser span rather than continuing its trace, so the two are findable from each other but
      * stay separate traces. Both SDKs are dynamically imported, off the critical entry bundle.
@@ -261,11 +270,6 @@ export const useObservabilityStore = defineStore('observability', () => {
         ])
             .then(([sdk, { TracingInstrumentation }]) => {
                 const { initializeFaro } = sdk;
-                makeMeasurement = () => [
-                    new sdk.WebVitalsInstrumentation(),
-                    new sdk.PerformanceInstrumentation(),
-                    new sdk.NavigationInstrumentation()
-                ];
 
                 // Faro Web SDK `initializeFaro`: `url` = the Alloy Faro receiver, `app` tags every
                 // signal, `instrumentations` = web defaults + tracing.
@@ -292,6 +296,11 @@ export const useObservabilityStore = defineStore('observability', () => {
                         new sdk.ConsoleInstrumentation(),
                         new sdk.CSPInstrumentation(),
                         new sdk.ViewInstrumentation(),
+                        // Core Web Vitals and performance timing. Their events carry a URL each,
+                        // which `beforeSend` strips. No NavigationInstrumentation: it is
+                        // experimental and the views above already say where the visitor is.
+                        new sdk.WebVitalsInstrumentation(),
+                        new sdk.PerformanceInstrumentation(),
                         new TracingInstrumentation({
                             instrumentationOptions: {
                                 // Send `traceparent` to the API origin: the API records it as a span LINK, not a parent.
@@ -302,7 +311,6 @@ export const useObservabilityStore = defineStore('observability', () => {
                 });
 
                 faroReady.value = true;
-                applyMeasurementConsent();
                 logger.debug(
                     'observability',
                     '[Faro] Initialized',
@@ -331,28 +339,28 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Applies the visitor's consent to Faro. Granted loads and boots it (once), lets its transport
-     * send and adds web vitals, performance and navigation timing. Withdrawn pauses the transport,
-     * which drops what is reported from then on, and removes the measurement. Idempotent, and a
-     * withdrawal that lands while Faro is still loading wins: it is never unpaused.
+     * Applies the visitor's consent to Faro. Granted loads and boots it (once) and lets its
+     * transport send. Withdrawn pauses the transport, which drops what is reported from then on.
+     * Idempotent, and a withdrawal that lands while Faro is still loading wins: the transport is
+     * paused the moment Faro exists, never left running.
      *
      * @param granted - Whether the visitor currently consents to analytics.
      */
     const setFaroConsent = (granted: boolean): void => {
-        measurementConsent = granted;
+        faroConsent = granted;
 
         if (!granted) {
             // Faro `pause()`: the transport stops sending and drops new items, nothing is buffered.
             faro?.pause();
-            applyMeasurementConsent();
             return;
         }
 
         void initFaro().then((ready) => {
-            if (!ready || !measurementConsent) return;
-            // Faro `unpause()`: undoes an earlier `pause()`; a no-op on a transport never paused.
-            faro?.unpause();
-            applyMeasurementConsent();
+            if (!ready) return;
+            // Faro `unpause()` undoes an earlier `pause()` (a no-op on a transport never paused);
+            // a consent withdrawn while Faro loaded pauses it instead.
+            if (faroConsent) faro?.unpause();
+            else faro?.pause();
         });
     };
 

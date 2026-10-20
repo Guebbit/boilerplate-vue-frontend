@@ -40,8 +40,12 @@ vi.mock('@/infrastructure/analytics-consent.ts', () => ({
 /** Whether the mocked build has a Faro receiver configured. */
 let faroConfigured = false;
 
+/** Whether the mocked build has a Umami website id configured. */
+let umamiConfigured = true;
+
 vi.mock('@/infrastructure/observability/config.ts', () => ({
-    readFaroConfig: () => (faroConfigured ? { url: 'http://collector/collect' } : undefined)
+    readFaroConfig: () => (faroConfigured ? { url: 'http://collector/collect' } : undefined),
+    readUmamiConfig: () => (umamiConfigured ? { websiteId: 'site-1' } : undefined)
 }));
 
 vi.mock('vue-i18n', async (importOriginal) => {
@@ -56,6 +60,7 @@ const mountBanner = () =>
 beforeEach(() => {
     flagEnabled = true;
     faroConfigured = false;
+    umamiConfigured = true;
     consentChoice.value = 'unknown';
     promptOpen.value = true;
     grant.mockReset();
@@ -73,6 +78,16 @@ describe('AppAnalyticsConsentBanner', () => {
         faroConfigured = true;
 
         expect(mountBanner().text()).toContain('analytics-consent.crash-reports');
+    });
+
+    it('names the usage statistics only when Umami is configured', () => {
+        expect(mountBanner().text()).toContain('analytics-consent.usage');
+
+        umamiConfigured = false;
+        faroConfigured = true;
+        const faroOnly = mountBanner().text();
+        expect(faroOnly).not.toContain('analytics-consent.usage');
+        expect(faroOnly).toContain('analytics-consent.crash-reports');
     });
 
     it('says nothing about crash reports when no Faro receiver is configured', () => {

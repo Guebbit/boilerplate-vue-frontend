@@ -24,7 +24,10 @@ const faroApi = {
     pushError: vi.fn()
 };
 
-/** The `faro.instrumentations` surface `setFaroConsent` drives. */
+/**
+ * The `faro.instrumentations` surface. Nothing here calls it any more: the SDK's `remove` only
+ * takes out the last instrumentation added, so a withdrawal pauses the transport instead.
+ */
 const faroInstrumentations = { add: vi.fn(), remove: vi.fn() };
 
 /** What `initializeFaro` returns — the `api` handle, the instrumentation registry and the transport switch. */
@@ -99,10 +102,6 @@ const bootInstrumentations = (): string[] => {
     return config.instrumentations.map(({ name }) => name);
 };
 
-/** The names carried by one `instrumentations.add` / `remove` call's arguments. */
-const namesOf = (call: unknown[] | undefined): string[] =>
-    (call as { name: string }[]).map(({ name }) => name);
-
 describe('Faro before consent', () => {
     it('is not loaded at all while consent is unknown or denied', async () => {
         const store = useObservabilityStore();
@@ -113,7 +112,7 @@ describe('Faro before consent', () => {
         expect(store.faroReady).toBe(false);
     });
 
-    it('boots with crash reports and tracing, and no measurement', async () => {
+    it('boots with crash reports, web vitals, performance and tracing, and no navigation', async () => {
         await useObservabilityStore().initFaro();
 
         expect(bootInstrumentations()).toEqual([
@@ -121,8 +120,11 @@ describe('Faro before consent', () => {
             'ConsoleInstrumentation',
             'CSPInstrumentation',
             'ViewInstrumentation',
+            'WebVitalsInstrumentation',
+            'PerformanceInstrumentation',
             'TracingInstrumentation'
         ]);
+        expect(bootInstrumentations()).not.toContain('NavigationInstrumentation');
         expect(faroInstrumentations.add).not.toHaveBeenCalled();
     });
 
@@ -137,23 +139,18 @@ describe('Faro before consent', () => {
 });
 
 describe('setFaroConsent', () => {
-    it('boots Faro and adds web vitals, performance and navigation on consent', async () => {
+    it('boots Faro once on consent and lets the transport send', async () => {
         const store = useObservabilityStore();
 
         store.setFaroConsent(true);
         await store.initFaro();
 
         expect(initializeFaro).toHaveBeenCalledOnce();
-        expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
-        expect(namesOf(faroInstrumentations.add.mock.calls[0])).toEqual([
-            'WebVitalsInstrumentation',
-            'PerformanceInstrumentation',
-            'NavigationInstrumentation'
-        ]);
         expect(fakeFaro.unpause).toHaveBeenCalledOnce();
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
     });
 
-    it('is idempotent: a second grant boots and adds nothing more', async () => {
+    it('is idempotent: a second grant boots nothing more', async () => {
         const store = useObservabilityStore();
 
         store.setFaroConsent(true);
@@ -162,24 +159,22 @@ describe('setFaroConsent', () => {
         await store.initFaro();
 
         expect(initializeFaro).toHaveBeenCalledOnce();
-        expect(faroInstrumentations.add).toHaveBeenCalledTimes(1);
     });
 
-    it('pauses the transport and removes exactly what it added on withdrawal, once', async () => {
+    it('pauses the transport on withdrawal and never touches the instrumentations', async () => {
         const store = useObservabilityStore();
         store.setFaroConsent(true);
         await store.initFaro();
-        const added = faroInstrumentations.add.mock.calls[0];
 
         store.setFaroConsent(false);
         store.setFaroConsent(false);
 
         expect(fakeFaro.pause).toHaveBeenCalled();
-        expect(faroInstrumentations.remove).toHaveBeenCalledTimes(1);
-        expect(faroInstrumentations.remove.mock.calls[0]).toEqual(added);
+        expect(faroInstrumentations.remove).not.toHaveBeenCalled();
+        expect(faroInstrumentations.add).not.toHaveBeenCalled();
     });
 
-    it('lets the transport send again when consent is given back', async () => {
+    it('lets the transport send again when consent is given back, without booting twice', async () => {
         const store = useObservabilityStore();
         store.setFaroConsent(true);
         await store.initFaro();
@@ -193,15 +188,16 @@ describe('setFaroConsent', () => {
         expect(initializeFaro).toHaveBeenCalledOnce();
     });
 
-    it('never unpauses when the withdrawal lands while Faro is still loading', async () => {
+    it('pauses, and never unpauses, when the withdrawal lands while Faro is still loading', async () => {
         const store = useObservabilityStore();
 
         store.setFaroConsent(true);
         store.setFaroConsent(false);
         await store.initFaro();
+        await Promise.resolve();
 
         expect(fakeFaro.unpause).not.toHaveBeenCalled();
-        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+        expect(fakeFaro.pause).toHaveBeenCalled();
     });
 
     it('is a no-op while Faro is disabled by configuration', async () => {
@@ -211,7 +207,7 @@ describe('setFaroConsent', () => {
         await Promise.resolve();
 
         expect(initializeFaro).not.toHaveBeenCalled();
-        expect(faroInstrumentations.add).not.toHaveBeenCalled();
+        expect(fakeFaro.unpause).not.toHaveBeenCalled();
     });
 });
 
@@ -403,6 +399,68 @@ describe('stripTokensFromTelemetry', () => {
 
     it('leaves a trace item with no spans alone', () => {
         expect(() => stripTokensFromTelemetry(fakeTransportItem({ payload: {} }))).not.toThrow();
+    });
+});
+
+/** Reads one attribute back off an event item. */
+const attribute = (item: TransportItem, key: string): unknown =>
+    (item.payload as { attributes: Record<string, unknown> }).attributes[key];
+
+describe('stripTokensFromTelemetry on events', () => {
+    it.each(['faro.performance.navigation', 'faro.performance.resource'])(
+        'strips the timed URL a %s event carries in `name`',
+        (eventName) => {
+            const result = stripTokensFromTelemetry(
+                fakeTransportItem({
+                    type: 'event',
+                    payload: {
+                        name: eventName,
+                        attributes: { name: 'https://shop.example/users?email=ada%40example.com#x' }
+                    }
+                })
+            );
+
+            expect(attribute(result, 'name')).toBe('https://shop.example/users');
+        }
+    );
+
+    it('strips fromUrl and toUrl on a navigation event', () => {
+        const result = stripTokensFromTelemetry(
+            fakeTransportItem({
+                type: 'event',
+                payload: {
+                    name: 'faro.navigation',
+                    attributes: {
+                        fromUrl: 'https://shop.example/users?email=a%40b.c',
+                        toUrl: 'https://shop.example/reset#token=secret',
+                        duration: '12'
+                    }
+                }
+            })
+        );
+
+        expect(attribute(result, 'fromUrl')).toBe('https://shop.example/users');
+        expect(attribute(result, 'toUrl')).toBe('https://shop.example/reset');
+        expect(attribute(result, 'duration')).toBe('12');
+    });
+
+    it('leaves the `name` attribute of any other event alone: it is not necessarily a URL', () => {
+        const result = stripTokensFromTelemetry(
+            fakeTransportItem({
+                type: 'event',
+                payload: { name: 'checkout.started', attributes: { name: 'first-step' } }
+            })
+        );
+
+        expect(attribute(result, 'name')).toBe('first-step');
+    });
+
+    it('tolerates an event with no attributes', () => {
+        expect(() =>
+            stripTokensFromTelemetry(
+                fakeTransportItem({ type: 'event', payload: { name: 'faro.navigation' } })
+            )
+        ).not.toThrow();
     });
 });
 
