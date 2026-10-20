@@ -118,8 +118,9 @@ describe('PurchaseHoldNotice', () => {
             expect(wrapper.get('[data-test=purchase-hold-note]').text()).toBe(
                 'Please write to us about your recent orders.'
             );
+            // The contact form opens on the account category, so the question reaches the right inbox.
             expect(wrapper.get('[data-test=purchase-hold-contact]').attributes('href')).toContain(
-                '/contact'
+                '/contact?category=account'
             );
         });
     });

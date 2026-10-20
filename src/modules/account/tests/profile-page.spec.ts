@@ -421,3 +421,35 @@ describe('clearing the phone and website', () => {
             });
     });
 });
+
+describe('the purchase-hold notice', () => {
+    it('shows on the profile page while the account has a hold in force, with a way to ask a person', () => {
+        responses['GET /account'] = orvalEnvelope({
+            ...USER,
+            purchaseHold: {
+                until: '2999-01-01T12:00:00.000Z',
+                reason: 'staff',
+                note: 'Please write to us about your recent orders.',
+                setAt: '2026-10-19T10:00:00.000Z'
+            }
+        });
+        const wrapper = mountProfile();
+
+        return flushPromises().then(() => {
+            expect(wrapper.get('[data-test=purchase-hold-note]').text()).toBe(
+                'Please write to us about your recent orders.'
+            );
+            expect(wrapper.get('[data-test=purchase-hold-contact]').attributes('href')).toContain(
+                'category=account'
+            );
+        });
+    });
+
+    it('is absent when the account has no hold', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=purchase-hold-notice]').exists()).toBe(false);
+        });
+    });
+});
