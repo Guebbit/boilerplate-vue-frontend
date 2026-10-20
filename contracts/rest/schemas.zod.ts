@@ -1711,7 +1711,8 @@ export const GetAccountResponse = zod.strictObject({
                 note: zod.string().max(getAccountResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -1799,7 +1800,8 @@ export const ReplaceAccountResponse = zod.strictObject({
                 note: zod.string().max(replaceAccountResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -1888,7 +1890,8 @@ export const UpdateAccountResponse = zod.strictObject({
                 note: zod.string().max(updateAccountResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -2598,7 +2601,8 @@ export const SignupResponse = zod.strictObject({
                 note: zod.string().max(signupResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -3028,7 +3032,8 @@ export const ListUsersQueryParams = zod.strictObject({
     username: zod.string().max(listUsersQueryUsernameMax).optional(),
     active: zod.boolean().optional(),
     deleted: zod.boolean().optional(),
-    purchaseHold: zod.literal(true).optional()
+    purchaseHold: zod.literal(true).optional(),
+    purchaseHoldReview: zod.literal(true).optional()
 });
 export const listUsersResponseDataItemsItemIdMax = 64;
 export const listUsersResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -3094,7 +3099,8 @@ export const ListUsersResponse = zod.strictObject({
                             .optional(),
                         setAt: zod.iso.datetime({ offset: true })
                     })
-                    .optional()
+                    .optional(),
+                purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
         meta: zod.strictObject({
@@ -3185,7 +3191,8 @@ export const CreateUserResponse = zod.strictObject({
                 note: zod.string().max(createUserResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -3269,7 +3276,8 @@ export const GetUserByIdResponse = zod.strictObject({
                 note: zod.string().max(getUserByIdResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -3362,7 +3370,8 @@ export const ReplaceUserByIdResponse = zod.strictObject({
                 note: zod.string().max(replaceUserByIdResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -3459,7 +3468,8 @@ export const UpdateUserByIdResponse = zod.strictObject({
                 note: zod.string().max(updateUserByIdResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -3549,7 +3559,8 @@ export const RestoreUserByIdResponse = zod.strictObject({
                 note: zod.string().max(restoreUserByIdResponseDataPurchaseHoldNoteMax).optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -3607,7 +3618,8 @@ export const SearchUsersBody = zod.strictObject({
     username: zod.string().max(searchUsersBodyUsernameMax).optional(),
     active: zod.boolean().optional(),
     deleted: zod.boolean().optional(),
-    purchaseHold: zod.literal(true).optional()
+    purchaseHold: zod.literal(true).optional(),
+    purchaseHoldReview: zod.literal(true).optional()
 });
 export const searchUsersResponseDataItemsItemIdMax = 64;
 export const searchUsersResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -3675,7 +3687,8 @@ export const SearchUsersResponse = zod.strictObject({
                             .optional(),
                         setAt: zod.iso.datetime({ offset: true })
                     })
-                    .optional()
+                    .optional(),
+                purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
         meta: zod.strictObject({
@@ -12954,7 +12967,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     }),
     auditLog: zod.array(
         zod.strictObject({
@@ -13837,7 +13851,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
     )
 });
 /**
- * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
 export const setUserPurchaseHoldPathIdMax = 64;
@@ -13906,11 +13920,12 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
                     .optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
- * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force.
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row.
  * @summary Lift a user's purchase hold
  */
 export const liftUserPurchaseHoldPathIdMax = 64;
@@ -13980,7 +13995,8 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
                     .optional(),
                 setAt: zod.iso.datetime({ offset: true })
             })
-            .optional()
+            .optional(),
+        purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**

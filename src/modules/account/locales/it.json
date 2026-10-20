@@ -255,7 +255,7 @@
     },
     "purchase-hold-notice": {
         "title": "Il checkout è in pausa per il tuo account",
-        "reason-repeated_cancellations": "Hai annullato più ordini in poco tempo, quindi per precauzione abbiamo messo in pausa i nuovi ordini. Finisce da solo il {date}, o prima non appena lo avremo guardato.",
+        "reason-repeated_cancellations": "Diversi tuoi ordini sono stati annullati o lasciati non pagati in poco tempo, quindi per precauzione abbiamo messo in pausa i nuovi ordini. Dura al massimo 7 giorni e finisce da solo il {date}, o prima non appena lo avremo guardato.",
         "reason-staff": "Il nostro team ha messo in pausa i nuovi ordini sul tuo account fino al {date}.",
         "still-allowed": "Puoi ancora pagare, annullare o rendere gli ordini che hai già, e usare l'account come sempre.",
         "contest": "Se pensi sia un errore, scrivici e una persona lo riesaminerà.",

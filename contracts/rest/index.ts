@@ -163,7 +163,7 @@ export const PurchaseHoldReason = {
 } as const;
 
 export interface PurchaseHold {
-    /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window; staff can lift it earlier. */
+    /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window, but at most 7 days after the hold was placed; staff can lift it earlier. A `staff` hold has no maximum. */
     until: string;
     reason: PurchaseHoldReason;
     /**
@@ -198,6 +198,8 @@ export interface User {
     deletedAt?: string;
     actions?: UserActions;
     purchaseHold?: PurchaseHold;
+    /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
+    purchaseHoldFlaggedAt?: string;
 }
 
 export interface UserEnvelope {
@@ -2109,6 +2111,7 @@ export interface SearchUsersRequest {
     active?: boolean;
     deleted?: boolean;
     purchaseHold?: true;
+    purchaseHoldReview?: true;
 }
 
 export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
@@ -4962,7 +4965,7 @@ export const OrderTimelineType = {
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `wait_unanswered`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineEntryData = { [key: string]: unknown };
 
@@ -4974,7 +4977,7 @@ export interface OrderTimelineEntry {
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `wait_unanswered`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineEntryData;
 }
 
@@ -6353,6 +6356,10 @@ export type ListUsersParams = {
      * `true` lists only the accounts under a purchase hold right now; absent lists everyone. There is no `false`: a lifted or expired hold is not a state to search for.
      */
     purchaseHold?: true;
+    /**
+     * `true` lists only the accounts the shop's rule flagged for review and no staff member has acted on yet, whether or not a hold is still running. Absent lists everyone. There is no `false`.
+     */
+    purchaseHoldReview?: true;
 };
 
 export type DeleteUserParams = {
@@ -10900,7 +10907,7 @@ export const downloadAccountExport = (
 };
 
 /**
- * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
 export const setUserPurchaseHold = (
@@ -10920,7 +10927,7 @@ export const setUserPurchaseHold = (
 };
 
 /**
- * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force.
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row.
  * @summary Lift a user's purchase hold
  */
 export const liftUserPurchaseHold = (

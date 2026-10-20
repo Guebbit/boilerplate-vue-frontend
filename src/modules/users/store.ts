@@ -117,7 +117,8 @@ export const useUsersStore = defineStore('users', () => {
                     username: filters.username,
                     active: filters.active,
                     deleted: filters.deleted,
-                    purchaseHold: filters.purchaseHold
+                    purchaseHold: filters.purchaseHold,
+                    purchaseHoldReview: filters.purchaseHoldReview
                 }).then((response) => ({
                     items: response.data.items,
                     totalItems: response.data.meta.totalItems

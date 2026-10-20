@@ -134,6 +134,29 @@ const holdOptions = computed(() => [
 ]);
 
 /**
+ * Options of the "needs review" filter select: everyone, or only the accounts the shop's rule
+ * flagged and no staff member has acted on yet. There is no "reviewed" row — the API offers none.
+ *
+ * @returns The localized options, re-translated on locale change.
+ */
+const reviewOptions = computed(() => [
+    { value: null, label: t('users-list-page.filter-needs-review-all') },
+    { value: true, label: t('users-list-page.filter-needs-review-yes') }
+]);
+
+/**
+ * The "needs review" select's model: `null` (the "any" row) on screen, no `purchaseHoldReview`
+ * filter in {@link filters}.
+ */
+const reviewChoice = useAnyFilterChoice(
+    () => filters.value.purchaseHoldReview,
+    (value) => {
+        // The API accepts `true` only; the "any" row clears the filter.
+        filters.value.purchaseHoldReview = value === true ? true : undefined;
+    }
+);
+
+/**
  * The "purchase hold" select's model: `null` (the "any" row) on screen, no `purchaseHold` filter
  * in {@link filters}.
  */
@@ -192,6 +215,7 @@ const { sync: syncUrl } = useListUrlState({
         active: 'boolean',
         deleted: 'boolean',
         purchaseHold: 'boolean',
+        purchaseHoldReview: 'boolean',
         sort: 'string'
     }
 });
@@ -379,6 +403,15 @@ const handleHardDelete = (userId: string, username: string) =>
                         hide-details
                     />
                     <v-select
+                        v-model="reviewChoice"
+                        :label="t('users-list-page.filter-needs-review')"
+                        :items="reviewOptions"
+                        item-title="label"
+                        item-value="value"
+                        data-test="filter-needs-review"
+                        hide-details
+                    />
+                    <v-select
                         v-model="deletedChoice"
                         :label="t('generic.filter-deleted')"
                         :items="deletedOptions"
@@ -457,6 +490,16 @@ const handleHardDelete = (userId: string, username: string) =>
                     data-test="row-purchase-hold"
                 >
                     {{ t('users-list-page.chip-purchase-hold') }}
+                </v-chip>
+                <v-chip
+                    v-if="item.purchaseHoldFlaggedAt"
+                    size="small"
+                    variant="tonal"
+                    color="info"
+                    class="ml-1"
+                    data-test="row-needs-review"
+                >
+                    {{ t('users-list-page.chip-needs-review') }}
                 </v-chip>
                 <v-chip
                     v-if="item.deletedAt"

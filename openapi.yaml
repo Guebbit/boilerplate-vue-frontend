@@ -3217,6 +3217,13 @@ paths:
             type: boolean
             enum:
               - true
+        - name: purchaseHoldReview
+          in: query
+          description: "`true` lists only the accounts the shop's rule flagged for review and no staff member has acted on yet, whether or not a hold is still running. Absent lists everyone. There is no `false`."
+          schema:
+            type: boolean
+            enum:
+              - true
       responses:
         "200":
           description: Users list page
@@ -7963,7 +7970,7 @@ paths:
       tags:
         - Users
       summary: Put a purchase hold on a user
-      description: Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+      description: "Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`."
       operationId: setUserPurchaseHold
       security:
         - bearerAuth: []
@@ -8009,7 +8016,7 @@ paths:
       tags:
         - Users
       summary: Lift a user's purchase hold
-      description: "Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force."
+      description: "Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row."
       operationId: liftUserPurchaseHold
       security:
         - bearerAuth: []
@@ -10139,6 +10146,10 @@ components:
           $ref: "#/components/schemas/UserActions"
         purchaseHold:
           $ref: "#/components/schemas/PurchaseHold"
+        purchaseHoldFlaggedAt:
+          type: string
+          format: date-time
+          description: When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold.
     PurchaseHold:
       type: object
       additionalProperties: false
@@ -10150,7 +10161,7 @@ components:
         until:
           type: string
           format: date-time
-          description: When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window; staff can lift it earlier.
+          description: When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window, but at most 7 days after the hold was placed; staff can lift it earlier. A `staff` hold has no maximum.
         reason:
           type: string
           enum:
@@ -13115,6 +13126,10 @@ components:
         deleted:
           type: boolean
         purchaseHold:
+          type: boolean
+          enum:
+            - true
+        purchaseHoldReview:
           type: boolean
           enum:
             - true
@@ -17634,7 +17649,7 @@ components:
         data:
           type: object
           additionalProperties: true
-          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure`, `payment_mismatch` or `wait_unanswered`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     OrderTimelineExportEntry:
       allOf:
         - $ref: "#/components/schemas/OrderTimelineEntry"

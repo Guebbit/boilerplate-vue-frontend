@@ -203,6 +203,67 @@ describe('the purchase hold', () => {
             });
     });
 
+    describe('with the account flagged for review', () => {
+        /** Flagged by the shop's rule, no hold in force (it ended, or only paid cancels flagged it). */
+        const FLAGGED: UserType = {
+            ...A_USER,
+            actions: { update: true, ban: true, delete: true },
+            purchaseHoldFlaggedAt: '2026-10-19T10:00:00.000Z'
+        };
+
+        it('says since when, and offers "Mark as reviewed" next to "Pause checkout"', () => {
+            signIn(false);
+            const wrapper = mountUser(FLAGGED);
+
+            expect(wrapper.get('[data-test=user-needs-review]').text()).toContain(
+                'Needs review since'
+            );
+            expect(wrapper.find('[data-test=user-mark-reviewed]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(true);
+        });
+
+        it('shows neither the line nor the button for an account that was never flagged', () => {
+            signIn(false);
+            const wrapper = mountUser({
+                ...A_USER,
+                actions: { update: true, ban: true, delete: true }
+            });
+
+            expect(wrapper.find('[data-test=user-needs-review]').exists()).toBe(false);
+            expect(wrapper.find('[data-test=user-mark-reviewed]').exists()).toBe(false);
+        });
+
+        it('offers only "Lift the hold" while a hold is in force: lifting it is the review', () => {
+            signIn(false);
+            const wrapper = mountUser({
+                ...HELD,
+                purchaseHoldFlaggedAt: '2026-10-19T10:00:00.000Z'
+            });
+
+            expect(wrapper.find('[data-test=user-lift-hold]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=user-mark-reviewed]').exists()).toBe(false);
+        });
+
+        it('marks the account reviewed through the lift once the confirmation is accepted', () => {
+            signIn(false);
+            const store = useUsersStore();
+            const lift = vi.spyOn(store, 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
+            const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+            const wrapper = mountUser(FLAGGED);
+
+            return wrapper
+                .get('[data-test=user-mark-reviewed]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(confirm).toHaveBeenCalledWith(
+                        expect.objectContaining({ confirmLabel: 'Mark as reviewed' })
+                    );
+                    expect(lift).toHaveBeenCalledWith('u1');
+                });
+        });
+    });
+
     it('leaves the hold alone when the confirmation is declined', () => {
         signIn(false);
         const store = useUsersStore();
