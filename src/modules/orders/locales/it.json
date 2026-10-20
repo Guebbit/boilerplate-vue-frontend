@@ -181,7 +181,7 @@
         "type-credit_note_issued": "Nota di credito emessa",
         "type-release_date_moved": "Data di uscita cambiata",
         "type-delay_notice_sent": "Avviso di ritardo inviato",
-        "type-wait_confirmed": "L'acquirente ha scelto di aspettare",
+        "type-wait_confirmed": "Attesa confermata",
         "type-address_corrected": "Indirizzo di spedizione corretto dal personale",
         "type-wait_expired": "Attesa scaduta senza risposta",
         "detail-method": "Pagato con {value}",
