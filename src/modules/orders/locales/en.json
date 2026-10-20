@@ -154,6 +154,7 @@
         "loading": "Loading history...",
         "empty": "Nothing has happened to this order yet.",
         "badge-staff-only": "Hidden from the buyer",
+        "badge-own-order": "Own order",
         "label-text": "Note: {text}",
         "label-actor": "by {actor}",
         "type-created": "Order placed",

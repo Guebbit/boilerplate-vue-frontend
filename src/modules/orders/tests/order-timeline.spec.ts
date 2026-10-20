@@ -69,10 +69,10 @@ const signIn = (staff: boolean) => {
  * @param rows - what the endpoint returns
  * @returns the mounted wrapper, after the read settled
  */
-const mountTimeline = (rows: OrderTimelineEntry[]) => {
+const mountTimeline = (rows: OrderTimelineEntry[], ownerId?: string) => {
     const fetchTimeline = vi.spyOn(useOrdersStore(), 'fetchTimeline').mockResolvedValue(rows);
     const wrapper = mount(OrderTimeline, {
-        props: { orderId: 'o1', refreshKey: 'a' },
+        props: { orderId: 'o1', refreshKey: 'a', ownerId },
         global: { plugins: [vuetify, i18n] }
     });
     return flushPromises().then(() => ({ wrapper, fetchTimeline }));
@@ -101,6 +101,39 @@ describe('OrderTimeline — the staff view', () => {
         );
         expect(rows[2]?.find('[data-test="order-timeline-staff-only"]').exists()).toBe(true);
         expect(rows[1]?.find('[data-test="order-timeline-staff-only"]').exists()).toBe(false);
+    });
+});
+
+describe('OrderTimeline — own money', () => {
+    it('chips the rows the order’s own buyer did, for staff, and no others', async () => {
+        signIn(true);
+
+        const { wrapper } = await mountTimeline(STAFF_ROWS, 'u9');
+
+        const rows = wrapper.findAll('[data-test="order-timeline-entry"]');
+        expect(
+            rows.map((row) => row.find('[data-test="order-timeline-own-order"]').exists())
+        ).toEqual([false, true, true]);
+    });
+
+    it('chips nothing when the buyer did none of the rows, or the order has no buyer', async () => {
+        signIn(true);
+
+        const strangers = await mountTimeline(STAFF_ROWS, 'someone-else');
+        const nobody = await mountTimeline(STAFF_ROWS);
+
+        expect(strangers.wrapper.find('[data-test="order-timeline-own-order"]').exists()).toBe(
+            false
+        );
+        expect(nobody.wrapper.find('[data-test="order-timeline-own-order"]').exists()).toBe(false);
+    });
+
+    it('shows no chip to a buyer, who never sees an actor', async () => {
+        signIn(false);
+
+        const { wrapper } = await mountTimeline(BUYER_ROWS, 'u9');
+
+        expect(wrapper.find('[data-test="order-timeline-own-order"]').exists()).toBe(false);
     });
 });
 

@@ -257,6 +257,22 @@ void fetchPage({ ...filters });
                 <span class="whitespace-nowrap">{{ formatDateTime(item.timestamp) }}</span>
             </template>
 
+            <template v-slot:[`item.action`]="{ item }">
+                <span class="inline-flex flex-wrap items-center gap-2">
+                    {{ item.action }}
+                    <!-- Own money is allowed and recorded: the row says the actor was the buyer. -->
+                    <v-chip
+                        v-if="item.metadata?.ownOrder === true"
+                        size="x-small"
+                        variant="tonal"
+                        color="info"
+                        data-test="audit-own-order"
+                    >
+                        {{ t('admin-page.audit-own-order') }}
+                    </v-chip>
+                </span>
+            </template>
+
             <template v-slot:[`item.actorRole`]="{ item }">
                 <v-chip
                     size="small"

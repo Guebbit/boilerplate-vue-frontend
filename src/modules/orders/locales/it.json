@@ -154,6 +154,7 @@
         "loading": "Caricamento della cronologia...",
         "empty": "Nessun evento per questo ordine.",
         "badge-staff-only": "Nascosto all'acquirente",
+        "badge-own-order": "Proprio ordine",
         "label-text": "Nota: {text}",
         "label-actor": "da {actor}",
         "type-created": "Ordine effettuato",

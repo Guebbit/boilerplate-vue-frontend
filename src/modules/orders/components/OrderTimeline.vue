@@ -15,7 +15,9 @@ export default {
  * which rows the caller may read — staff get every one with the actor and any text they wrote, the
  * buyer only the buyer-visible ones and never an actor — so this component filters nothing. Staff
  * (`display:Order`) additionally get a badge on the rows the buyer cannot see. The text of each
- * line is `describeTimelineEntry`'s, built from the row's ids and codes.
+ * line is `describeTimelineEntry`'s, built from the row's ids and codes. A row done by the order's
+ * own buyer carries an "own order" chip for staff, so a review sees a staff member handling their own
+ * order's money at a glance.
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -42,6 +44,8 @@ const props = defineProps<{
     orderId: string;
     /** Any value that differs after the order changed; the history is read again when it does. */
     refreshKey?: string;
+    /** The order's buyer: a row whose actor is this account was done by the order's own buyer. */
+    ownerId?: string;
 }>();
 
 /**
@@ -91,6 +95,17 @@ const tools: TimelineTools = {
 const lines = computed(() =>
     entries.value.map((entry) => ({ entry, line: describeTimelineEntry(entry, tools) }))
 );
+
+/**
+ * Whether a row was done by the order's own buyer — a staff member handling their own order's
+ * money is allowed and recorded, and this is where a reader sees it. The actor reaches the screen
+ * only for staff, and the row outlives the 90-day audit row.
+ *
+ * @param entry - the row
+ * @returns `true` when the row's actor is the order's buyer
+ */
+const isByBuyer = (entry: OrderTimelineEntry): boolean =>
+    props.ownerId !== undefined && entry.actor === props.ownerId;
 
 /**
  * Ticket of the newest read; an older read finishing late sees it moved on and drops its answer.
@@ -163,6 +178,15 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
                     >
                         <EyeOff :size="12" class="mr-1" aria-hidden="true" />
                         {{ t('order-timeline.badge-staff-only') }}
+                    </v-chip>
+                    <v-chip
+                        v-if="session.can('display', 'Order') && isByBuyer(entry)"
+                        size="x-small"
+                        variant="tonal"
+                        color="info"
+                        data-test="order-timeline-own-order"
+                    >
+                        {{ t('order-timeline.badge-own-order') }}
                     </v-chip>
                 </div>
                 <span v-if="line.detail" class="text-sm" data-test="order-timeline-detail">

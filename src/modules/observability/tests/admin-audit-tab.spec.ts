@@ -131,3 +131,35 @@ describe('the correlation ids', () => {
         });
     });
 });
+
+/** An audit row of a refund, with or without the flag a staff member handling their own order earns. */
+const refundRow = (metadata: Record<string, unknown>) => ({
+    actorUserId: 'u1',
+    actorRole: 'admin',
+    actorScope: 'tenant',
+    action: 'admin.payment.refunded',
+    outcome: 'success',
+    timestamp: '2026-10-18T08:00:00.000Z',
+    level: 'info',
+    metadata
+});
+
+describe('own money', () => {
+    it('badges a row whose metadata says ownOrder, and no other', () => {
+        vi.mocked(listAuditEntries).mockResolvedValueOnce(
+            contractEnvelope<Awaited<ReturnType<typeof listAuditEntries>>>(
+                schemas.ListAuditEntriesResponse,
+                {
+                    items: [refundRow({ ownOrder: true }), refundRow({ amount: 5 })],
+                    meta: { page: 1, pageSize: 50, totalItems: 2, totalPages: 1 }
+                }
+            )
+        );
+        const wrapper = mountTab({ endpoint: 'shop' });
+
+        return flushPromises().then(() => {
+            expect(wrapper.findAll('[data-test=audit-own-order]')).toHaveLength(1);
+            expect(wrapper.get('[data-test=audit-own-order]').text()).toBe('Own order');
+        });
+    });
+});
