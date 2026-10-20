@@ -19,7 +19,7 @@ flowchart LR
     Main["src/main.ts\nsyncTracker() on the visitor's answer"]
     Store["src/infrastructure/observability/store.ts\nuseObservabilityStore()"]
     HTTP["src/infrastructure/http/index.ts\ncaptureException() on 5xx"]
-    Components["Stores + composables\ntrack() / identifyUser()"]
+    Components["Stores + composables\ncaptureException()"]
 
     Main --> Store
     HTTP --> Store
@@ -64,7 +64,8 @@ tab closes. It captures:
 - Tracing (below)
 - Browser metadata (browser, operating system, language, viewport) and the page URL (query and fragment
   stripped), on every item
-- For a signed-in visitor who consented, their user id (`setUser`, id only, never an email)
+- No user id: Faro never calls `setUser`. An API failure's report carries the response's `x-request-id`,
+  which finds the request in the API's logs.
 
 The receiver sees the visitor's IP address: it is the operator's own Alloy, not a third party.
 
@@ -116,7 +117,7 @@ The trace-propagation origin is derived from `VITE_API_URL`, the same value the 
 ### What it captures
 
 - **Pageviews** — automatic. The tracker script hooks SPA history changes, so there is **no manual `page_view` event** in the router.
-- **User identity** via `identifyUser()` once the profile loads with `analyticsConsent` true, reset by `unidentifyUser()` on logout (best-effort; Umami `identify` is optional).
+- **No user identity** — the browser never calls Umami's `identify`, so the pageviews carry no account id. The backend's own events do, for a consenting signed-in caller; see [Umami: Consent](./umami.md#consent).
 - **Nothing before consent** — the tracker loads only after the visitor accepts the banner; see [Umami: Consent](./umami.md#consent).
 
 ### Rules
@@ -180,10 +181,6 @@ All observability calls go through `useObservabilityStore()`. Never import the F
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 const obs = useObservabilityStore();
-
-// Identify the visitor after login, and drop the association on logout
-obs.identifyUser(userId);
-obs.unidentifyUser();
 
 // Capture an exception manually (sent to Faro → Grafana)
 obs.captureException(error);

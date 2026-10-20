@@ -18,7 +18,6 @@ import {
     confirmPasswordReset as apiConfirmPasswordReset
 } from '@api';
 import type { MfaChallenge, LoginOutcome as ApiLoginOutcome } from '@api';
-import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { useProfileStore } from './profile.ts';
@@ -247,7 +246,6 @@ export const useAuthStore = defineStore('accountAuth', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
-        useObservabilityStore().unidentifyUser();
         return session.logout().then(() => {
             useProfileStore().resetAll();
             // Back to the guest cookie's answer: the account's no longer applies.
@@ -261,7 +259,6 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @returns A promise resolving once every refresh token is revoked and local state cleared.
      */
     const logoutEverywhere = () => {
-        useObservabilityStore().unidentifyUser();
         return session.logoutAll().then(() => {
             useProfileStore().resetAll();
             useAnalyticsConsentStore().syncTracker();
