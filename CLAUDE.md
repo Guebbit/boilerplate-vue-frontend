@@ -129,6 +129,10 @@ sharp(buffer).resize(
 
 - Visual baselines (`**/__snapshots__/*.png`) are recorded only inside the pinned image
   (`docs/tools/visual-regression.md`), never on a host.
+- **A run that finds failures: fix them all, then re-run only what the fixes can affect.** That is
+  the failed tests plus the ones that touch the same areas — never the whole suite by default. A
+  long suite (the live e2e takes hours) is run in full once; a second full run is a deliberate
+  choice, made when extra certainty is wanted after the fix pass is done.
 
 ## UI and design
 
