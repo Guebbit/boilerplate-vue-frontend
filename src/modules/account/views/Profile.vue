@@ -28,6 +28,7 @@ import { supportedLanguages } from '@/i18n';
 import { useProfileStore } from '../stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import ProfileAvatar from '../components/ProfileAvatar.vue';
+import PurchaseHoldNotice from '../components/PurchaseHoldNotice.vue';
 import ProfilePasswordChange from '../components/ProfilePasswordChange.vue';
 import ProfileTwoFactor from '../components/ProfileTwoFactor.vue';
 import ProfileConnectedAccounts from '../components/ProfileConnectedAccounts.vue';
@@ -363,6 +364,8 @@ const cancelPendingEmail = () => {
 
 <template>
     <div id="profile-page">
+        <PurchaseHoldNotice class="mx-auto mt-10 w-full max-w-xl" />
+
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <ProfileAvatar />
 

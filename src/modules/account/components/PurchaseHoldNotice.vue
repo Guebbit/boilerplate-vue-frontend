@@ -100,7 +100,7 @@ onMounted(() => {
             {{ t('purchase-hold-notice.contest') }}
             <RouterLink
                 v-if="hasContact"
-                :to="routerLinkI18n({ name: 'Contact' })"
+                :to="routerLinkI18n({ name: 'Contact', query: { category: 'account' } })"
                 data-test="purchase-hold-contact"
             >
                 {{ t('purchase-hold-notice.contact-us') }}
