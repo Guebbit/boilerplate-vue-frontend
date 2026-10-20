@@ -316,6 +316,45 @@ describe('useUsersStore', () => {
                 }));
     });
 
+    describe('the purchase hold', () => {
+        it('puts the hold with its end date and note, as the JSON body', () =>
+            useUsersStore()
+                .setPurchaseHold('u1', { until: '2999-01-01T23:59:59.999Z', note: 'Write to us.' })
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/users/u1/purchase-hold',
+                        method: 'PUT',
+                        data: { until: '2999-01-01T23:59:59.999Z', note: 'Write to us.' }
+                    });
+                }));
+
+        it('lifts the hold with a DELETE on the same path', () => {
+            // Unlike the other deletes this one answers with the user, hold gone.
+            vi.mocked(orvalMutator).mockResolvedValueOnce(
+                parseOrvalFixture(
+                    'DELETE',
+                    '/users/u1/purchase-hold',
+                    orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+                )
+            );
+            return useUsersStore()
+                .liftPurchaseHold('u1')
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/users/u1/purchase-hold',
+                        method: 'DELETE'
+                    });
+                });
+        });
+
+        it('replaces the cached user with the one the API answered', () => {
+            const store = useUsersStore();
+            return store.setPurchaseHold('u1', { until: '2999-01-01T23:59:59.999Z' }).then(() => {
+                expect(store.users.u1?.username).toBe('ada');
+            });
+        });
+    });
+
     describe('hardDeleteUser', () => {
         /*
          * A separate method rather than a flag on `deleteUser`, because the two are not the same

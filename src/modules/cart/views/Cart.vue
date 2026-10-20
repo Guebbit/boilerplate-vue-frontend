@@ -48,7 +48,7 @@ import TourButton from '@/ui/molecules/TourButton.vue';
 import MergeReportAlert from '../components/MergeReportAlert.vue';
 import { ShippingSelector } from '@/modules/delivery';
 import { PaymentMethodSelector } from '@/modules/payments';
-import { AddressPicker } from '@/modules/account';
+import { AddressPicker, PurchaseHoldNotice } from '@/modules/account';
 import { useProductLines } from '@/modules/products';
 
 /**
@@ -202,6 +202,11 @@ watch([notes, paymentMethodId, addressId], () => {
             ...(addressId.value === undefined ? {} : { addressId: addressId.value })
         });
 });
+
+/**
+ * Raised after a checkout the hold refused, so the banner reads the buyer's record again.
+ */
+const holdSignal = ref(0);
 
 /**
  * Whether any line cannot be bought as it stands (short, sold out, off sale, removed). Checkout
@@ -418,6 +423,13 @@ const runCheckout = () =>
             if (verdict.kind === 'open-order-limit') {
                 openOrderIds.value = verdict.orderIds;
                 addMessage(t('cart-page.error-open-order-limit'));
+                return;
+            }
+            if (verdict.kind === 'purchase-hold') {
+                // The banner carries the reason, the date and the note; it reads the buyer's own
+                // record, so reload it now rather than waiting for the next visit.
+                addMessage(t('cart-page.error-purchase-hold'));
+                holdSignal.value += 1;
                 return;
             }
             if (verdict.kind === 'cart-empty') {
@@ -638,6 +650,12 @@ onMounted(() =>
                     </li>
                 </ul>
             </v-alert>
+
+            <!--
+                A purchase hold pauses new orders only. The banner reads the buyer's own record,
+                so it shows before a checkout is tried as well as after one is refused.
+            -->
+            <PurchaseHoldNotice :refresh-signal="holdSignal" />
 
             <!--
                 CART_OPEN_ORDER_LIMIT names the unpaid orders in the way: the fix is paying or

@@ -64,6 +64,7 @@ export type CheckoutErrorVerdict =
     | { kind: 'ship-to-country-not-supported' }
     | { kind: 'product-unavailable'; lines: UnavailableCartLine[] }
     | { kind: 'open-order-limit'; orderIds: string[] }
+    | { kind: 'purchase-hold' }
     | { kind: 'cart-empty' }
     | { kind: 'in-flight' }
     | { kind: 'server-error' }
@@ -196,6 +197,8 @@ export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
             : [];
         return { kind: 'open-order-limit', orderIds };
     }
+    // The reason, the date and the note are the buyer's own record's to show (`PurchaseHoldNotice`).
+    if (item?.code === ERROR_CODES.CART_PURCHASE_HOLD) return { kind: 'purchase-hold' };
     if (item?.code === ERROR_CODES.CART_EMPTY) return { kind: 'cart-empty' };
     if (item?.code === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT) return { kind: 'in-flight' };
     if ((error as { status?: unknown } | null | undefined)?.status === 500)

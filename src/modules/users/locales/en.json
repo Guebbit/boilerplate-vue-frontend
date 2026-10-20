@@ -40,7 +40,11 @@
         "success-restore": "User restored",
         "button-access": "Manage access",
         "button-access-named": "Manage access for {name}",
-        "success-access-update": "User access updated"
+        "success-access-update": "User access updated",
+        "filter-purchase-hold": "Purchase hold",
+        "filter-purchase-hold-all": "Any",
+        "filter-purchase-hold-yes": "Checkout paused",
+        "chip-purchase-hold": "Checkout paused"
     },
     "users-form": {
         "email-invalid": "Check your email address for typos or a missing domain",
@@ -73,7 +77,16 @@
         "image-alt": "Profile picture of {name}",
         "button-manage-access": "Manage access",
         "success-access-update": "User access updated",
-        "button-history": "History"
+        "button-history": "History",
+        "label-purchase-hold": "Purchase hold",
+        "purchase-hold-none": "None",
+        "purchase-hold-staff": "Paused by staff until {date}",
+        "purchase-hold-automatic": "Paused after repeated cancellations until {date}",
+        "button-pause-checkout": "Pause checkout",
+        "button-lift-hold": "Lift the hold",
+        "confirm-lift-hold": "Lift the purchase hold on {name}? The count of cancellations starts again from now.",
+        "success-hold-set": "Checkout paused.",
+        "success-hold-lifted": "Purchase hold lifted."
     },
     "user-create-page": {
         "page-title": "Create user",
@@ -117,5 +130,15 @@
     },
     "navigation": {
         "label-users-list": "@:users.user @:generic.list"
+    },
+    "user-purchase-hold-dialog": {
+        "title": "Pause checkout for {name}",
+        "intro": "They can still pay for, cancel and return orders they already have. They cannot place a new order until the hold ends or you lift it.",
+        "label-until": "Hold ends on",
+        "hint-until": "The hold ends at the close of this day (UTC).",
+        "error-until": "Pick a day from tomorrow on.",
+        "label-note": "Note for the buyer (optional)",
+        "hint-note": "Shown to them with the refusal. Write it as if they read it, and say how to contest it.",
+        "button-confirm": "Pause checkout"
     }
 }

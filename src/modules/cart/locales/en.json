@@ -66,7 +66,8 @@
         "error-cart-empty": "This cart is already empty. If you just placed an order it went through: check your orders.",
         "error-checkout-in-flight": "Your order is still being processed. Check your orders in a moment before trying again.",
         "order-placed-after-error": "Your order was placed, but the confirmation did not reach us. Here are your orders.",
-        "label-no-withdrawal": "No right of withdrawal"
+        "label-no-withdrawal": "No right of withdrawal",
+        "error-purchase-hold": "Checkout is paused for your account, see the notice above."
     },
     "guest-cart-page": {
         "intro": "This cart is saved on this device. Sign in to check out: what is in it is added to your account's cart.",

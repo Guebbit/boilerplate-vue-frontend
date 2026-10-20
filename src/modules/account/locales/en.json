@@ -252,5 +252,13 @@
         "same": "Same as the shipping address",
         "empty": "You have no saved addresses yet — add the address this order is invoiced to.",
         "add": "Add an address"
+    },
+    "purchase-hold-notice": {
+        "title": "Checkout is paused for your account",
+        "reason-repeated_cancellations": "You cancelled several orders in a short time, so we paused new orders as a precaution. It lifts by itself on {date}, or sooner once we have looked at it.",
+        "reason-staff": "Our team paused new orders on your account until {date}.",
+        "still-allowed": "You can still pay for, cancel or return the orders you already have, and use your account as usual.",
+        "contest": "If you think this is a mistake, tell us and a person will review it.",
+        "contact-us": "Contact us"
     }
 }

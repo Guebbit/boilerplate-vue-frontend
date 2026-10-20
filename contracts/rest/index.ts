@@ -155,6 +155,25 @@ export interface UserActions {
     delete: boolean;
 }
 
+export type PurchaseHoldReason = (typeof PurchaseHoldReason)[keyof typeof PurchaseHoldReason];
+
+export const PurchaseHoldReason = {
+    repeated_cancellations: 'repeated_cancellations',
+    staff: 'staff'
+} as const;
+
+export interface PurchaseHold {
+    /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window; staff can lift it earlier. */
+    until: string;
+    reason: PurchaseHoldReason;
+    /**
+     * Staff text shown to the buyer with the refusal. Absent on an automatic hold.
+     * @maxLength 500
+     */
+    note?: string;
+    setAt: string;
+}
+
 export interface User {
     id: Id;
     email: Email;
@@ -178,6 +197,7 @@ export interface User {
     updatedAt?: string;
     deletedAt?: string;
     actions?: UserActions;
+    purchaseHold?: PurchaseHold;
 }
 
 export interface UserEnvelope {
@@ -2088,6 +2108,7 @@ export interface SearchUsersRequest {
     username?: string;
     active?: boolean;
     deleted?: boolean;
+    purchaseHold?: true;
 }
 
 export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
@@ -5351,6 +5372,16 @@ export interface AccountExportResponse {
     stockAlerts: StockAlert[];
 }
 
+export interface SetPurchaseHoldRequest {
+    /** When checkout opens again. Must be in the future. */
+    until: string;
+    /**
+     * Shown to the buyer with the refusal, so write it as if they read it (GDPR Art. 22(3): the reason and how to contest it).
+     * @maxLength 500
+     */
+    note?: string;
+}
+
 export interface MergeCartRequest {
     /**
      * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart`s.
@@ -6324,6 +6355,10 @@ export type ListUsersParams = {
      * `true` lists only soft-deleted rows, `false` only live ones; absent lists both. Admin-effective: a caller who cannot see deleted rows at all gets an empty page for `true`.
      */
     deleted?: boolean;
+    /**
+     * `true` lists only the accounts under a purchase hold right now; absent lists everyone. There is no `false`: a lifted or expired hold is not a state to search for.
+     */
+    purchaseHold?: true;
 };
 
 export type DeleteUserParams = {
@@ -10871,6 +10906,40 @@ export const downloadAccountExport = (
 };
 
 /**
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+ * @summary Put a purchase hold on a user
+ */
+export const setUserPurchaseHold = (
+    id: string,
+    setPurchaseHoldRequest: SetPurchaseHoldRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}/purchase-hold`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: setPurchaseHoldRequest
+        },
+        options
+    );
+};
+
+/**
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force.
+ * @summary Lift a user's purchase hold
+ */
+export const liftUserPurchaseHold = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        { url: `/users/${id}/purchase-hold`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
  * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
@@ -11855,6 +11924,12 @@ export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSess
 export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;
 export type DownloadAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof downloadAccountExport>>
+>;
+export type SetUserPurchaseHoldResult = NonNullable<
+    Awaited<ReturnType<typeof setUserPurchaseHold>>
+>;
+export type LiftUserPurchaseHoldResult = NonNullable<
+    Awaited<ReturnType<typeof liftUserPurchaseHold>>
 >;
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
