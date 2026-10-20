@@ -4,12 +4,13 @@
  * PS4 · The preorder board through a delay. A paid preorder is due in five days; the admin moves
  * the release date ten days later from the board's own link and confirms what the form says it
  * will do. The board shows the slip and the buyer is mailed. Once the new date has passed the
- * sweep asks the buyer to keep waiting (the row gains an answer-by day and the Late view lists
- * it); a month of silence later the sweep cancels, and the cash is owed back, and the row says why.
+ * sweep tells the buyer once more (the Late view lists the row). A month of silence later nothing
+ * has been cancelled: the shop tells and a person decides, so the order is still waiting.
  *
  * Demo only: the dates are clock jumps and the sweeps are pulled with the job lever.
  */
 import { byTemplate } from '../../../../scripts/e2e/mail-filters';
+import { mailMentions } from '../../../../scripts/e2e/mail-message';
 import { paidPreorderBy, preorderOnSale, releaseDateIn } from '../../../support/e2e/steps';
 
 /** One day in milliseconds, for the clock jumps. */
@@ -23,7 +24,7 @@ describe('PS4 · The preorder board through a delay', () => {
         cy.visit('/en');
     });
 
-    it('shows the slip, asks after the new date, and cancels and refunds after silence', () => {
+    it('shows the slip, tells the buyer once the date passes, and cancels nothing on its own', () => {
         const title = `PS4 preorder ${String(Date.now())}`;
         preorderOnSale({ releaseInDays: 5, limit: 2, title }).then((productId) => {
             paidPreorderBy(productId).then((orderId) => {
@@ -50,15 +51,18 @@ describe('PS4 · The preorder board through a delay', () => {
                     cy.emailTo(email, byTemplate('delivery.fulfillment-delayed'));
                 });
 
-                cy.step('past the new date the sweep asks the buyer to keep waiting');
+                cy.step('past the new date the sweep tells the buyer once more');
                 cy.travel(16 * DAY_MS);
                 cy.runJob('sweep-preorders');
+                cy.accountOf('user').then(({ email }) => {
+                    cy.emailTo(email, (mail) => mailMentions(mail, 'Part of your order is late'));
+                });
                 cy.loginAs('admin');
                 cy.visit('/en/sales/preorders?tab=orders');
                 cy.get(`[data-test=preorder-order-link][href*="${orderId}"]`)
                     .closest('tr')
                     .find('[data-test=preorder-answer-by]')
-                    .should('exist');
+                    .should('not.exist');
                 cy.get('[data-test=preorder-filter-late] input').check({ force: true });
                 cy.get(`[data-test=preorder-order-link][href*="${orderId}"]`).should('exist');
                 cy.get('[data-test=preorder-filter-late] input').uncheck({ force: true });
@@ -66,7 +70,7 @@ describe('PS4 · The preorder board through a delay', () => {
                 cy.get(`[data-test=preorder-order-link][href*="${orderId}"]`).should('not.exist');
                 cy.get('[data-test=preorder-filter-due-soon] input').uncheck({ force: true });
 
-                cy.step('a month of silence later the sweep cancels, and the cash is owed back');
+                cy.step('a month of silence later nothing was cancelled: a person decides');
                 cy.travel(31 * DAY_MS);
                 cy.runJob('sweep-preorders');
                 cy.loginAs('admin');
@@ -74,23 +78,10 @@ describe('PS4 · The preorder board through a delay', () => {
                 cy.get(`[data-test=preorder-order-link][href*="${orderId}"]`)
                     .closest('tr')
                     .find('[data-test=preorder-cancel-reason]')
-                    .should('exist');
+                    .should('not.exist');
                 cy.apiAs<{ status: string }>('admin', 'GET', `/orders/${orderId}`)
                     .its('status')
-                    .should('equal', 'cancelled');
-                // Paid in cash, so there is no provider to refund through: the money is owed by hand.
-                cy.apiAs<{ items: { orderId: string; kind: string }[] }>(
-                    'admin',
-                    'GET',
-                    '/payments/attention'
-                ).should((attention) => {
-                    expect(
-                        attention?.items.some(
-                            (item) => item.orderId === orderId && item.kind === 'manual_refund_owed'
-                        ),
-                        'a refund owed by hand'
-                    ).to.equal(true);
-                });
+                    .should('not.equal', 'cancelled');
             });
         });
     });

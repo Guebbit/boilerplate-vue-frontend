@@ -14,13 +14,11 @@
         "button-clear-all": "Elimina tutte",
         "button-delete-named": "Elimina la notifica: {text}",
         "unread": "Nuova",
-        "fulfillment-delayed": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} ed è ora attesa per il {expected}. Puoi continuare ad aspettare o annullarla dal tuo ordine.",
-        "fulfillment-delayed-undated": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} e stiamo ancora aspettando la merce. Puoi continuare ad aspettare o annullarla dal tuo ordine.",
-        "fulfillment-confirm-wait": "Una parte del tuo ordine ({titles}) è in ritardo. Dicci entro il {answerBy} che vuoi ancora aspettare, altrimenti sarà annullata e rimborsata.",
+        "fulfillment-delayed": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} ed è ora attesa per il {expected}. Se ti va bene aspettare non devi fare nulla; puoi annullarla dal tuo ordine.",
+        "fulfillment-delayed-undated": "Una parte del tuo ordine ({titles}) è in ritardo: era promessa per il {agreed} e stiamo ancora aspettando la merce. Se ti va bene aspettare non devi fare nulla; puoi annullarla dal tuo ordine.",
         "fulfillment-held-check_address": "Una parte del tuo ordine è in sospeso: controlla l'indirizzo di consegna.",
         "fulfillment-held-delayed": "Una parte del tuo ordine è trattenuta per un momento e partirà più tardi del previsto.",
         "fulfillment-held-message": "Il negozio scrive: {message}",
-        "fulfillment-confirm-wait-bare": "Una parte del tuo ordine ({titles}) è in ritardo. Dicci se vuoi ancora aspettare, oppure annullala dal tuo ordine.",
         "link-order": "Apri l'ordine",
         "stock-alert": "Buone notizie: {name} si può ordinare di nuovo."
     }

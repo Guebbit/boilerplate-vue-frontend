@@ -152,28 +152,22 @@ describe('what a row says', () => {
             expect(wrapper.find('[data-test=preorder-slipped]').exists()).toBe(false);
         }));
 
-    it('shows the deadline of an answer still owed', () =>
-        mountTable([
-            aPreorderFulfillmentOrder({
-                state: 'awaiting_yes',
-                consent: 'awaiting',
-                consentDeadline: '2027-04-19T00:00:00.000Z'
-            })
-        ]).then(({ wrapper }) => {
+    it('names a waiting row waiting, with no answer owed and no deadline', () =>
+        mountTable([aPreorderFulfillmentOrder({ state: 'waiting' })]).then(({ wrapper }) => {
             expect(wrapper.get('[data-test=preorder-state]').attributes('data-state')).toBe(
-                'awaiting_yes'
+                'waiting'
             );
-            expect(wrapper.get('[data-test=preorder-answer-by]').text()).toContain('Answer by');
+            expect(wrapper.find('[data-test=preorder-answer-by]').exists()).toBe(false);
         }));
 
     it('says who cancelled a cancelled one', () =>
-        mountTable([
-            aPreorderFulfillmentOrder({ state: 'cancelled', cancelReason: 'no_answer' })
-        ]).then(({ wrapper }) => {
-            expect(wrapper.get('[data-test=preorder-cancel-reason]').text()).toBe(
-                'Cancelled: no answer'
-            );
-        }));
+        mountTable([aPreorderFulfillmentOrder({ state: 'cancelled', cancelReason: 'order' })]).then(
+            ({ wrapper }) => {
+                expect(wrapper.get('[data-test=preorder-cancel-reason]').text()).toBe(
+                    'Cancelled with the order'
+                );
+            }
+        ));
 
     it('says so when nothing matches', () =>
         mountTable([]).then(({ wrapper }) => {

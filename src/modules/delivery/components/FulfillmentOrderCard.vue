@@ -4,17 +4,17 @@
  * One card per fulfillment order — the group of lines that leave together — in Shopify's admin
  * layout: status, hold reason, what is promised and when, each line with how much shipped,
  * was cancelled and remains, then the shipments cut from it. Every button comes from the
- * record's own `actions` (the buyer's "Keep waiting" included); the one exception is the forced
- * ship, offered to an override holder while the ordinary door is closed (the server refuses what
- * does not apply). A late preorder also shows where it stands with its buyer: the promised date,
- * the answer owed and by when, the last notice, and who cancelled it.
+ * record's own `actions`; the one exception is the forced ship, offered to an override holder
+ * while the ordinary door is closed (the server refuses what does not apply). A late preorder also
+ * shows the promised date, the last notice sent, and who cancelled it. The shop only tells the
+ * buyer: there is no question to answer.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { OrderStatus } from '@/types/enums.ts';
 import { useDeliveryStore } from '../store.ts';
@@ -136,35 +136,6 @@ const promisedDate = computed(() =>
 );
 
 /**
- * The consent sentence's dictionary key. While an answer is owed, the buyer (whose record carries
- * `actions.confirmWait`) is asked; anyone else reads that it is awaited.
- */
-const consentKey = computed(() => {
-    const { consent, actions } = props.fulfillmentOrder;
-    if (!consent) return undefined;
-    if (consent === 'awaiting')
-        return actions.confirmWait
-            ? 'fulfillment-order-card.consent-awaiting-buyer'
-            : 'fulfillment-order-card.consent-awaiting-staff';
-    return consent === 'confirmed'
-        ? 'fulfillment-order-card.consent-confirmed'
-        : 'fulfillment-order-card.consent-expired';
-});
-
-/**
- * What the buyer agreed to wait for, once no question is open: the definite revised date (accepted
- * by answering or by silence), or, after a "yes" to a question that offered no date, an open-ended
- * wait that stays cancellable until it ships. Absent while a question is open or expired, and when
- * nothing was ever agreed.
- */
-const agreedWait = computed(() => {
-    const { consent, revisedShipDate } = props.fulfillmentOrder;
-    if (consent === 'awaiting' || consent === 'expired') return undefined;
-    if (revisedShipDate) return { key: 'agreed-until', date: formatDate(revisedShipDate) };
-    return consent === 'confirmed' ? { key: 'agreed-open-ended', date: '' } : undefined;
-});
-
-/**
  * Runs one dialog-less write: clears the blocked state, toasts, tells the page, or blocks in place.
  *
  * @param move - The store call.
@@ -188,17 +159,6 @@ const run = (move: () => Promise<unknown>, success: string) => {
  */
 const markFulfilled = () =>
     run(() => deliveryStore.fulfill(props.fulfillmentOrder.id), 'fulfillment-order-card.fulfilled');
-
-/**
- * The buyer's answer: keep waiting.
- *
- * @returns A promise settling once the call finished.
- */
-const confirmWait = () =>
-    run(
-        () => deliveryStore.confirmWait(props.fulfillmentOrder.id),
-        'fulfillment-order-card.wait-confirmed'
-    );
 
 /**
  * Lifts a staff hold.
@@ -293,31 +253,6 @@ const release = () =>
         >
             {{ t('fulfillment-order-card.promised', { date: formatDateTime(promisedDate) }) }}
         </p>
-        <div v-if="consentKey" class="flex flex-col gap-1" data-test="fulfillment-order-consent">
-            <v-chip
-                size="small"
-                :color="fulfillmentOrder.consent === 'confirmed' ? 'success' : 'warning'"
-                variant="tonal"
-                class="self-start"
-                :data-consent="fulfillmentOrder.consent"
-            >
-                {{ t(consentKey) }}
-            </v-chip>
-            <p
-                v-if="fulfillmentOrder.consent === 'awaiting' && fulfillmentOrder.consentDeadline"
-                class="m-0 text-sm"
-                data-test="fulfillment-order-answer-by"
-            >
-                {{
-                    t('fulfillment-order-card.answer-by', {
-                        date: formatDateTime(fulfillmentOrder.consentDeadline)
-                    })
-                }}
-            </p>
-        </div>
-        <p v-if="agreedWait" class="m-0 text-sm" data-test="fulfillment-order-agreed-wait">
-            {{ t(`fulfillment-order-card.${agreedWait.key}`, { date: agreedWait.date }) }}
-        </p>
         <p
             v-if="fulfillmentOrder.lastNoticeAt"
             class="m-0 text-sm opacity-75"
@@ -392,16 +327,6 @@ const release = () =>
                 @click="holdOpen = true"
             >
                 {{ t('fulfillment-order-card.button-hold') }}
-            </v-btn>
-            <v-btn
-                v-if="fulfillmentOrder.actions.confirmWait"
-                color="primary"
-                size="small"
-                :disabled="loading"
-                data-test="confirm-wait"
-                @click="confirmWait"
-            >
-                {{ t('fulfillment-order-card.button-confirm-wait') }}
             </v-btn>
             <v-btn
                 v-if="fulfillmentOrder.actions.release"

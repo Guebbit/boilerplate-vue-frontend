@@ -82,7 +82,7 @@ flowchart TD
     card --> row["ShipmentRow<br/>tracking · mark delivered"]
     card -- "actions.ship" --> ship["ShipItemsDialog<br/>quantity per line · tracking"]
     card -- "actions.hold" --> hold["HoldDialog<br/>reason · note"]
-    card -- "actions.release / fulfill / confirmWait" --> store
+    card -- "actions.release / fulfill" --> store
     ship --> store["delivery store"]
     hold --> store
     row --> store
@@ -114,39 +114,29 @@ page ([orders](./orders.md)).
 
 ## A late preorder
 
-A preorder's fulfillment order carries the dates it was promised and is expected on, and where it
-stands with its buyer after a slip. The card shows it; the server decides everything (the late-date
-rules and the 30-day silence rule live in the backend's `delivery`).
+A preorder's fulfillment order carries the dates it was promised and is expected on, and when its
+buyer was last told. The card shows it; the server decides everything (the shop only tells the buyer
+about a late date and never asks or cancels: that rule lives in the backend's `delivery`).
 
-```mermaid
-stateDiagram-v2
-    [*] --> Waiting: paid, held for stock
-    Waiting --> Awaiting: date slips far, or twice, or passes<br/>(consent: awaiting, answer by the deadline)
-    Awaiting --> Confirmed: buyer presses "Keep waiting"<br/>(POST confirm-wait)
-    Awaiting --> Expired: silence past the deadline<br/>(cancel + refund, reason no_answer)
-    Confirmed --> Awaiting: a later slip asks again
-```
+| On the card                 | Source                                              |
+| --------------------------- | --------------------------------------------------- |
+| "Promised for {date}"       | `agreedAt`, shown once `expectedAt` differs from it |
+| "Last notice sent {date}"   | `lastNoticeAt`                                      |
+| who cancelled what was left | `cancelReason`: `buyer` · `staff` · `order`         |
 
-| On the card                             | Source                                                             |
-| --------------------------------------- | ------------------------------------------------------------------ |
-| "Promised for {date}"                   | `agreedAt`, shown once `expectedAt` differs from it                |
-| the consent chip and "Answer by {date}" | `consent` and `consentDeadline` (present exactly while `awaiting`) |
-| "Last notice sent {date}"               | `lastNoticeAt`                                                     |
-| who cancelled what was left             | `cancelReason`: `buyer` · `staff` · `no_answer` · `order`          |
-| the "Keep waiting" button               | `actions.confirmWait`: the order's own buyer, while `awaiting`     |
-
-The buyer is asked on their own order page (the same card), and the notice in the bell links there.
-Cancelling instead is the order's existing cancel; nothing new is built for it here.
+The buyer cancels on their own order page (the same card sits beside the order's cancel), and the
+notice in the bell links there. There is no question to answer and no button for it: doing nothing
+keeps them waiting.
 
 ## State
 
 Store `delivery`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                      | What it is                                                                                            |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **State**   | `methods` · `shipToCountries` · `fulfillmentOrders` · `shipments`                                                                            | The refs the setup function returns — the only writable surface.                                      |
-| **Getters** | `loading`                                                                                                                                    | Computed, derived from state. Read-only by construction.                                              |
-| **Actions** | `fetchMethods` · `fetchFulfillmentForOrder` · `start` · `ship` · `fulfill` · `hold` · `release` · `confirmWait` · `deliver` · `editTracking` | Everything that changes state or calls the API. Each write ends by re-reading the order's fulfilment. |
+| Kind        | Members                                                                                                                      | What it is                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **State**   | `methods` · `shipToCountries` · `fulfillmentOrders` · `shipments`                                                            | The refs the setup function returns — the only writable surface.                                      |
+| **Getters** | `loading`                                                                                                                    | Computed, derived from state. Read-only by construction.                                              |
+| **Actions** | `fetchMethods` · `fetchFulfillmentForOrder` · `start` · `ship` · `fulfill` · `hold` · `release` · `deliver` · `editTracking` | Everything that changes state or calls the API. Each write ends by re-reading the order's fulfilment. |
 
 ## Screens
 
@@ -156,18 +146,17 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 #### Endpoints called
 
-| Call                                                  | Response envelope                     |
-| ----------------------------------------------------- | ------------------------------------- |
-| `POST /delivery/order/{id}/start`                     | `StartFulfilmentResponse`             |
-| `GET /delivery/order/{id}`                            | `GetFulfillmentByOrderResponse`       |
-| `POST /delivery/fulfillment-orders/{id}/shipments`    | `ShipFulfillmentOrderResponse`        |
-| `POST /delivery/fulfillment-orders/{id}/fulfill`      | `FulfillFulfillmentOrderResponse`     |
-| `POST /delivery/fulfillment-orders/{id}/hold`         | `HoldFulfillmentOrderResponse`        |
-| `POST /delivery/fulfillment-orders/{id}/release`      | `ReleaseFulfillmentOrderResponse`     |
-| `POST /delivery/fulfillment-orders/{id}/confirm-wait` | `ConfirmFulfillmentOrderWaitResponse` |
-| `PATCH /delivery/shipments/{id}`                      | `UpdateShipmentResponse`              |
-| `POST /delivery/shipments/{id}/deliver`               | `DeliverShipmentResponse`             |
-| `GET /delivery/methods`                               | `ListShippingMethodsResponse`         |
+| Call                                               | Response envelope                 |
+| -------------------------------------------------- | --------------------------------- |
+| `POST /delivery/order/{id}/start`                  | `StartFulfilmentResponse`         |
+| `GET /delivery/order/{id}`                         | `GetFulfillmentByOrderResponse`   |
+| `POST /delivery/fulfillment-orders/{id}/shipments` | `ShipFulfillmentOrderResponse`    |
+| `POST /delivery/fulfillment-orders/{id}/fulfill`   | `FulfillFulfillmentOrderResponse` |
+| `POST /delivery/fulfillment-orders/{id}/hold`      | `HoldFulfillmentOrderResponse`    |
+| `POST /delivery/fulfillment-orders/{id}/release`   | `ReleaseFulfillmentOrderResponse` |
+| `PATCH /delivery/shipments/{id}`                   | `UpdateShipmentResponse`          |
+| `POST /delivery/shipments/{id}/deliver`            | `DeliverShipmentResponse`         |
+| `GET /delivery/methods`                            | `ListShippingMethodsResponse`     |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

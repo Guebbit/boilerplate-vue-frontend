@@ -141,7 +141,7 @@ export interface ExamplePublishedPayload {
   'title': string;
 }
 export interface NotificationCreatedPayload {
-  'notification': NotificationCartLineRemovedPayload | NotificationWishlistItemRemovedPayload | NotificationCartMergeRefusedPayload | NotificationFulfillmentDelayedPayload | NotificationFulfillmentConfirmWaitPayload | NotificationFulfillmentHeldPayload | NotificationStockAlertPayload;
+  'notification': NotificationCartLineRemovedPayload | NotificationWishlistItemRemovedPayload | NotificationCartMergeRefusedPayload | NotificationFulfillmentDelayedPayload | NotificationFulfillmentHeldPayload | NotificationStockAlertPayload;
 }
 export interface NotificationCartLineRemovedPayload {
   'id': string;
@@ -189,7 +189,7 @@ export interface NotificationFulfillmentDelayedPayload {
   'id': string;
   'code': AnonymousSchema90;
   'params': FulfillmentDelayedParamsPayload;
-  'severity': AnonymousSchema98;
+  'severity': AnonymousSchema97;
   'readAt'?: string;
   'createdAt': string;
 }
@@ -200,46 +200,35 @@ export interface FulfillmentDelayedParamsPayload {
   'titles': string[];
   'agreedAt': string;
   'expectedAt'?: string;
-  'answerBy'?: string;
 }
-export type AnonymousSchema98 = "info" | "success" | "warning" | "error";
-export interface NotificationFulfillmentConfirmWaitPayload {
-  'id': string;
-  'code': AnonymousSchema102;
-  'params': FulfillmentDelayedParamsPayload;
-  'severity': AnonymousSchema103;
-  'readAt'?: string;
-  'createdAt': string;
-}
-export type AnonymousSchema102 = "notifications.fulfillment-confirm-wait";
-export type AnonymousSchema103 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema97 = "info" | "success" | "warning" | "error";
 export interface NotificationFulfillmentHeldPayload {
   'id': string;
-  'code': AnonymousSchema107;
+  'code': AnonymousSchema101;
   'params': FulfillmentHeldParamsPayload;
-  'severity': AnonymousSchema112;
+  'severity': AnonymousSchema106;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema107 = "notifications.fulfillment-held";
+export type AnonymousSchema101 = "notifications.fulfillment-held";
 export interface FulfillmentHeldParamsPayload {
   'orderId': string;
   'fulfillmentOrderId': string;
-  'notice': AnonymousSchema110;
+  'notice': AnonymousSchema104;
   'message'?: string;
 }
-export type AnonymousSchema110 = "check_address" | "delayed";
-export type AnonymousSchema112 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema104 = "check_address" | "delayed";
+export type AnonymousSchema106 = "info" | "success" | "warning" | "error";
 export interface NotificationStockAlertPayload {
   'id': string;
-  'code': AnonymousSchema116;
+  'code': AnonymousSchema110;
   'params': CartLineRemovedParamsPayload;
-  'severity': AnonymousSchema117;
+  'severity': AnonymousSchema111;
   'readAt'?: string;
   'createdAt': string;
 }
-export type AnonymousSchema116 = "notifications.stock-alert";
-export type AnonymousSchema117 = "info" | "success" | "warning" | "error";
+export type AnonymousSchema110 = "notifications.stock-alert";
+export type AnonymousSchema111 = "info" | "success" | "warning" | "error";
 export interface NotificationsDeletedPayload {
   'all': boolean;
   'ids': string[];
@@ -355,7 +344,7 @@ export interface SseEventPayloadMap {
 }
 export type SseEventPayload<TEventName extends SseEventName> = SseEventPayloadMap[TEventName];
 export const SSE_EVENT_PAYLOAD_SCHEMAS: Record<SseEventName, Record<string, unknown>> = {
-    "notifications.created": {"title":"NotificationCreatedPayload","type":"object","required":["notification"],"properties":{"notification":{"title":"NotificationPayload","oneOf":[{"title":"NotificationCartLineRemovedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.cart-line-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationWishlistItemRemovedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.wishlist-item-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationCartMergeRefusedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.cart-merge-refused"]},"params":{"title":"CartMergeRefusedParamsPayload","type":"object","required":["lines"],"properties":{"lines":{"type":"array","items":{"title":"CartMergeRefusedLinePayload","type":"object","required":["productId","requested","titles"],"properties":{"productId":{"type":"string"},"requested":{"type":"integer"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentDelayedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.fulfillment-delayed"]},"params":{"title":"FulfillmentDelayedParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","titles","agreedAt"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"titles":{"type":"array","items":{"type":"string"}},"agreedAt":{"type":"string","format":"date-time"},"expectedAt":{"type":"string","format":"date-time"},"answerBy":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentConfirmWaitPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.fulfillment-confirm-wait"]},"params":{"title":"FulfillmentDelayedParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","titles","agreedAt"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"titles":{"type":"array","items":{"type":"string"}},"agreedAt":{"type":"string","format":"date-time"},"expectedAt":{"type":"string","format":"date-time"},"answerBy":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentHeldPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.fulfillment-held"]},"params":{"title":"FulfillmentHeldParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","notice"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"notice":{"type":"string","enum":["check_address","delayed"]},"message":{"type":"string","maxLength":500}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStockAlertPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.stock-alert"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false}],"discriminator":"code"}},"additionalProperties":false},
+    "notifications.created": {"title":"NotificationCreatedPayload","type":"object","required":["notification"],"properties":{"notification":{"title":"NotificationPayload","oneOf":[{"title":"NotificationCartLineRemovedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.cart-line-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationWishlistItemRemovedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.wishlist-item-removed"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationCartMergeRefusedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.cart-merge-refused"]},"params":{"title":"CartMergeRefusedParamsPayload","type":"object","required":["lines"],"properties":{"lines":{"type":"array","items":{"title":"CartMergeRefusedLinePayload","type":"object","required":["productId","requested","titles"],"properties":{"productId":{"type":"string"},"requested":{"type":"integer"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentDelayedPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.fulfillment-delayed"]},"params":{"title":"FulfillmentDelayedParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","titles","agreedAt"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"titles":{"type":"array","items":{"type":"string"}},"agreedAt":{"type":"string","format":"date-time"},"expectedAt":{"type":"string","format":"date-time"}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationFulfillmentHeldPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.fulfillment-held"]},"params":{"title":"FulfillmentHeldParamsPayload","type":"object","required":["orderId","fulfillmentOrderId","notice"],"properties":{"orderId":{"type":"string"},"fulfillmentOrderId":{"type":"string"},"notice":{"type":"string","enum":["check_address","delayed"]},"message":{"type":"string","maxLength":500}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false},{"title":"NotificationStockAlertPayload","type":"object","required":["id","code","params","severity","createdAt"],"properties":{"id":{"type":"string"},"code":{"type":"string","enum":["notifications.stock-alert"]},"params":{"title":"CartLineRemovedParamsPayload","type":"object","required":["productId","titles"],"properties":{"productId":{"type":"string"},"titles":{"description":"Locale → the product's name in it.","type":"object","additionalProperties":{"type":"string"}}},"additionalProperties":false},"severity":{"type":"string","enum":["info","success","warning","error"]},"readAt":{"description":"When the owner read it; absent while unread.","type":"string","format":"date-time"},"createdAt":{"type":"string","format":"date-time"}},"additionalProperties":false}],"discriminator":"code"}},"additionalProperties":false},
     "notifications.deleted": {"title":"NotificationsDeletedPayload","type":"object","required":["all","ids"],"properties":{"all":{"description":"True when the whole inbox went (`dismiss-all`); `ids` is then empty.","type":"boolean"},"ids":{"description":"The deleted notifications' ids.","type":"array","items":{"type":"string"}}},"additionalProperties":false},
     "notifications.read": {"title":"NotificationsReadPayload","type":"object","required":["readAt"],"properties":{"readAt":{"type":"string","format":"date-time"}},"additionalProperties":false},
     "observability.heartbeat": {"type":"object","required":["timestamp","uptimeSeconds","memory","http","realtime"],"properties":{"timestamp":{"type":"string","format":"date-time"},"uptimeSeconds":{"type":"integer","minimum":0},"memory":{"title":"MemoryUsage","type":"object","required":["rss","heapUsed","heapTotal","external"],"properties":{"rss":{"type":"integer","minimum":0},"heapUsed":{"type":"integer","minimum":0},"heapTotal":{"type":"integer","minimum":0},"external":{"type":"integer","minimum":0}},"additionalProperties":false},"http":{"title":"HttpMetrics","type":"object","required":["totalRequests","totalErrors"],"properties":{"totalRequests":{"type":"integer","minimum":0},"totalErrors":{"type":"integer","minimum":0}},"additionalProperties":false},"realtime":{"title":"RealtimeMetrics","type":"object","required":["sseClients"],"properties":{"sseClients":{"type":"integer","minimum":0}},"additionalProperties":false}},"additionalProperties":false},

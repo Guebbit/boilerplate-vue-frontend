@@ -86,7 +86,6 @@
         "column-states": "Unità per stato",
         "outstanding-split": "{held} non pagati, {paid} pagati",
         "count-waiting": "{count} in attesa",
-        "count-awaiting-yes": "{count} in attesa di risposta",
         "count-allocated": "{count} assegnati",
         "count-shipped": "{count} spediti",
         "count-cancelled": "{count} annullati",

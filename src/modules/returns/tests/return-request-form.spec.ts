@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { VSelect } from 'vuetify/components';
-import type { ReturnOptionLine, ReturnRequestReason } from '@types';
+import type { ReturnOptionLine, ReturnReason } from '@types';
 import ReturnRequestForm from '../components/ReturnRequestForm.vue';
 import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -30,7 +30,7 @@ const LINES = [
 /**
  * Every reason the form may offer, the state inside the withdrawal period.
  */
-const ALL_REASONS: ReturnRequestReason[] = ['withdrawal', 'defective', 'wrong_item', 'other'];
+const ALL_REASONS: ReturnReason[] = ['withdrawal', 'defective', 'wrong_item', 'other'];
 
 /**
  * Mounts the form with the store's call spied BEFORE mount — the component destructures its
@@ -38,10 +38,7 @@ const ALL_REASONS: ReturnRequestReason[] = ['withdrawal', 'defective', 'wrong_it
  *
  * @returns the wrapper and the store
  */
-const mountForm = (
-    lines: ReturnOptionLine[] = LINES,
-    reasons: ReturnRequestReason[] = ALL_REASONS
-) => {
+const mountForm = (lines: ReturnOptionLine[] = LINES, reasons: ReturnReason[] = ALL_REASONS) => {
     const store = useReturnsStore();
     vi.spyOn(store, 'openReturn').mockResolvedValue(aReturn());
     const wrapper = mount(ReturnRequestForm, {
