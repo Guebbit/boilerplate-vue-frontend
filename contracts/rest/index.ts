@@ -4175,6 +4175,16 @@ export interface ReturnLine {
 }
 
 /**
+ * Who pays to send returned goods back: the customer, or the shop. The shop's setting is `NODE_RETURN_POSTAGE_PAYER`; a return freezes the value it was opened under.
+ */
+export type ReturnPostagePayer = (typeof ReturnPostagePayer)[keyof typeof ReturnPostagePayer];
+
+export const ReturnPostagePayer = {
+    consumer: 'consumer',
+    shop: 'shop'
+} as const;
+
+/**
  * What the requesting caller may do to this return, decided by the server, so a client renders its controls from this rather than re-implementing the lifecycle. Each needs the key that names the act and a status the act can run from.
  */
 export interface ReturnActions {
@@ -4185,16 +4195,6 @@ export interface ReturnActions {
     /** Whether `POST /returns/{id}/receive` would be accepted. */
     receive: boolean;
 }
-
-/**
- * Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)).
- */
-export type ReturnReturnPostage = (typeof ReturnReturnPostage)[keyof typeof ReturnReturnPostage];
-
-export const ReturnReturnPostage = {
-    consumer: 'consumer',
-    shop: 'shop'
-} as const;
 
 export interface Return {
     id: Id;
@@ -4215,7 +4215,7 @@ export interface Return {
     /** What is coming back — or, for a `cancellation`, the remainder that was cancelled. Empty on a withdrawal before dispatch — no goods are expected. */
     lines: ReturnLine[];
     /** Who pays to send the goods back — frozen when the return was opened, from the shop's configuration, so it is what the customer was told beforehand (Art. 14(1)). */
-    returnPostage: ReturnReturnPostage;
+    returnPostage: ReturnPostagePayer;
     /** Why staff declined. Present only on a `declined` return. */
     declineReason?: string;
     /** When staff decided it — or, for a withdrawal, when it was opened already approved. */
@@ -5960,17 +5960,6 @@ export interface ShopAddress {
     country: CountryCode;
 }
 
-/**
- * Who pays to send returned goods back (`NODE_RETURN_POSTAGE_PAYER`).
- */
-export type ShopReturnPostagePayer =
-    (typeof ShopReturnPostagePayer)[keyof typeof ShopReturnPostagePayer];
-
-export const ShopReturnPostagePayer = {
-    consumer: 'consumer',
-    shop: 'shop'
-} as const;
-
 export interface Shop {
     /** The seller's name, as registered. */
     legalName: string;
@@ -5991,8 +5980,7 @@ export interface Shop {
     /** Every country this deployment ships a physical order to (`NODE_SHIP_TO_COUNTRIES`) — checkout refuses a method that `requiresAddress` once the resolved address falls outside it. */
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;
-    /** Who pays to send returned goods back (`NODE_RETURN_POSTAGE_PAYER`). */
-    returnPostagePayer: ShopReturnPostagePayer;
+    returnPostagePayer: ReturnPostagePayer;
 }
 
 export interface ShopEnvelope {
