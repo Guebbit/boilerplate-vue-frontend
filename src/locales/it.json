@@ -145,7 +145,9 @@
     "translation-tabs": {
         "error-count": "{count} errore/i",
         "button-remove-language": "Rimuovi {name}",
-        "label-add-language": "Aggiungi lingua"
+        "label-add-language": "Aggiungi lingua",
+        "draft": "Bozza",
+        "draft-hint": "Bozza — non visibile ai clienti"
     },
     "image": {
         "placeholder-alt": "Nessuna immagine disponibile — immagine segnaposto"

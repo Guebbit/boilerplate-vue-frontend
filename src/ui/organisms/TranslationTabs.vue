@@ -23,13 +23,15 @@ import { Plus, X } from 'lucide-vue-next';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
- * One language the tab bar can offer — a `LocaleCapability`, narrowed to the three fields this
- * component reads.
+ * One language the tab bar can offer — a `LocaleCapability`, narrowed to the fields this component
+ * reads. `active: false` is a DRAFT language: text typed into it is saved and kept, and not shown
+ * to shoppers until the language is switched on. Absent means live.
  */
 export interface TranslationTabLocale {
     tag: string;
     nativeName: string;
     direction: 'ltr' | 'rtl';
+    active?: boolean;
 }
 
 /**
@@ -42,8 +44,8 @@ const {
     errorCounts = {}
 } = defineProps<{
     /**
-     * Every active locale this deployment offers — the universe the "add language" picker
-     * chooses from.
+     * Every locale the caller may write into — live languages and, for staff, draft ones: the
+     * universe the "add language" picker chooses from.
      */
     locales: TranslationTabLocale[];
 
@@ -104,9 +106,16 @@ const openLocales = computed(() =>
 );
 
 /**
- * Active locales with no tab open yet — what the "add language" select offers.
+ * Locales with no tab open yet — what the "add language" select offers, a draft one marked as such.
  */
-const closedLocales = computed(() => locales.filter(({ tag }) => !openTags.includes(tag)));
+const closedLocales = computed(() =>
+    locales
+        .filter(({ tag }) => !openTags.includes(tag))
+        .map(({ tag, nativeName, active = true }) => ({
+            tag,
+            title: active ? nativeName : `${nativeName} (${t('translation-tabs.draft')})`
+        }))
+);
 
 /**
  * The active tab's own row, for the single remove button's label — `undefined` before the first
@@ -155,6 +164,14 @@ const handlePick = (tag: string | null) => {
                 >
                     <span :dir="locale.direction">{{ locale.nativeName }}</span>
                 </v-badge>
+                <span
+                    v-if="locale.active === false"
+                    class="ml-2 rounded-sm px-1 text-xs opacity-70"
+                    :title="t('translation-tabs.draft-hint')"
+                    :data-test="`translation-tab-draft-${locale.tag}`"
+                >
+                    {{ t('translation-tabs.draft') }}
+                </span>
             </v-tab>
         </v-tabs>
 
@@ -178,7 +195,7 @@ const handlePick = (tag: string | null) => {
             v-if="closedLocales.length > 0"
             v-model="addSelection"
             :items="closedLocales"
-            item-title="nativeName"
+            item-title="title"
             item-value="tag"
             :label="t('translation-tabs.label-add-language')"
             hide-details

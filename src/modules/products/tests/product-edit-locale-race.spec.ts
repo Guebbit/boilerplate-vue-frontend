@@ -1,7 +1,7 @@
 /**
  * @module
  * Reproduces the fetch-ordering race `ProductEdit.vue`'s tab bar must survive: the page's own,
- * independent `fetchActiveLocales()` (`GET /locales`) answering before `loadAdminProduct()`
+ * independent `fetchTranslationLocales()` (`GET /locales`) answering before `loadAdminProduct()`
  * (`GET /products/{id}/admin`) does. Before the fix, `openTags` unconditionally opened the
  * fallback tab the moment the fallback tag was known, and the template's
  * `form.translations[tag]!.title` threw once Vue re-rendered against a `form.translations` still

@@ -60,7 +60,9 @@ const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
 
 /**
- * The manifest and its fallback locale.
+ * The manifest and its fallback locale. The manifest is every language the caller may write into:
+ * a switched-off one (`active: false`) reaches only staff holding `display:Locale`, and the tab bar
+ * offers it as a draft.
  */
 const { capabilities, fallbackLocale } = storeToRefs(localesStore);
 
@@ -78,11 +80,6 @@ const entityType = computed(() => String(route.params.entityType));
 
 /** The entity's id, from the route. */
 const entityId = computed(() => String(route.params.id));
-
-/**
- * Every active locale — the tab bar's "add language" universe.
- */
-const activeLocales = computed(() => capabilities.value.filter((capability) => capability.active));
 
 /**
  * The rows as last fetched, kept around so `handleAddLocale` can restore a removed-then-readded
@@ -130,14 +127,16 @@ const loading = ref(false);
 const saving = ref(false);
 
 /**
- * (Re)loads the manifest (once) and this entity's translation rows, then rebuilds the drafts.
+ * (Re)loads the manifest and this entity's translation rows, then rebuilds the drafts.
  *
  * @returns A promise resolving once the screen's state reflects the server's.
  */
 const load = () => {
     loading.value = true;
     return Promise.all([
-        capabilities.value.length === 0 ? localesStore.fetchLanguages() : Promise.resolve(),
+        // Refetched on every load, not cached for the session: who is signed in decides whether the
+        // manifest carries the draft languages, and a session can change under an open store.
+        localesStore.fetchLanguages(),
         localesStore.fetchEntityTranslations(entityType.value, entityId.value)
     ])
         .then(([, result]) => {
@@ -255,7 +254,7 @@ const handleSave = () => {
         <v-card class="p-5">
             <TranslationTabs
                 v-model="activeTab"
-                :locales="activeLocales"
+                :locales="capabilities"
                 :open-tags="openTags"
                 :fallback-tag="fallbackLocale"
                 @add="handleAddLocale"

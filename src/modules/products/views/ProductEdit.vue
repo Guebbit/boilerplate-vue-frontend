@@ -26,7 +26,7 @@ import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useProductsStore } from '../store';
 import { productsSchema } from '../schemas.ts';
-import { useActiveLocales } from '../composables/use-active-locales.ts';
+import { useTranslationLocales } from '../composables/use-translation-locales.ts';
 import { useTranslatedEntityForm } from '../composables/use-translated-entity-form.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -109,8 +109,8 @@ const mayViewTranslations = computed(
 /**
  * The deployment's active locales and fallback tag — what the tab bar offers to add.
  */
-const { locales, fallbackLocale, fetchActiveLocales } = useActiveLocales();
-void fetchActiveLocales();
+const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocales();
+void fetchTranslationLocales();
 
 /**
  * The fetched admin record: every language this product has a row for, plus its price/stock/
