@@ -98,7 +98,9 @@ export const setEnabledInTheForm = (
  * method).
  *
  * Done BEFORE the order a spec cares about, never after: a cancellation announces itself too, and
- * its delivery row must be older than the `order.created` one the spec waits for.
+ * its delivery row must be older than the `order.created` one the spec waits for. Cancelled as the
+ * administrator: the customer's OWN cancels count towards the purchase hold, and a spec that places
+ * several orders would otherwise be refused at its third.
  *
  * @returns a chain that settles once the open orders are cancelled
  */
@@ -107,7 +109,7 @@ const freeTheOpenOrderSlots = (): Cypress.Chainable =>
         .apiAs<{ items: { id: string; status: string }[] }>('user', 'GET', '/orders?pageSize=100')
         .then((page) => {
             for (const { id } of (page?.items ?? []).filter(({ status }) => status === 'pending'))
-                cy.apiAs('user', 'POST', `/orders/${id}/cancel`);
+                cy.apiAs('admin', 'POST', `/orders/${id}/cancel`);
         });
 
 /**
