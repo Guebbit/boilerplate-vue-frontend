@@ -4973,7 +4973,7 @@ export interface OrderTimelineEntry {
     id: Id;
     at: string;
     type: OrderTimelineType;
-    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. */
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
