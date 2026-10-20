@@ -49,6 +49,7 @@
         "audit-col-actor": "Utente",
         "audit-col-role": "Ruolo",
         "audit-col-action": "Azione",
+        "audit-own-order": "Proprio ordine",
         "audit-col-outcome": "Esito",
         "audit-col-ip": "IP",
         "audit-col-request-id": "Request ID",

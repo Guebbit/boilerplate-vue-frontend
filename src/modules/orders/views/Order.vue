@@ -571,7 +571,11 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 
             <CardDetail v-if="currentOrder">
                 <div data-tour="order-timeline">
-                    <OrderTimeline :order-id="currentOrder.id" :refresh-key="timelineRefreshKey" />
+                    <OrderTimeline
+                        :order-id="currentOrder.id"
+                        :owner-id="currentOrder.userId"
+                        :refresh-key="timelineRefreshKey"
+                    />
                 </div>
             </CardDetail>
 
