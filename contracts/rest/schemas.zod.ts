@@ -6,11 +6,15 @@
  * Designed for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
  *
  * Language: every endpoint honours `Accept-Language` (q-weights and region tags
- * included). It selects the language of user-facing copy only — `errors[].message` and a
- * success envelope's `message` — never the response shape, the status code, or a
- * machine-readable field such as `errors[].code`. An unsupported language falls back
- * instead of erroring; `Content-Language` states what was used and `Vary:
- * Accept-Language` is always set. `GET /locales` lists what a deployment supports.
+ * included). One language is picked per request, from the languages switched on in
+ * `GET /locales`, and it selects the language of user-facing copy and of translated entity
+ * fields (a product's `title`, `description`) — `errors[].message`, a success envelope's
+ * `message` — never the response shape, the status code, or a machine-readable field such
+ * as `errors[].code`. A message the API has no wording for in that language falls back to
+ * the default language, one message at a time. An unknown or switched-off language falls
+ * back instead of erroring; `Content-Language` states the language picked, the audience the
+ * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
+ * `GET /locales` lists what a deployment offers.
  *
  * The header is intentionally not declared per operation: it applies to all of them and
  * clients set it once in an interceptor, so declaring it on every operation would only add a
@@ -65,19 +69,25 @@ export const GetSecurityTxtResponse = zod.string();
  * actually do.
  *
  * `apps` is the field doing the real work: which apps have words in that
- * language. The backend app means the API can answer requests in it — its
+ * language. The backend app means the API has its own wording in it — its
  * dictionary is deployed and i18next holds it. A frontend app means a client
  * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
- * have either, or both, and the two are not the same capability: a language added
- * through the admin routes below carries only the frontend app until a file is
- * deployed for it.
+ * have either, or both: a language added through the admin routes below carries
+ * only the frontend app until a file is deployed for it, and a request in it is
+ * still answered in it, with the API's own messages in the default language.
+ *
+ * `active: false` marks a language switched off. A client that bundles its own copy
+ * of a language must stop offering it when it reads that flag; the API never picks
+ * it for a request.
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
  * API is exactly who needs it.
  *
- * An ADMIN gets the same manifest plus the rows a visitor is not offered: inactive
- * languages, each carrying `active: false`. The flag gates selection by visitors and
- * nothing else — the same rule products and users follow.
+ * An ADMIN gets the same manifest plus the rows of the languages a visitor never
+ * sees: a registered language that is switched off, carrying `active: false`. A
+ * language with a deployed file that is switched off is listed for everyone, as
+ * `active: false`. The flag gates selection by visitors and nothing else — the same
+ * rule products and users follow.
  * @summary Supported languages
  */
 export const getLocalesResponseDataLocalesItemTagMax = 35;
@@ -132,9 +142,10 @@ export const GetLocalesResponse = zod.strictObject({
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
  *
- * This does NOT teach the API to answer in the new language — that needs a dictionary
- * file and a deploy. A language created here carries only the frontend app until
- * one exists.
+ * A language created switched on is served at once: a request in it is answered in
+ * it (product text, search, `Content-Language`). The API's own messages have no
+ * wording of their own in it until a dictionary file is deployed, so each falls back
+ * to the default language. It carries only the frontend app until one exists.
  * @summary Add a language
  */
 export const createLocaleBodyTagMax = 35;
