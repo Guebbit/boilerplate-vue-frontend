@@ -6,12 +6,16 @@
  * and the placed order names the date it ships from. Nothing is held on a shelf: a preorder is an
  * allowance, which only the admin opens (`PUT /inventory/levels/{id}/backorder-limit`).
  *
+ * When the one place in the allowance is taken and paid for, the next shopper is told it is out of
+ * stock instead of being offered a preorder that the cart would then refuse.
+ *
  * Written against the live pages and not yet run in a browser: the first run may need its
  * selectors nudged.
  */
 import {
     checkoutAs,
     createProductThroughTheForm,
+    preorderOnSale,
     releaseDateIn,
     addOpenProductToCart
 } from '../../../support/e2e/steps';
@@ -59,6 +63,26 @@ describe('PS2 · The buyer preorders', () => {
                 cy.visit(`/en/orders/${String(order?.id)}`);
                 cy.get('[data-test=order-item-preorder]').should('contain.text', 'ships from');
             });
+        });
+    });
+
+    it('tells the next shopper "Out of stock" once the allowance is taken', () => {
+        cy.step('a preorder with room for one, and one shopper takes the place and pays');
+        preorderOnSale({ releaseInDays: 60, limit: 1 }).then((id) => {
+            cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 1 });
+            cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
+            checkoutAs<OrderLike>('user').then((order) => {
+                cy.apiAs('admin', 'POST', `/payments/order/${String(order?.id)}/offline`, {
+                    method: 'cash'
+                });
+            });
+
+            cy.step('the next shopper reads "Out of stock" on a disabled button');
+            cy.loginAs('support');
+            cy.visit(`/en/products/${id}`);
+            cy.get('[data-test=add-to-cart]')
+                .should('contain.text', 'Out of stock')
+                .and('be.disabled');
         });
     });
 });
