@@ -129,9 +129,9 @@ second, deeper scope that this repo has no equivalent for.
 One folder per audit, in the [Agent Skills](https://agentskills.io) layout: a `SKILL.md` an AI reads
 and follows, and a `scripts/` folder for anything it runs.
 
-| File                       | What it is                                                                                       | Read next                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| `scripts/audit/*/SKILL.md` | The six audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
+| File                       | What it is                                                                                   | Read next                              |
+| -------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `scripts/audit/*/SKILL.md` | The audit prompts. Each is registered with Claude Code by a pointer under `.claude/skills/`. | [AI Auditing](../tools/ai-auditing.md) |
 
 The design review keeps its programs in `scripts/audit/design-manual/scripts/`:
 

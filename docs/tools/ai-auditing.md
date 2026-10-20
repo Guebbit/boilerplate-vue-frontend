@@ -8,7 +8,7 @@ notice that the docs promise a rule the contract never encodes.
 **Prose ↔ code is the gap**, and it is the one place a language model beats a program rather than
 approximating one. This repo has ~70 files under `docs/` stating rules no schema enforces.
 
-`scripts/audit/` holds five prompts that live in exactly that gap, plus `test-honesty`, which asks
+`scripts/audit/` holds the prompts that live in exactly that gap, among them `test-honesty`, which asks
 whether a test can fail at all. They are plain markdown, run by hand against an LLM, and they write
 reports — never code.
 
@@ -41,7 +41,7 @@ Two consequences, both non-negotiable:
 - **A finding without a citation is not a finding.** Either a `file:line` in the spec, or nothing.
   Prose confidence is not evidence.
 
-## The six prompts
+## The prompts
 
 | File                                          | Asks                                                                                                                                                          | Writes to                             |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -51,6 +51,7 @@ Two consequences, both non-negotiable:
 | `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                    | `reports/audit/test-honesty/`         |
 | `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
 | `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                            | `reports/audit/design-manual/`        |
+| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see?          | `reports/audit/ddd-drift/`            |
 
 The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
