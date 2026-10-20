@@ -181,6 +181,11 @@ export NODE_MAIL_TRANSPORT=smtp NODE_SMTP_HOST=127.0.0.1 NODE_SMTP_PORT=1025 \
 export NODE_RATE_LIMIT_MAX=100000 NODE_AUTH_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_ADDRESS_MAX=1000 \
        NODE_SIGNUP_RATE_LIMIT_MAX=1000 NODE_RESET_RATE_LIMIT_MAX=1000
 
+# The limiter's counters must live in Redis, so that `cy.restore()`'s reseed clears them. Left in
+# the backend's memory they outlive every reseed, and the payment budget (5 card confirms per
+# account per hour) trips every journey that pays by card as the same customer.
+export NODE_RATE_LIMIT_REDIS_URL=redis://127.0.0.1:6379
+
 npm run host -- db:bootstrap    # migrate + seed
 npm run host -- e2e:serve       # the backend, marked as an e2e run
 ```
@@ -191,10 +196,11 @@ npm run host -- e2e:serve       # the backend, marked as an e2e run
 
 ```sh
 cd boilerplate-vue-frontend
+export NODE_RATE_LIMIT_REDIS_URL=redis://127.0.0.1:6379   # the same value as the backend's: the reseed clears the counters there
 MAILPIT_URL=http://localhost:8025 npm run test:e2e:live
 ```
 
-Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#backend_path)), which reseeds through the backend checkout. It needs the same `NODE_PSEUDONYM_KEY` and encryption keys as the running backend, so export them in this shell too. Do NOT export `NODE_ENV=development` here: `vite build` then makes a development bundle, which throws on a contract mismatch instead of validating like the real one. Put `NODE_ENV=development` in the backend checkout's `.env` instead, where the reseed reads it; CI puts them on the command itself.
+Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#backend_path)), which reseeds through the backend checkout. It needs the same `NODE_PSEUDONYM_KEY` and encryption keys as the running backend, so export them in this shell too, and the same `NODE_RATE_LIMIT_REDIS_URL`: the reseed is a separate process, and it clears the limiter's counters only through that URL. Do NOT export `NODE_ENV=development` here: `vite build` then makes a development bundle, which throws on a contract mismatch instead of validating like the real one. Put `NODE_ENV=development` in the backend checkout's `.env` instead, where the reseed reads it; CI puts them on the command itself.
 
 With no `MAILPIT_URL`, the mail-driven specs report as skipped (`cy.skipUnlessMailbox()`) rather than failing. `test:e2e:live` builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
 
@@ -207,6 +213,8 @@ The backend ships `NODE_RATE_LIMIT_MAX=100` per minute per IP — sized for a pe
 The recipe raises exactly the volume buckets: the global one (`100000` — `1000` a minute still gave 429s on login), the credential pair (per account named, per address calling), signup and password reset. They are separate buckets, so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Payments, invoicing and returns stay at their defaults. Do not raise any of these in a deployed environment — the small credential budget is what makes password guessing expensive, and the buckets are deliberately decoupled so that widening one never widens the other (see `boilerplate-node-backend/src/infrastructure/http/middlewares/rate-limit.ts`).
 
 The variables go in front of `compose:restart` when the backend runs in its container — they are declared in `docker-compose.yml` precisely so a run can raise them from the shell.
+
+The counters reset on every reseed only when they live in Redis (`NODE_RATE_LIMIT_REDIS_URL`, step 2). Without it they sit in the backend process's memory, no reseed reaches them, and the payment budget (5 card confirms per account per hour, `payments` keeps its default) answers **429** to the sixth journey that pays by card as the seeded customer, so `CU20`, `CU25` and `N1` fail on a missing `payment-status`. CI sets the URL job-wide.
 
 This covers the BROWSER's traffic only. `cy.restore()` is several hundred API requests of its own now that the backend builds its demo shop by driving it, and those are deliberately kept off these buckets entirely: the seeder counts in its own memory rather than the deployment's Redis, so it neither spends a real visitor's allowance nor inherits what one already spent. See `boilerplate-node-backend/scenarios/rate-limits.ts`.
 
