@@ -216,7 +216,7 @@ export const BROWSER_STORAGE_ITEMS: readonly BrowserStorageItem[] = [
     },
     {
         id: 'faroNavigation',
-        kind: 'localStorage',
+        kind: 'sessionStorage',
         setter: 'library',
         party: 'first',
         necessity: 'consent',

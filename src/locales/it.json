@@ -88,8 +88,9 @@
     },
     "analytics-consent": {
         "banner-label": "Consenso analitico",
-        "message": "Vorremmo misurare come viene usato il sito: pagine visitate, e come viene cercato e sfogliato il catalogo. Nulla viene misurato finché non accetti. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",
-        "crash-reports": "Anche le segnalazioni di errore seguono la tua scelta: nessuna viene inviata finché non accetti.",
+        "message": "Vorremmo misurare come viene usato il sito e dove si rompe. Nulla viene misurato finché non accetti, e la tua risposta vale per tutto ciò che è elencato qui. Puoi cambiare idea in qualsiasi momento da \"Scelte sulla privacy\" nel piè di pagina.",
+        "usage": "Statistiche d'uso: pagine visitate, e come viene cercato e sfogliato il catalogo.",
+        "crash-reports": "Segnalazioni di errore e velocità delle pagine: errori, quanto velocemente si caricano le pagine e l'indirizzo di ciascuna (mai ciò che segue un ? o un #), inviati al nostro server.",
         "privacy-choices": "Scelte sulla privacy",
         "button-accept": "Accetta",
         "button-decline": "Rifiuta"
@@ -378,7 +379,8 @@
                 ]
             },
             "paragraphs": [
-                "Analisi: quando è configurato, questo sito misura le visualizzazioni di pagina con un tracker Umami self-hosted, ma solo dopo che accetti il banner sulle analisi. Sono inclusi l'indirizzo di ogni pagina, la lingua e la dimensione dello schermo del browser e la pagina di provenienza. Se rifiuti, o ritiri il consenso da \"Scelte sulla privacy\" nel piè di pagina, il tracker non viene caricato o smette di inviare. Se hai effettuato l'accesso, l'id del tuo account viene associato a ciò che viene registrato."
+                "Analisi: quando è configurato, questo sito misura le visualizzazioni di pagina con un tracker Umami self-hosted, ma solo dopo che accetti il banner sulle analisi. Sono inclusi l'indirizzo di ogni pagina, la lingua e la dimensione dello schermo del browser e la pagina di provenienza. Se rifiuti, o ritiri il consenso da \"Scelte sulla privacy\" nel piè di pagina, il tracker non viene caricato o smette di inviare. Se hai effettuato l'accesso, l'id del tuo account viene associato a ciò che viene registrato.",
+                "Segnalazioni di errore e velocità delle pagine: quando è configurato, questo sito invia errori, errori della console, la velocità di caricamento delle pagine e una traccia di ogni richiesta al proprio collettore (Grafana Faro, gestito dall'operatore, non da terzi), ma solo dopo che accetti lo stesso banner. Sono inclusi l'indirizzo di ogni pagina senza ciò che segue un ? o un #, il browser, il sistema operativo, la lingua e la dimensione dello schermo, e il tuo indirizzo IP così come lo riceve il collettore. Se hai effettuato l'accesso e hai accettato, l'id del tuo account viene associato. Se rifiuti, o ritiri il consenso, non viene inviato nulla. Una sola chiave, com.grafana.faro.lastNavigationId, resta in sessionStorage finché non chiudi la scheda."
             ]
         },
         "legal": {
@@ -495,8 +497,8 @@
                 "lifetime": "Finché non accetti di nuovo"
             },
             "faroNavigation": {
-                "purpose": "Usato dalla libreria dei report di errore per collegare le visite alle pagine in un report. Impostato solo dopo che accetti le analisi.",
-                "lifetime": "Finché non cancelli i dati del sito"
+                "purpose": "Usato dalla libreria di misurazione delle prestazioni per distinguere un caricamento di pagina dal successivo. Impostato solo dopo che accetti le analisi.",
+                "lifetime": "Finché non chiudi la scheda"
             }
         }
     },

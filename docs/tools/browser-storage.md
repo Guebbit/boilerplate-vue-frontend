@@ -39,7 +39,7 @@ without both keys in both languages fails `tests/unit/infrastructure/browser-sto
 | Cookies, frontend | `rememberMe`, `analyticsConsent` (six months), `themePreference`                                                                               |
 | `localStorage`    | `toursSeen` (six months after the last change), `guest-cart` (thirty days after the last change), `guest-cart-merge-attempt`, `umami.disabled` |
 | `sessionStorage`  | `checkout-draft:<userId>`, `checkout-attempt`, `app:stale-deploy-reloaded`                                                                     |
-| After consent     | `com.grafana.faro.lastNavigationId`, set by the crash-report library                                                                           |
+| After consent     | `com.grafana.faro.lastNavigationId` in `sessionStorage` (gone when the tab closes), set by Faro's performance-measurement code                 |
 
 ## Rules that follow from the list
 

@@ -61,12 +61,12 @@ describe('browserStorageFor', () => {
         expect(shown).toContain('session');
     });
 
-    it('adds the crash-report key only when a Faro receiver is configured', () => {
+    it('adds the Faro key only when a Faro receiver is configured', () => {
         expect(names({ analytics: true, faro: false })).not.toContain('faroNavigation');
         expect(names({ analytics: true, faro: true })).toContain('faroNavigation');
     });
 
-    it('marks the crash-report key as needing consent, and every other row as exempt', () => {
+    it('marks the Faro key as needing consent, and every other row as exempt', () => {
         const needing = BROWSER_STORAGE_ITEMS.filter(({ necessity }) => necessity === 'consent');
 
         expect(needing.map(({ id }) => id)).toEqual(['faroNavigation']);

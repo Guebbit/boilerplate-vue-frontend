@@ -172,6 +172,68 @@ describe('promptOpen, reopen and the Umami tracker', () => {
     });
 });
 
+/** The observability store the consent store drives, with its Faro switch spied. */
+const spiedObservability = async () => {
+    const { useObservabilityStore } = await import('@/infrastructure/observability/store.ts');
+    const observability = useObservabilityStore();
+    return vi.spyOn(observability, 'setFaroConsent');
+};
+
+describe('syncTracker while a signed-in account answer is still on its way', () => {
+    beforeEach(() => {
+        vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
+        localStorage.clear();
+        document.head.innerHTML = '';
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        deleteCookie('isAuth');
+    });
+
+    it('starts no tracker from a stale guest grant when the isAuth hint cookie is present', async () => {
+        const store = useAnalyticsConsentStore();
+        store.grant();
+        document.head.innerHTML = '';
+        localStorage.clear();
+        setCookie('isAuth', 'true', { path: '/' });
+        setActivePinia(createPinia());
+        const setFaroConsent = await spiedObservability();
+
+        useAnalyticsConsentStore().syncTracker();
+
+        expect(setFaroConsent).toHaveBeenCalledWith(false);
+        expect(setFaroConsent).not.toHaveBeenCalledWith(true);
+        expect(document.querySelector('script[data-website-id="site-1"]')).toBeNull();
+        expect(localStorage.getItem('umami.disabled')).toBe('1');
+    });
+
+    it('follows the account once the profile has pushed its answer', async () => {
+        setCookie('isAuth', 'true', { path: '/' });
+        setActivePinia(createPinia());
+        const setFaroConsent = await spiedObservability();
+        const store = useAnalyticsConsentStore();
+
+        store.setAccountChoice(true);
+        store.syncTracker();
+
+        expect(setFaroConsent).toHaveBeenCalledWith(true);
+        expect(document.querySelector('script[data-website-id="site-1"]')).not.toBeNull();
+    });
+
+    it('is unchanged for a guest: the cookie answer applies at once', async () => {
+        const store = useAnalyticsConsentStore();
+        store.grant();
+        setActivePinia(createPinia());
+        const setFaroConsent = await spiedObservability();
+
+        useAnalyticsConsentStore().syncTracker();
+
+        expect(setFaroConsent).toHaveBeenCalledWith(true);
+    });
+});
+
 describe('trackBrowsing', () => {
     const VIEW = { event: 'product_viewed', productId: 'abc' } as const;
 
