@@ -9798,6 +9798,11 @@ components:
       description: "The resource's current version as a strong entity-tag (RFC 9110 §8.8.3). Send it back as `If-Match` on `PUT`, `PATCH` or `DELETE` to refuse the write if someone else changed the resource in between. Opaque: compare it, never parse it. It validates writes only — a read never answers `304` from it."
       schema:
         type: string
+    WWW-Authenticate:
+      required: true
+      description: "The challenge a 401 carries (RFC 9110 §11.6.1, §15.5.2; RFC 6750 §3): which scheme the API takes (`Bearer realm=\"api\"`), or, where a guard knows more, why the credential was refused (`error=\"invalid_token\"`, or `error=\"insufficient_user_authentication\"` with a `max_age` for a step-up). A generic HTTP client reads this; this app's own clients read `errors[].code` and never the header."
+      schema:
+        type: string
   responses:
     Success:
       description: Success
@@ -9813,6 +9818,9 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: Unauthorized
+      headers:
+        WWW-Authenticate:
+          $ref: "#/components/headers/WWW-Authenticate"
       content:
         application/json:
           schema:
