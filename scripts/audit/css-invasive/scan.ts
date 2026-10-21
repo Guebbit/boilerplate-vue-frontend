@@ -896,7 +896,7 @@ const classSourceOf = (node: unknown): ClassSource => {
         const record = value as Record<string, unknown>;
         if (record.type === 'StringLiteral') found.strings.push(record.value as string);
         if (record.type === 'TemplateElement')
-            found.strings.push(String((record.value as { cooked?: string }).cooked ?? ''));
+            found.strings.push((record.value as { cooked?: string }).cooked ?? '');
         if (record.type === 'Identifier') found.names.push(String(record.name));
         for (const [key, child] of Object.entries(record))
             if (key !== 'loc' && key !== 'extra') visit(child);
