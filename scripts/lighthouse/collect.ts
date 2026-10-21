@@ -100,6 +100,41 @@ const sequentially = async <T>(count: number, step: () => Promise<T>): Promise<T
 };
 
 /**
+ * Signs in as the case's persona, runs its setup, then measures it `runs` times.
+ *
+ * @param page - A fresh page in the case's own browser context.
+ * @param audit - the case
+ * @param scenario - what the backend seeded
+ * @param browser - the launched Chrome
+ * @param runs - how many measured runs
+ * @returns the measured runs
+ */
+const measureCase = (
+    page: Page,
+    audit: LighthouseCase,
+    scenario: ScenarioDescription,
+    browser: AuditBrowser,
+    runs: number
+): Promise<MeasuredRun[]> => {
+    const account = audit.persona ? scenario.accounts[audit.persona] : undefined;
+    if (audit.persona && !account)
+        throw new Error(`${audit.name}: the backend seeded no "${audit.persona}" account`);
+    return (account ? signIn(page, account) : Promise.resolve())
+        .then(() =>
+            audit.prepare?.(page, { origin: AUDIT_APP_ORIGIN, subjects: scenario.subjects })
+        )
+        .then(() =>
+            sequentially(runs, () =>
+                measureOnce(
+                    page,
+                    `${AUDIT_APP_ORIGIN}${resolveRoute(audit.route, scenario.subjects)}`,
+                    browser.port
+                )
+            )
+        );
+};
+
+/**
  * Measures one case: sign in, prepare, then `runs` times.
  *
  * @param audit - the case
@@ -116,28 +151,6 @@ export const collectCase = (
     browser.browser.createBrowserContext().then((context) =>
         context
             .newPage()
-            .then((page) => {
-                const account = audit.persona ? scenario.accounts[audit.persona] : undefined;
-                if (audit.persona && !account)
-                    throw new Error(
-                        `${audit.name}: the backend seeded no "${audit.persona}" account`
-                    );
-                return (account ? signIn(page, account) : Promise.resolve())
-                    .then(() =>
-                        audit.prepare?.(page, {
-                            origin: AUDIT_APP_ORIGIN,
-                            subjects: scenario.subjects
-                        })
-                    )
-                    .then(() =>
-                        sequentially(runs, () =>
-                            measureOnce(
-                                page,
-                                `${AUDIT_APP_ORIGIN}${resolveRoute(audit.route, scenario.subjects)}`,
-                                browser.port
-                            )
-                        )
-                    );
-            })
+            .then((page) => measureCase(page, audit, scenario, browser, runs))
             .finally(() => context.close())
     );

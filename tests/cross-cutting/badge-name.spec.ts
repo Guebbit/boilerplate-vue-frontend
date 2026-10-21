@@ -42,6 +42,25 @@ const componentFiles = (directory: string): string[] =>
     });
 
 /**
+ * Index of the `>` that closes the tag opened at `start`, skipping any `>` inside a quoted value.
+ *
+ * @param source - The file text.
+ * @param start - Where the tag opens.
+ * @returns The closing index, or `undefined` for an unterminated tag.
+ */
+const tagEnd = (source: string, start: number): number | undefined => {
+    let quote: string | undefined;
+    for (let index = start; index < source.length; index++) {
+        const character = source[index];
+        if (quote) {
+            if (character === quote) quote = undefined;
+        } else if (character === '"' || character === "'") quote = character;
+        else if (character === '>') return index;
+    }
+    return undefined;
+};
+
+/**
  * The opening tag of every `<v-badge>` in a source file.
  *
  * Scanned quote-aware rather than matched with `/<v-badge[^>]*>/`: an attribute value may itself
@@ -54,17 +73,8 @@ const componentFiles = (directory: string): string[] =>
 const badgeTagsOf = (source: string): string[] => {
     const tags: string[] = [];
     for (const { index: start } of source.matchAll(/<v-badge\b/g)) {
-        let quote: string | undefined;
-        for (let index = start; index < source.length; index++) {
-            const character = source[index];
-            if (quote) {
-                if (character === quote) quote = undefined;
-            } else if (character === '"' || character === "'") quote = character;
-            else if (character === '>') {
-                tags.push(source.slice(start, index + 1));
-                break;
-            }
-        }
+        const end = tagEnd(source, start);
+        if (end !== undefined) tags.push(source.slice(start, end + 1));
     }
     return tags;
 };

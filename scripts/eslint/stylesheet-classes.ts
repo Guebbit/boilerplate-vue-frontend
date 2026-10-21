@@ -40,6 +40,32 @@ export const classesOfCss = (css: string): Set<string> => {
 };
 
 /**
+ * Files one `<style>` block's classes: plain blocks are global, scoped ones belong to their file.
+ *
+ * @param block - The SFC style block.
+ * @param relativePath - The SFC's path, the key for scoped classes.
+ * @param global - The global class names so far.
+ * @param scopedByFile - The scoped class names so far, per SFC.
+ */
+const addBlockClasses = (
+    block: { content: string; scoped?: boolean },
+    relativePath: string,
+    global: Set<string>,
+    scopedByFile: Map<string, Set<string>>
+): void => {
+    const names = classesOfCss(block.content);
+    if (!block.scoped) {
+        for (const name of names) global.add(name);
+        return;
+    }
+    if (names.size > 0)
+        scopedByFile.set(
+            relativePath,
+            new Set([...(scopedByFile.get(relativePath) ?? []), ...names])
+        );
+};
+
+/**
  * Reads every stylesheet under `src/`: the plain CSS files and the `<style>` blocks of the SFCs.
  *
  * @param root - The repo root.
@@ -58,15 +84,8 @@ export const readStylesheetClasses = (root: string): StylesheetClasses => {
         const { descriptor } = parse(readFileSync(`${root}/${file}`, 'utf8'), {
             filename: relativePath
         });
-        for (const block of descriptor.styles) {
-            const names = classesOfCss(block.content);
-            if (!block.scoped) for (const name of names) global.add(name);
-            else if (names.size > 0)
-                scopedByFile.set(
-                    relativePath,
-                    new Set([...(scopedByFile.get(relativePath) ?? []), ...names])
-                );
-        }
+        for (const block of descriptor.styles)
+            addBlockClasses(block, relativePath, global, scopedByFile);
     }
 
     return { global, scopedByFile };

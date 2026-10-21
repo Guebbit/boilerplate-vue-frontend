@@ -69,6 +69,17 @@ const publishedBy = (name: string): Set<string> | undefined => {
     return published;
 };
 
+/** The names `source` imports from the `target` module's barrel, `as` aliases stripped. */
+const importedNames = (source: string, target: string): string[] => {
+    const pattern = new RegExp(
+        String.raw`import\s+(?:type\s+)?{([^}]*)}\s+from\s+["']@/modules/${target}["']`,
+        'g'
+    );
+    return [...source.matchAll(pattern)].flatMap((clause) =>
+        clauseNames(clause[1]).map((name) => name.split(/\s+as\s+/)[0].trim())
+    );
+};
+
 /** `<module> → the names other modules actually import from its barrel`. */
 const consumedFromBarrels = (): Map<string, Set<string>> => {
     const consumed = new Map(moduleNames().map((name) => [name, new Set<string>()]));
@@ -79,17 +90,9 @@ const consumedFromBarrels = (): Map<string, Set<string>> => {
             : undefined;
         const source = readFileSync(file, 'utf8');
 
-        for (const target of moduleNames()) {
-            // Own files, specs included: a module is not a consumer of itself.
-            if (target === owner) continue;
-            const pattern = new RegExp(
-                String.raw`import\s+(?:type\s+)?{([^}]*)}\s+from\s+["']@/modules/${target}["']`,
-                'g'
-            );
-            for (const clause of source.matchAll(pattern))
-                for (const name of clauseNames(clause[1]))
-                    consumed.get(target)!.add(name.split(/\s+as\s+/)[0].trim());
-        }
+        // Own files, specs included: a module is not a consumer of itself.
+        for (const target of moduleNames().filter((name) => name !== owner))
+            for (const name of importedNames(source, target)) consumed.get(target)!.add(name);
     }
     return consumed;
 };
