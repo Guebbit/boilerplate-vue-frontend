@@ -17,6 +17,8 @@ import routes from './routes';
  *
  * An admin CRUD over a user record with an email and an admin flag — the same problem in every
  * application that has ever had one.
+ *
+ * Context map: `docs/modules/users.md` § "The map".
  */
 export default {
     name: 'users',

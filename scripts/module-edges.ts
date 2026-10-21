@@ -3,9 +3,8 @@
  * a new cross-module coupling is a deliberate edit here, rather than a one-line import nobody
  * questions. See `docs/theory/strategic-ddd.md` §2.
  *
- * The WHY for each edge — what is reached, and what kind of relationship it is
- * (conformist/customer-supplier/published-language) — is prose in the docblock at the top of the
- * dependent module's `module.ts`, next to the imports it describes.
+ * The WHY for each edge — what is reached, and what kind of relationship it is — is on the
+ * dependent module's docs page, `docs/modules/<module>.md` § "The map".
  *
  * Read by `eslint.config.ts` (a sibling FE module's own files) and by
  * `tests/cross-cutting/module-coupling.spec.ts` (a call to another BACKEND module's contract

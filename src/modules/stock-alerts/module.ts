@@ -13,10 +13,10 @@ import routes from './routes';
 /**
  * Back-in-stock requests.
  *
- * One arrow goes out: `products` is `conformist`, because the button reads the product's shelf
- * state from the products domain. The reverse arrow does not exist: the button is contributed to
- * the `product-actions` slot by this manifest, so `products` never imports it. Deleting the folder
- * costs a convenience, not a capability.
+ * The button is contributed to the `product-actions` slot by this manifest, so `products` never
+ * imports it. Deleting the folder costs a convenience, not a capability.
+ *
+ * Context map: `docs/modules/stock-alerts.md` § "The map".
  */
 export default {
     name: 'stock-alerts',

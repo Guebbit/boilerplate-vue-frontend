@@ -45,8 +45,8 @@ One screen, one store, product references and nothing else. Read it next to
 
 The interesting line is a single call. Move-to-cart is a **wishlist** endpoint; once it answers,
 this store asks the cart to **refetch itself** through the cart barrel, so the header's badge cannot
-lag a write this module initiated. That one call is the whole of the `wishlist → cart` edge, and it
-is why the edge is `conformist` rather than `customer-supplier` — the cart is never asked to write.
+lag a write this module initiated. That one call is the whole of the `wishlist → cart` edge: the cart is asked to read again, never
+to write.
 
 ::: tip Why this is a line and not a loop
 The reverse arrows do not exist. The cart never reads the wishlist, and the product page never

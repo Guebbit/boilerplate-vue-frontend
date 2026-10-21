@@ -29,16 +29,19 @@ management — is answered through that one prompt.
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
+    cart["cart"] -.->|"published-language"| account["<b>account</b>"]
     account["<b>account</b>"] -.->|"published-language"| users["users"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
+    class cart core;
     class users generic;
     class account self;
 ```
 
+- `cart` → **published-language** — Mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`; the checkout never reads an account store.
 - → `users` **published-language** — Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.
 
 ## The story

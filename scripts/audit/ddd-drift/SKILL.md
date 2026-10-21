@@ -10,8 +10,8 @@ the code DOES.
 GOAL: Report every place where a claim about the module structure, or a rule the server should decide, has
 drifted from the code. BE strict, FE elastic: rules and state ownership, never styling.
 
-WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context map is prose in each
-`module.ts` docblock. A barrel is the published language. `domain/` is thin and pure. The server decides the
+WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context map is each module's docs page
+(`docs/modules/<m>.md` § "The map"); `module.ts` docblocks point at it. A barrel is the published language. `domain/` is thin and pure. The server decides the
 rules; the client reads the `*Actions` flags (`docs/theory/strategic-ddd.md` §4). There is no tactical DDD
 on purpose (`docs/theory/domain-layer.md` §4). Do not ask for aggregates, entities or repositories.
 
@@ -31,15 +31,15 @@ Copy the exclusion list from "Out of scope" below into the report header.
 
 ## The drift classes
 
-| class                           | drift when                                                                                            | fine when                                                              | sev                                       |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`             | the claim is generated and checked (the sitemap block)                 | high                                      |
-| F2 client decides a server rule | a button or option is gated on status literals the server should answer through an `*Actions` flag    | the literal only labels or colours, or the contract states the formula | high (the fix is a backend contract flag) |
-| F3 context-map label wrong      | a docblock's relationship label disagrees with what the import does (the table in `strategic-ddd.md`) | the label matches the import                                           | med                                       |
-| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling          | the sibling must read the state                                        | med                                       |
-| F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`  | one caller, no trap: inline is right                                   | low                                       |
-| F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones      | `core` with no `domain/`                                               | low                                       |
-| F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                | the values are client-only state                                       | low                                       |
+| class                           | drift when                                                                                               | fine when                                                              | sev                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`                | the claim is generated and checked (the sitemap block)                 | high                                      |
+| F2 client decides a server rule | a button or option is gated on status literals the server should answer through an `*Actions` flag       | the literal only labels or colours, or the contract states the formula | high (the fix is a backend contract flag) |
+| F3 context-map label wrong      | a module page's relationship label disagrees with what the import does (the table in `strategic-ddd.md`) | the label matches the import                                           | med                                       |
+| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling             | the sibling must read the state                                        | med                                       |
+| F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`     | one caller, no trap: inline is right                                   | low                                       |
+| F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones         | `core` with no `domain/`                                               | low                                       |
+| F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                   | the values are client-only state                                       | low                                       |
 
 ## Procedure
 
@@ -81,7 +81,7 @@ A ROUTE is a BACKEND contract change and needs the user's yes. Report it. Never 
 
 ### 3 — F3 and F4: edges and barrels
 
-For each docblock edge label and each barrel export, check what the sibling does with it: reads state, asks
+For each edge label on a module page and each barrel export, check what the sibling does with it: reads state, asks
 for a write, or mounts a component. A swapped label is F3. A store or composable published where a component
 or schema would do is F4.
 

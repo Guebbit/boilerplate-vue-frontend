@@ -46,7 +46,7 @@ flowchart LR
 ## The story
 
 The order page is the most composed screen in the application, and it is composed out of other
-people's components. Two of its four edges are `published-language`, and a third is mostly components:
+people's components. Most of its edges are components:
 
 | Mounted           | From                        | What this module learns                                  |
 | ----------------- | --------------------------- | -------------------------------------------------------- |
@@ -54,10 +54,10 @@ people's components. Two of its four edges are `published-language`, and a third
 | `ShipmentPanel`   | [`delivery`](./delivery.md) | nothing — not what a tracking code is                    |
 | `WithdrawalPanel` | [`returns`](./returns.md)   | nothing — not what a return record holds                 |
 
-That is the strongest kind of edge on the map: neither side touches the other's store. The panels
+That is the strongest kind of edge: neither side touches the other's store. The panels
 render their own concern, fetch their own data, and this module holds the layout around them.
 
-The `payments` edge is still `customer-supplier`, because of one import: the staff edit screen
+The `payments` edge is not only components, because of one import: the staff edit screen
 refunds through `useOrderRefund`. That composable answers one question (is a refund open?) and
 performs one action, so the edge stays narrow, but it is a call, not vocabulary.
 

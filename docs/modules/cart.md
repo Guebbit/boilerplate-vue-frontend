@@ -51,17 +51,15 @@ flowchart LR
 ## The story
 
 [`orders`](./orders.md) reaches the barrel for the reorder button and [`wishlist`](./wishlist.md)
-for its move-to-cart exit. `orders` is `customer-supplier` — it asks this store to write a line —
-and `wishlist` is `conformist`: the move itself is a wishlist endpoint, and this store is only
-asked to refetch.
+for its move-to-cart exit (kinds are on the map above): `orders` asks this store to write a line,
+while the move itself is a wishlist endpoint and this store is only asked to refetch.
 
 The product page's "add to cart" arrives the other way round. This module's manifest contributes
 `components/AddToCartButton.vue` to the `product-actions` slot that [`products`](./products.md)
 owns (see `src/kernel/slots.ts`), so `products` never imports the cart and the graph stays a DAG.
 
-[`delivery`](./delivery.md) is `published-language`: the checkout mounts `ShippingSelector` and
-never learns what a shipping rate is. [`products`](./products.md) is `customer-supplier`: the page
-holds lines as ids only and joins them to their product records in one `POST /products/search`
+[`delivery`](./delivery.md): the checkout mounts `ShippingSelector` and never learns what a
+shipping rate is. [`products`](./products.md): the page holds lines as ids only and joins them to their product records in one `POST /products/search`
 per hundred ids, through `useProductLines` — the same records the product page reads.
 
 ::: tip The badge and its total are the only reactive things this module lends the shell

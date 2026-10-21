@@ -14,7 +14,7 @@ export default {
  * Order detail page for both the customer and the operator. Loads one order
  * by route id, forces a detail re-fetch when the cached record lacks
  * `actions`, and mounts the payment/transfer-instructions/shipment panels as
- * self-contained published-language components.
+ * self-contained components.
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { shopCurrency } from '@/infrastructure/shop.ts';

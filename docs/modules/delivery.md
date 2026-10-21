@@ -53,8 +53,7 @@ flowchart LR
 | `PreorderFulfillmentTable` | [`inventory`](./inventory.md) | the preorder board, tab 2 |
 | `usePreorderSummaries`     | [`inventory`](./inventory.md) | the preorder board, tab 1 |
 
-All three edges are `published-language`, and each is declared by the using module rather than here.
-None learns what a shipping rate or a tracking code is: the components render their own concern
+Each edge is declared by the using module rather than here. None learns what a shipping rate or a tracking code is: the components render their own concern
 and fetch their own data.
 
 ::: tip What deleting this module costs, precisely

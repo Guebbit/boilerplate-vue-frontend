@@ -31,6 +31,8 @@ declare module '@/infrastructure/utils/logger.ts' {
  * route needs neither.
  *
  * It is on `DEMO_MODULE_NAMES`, so `npm run demo:remove` deletes it with the shop: copy it first.
+ *
+ * It sits on no context-map edge: `docs/modules/index.md` § "The whole map".
  */
 export default {
     name: 'example',

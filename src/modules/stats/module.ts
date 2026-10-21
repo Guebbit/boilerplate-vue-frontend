@@ -17,6 +17,8 @@ import routes from './routes';
  * page; no number anywhere else changes, because none is computed here.
  *
  * Reporting, not selling: it explains what the shop did, and owns none of the data.
+ *
+ * Context map: `docs/modules/stats.md` § "The map".
  */
 export default {
     name: 'stats',

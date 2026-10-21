@@ -46,8 +46,8 @@ availability, and the ledger that explains every move.
 
 The dependency is as thin as a dependency gets. The page names products — the receipt select, the
 title lookup — by reading `useProductsStore` **as it is**, with no translation and no say in its
-shape. That is `conformist`, and it is the same one-way arrow the backend's `inventory` module
-declares against its own `products`.
+shape. It is the same one-way arrow the backend's `inventory` module declares against its own
+`products`.
 
 ::: tip What deleting this module costs, precisely
 The board and the ledger view go. **Every shelf count stays correct** — the counters and the

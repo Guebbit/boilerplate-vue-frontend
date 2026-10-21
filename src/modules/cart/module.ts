@@ -18,28 +18,15 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 /**
  * The shopping cart, and the checkout that turns it into an order.
  *
- * Orders reaches the cart barrel for the reorder button, and wishlist for its move-to-cart exit;
-both are `customer-supplier` or `conformist` — they ask this store to write a line or refetch.
-The product page's "add to cart" arrives the other way round: this manifest contributes the
-button to the `product-actions` slot the products module owns, so `products` never imports the
-cart.
-
-Four arrows go out. Three are `published-language`: `delivery`, whose `ShippingSelector` the
-checkout mounts without ever learning what a shipping rate is; `payments`, whose
-`PaymentMethodSelector` the checkout mounts the same way — this store never learns what a
-payment method costs to offer, only which ids exist; and `account`, whose `AddressPicker` the
-checkout mounts when the chosen method needs an address, reusing that module's own add-address
-dialog rather than knowing anything about the address book itself.
-
-The fourth, `products`, is `customer-supplier`: after each cart write (a line, a checkout), the
-store asks products to drop its cached catalogue (`invalidateProductsCache`), whose stock
-counts that write just made stale. The cart page also
-reads its lines' current title and price from the products dictionary (`useProductLines`, one
-batched read) instead of asking per line — a `conformist` read riding the same edge.
-
-Checkout is the one screen where price, stock, address and shipping have to agree at once,
- * and the only place this client holds a multi-step flow of its own. Every other module points
- * at it.
+ * Other modules reach the cart barrel (`orders` for the reorder button, `wishlist` for its
+ * move-to-cart exit). The product page's "add to cart" arrives the other way round: this manifest
+ * contributes the button to the `product-actions` slot the products module owns, so `products`
+ * never imports the cart.
+ *
+ * Checkout is the one screen where price, stock, address and shipping have to agree at once, and
+ * the only place this client holds a multi-step flow of its own. Every other module points at it.
+ *
+ * Context map: `docs/modules/cart.md` § "The map".
  */
 export default {
     name: 'cart',
