@@ -8,6 +8,7 @@
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import type { PaymentMethodId } from '@types';
 
+import { readJson, removeByPrefix, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 /** The fields a checkout remembers. */
 export interface CheckoutDraft {
     /** The free-text note, as typed (untrimmed). */
@@ -51,15 +52,8 @@ const toDraft = (value: unknown): CheckoutDraft => {
  * @param userId - the signed-in user
  * @returns the draft, or an empty one when none is saved or storage is unavailable
  */
-export const readCheckoutDraft = (userId: string): CheckoutDraft => {
-    // eslint-disable-next-line no-restricted-syntax -- sessionStorage throws when blocked, and JSON.parse when the value is not JSON; either means "no draft", never a failure
-    try {
-        const raw = sessionStorage.getItem(keyFor(userId));
-        return toDraft(raw === null ? undefined : JSON.parse(raw));
-    } catch {
-        return toDraft(undefined);
-    }
-};
+export const readCheckoutDraft = (userId: string): CheckoutDraft =>
+    toDraft(readJson('session', keyFor(userId)));
 
 /**
  * Saves the user's draft.
@@ -68,23 +62,12 @@ export const readCheckoutDraft = (userId: string): CheckoutDraft => {
  * @param draft - what to remember
  */
 export const writeCheckoutDraft = (userId: string, draft: CheckoutDraft): void => {
-    // eslint-disable-next-line no-restricted-syntax -- sessionStorage throws when blocked or full; the draft is a convenience and losing it is the pre-existing behaviour
-    try {
-        sessionStorage.setItem(keyFor(userId), JSON.stringify(draft));
-    } catch {
-        // Nothing to report to: the customer keeps typing either way.
-    }
+    writeJson('session', keyFor(userId), draft);
 };
 
 /**
  * Drops every saved draft — on checkout, and when the session ends.
  */
 export const clearCheckoutDrafts = (): void => {
-    // eslint-disable-next-line no-restricted-syntax -- sessionStorage throws when blocked; nothing saved means nothing to clear
-    try {
-        for (const key of Object.keys(sessionStorage))
-            if (key.startsWith(KEY_PREFIX)) sessionStorage.removeItem(key);
-    } catch {
-        // Blocked storage held no draft.
-    }
+    removeByPrefix('session', KEY_PREFIX);
 };

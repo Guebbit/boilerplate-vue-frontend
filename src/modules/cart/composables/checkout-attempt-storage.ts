@@ -8,6 +8,7 @@
  * for as long as the page lives.
  */
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
+import { readJson, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 
 /**
  * The storage key.
@@ -39,20 +40,14 @@ export interface CheckoutAttempt {
  *  unavailable.
  */
 export const readCheckoutAttempt = (): CheckoutAttempt | undefined => {
-    // eslint-disable-next-line no-restricted-syntax -- sessionStorage throws when blocked, and JSON.parse when the value is not JSON; either means "no saved attempt", never a failure
-    try {
-        const raw = sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
-        const parsed: unknown = raw === null ? undefined : JSON.parse(raw);
-        if (typeof parsed !== 'object' || parsed === null) return undefined;
-        const { viewerId, fingerprint, key } = parsed as Record<string, unknown>;
-        return typeof viewerId === 'string' &&
-            typeof fingerprint === 'string' &&
-            typeof key === 'string'
-            ? { viewerId, fingerprint, key }
-            : undefined;
-    } catch {
-        return undefined;
-    }
+    const parsed = readJson('session', CHECKOUT_ATTEMPT_STORAGE_KEY);
+    if (typeof parsed !== 'object' || parsed === null) return undefined;
+    const { viewerId, fingerprint, key } = parsed as Record<string, unknown>;
+    return typeof viewerId === 'string' &&
+        typeof fingerprint === 'string' &&
+        typeof key === 'string'
+        ? { viewerId, fingerprint, key }
+        : undefined;
 };
 
 /**
@@ -61,11 +56,5 @@ export const readCheckoutAttempt = (): CheckoutAttempt | undefined => {
  * @param attempt - The attempt to keep; `undefined` removes the saved one.
  */
 export const writeCheckoutAttempt = (attempt: CheckoutAttempt | undefined): void => {
-    // eslint-disable-next-line no-restricted-syntax -- sessionStorage throws when blocked or full; without the copy a retry after a reload mints a new key, which is the state of an app with no storage at all
-    try {
-        if (attempt) sessionStorage.setItem(CHECKOUT_ATTEMPT_STORAGE_KEY, JSON.stringify(attempt));
-        else sessionStorage.removeItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
-    } catch {
-        // Nothing to report to: the checkout itself still works.
-    }
+    writeJson('session', CHECKOUT_ATTEMPT_STORAGE_KEY, attempt);
 };
