@@ -30,7 +30,7 @@ const mountButton = () =>
     mount(CopyButton, {
         props: {
             text: 'IT60X0542811101000000123456',
-            ariaLabel: 'Copy the IBAN',
+            label: 'Copy the IBAN',
             failureKey: 'generic.secret-reveal-copy-failed'
         },
         attrs: { 'data-test': 'copy-iban' },

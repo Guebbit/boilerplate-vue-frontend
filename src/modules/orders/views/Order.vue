@@ -54,7 +54,7 @@ import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
@@ -332,9 +332,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 />
             </template>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentOrder" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('order-target-page.label-order-id')"
@@ -416,10 +414,12 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="tertiary">
-                        <template #icon><ShoppingCart :size="28" /></template>
-                    </CardInfo>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="tertiary"
+                >
+                    <template #icon><ShoppingCart :size="28" /></template>
                     <div v-if="session.can('display', 'Order')" class="flex justify-end">
                         <TourButton tour="order-staff" />
                     </div>
@@ -669,7 +669,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             </div>
                         </div>
                     </div>
-                </CardDetail>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

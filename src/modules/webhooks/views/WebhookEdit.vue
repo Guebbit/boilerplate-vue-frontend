@@ -27,13 +27,13 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useWebhooksStore } from '../store';
 import { webhookEditSchema } from '../schemas.ts';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { EMPTY_VALUE, formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -184,6 +184,23 @@ const submitForm = () => {
  * Selects and hydrates the subscription whenever the route id changes.
  */
 watchSubscription(() => id);
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('webhook-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('webhook-target-page.label-created-at'),
+        value: formatDateTime(currentSubscription.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('webhook-target-page.label-updated-at'),
+        value: formatDateTime(currentSubscription.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -195,12 +212,7 @@ watchSubscription(() => id);
                 </ItemDetailHero>
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('webhook-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('webhook-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -265,26 +277,14 @@ watchSubscription(() => id);
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><Webhook :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-created-at')"
-                        :value="formatDateTime(currentSubscription?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-updated-at')"
-                        :value="formatDateTime(currentSubscription?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Webhook :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

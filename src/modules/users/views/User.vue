@@ -35,7 +35,8 @@ import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
@@ -263,6 +264,22 @@ const handleLiftHold = () => {
                 .catch((error: unknown) => reportHoldError(error));
         });
 };
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('user-target-page.label-created-at'),
+        value: formatDateTime(currentUser.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('user-target-page.label-updated-at'),
+        value: formatDateTime(currentUser.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -297,9 +314,7 @@ const handleLiftHold = () => {
                 />
             </template>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentUser" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('user-target-page.label-id')"
@@ -352,21 +367,14 @@ const handleLiftHold = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><User :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('user-target-page.label-created-at')"
-                        :value="formatDateTime(currentUser?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-updated-at')"
-                        :value="formatDateTime(currentUser?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><User :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

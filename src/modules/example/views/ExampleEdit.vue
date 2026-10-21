@@ -28,14 +28,14 @@ import { useExampleStore } from '../store';
 import { exampleEditSchema } from '../schemas.ts';
 import { EXAMPLE_STATUSES } from '../domain';
 import type { ExampleStatus } from '@types';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { EMPTY_VALUE, formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
+import { formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -199,6 +199,23 @@ const onMissingRecord = useMissingRecord();
  * Selects and hydrates the example whenever the route id changes.
  */
 watchExample(() => id, { onError: onMissingRecord });
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('example-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('example-target-page.label-created-at'),
+        value: formatDateTime(currentExample.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('example-target-page.label-updated-at'),
+        value: formatDateTime(currentExample.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -214,12 +231,7 @@ watchExample(() => id, { onError: onMissingRecord });
                 </ItemDetailHero>
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('example-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('example-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -285,30 +297,14 @@ watchExample(() => id, { onError: onMissingRecord });
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo
-                        :title="heroTitle"
-                        :description="formatText(currentExample?.ownerName)"
-                        accent="secondary"
-                    >
-                        <template #icon><NotebookPen :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('example-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-created-at')"
-                        :value="formatDateTime(currentExample?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-updated-at')"
-                        :value="formatDateTime(currentExample?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="formatText(currentExample?.ownerName)"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><NotebookPen :size="28" /></template>
+                </RecordAsideCard>
             </template>
         </ItemDetailLayout>
     </div>

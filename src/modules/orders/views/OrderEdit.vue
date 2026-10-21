@@ -34,10 +34,10 @@ import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
 import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatDateTime, formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -415,6 +415,27 @@ watchOrder(() => id, { onError: onMissingRecord });
  * control on this page gates on that field.
  */
 useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('order-target-page.label-date'),
+        value: formatDateTime(currentOrder.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('order-target-page.label-updated-at'),
+        value: formatDateTime(currentOrder.value?.updatedAt),
+        icon: Clock
+    },
+    {
+        label: t('order-target-page.label-items'),
+        value: currentOrder.value?.items.length ?? 0,
+        icon: Package
+    }
+]);
 </script>
 
 <template>
@@ -447,12 +468,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 />
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('order-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('order-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -635,26 +651,14 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="tertiary">
-                        <template #icon><ShoppingCart :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('order-target-page.label-date')"
-                        :value="formatDateTime(currentOrder?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('order-target-page.label-updated-at')"
-                        :value="formatDateTime(currentOrder?.updatedAt)"
-                        :icon="Clock"
-                    />
-                    <ItemDetailField
-                        :label="t('order-target-page.label-items')"
-                        :value="currentOrder?.items?.length ?? 0"
-                        :icon="Package"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="tertiary"
+                    :fields="asideFields"
+                >
+                    <template #icon><ShoppingCart :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

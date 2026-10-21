@@ -78,7 +78,7 @@ const groupedReference = computed(
             <dd class="font-medium" data-test="transfer-iban">{{ instructions.iban }}</dd>
             <CopyButton
                 :text="instructions.iban"
-                :aria-label="t('transfer-instructions-panel.button-copy-iban')"
+                :label="t('transfer-instructions-panel.button-copy-iban')"
                 failure-key="transfer-instructions-panel.copy-failed"
                 data-test="transfer-copy-iban"
             />
@@ -111,7 +111,7 @@ const groupedReference = computed(
                 </p>
                 <CopyButton
                     :text="instructions.reference"
-                    :aria-label="t('transfer-instructions-panel.button-copy-reference')"
+                    :label="t('transfer-instructions-panel.button-copy-reference')"
                     failure-key="transfer-instructions-panel.copy-failed"
                     data-test="transfer-copy-reference"
                 />

@@ -282,7 +282,7 @@ void fetchPage({ ...filters });
                     </span>
                     <CopyButton
                         :text="item.requestId"
-                        :aria-label="t('admin-page.audit-copy-request-id', { id: item.requestId })"
+                        :label="t('admin-page.audit-copy-request-id', { id: item.requestId })"
                         failure-key="admin-page.audit-copy-failed"
                         data-test="audit-copy-requestId"
                     />
@@ -301,7 +301,7 @@ void fetchPage({ ...filters });
                     </span>
                     <CopyButton
                         :text="item.traceId"
-                        :aria-label="t('admin-page.audit-copy-trace-id', { id: item.traceId })"
+                        :label="t('admin-page.audit-copy-trace-id', { id: item.traceId })"
                         failure-key="admin-page.audit-copy-failed"
                         data-test="audit-copy-traceId"
                     />

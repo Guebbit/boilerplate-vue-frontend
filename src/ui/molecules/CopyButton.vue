@@ -12,7 +12,7 @@ import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.t
 /**
  * What to copy, how the button is named, and the toast for a failed copy.
  */
-const { text, failureKey } = defineProps<{
+const { text, label, failureKey } = defineProps<{
     /**
      * The text written to the clipboard.
      */
@@ -20,7 +20,7 @@ const { text, failureKey } = defineProps<{
     /**
      * The button's accessible name; it should say what is copied.
      */
-    ariaLabel: string;
+    label: string;
     /**
      * Locale key of the toast shown when the copy fails, worded for what was copied.
      */
@@ -39,7 +39,7 @@ const size = useTouchFriendlySize();
 </script>
 
 <template>
-    <v-btn icon variant="text" :size="size" :aria-label="ariaLabel" @click="copy(text)">
+    <v-btn icon variant="text" :size="size" :aria-label="label" @click="copy(text)">
         <Copy :size="14" aria-hidden="true" />
     </v-btn>
 </template>

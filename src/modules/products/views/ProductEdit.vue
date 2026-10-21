@@ -31,11 +31,11 @@ import { useTranslatedEntityForm } from '../composables/use-translated-entity-fo
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { Calendar, Clock, Hash, Languages, Package, Pencil } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
@@ -444,6 +444,23 @@ const submitForm = () => {
             });
     }).catch(handleSubmitFailure);
 };
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('product-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('product-target-page.label-created-at'),
+        value: formatDateTime(adminProduct.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('product-target-page.label-updated-at'),
+        value: formatDateTime(adminProduct.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -478,12 +495,8 @@ const submitForm = () => {
                 />
             </template>
 
-            <CardDetail>
-                <div class="mb-5 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                        <p class="mt-1 opacity-75">{{ t('product-edit-page.page-title') }}</p>
-                    </div>
+            <CardDetail :title="t('generic.details')" :subtitle="t('product-edit-page.page-title')">
+                <template #title-actions>
                     <v-btn
                         v-if="id && mayViewTranslations"
                         variant="tonal"
@@ -498,7 +511,7 @@ const submitForm = () => {
                         <Languages :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('product-edit-page.button-translations') }}
                     </v-btn>
-                </div>
+                </template>
 
                 <form
                     ref="formElement"
@@ -705,26 +718,14 @@ const submitForm = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="primary">
-                        <template #icon><Package :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('product-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-created-at')"
-                        :value="formatDateTime(adminProduct?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-updated-at')"
-                        :value="formatDateTime(adminProduct?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="primary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Package :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

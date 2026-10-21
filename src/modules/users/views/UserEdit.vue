@@ -42,11 +42,11 @@ import { supportedLanguages } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { z } from 'zod';
 import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
@@ -352,6 +352,23 @@ const onMissingRecord = useMissingRecord();
  * Selects and (re)fetches the user whenever the route id changes.
  */
 watchUser(() => id, { onError: onMissingRecord });
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('user-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('user-target-page.label-created-at'),
+        value: formatDateTime(currentUser.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('user-target-page.label-updated-at'),
+        value: formatDateTime(currentUser.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -380,12 +397,7 @@ watchUser(() => id, { onError: onMissingRecord });
                 />
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('user-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('user-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -493,26 +505,14 @@ watchUser(() => id, { onError: onMissingRecord });
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><User :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('user-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-created-at')"
-                        :value="formatDateTime(currentUser?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-updated-at')"
-                        :value="formatDateTime(currentUser?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><User :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

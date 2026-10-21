@@ -86,7 +86,7 @@ watch(
                         </code>
                         <CopyButton
                             :text="secret ?? ''"
-                            :aria-label="t('generic.secret-reveal-button-copy')"
+                            :label="t('generic.secret-reveal-button-copy')"
                             failure-key="generic.secret-reveal-copy-failed"
                         />
                     </div>

@@ -34,7 +34,8 @@ import LazyImage from '@/ui/molecules/LazyImage.vue';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
@@ -158,6 +159,27 @@ const handleDelete = () => {
                 .catch((error: unknown) => reportDeleteError(error));
         });
 };
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('example-target-page.label-published-at'),
+        value: formatDateTime(currentExample.value?.publishedAt),
+        icon: Calendar
+    },
+    {
+        label: t('example-target-page.label-created-at'),
+        value: formatDateTime(currentExample.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('example-target-page.label-updated-at'),
+        value: formatDateTime(currentExample.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -181,9 +203,7 @@ const handleDelete = () => {
                 />
             </template>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentExample" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('example-target-page.label-body')"
@@ -234,30 +254,14 @@ const handleDelete = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo
-                        :title="heroTitle"
-                        :description="formatText(currentExample?.ownerName)"
-                        accent="secondary"
-                    >
-                        <template #icon><NotebookPen :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('example-target-page.label-published-at')"
-                        :value="formatDateTime(currentExample?.publishedAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-created-at')"
-                        :value="formatDateTime(currentExample?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-updated-at')"
-                        :value="formatDateTime(currentExample?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="formatText(currentExample?.ownerName)"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><NotebookPen :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

@@ -30,7 +30,8 @@ import { Ban, Calendar, Clock, FileText, Hash, Link, Webhook, Zap } from 'lucide
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
@@ -219,6 +220,22 @@ const handleDelete = () => {
                 .catch((error: unknown) => reportDeleteError(error));
         });
 };
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('webhook-target-page.label-created-at'),
+        value: formatDateTime(currentSubscription.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('webhook-target-page.label-updated-at'),
+        value: formatDateTime(currentSubscription.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -254,9 +271,7 @@ const handleDelete = () => {
                 />
             </template>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentSubscription" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('webhook-target-page.label-id')"
@@ -371,21 +386,14 @@ const handleDelete = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><Webhook :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-created-at')"
-                        :value="formatDateTime(currentSubscription?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-updated-at')"
-                        :value="formatDateTime(currentSubscription?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Webhook :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>
