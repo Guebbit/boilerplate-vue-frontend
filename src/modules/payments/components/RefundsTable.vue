@@ -19,7 +19,6 @@ export default {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { RefundReason, RefundStatus } from '@/types/enums.ts';
@@ -28,6 +27,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type {
     RefundListItem,
@@ -204,15 +204,7 @@ const STATUS_COLORS = {
                         hide-details
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" data-test="refunds-search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="refunds-search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions hook-prefix="refunds" :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 

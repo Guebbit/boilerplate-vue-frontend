@@ -44,6 +44,16 @@ describe('ListSearchActions — the buttons', () => {
     });
 });
 
+describe('ListSearchActions — hook prefix', () => {
+    it('namespaces both hooks, so two rows on one page stay distinct', () => {
+        const wrapper = mountRow({ hookPrefix: 'refunds' });
+
+        expect(wrapper.find('[data-test="refunds-search-submit"]').exists()).toBe(true);
+        expect(wrapper.find('[data-test="refunds-search-reset"]').exists()).toBe(true);
+        expect(wrapper.find('[data-test="search-submit"]').exists()).toBe(false);
+    });
+});
+
 describe('ListSearchActions — loading', () => {
     it('keeps both buttons live when no loading is passed', () => {
         const wrapper = mountRow();

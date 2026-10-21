@@ -18,7 +18,6 @@ export default {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { sortFieldsOf, sortTokensOf } from '@/infrastructure/utils/sort.ts';
@@ -28,6 +27,7 @@ import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type {
     Payment,
@@ -293,15 +293,7 @@ const orderLink = useOrderLink();
                         hide-details
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" data-test="payments-search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="payments-search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions hook-prefix="payments" :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 
