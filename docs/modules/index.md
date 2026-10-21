@@ -49,7 +49,6 @@ flowchart LR
         returns["returns"]
         stats["stats"]
         stockAlerts["stock-alerts"]
-        webhooks["webhooks"]
         wishlist["wishlist"]
     end
     subgraph GENERIC["generic"]
@@ -60,6 +59,7 @@ flowchart LR
         locales["locales"]
         observability["observability"]
         users["users"]
+        webhooks["webhooks"]
     end
     demo["example"]
     account -.-> users
@@ -81,8 +81,8 @@ flowchart LR
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,notifications,payments,returns,stats,stockAlerts,webhooks,wishlist supporting;
-    class account,apiKeys,feedback,locales,observability,users generic;
+    class delivery,inventory,notifications,payments,returns,stats,stockAlerts,wishlist supporting;
+    class account,apiKeys,feedback,locales,observability,users,webhooks generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
     style GENERIC fill:#f8fdfc,stroke:#cbd5e1
@@ -143,7 +143,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 19      | 3    | 9          | 6       | 49      | 18     | 14            |
+| 19      | 3    | 8          | 7       | 49      | 18     | 14            |
 
 `example` is unclassified: it is the template a new domain is copied from, not a subdomain.
 
@@ -166,7 +166,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |
 | [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 1          | 0              |
 | [`users`](./users.md)                                          | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
-| [`webhooks`](./webhooks.md)                                    | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
+| [`webhooks`](./webhooks.md)                                    | `generic`    | `foundation` | 5       | `webhooks`               | 9         | 0          | 0              |
 | [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 2          | 0              |
 
 ## The two repositories

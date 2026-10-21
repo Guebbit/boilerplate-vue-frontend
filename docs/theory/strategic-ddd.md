@@ -119,11 +119,11 @@ the store or component each entry describes. The glossary sits beside the meanin
 DDD's own advice is the part most often skipped: tactical patterns belong in the **core** domain,
 and everything else should use the simplest thing that works.
 
-| Subdomain    | Meaning                                                         | Here                                                                                                             |
-| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                                     |
-| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `webhooks`, `wishlist` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `feedback`, `locales`, `observability`, `users`                                           |
+| Subdomain    | Meaning                                                         | Here                                                                                                 |
+| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                         |
+| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `wishlist` |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `feedback`, `locales`, `observability`, `users`, `webhooks`                   |
 
 `example` is not classified: it is the template a new domain is copied from, and it carries a
 `domain/` so the copy has one to keep or delete.

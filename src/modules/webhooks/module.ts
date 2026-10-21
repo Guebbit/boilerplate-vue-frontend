@@ -12,8 +12,8 @@ import routes from './routes';
  * Webhook subscription management: who gets notified of what, the signing secret ring, and the
  * delivery log behind it.
  *
- * Depends on nothing. The subscriptions and deliveries it manages are produced by orders and
- * payments on the backend's own domain-event bus — this module never imports either of theirs.
+ * Depends on nothing. The subscriptions and deliveries it manages are produced by whichever backend modules publish
+ * public events (orders, payments, returns, delivery) on the backend's own domain-event bus — this module never imports either of theirs.
  *
  * Two nav entries, not one: subscriptions (creating/rotating/removing) and the delivery log
  * (reading/replaying) are different jobs an operator reaches for at different times, same split
