@@ -21,7 +21,8 @@ import {
     formatMegabytes,
     formatTime,
     formatUptime,
-    formatAddressLine
+    formatAddressLine,
+    formatCountry
 } from '@/infrastructure/utils/formatters';
 
 describe('formatText', () => {
@@ -376,16 +377,31 @@ describe('formatAddressLine', () => {
 
     it('prints the addressee first when there is one', () => {
         expect(formatAddressLine({ ...address, fullName: 'Ada Lovelace' })).toBe(
-            'Ada Lovelace, Via Roma 1, 20100 Milano, IT'
+            'Ada Lovelace, Via Roma 1, 20100 Milano, Italy'
         );
     });
 
     it('starts at the street when nobody is named', () => {
-        expect(formatAddressLine(address)).toBe('Via Roma 1, 20100 Milano, IT');
+        expect(formatAddressLine(address)).toBe('Via Roma 1, 20100 Milano, Italy');
     });
 
     it('is undefined with no address at all', () => {
         expect(formatAddressLine(undefined)).toBeUndefined();
         expect(formatAddressLine(null)).toBeUndefined();
+    });
+});
+
+describe('formatCountry', () => {
+    it('prints the country as its name in the viewing language', () => {
+        expect(formatCountry('IT')).toBe('Italy');
+    });
+
+    it('falls back to the code the runtime cannot resolve', () => {
+        expect(formatCountry('ZZZZ')).toBe('ZZZZ');
+    });
+
+    it('is empty for an absent code', () => {
+        expect(formatCountry(undefined)).toBe('');
+        expect(formatCountry('')).toBe('');
     });
 });

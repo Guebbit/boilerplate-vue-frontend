@@ -13,6 +13,7 @@ import {
 } from '@guebbit/js-toolkit';
 import type { StatsInterval } from '@types';
 import { getCurrentLocale } from '@/i18n';
+import { countryLabel } from '@/i18n/country-label.ts';
 import { minorUnitExponent } from './currency-exponents.ts';
 import { runtimeValue } from '@/infrastructure/runtime-config';
 
@@ -223,6 +224,16 @@ export const formatFlag = (
 ) => formatFlagBase(value, trueLabel, falseLabel, EMPTY_VALUE);
 
 /**
+ * A country code as its name in the viewing language.
+ *
+ * @param code - ISO 3166-1 alpha-2 code, e.g. `IT`.
+ * @returns The localized name, the bare code when the runtime cannot resolve it, or the empty
+ *  string for an absent code.
+ */
+export const formatCountry = (code?: string | null): string =>
+    code ? countryLabel(code, getCurrentLocale() || 'en') : '';
+
+/**
  * The fields a postal address prints on one line. `fullName` is the addressee, when there is one —
  * a frozen order address names a person, the shop's own address does not.
  */
@@ -235,19 +246,25 @@ export interface AddressLineParts {
     zip: string;
     /** Town or city. */
     city: string;
-    /** Country, as the record carries it (an ISO code). */
+    /** Country as the record carries it (an ISO 3166-1 alpha-2 code); printed as its localized name. */
     country: string;
 }
 
 /**
- * A postal address as one line, the way a letter head prints it: `Name, Street, Zip City, Country`.
+ * A postal address as one line, the way a letter head prints it: `Name, Street, Zip City, Country`,
+ * the country as its name in the viewing language.
  *
  * @param address - The address, when there is one.
  * @returns The line, or `undefined` when `address` is absent.
  */
 export const formatAddressLine = (address?: AddressLineParts | null) =>
     address
-        ? [address.fullName, address.street, `${address.zip} ${address.city}`, address.country]
+        ? [
+              address.fullName,
+              address.street,
+              `${address.zip} ${address.city}`,
+              formatCountry(address.country)
+          ]
               .filter(Boolean)
               .join(', ')
         : undefined;

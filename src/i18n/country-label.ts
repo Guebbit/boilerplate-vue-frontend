@@ -1,7 +1,8 @@
 /**
  * @module
- * A country's own localized display name for a picker option — the same idea as
- * `language-label.ts`'s `languageLabel`, for `AddressFormDialog.vue`'s country select.
+ * A country's own localized display name — the same idea as `language-label.ts`'s
+ * `languageLabel`. Labels the country pickers' options and, through `formatCountry`, printed
+ * addresses.
  */
 
 /**

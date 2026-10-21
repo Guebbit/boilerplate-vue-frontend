@@ -27,6 +27,7 @@ import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '../stores/addresses.ts';
+import { formatCountry } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Address } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -185,7 +186,8 @@ onMounted(fetchAddresses);
                         <p class="text-sm opacity-80">{{ address.fullName }}</p>
                         <p class="text-sm opacity-80">{{ address.street }}</p>
                         <p class="text-sm opacity-80">
-                            {{ address.zip }} {{ address.city }} — {{ address.country }}
+                            {{ address.zip }} {{ address.city }} —
+                            {{ formatCountry(address.country) }}
                         </p>
                         <p v-if="address.phone" class="text-sm opacity-80">{{ address.phone }}</p>
                     </div>
