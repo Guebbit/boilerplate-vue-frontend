@@ -11,50 +11,13 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Public confirm page for an email change: the token is the credential, and a submit button
- * (rather than firing on mount) keeps a mail scanner that prefetches the link from spending the
- * token before the human arrives. Same shape as the verify-email confirm page — the two prove
- * different tokens (`account/services/verification.ts`'s `EMAIL_CHANGE_TOKEN_TYPE`), never each
- * other's — but the form itself has nothing left to differ on.
+ * Public confirm page for an email change: the token mailed to the NEW address is the credential.
+ * The server checks it as a different token type from the verify-email confirm, never the
+ * other's, but the form is the same `LinkTokenConfirmCard`.
+ * Success lands on Home, where a live session shows the new address.
  */
-import { ref } from 'vue';
-import { z } from 'zod';
-import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '../stores/profile.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
-import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';
-import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-
-/**
- * Form state: only the one-time token, prefilled from the email link.
- */
-interface EmailChangeConfirmForm {
-    token?: string;
-}
-
-/**
- * Translation function, and the currently active locale code.
- */
-const { t, locale } = useI18n();
-
-/**
- * Current route, read for its params, query and name.
- */
-const route = useRoute();
-
-/**
- * Router instance, for the navigations this file performs.
- */
-const router = useRouter();
-
-/**
- * Toast dispatcher, used to report every outcome to the visitor.
- */
-const { addMessage } = useNotificationsStore();
+import LinkTokenConfirmCard from '../components/LinkTokenConfirmCard.vue';
 
 /**
  * Confirms the new address against the emailed token.
@@ -62,96 +25,33 @@ const { addMessage } = useNotificationsStore();
 const { confirmEmailChange } = useProfileStore();
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * This page's translation keys.
  */
-const formElement = ref<HTMLFormElement>();
+const copy = {
+    intro: 'email-change-confirm-page.intro',
+    label: 'email-change-confirm-page.label-token',
+    submit: 'email-change-confirm-page.button-submit',
+    tokenRequired: 'email-change-confirm-page.token-required',
+    success: 'email-change-confirm-page.success'
+};
 
 /**
- * Form state, error surface and submit handler, from the toolkit's form validation.
+ * This page's `data-test` hooks.
  */
-const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<EmailChangeConfirmForm>(
-        {
-            token: readLinkToken(route)
-        },
-        z.object({
-            token: z.string().min(1, { error: () => t('email-change-confirm-page.token-required') })
-        }),
-        {
-            formElement,
-            revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-            onInvalid: () => addMessage(t('generic.fix-errors'))
-        }
-    );
-
-// The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
-// pageview and observability event after mount to carry to Umami, Faro and browser history.
-useLinkTokenCleanup(route, router);
-
-/**
- * This submit's own blocked state — a spent or unknown token names no field, so it lands here
- * instead of a toast, next to the button the visitor just pressed.
- */
-const {
-    message: confirmError,
-    type: confirmErrorType,
-    report: reportConfirmError,
-    clear: clearConfirmError
-} = useBlockingError();
-
-/**
- * Spends the token; success goes to Home, where a live session shows the new address.
- *
- * @returns A promise resolving once the confirmation settles: success is a toast, a failure
- *  blocks the form in place ({@link confirmError}).
- */
-const submitForm = () => {
-    clearConfirmError();
-    return handleSubmit(() =>
-        confirmEmailChange(form.value.token ?? '')
-            .then(() => {
-                addMessage(t('email-change-confirm-page.success'));
-                return router.push(routerLinkI18n({ name: 'Home' }));
-            })
-            // Swallows `router.push`'s resolved value — a failed navigation is the router's own
-            // `onError` to report, not this form's. Same note as the verify-email confirm.
-            .then(() => undefined)
-    ).catch((error) => reportConfirmError(error));
+const testIds = {
+    token: 'email-change-token',
+    submit: 'email-change-submit',
+    error: 'email-change-confirm-error'
 };
 </script>
 
 <template>
     <div id="email-change-confirm-page">
-        <v-card class="mx-auto mt-10 w-full max-w-md p-8">
-            <p class="mb-4 opacity-80">{{ t('email-change-confirm-page.intro') }}</p>
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.token"
-                    type="text"
-                    data-test="email-change-token"
-                    :label="t('email-change-confirm-page.label-token')"
-                    :error-messages="showFormErrors ? (formErrors.token ?? []) : []"
-                    class="mb-4"
-                />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    block
-                    data-test="email-change-submit"
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
-                >
-                    {{ t('email-change-confirm-page.button-submit') }}
-                </v-btn>
-                <InlineErrorAlert
-                    :message="confirmError"
-                    :type="confirmErrorType"
-                    class="mt-4"
-                    data-test="email-change-confirm-error"
-                />
-            </form>
-        </v-card>
+        <LinkTokenConfirmCard
+            :copy="copy"
+            :test-ids="testIds"
+            :spend="confirmEmailChange"
+            success-route="Home"
+        />
     </div>
 </template>

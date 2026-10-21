@@ -24,6 +24,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { providerLabel } from '../stores/oauth.ts';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 import { useTwoFactorStore } from '../stores/two-factor.ts';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import type { TwoFactorMethodSummary } from '@api';
@@ -95,18 +96,15 @@ const oauthChallenge = computed(() => {
     if (mfaRequired !== '1' || typeof expiresAt !== 'string' || typeof methods !== 'string')
         return undefined;
 
-    // JSON.parse throws on malformed input, with no non-throwing form — a hand-edited or
-    // truncated URL is exactly the "no safe wrapper" case this rule carves out.
-    // eslint-disable-next-line no-restricted-syntax -- containing JSON.parse's throw on a malformed `methods` query param, which has no non-throwing form
-    try {
-        return {
-            expiresAt,
-            methods: JSON.parse(methods) as TwoFactorMethodSummary[],
-            ...(typeof defaultMethod === 'string' && { defaultMethod })
-        };
-    } catch {
-        return undefined;
-    }
+    // A hand-edited or truncated URL leaves `methods` unparseable, or not a list at all.
+    const parsedMethods = parseJsonSafe(methods);
+    if (!Array.isArray(parsedMethods)) return undefined;
+    return {
+        expiresAt,
+        // The backend wrote this list; its entries are read as the contract's summaries.
+        methods: parsedMethods as TwoFactorMethodSummary[],
+        ...(typeof defaultMethod === 'string' && { defaultMethod })
+    };
 });
 
 /**
