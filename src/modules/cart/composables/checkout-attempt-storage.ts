@@ -51,7 +51,8 @@ export const readCheckoutAttempt = (): CheckoutAttempt | undefined => {
 };
 
 /**
- * Saves the attempt, or removes it once it ended.
+ * Saves the attempt, or removes it once it ended. A refused write costs only a reload's replay:
+ * the retry then mints a new key, as an app with no storage at all would.
  *
  * @param attempt - The attempt to keep; `undefined` removes the saved one.
  */

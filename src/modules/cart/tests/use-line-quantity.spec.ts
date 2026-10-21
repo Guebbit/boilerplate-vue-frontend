@@ -237,9 +237,8 @@ describe('useLineQuantity — checkout and clear must not race a pending step', 
             ['p1', 3]
         ]);
 
-        // Request A resolves first. The old code deleted `inFlight`'s entry unconditionally here
-        // — which by now holds request B, not A — so a `settle()` afterwards would not wait for
-        // B at all.
+        // Request A resolves first. `inFlight`'s entry by now holds request B, not A, so an
+        // unconditional delete here would leave a later `settle()` not waiting for B at all.
         resolvers[0]?.(undefined);
         await vi.advanceTimersByTimeAsync(0);
 

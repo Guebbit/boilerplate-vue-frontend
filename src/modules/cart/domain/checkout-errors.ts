@@ -1,7 +1,7 @@
 /**
  * @module
  * Classifies a checkout rejection into one of the API's documented shapes
- * (`docs/modules/cart-checkout.md` §"The eight refusals, and why they are shaped differently").
+ * (`docs/modules/cart-checkout.md` §"The refusals, and why they are shaped differently").
  * Pure: reads the envelope's `errors[0]`, returns a verdict, produces no copy — the view decides
  * what each verdict says and does.
  */
@@ -151,56 +151,108 @@ const firstErrorItem = (error: unknown): { code?: unknown; details?: unknown } |
 };
 
 /**
- * Classifies a checkout rejection.
+ * Reads one field of an error item's `details`, which crosses the wire untyped.
+ *
+ * @param details - The item's `details`, still unknown.
+ * @param key - The field to read.
+ * @returns The field, or `undefined` when `details` is not an object.
+ */
+const detailOf = (details: unknown, key: string): unknown =>
+    typeof details === 'object' && details !== null
+        ? (details as Record<string, unknown>)[key]
+        : undefined;
+
+/**
+ * Reads a list field of `details`, keeping only the entries `parse` accepts.
+ *
+ * @param details - The item's `details`, still unknown.
+ * @param key - The list field to read (`lines`, `orderIds`).
+ * @param parse - Narrows one entry; `undefined` drops it.
+ * @returns The valid entries; none when the field is not an array.
+ */
+const listDetail = <TEntry>(
+    details: unknown,
+    key: string,
+    parse: (entry: unknown) => TEntry | undefined
+): TEntry[] => {
+    const raw = detailOf(details, key);
+    // `Array.isArray` narrows to `any[]` in the stdlib typings; re-read as `unknown[]`.
+    if (!Array.isArray(raw)) return [];
+    return (raw as unknown[]).map((entry) => parse(entry)).filter((entry) => entry !== undefined);
+};
+
+/**
+ * Narrows one `orderIds` entry to a string.
+ *
+ * @param value - The entry, still unknown.
+ * @returns The id, or `undefined` when it is not a string.
+ */
+const asOrderId = (value: unknown): string | undefined =>
+    typeof value === 'string' ? value : undefined;
+
+/**
+ * One verdict per error code with a dedicated UI answer. Each entry builds the verdict from the
+ * item's `details`; a code missing here falls through to `server-error` or `other`.
+ * A `Map` rather than an object: `code` is wire data, so a key like `toString` must not resolve.
+ */
+const VERDICT_BY_CODE: ReadonlyMap<unknown, (details: unknown) => CheckoutErrorVerdict> = new Map<
+    string,
+    (details: unknown) => CheckoutErrorVerdict
+>([
+    [ERROR_CODES.CART_CHANGED, () => ({ kind: 'cart-changed' })],
+    [
+        ERROR_CODES.CART_TOTAL_CHANGED,
+        (details) => ({
+            kind: 'total-changed',
+            expected: asMoney(detailOf(details, 'expected')),
+            actual: asMoney(detailOf(details, 'actual'))
+        })
+    ],
+    [ERROR_CODES.CART_ADDRESS_NOT_FOUND, () => ({ kind: 'address-not-found' })],
+    [ERROR_CODES.CART_BILLING_ADDRESS_REQUIRED, () => ({ kind: 'billing-address-required' })],
+    [ERROR_CODES.CART_SHIPPING_METHOD_WEIGHT, () => ({ kind: 'shipping-method-weight' })],
+    [
+        ERROR_CODES.CART_SHIP_TO_COUNTRY_NOT_SUPPORTED,
+        () => ({ kind: 'ship-to-country-not-supported' })
+    ],
+    [
+        ERROR_CODES.CART_INSUFFICIENT_STOCK,
+        (details) => ({
+            kind: 'insufficient-stock',
+            lines: listDetail(details, 'lines', asShortfallLine)
+        })
+    ],
+    [
+        ERROR_CODES.CART_PRODUCT_UNAVAILABLE,
+        (details) => ({
+            kind: 'product-unavailable',
+            lines: listDetail(details, 'lines', asUnavailableLine)
+        })
+    ],
+    [
+        ERROR_CODES.CART_OPEN_ORDER_LIMIT,
+        (details) => ({
+            kind: 'open-order-limit',
+            orderIds: listDetail(details, 'orderIds', asOrderId)
+        })
+    ],
+    // The reason, the date and the note are the buyer's own record's to show (`PurchaseHoldNotice`).
+    [ERROR_CODES.CART_PURCHASE_HOLD, () => ({ kind: 'purchase-hold' })],
+    [ERROR_CODES.CART_EMPTY, () => ({ kind: 'cart-empty' })],
+    [ERROR_CODES.IDEMPOTENCY_IN_FLIGHT, () => ({ kind: 'in-flight' })]
+]);
+
+/**
+ * Classifies a checkout rejection: the error code's own verdict first, then a bare 500, then
+ * `other`.
  *
  * @param error - The rejected value `cartStore.checkout()` threw.
  * @returns The verdict the view renders from.
  */
 export const classifyCheckoutError = (error: unknown): CheckoutErrorVerdict => {
     const item = firstErrorItem(error);
-    if (item?.code === ERROR_CODES.CART_CHANGED) return { kind: 'cart-changed' };
-    if (item?.code === ERROR_CODES.CART_TOTAL_CHANGED) {
-        const details = item.details as { expected?: unknown; actual?: unknown } | undefined;
-        return {
-            kind: 'total-changed',
-            expected: asMoney(details?.expected),
-            actual: asMoney(details?.actual)
-        };
-    }
-    if (item?.code === ERROR_CODES.CART_ADDRESS_NOT_FOUND) return { kind: 'address-not-found' };
-    if (item?.code === ERROR_CODES.CART_BILLING_ADDRESS_REQUIRED)
-        return { kind: 'billing-address-required' };
-    if (item?.code === ERROR_CODES.CART_SHIPPING_METHOD_WEIGHT) {
-        return { kind: 'shipping-method-weight' };
-    }
-    if (item?.code === ERROR_CODES.CART_SHIP_TO_COUNTRY_NOT_SUPPORTED) {
-        return { kind: 'ship-to-country-not-supported' };
-    }
-    if (item?.code === ERROR_CODES.CART_INSUFFICIENT_STOCK) {
-        const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
-        const lines = Array.isArray(rawLines)
-            ? rawLines.map((line) => asShortfallLine(line)).filter((line) => line !== undefined)
-            : [];
-        return { kind: 'insufficient-stock', lines };
-    }
-    if (item?.code === ERROR_CODES.CART_PRODUCT_UNAVAILABLE) {
-        const rawLines = (item.details as { lines?: unknown } | undefined)?.lines;
-        const lines = Array.isArray(rawLines)
-            ? rawLines.map((line) => asUnavailableLine(line)).filter((line) => line !== undefined)
-            : [];
-        return { kind: 'product-unavailable', lines };
-    }
-    if (item?.code === ERROR_CODES.CART_OPEN_ORDER_LIMIT) {
-        const rawIds = (item.details as { orderIds?: unknown } | undefined)?.orderIds;
-        const orderIds = Array.isArray(rawIds)
-            ? rawIds.filter((id): id is string => typeof id === 'string')
-            : [];
-        return { kind: 'open-order-limit', orderIds };
-    }
-    // The reason, the date and the note are the buyer's own record's to show (`PurchaseHoldNotice`).
-    if (item?.code === ERROR_CODES.CART_PURCHASE_HOLD) return { kind: 'purchase-hold' };
-    if (item?.code === ERROR_CODES.CART_EMPTY) return { kind: 'cart-empty' };
-    if (item?.code === ERROR_CODES.IDEMPOTENCY_IN_FLIGHT) return { kind: 'in-flight' };
+    const toVerdict = VERDICT_BY_CODE.get(item?.code);
+    if (toVerdict) return toVerdict(item?.details);
     if ((error as { status?: unknown } | null | undefined)?.status === 500)
         return { kind: 'server-error' };
     return { kind: 'other' };

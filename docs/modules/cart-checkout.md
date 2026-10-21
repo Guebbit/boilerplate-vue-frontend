@@ -78,6 +78,11 @@ the boundary — two numbers this screen already owns for its own totals — not
 | `422`                          | The resolved address's country isn't on the ship-to list (`CART_SHIP_TO_COUNTRY_NOT_SUPPORTED`)                     | Say so — the country select already narrows a NEW address to the list, so the fix is picking or adding one, not a field this screen can correct.                                                                                                  |
 | transport, `502`, `503`, `504` | The request never reached the API, or the gateway gave up                                                           | Show the generic checkout error. The `Idempotency-Key` is kept, so a retry is the same attempt. See [the checkout key](./cart.md#the-checkout-key).                                                                                               |
 
+`classifyCheckoutError` (`domain/checkout-errors.ts`) maps each code to a verdict through one table;
+`useCheckoutRefusals` (`composables/use-checkout-refusals.ts`) maps each verdict to the reaction above
+through one exhaustive switch. A cart read that fails after a refusal shows the generic checkout error
+rather than going silent.
+
 ::: warning Two of these are lists, and rendering either as one message throws away the useful half
 `CART_INSUFFICIENT_STOCK`'s `errors[0].details.lines` carries `productId`, `title` and `requested` per
 short line (the number left is for stock readers only). `CART_PRODUCT_UNAVAILABLE`'s carries `productId` and an optional

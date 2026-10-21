@@ -31,9 +31,11 @@ payment method costs to offer, only which ids exist; and `account`, whose `Addre
 checkout mounts when the chosen method needs an address, reusing that module's own add-address
 dialog rather than knowing anything about the address book itself.
 
-The fourth, `products`, is `customer-supplier`: the cart page reads its lines' current title and
-price from the products dictionary (`useProductLines`, one batched read) instead of asking per
-line, and the products store owns the language reset those records need.
+The fourth, `products`, is `customer-supplier`: after each cart write (a line, a checkout), the
+store asks products to drop its cached catalogue (`invalidateProductsCache`), whose stock
+counts that write just made stale. The cart page also
+reads its lines' current title and price from the products dictionary (`useProductLines`, one
+batched read) instead of asking per line — a `conformist` read riding the same edge.
 
 Checkout is the one screen where price, stock, address and shipping have to agree at once,
  * and the only place this client holds a multi-step flow of its own. Every other module points

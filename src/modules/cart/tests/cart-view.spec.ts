@@ -213,6 +213,23 @@ describe('the checkout refusals', () => {
                 });
         }));
 
+    it('blocks the button in place when the refetch after CART_CHANGED fails, rather than going silent', () =>
+        mountCart().then(({ wrapper, checkoutSpy, cart }) => {
+            checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
+            vi.mocked(cart.fetchCart).mockRejectedValueOnce(
+                checkoutRejection(500, 'INTERNAL_ERROR')
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(cart.fetchCart).toHaveBeenCalledTimes(2);
+                    expect(wrapper.find('[data-test=cart-checkout-error]').exists()).toBe(true);
+                });
+        }));
+
     it('names the old and the new total on CART_TOTAL_CHANGED, and keeps the button live', () =>
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(

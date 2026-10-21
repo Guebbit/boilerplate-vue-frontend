@@ -131,9 +131,8 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * Counts every start and end of a call that replaces `cart`, and every viewer change. A
-     * background
-     * read ({@link pollCart}) remembers the count when it leaves and drops its answer if the count
-     * moved: something fresher, or someone else's, has happened since.
+     * background read ({@link pollCart}) remembers the count when it leaves and drops its answer if
+     * the count moved: something fresher, or someone else's, has happened since.
      */
     let cartEpoch = 0;
 
@@ -202,7 +201,7 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * What this basket needs from shipping, and what it may choose from — the server's own
-     * answer, replacing a client-computed basket weight and free-above math.
+     * answer: the basket weight and the free-above threshold are never computed here.
      */
     const cartShipping = computed<CartShipping | undefined>(() => cart.value?.shipping);
 
@@ -263,7 +262,7 @@ export const useCartStore = defineStore('cart', () => {
     /**
      * What the header writes beside the badge: the cart's money total (before shipping) paired
      * with its currency — one computed, not two, so a caller can never read one half of a summary
-     * that has not loaded yet (`formatCurrency` now takes currency as a required argument).
+     * that has not loaded yet (`formatCurrency` takes the currency as a required argument).
      */
     const badgeMoney = computed(() =>
         liveSummary.value === undefined

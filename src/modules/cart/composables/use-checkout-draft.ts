@@ -6,9 +6,9 @@
  * dies with the tab. The delivery method is not here: the server's cart holds that.
  */
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
+import { readJson, removeByPrefix, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 import type { PaymentMethodId } from '@types';
 
-import { readJson, removeByPrefix, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 /** The fields a checkout remembers. */
 export interface CheckoutDraft {
     /** The free-text note, as typed (untrimmed). */
@@ -56,7 +56,7 @@ export const readCheckoutDraft = (userId: string): CheckoutDraft =>
     toDraft(readJson('session', keyFor(userId)));
 
 /**
- * Saves the user's draft.
+ * Saves the user's draft. A refused write loses only a convenience: the customer keeps typing.
  *
  * @param userId - the signed-in user
  * @param draft - what to remember

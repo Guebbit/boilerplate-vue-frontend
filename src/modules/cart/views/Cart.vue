@@ -23,14 +23,15 @@ import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useCartStore } from '../store.ts';
-// The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
-// clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.
-import { MIN_LINE_QUANTITY, classifyCheckoutError, fromMinorUnits } from '../domain';
-import type { CheckoutShortfallLine, ExpectedTotal, UnavailableCartLine } from '../domain';
+// The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
+// clamping half of that rule lives with the stepping itself, in `use-line-quantity.ts`.
+import { MIN_LINE_QUANTITY, classifyCheckoutError } from '../domain';
+import type { CheckoutShortfallLine } from '../domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useLineQuantity } from '../composables/use-line-quantity.ts';
+import { useCheckoutRefusals } from '../composables/use-checkout-refusals.ts';
 import { useCartStockPoll } from '../composables/use-cart-stock-poll.ts';
 import { useCartFocusRefresh } from '../composables/use-cart-focus-refresh.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
@@ -204,11 +205,6 @@ watch([notes, paymentMethodId, addressId], () => {
 });
 
 /**
- * Raised after a checkout the hold refused, so the banner reads the buyer's record again.
- */
-const holdSignal = ref(0);
-
-/**
  * Whether any line cannot be bought as it stands (short, sold out, off sale, removed). Checkout
  * refuses every one of those, so "Place order" waits until the shopper has fixed them. A
  * `preorder` line is buyable: it ships from its release date. So is a `backorder` one: it ships
@@ -239,17 +235,22 @@ const canCheckout = computed(() => {
 });
 
 /**
- * The short lines a `CART_INSUFFICIENT_STOCK` refusal named, rendered inline so the customer
- * fixes the basket in one pass rather than being refused again on the next attempt. Empty
- * whenever the last checkout did not end in this particular refusal.
+ * What a refused checkout left on screen (named lines, unpaid orders, the hold banner's signal,
+ * the button's blocked state), and the handler that reacts to each refusal.
  */
-const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
-
-/**
- * The lines a `CART_PRODUCT_UNAVAILABLE` refusal named — a product removed or hidden since
- * the basket was built. Empty whenever the last checkout did not end in this refusal.
- */
-const unavailableLines = ref<UnavailableCartLine[]>([]);
+const {
+    insufficientStockLines,
+    unavailableLines,
+    openOrderIds,
+    holdSignal,
+    checkoutError,
+    resetRefusals,
+    handleRefusal
+} = useCheckoutRefusals({
+    onShippingMethodRefused: () => {
+        shippingMethodId.value = undefined;
+    }
+});
 
 /**
  * The sentence for one refused line: fewer left, none left, or off sale. Literal keys, so a
@@ -266,13 +267,8 @@ const shortfallText = ({ title, requested, availability }: CheckoutShortfallLine
 };
 
 /**
- * The unpaid orders `CART_OPEN_ORDER_LIMIT` named, as links the shopper can follow to pay or
- * cancel one. Empty whenever the last checkout did not end in this refusal.
- */
-const openOrderIds = ref<string[]>([]);
-
-/**
- * Where each of {@link openOrderIds} lives. An order page is the orders module's: a build without
+ * Where each unpaid order `CART_OPEN_ORDER_LIMIT` named lives, as links the shopper can follow to
+ * pay or cancel one. An order page is the orders module's: a build without
  * it has nowhere to send the shopper, so those ids simply get no link.
  */
 const openOrderTargets = computed(() =>
@@ -283,17 +279,6 @@ const openOrderTargets = computed(() =>
 );
 
 /**
- * The checkout button's own blocked state — the one dedicated control this page cannot proceed
- * past until it succeeds. Every refusal `classifyCheckoutError` names more specifically keeps its
- * own toast/inline handling above; only the generic fallback renders here.
- */
-const {
-    message: checkoutError,
-    report: reportCheckoutError,
-    clear: clearCheckoutError
-} = useBlockingError();
-
-/**
  * Whether an order is being placed, from the first instant of the press. Set synchronously, which
  * `loading` is not (it flips inside the store, a task later), so a second press in the same task
  * and the steppers are both shut out for the whole call. See `docs/modules/cart-checkout.md`.
@@ -301,48 +286,19 @@ const {
 const placing = ref(false);
 
 /**
- * A wire money amount, written the way the rest of the page writes prices.
- *
- * @param money - Minor units plus currency, from `CART_TOTAL_CHANGED`'s details.
- * @returns The amount in the visitor's locale formatting.
- */
-const formatMinor = (money: ExpectedTotal) =>
-    formatCurrency(fromMinorUnits(money.amount, currencyDigits(money.currency)), money.currency);
-
-/**
- * The refusal text for a total that moved between what the page showed and what would be charged.
- * Without both amounts (a malformed `details`) it falls back to the sentence that names neither.
- *
- * @param expected - The total the page showed.
- * @param actual - The total the server would charge.
- * @returns The message to show.
- */
-const totalChangedMessage = (expected?: ExpectedTotal, actual?: ExpectedTotal) =>
-    expected && actual
-        ? t('cart-page.error-total-changed', {
-              from: formatMinor(expected),
-              to: formatMinor(actual)
-          })
-        : t('cart-page.error-total-changed-generic');
-
-/**
  * The checkout request itself, once {@link checkout} has confirmed no line-quantity step is still
- * in the debounce window.
- *
- * See `docs/modules/cart-checkout.md` §"The eight refusals, and why they are shaped differently"
- * for what each `classifyCheckoutError` branch below answers and why. A transport failure alone
- * has no more specific answer than the generic toast.
+ * in the debounce window. A refusal goes to {@link handleRefusal}.
  *
  * @returns A promise resolving once the flow settles: a success toast and a navigation to the new
- *  order's own page, or the refusal-specific handling below.
+ *  order's own page, or the refusal's own reaction.
  */
 const runCheckout = () =>
     placeOrder({
-        // No `shippingMethodId` here — it is the cart's own choice now, already persisted via
+        // No `shippingMethodId`: the cart holds that choice, persisted via
         // `PUT /cart/shipping-method` by the `watch` above.
-        // Only when the chosen method actually needs one: the picker unmounts on pickup but
-        // leaves `addressId` holding its last value, and the backend now refuses an address
-        // paired with a method that can't use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
+        // An address only when the chosen method needs one: the picker unmounts on pickup but
+        // leaves `addressId` holding its last value, and the API refuses an address paired with
+        // a method that cannot use it (409 `CART_ADDRESS_NOT_APPLICABLE`).
         ...(cartShipping.value?.required &&
         shippingMethodRequiresAddress.value &&
         addressId.value !== undefined
@@ -375,83 +331,7 @@ const runCheckout = () =>
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
             void router.push(routerLinkI18n(target));
         })
-        .catch((error: unknown) => {
-            const verdict = classifyCheckoutError(error);
-            if (verdict.kind === 'cart-changed') {
-                addMessage(t('cart-page.error-cart-changed'));
-                return fetchCart().then(() => undefined);
-            }
-            if (verdict.kind === 'total-changed') {
-                // The store already read the cart again, so the page shows the new total; the
-                // button stays live, and the next press confirms that total.
-                addMessage(totalChangedMessage(verdict.expected, verdict.actual));
-                return;
-            }
-            if (verdict.kind === 'insufficient-stock') {
-                insufficientStockLines.value = verdict.lines;
-                addMessage(t('cart-page.error-insufficient-stock'));
-                return;
-            }
-            if (verdict.kind === 'address-not-found') {
-                addMessage(t('cart-page.error-address-not-found'));
-                return;
-            }
-            if (verdict.kind === 'billing-address-required') {
-                addMessage(t('cart-page.error-billing-address-required'));
-                return;
-            }
-            if (verdict.kind === 'shipping-method-weight') {
-                // Reopens the picker rather than leaving the refused choice selected — the basket
-                // this client weighed is advisory, so the server's own enforced check is the one
-                // that actually knows the chosen method cannot carry it.
-                shippingMethodId.value = undefined;
-                addMessage(t('cart-page.error-shipping-method-weight'));
-                return;
-            }
-            if (verdict.kind === 'ship-to-country-not-supported') {
-                // The resolved address's country fell outside the ship-to list — the select
-                // above already narrows a NEW address to it, so the fix is picking (or adding)
-                // one, not a field this page can correct on the shopper's behalf.
-                addMessage(t('cart-page.error-ship-to-country-not-supported'));
-                return;
-            }
-            if (verdict.kind === 'product-unavailable') {
-                unavailableLines.value = verdict.lines;
-                addMessage(t('cart-page.error-product-unavailable'));
-                return;
-            }
-            if (verdict.kind === 'open-order-limit') {
-                openOrderIds.value = verdict.orderIds;
-                addMessage(t('cart-page.error-open-order-limit'));
-                return;
-            }
-            if (verdict.kind === 'purchase-hold') {
-                // The banner carries the reason, the date and the note; it reads the buyer's own
-                // record, so reload it now rather than waiting for the next visit.
-                addMessage(t('cart-page.error-purchase-hold'));
-                holdSignal.value += 1;
-                return;
-            }
-            if (verdict.kind === 'cart-empty') {
-                // The server holds no basket: the order a lost answer hid exists. The page must
-                // stop offering lines that are not there.
-                addMessage(t('cart-page.error-cart-empty'));
-                return fetchCart().then(() => undefined);
-            }
-            if (verdict.kind === 'in-flight') {
-                // The store already waited for the first attempt; it is still running.
-                addMessage(t('cart-page.error-checkout-in-flight'));
-                return fetchCart().then(() => undefined);
-            }
-            if (verdict.kind === 'server-error' && cartItems.value.length === 0) {
-                // The store read the cart again after the 500: empty means the order was written.
-                addMessage(t('cart-page.order-placed-after-error'));
-                const orders = linkIfRouted(router, 'OrdersList') ?? { name: 'Home' };
-                void router.push(routerLinkI18n(orders));
-                return;
-            }
-            reportCheckoutError(error);
-        });
+        .catch(handleRefusal);
 
 /**
  * Places an order from the current cart.
@@ -469,16 +349,16 @@ const runCheckout = () =>
 const checkout = () => {
     if (placing.value) return Promise.resolve();
     placing.value = true;
-    insufficientStockLines.value = [];
-    unavailableLines.value = [];
-    openOrderIds.value = [];
-    clearCheckoutError();
-    return settle()
-        .then(runCheckout)
-        .catch(() => undefined)
-        .finally(() => {
-            placing.value = false;
-        });
+    resetRefusals();
+    return (
+        settle()
+            // Only `settle`'s rejection is absorbed: `useLineQuantity`'s `onError` already
+            // reported it, and the order must not be placed at a stale quantity.
+            .then(runCheckout, () => undefined)
+            .finally(() => {
+                placing.value = false;
+            })
+    );
 };
 
 /**
