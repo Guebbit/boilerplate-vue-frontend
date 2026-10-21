@@ -181,6 +181,10 @@ instead of floating in it. A Vuetify data table is rendered through the `DataTab
 owns `mobile-breakpoint`, and a `v-table` carries a **named** `v-focusable-scroll`, so its sideways
 scroll region is reachable by keyboard. `local/mobile-strategy` enforces all three.
 
+A form or step dialog sits in `DialogShell` (`src/ui/organisms/DialogShell.vue`), which binds
+`:fullscreen`, names the dialog by its heading and hands focus back to the opener. `DialogHost.vue`
+stays its own `v-dialog` on purpose.
+
 ## Breakpoints, viewport bands and layout invariants
 
 Where the layout changes, and the rules a page has to keep at every width. The sweep that checks

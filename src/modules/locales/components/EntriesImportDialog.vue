@@ -11,8 +11,7 @@
  */
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import type { LocaleEntryInput, LocaleAppDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/i18n';
 import { flattenDictionary } from '../dictionaries';
@@ -61,27 +60,12 @@ const isOpen = defineModel<boolean>({ required: true });
  */
 const { t } = useI18n();
 
-/**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the import dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
 /*
  * Deliberately NOT on `useStructureFormValidation`, unlike the two form dialogs beside it. What this validates is
  * a JSON document, and the useful result is the ROWS it parsed to — data the preview below
  * renders — not a per-field error. A schema would have to carry the parse through a transform to
  * hand back the same thing `parsed` already does.
  */
-
-/**
- * Id for the dialog's name, so it is announced by its title rather than as "dialog".
- */
-const titleId = useId();
 
 /**
  * Id for the parse error both the file picker and the paste area point at.
@@ -180,7 +164,7 @@ const handleImport = () => {
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="640" :fullscreen="fullscreen" :aria-labelledby="titleId">
+    <DialogShell v-model="isOpen" max-width="640" v-slot="{ titleId }">
         <v-card class="p-5" data-test="entries-import">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ t('entries-import.title') }}
@@ -276,5 +260,5 @@ const handleImport = () => {
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

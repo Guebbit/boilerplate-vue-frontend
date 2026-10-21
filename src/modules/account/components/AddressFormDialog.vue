@@ -15,10 +15,9 @@ export default {
  * (the checkout side) can offer the same "add an address" flow without a second copy of the
  * form, its schema, or its save logic.
  */
-import { computed, ref, useId, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '../stores/addresses.ts';
@@ -81,16 +80,6 @@ const offerSetAsDefault = computed(() => !editing && addresses.value.length > 0)
 const setAsDefaultOnAdd = ref(false);
 
 /**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the address dialog once it closes.
- */
-useReturnFocus(() => open.value);
-
-/**
  * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
  */
 interface AddressForm {
@@ -133,11 +122,6 @@ const formFrom = (address: Address | undefined): AddressForm =>
               phone: address.phone ?? ''
           }
         : emptyForm();
-
-/**
- * The dialog heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const dialogTitleId = useId();
 
 /**
  * The country select's own options: {@link shipToCountries} when the caller named one,
@@ -215,14 +199,9 @@ const handleSave = () =>
 </script>
 
 <template>
-    <v-dialog
-        v-model="open"
-        max-width="480"
-        :fullscreen="fullscreen"
-        :aria-labelledby="dialogTitleId"
-    >
+    <DialogShell v-model="open" max-width="480" v-slot="{ titleId }">
         <v-card class="p-6" data-test="address-dialog">
-            <h2 :id="dialogTitleId" class="mb-4 text-lg font-semibold">
+            <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ editing ? t('profile-page.addresses-edit') : t('profile-page.addresses-add') }}
             </h2>
             <form novalidate @submit.prevent="handleSave">
@@ -309,5 +288,5 @@ const handleSave = () =>
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>
