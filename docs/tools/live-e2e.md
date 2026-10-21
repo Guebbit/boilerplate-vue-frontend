@@ -14,6 +14,26 @@ Two tiers and a hand run, all through the same `e2e-live.yml`:
 
 Both tiers share one definition of the services, the sibling checkout and the seeding, so they cannot drift apart. **Scheduled workflows only ever run on the default branch**: a `cron` fires against `main` and nothing else.
 
+## The shard watchdog
+
+`npm run test:e2e` never trusts a shard's exit code alone.
+
+```mermaid
+flowchart LR
+  S[shard: npx cypress] -->|output| W{silent > N min?}
+  W -->|yes| K[kill process group] --> H[HUNG]
+  W -->|no| X[close: code, signal]
+  X --> J{judgeShard}
+  H --> F[shard FAILED, gate red]
+  J -->|signal, code != 0, fewer specs than assigned| F
+  J -->|clean, every spec in the summary| P[shard OK]
+```
+
+- **Silence:** no stdout or stderr for 10 minutes (`E2E_SHARD_QUIET_MINUTES` changes it) kills the shard's process group and fails it as HUNG. The longest healthy spec is ~90 s.
+- **Signal:** any signal fails the shard, even when the `npx` wrapper exited 0.
+- **Spec count:** the specs in Cypress' final summary table must equal the specs assigned. A shard that exits 0 with fewer finished fails.
+- Code: `scripts/e2e/shard-process.ts` (the watchdog), `scripts/e2e/shard-verdict.ts` (the pure verdict). `tests/unit/scripts/e2e/shard-process.spec.ts` proves the hang against a stand-in that sleeps forever.
+
 ## Tiers
 
 ```mermaid
