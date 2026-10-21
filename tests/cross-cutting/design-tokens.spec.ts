@@ -19,57 +19,15 @@
  *    show only colours the theme has, and the address bar has a light and a dark colour.
  */
 import { describe, expect, it } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
-import path from 'node:path';
 import postcss from 'postcss';
-import type { AtRule, Declaration, Node } from 'postcss';
+import type { Declaration } from 'postcss';
 import { createVuetify } from 'vuetify';
+import { cssSources, insideTheme, MAIN_CSS, readRoot } from '../../scripts/css-sources';
 import { isColorLiteral, themeColorNames, CSS_NAMED_COLORS } from '../../scripts/design-policy';
 import { dark, light, variations } from '../../src/ui/vuetify/theme';
 
-/** The repo root (tests run from it). */
-const ROOT = process.cwd();
-
-/** The Tailwind entry stylesheet, the one global stylesheet of the app. */
-const MAIN_CSS = path.resolve(ROOT, 'src/styles/main.css');
-
-/** One piece of CSS and where it came from, for the failure message. */
-interface CssSource {
-    file: string;
-    css: string;
-}
-
-/** Every `.vue` file under `src/`, tests excluded. */
-const vueFiles = (directory: string): string[] =>
-    readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-        const full = path.join(directory, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : vueFiles(full);
-        return entry.name.endsWith('.vue') ? [full] : [];
-    });
-
-/** The stylesheet and the body of every SFC `<style>` block, each tagged with its file. */
-const cssSources = (): CssSource[] => {
-    const blocks = vueFiles(path.resolve(ROOT, 'src')).flatMap((file) =>
-        [...readFileSync(file, 'utf8').matchAll(/<style[^>]*>([\S\s]*?)<\/style>/g)].map(
-            (match) => ({ file: path.relative(ROOT, file), css: match[1] ?? '' })
-        )
-    );
-    return [
-        { file: path.relative(ROOT, MAIN_CSS), css: readFileSync(MAIN_CSS, 'utf8') },
-        ...blocks
-    ];
-};
-
 /** Every declaration and at-rule of every source, parsed. */
 const parsed = cssSources().map(({ file, css }) => ({ file, root: postcss.parse(css) }));
-
-/** Whether a node sits inside an `@theme` block (plain or `inline`). */
-const insideTheme = (node: Node | undefined): boolean => {
-    if (node === undefined) return false;
-    // `type === 'atrule'` is what makes the node an AtRule; PostCSS types `parent` more widely.
-    if (node.type === 'atrule' && (node as AtRule).name === 'theme') return true;
-    return insideTheme(node.parent);
-};
 
 /** Every declaration, with its file. */
 const declarations = (): { file: string; decl: Declaration }[] =>
@@ -109,8 +67,7 @@ describe('design tokens, the stylesheet half', () => {
 
     it('repeats no colour-bearing declaration across SFC style blocks', () => {
         const sfcDeclarations = declarations().filter(
-            ({ file, decl }) =>
-                file !== path.relative(ROOT, MAIN_CSS) && COLOR_PROPERTY.test(decl.prop)
+            ({ file, decl }) => file !== MAIN_CSS && COLOR_PROPERTY.test(decl.prop)
         );
         // Not vacuous: the SFC blocks do hold colour-bearing declarations.
         expect(sfcDeclarations.length).toBeGreaterThanOrEqual(5);
@@ -198,9 +155,6 @@ describe('design tokens, the stylesheet half', () => {
         expect([variations.lighten, variations.darken]).toEqual([2, 2]);
     });
 });
-
-/** Reads a file at the repo root. */
-const readRoot = (file: string): string => readFileSync(path.resolve(ROOT, file), 'utf8');
 
 /** Every colour value the theme declares, either theme, lower case. */
 const themeValues = (): Set<string> =>
