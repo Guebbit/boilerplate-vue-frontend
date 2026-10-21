@@ -54,7 +54,7 @@ const { hasImage } = defineProps<{
 </script>
 
 <template>
-    <CardDetail class="detail-hero grid items-center gap-5 sm:grid-cols-term">
+    <CardDetail class="detail-hero surface-glow grid items-center gap-5 sm:grid-cols-term">
         <LazyImage
             v-if="hasImage"
             :src="imageUrl"
@@ -91,10 +91,8 @@ const { hasImage } = defineProps<{
 </template>
 
 <style scoped>
-/* soft accent glow in the hero corner, driven by the page accent */
+/* the glow's structure is `.surface-glow` in main.css; this is its colour, the page accent */
 .detail-hero {
-    background:
-        radial-gradient(circle at top right, rgb(var(--detail-accent) / 0.16), transparent 38%),
-        rgb(var(--v-theme-surface));
+    --glow-color: var(--detail-accent);
 }
 </style>

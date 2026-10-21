@@ -315,3 +315,31 @@
 .v-application .v-data-table-headers--loading {
     opacity: 1;
 }
+
+/**
+ * A soft two-corner colour glow over the surface, shared by the heroes that draw one.
+ *
+ * Parameters are custom properties the owner sets: `--glow-color` (an `r g b` theme triplet),
+ * `--glow-strength` and `--glow-reach` for the top-right glow, and optionally `--glow-far-color`
+ * and `--glow-far-strength` for the bottom-left one (alpha 0 draws nothing).
+ *
+ * Deliberately OUTSIDE `@layer`, for the same reason as the rules above: it must beat Vuetify's
+ * layered flat-card background. See `docs/theory/design-system.md#scoped-styles`.
+ */
+.surface-glow {
+    --glow-strength: 0.16;
+    --glow-reach: 38%;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgb(var(--glow-color) / var(--glow-strength)),
+            transparent var(--glow-reach)
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgb(var(--glow-far-color, var(--glow-color)) / var(--glow-far-strength, 0)),
+            transparent var(--glow-reach)
+        ),
+        rgb(var(--v-theme-surface));
+}

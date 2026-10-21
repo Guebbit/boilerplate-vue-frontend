@@ -111,8 +111,6 @@ A new collision, or a listed one that stops colliding, fails the spec by name.
 
 ## The reasoned escape hatch
 
-## The reasoned escape hatch
-
 A one-off that no token covers takes an inline disable, and the disable has to say why:
 
 ```vue
@@ -144,6 +142,27 @@ prop (`color`, `bg-color`…) takes a theme name; so does a status map in a scri
 The boot surfaces use the same colours. The splash is painted before any JavaScript runs, so
 `index.html` repeats the theme's `background` and `on-background` as literals, and a spec holds them
 to the theme's values. The address bar follows the theme through `useThemeColorMeta`.
+
+## Scoped styles
+
+Tailwind classes are the default. A SFC `<style scoped>` block is for what a class cannot say: a
+multi-layer gradient, a sticky table cell, a Vuetify token raise with a written reason.
+
+- Theme colours only (`var(--v-theme-X)`, `--detail-accent`), never a literal.
+- A declaration used in two SFCs moves to a class in `src/styles/main.css`, parameterised by custom
+  properties. `.surface-glow` is the example: the hero glow's structure lives once, each hero sets
+  its own colour and numbers.
+- A shared class that must beat a Vuetify component background sits outside `@layer`, as the other
+  unlayered rules there do.
+- `tests/cross-cutting/design-tokens.spec.ts` guards it: no literal, no unknown theme name, no
+  undeclared breakpoint, and no colour-bearing declaration repeated across SFC blocks.
+
+```mermaid
+flowchart LR
+    SFC["SFC style block"] --> Spec["design-tokens.spec<br/><i>literal · theme name · breakpoint · repeat</i>"]
+    Spec -->|"repeated"| Main["class in main.css<br/><i>.surface-glow</i>"]
+    Spec -->|"unique"| Stay["stays scoped"]
+```
 
 ## Hover is not a cue on touch
 
