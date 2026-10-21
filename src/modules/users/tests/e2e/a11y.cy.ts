@@ -40,6 +40,15 @@ sweepA11y(
                 cy.get('[data-test=user-manage-access]').click();
                 cy.get('[data-test=user-access-dialog]').should('be.visible');
             }
+        },
+        {
+            // The pause-checkout dialog: a date field, a reason and a note inside a modal.
+            name: 'user detail, pause checkout dialog',
+            route: userDetail,
+            prepare: () => {
+                cy.get('[data-test=user-pause-checkout]').click();
+                cy.get('[data-test=user-purchase-hold-dialog]').should('be.visible');
+            }
         }
     ],
     'admin'
