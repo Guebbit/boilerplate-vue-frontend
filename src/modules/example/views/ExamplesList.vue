@@ -202,7 +202,7 @@ const handleDelete = (example: Example) =>
                         hide-details
                         @update:model-value="handleSearch"
                     />
-                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
+                    <PageSizeSelect v-model="pageSize" />
                 </div>
                 <ListSearchActions @reset="handleReset">
                     <v-spacer />

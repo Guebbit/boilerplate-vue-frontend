@@ -214,7 +214,6 @@ void fetchPage({ ...filters });
                     <PageSizeSelect
                         v-model="filters.pageSize"
                         :sizes="pageSizeOptions"
-                        :label="t('generic.page-size')"
                         @update:model-value="handleSearch"
                     />
                 </div>

@@ -608,7 +608,7 @@ const handleExport = () => {
                         data-test="filter-deleted"
                         hide-details
                     />
-                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
+                    <PageSizeSelect v-model="pageSize" />
                 </div>
                 <v-checkbox
                     v-if="isStaff"

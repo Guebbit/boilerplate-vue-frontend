@@ -152,7 +152,7 @@ const { handleSearch, handleReset } = useListSearch({
                         item-value="value"
                         hide-details
                     />
-                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
+                    <PageSizeSelect v-model="pageSize" />
                 </div>
                 <ListSearchActions :loading="loading" @reset="handleReset" />
             </form>

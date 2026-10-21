@@ -45,11 +45,11 @@ Components that use Vuetify components internally (`v-number-input`, etc.) must 
 import { mount } from '@vue/test-utils';
 import vuetify from '@/ui/vuetify';
 
-const mountCounter = (props = {}) =>
-    mount(FormCounterInput, { props, global: { plugins: [vuetify] } });
+const mountSelect = (props = {}) =>
+    mount(PageSizeSelect, { props, global: { plugins: [vuetify] } });
 ```
 
-`tests/unit/ui/form-counter-input.spec.ts` and `tests/unit/app/app-navigation.spec.ts` are the two examples.
+`tests/unit/ui/page-size-select.spec.ts` and `tests/unit/app/app-navigation.spec.ts` are the two examples.
 
 ### Store tests — stubbing the network boundary
 

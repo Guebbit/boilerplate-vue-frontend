@@ -2,19 +2,20 @@
 /**
  * @module
  * The page-size picker every paginated list repeated verbatim: a `v-select` over a small
- * set of row counts, bound straight to the toolkit's own `pageSize` ref. Does no i18n of its
- * own — `label` arrives already translated, same as `ListPagination`'s `ariaLabel`.
+ * set of row counts, bound straight to the toolkit's own `pageSize` ref. The label defaults to
+ * the shared "Page size" string; a caller passes its own only to say something else.
  */
+import { useI18n } from 'vue-i18n';
 import { DEFAULT_PAGE_SIZES } from './page-size-options.ts';
 
 /**
- * Props of the picker: the translated label and the offered row counts.
+ * Props of the picker: an optional label and the offered row counts.
  */
 const { label, sizes = DEFAULT_PAGE_SIZES } = defineProps<{
     /**
-     * Already-translated label for the select.
+     * Already-translated label for the select. Defaults to `generic.page-size`.
      */
-    label: string;
+    label?: string;
     /**
      * Row counts offered. Defaults to {@link DEFAULT_PAGE_SIZES}.
      */
@@ -27,12 +28,17 @@ const { label, sizes = DEFAULT_PAGE_SIZES } = defineProps<{
  * always initialises it.
  */
 const modelValue = defineModel<number | undefined>({ required: true });
+
+/**
+ * Translation function, for the default label.
+ */
+const { t } = useI18n();
 </script>
 
 <template>
     <v-select
         v-model="modelValue"
-        :label="label"
+        :label="label ?? t('generic.page-size')"
         :items="sizes.map((value) => ({ value, label: String(value) }))"
         item-title="label"
         item-value="value"

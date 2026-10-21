@@ -103,7 +103,7 @@ of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modu
 | `route-link.ts` | its whole reason to exist is a route that may not resolve because the module owning it may not be in this build — meaningless in an app with no modules |
 
 Three near misses show where the line falls, because each survives perfectly well in an app with no
-modules and none is imported by the registry: `src/ui/molecules/FormCounterInput.vue` imports
+modules and none is imported by the registry: `src/ui/molecules/PageSizeSelect.vue` imports
 nothing at all, `src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and
 drives its locale-prefixed routes, and `src/modules/example/store.ts` is one domain's own state
 rather than shared state. None of the three belongs to the module system; each
