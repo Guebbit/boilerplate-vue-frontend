@@ -353,7 +353,7 @@ flowchart TD
 ```
 
 **Which proof the dialog asks for is the server's answer, not the client's guess.** On open it calls
-`GET /account/reauth` (`reauthMethods()` on the session store) and shows the first method listed:
+`GET /account/reauth` (`reauthMethods()` in `infrastructure/reauth.ts`) and shows the first method listed:
 
 - `password` — the password field.
 - `email` — an account with no password (it signed up through a provider): a "send code" button
@@ -378,7 +378,7 @@ the dialog that is the difference between one prompt and five stacked on top of 
 
 `ReauthDialog.vue` lives in `app/` and the call it makes lives in the session store (`infrastructure/session.ts`),
 so the shell never imports this module — nor does the "resend verification" banner, which reads the
-session viewer's `verified` flag and calls the session store's `requestEmailVerification()`. The
+session viewer's `verified` flag and calls `requestEmailVerification()` from `infrastructure/email-verification.ts`. The
 store holding the dialog's open/closed state lives in
 `infrastructure/http/` rather than `ui/` — the interceptor reads it directly, and the
 infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for the rule.

@@ -159,8 +159,8 @@ Reading them as one is the usual source of confusion.
 | `src/ui/**`                          | nowhere: it takes a prop and emits a model. It may not _have_ behaviour |
 
 The payoff is not tidiness. A call sitting one step out is testable without mounting anything,
-reusable by a second component, and mockable in one place — `persistLocalePreference` on the
-session store is the reference case, five unit tests and no component in sight.
+reusable by a second component, and mockable in one place — `persistLocalePreference` in
+`infrastructure/locale-preference.ts` is the reference case, five unit tests and no component in sight.
 
 ### The corollary that trips people up
 

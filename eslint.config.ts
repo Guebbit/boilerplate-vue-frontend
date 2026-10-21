@@ -154,6 +154,8 @@ const boundariesFiles = [
     { pattern: 'src/demo-modules.ts', category: 'demo-manifest' },
     { pattern: 'src/modules/*/tests/**/*.ts', category: 'spec' },
     { pattern: 'src/infrastructure/session.ts', category: 'infra-app-state' },
+    { pattern: 'src/infrastructure/reauth.ts', category: 'infra-app-state' },
+    { pattern: 'src/infrastructure/locale-preference.ts', category: 'infra-app-state' },
     { pattern: 'src/infrastructure/observability/**/*.ts', category: 'infra-app-state' }
 ];
 

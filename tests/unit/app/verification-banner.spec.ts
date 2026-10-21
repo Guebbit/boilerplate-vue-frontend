@@ -10,17 +10,20 @@ import { createPinia } from 'pinia';
 import AppVerificationBanner from '@/app/components/AppVerificationBanner.vue';
 import vuetify from '@/ui/vuetify';
 
-/** Stub for the session store's `requestEmailVerification`. */
-const requestEmailVerification = vi.fn();
+/** Stub for the resend call. */
+const requestEmailVerification = vi.fn<() => unknown>();
 
-/** The mocked session store: a viewer (or none) and the resend action. */
+/** The mocked session store: a viewer, or none. */
 const session = {
-    viewer: ref<{ email: string; verified: boolean } | undefined>(undefined),
-    requestEmailVerification
+    viewer: ref<{ email: string; verified: boolean } | undefined>(undefined)
 };
 
 vi.mock('@/infrastructure/session.ts', () => ({
-    useSessionStore: () => session,
+    useSessionStore: () => session
+}));
+
+vi.mock('@/infrastructure/email-verification.ts', () => ({
+    requestEmailVerification: () => requestEmailVerification(),
     emailVerifyResendRetryAfter: () => undefined
 }));
 

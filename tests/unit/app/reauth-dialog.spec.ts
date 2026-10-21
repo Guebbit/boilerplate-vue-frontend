@@ -2,12 +2,12 @@
  * `ReauthDialog` — never mounted anywhere before this: `step-up.spec.ts` says so
  * explicitly, driving `useReauthPromptStore()` directly to cover the INTERCEPTOR's park/replay
  * mechanics instead. This is the other half — the dialog's own job once the store is open: submit
- * calls `useSessionStore().reauth()`, success resolves the prompt, a wrong password shows inline and
+ * calls `useReauthStore().reauth()`, success resolves the prompt, a wrong password shows inline and
  * stays open, and closing any other way (cancel) rejects it.
  *
  * `useReauthPromptStore` is the REAL store, not mocked — its open/close wiring is exactly what
- * this component exists to drive, so faking it would test nothing. `useSessionStore` is mocked: its
- * own `reauth()` call is `session.spec.ts`'s job, not this dialog's.
+ * this component exists to drive, so faking it would test nothing. `useReauthStore` is mocked: its
+ * own `reauth()` call is `reauth.spec.ts`'s job, not this dialog's.
  *
  * The 422-vs-anything-else branch this dialog's error message takes is a separate, narrower
  * concern covered by `reauth-dialog-error-message.spec.ts` — kept in its own file since it
@@ -23,21 +23,23 @@ import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 
-/** Stub for the session store's `reauth`. */
+/** Stub for the reauth store's `reauth`. */
 const reauth = vi.fn();
 
-/** Stub for the session store's `reauthMethods`. */
-const reauthMethods = vi.fn();
+/** Stub for `reauthMethods`. */
+const reauthMethods = vi.fn<() => Promise<string[]>>();
 
-/** Stub for the session store's `sendReauthCode`. */
-const sendReauthCode = vi.fn();
+/** Stub for `sendReauthCode`. */
+const sendReauthCode = vi.fn<() => Promise<number>>();
 
 /** Whether the mocked store reports a re-authentication in flight. */
 const reauthing = ref(false);
 
-vi.mock('@/infrastructure/session.ts', () => ({
+vi.mock('@/infrastructure/reauth.ts', () => ({
     reauthSendRetryAfter: (error: { retryAfter?: number }) => error.retryAfter,
-    useSessionStore: () => ({ reauth, reauthMethods, sendReauthCode, reauthing })
+    reauthMethods: () => reauthMethods(),
+    sendReauthCode: () => sendReauthCode(),
+    useReauthStore: () => ({ reauth, reauthing })
 }));
 
 /** Mounts the dialog with the plugins it needs. */

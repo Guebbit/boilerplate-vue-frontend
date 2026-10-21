@@ -19,7 +19,11 @@ import { onUnmounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { emailVerifyResendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
+import {
+    emailVerifyResendRetryAfter,
+    requestEmailVerification
+} from '@/infrastructure/email-verification.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 /**
@@ -37,12 +41,6 @@ const { addMessage } = useNotificationsStore();
  * unlike the account module's full record, which only the profile page fetches.
  */
 const { viewer } = storeToRefs(useSessionStore());
-
-/**
- * Re-sends the address-verification email — the session store owns the call, since it also owns
- * the `verified` flag this banner keys on.
- */
-const { requestEmailVerification } = useSessionStore();
 
 /**
  * Seconds left on the server's own resend cooldown, counted down to re-enable the button. Zero

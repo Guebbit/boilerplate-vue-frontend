@@ -277,7 +277,10 @@ remembering:
    `stores/addresses.ts` / `stores/oauth.ts` / `stores/two-factor.ts` each hold state scoped to the
    one component that renders it. The shell knows only _someone is signed in, here is their name and
    picture, here is their role_ — the second seam divides responsibilities within the account
-   domain, without moving anything across the session/account boundary.
+   domain, without moving anything across the session/account boundary. The shell's other calls
+   that need a session but not the credential lifecycle — the step-up re-proof, the verification
+   resend and the language preference — sit in their own files beside `session.ts`
+   (`reauth.ts`, `email-verification.ts`, `locale-preference.ts`).
 
 ### The honest scorecard
 

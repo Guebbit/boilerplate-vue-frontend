@@ -6,7 +6,7 @@
  * can close it; and it is ONE polite live region. The products lookup is the real composable over
  * the real products store, with its network read stubbed to answer from a small catalogue.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';

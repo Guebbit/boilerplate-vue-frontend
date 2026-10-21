@@ -20,16 +20,16 @@ const push = vi.fn().mockResolvedValue(undefined);
 /** The mocked current route, with a param and a query the switch must keep. */
 const currentRoute = { params: { id: '42' }, query: { tab: 'details' } };
 
-/** Stub for the session store's `persistLocalePreference`. */
-const persistLocalePreference = vi.fn();
+/** Stub for `persistLocalePreference`. */
+const persistLocalePreference = vi.fn<(locale: string) => unknown>();
 
 vi.mock('vue-router', () => ({
     useRoute: () => currentRoute,
     useRouter: () => ({ replace, push })
 }));
 
-vi.mock('@/infrastructure/session.ts', () => ({
-    useSessionStore: () => ({ persistLocalePreference })
+vi.mock('@/infrastructure/locale-preference.ts', () => ({
+    persistLocalePreference: (locale: string) => persistLocalePreference(locale)
 }));
 
 vi.mock('vue-i18n', async (importOriginal) => {

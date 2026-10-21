@@ -40,7 +40,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
-import { emailVerifyResendRetryAfter } from '@/infrastructure/session.ts';
+import { emailVerifyResendRetryAfter } from '@/infrastructure/email-verification.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 

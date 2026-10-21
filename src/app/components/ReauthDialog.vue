@@ -6,7 +6,7 @@
  * for an account with no password — a "send code" button and a field for the mailed code. On
  * An account with a second factor armed gets one more field when the server's challenge asks for
  * it (`details.methods` has `otp`): the code is sent beside the first proof, in one call. On
- * submit it calls `useSessionStore().reauth()` itself — the interceptor that opened it only needed
+ * submit it calls `useReauthStore().reauth()` itself — the interceptor that opened it only needed
  * to know when a fresh session exists, not how one gets there — and a wrong answer stays open for
  * another try rather than closing. See docs/modules/account.md.
  */
@@ -16,7 +16,12 @@ import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { reauthSendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
+import {
+    reauthMethods,
+    reauthSendRetryAfter,
+    sendReauthCode,
+    useReauthStore
+} from '@/infrastructure/reauth.ts';
 import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
 import type { ReauthMethod, ReauthRequest } from '@types';
 
@@ -33,7 +38,7 @@ const reauthDialog = useReauthPromptStore();
 /**
  * Whether a re-authentication call is in flight.
  */
-const { reauthing } = storeToRefs(useSessionStore());
+const { reauthing } = storeToRefs(useReauthStore());
 
 /**
  * Id of the body copy, referenced by the dialog's `aria-describedby`.
@@ -135,8 +140,7 @@ onUnmounted(() => {
  * @returns A promise settling once the list is known; a failure shows in the dialog.
  */
 const loadMethods = () =>
-    useSessionStore()
-        .reauthMethods()
+    reauthMethods()
         .then((list) => {
             methods.value = list;
             if (list[0] === 'password') void nextTick(() => passwordField.value?.focus());
@@ -202,7 +206,7 @@ const submit = () => {
         proof.value.method === 'password'
             ? 'reauth-dialog.error-wrong-password'
             : 'reauth-dialog.error-wrong-code';
-    return useSessionStore()
+    return useReauthStore()
         .reauth(proof.value)
         .then(() => {
             reauthDialog.resolveStepUp();
@@ -226,8 +230,7 @@ const submit = () => {
  */
 const sendCode = () => {
     errorMessage.value = undefined;
-    return useSessionStore()
-        .sendReauthCode()
+    return sendReauthCode()
         .then((resendAfter) => {
             startCooldown(resendAfter);
             sent.value = true;

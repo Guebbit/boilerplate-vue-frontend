@@ -45,9 +45,11 @@ const held = ref<string[]>([]);
 const session = {
     isAuth: ref(false),
     viewer: ref<{ email: string } | undefined>(undefined),
-    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`),
-    persistLocalePreference: vi.fn()
+    can: (action: string, subject: string) => held.value.includes(`${action} ${subject}`)
 };
+
+/** Stub for `persistLocalePreference`, which the language entries call. */
+const persistLocalePreference = vi.fn<(locale: string) => unknown>();
 
 /**
  * Which of the auth routes this build ships.
@@ -224,6 +226,10 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/infrastructure/session.ts', () => ({
     useSessionStore: () => session
+}));
+
+vi.mock('@/infrastructure/locale-preference.ts', () => ({
+    persistLocalePreference: (locale: string) => persistLocalePreference(locale)
 }));
 
 /**
@@ -775,7 +781,7 @@ describe('Navigation', () => {
                     expect(replaceSpy).toHaveBeenCalledWith(
                         expect.objectContaining({ params: { locale: other } })
                     );
-                    expect(session.persistLocalePreference).toHaveBeenCalledWith(other);
+                    expect(persistLocalePreference).toHaveBeenCalledWith(other);
                 });
         });
     });

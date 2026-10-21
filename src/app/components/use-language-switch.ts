@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { supportedLanguages } from '@/i18n';
 import { languageLabel } from '@/i18n/language-label.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import { persistLocalePreference } from '@/infrastructure/locale-preference.ts';
 
 /**
  * The choices, the active one, and the action. Call it from `setup`.
@@ -22,9 +22,9 @@ import { useSessionStore } from '@/infrastructure/session.ts';
  * product page keeps showing the title it fetched in the language the visitor just left.
  *
  * `persistLocalePreference` is deliberately NOT awaited: the page must be in the new language
- * before the account endpoint has answered, and a failed write must not un-switch it. The session
- * store owns remembering the choice for whoever can have one remembered; this does not know
- * whether anyone is signed in.
+ * before the account endpoint has answered, and a failed write must not un-switch it. `locale-preference.ts`
+ * owns remembering the choice for whoever can have one remembered; this does not know whether
+ * anyone is signed in.
  *
  * @returns The language codes, the active one, a choice's label, and the switch.
  */
@@ -44,7 +44,7 @@ export const useLanguageSwitch = () => {
      *  locale, or on `/` (locale recalculated) if that navigation fails.
      */
     const switchLanguage = (newLocale: string) => {
-        void useSessionStore().persistLocalePreference(newLocale);
+        void persistLocalePreference(newLocale);
         return (
             router
                 .replace({

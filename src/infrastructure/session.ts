@@ -6,6 +6,11 @@
  * `isAuth` derives from session AND viewer together, never either alone, so a
  * restored-but-not-yet-identified session cannot be read as authenticated.
  *
+ * Concerns, each its own block below: credential, viewer, abilities, idle timeout, cross-tab
+ * sync, logout. The step-up re-proof (`reauth.ts`), the verification-mail resend
+ * (`email-verification.ts`) and the language preference (`locale-preference.ts`) share no state
+ * with them and live beside this file.
+ *
  * Which of the two modes the deployment runs is read once from `GET /account/session-config`;
  * see `docs/tools/security.md`.
  */
@@ -21,35 +26,16 @@ import {
     refreshToken as apiRefreshToken,
     logout as apiLogout,
     logoutAll as apiLogoutAll,
-    updateAccount as apiUpdateAccount,
-    reauth as apiReauth,
-    getReauthMethods as apiGetReauthMethods,
-    sendReauthCode as apiSendReauthCode,
-    requestEmailVerification as apiRequestEmailVerification,
     touchSession as apiTouchSession
 } from '@api';
-import { ERROR_CODES } from '@api/error-codes';
 import type { PermissionAction } from '@api/permission-actions';
-import {
-    getTokenFromResponse,
-    getPayloadFromResponse,
-    getRetryAfter
-} from '@/infrastructure/http/envelope.ts';
+import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
-import type {
-    Abilities,
-    SessionConfigMode,
-    EmailVerificationRequested,
-    PackedRules,
-    ReauthMethod,
-    ReauthMethods,
-    ReauthRequest,
-    TwoFactorDelivery
-} from '@types';
+import type { Abilities, SessionConfigMode, PackedRules } from '@types';
 import type { AxiosError } from 'axios';
 import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
 
@@ -176,27 +162,6 @@ const applyRememberChoice = (remember?: boolean) => {
         });
     else if (remember === false) deleteCookie(BROWSER_STORAGE_NAME.rememberMe);
 };
-
-/**
- * The server's own resend cooldown from a verification-mail 429, or `undefined` when the rejection
- * was something else. Both `POST /account/verify-request` (the banner) and `POST
- * /account/pending-email/resend` (the profile page) answer it under the one code
- * (`EMAIL_VERIFY_RESEND_TOO_SOON`), so it lives here beside the first call.
- *
- * @param error - The rejected value a verification-mail send threw.
- * @returns Seconds to wait, or `undefined`.
- */
-export const emailVerifyResendRetryAfter = (error: unknown): number | undefined =>
-    getRetryAfter(error, ERROR_CODES.EMAIL_VERIFY_RESEND_TOO_SOON);
-
-/**
- * The seconds a refused step-up code send still has to wait, read off its 429.
- *
- * @param error - The rejected value `sendReauthCode()` threw.
- * @returns Seconds to wait, or `undefined` when this was not that refusal.
- */
-export const reauthSendRetryAfter = (error: unknown): number | undefined =>
-    getRetryAfter(error, ERROR_CODES.TWO_FACTOR_RESEND_TOO_SOON);
 
 /**
  * Store instance: see the module doc above for the `isAuth` derivation rule.
@@ -633,33 +598,6 @@ export const useSessionStore = defineStore('session', () => {
         });
 
     /**
-     * Remembers a signed-in visitor's language choice on their account.
-     *
-     * A guest's choice lives in the URL (`/:locale/...`) and dies with the tab, which is the right
-     * lifetime for someone with no record to write to; a signed-in visitor's account record is the
-     * one place a preference outlives the tab.
-     *
-     * The `isAuth` check is here rather than at the call site because it is a rule about the
-     * preference, not about the button — a caller that forgot it would send an anonymous
-     * `PATCH /account` and get a 401. It is also what keeps `AppLanguageSwitcher` out of this store.
-     *
-     * Best-effort: callers fire it without awaiting, and a failed write is invisible, leaving the
-     * stored preference stale until the next switch. A toast about a preference nobody asked to be
-     * told about is the worse trade.
-     *
-     * @param locale - Language tag the visitor just chose.
-     * @returns Resolves once the write settles, or immediately for a guest. Never rejects.
-     */
-    const persistLocalePreference = (locale: string): Promise<void> =>
-        isAuth.value
-            ? // PATCH, not PUT: this sends `{ locale }` alone, and a PUT's
-              // every omitted field would be cleared instead (RFC 9110 §9.3.4).
-              apiUpdateAccount({ locale })
-                  .then(() => undefined)
-                  .catch(() => undefined)
-            : Promise.resolve();
-
-    /**
      * Drops every trace of the session held here: token, viewer and the `isAuth` cookie, without
      * telling the other tabs — {@link clearSession} is the public action; this is the half a
      * cross-tab broadcast also needs, since re-broadcasting what arrived AS a broadcast would loop.
@@ -803,67 +741,6 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Whether a re-proof is in flight — the step-up dialog's own spinner, so it does not answer
-     * to a login or a signup running behind it.
-     */
-    const reauthing = ref(false);
-
-    /**
-     * Proves who the visitor is again and adopts the re-minted session — the step-up prompt's
-     * one write. Lives here, not in `account`, because the shell renders the prompt on every page
-     * and a session is what it renews.
-     *
-     * @param proof - The tagged body: a password, or the code mailed to an account with none.
-     * @returns A promise resolving once the fresh token is stored; rejects with the API's error
-     *  (a 422 means a wrong password or code — the API keeps 401 for "your session is gone").
-     */
-    const reauth = (proof: ReauthRequest): Promise<void> => {
-        reauthing.value = true;
-        return apiReauth(proof)
-            .then((data) => {
-                adoptSession(data);
-            })
-            .finally(() => {
-                reauthing.value = false;
-            });
-    };
-
-    /**
-     * Which ways this account can answer the step-up prompt, in the order to offer them. The
-     * server decides: the kernel that raises the challenge cannot see whether the account has a
-     * password.
-     *
-     * @returns The methods; empty when the account has no password and mail cannot be delivered.
-     */
-    const reauthMethods = (): Promise<ReauthMethod[]> =>
-        apiGetReauthMethods().then(
-            (data) => getPayloadFromResponse<ReauthMethods>(data)?.methods ?? []
-        );
-
-    /**
-     * Mails the visitor their step-up code — only an account with no password may ask.
-     *
-     * @returns The server's own resend cooldown in seconds; counting it down means the 429 the
-     *  endpoint answers inside it is never met.
-     */
-    const sendReauthCode = (): Promise<number> =>
-        apiSendReauthCode('email').then(
-            (data) => getPayloadFromResponse<TwoFactorDelivery>(data)?.resendAfter ?? 0
-        );
-
-    /**
-     * Asks for the address-verification email to be sent again — the shell banner's one action,
-     * so it rides with the `verified` flag it acts on.
-     *
-     * @returns The server's own cooldown in seconds. A caller that counts this down never sees
-     *  the 429 the endpoint answers inside it — the number is the server's, never the client's.
-     */
-    const requestEmailVerification = (): Promise<number> =>
-        apiRequestEmailVerification().then(
-            (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
-        );
-
-    /**
      * Ends THIS session only: the refresh cookie's token is revoked server-side and local state is
      * cleared. Other devices keep their own tokens — `logoutAll` is the one that ends everything.
      *
@@ -919,12 +796,6 @@ export const useSessionStore = defineStore('session', () => {
         refreshToken,
         restoreFromCookies,
         loadViewer,
-        persistLocalePreference,
-        reauthing,
-        reauth,
-        reauthMethods,
-        sendReauthCode,
-        requestEmailVerification,
         clearSession,
         signalExpired,
         signalIdle,
