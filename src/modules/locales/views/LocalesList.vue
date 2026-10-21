@@ -22,7 +22,7 @@ import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '../store.ts';
-import { deactivateThenDelete } from '../domain/deactivate-then-delete.ts';
+import { deactivateThenDelete } from '../deactivate-then-delete.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';

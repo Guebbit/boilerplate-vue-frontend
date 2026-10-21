@@ -178,7 +178,7 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 
 ### The folder is optional
 
-Nine of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`, `locales`,
+Eight of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`,
 `notifications`, `orders`, `products` and `stats` — and the rest have no rule that clears the floor
 above. `ls -d src/modules/*/domain` is the current list; this sentence is not checked against it.
 

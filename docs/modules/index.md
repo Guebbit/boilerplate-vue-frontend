@@ -56,12 +56,12 @@ flowchart LR
         direction TB
         account["account"]
         apiKeys["api-keys"]
-        demo["demo"]
         feedback["feedback"]
         locales["locales"]
         observability["observability"]
         users["users"]
     end
+    demo["example"]
     account -.-> users
     cart -.-> account
     cart -.-> delivery
@@ -82,7 +82,7 @@ flowchart LR
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
     class delivery,inventory,notifications,payments,returns,stats,stockAlerts,webhooks,wishlist supporting;
-    class account,apiKeys,demo,feedback,locales,observability,users generic;
+    class account,apiKeys,feedback,locales,observability,users generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
     style GENERIC fill:#f8fdfc,stroke:#cbd5e1
@@ -100,6 +100,7 @@ beside it.
 | 🟪 violet | `core`       | The reason the product exists. Worth its own client-side rules.                                                                                         |
 | 🟦 blue   | `supporting` | Specific to this business but not a differentiator. Kept plain.                                                                                         |
 | 🟩 teal   | `generic`    | A solved problem. Modelling effort here is waste — a `domain/` folder inside one is a rule of thumb this codebase asks a reviewer to catch, not a spec. |
+| ⬜ none   | —            | `example` only: the template a domain is copied from, which is not a subdomain.                                                                         |
 
 ::: warning Read `core` with one caveat, on a client
 This application owns almost none of the domain it displays. Prices, totals, eligibility and
@@ -142,7 +143,9 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 19      | 3    | 9          | 7       | 49      | 18     | 14            |
+| 19      | 3    | 9          | 6       | 49      | 18     | 14            |
+
+`example` is unclassified: it is the template a new domain is copied from, not a subdomain.
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -150,7 +153,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 | [`api-keys`](./api-keys.md)                                    | `generic`    | `foundation` | 2       | `api-keys`               | 3         | 0          | 0              |
 | [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 1          | 3              |
 | [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 13        | 0          | 3              |
-| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | `generic`    | `example`    | 5       | `example`                | 6         | 0          | 0              |
+| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | —            | `example`    | 5       | `example`                | 6         | 0          | 0              |
 | [`feedback`](./feedback.md)                                    | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
 | [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
 | [`locales`](./locales.md)                                      | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |

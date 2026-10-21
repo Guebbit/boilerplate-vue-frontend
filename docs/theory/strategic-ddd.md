@@ -121,7 +121,10 @@ and everything else should use the simplest thing that works.
 | ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                                     |
 | `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `webhooks`, `wishlist` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `example`, `feedback`, `locales`, `observability`, `users`                                |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `feedback`, `locales`, `observability`, `users`                                           |
+
+`example` is not classified: it is the template a new domain is copied from, and it carries a
+`domain/` so the copy has one to keep or delete.
 
 The same split is drawn as a map in [Modules](../modules/index.md#the-whole-map).
 
@@ -141,10 +144,6 @@ too, and what is in it is the point: reading answers, never making them. `shelfS
 flags the API already sent into one badge; `timeline.ts` words an event the server recorded;
 `reorder.ts` diffs the cart the server returned. Prices and status transitions stay the server's to
 decide — a second implementation here would be drift, not thoroughness.
-
-The reverse is a review question, not a rule: `locales` and `example` are `generic` and carry a
-`domain/` folder, which the rule of thumb above says they should not. Each folder is worth a look
-before it grows.
 
 ::: tip These values are this project's, not a rule for the next one
 A boilerplate has no core domain. The table above is this shop's answer, and the first thing a real
