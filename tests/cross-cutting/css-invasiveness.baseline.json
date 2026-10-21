@@ -2,33 +2,9 @@
     "$comment": "Known invasive-CSS hits, frozen. New hits fail tests/cross-cutting/css-invasiveness.spec.ts; so does an entry that no longer occurs. Shrink with `npm run audit:css -- --shrink-baseline`; never add by hand.",
     "entries": [
         {
-            "file": "src/modules/locales/views/LocaleEntries.vue",
-            "check": "native-title",
-            "anchor": "span title=t('locale-entries-page.key-immutable')",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesList.vue",
-            "check": "native-title",
-            "anchor": "v-chip title=t(`locales-list-page.app-${appKind(app)}-hint`)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/notifications/components/NotificationsBell.vue",
-            "check": "native-title",
-            "anchor": "v-btn title=t('notifications.bell-label')",
-            "count": 1
-        },
-        {
             "file": "src/modules/observability/views/RealtimePlayground.vue",
             "check": "vuetify-prop-first",
             "anchor": "v-card.border-s-4",
-            "count": 1
-        },
-        {
-            "file": "src/modules/orders/views/OrdersList.vue",
-            "check": "native-title",
-            "anchor": "v-btn title=t('orders-export.button-hint')",
             "count": 1
         },
         {
@@ -101,12 +77,6 @@
             "file": "src/ui/organisms/CardMaterialStat.vue",
             "check": "vuetify-prop-first",
             "anchor": "v-card.border-t-4",
-            "count": 1
-        },
-        {
-            "file": "src/ui/organisms/TranslationTabs.vue",
-            "check": "native-title",
-            "anchor": "span title=t('translation-tabs.draft-hint')",
             "count": 1
         }
     ]

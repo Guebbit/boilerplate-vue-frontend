@@ -167,13 +167,20 @@ const handlePick = (tag: string | null) => {
                 <span
                     v-if="locale.active === false"
                     class="ml-2 rounded-sm px-1 text-xs opacity-70"
-                    :title="t('translation-tabs.draft-hint')"
                     :data-test="`translation-tab-draft-${locale.tag}`"
                 >
                     {{ t('translation-tabs.draft') }}
                 </span>
             </v-tab>
         </v-tabs>
+
+        <p
+            v-if="activeLocale?.active === false"
+            class="mt-2 text-sm opacity-70"
+            data-test="translation-draft-hint"
+        >
+            {{ t('translation-tabs.draft-hint') }}
+        </p>
 
         <v-btn
             v-if="activeLocale && activeLocale.tag !== fallbackTag"

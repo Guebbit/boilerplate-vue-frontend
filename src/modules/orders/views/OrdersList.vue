@@ -624,7 +624,6 @@ const handleExport = () => {
                         variant="tonal"
                         color="secondary"
                         data-test="orders-export"
-                        :title="t('orders-export.button-hint')"
                         :disabled="exporting"
                         :loading="exporting"
                         @click="handleExport"

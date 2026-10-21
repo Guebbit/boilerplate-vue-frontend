@@ -123,7 +123,6 @@ const focusPanel = () => {
                     icon
                     variant="text"
                     :aria-label="bellLabel"
-                    :title="t('notifications.bell-label')"
                     data-test="notifications-bell"
                 >
                     <Bell :size="20" aria-hidden="true" />

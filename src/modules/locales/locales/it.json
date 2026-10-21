@@ -29,6 +29,8 @@
         "column-active": "Attiva",
         "button-dictionary": "Dizionario",
         "column-apps": "App",
+        "app-kind-backend": "API",
+        "app-kind-frontend": "Client",
         "app-backend-hint": "La copia dell’API: l’API può rispondere in questa lingua — c’è un file di dizionario distribuito.",
         "app-frontend-hint": "La copia di un client: un dizionario è scaricabile per questa lingua.",
         "table-caption": "Lingue",

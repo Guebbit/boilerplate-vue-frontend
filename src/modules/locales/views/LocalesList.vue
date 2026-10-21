@@ -299,25 +299,14 @@ onMounted(() => {
 
             <template v-slot:[`item.apps`]="{ item }">
                 <div class="flex gap-1">
-                    <!--
-                        A native title rather than a v-tooltip: the apps are the field doing
-                        the real work, and the explanation has to reach a screen reader too — an
-                        ARIA tooltip node with no name fails axe. A non-interactive chip renders
-                        as a role-less span, so the explanation is a visually-hidden sibling
-                        rather than an `aria-label` (`aria-prohibited-attr`).
-                    -->
                     <v-chip
                         v-for="app in item.apps"
                         :key="app"
                         size="small"
                         variant="tonal"
                         :color="appKind(app) === 'backend' ? 'tertiary' : 'secondary'"
-                        :title="t(`locales-list-page.app-${appKind(app)}-hint`)"
                     >
                         {{ localesStore.appLabel(app) }}
-                        <span class="sr-only">
-                            {{ t(`locales-list-page.app-${appKind(app)}-hint`) }}
-                        </span>
                     </v-chip>
                 </div>
             </template>
@@ -385,6 +374,28 @@ onMounted(() => {
                 </div>
             </template>
         </DataTable>
+
+        <!-- What the two chip colours in the Apps column mean, visible rather than a tooltip. -->
+        <ul
+            v-if="capabilities.length > 0"
+            class="mt-3 flex list-none flex-col gap-1 p-0 text-sm"
+            data-test="locales-app-legend"
+        >
+            <li
+                v-for="kind in ['backend', 'frontend'] as const"
+                :key="kind"
+                class="flex items-center gap-2"
+            >
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="kind === 'backend' ? 'tertiary' : 'secondary'"
+                >
+                    {{ t(`locales-list-page.app-kind-${kind}`) }}
+                </v-chip>
+                {{ t(`locales-list-page.app-${kind}-hint`) }}
+            </li>
+        </ul>
 
         <LanguageFormDialog
             ref="languageDialog"
