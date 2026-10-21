@@ -51,6 +51,7 @@ import { VIEWPORTS } from './scripts/e2e/viewports';
 import { windowFor, withDesktopPointer, withWindowSize } from './scripts/e2e/browser-launch';
 import { forgetLoginCodes, loginTotpCodeFor, totpCode } from './scripts/e2e/totp';
 import { declaredStatuses } from './scripts/e2e/declared-statuses';
+import { assertLiveRateLimitStore } from './scripts/e2e/live-rate-limit-guard';
 import {
     SINGLE_PROCESS_SINK_PORT,
     startWebhookSink,
@@ -165,6 +166,14 @@ export default defineConfig({
          * committed baseline files. See `tests/support/e2e/visual-task.ts`.
          */
         setupNodeEvents(on, config) {
+            /*
+             * A live run without the limiter's Redis URL fails hours in with a 429, so it
+             * refuses to start instead — see `scripts/e2e/live-rate-limit-guard.ts`.
+             */
+            assertLiveRateLimitStore(
+                config.env.liveProfile === true,
+                process.env.NODE_RATE_LIMIT_REDIS_URL
+            );
             /*
              * Retry-passes, recorded rather than lost to `retries` — see
              * `scripts/e2e/flaky-report.ts`. A sharded run resets the report once, before its
