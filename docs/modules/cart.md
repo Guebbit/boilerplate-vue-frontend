@@ -81,6 +81,11 @@ Checkout lives in this store and not in the orders store, even though it answers
 cart this store is responsible for. Owned from anywhere else, the local cart survives a completed
 order and the header keeps showing items the server has already turned into one.
 
+The store keeps every write to `cart` and its ordering rules (tickets, epoch, seeding, the reset barrier)
+in one file, so "can a poll land over a merge?" is answered by reading one place. What touches no store
+state — the key header, the in-flight retry ladder, the empty-cart shape — lives in
+`composables/idempotent-calls.ts` and `domain/empty-cart.ts`.
+
 Stepping a line's quantity does not call the store directly. `composables/use-line-quantity.ts`
 debounces per-product clicks into one trailing request each — three quick clicks on `+` used to put
 three requests in flight, and the cart ended up showing whichever one the server answered LAST.
@@ -451,13 +456,15 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `composables/use-cart-stock-poll.ts`        | Starts the opt-in stock poll for the lifetime of the page's setup: the interval, the visibility pause, the stop on logout. Registers nothing when the knob is off.                  | [read](../theory/layers.md)           |
 | `composables/use-cart-focus-refresh.ts`     | Reads the cart again when the shopper comes back to the page: the window gets focus or the tab becomes visible.                                                                     | [read](../theory/layers.md)           |
 | `composables/use-guest-cart.ts`             | The guest cart as a composable: the list, its actions, the copy-taking from another tab and the merge key rules.                                                                    | [read](../theory/layers.md)           |
-| `composables/checkout-attempt-storage.ts`   | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded.                                                        | [read](../theory/layers.md)           |
+| `composables/checkout-attempt-storage.ts`   | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded; also picks the key for the next checkout.              | [read](../theory/layers.md)           |
+| `composables/idempotent-calls.ts`           | The transport rules of the keyed calls: the `Idempotency-Key` header, the in-flight retry ladder and which merge refusals are final. Stateless.                                     | [read](../theory/layers.md)           |
 | `composables/use-line-quantity.ts`          | Debounces per-product stepper clicks into one trailing API call each, answering the visitor's own last click locally so the UI never waits on the round trip.                       | [read](../theory/layers.md)           |
 | `domain/checkout-errors.ts`                 | Pure rules over plain data — no store, no component, no axios. Classifies a checkout rejection into one of its verdicts.                                                            | [read](../theory/domain-layer.md)     |
 | `domain/guest-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The guest cart's lines, caps and read-back.                                                                          | [read](../theory/domain-layer.md)     |
 | `domain/merge-report.ts`                    | Pure rules over plain data — no store, no component, no axios. Which lines of a merge answer are worth telling the shopper about.                                                   |
 | `domain/expected-total.ts`                  | Pure rules over plain data. The shown total as minor units and its currency, the shape `POST /cart/checkout` requires.                                                              | [read](../theory/domain-layer.md)     |
 | `domain/checkout-attempt.ts`                | Pure rules over plain data — no store, no component, no axios. The fingerprint that decides whether a checkout is the same call as the last one.                                    | [read](../theory/domain-layer.md)     |
+| `domain/empty-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The known-empty cart a successful checkout leaves.                                                                   | [read](../theory/domain-layer.md)     |
 | `domain/stock-poll.ts`                      | Pure rules over plain data — no store, no component, no axios. What the configured poll interval means: a positive whole number of seconds, else off.                               | [read](../theory/domain-layer.md)     |
 | `domain/index.ts`                           | The domain barrel.                                                                                                                                                                  | [read](../theory/domain-layer.md)     |
 | `domain/quantity.ts`                        | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                          | [read](../theory/domain-layer.md)     |
