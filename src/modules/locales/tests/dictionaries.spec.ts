@@ -28,6 +28,13 @@ describe('flattenDictionary', () => {
     it('answers nothing for an empty dictionary', () => {
         expect(flattenDictionary({})).toEqual([]);
     });
+
+    it('skips a null or non-string leaf instead of throwing', () => {
+        const pasted = { a: null, b: 3, c: { d: 'kept', e: null } } as unknown as Parameters<
+            typeof flattenDictionary
+        >[0];
+        expect(flattenDictionary(pasted)).toEqual([{ key: 'c.d', value: 'kept' }]);
+    });
 });
 
 describe('expandEntries', () => {

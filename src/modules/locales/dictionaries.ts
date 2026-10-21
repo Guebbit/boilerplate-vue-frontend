@@ -26,7 +26,7 @@ import type { TranslationDictionaries } from '@/i18n';
  *
  * @param dictionary - The nested dictionary, e.g. a parsed `src/locales/en.json`.
  * @param prefix - Internal recursion state; leave empty.
- * @returns One `{ key, value }` pair per leaf string, dotted.
+ * @returns One `{ key, value }` pair per leaf string, dotted; non-string leaves are skipped.
  */
 export const flattenDictionary = (
     dictionary: TranslationDictionaries | TranslationDictionaries[] | string[],
@@ -35,6 +35,8 @@ export const flattenDictionary = (
     Object.entries(dictionary).flatMap(([segment, value]) => {
         const key = prefix === '' ? segment : `${prefix}.${segment}`;
         if (typeof value === 'string') return [{ key, value }];
+        // A null, number or boolean is no message: pasted JSON may hold one, and it is skipped.
+        if (typeof value !== 'object' || value === null) return [];
         return flattenDictionary(value, key);
     });
 

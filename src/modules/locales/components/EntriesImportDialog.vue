@@ -16,6 +16,7 @@ import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import type { LocaleEntryInput, LocaleAppDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/i18n';
 import { flattenDictionary } from '../dictionaries';
+import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
@@ -128,17 +129,12 @@ const handleFile = (file: File | File[] | null) => {
  */
 const parsed = computed<{ entries?: LocaleEntryInput[]; error?: string }>(() => {
     if (rawJson.value.trim() === '') return {};
-    // eslint-disable-next-line no-restricted-syntax -- JSON.parse has no non-throwing form; the catch turns hand-typed JSON into a form error
-    try {
-        const dictionary: unknown = JSON.parse(rawJson.value);
-        if (typeof dictionary !== 'object' || dictionary === null || Array.isArray(dictionary))
-            return { error: t('entries-import.error-parse') };
-        const entries = flattenDictionary(dictionary as TranslationDictionaries);
-        if (entries.length === 0) return { error: t('entries-import.error-empty') };
-        return { entries };
-    } catch {
+    const dictionary = parseJsonSafe(rawJson.value);
+    if (typeof dictionary !== 'object' || dictionary === null || Array.isArray(dictionary))
         return { error: t('entries-import.error-parse') };
-    }
+    const entries = flattenDictionary(dictionary as TranslationDictionaries);
+    if (entries.length === 0) return { error: t('entries-import.error-empty') };
+    return { entries };
 });
 
 /**
