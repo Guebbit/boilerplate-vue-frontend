@@ -230,7 +230,9 @@ export const DESIGN_POLICY = {
         /** The highest raw `z-index` allowed: local stacking only; anything above is a token. */
         localZIndexMax: 9,
         /** The spacing step (`--spacing`) a rem length must be a multiple of. */
-        spacingRem: 0.25
+        spacingRem: 0.25,
+        /** `unit-disallowed-list`: units a declaration may not use (`vh` jumps with the mobile URL bar). */
+        disallowedUnits: ['vh']
     },
 
     /**

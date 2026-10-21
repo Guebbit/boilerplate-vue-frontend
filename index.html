@@ -33,22 +33,22 @@
         -->
         <!-- The splash colours are the theme's `background` and `on-background` (src/ui/vuetify/theme.ts). -->
         <style>
-            #app-splash {
+            .app-splash {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                min-height: 100vh;
+                min-height: 100dvh;
                 font-family: system-ui, sans-serif;
                 color: #1d2433;
                 background: #f6f7fb;
             }
             @media (prefers-color-scheme: dark) {
-                #app-splash {
+                .app-splash {
                     color: #e7eaf1;
                     background: #0e1116;
                 }
             }
-            #app-splash__spinner {
+            .app-splash__spinner {
                 width: 2rem;
                 height: 2rem;
                 border: 0.25rem solid currentColor;
@@ -57,7 +57,7 @@
                 animation: app-splash-spin 0.75s linear infinite;
             }
             @media (prefers-reduced-motion: reduce) {
-                #app-splash__spinner {
+                .app-splash__spinner {
                     animation: none;
                 }
             }
@@ -74,8 +74,8 @@
             the page.</noscript
         >
         <div id="app">
-            <div id="app-splash" role="status" aria-label="Loading">
-                <div id="app-splash__spinner" aria-hidden="true"></div>
+            <div class="app-splash" role="status" aria-label="Loading">
+                <div class="app-splash__spinner" aria-hidden="true"></div>
             </div>
         </div>
         <!--

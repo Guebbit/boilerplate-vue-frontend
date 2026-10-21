@@ -2,18 +2,6 @@
     "$comment": "Known invasive-CSS hits, frozen. New hits fail tests/cross-cutting/css-invasiveness.spec.ts; so does an entry that no longer occurs. Shrink with `npm run audit:css -- --shrink-baseline`; never add by hand.",
     "entries": [
         {
-            "file": "index.html",
-            "check": "max-specificity",
-            "anchor": "#app-splash",
-            "count": 2
-        },
-        {
-            "file": "index.html",
-            "check": "max-specificity",
-            "anchor": "#app-splash__spinner",
-            "count": 2
-        },
-        {
             "file": "src/app/components/AppAnalyticsConsentBanner.vue",
             "check": "vuetify-prop-first",
             "anchor": "v-alert.rounded-none",

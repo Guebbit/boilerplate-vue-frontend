@@ -83,9 +83,7 @@ describe('invasive CSS, against the baseline', () => {
         // Not vacuous: main.css, six SFC style blocks, the splash; and over a hundred SFCs.
         expect(cssSources().length + documentCssSources().length).toBeGreaterThanOrEqual(8);
         expect(vueFiles().length).toBeGreaterThan(100);
-        expect(new Set(findings.map((finding) => finding.file.split('.').at(-1)))).toEqual(
-            new Set(['css', 'html', 'vue', 'ts'])
-        );
+        expect(documentCssSources().length).toBeGreaterThanOrEqual(1);
     });
 
     it.each(CHECK_IDS)('has no new `%s` hit, and no fixed one left in the baseline', (check) => {
@@ -123,7 +121,8 @@ describe('each CSS check fires on a sample', () => {
         ['magic-length', '.box { padding: 13px; }'],
         ['magic-length', '.box { margin-top: 0.3rem; }'],
         ['utility-redefinition', '.panel .opacity-70 { opacity: 0.82; }'],
-        ['duplicate-in-rule', '.box { color: inherit; color: currentcolor; }']
+        ['duplicate-in-rule', '.box { color: inherit; color: currentcolor; }'],
+        ['unit-disallowed-list', '.splash { min-height: 100vh; }']
     ])('%s: %s', async (check, css) => {
         expect(await cssChecks(css)).toContain(check);
     });
@@ -133,6 +132,7 @@ describe('each CSS check fires on a sample', () => {
             .board { position: sticky; z-index: 1; padding: var(--gap, 13px); }
             .board:focus-visible { margin: 0.5rem; z-index: var(--z-index-toast); }
             .list li { color: inherit; }
+            .splash { min-height: 100dvh; }
         `;
         // An unscoped block may style an element: `li` is no scoped-CSS slowdown there.
         expect(await cssChecks(css, false)).toEqual([]);

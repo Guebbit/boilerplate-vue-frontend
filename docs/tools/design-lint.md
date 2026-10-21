@@ -112,6 +112,7 @@ error cannot be frozen without a disable on each known line.
 | `magic-length`                     | A px length, or a rem off the 0.25rem step, on a spacing or sizing property                 |
 | `utility-redefinition`             | A selector on a class Tailwind generates (`.opacity-70`)                                    |
 | `block-size`                       | An SFC `<style>` block over 15 declarations                                                 |
+| `unit-disallowed-list`             | A `vh` length (use `dvh`: the mobile address bar moves the viewport)                        |
 | `duplicate-in-rule`                | The same property twice in a rule                                                           |
 | `repeated-custom-property`         | The same `--*` declaration in two SFC blocks                                                |
 | `vuetify-prop-first`               | A static utility on a `v-*` tag that duplicates a prop the component has                    |

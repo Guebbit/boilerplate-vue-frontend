@@ -91,6 +91,10 @@ export const CHECKS = {
         title: 'An SFC `<style>` block over `cssInvasiveness.maxScopedDeclarations` declarations.',
         fix: 'Move the styling to utilities and props; keep only what has no class.'
     },
+    'unit-disallowed-list': {
+        title: 'A declaration uses a disallowed unit (`vh`: the mobile address bar makes it overflow).',
+        fix: 'Use `dvh` (or `svh`/`lvh`), which tracks the visible viewport.'
+    },
     'duplicate-in-rule': {
         title: 'The same property twice in one rule.',
         fix: 'Delete the dead declaration.'
@@ -426,6 +430,16 @@ export const magicLengths = (value: string): string[] =>
         })
         .map(([whole]) => whole);
 
+/**
+ * Whether a value uses a unit, as a number followed by exactly that unit (`dvh` is not `vh`).
+ *
+ * @param value - A declaration value.
+ * @param unit - The unit, e.g. `vh`.
+ * @returns Whether the value holds a number in that unit.
+ */
+const hasUnit = (value: string, unit: string): boolean =>
+    new RegExp(String.raw`(?<![\w-])\d*\.?\d+${unit}\b`).test(value);
+
 /** The rule-level checks, by id. */
 const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
     [
@@ -500,6 +514,13 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
                 .filter(
                     (decl) => LENGTH_PROPERTY.test(decl.prop) && magicLengths(decl.value).length > 0
                 )
+                .map((decl) => declText(decl))
+    ],
+    [
+        'unit-disallowed-list',
+        (rule) =>
+            declsOf(rule)
+                .filter((decl) => KNOBS.disallowedUnits.some((unit) => hasUnit(decl.value, unit)))
                 .map((decl) => declText(decl))
     ],
     [
