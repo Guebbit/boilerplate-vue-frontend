@@ -13,7 +13,8 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { Copy, Search } from 'lucide-vue-next';
+import { Copy } from 'lucide-vue-next';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
@@ -217,20 +218,7 @@ void fetchPage({ ...filters });
                         @update:model-value="handleSearch"
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        :disabled="loading"
-                        data-test="search-submit"
-                    >
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 
