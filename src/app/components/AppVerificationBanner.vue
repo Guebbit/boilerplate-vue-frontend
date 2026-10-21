@@ -102,7 +102,7 @@ const handleResendVerification = () => {
         type="warning"
         variant="tonal"
         density="compact"
-        class="rounded-none"
+        tile
         data-test="verify-banner"
     >
         {{ t('verification-banner.message') }}

@@ -2,48 +2,6 @@
     "$comment": "Known invasive-CSS hits, frozen. New hits fail tests/cross-cutting/css-invasiveness.spec.ts; so does an entry that no longer occurs. Shrink with `npm run audit:css -- --shrink-baseline`; never add by hand.",
     "entries": [
         {
-            "file": "src/app/components/AppAnalyticsConsentBanner.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-alert.rounded-none",
-            "count": 1
-        },
-        {
-            "file": "src/app/components/AppNavPinnedButton.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-btn.min-h-11",
-            "count": 1
-        },
-        {
-            "file": "src/app/components/AppNavPinnedButton.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-btn.min-w-11",
-            "count": 1
-        },
-        {
-            "file": "src/app/components/AppNavPinnedButton.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-btn.sm:min-h-0",
-            "count": 1
-        },
-        {
-            "file": "src/app/components/AppNavPinnedButton.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-btn.sm:min-w-16",
-            "count": 1
-        },
-        {
-            "file": "src/app/components/AppStaffEnrollmentBanner.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-alert.rounded-none",
-            "count": 1
-        },
-        {
-            "file": "src/app/components/AppVerificationBanner.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-alert.rounded-none",
-            "count": 1
-        },
-        {
             "file": "src/modules/account/components/ProfileConnectedAccounts.vue",
             "check": "repeated-custom-property",
             "anchor": ".connected-since { --v-medium-emphasis-opacity: 1 }",
