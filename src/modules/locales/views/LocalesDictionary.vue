@@ -594,6 +594,7 @@ onMounted(() => {
                         The baseline's placeholder is drawn at the theme's medium emphasis, not
                         Vuetify's disabled opacity: it is text the translator must read.
                     -->
+                    <!-- css-allow vuetify-variable -- Vuetify draws a placeholder at disabled opacity and has no prop for it; the baseline is text to read (WCAG 1.4.3) -->
                     <v-text-field
                         :model-value="
                             drafts[cellId(language.tag, item.key)] ??

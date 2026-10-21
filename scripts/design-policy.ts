@@ -242,6 +242,7 @@ export const DESIGN_POLICY = {
     vuetifyPropUtilities: [
         { pattern: '^rounded(?:-.+)?$', props: ['rounded'] },
         { pattern: String.raw`^border(?:-[sebtxy])?(?:-\d+)?$`, props: ['border'] },
+        { pattern: '^border(?:-[sebtxy])?-([a-z-]+)$', props: ['border'], themeColor: true },
         { pattern: '^bg-([a-z-]+)$', props: ['bg-color', 'color'], themeColor: true },
         { pattern: '^text-([a-z-]+)$', props: ['color'], themeColor: true },
         ...(

@@ -22,7 +22,7 @@ import path from 'node:path';
 import postcss from 'postcss';
 import type { AtRule, Comment, Declaration, Root, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
-import { parse as parseSfc } from 'vue/compiler-sfc';
+import { babelParse, parse as parseSfc } from 'vue/compiler-sfc';
 import {
     cssSources,
     documentCssSources,
@@ -777,6 +777,8 @@ interface TemplateNode {
     props?: TemplateProp[];
     /** An element's children. */
     children?: TemplateNode[];
+    /** Class tokens read out of its `:class` binding, filled in by {@link scanTemplate}. */
+    dynamicTokens?: string[];
     /** Where the node starts. */
     loc: { start: { line: number; column: number }; source: string };
 }
@@ -860,9 +862,102 @@ const titleAttribute = (node: TemplateNode): TemplateProp | undefined =>
             (prop.type === NODE.directive && prop.name === 'bind' && prop.arg?.content === 'title')
     );
 
-/** The static class tokens of an element. */
-const classTokens = (node: TemplateNode): string[] =>
-    (staticAttribute(node, 'class') ?? '').split(/\s+/).filter(Boolean);
+/** The static class tokens of an element, plus the ones its `:class` binding can produce. */
+const classTokens = (node: TemplateNode): string[] => [
+    ...(staticAttribute(node, 'class') ?? '').split(/\s+/).filter(Boolean),
+    ...(node.dynamicTokens ?? [])
+];
+
+/**
+ * What a `:class` expression or a script binding contributes: its string literals, the static
+ * parts of its template literals, and the identifiers it names.
+ */
+interface ClassSource {
+    /** Literal text found in it. */
+    strings: string[];
+    /** Identifiers found in it, to be looked up in the script. */
+    names: string[];
+}
+
+/**
+ * Collects the string literals and identifiers anywhere in a Babel AST.
+ *
+ * @param node - Any AST node, or a plain value inside one.
+ * @returns The literals and identifier names found.
+ */
+const classSourceOf = (node: unknown): ClassSource => {
+    const found: ClassSource = { strings: [], names: [] };
+    const visit = (value: unknown): void => {
+        if (Array.isArray(value)) {
+            for (const item of value) visit(item);
+            return;
+        }
+        if (typeof value !== 'object' || value === null) return;
+        const record = value as Record<string, unknown>;
+        if (record.type === 'StringLiteral') found.strings.push(record.value as string);
+        if (record.type === 'TemplateElement')
+            found.strings.push(String((record.value as { cooked?: string }).cooked ?? ''));
+        if (record.type === 'Identifier') found.names.push(String(record.name));
+        for (const [key, child] of Object.entries(record))
+            if (key !== 'loc' && key !== 'extra') visit(child);
+    };
+    visit(node);
+    return found;
+};
+
+/** Class tokens (whitespace split) out of a list of literals. */
+const tokensOf = (strings: string[]): string[] =>
+    strings.flatMap((text) => text.split(/\s+/)).filter(Boolean);
+
+/**
+ * The top-level `<script setup>` bindings of an SFC and what their initialisers hold, so a
+ * `:class="accentClass"` can be followed to the strings behind it.
+ *
+ * @param script - The `<script setup>` source, or `undefined`.
+ * @returns The class source per binding name.
+ */
+const scriptBindings = (script: string | undefined): Map<string, ClassSource> => {
+    const bindings = new Map<string, ClassSource>();
+    if (script === undefined) return bindings;
+    const { program } = babelParse(script, { sourceType: 'module', plugins: ['typescript'] });
+    for (const statement of program.body) {
+        if (statement.type !== 'VariableDeclaration') continue;
+        for (const declarator of statement.declarations)
+            if (declarator.id.type === 'Identifier')
+                bindings.set(declarator.id.name, classSourceOf(declarator.init));
+    }
+    return bindings;
+};
+
+/**
+ * The class tokens an element's `:class` binding can produce: literals in the expression, and
+ * the literals in the bindings it names, followed one level further.
+ *
+ * @param node - The element.
+ * @param bindings - The script's top-level bindings.
+ * @returns The tokens; empty when there is no `:class` or it does not parse.
+ */
+const dynamicClassTokens = (
+    node: TemplateNode,
+    bindings: ReadonlyMap<string, ClassSource>
+): string[] => {
+    const expression = node.props?.find(
+        (prop) =>
+            prop.type === NODE.directive && prop.name === 'bind' && prop.arg?.content === 'class'
+    )?.exp?.content;
+    if (expression === undefined) return [];
+    let source: ClassSource;
+    try {
+        source = classSourceOf(babelParse(`(${expression})`, { plugins: ['typescript'] }).program);
+    } catch {
+        return [];
+    }
+    const first = source.names.flatMap((name) => bindings.get(name) ?? []);
+    const second = first.flatMap((binding) =>
+        binding.names.flatMap((name) => bindings.get(name) ?? [])
+    );
+    return tokensOf([...source.strings, ...[...first, ...second].flatMap((b) => b.strings)]);
+};
 
 /** A class without its variants (`sm:hover:min-h-0` → `min-h-0`), brackets respected. */
 const bareClass = (token: string): string => token.replace(/^(?:(?:\[[^\]]*]|[^:[])*:)*/, '');
@@ -1091,8 +1186,15 @@ export const scanTemplate = (file: string, text: string, context: TemplateContex
         templateParseOptions: { comments: true }
     }).descriptor.template?.ast;
     const roots = isTemplateNode(ast) ? childrenOf(ast) : [];
-    const rootOverrides = rootOverrideHits(file, text, elementsOf(roots));
-    const hits = elementsOf(roots).flatMap((node) =>
+    const bindings = scriptBindings(
+        parseSfc(text, { filename: file }).descriptor.scriptSetup?.content
+    );
+    const elements = elementsOf(roots).map((node) => ({
+        ...node,
+        dynamicTokens: dynamicClassTokens(node, bindings)
+    }));
+    const rootOverrides = rootOverrideHits(file, text, elements);
+    const hits = elements.flatMap((node) =>
         ELEMENT_CHECKS.flatMap(([check, run]) =>
             run(node, context).map(({ line, ...offence }) =>
                 hitOf({

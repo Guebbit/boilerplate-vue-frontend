@@ -169,6 +169,9 @@ describe('each template and script check fires on a sample', () => {
         ['tailwind-important', '<div class="!mt-2" />'],
         ['vuetify-arbitrary-variant', '<div class="[&_.v-field]:bg-surface" />'],
         ['vuetify-variable', '<v-text-field class="[--v-disabled-opacity:0.8]" />'],
+        ['vuetify-prop-first', '<v-card :class="{ \'rounded-none\': x }" />'],
+        ['vuetify-prop-first', "<v-card :class=\"ok ? 'border-t-primary' : ''\" />"],
+        ['vuetify-variable', "<v-text-field :class=\"ok ? '[--v-disabled-opacity:0.8]' : ''\" />"],
         ['native-title', '<span :title="hint">x</span>'],
         ['native-title', '<v-btn title="Export" />']
     ])('%s: %s', (check, template) => {
@@ -178,6 +181,13 @@ describe('each template and script check fires on a sample', () => {
     it('lets a title prop, a layout class and a non-theme class through', () => {
         // `v-card` renders `title` visibly; `w-full` on a card is layout; `bg-gradient` is no colour.
         expect(templateChecks('<v-card title="Orders" class="w-full bg-gradient" />')).toEqual([]);
+    });
+
+    it('lets a :class on a prop-less property through, and follows a binding to its literals', () => {
+        expect(templateChecks('<v-chip :class="{ \'opacity-60\': x }" />')).toEqual([]);
+        const sfc =
+            '<script setup lang="ts">const EDGE = { a: \'border-t-primary\' };\nconst edge = computed(() => EDGE[k]);</script><template><v-card :class="edge" /></template>';
+        expect(sfcChecks(sfc)).toEqual(['vuetify-prop-first']);
     });
 
     it('fires vuetify-root-override on a scoped rule that restyles a Vuetify tag by its class', () => {
