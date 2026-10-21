@@ -21,9 +21,13 @@ import { Download } from 'lucide-vue-next';
 import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import { formatCurrency, formatPercent } from '@/infrastructure/utils/formatters.ts';
+import {
+    formatBucketStart,
+    formatCurrency,
+    formatPercent
+} from '@/infrastructure/utils/formatters.ts';
 import type { SalesCurrency, SalesFigures, SalesStats } from '@types';
-import { bucketLabel, isFlat, percentChange, toCsv } from '../domain';
+import { isFlat, percentChange, toCsv } from '../domain';
 import type { ChartModel } from '../domain';
 import ChartWithTable from './ChartWithTable.vue';
 
@@ -36,9 +40,9 @@ const props = defineProps<{
 }>();
 
 /**
- * Translation function and the active locale.
+ * Translation function.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 /**
  * The money figures a card shows, in the order of the row, with how each is formatted.
@@ -95,11 +99,10 @@ function changeText(change: number | undefined): string {
  */
 function chartsOf(group: SalesCurrency): { sales: ChartModel; orders: ChartModel } {
     const labels = group.buckets.map(({ start }) =>
-        bucketLabel(
+        formatBucketStart(
             start,
             props.sales?.period.timeZone ?? 'UTC',
-            props.sales?.period.interval ?? 'day',
-            locale.value
+            props.sales?.period.interval ?? 'day'
         )
     );
     return {

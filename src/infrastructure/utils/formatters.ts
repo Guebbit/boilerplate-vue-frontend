@@ -11,6 +11,7 @@ import {
     formatCurrency as formatCurrencyBase,
     formatFlag as formatFlagBase
 } from '@guebbit/js-toolkit';
+import type { StatsInterval } from '@types';
 import { getCurrentLocale } from '@/i18n';
 import { minorUnitExponent } from './currency-exponents.ts';
 import { runtimeValue } from '@/infrastructure/runtime-config';
@@ -83,6 +84,27 @@ export const formatUtcDate = (value?: string | null) =>
         locale: getLocale(),
         empty: EMPTY_VALUE,
         format: { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }
+    });
+
+/**
+ * A stats bucket's start as a short axis label, read in the shop's own zone. A bucket starts at the
+ * shop's local midnight as a UTC instant: in the browser's zone a 00:00 Rome bucket would label as
+ * the evening before for a viewer in London.
+ *
+ * @param value - The bucket's first instant, ISO 8601.
+ * @param timeZone - The shop's IANA zone, from the stats answer's `period`.
+ * @param interval - The bucket size: a month shows month and year, anything shorter shows the day.
+ * @returns The short label, e.g. `Oct 12` or `Oct 2026`, or {@link EMPTY_VALUE}.
+ */
+export const formatBucketStart = (value: string, timeZone: string, interval: StatsInterval) =>
+    formatDateTimeBase(value, {
+        locale: getLocale(),
+        empty: EMPTY_VALUE,
+        // `timeZone` makes `Intl.DateTimeFormat` read the instant as that zone's wall clock.
+        format:
+            interval === 'month'
+                ? { timeZone, month: 'short', year: 'numeric' }
+                : { timeZone, day: 'numeric', month: 'short' }
     });
 
 /**
@@ -199,3 +221,33 @@ export const formatFlag = (
     trueLabel: string,
     falseLabel: string
 ) => formatFlagBase(value, trueLabel, falseLabel, EMPTY_VALUE);
+
+/**
+ * The fields a postal address prints on one line. `fullName` is the addressee, when there is one —
+ * a frozen order address names a person, the shop's own address does not.
+ */
+export interface AddressLineParts {
+    /** The addressee, printed first when present. */
+    fullName?: string;
+    /** Street and house number. */
+    street: string;
+    /** Postal code. */
+    zip: string;
+    /** Town or city. */
+    city: string;
+    /** Country, as the record carries it (an ISO code). */
+    country: string;
+}
+
+/**
+ * A postal address as one line, the way a letter head prints it: `Name, Street, Zip City, Country`.
+ *
+ * @param address - The address, when there is one.
+ * @returns The line, or `undefined` when `address` is absent.
+ */
+export const formatAddressLine = (address?: AddressLineParts | null) =>
+    address
+        ? [address.fullName, address.street, `${address.zip} ${address.city}`, address.country]
+              .filter(Boolean)
+              .join(', ')
+        : undefined;

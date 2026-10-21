@@ -2,7 +2,7 @@
 
 ::: tip At a glance
 **Owns** — a customer's order history, the staff's page over every order, the detail screen, and the admin status edit.
-**Depends on** — four modules, and three of those are components it mounts rather than state it reads.
+**Depends on** — four modules: two only for components it mounts, two for a call that makes something happen (the cart's refill, a payment's refund).
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
@@ -27,34 +27,41 @@ flowchart LR
     orders["<b>orders</b>"] ==>|"customer-supplier"| cart["cart"]
     orders["<b>orders</b>"] -.->|"published-language"| delivery["delivery"]
     orders["<b>orders</b>"] ==>|"customer-supplier"| payments["payments"]
+    orders["<b>orders</b>"] -.->|"published-language"| returns["returns"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class cart core;
-    class delivery,payments supporting;
+    class delivery,payments,returns supporting;
     class orders self;
 ```
 
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
-- → `payments` **customer-supplier** — `OrderEdit` calls `useOrderRefund`, which performs a refund. Otherwise **published-language**: Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
+- → `payments` **customer-supplier** — Calls `useOrderRefund` to refund an order from the staff edit screen; also mounts `PaymentPanel`, `RecordOfflinePaymentForm` and `OrderReferenceSearch`, which on their own would be `published-language`.
+- → `returns` **published-language** — Mounts `WithdrawalPanel`; the withdrawal and the order's returns list are the component's own business.
 
 ## The story
 
 The order page is the most composed screen in the application, and it is composed out of other
-people's components. Two of its three edges are `published-language`:
+people's components. Two of its four edges are `published-language`, and a third is mostly components:
 
-| Mounted         | From                        | What this module learns                                  |
-| --------------- | --------------------------- | -------------------------------------------------------- |
-| `PaymentPanel`  | [`payments`](./payments.md) | nothing — not that a provider exists, not what a card is |
-| `ShipmentPanel` | [`delivery`](./delivery.md) | nothing — not what a tracking code is                    |
+| Mounted           | From                        | What this module learns                                  |
+| ----------------- | --------------------------- | -------------------------------------------------------- |
+| `PaymentPanel`    | [`payments`](./payments.md) | nothing — not that a provider exists, not what a card is |
+| `ShipmentPanel`   | [`delivery`](./delivery.md) | nothing — not what a tracking code is                    |
+| `WithdrawalPanel` | [`returns`](./returns.md)   | nothing — not what a return record holds                 |
 
 That is the strongest kind of edge on the map: neither side touches the other's store. The panels
 render their own concern, fetch their own data, and this module holds the layout around them.
 
-::: tip The third edge runs against the server's arrow, deliberately
+The `payments` edge is still `customer-supplier`, because of one import: the staff edit screen
+refunds through `useOrderRefund`. That composable answers one question (is a refund open?) and
+performs one action, so the edge stays narrow, but it is a call, not vocabulary.
+
+::: tip The cart edge runs against the server's arrow, deliberately
 Reaching into `cart` is the **reorder button** — the order page refills the visitor's cart through
 the cart barrel. On the server the arrow points the other way, because a checkout creates an order.
 

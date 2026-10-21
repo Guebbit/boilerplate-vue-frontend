@@ -50,17 +50,18 @@ the domain, and anything that breaks is real coupling worth seeing. Covered in
 A module's imports are its dependency list. What they do not say is what KIND of reach each one is,
 and the kinds differ enormously in what they cost when the upstream moves:
 
-| Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                |
-| -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
-| `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `inventory → products` |
-| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → cart`      |
-| `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`    |
+| Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                   |
+| -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
+| `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `stock-alerts → products` |
+| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → cart`         |
+| `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`       |
 
 ### Where the map lives
 
 In the docblock at the top of each module's `module.ts`, in prose, next to the imports it describes.
 `cart` reaches four siblings, and its docblock says how it depends on each: three `published-language`
-vocabularies (`delivery`, `payments`, `account`) and one `customer-supplier` read (`products`). `published-language` is the cheapest relationship in
+vocabularies (`delivery`, `payments`, `account`) and one `customer-supplier` call (`products`, whose
+cached catalogue it drops after each cart write). `published-language` is the cheapest relationship in
 the table and the one to copy: `delivery` publishes a component and no storage at all.
 
 This used to be a `dependsOn` field on the manifest — a typed array of `{ module, as, because }`
@@ -116,11 +117,13 @@ prose moved to the glossary page.
 DDD's own advice is the part most often skipped: tactical patterns belong in the **core** domain,
 and everything else should use the simplest thing that works.
 
-| Subdomain    | Meaning                                                         | Here                                                                                                 |
-| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                         |
-| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`, `stats`, `notifications`, `returns`, `stock-alerts` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `api-keys`, `example`, `feedback`, `locales`, `observability`, `webhooks`        |
+| Subdomain    | Meaning                                                         | Here                                                                                                             |
+| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                                     |
+| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `webhooks`, `wishlist` |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `example`, `feedback`, `locales`, `observability`, `users`                                |
+
+The same split is drawn as a map in [Modules](../modules/index.md#the-whole-map).
 
 The rule of thumb that follows: **a `generic` module should not carry a `domain/` folder.** A
 pure-rules layer inside authentication or i18n is effort spent on the part of the client that should
@@ -133,10 +136,15 @@ ever consulted. The classification above is still true and still useful to a rea
 to put a new rule; it just is not proven by a passing test any more, the same way `core` never was.
 
 There is deliberately **no** rule, enforced or otherwise, that `core` must have a `domain/`. `cart`
-has one because quantity clamping is a genuine client-side rule. `products` and `orders` are core, and
-their `domain/` folders stay thin (`shelf-state.ts`, `release-date.ts`, `timeline.ts`) — prices
-and status transitions are the server's to decide, and a second implementation here would be
-drift, not thoroughness.
+has one because quantity clamping is a genuine client-side rule. `products` and `orders` have one
+too, and what is in it is the point: reading answers, never making them. `shelfStateOf` ranks the
+flags the API already sent into one badge; `timeline.ts` words an event the server recorded;
+`reorder.ts` diffs the cart the server returned. Prices and status transitions stay the server's to
+decide — a second implementation here would be drift, not thoroughness.
+
+The reverse is a review question, not a rule: `locales` and `example` are `generic` and carry a
+`domain/` folder, which the rule of thumb above says they should not. Each folder is worth a look
+before it grows.
 
 ::: tip These values are this project's, not a rule for the next one
 A boilerplate has no core domain. The table above is this shop's answer, and the first thing a real
@@ -189,13 +197,16 @@ Applying that removed whole barrels (`admin`, `orders`, `realtime`, and later `w
 product page's heart became a contribution to a slot instead of an import) and the stores nobody had
 ever imported.
 
-What survived says something specific about a client. The modules that publish a **store** are the
-ones siblings read or ask to change state: `cart` (asked to refetch by `wishlist`, to refill by
-`orders`) and `products` (read by `cart`, `wishlist` and `inventory`, through `useProductLines` and
-its store). The ones that publish a **component** or a **schema** are answering a narrower question,
-and are the better shape — `PaymentPanel` renders a payment without its caller learning what a
-provider is. `delivery` publishes four components and one read-only composable (`usePreorderSummaries`, a state read handed to `inventory`) and deliberately not its store, because offering
-both would mean offering a wider way to do the same thing, and the wider one always wins.
+What survived says something specific about a client. The modules that publish **state access** are
+the ones siblings read or ask to change state: `cart` publishes its store (asked to refetch by
+`wishlist`, to refill by `orders`), and `products` publishes narrow handles on its store — read by
+`cart`, `wishlist`, `inventory` and `stock-alerts` through `useProductLines` and `shelfStateOf`, and
+asked to drop its cached catalogue by `cart` and `inventory` through `invalidateProductsCache`. The
+ones that publish a **component** or a **schema** are answering a narrower question, and are the
+better shape — `PaymentPanel` renders a payment without its caller learning what a provider is.
+`delivery` publishes four components and one read-only composable (`usePreorderSummaries`, for
+`inventory`'s preorder board) and deliberately not its store, because offering both would mean
+offering a wider way to do the same thing, and the wider one always wins.
 
 ### Why the backend's rule is the opposite
 

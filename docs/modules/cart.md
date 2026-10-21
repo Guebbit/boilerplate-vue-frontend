@@ -2,22 +2,22 @@
 
 ::: tip At a glance
 **Owns** — the cart screen, the cart store, the guest cart that precedes it, and the checkout flow that ends them.
-**Depends on** — [`delivery`](./delivery.md), and only for a component it mounts.
+**Depends on** — [`delivery`](./delivery.md), [`payments`](./payments.md) and [`account`](./account.md) for components it mounts, and [`products`](./products.md) for its cached catalogue and line titles.
 **Breaks if you change** — `badgeQuantity`. The shell's header reads it through the manifest.
 :::
 
-| Fact                    | This module                                                                |
-| ----------------------- | -------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.   |
-| **Screens**             | 1 — `Cart`, which shows a guest `GuestCart` and a signed-in visitor `Cart` |
-| **Store**               | `cart`                                                                     |
-| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)     |
-| **API calls**           | 10                                                                         |
-| **Depends on**          | [`delivery`](./delivery.md) · [`products`](./products.md)                  |
-| **Depended on by**      | [`orders`](./orders.md) · [`wishlist`](./wishlist.md)                      |
-| **Languages**           | `en` · `it`                                                                |
-| **Publishes**           | `useCartStore`                                                             |
-| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                       |
+| Fact                    | This module                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                            |
+| **Screens**             | 1 — `Cart`, which shows a guest `GuestCart` and a signed-in visitor `Cart`                                          |
+| **Store**               | `cart`                                                                                                              |
+| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)                                              |
+| **API calls**           | 10                                                                                                                  |
+| **Depends on**          | [`account`](./account.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) · [`products`](./products.md) |
+| **Depended on by**      | [`orders`](./orders.md) · [`wishlist`](./wishlist.md)                                                               |
+| **Languages**           | `en` · `it`                                                                                                         |
+| **Publishes**           | `useCartStore`                                                                                                      |
+| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                                                                |
 
 ## The map
 
@@ -25,8 +25,10 @@
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
     orders["orders"] ==>|"customer-supplier"| cart["<b>cart</b>"]
-    wishlist["wishlist"] -->|"conformist"| cart["<b>cart</b>"]
+    wishlist["wishlist"] ==>|"customer-supplier"| cart["<b>cart</b>"]
     cart["<b>cart</b>"] -.->|"published-language"| delivery["delivery"]
+    cart["<b>cart</b>"] -.->|"published-language"| payments["payments"]
+    cart["<b>cart</b>"] -.->|"published-language"| account["account"]
     cart["<b>cart</b>"] ==>|"customer-supplier"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
@@ -34,14 +36,17 @@ flowchart LR
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class orders,products core;
-    class delivery,wishlist supporting;
+    class delivery,payments,wishlist supporting;
+    class account generic;
     class cart self;
 ```
 
 - `orders` → **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
-- `wishlist` → **conformist** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
-- → `products` **customer-supplier** — Reads its lines' title and price from the products dictionary in one batched read (`useProductLines`).
+- `wishlist` → **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
+- → `products` **customer-supplier** — Asks the products store to drop its cached catalogue after each cart write (`invalidateProductsCache`), and reads its lines' title and price from the products dictionary in one batched read (`useProductLines`).
 - → `delivery` **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
+- → `payments` **published-language** — Mounts `PaymentMethodSelector`; the checkout learns which method ids exist, never what one costs to offer.
+- → `account` **published-language** — Mounts `AddressPicker` (shipping and billing) and `PurchaseHoldNotice`; the address book and the hold record stay the account's.
 
 ## The story
 

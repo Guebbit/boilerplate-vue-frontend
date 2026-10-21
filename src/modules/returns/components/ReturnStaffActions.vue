@@ -24,6 +24,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
+import { declineReasonSchema } from '../schemas.ts';
 import type { Return } from '@types';
 
 /**
@@ -79,11 +80,7 @@ const declineElement = ref<HTMLFormElement>();
  * Decline needs a reason — a refusal nobody explains is not one.
  */
 const declineSchema = z.object({
-    reason: z
-        .string()
-        .trim()
-        .min(1, { error: () => t('return-staff-actions.error-reason-required') })
-        .max(500)
+    reason: declineReasonSchema
 });
 
 /**

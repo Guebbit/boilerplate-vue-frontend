@@ -6,12 +6,11 @@
  * its call and reports the outcome in place. A second, separate text is the message the BUYER
  * reads: the note stays staff's.
  */
-import { computed, ref, watch, useId } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useDeliveryStore } from '../store.ts';
@@ -48,21 +47,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
- * Whether the dialog fills the screen — it does on a phone.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
 
 /**
  * The store's hold call and its in-flight flag.
@@ -141,13 +125,7 @@ const submit = () => {
 </script>
 
 <template>
-    <v-dialog
-        v-model="isOpen"
-        max-width="480"
-        :fullscreen="fullscreen"
-        :aria-labelledby="titleId"
-        data-test="hold-dialog"
-    >
+    <DialogShell v-model="isOpen" max-width="480" data-test="hold-dialog" v-slot="{ titleId }">
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ t('hold-dialog.title', { number: fulfillmentOrder.number }) }}
@@ -202,5 +180,5 @@ const submit = () => {
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

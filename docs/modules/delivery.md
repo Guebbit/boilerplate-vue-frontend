@@ -199,7 +199,7 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 ## Related pages
 
-- [`cart`](./cart.md) · [`orders`](./orders.md) — the two modules that mount these components
+- [`cart`](./cart.md) · [`orders`](./orders.md) · [`inventory`](./inventory.md) — the three modules that mount these components
 - [`payments`](./payments.md) — the other component-only module
 - [Strategic DDD](../theory/strategic-ddd.md) — reading a `published-language` edge
 - [Adding & Removing a Module](../theory/module-lifecycle.md) — the deletability procedure

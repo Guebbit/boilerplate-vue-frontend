@@ -24,8 +24,8 @@
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    wishlist["<b>wishlist</b>"] -->|"customer-supplier"| cart["cart"]
-    wishlist["<b>wishlist</b>"] ==>|"conformist"| products["products"]
+    wishlist["<b>wishlist</b>"] ==>|"customer-supplier"| cart["cart"]
+    wishlist["<b>wishlist</b>"] -->|"conformist"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -35,7 +35,7 @@ flowchart LR
     class wishlist self;
 ```
 
-- → `products` **conformist** — Joins its saved lines to their product records (`useProductLines`).
+- → `products` **conformist** — Joins its saved lines to their product records (`useProductLines`), read as they are.
 - → `cart` **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
 
 ## The story

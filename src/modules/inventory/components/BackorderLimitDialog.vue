@@ -6,12 +6,11 @@
  * sit below what is already outstanding: those orders stay, only new ones are refused — the hint says
  * so. "Unlimited" sends no cap at all.
  */
-import { ref, watch, useId } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useInventoryStore } from '../store.ts';
@@ -38,21 +37,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
- * Whether the dialog fills the screen — it does on a phone.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
 
 /**
  * The store's write and its in-flight flag.
@@ -112,12 +96,11 @@ const submit = () => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
         max-width="480"
-        :fullscreen="fullscreen"
-        :aria-labelledby="titleId"
         data-test="backorder-limit-dialog"
+        v-slot="{ titleId }"
     >
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
@@ -170,5 +153,5 @@ const submit = () => {
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

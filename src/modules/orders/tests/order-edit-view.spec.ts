@@ -168,7 +168,7 @@ beforeEach(() => {
 
 describe('a list-cache arrival gains actions', () => {
     it('enables Cancel once the forced re-fetch lands', () => {
-        // `status` is not a form field any more — the moves this page renders from
+        // `status` is not a form field — the moves this page renders from
         // `actions` are the cancel/refund/override controls, not a status select, so proving the
         // re-fetch landed means proving THOSE gain their real state.
         signInAsAdmin();

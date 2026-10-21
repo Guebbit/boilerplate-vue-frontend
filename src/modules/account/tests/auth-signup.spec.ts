@@ -101,7 +101,7 @@ describe('useAuthStore.signup', () => {
 
     /**
      * The API takes no file at signup, so the request is JSON whatever the form held — a store
-     * that still built multipart would be refused by a route that no longer mounts multer.
+     * that built multipart would be refused by a route that mounts no multer.
      */
     it('carries every scalar field in the JSON body', () =>
         useAuthStore()

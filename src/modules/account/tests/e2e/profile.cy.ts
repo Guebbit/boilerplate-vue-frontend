@@ -110,8 +110,8 @@ describe('Profile self-service', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();
             // the demo customer's real one; the new one satisfies `usersPasswordSchema` — the
-            // submit is no longer
-            // disabled behind an invalid form, it reveals the errors, so the fixture must pass them.
+            // submit is not disabled behind an invalid form, it reveals the errors, so the fixture
+            // must pass them.
             cy.get('[data-test=current-password] input')
                 .should('not.be.disabled')
                 .type(seedAccount('user').password);
@@ -242,7 +242,7 @@ describe('Profile self-service', () => {
 
         /*
          * The token-spends-and-the-banner-goes arc is NOT here: it needs an account that never
-         * proved its address, and an email change no longer produces one. `registration.cy.ts`
+         * proved its address, and an email change does not produce one. `registration.cy.ts`
          * owns it end to end — "an unverified account shows the banner until the emailed token
          * is spent" — from the signup that actually creates that state.
          */

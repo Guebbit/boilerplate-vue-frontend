@@ -12,6 +12,7 @@
 
 import { ref, shallowRef, computed, onScopeDispose } from 'vue';
 import { defineStore } from 'pinia';
+import { deleteCookie, setCookie } from '@guebbit/js-toolkit';
 import { BROWSER_STORAGE_NAME, THIRTY_DAYS } from '@/infrastructure/browser-storage.ts';
 import {
     getAccount as apiGetAccount,
@@ -154,52 +155,27 @@ export interface SessionViewer {
 }
 
 /**
- * Writes a cookie through the prototype setter rather than `document.cookie`.
+ * Applies a login's "remember me" choice to the `rememberMe` marker, this app's one JS-written
+ * session cookie: `true` (re)starts it for thirty days, `false` removes it, `undefined` (a silent
+ * refresh, a re-proof) keeps whatever marker login left.
  *
- * Going through the original descriptor keeps the write working even when a library (or a test
- * double) has shadowed `document.cookie` on the instance.
+ * `Secure` follows the page's scheme rather than a build flag: a `Secure` cookie is silently
+ * dropped on plain HTTP, which would break the local dev server.
  *
- * @param value - Full cookie string, attributes included.
+ * @param remember - The visitor's choice, when the caller knows it.
  */
-const setCookie = (value: string) => {
-    const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
-    cookieDescriptor?.set?.call(document, value);
+const applyRememberChoice = (remember?: boolean) => {
+    // js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
+    // `sameSite: 'Lax'` = sent on top-level navigations only.
+    if (remember === true)
+        setCookie(BROWSER_STORAGE_NAME.rememberMe, 'true', {
+            days: THIRTY_DAYS,
+            path: '/',
+            secure: location.protocol === 'https:',
+            sameSite: 'Lax'
+        });
+    else if (remember === false) deleteCookie(BROWSER_STORAGE_NAME.rememberMe);
 };
-
-/**
- * `; Secure` over HTTPS, or nothing over plain HTTP.
- *
- * `rememberMe` carries no credential, but there is no reason to leave it the one cookie this app
- * sends over an unencrypted connection when it does not have to.
- * Checked against `location.protocol` rather than a build-mode flag: a `Secure` cookie is
- * silently DROPPED by the browser on plain HTTP, which would break the local dev server if this
- * were on by default instead of tracking the scheme actually in use.
- */
-const secureAttribute = () => (location.protocol === 'https:' ? '; Secure' : '');
-
-/**
- * Writes this app's one JS-written session cookie (`rememberMe`), attributes included.
- *
- * `path=/` and `SameSite=Lax` are decided here rather than at each call site, which is where a
- * security attribute belongs: one place to read, one place to change.
- *
- * @param name - Cookie name.
- * @param value - Cookie value.
- * @param maxAgeSeconds - Lifetime. Omitted, the cookie lasts for the browser session.
- */
-const writeCookie = (name: string, value: string, maxAgeSeconds?: number) => {
-    const maxAge = maxAgeSeconds === undefined ? '' : `; max-age=${maxAgeSeconds}`;
-    // js-toolkit `setCookie(rawCookieString)`: one raw `name=value; attribute…` string, written
-    // as given. `path=/` = site-wide; `SameSite=Lax` = no cross-site sub-requests carry it.
-    setCookie(`${name}=${value}; path=/${maxAge}; SameSite=Lax${secureAttribute()}`);
-};
-
-/**
- * Expires a cookie: the same write, empty and already stale.
- *
- * @param name - Cookie name.
- */
-const clearCookie = (name: string) => writeCookie(name, '', 0);
 
 /**
  * The server's own resend cooldown from a verification-mail 429, or `undefined` when the rejection
@@ -410,13 +386,6 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
-     * Thirty days — what "remember me" conventionally promises, stamped onto the `rememberMe`
-     * marker. The backend decides how long the session itself lasts and sets `isAuth` to match;
-     * see `useAuthStore.login`'s `remember` param.
-     */
-    const REMEMBER_ME_MAX_AGE_SECONDS = THIRTY_DAYS * 24 * 60 * 60;
-
-    /**
      * Records a freshly issued token.
      *
      * The `isAuth` hint cookie is the backend's: it sets it beside the session cookie with the
@@ -430,9 +399,7 @@ export const useSessionStore = defineStore('session', () => {
      */
     const setAccessToken = (token?: string, remember?: boolean) => {
         accessToken.value = token;
-        if (remember === true)
-            writeCookie(BROWSER_STORAGE_NAME.rememberMe, 'true', REMEMBER_ME_MAX_AGE_SECONDS);
-        else if (remember === false) clearCookie(BROWSER_STORAGE_NAME.rememberMe);
+        applyRememberChoice(remember);
     };
 
     /**
@@ -447,9 +414,7 @@ export const useSessionStore = defineStore('session', () => {
      */
     const startCookieSession = (remember?: boolean) => {
         cookieSession.value = true;
-        if (remember === true)
-            writeCookie(BROWSER_STORAGE_NAME.rememberMe, 'true', REMEMBER_ME_MAX_AGE_SECONDS);
-        else if (remember === false) clearCookie(BROWSER_STORAGE_NAME.rememberMe);
+        applyRememberChoice(remember);
     };
 
     /**
@@ -713,8 +678,9 @@ export const useSessionStore = defineStore('session', () => {
         idle.value = undefined;
         idleRead = false;
         // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
-        clearCookie(BROWSER_STORAGE_NAME.isAuth);
-        clearCookie(BROWSER_STORAGE_NAME.rememberMe);
+        // js-toolkit `deleteCookie(name)`: rewrites it already expired on `path=/`, where both live.
+        deleteCookie(BROWSER_STORAGE_NAME.isAuth);
+        deleteCookie(BROWSER_STORAGE_NAME.rememberMe);
         // A refresh that started before this must not act on its result once it lands — see
         // `refreshToken`'s own epoch check.
         sessionEpoch.value += 1;

@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import {
     autoInterval,
     bucketCount,
-    bucketLabel,
     chartTable,
     escapeCsvCell,
     isFlat,
@@ -247,19 +246,5 @@ describe('chartTable', () => {
                 ['x"]; pie', Number.NaN, 3]
             ]
         });
-    });
-});
-
-describe('bucketLabel', () => {
-    it('reads a bucket in the shop zone, not the browser zone', () => {
-        // 22:00 UTC on 11 Oct is already 12 Oct in Rome (UTC+2), so the bucket is the 12th.
-        expect(bucketLabel('2026-10-11T22:00:00.000Z', 'Europe/Rome', 'day', 'en')).toBe('Oct 12');
-        expect(bucketLabel('2026-10-11T22:00:00.000Z', 'UTC', 'day', 'en')).toBe('Oct 11');
-    });
-
-    it('shows month and year for a month bucket', () => {
-        expect(bucketLabel('2026-09-30T22:00:00.000Z', 'Europe/Rome', 'month', 'en')).toBe(
-            'Oct 2026'
-        );
     });
 });

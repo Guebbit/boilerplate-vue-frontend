@@ -3,6 +3,7 @@
  * Vitest spec for the permanent-delete rule: only a cancelled, never-paid order qualifies.
  */
 import { describe, expect, it } from 'vitest';
+import type { OrderPaymentStatus, OrderStatus } from '@types';
 import { canHardDelete, canSoftDelete } from '../domain';
 
 describe('canHardDelete', () => {
@@ -14,7 +15,7 @@ describe('canHardDelete', () => {
         expect(canHardDelete({ status: 'pending', paymentStatus: 'unpaid' })).toBe(false);
     });
 
-    it.each(['paid', 'partially_refunded', 'refunded'])(
+    it.each<OrderPaymentStatus>(['paid', 'partially_refunded', 'refunded'])(
         'refuses a cancelled order whose payment state is %s',
         (paymentStatus) => {
             expect(canHardDelete({ status: 'cancelled', paymentStatus })).toBe(false);
@@ -27,7 +28,7 @@ describe('canSoftDelete', () => {
         expect(canSoftDelete({ status: 'cancelled' })).toBe(true);
     });
 
-    it.each(['pending', 'paid', 'processing', 'shipped', 'delivered'])(
+    it.each<OrderStatus>(['pending', 'paid', 'processing', 'shipped', 'delivered'])(
         'refuses an order that is still %s: it is cancelled first',
         (status) => {
             expect(canSoftDelete({ status })).toBe(false);

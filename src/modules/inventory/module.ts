@@ -13,10 +13,10 @@ import routes from './routes';
 /**
  * The stock ledger and the preorder board, admin-side.
  *
- * Reaches into `products` — a `conformist` read of `useProductsStore` as it is, to name products in
- * the receipt select and the ledger titles — because the page names products (the receipt select,
- * the title lookup) through the products barrel, the same one-way arrow the BE's inventory module
- * has. The preorder board also mounts `delivery`'s second tab and reads its per-product counts
+ * Reaches into `products` — `customer-supplier`: a recorded movement changes stock, so the
+ * stock-movement form asks the products store to drop its cached catalogue (`invalidateProductsCache`);
+ * the ledger also reads its rows' titles through `useProductLines` as they are. The same one-way
+ * arrow the BE's inventory module has. The preorder board also mounts `delivery`'s second tab and reads its per-product counts
  * through that barrel, a `published-language` reach: the fulfillment orders are `delivery`'s, and
  * this module learns nothing of a shipment. Deleting this module removes the boards and the ledger
  * behind them; every shelf count stays correct, every WHY goes unrecorded.

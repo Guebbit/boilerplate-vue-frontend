@@ -178,7 +178,9 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 
 ### The folder is optional
 
-Nine modules have one today — `cart`, `delivery`, `example`, `inventory`, `locales`, `notifications`, `orders`, `products` and `stats` — and the rest never will.
+Nine of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`, `locales`,
+`notifications`, `orders`, `products` and `stats` — and the rest have no rule that clears the floor
+above. `ls -d src/modules/*/domain` is the current list; this sentence is not checked against it.
 
 Worth noting: `canAccess()` in `app/guards/authentications.ts` is already exactly this pattern
 — a pure function, requirement in, boolean out. It stays in `app/` because it is a rule about _this

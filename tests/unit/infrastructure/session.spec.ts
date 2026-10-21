@@ -241,7 +241,7 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
 
             useSessionStore().setAccessToken('token', true);
 
-            expect(cookiesWritten().some((value) => value.includes('; Secure'))).toBe(true);
+            expect(cookiesWritten().some((value) => /; secure/i.test(value))).toBe(true);
         });
 
         it('is absent over plain http', () => {
@@ -249,7 +249,7 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
 
             useSessionStore().setAccessToken('token', true);
 
-            expect(cookiesWritten().some((value) => value.includes('; Secure'))).toBe(false);
+            expect(cookiesWritten().some((value) => /; secure/i.test(value))).toBe(false);
         });
     });
 });

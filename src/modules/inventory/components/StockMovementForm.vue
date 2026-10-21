@@ -22,7 +22,7 @@ import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useInventoryStore } from '../store.ts';
-import { useProductsStore } from '@/modules/products';
+import { invalidateProductsCache } from '@/modules/products';
 import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -58,12 +58,6 @@ const { addMessage } = useNotificationsStore();
  * Owns the receipt/adjustment writes and their loading flag.
  */
 const inventoryStore = useInventoryStore();
-
-/**
- * Refreshes the catalogue's own copy of the stock counters after a successful write — the
- * product picker itself is search-as-you-type now (see below), not this store's cache.
- */
-const productsStore = useProductsStore();
 
 /**
  * True while the pending write is in flight; binds to the submit button.
@@ -160,10 +154,10 @@ const submitForm = () =>
                     )
                 );
                 form.value.note = '';
-                // The catalogue carries its own copy of the counters, so it has to hear about this too.
-                return productsStore.fetchProducts();
+                // The catalogue caches its own copy of the counters: mark it stale so every
+                // product screen refetches. Fire-and-forget — a failed refetch is not a failed write.
+                invalidateProductsCache();
             })
-            .then(() => undefined)
             .catch((error: unknown) => {
                 // A refusal that names a field lands on it; the 409 has no field, so it blocks here.
                 applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });

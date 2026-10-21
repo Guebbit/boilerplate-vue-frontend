@@ -27,6 +27,7 @@
 
 import { defineStore } from 'pinia';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
+import { writeJson } from '@/infrastructure/utils/safe-storage.ts';
 import { ref } from 'vue';
 import { mapValues } from 'lodash-es';
 import type { Faro, TransportItem } from '@grafana/faro-web-sdk';
@@ -200,19 +201,14 @@ const UMAMI_OPT_OUT_KEY = BROWSER_STORAGE_NAME.umamiDisabled;
 
 /**
  * Sets or clears the tracker's own opt-out switch. Storage can be blocked (private mode, a
- * browser setting) and then there is nothing to flip, so a refusal is swallowed: the script is
- * only ever injected on consent, and a blocked-storage visitor who never consented never loads it.
+ * browser setting) and then `writeJson` swallows the refusal: the script is only ever injected on
+ * consent, and a blocked-storage visitor who never consented never loads it.
  *
  * @param disabled - `true` to silence the tracker, `false` to let it send again.
  */
 const setUmamiOptOut = (disabled: boolean): void => {
-    // eslint-disable-next-line no-restricted-syntax -- `localStorage` access itself throws when storage is blocked; there is no non-throwing probe
-    try {
-        if (disabled) localStorage.setItem(UMAMI_OPT_OUT_KEY, '1');
-        else localStorage.removeItem(UMAMI_OPT_OUT_KEY);
-    } catch {
-        logger.debug('observability', '[Umami] localStorage unavailable, opt-out not persisted');
-    }
+    // `1` (JSON) is the truthy value Umami reads; `undefined` removes the key.
+    writeJson('local', UMAMI_OPT_OUT_KEY, disabled ? 1 : undefined);
 };
 
 /**

@@ -10,6 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import StockMovementForm from '../components/StockMovementForm.vue';
 import { useInventoryStore } from '../store.ts';
 import { useProductsStore } from '@/modules/products';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -113,6 +114,16 @@ describe('the receipt form', () => {
             expect(receiveSpy).not.toHaveBeenCalled();
         });
     });
+
+    it('marks the catalogue stale after a write lands, so product screens refetch their counters', () => {
+        const wrapper = mountForm('receipt');
+        vi.spyOn(useInventoryStore(), 'receive').mockResolvedValue(undefined);
+        const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+        return submitAmount(wrapper, 5, 'receipt').then(() => {
+            expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['products'] });
+        });
+    });
 });
 
 describe('the adjustment form', () => {
@@ -139,7 +150,6 @@ describe('the adjustment form', () => {
         const wrapper = mountForm('adjust');
         const inventory = useInventoryStore();
         vi.spyOn(inventory, 'adjust').mockResolvedValue(undefined);
-        vi.spyOn(useProductsStore(), 'fetchProducts').mockResolvedValue([]);
 
         return submitAmount(wrapper, -3, 'adjust').then(() => {
             expect(inventory.adjust).toHaveBeenCalledWith('p1', -3, undefined);

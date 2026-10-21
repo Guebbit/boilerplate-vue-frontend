@@ -24,7 +24,7 @@
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    inventory["<b>inventory</b>"] -->|"conformist"| products["products"]
+    inventory["<b>inventory</b>"] ==>|"customer-supplier"| products["products"]
     inventory["<b>inventory</b>"] -.->|"published-language"| delivery["delivery"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
@@ -36,7 +36,7 @@ flowchart LR
     class inventory self;
 ```
 
-- → `products` **conformist** — Reads `useProductsStore` as it is, to name products in the receipt select and the ledger titles.
+- → `products` **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
 - → `delivery` **published-language** — Mounts `PreorderFulfillmentTable` and reads `usePreorderSummaries` on the preorder board; the fulfillment orders stay `delivery`'s.
 
 ## The story

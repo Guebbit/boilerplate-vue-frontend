@@ -3,17 +3,19 @@
  * The rules behind the row's delete and permanent-delete actions, mirrored from the API so a button
  * is never offered for a refusal the server would answer with 409 (`ORDER_NOT_CANCELLED`,
  * `ORDER_INVOICED`).
- * Pure: reads two fields of the order, no Vue, no I/O.
+ * Pure: reads two fields of the order, no Vue, no I/O. Both fields carry the generated status
+ * unions, so a literal the contract drops stops compiling here.
  */
+import type { OrderPaymentStatus, OrderStatus } from '@types';
 
 /**
  * The slice of an order the rule reads.
  */
 export interface HardDeletableOrder {
     /** Lifecycle status; only `cancelled` has finished every side effect a cancel owns. */
-    status: string;
+    status: OrderStatus;
     /** Money state; `unpaid` is the only value that means the order was never paid. */
-    paymentStatus: string;
+    paymentStatus: OrderPaymentStatus;
 }
 
 /**

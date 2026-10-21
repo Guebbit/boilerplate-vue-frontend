@@ -8,10 +8,9 @@
  * duplicate key, a transport failure); the parent renders its `InlineErrorAlert` here, above the
  * buttons, since this dialog has no opinion of its own on what a blocked save looks like.
  */
-import { watch, computed, useId } from 'vue';
+import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '../schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -58,21 +57,6 @@ const { t, locale } = useI18n();
  * Toast dispatcher for the "fix the form's errors" notice.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the entry dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
 
 /**
  * The first app the registry lists — the default when the page has no filter on.
@@ -122,7 +106,7 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="560" :fullscreen="fullscreen" :aria-labelledby="titleId">
+    <DialogShell v-model="isOpen" max-width="560" v-slot="{ titleId }">
         <v-card class="p-5" data-test="entry-form">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h2>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">
@@ -172,5 +156,5 @@ defineExpose({ applyServerErrors });
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

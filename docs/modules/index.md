@@ -63,17 +63,19 @@ flowchart LR
         users["users"]
     end
     account -.-> users
+    cart -.-> account
     cart -.-> delivery
-    inventory --> products
+    cart -.-> payments
+    cart ==> products
+    inventory ==> products
     inventory -.-> delivery
     orders ==> cart
     orders -.-> delivery
-    orders -.-> payments
+    orders ==> payments
     orders -.-> returns
-    products ==> cart
-    products ==> wishlist
     stockAlerts --> products
-    wishlist --> cart
+    wishlist ==> cart
+    wishlist --> products
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -140,7 +142,7 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 18      | 3    | 8          | 7       | 49      | 18     | 11            |
+| 19      | 3    | 9          | 7       | 49      | 18     | 14            |
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |

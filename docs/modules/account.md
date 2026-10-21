@@ -15,13 +15,13 @@ management — is answered through that one prompt.
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                  |
 | **Screens**             | 12 — `Login` · `Signup` · `TwoFactorChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountDeleteConfirm` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `EmailChangeUndo` · `OAuthCallback` · `Profile` · `Logout` |
-| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountTwoFactor`                                                                                                             |
+| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountOAuthLinks` · `accountTwoFactor`                                                                                       |
 | **Menu entries**        | `Profile`                                                                                                                                                                                                                            |
 | **API calls**           | 31                                                                                                                                                                                                                                   |
 | **Depends on**          | [`users`](./users.md)                                                                                                                                                                                                                |
-| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing)                                                                                                                                                           |
+| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`                                                                                                                                 |
 | **Languages**           | `en` · `it`                                                                                                                                                                                                                          |
-| **Publishes**           | `AddressPicker`                                                                                                                                                                                                                      |
+| **Publishes**           | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                                                               |
 | **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                                              |
 
 ## The map
@@ -53,7 +53,8 @@ _editable record_, not the credential.
 
 **One domain, seven stores.** They split by lifecycle, not by screen: `accountAuth` establishes and
 ends a session, `accountProfile` owns the editable record once one exists, and `accountSessions`,
-`accountAddresses`, `accountOAuthProviders` and `accountTwoFactor` each own a panel's own slice.
+`accountAddresses`, `accountOAuthLinks` and `accountTwoFactor` each own a panel's own slice, and
+`accountOAuthProviders` holds the deployment's provider list — a public fact, not the visitor's.
 A store that outlives its panel would be a cache nobody invalidates.
 
 **Connecting a provider is a signed-in step.** A sign-in with a provider whose email matches an
@@ -83,22 +84,24 @@ the same pair shares only the validation vocabulary, and the server remains the 
 because the two sides genuinely have different relationships to the same data.
 :::
 
-There is no `index.ts` next to the manifest, and that is an answer rather than an omission: no other
-domain has ever needed anything from this one. A barrel exists when a module exports something; an
-empty one is a promise nobody asked for.
+The `index.ts` next to the manifest publishes two components and no store: `AddressPicker` and
+`PurchaseHoldNotice`, both mounted by `cart`'s checkout. A component is the narrowest thing a
+sibling can be handed — the checkout renders an address choice and a purchase hold without
+learning what an address book or a hold record is.
 
 ## State
 
-Six stores, listed by what each one's setup function returns — an internal ref is not part of the surface.
+Seven stores, listed by what each one's setup function returns — an internal ref is not part of the surface.
 
-| Store                   | File                   | Surface                                                                                                                                                                                                                                                                                                    |
-| ----------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `accountAuth`           | `stores/auth.ts`       | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
-| `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete` · `requestAccountExport` · `downloadAccountExport`                                                                                 |
-| `accountSessions`       | `stores/sessions.ts`   | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
-| `accountAddresses`      | `stores/addresses.ts`  | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
-| `accountOAuthProviders` | `stores/oauth.ts`      | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
-| `accountTwoFactor`      | `stores/two-factor.ts` | `status` · `setup` · `confirmed` · `challenge` · `delivery` · `secondsUntilResend` · `loading` · `fetchStatus` · `setupMethod` · `confirmMethod` · `removeMethod` · `disableAll` · `regenerateBackupCodes` · `clearSetup` · `beginLoginChallenge` · `clearChallenge` · `sendLoginCode` · `submitLoginCode` |
+| Store                   | File                    | Surface                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `accountAuth`           | `stores/auth.ts`        | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
+| `accountProfile`        | `stores/profile.ts`     | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete` · `requestAccountExport` · `downloadAccountExport`                                                                                 |
+| `accountSessions`       | `stores/sessions.ts`    | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
+| `accountAddresses`      | `stores/addresses.ts`   | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
+| `accountOAuthProviders` | `stores/oauth.ts`       | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
+| `accountOAuthLinks`     | `stores/oauth-links.ts` | `links` · `loading` · `fetchLinks` · `unlinkProvider`                                                                                                                                                                                                                                                      |
+| `accountTwoFactor`      | `stores/two-factor.ts`  | `status` · `setup` · `confirmed` · `challenge` · `delivery` · `secondsUntilResend` · `loading` · `fetchStatus` · `setupMethod` · `confirmMethod` · `removeMethod` · `disableAll` · `regenerateBackupCodes` · `clearSetup` · `beginLoginChallenge` · `clearChallenge` · `sendLoginCode` · `submitLoginCode` |
 
 ## Screens
 

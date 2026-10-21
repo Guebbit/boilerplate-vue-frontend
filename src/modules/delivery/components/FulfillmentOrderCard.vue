@@ -22,7 +22,7 @@ import { shippableLines } from '../domain/ship-lines.ts';
 import HoldDialog from './HoldDialog.vue';
 import ShipItemsDialog from './ShipItemsDialog.vue';
 import ShipmentRow from './ShipmentRow.vue';
-import type { FulfillmentOrder, Shipment } from '@types';
+import type { FulfillmentOrder, FulfillmentOrderStatus, Shipment } from '@types';
 
 /**
  * The fulfillment order, the shipments cut from it, and what the caller may force.
@@ -93,6 +93,15 @@ const canForceShip = computed(() => (props.override ?? []).includes(OrderStatus.
 const canForceDeliver = computed(() => (props.override ?? []).includes(OrderStatus.delivered));
 
 /**
+ * The statuses a forced shipment may leave from. Typed against the generated union, so a status
+ * the contract drops stops compiling here.
+ */
+const FORCE_SHIPPABLE_STATUSES: ReadonlySet<FulfillmentOrderStatus> = new Set([
+    'open',
+    'in_progress'
+]);
+
+/**
  * Whether the ship button shows: the ordinary door, or the forced one while the ordinary is closed
  * and something physical still remains to leave.
  */
@@ -101,7 +110,7 @@ const offerShip = computed(
         props.fulfillmentOrder.actions.ship ||
         (canForceShip.value &&
             props.fulfillmentOrder.kind === 'physical' &&
-            ['open', 'in_progress'].includes(props.fulfillmentOrder.status) &&
+            FORCE_SHIPPABLE_STATUSES.has(props.fulfillmentOrder.status) &&
             shippableLines(props.fulfillmentOrder.lines).length > 0)
 );
 

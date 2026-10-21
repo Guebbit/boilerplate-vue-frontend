@@ -14,12 +14,14 @@ import routes from './routes';
  * Reaches into `cart` for the reorder button — `Order.vue` refills the visitor's cart through the
  * cart barrel, a `customer-supplier` call. The server-side arrow runs the other way (checkout
  * creates an order), but a module's imports are what it depends on, and the import here is
- * order-page → cart store. Two more edges are `published-language`, the cheapest kind: it mounts
- * `ShipmentPanel` and `PaymentPanel`, self-contained components that render a parcel and a payment
- * without this module ever touching a shipment or a provider. `OrderEdit.vue` mounts
- * `RecordOfflinePaymentForm` and `OrdersList.vue` mounts `OrderReferenceSearch` on the same terms:
- * the RF-reference lookup and the 404 it has to read are the component's own business, on
- * `payments`' side of the barrel, so this module gains no edge to that endpoint. The withdrawal
+ * order-page → cart store. `delivery` is `published-language`, the cheapest kind: `Order.vue`
+ * mounts `ShipmentPanel` and `ShippingMethodName`, self-contained components that render a parcel
+ * and a method's name without this module ever touching a shipment. `payments` is
+ * `customer-supplier`, by one import: `OrderEdit.vue` refunds through `useOrderRefund`, a call that
+ * makes the payments store do something. The rest of that edge is components — `PaymentPanel` on
+ * the order page, `RecordOfflinePaymentForm` on the edit page, `OrderReferenceSearch` on the list,
+ * whose RF-reference lookup and the 404 it has to read are the component's own business, so this
+ * module gains no edge to that endpoint. The withdrawal
  * button is the same shape again: `Order.vue` mounts `returns`' `WithdrawalPanel`, which owns the
  * confirmation and the order's returns list, so `orders` never calls a returns operation itself.
  * `Order.vue` also mounts `delivery`'s `ShippingMethodName` on the same terms. The one exception is

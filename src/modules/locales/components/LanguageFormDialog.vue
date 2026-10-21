@@ -11,10 +11,9 @@
  * by two different parents (`LocalesList.vue`'s own row edit, `LocalesDictionary.vue`'s add), each
  * filling it with its own state.
  */
-import { watch, computed, useId } from 'vue';
+import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '../schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -73,24 +72,9 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the language dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
-/**
  * Whether the dialog is editing an existing language rather than creating one.
  */
 const isEdit = computed(() => props.language !== undefined);
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
 
 /*
  * Two schemas rather than one with a conditional tag rule: editing shows the tag disabled — it is
@@ -150,7 +134,7 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480" :fullscreen="fullscreen" :aria-labelledby="titleId">
+    <DialogShell v-model="isOpen" max-width="480" v-slot="{ titleId }">
         <v-card class="p-5" data-test="language-form">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}
@@ -218,5 +202,5 @@ defineExpose({ applyServerErrors });
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

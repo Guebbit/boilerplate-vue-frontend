@@ -9,6 +9,7 @@
  */
 
 import type { ErrorCode } from '@api/error-codes';
+import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 
 /**
  * One structured error as the reject envelope carries it. Both fields stay `unknown`: the shape
@@ -69,12 +70,7 @@ export const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | unde
  */
 const parsedBody = (value: unknown): unknown => {
     if (typeof value !== 'string') return value;
-    // eslint-disable-next-line no-restricted-syntax -- JSON.parse throws on text that is not JSON; such a body carries no envelope, so the local answer is `undefined`
-    try {
-        return JSON.parse(value) as unknown;
-    } catch {
-        return undefined;
-    }
+    return parseJsonSafe(value);
 };
 
 /**

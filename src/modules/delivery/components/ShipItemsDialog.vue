@@ -6,12 +6,11 @@
  * is closed. The dialog owns its call and reports the outcome in place; the server re-checks every
  * limit, so the form only keeps staff from asking for the impossible.
  */
-import { computed, ref, watch, useId } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
@@ -57,21 +56,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
- * Whether the dialog fills the screen — it does on a phone.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
 
 /**
  * The store's ship call and its in-flight flag.
@@ -172,12 +156,11 @@ const submit = singleFlight(() => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
         max-width="520"
-        :fullscreen="fullscreen"
-        :aria-labelledby="titleId"
         data-test="ship-items-dialog"
+        v-slot="{ titleId }"
     >
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
@@ -250,5 +233,5 @@ const submit = singleFlight(() => {
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

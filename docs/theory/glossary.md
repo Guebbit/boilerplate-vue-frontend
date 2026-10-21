@@ -43,16 +43,6 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Session**          | Whether someone is signed in. Owned by `infrastructure/session`, not by this module — the router guards read it before any domain code runs. |
 | **Account deletion** | A two-step exit: a request, then a confirm. Never one click.                                                                                 |
 
-## `observability`
-
-| Term          | What it means here                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------------- |
-| **KPI**       | One headline number on the console. Read from the observability endpoints, never computed here.     |
-| **Audit log** | The server’s record of who did what. This module renders it and owns none of it.                    |
-| **Health**    | Whether the API can serve. A liveness answer, not a correctness one.                                |
-| **Stream**    | The live SSE feed of observability metrics. Opened by this module, transported by `infrastructure`. |
-| **Frame**     | One message off the stream, shown raw so the shape is visible rather than described.                |
-
 ## `cart`
 
 | Term          | What it means here                                                                                                      |
@@ -123,6 +113,16 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Product**   | A sellable item as the API returns it. Identified by id; the name is not unique.                              |
 | **Catalogue** | The list view, with its filters and paging. The filters are query parameters — the server does the filtering. |
 | **Stock**     | Units on the shelf, read from the response. This client displays availability and never decides it.           |
+
+## `observability`
+
+| Term          | What it means here                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| **KPI**       | One headline number on the console. Read from the observability endpoints, never computed here.       |
+| **Audit log** | The server’s record of who did what. This module renders it and owns none of it.                      |
+| **Health**    | Whether the API can serve. A liveness answer, not a correctness one.                                  |
+| **Stream**    | The live SSE feed of observability metrics. Opened by this module, transported by `infrastructure`.   |
+| **Frame**     | One message off the stream, shown as a metric grid or as raw JSON, so the shape is visible on demand. |
 
 ## `notifications`
 

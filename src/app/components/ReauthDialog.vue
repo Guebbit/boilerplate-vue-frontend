@@ -13,8 +13,7 @@
 import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { reauthSendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
@@ -35,16 +34,6 @@ const reauthDialog = useReauthPromptStore();
  * Whether a re-authentication call is in flight.
  */
 const { reauthing } = storeToRefs(useSessionStore());
-
-/**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Ids wiring the dialog's own title and body to `aria-labelledby` / `aria-describedby`.
- */
-const titleId = useId();
 
 /**
  * Id of the body copy, referenced by the dialog's `aria-describedby`.
@@ -187,11 +176,6 @@ const isOpen = computed({
 });
 
 /**
- * Hands focus back to the control that opened the re-authentication prompt once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
-/**
  * The tagged body for whichever method is on show; `undefined` while its field is empty.
  */
 const proof = computed<ReauthRequest | undefined>(() => {
@@ -257,15 +241,14 @@ const sendCode = () => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
         max-width="420"
-        :fullscreen="fullscreen"
         persistent
         role="alertdialog"
-        :aria-labelledby="titleId"
         :aria-describedby="messageId"
         data-test="reauth-dialog"
+        v-slot="{ titleId }"
     >
         <v-card v-if="reauthDialog.isOpen">
             <v-card-title :id="titleId">{{ t('reauth-dialog.title') }}</v-card-title>
@@ -371,5 +354,5 @@ const sendCode = () => {
                 </v-btn>
             </v-card-actions>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

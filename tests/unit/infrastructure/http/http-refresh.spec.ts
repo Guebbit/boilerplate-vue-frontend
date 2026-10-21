@@ -21,6 +21,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+import { deleteCookie } from '@guebbit/js-toolkit';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
@@ -229,15 +230,11 @@ const loadHttp = () => {
 };
 
 /**
- * Clears the `isAuth` cookie through the prototype setter, the way `stores/session.ts` clears it.
+ * Clears the `isAuth` cookie with js-toolkit's `deleteCookie`, the way `session.ts` clears it.
  *
  * @returns Nothing; the cookie is cleared as a side effect.
  */
-const clearAuthCookie = () =>
-    Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')?.set?.call(
-        document,
-        'isAuth=; path=/; max-age=0'
-    );
+const clearAuthCookie = () => deleteCookie('isAuth');
 
 /**
  * Every request the server saw, as `METHOD /pathname`.

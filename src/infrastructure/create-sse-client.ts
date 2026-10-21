@@ -15,6 +15,7 @@ import * as zod from 'zod';
 import { SSE_EVENT_PAYLOAD_SCHEMAS, type SseEventName, type SseEventPayload } from '@types';
 import { isReportOnly, shouldValidateResponses } from '@/infrastructure/http/validate.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
+import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 
 /**
  * Callbacks registered on an SSE connection.
@@ -56,22 +57,6 @@ const SOURCE_CLOSED = 2;
  * at the last.
  */
 const REOPEN_DELAYS_MS: readonly number[] = [1000, 2000, 4000, 8000, 16_000, 30_000];
-
-/**
- * Safely parses a raw JSON string.
- *
- * @param rawData - Raw `data` field of an SSE frame.
- * @returns The parsed value, or `undefined` when the string is not valid JSON so
- *  callers can skip bad frames.
- */
-const parseJsonData = (rawData: string) => {
-    // eslint-disable-next-line no-restricted-syntax -- JSON.parse has no non-throwing form; a malformed SSE frame is dropped, not a crash
-    try {
-        return JSON.parse(rawData) as unknown;
-    } catch {
-        return;
-    }
-};
 
 /**
  * One Zod schema per event name, built on first use from the generated JSON Schema — so a build
@@ -181,9 +166,9 @@ export const createSseClient = <TEventName extends SseEventName>(
         // Register a listener per event name so the browser dispatches them individually
         for (const eventName of eventNames) {
             source.addEventListener(eventName, (event) => {
-                const payload = parseJsonData((event as MessageEvent<string>).data);
-                // `undefined` is `parseJsonData`'s failure signal; `null`, `0`, `false` and `""` are
-                // legitimate payloads.
+                const payload = parseJsonSafe((event as MessageEvent<string>).data);
+                // `undefined` is `parseJsonSafe`'s failure signal — a malformed frame is dropped;
+                // `null`, `0`, `false` and `""` are legitimate payloads.
                 if (payload === undefined || !passesContract(eventName, payload)) return;
 
                 // Parsed from the wire; validated against this type's schema when the gate is on.

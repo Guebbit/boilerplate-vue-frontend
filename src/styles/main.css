@@ -74,9 +74,11 @@
     --drop-shadow-*: initial;
     --text-shadow-*: initial;
 
-    /* unambiguous constants are allowed back in */
-    --color-white: #ffffff;
-    --color-black: #000000;
+    /*
+     * The one colour that is not a theme colour: `transparent` reads the same in light and dark.
+     * White and black are not here — a fixed white or black ignores the theme; use `surface` /
+     * `on-surface` (or an `on-*` pair) instead.
+     */
     --color-transparent: transparent;
     --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
