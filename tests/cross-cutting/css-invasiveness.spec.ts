@@ -117,6 +117,7 @@ describe('each CSS check fires on a sample', () => {
     it.each<[CheckId, string, boolean?]>([
         ['vuetify-internal', '.card .v-field { color: inherit; }'],
         ['deep', '.board :deep(.cell) { color: inherit; }'],
+        ['vuetify-internal', '.board :deep(td:first-child) { color: inherit; }'],
         ['vuetify-variable', '.row { --v-medium-emphasis-opacity: 1; }'],
         ['important', '.row { color: inherit !important; }'],
         ['max-specificity', '.a .b .c { color: inherit; }'],
@@ -167,6 +168,7 @@ describe('each template and script check fires on a sample', () => {
         ['vuetify-prop-first', '<v-btn class="bg-primary" />'],
         ['tailwind-important', '<div class="!mt-2" />'],
         ['vuetify-arbitrary-variant', '<div class="[&_.v-field]:bg-surface" />'],
+        ['vuetify-variable', '<v-text-field class="[--v-disabled-opacity:0.8]" />'],
         ['native-title', '<span :title="hint">x</span>'],
         ['native-title', '<v-btn title="Export" />']
     ])('%s: %s', (check, template) => {

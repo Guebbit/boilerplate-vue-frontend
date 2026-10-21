@@ -48,7 +48,7 @@ export interface CheckInfo {
 /** Every check, by id. The ids follow stylelint's rule names where one exists. */
 export const CHECKS = {
     'vuetify-internal': {
-        title: 'A selector reaches into a Vuetify class (`.v-*`).',
+        title: "A selector reaches into a Vuetify class (`.v-*`), or into a child's elements through `:deep()`.",
         fix: 'Use a prop, a `createVuetify({ defaults })` entry or a theme `variables` key; only then a `css-allow`.'
     },
     deep: {
@@ -56,7 +56,7 @@ export const CHECKS = {
         fix: 'Own child: give it a prop or a slot class. Vuetify child: a prop, a slot or `defaults`.'
     },
     'vuetify-variable': {
-        title: 'A declaration sets a `--v-*` custom property.',
+        title: 'A declaration or a class sets a `--v-*` custom property.',
         fix: 'Set it in the theme `variables` (`src/ui/vuetify/theme.ts`) or through the component prop that owns it.'
     },
     important: {
@@ -353,6 +353,17 @@ const isBareElement = (compound: selectorParser.Node[]): boolean =>
     compound.some((node) => node.type === 'tag') &&
     !compound.some((node) => ['class', 'id', 'attribute'].includes(node.type));
 
+/**
+ * Whether a `:deep()` argument names a bare element (`td`, `input::placeholder`): it reaches into
+ * a child's markup, and for a Vuetify child that markup is Vuetify's.
+ */
+const deepReachesElement = (selector: selectorParser.Selector): boolean =>
+    compoundsOf(selector.nodes).deeps.some((deep) =>
+        deep.nodes.some((argument) =>
+            compoundsOf(argument.nodes).compounds.some((compound) => isBareElement(compound))
+        )
+    );
+
 /** Every class name a selector names, `:deep()` and `:is()` arguments included. */
 const classesOf = (selector: selectorParser.Selector): string[] => {
     const names: string[] = [];
@@ -450,7 +461,11 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
         'vuetify-internal',
         (_rule, selectors) =>
             selectors
-                .filter((selector) => classesOf(selector).some((name) => name.startsWith('v-')))
+                .filter(
+                    (selector) =>
+                        classesOf(selector).some((name) => name.startsWith('v-')) ||
+                        deepReachesElement(selector)
+                )
                 .map(String)
     ],
     ['deep', (_rule, selectors) => selectors.filter((selector) => usesDeep(selector)).map(String)],
@@ -949,6 +964,16 @@ const ELEMENT_CHECKS: readonly (readonly [CheckId, ElementCheck])[] = [
         (node) =>
             classTokens(node)
                 .filter((token) => /\[[^\]]*\.v-[^\]]*]:/.test(token))
+                .map((token) => ({
+                    anchor: `${node.tag}.${token}`,
+                    snippet: `class="… ${token} …"`
+                }))
+    ],
+    [
+        'vuetify-variable',
+        (node) =>
+            classTokens(node)
+                .filter((token) => /^\[--v-[\w-]+:/.test(bareClass(token)))
                 .map((token) => ({
                     anchor: `${node.tag}.${token}`,
                     snippet: `class="… ${token} …"`

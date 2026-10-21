@@ -138,6 +138,10 @@ const vuetifyHeaders = computed(() =>
         title: header.title,
         key: header.key,
         width: header.width,
+        // `fixed: 'start'` pins the column; min/max bound it — https://vuetifyjs.com/en/api/v-data-table/#props-headers
+        fixed: header.fixed,
+        minWidth: header.minWidth,
+        maxWidth: header.maxWidth,
         sortable:
             isSortable.value &&
             !('synthetic' in header) &&

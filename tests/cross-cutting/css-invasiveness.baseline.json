@@ -2,87 +2,9 @@
     "$comment": "Known invasive-CSS hits, frozen. New hits fail tests/cross-cutting/css-invasiveness.spec.ts; so does an entry that no longer occurs. Shrink with `npm run audit:css -- --shrink-baseline`; never add by hand.",
     "entries": [
         {
-            "file": "src/modules/locales/composables/use-dictionary-cell-editor.ts",
-            "check": "vuetify-dom-query",
-            "anchor": "closest('.v-field')",
-            "count": 1
-        },
-        {
             "file": "src/modules/locales/views/LocaleEntries.vue",
             "check": "native-title",
             "anchor": "span title=t('locale-entries-page.key-immutable')",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "deep",
-            "anchor": ".dictionary-board :deep(.cell-baseline .v-field)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "deep",
-            "anchor": ".dictionary-board :deep(.cell-baseline input::placeholder)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "deep",
-            "anchor": ".dictionary-board :deep(.cell-missing .v-field)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "deep",
-            "anchor": ".dictionary-board :deep(td:first-child), .dictionary-board :deep(th:first-child)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "max-specificity",
-            "anchor": ".dictionary-board :deep(.cell-baseline .v-field)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "max-specificity",
-            "anchor": ".dictionary-board :deep(.cell-baseline input::placeholder)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "max-specificity",
-            "anchor": ".dictionary-board :deep(.cell-missing .v-field)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "max-specificity",
-            "anchor": ".dictionary-board :deep(td:first-child), .dictionary-board :deep(th:first-child)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "native-title",
-            "anchor": "span title=t('locale-entries-page.key-immutable')",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "native-title",
-            "anchor": "v-text-field title=cellState(language.tag, item.key) === 'entry' ? undefined : cellState(language.tag, item.key) === 'missing' ? t('locales-dictionary-page.cell-missing') : t(`locales-dictionary-page.cell-baseline-${appKind}`)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "vuetify-internal",
-            "anchor": ".dictionary-board :deep(.cell-baseline .v-field)",
-            "count": 1
-        },
-        {
-            "file": "src/modules/locales/views/LocalesDictionary.vue",
-            "check": "vuetify-internal",
-            "anchor": ".dictionary-board :deep(.cell-missing .v-field)",
             "count": 1
         },
         {

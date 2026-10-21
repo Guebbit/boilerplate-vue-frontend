@@ -284,7 +284,7 @@ describe('handleCellClear', () => {
     it('returns focus to the input the event came from on cancel', () => {
         confirmAnswer = false;
         document.body.innerHTML =
-            '<div class="v-field"><input id="cell" /><button id="clear"></button></div>';
+            '<div data-test="dictionary-cell"><input id="cell" /><button id="clear"></button></div>';
         const input = document.querySelector<HTMLInputElement>('#cell')!;
         const button = document.querySelector<HTMLButtonElement>('#clear')!;
         const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
@@ -348,10 +348,42 @@ describe('cellLabel', () => {
         expect(editor.cellLabel(ENGLISH, 'greeting')).toBe('locales-dictionary-page.cell-label');
     });
 
-    it('omits the baseline when there is none', () => {
+    it('says the cell is missing when there is neither an entry nor a baseline', () => {
         const { editor } = editorWith();
 
-        expect(editor.cellLabel(ENGLISH, 'greeting')).toBe('locales-dictionary-page.cell-label');
+        expect(editor.cellLabel(ENGLISH, 'greeting')).toBe(
+            'locales-dictionary-page.cell-label-missing'
+        );
+    });
+});
+
+describe('handleBoardFocusin', () => {
+    it('scrolls the board back by the part of a focused field hidden under the key column', () => {
+        document.body.innerHTML = `
+            <div id="scroller" style="overflow-x: auto">
+                <table><tr>
+                    <td><span data-test="dictionary-key">k</span></td>
+                    <td><input id="cell" /></td>
+                </tr></table>
+            </div>`;
+        const scroller = document.querySelector<HTMLElement>('#scroller')!;
+        const input = document.querySelector<HTMLInputElement>('#cell')!;
+        const keyCell = document.querySelector<HTMLElement>('td')!;
+        scroller.scrollBy = vi.fn();
+        keyCell.getBoundingClientRect = () => ({ right: 192 }) as DOMRect;
+        input.getBoundingClientRect = () => ({ left: 150 }) as DOMRect;
+        const { editor } = editorWith();
+        editor.boardElement.value = scroller;
+
+        editor.handleBoardFocusin(new FocusEvent('focusin', { relatedTarget: null }));
+        expect(scroller.scrollBy).not.toHaveBeenCalled();
+
+        Object.defineProperty(input, 'parentElement', { value: scroller });
+        const event = new FocusEvent('focusin');
+        Object.defineProperty(event, 'target', { value: input });
+        editor.handleBoardFocusin(event);
+
+        expect(scroller.scrollBy).toHaveBeenCalledWith({ left: -42 });
     });
 });
 

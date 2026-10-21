@@ -19,7 +19,7 @@ export default {
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { debounce } from 'lodash-es';
-import { ArrowLeft, Check, Plus, Search } from 'lucide-vue-next';
+import { ArrowLeft, Check, CircleAlert, FileText, Pencil, Plus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -121,6 +121,7 @@ const {
     handleCellClear,
     handleCellEnter,
     handleCellInput,
+    handleBoardFocusin,
     cellLabel
 } = useDictionaryCellEditor(app, entryAt, baselineAt, afterWrite);
 
@@ -224,16 +225,62 @@ const pageRows = computed(() =>
 );
 
 /**
+ * Width of the pinned key column. One value for width, min and max, so the column never flexes and
+ * the focus correction knows how much of the left edge it covers.
+ */
+const KEY_COLUMN_WIDTH = '12rem';
+
+/**
  * Columns of the board: the key column plus one synthetic column per language.
  */
 const tableHeaders = computed<CoreDataTableHeader<{ key: string }>[]>(() => [
-    { title: t('locales-dictionary-page.column-key'), key: 'key' },
+    {
+        title: t('locales-dictionary-page.column-key'),
+        key: 'key',
+        fixed: 'start',
+        width: KEY_COLUMN_WIDTH,
+        minWidth: KEY_COLUMN_WIDTH,
+        maxWidth: KEY_COLUMN_WIDTH
+    },
     ...languages.value.map((language) => ({
         title: `${language.nativeName} (${language.tag})`,
         key: language.tag,
         synthetic: true as const
     }))
 ]);
+
+/**
+ * Draws the baseline's placeholder at the theme's medium emphasis instead of Vuetify's disabled
+ * opacity (0.38, under AA on this surface): the baseline is text the translator has to read.
+ */
+const BASELINE_PLACEHOLDER_CLASS = '[--v-disabled-opacity:var(--v-medium-emphasis-opacity)]';
+
+/**
+ * What each cell state shows through props: the baseline is a tinted fill, the missing cell a red
+ * outline. An entry keeps the field's default look.
+ */
+const CELL_STATE_PROPS = {
+    entry: {},
+    baseline: { variant: 'filled' },
+    missing: { baseColor: 'error' }
+} as const;
+
+/**
+ * The icon each non-entry state carries in the field, so the state is not colour alone.
+ */
+const CELL_STATE_ICONS = { entry: undefined, baseline: FileText, missing: CircleAlert } as const;
+
+/**
+ * The Vuetify props one cell gets from its state.
+ *
+ * @param tag - The cell's language.
+ * @param key - The cell's key.
+ * @returns The state-keyed props, plus the clear button for an entry.
+ */
+const cellFieldProps = (tag: string, key: string) => ({
+    ...CELL_STATE_PROPS[cellState(tag, key)],
+    clearable: cellState(tag, key) === 'entry'
+});
 
 /**
  * Puts the typed text on the board and returns to the first page, which the new list redefines.
@@ -443,6 +490,27 @@ onMounted(() => {
             "
         />
 
+        <!-- What the three cell looks mean: each state is a fill, an outline or an icon plus this text. -->
+        <ul
+            v-if="languages.length > 0"
+            class="mb-3 flex list-none flex-wrap gap-x-6 gap-y-1 p-0 text-sm"
+            :aria-label="t('locales-dictionary-page.legend-label')"
+            data-test="dictionary-legend"
+        >
+            <li class="flex items-center gap-1">
+                <Pencil :size="14" aria-hidden="true" />
+                {{ t('locales-dictionary-page.cell-entry') }}
+            </li>
+            <li class="flex items-center gap-1">
+                <FileText :size="14" aria-hidden="true" />
+                {{ t(`locales-dictionary-page.cell-baseline-${appKind}`) }}
+            </li>
+            <li class="flex items-center gap-1 text-error">
+                <CircleAlert :size="14" aria-hidden="true" />
+                {{ t('locales-dictionary-page.cell-missing') }}
+            </li>
+        </ul>
+
         <v-empty-state
             v-if="!loading && languages.length === 0"
             :title="t('locales-dictionary-page.no-languages')"
@@ -459,7 +527,7 @@ onMounted(() => {
             data-test="dictionary-empty"
         />
 
-        <div v-else ref="boardElement" class="dictionary-board overflow-x-auto">
+        <div v-else ref="boardElement" @focusin="handleBoardFocusin">
             <DataTable
                 :headers="tableHeaders"
                 :items="pageRows"
@@ -498,17 +566,20 @@ onMounted(() => {
                     </div>
                 </template>
 
+                <template v-slot:[`header.key`]="{ column }">
+                    <div class="flex flex-col">
+                        <span>{{ column.title }}</span>
+                        <!-- Visible, not a tooltip: a finger cannot hover, a reader gets it in the header. -->
+                        <span class="text-xs font-normal">
+                            {{ t('locale-entries-page.key-immutable') }}
+                        </span>
+                    </div>
+                </template>
+
                 <template v-slot:[`item.key`]="{ item }">
-                    <!--
-                        Same native-title rule as the entries page's keys; the visually-hidden
-                        sibling repeats it for the reader, because a title alone is mouse-only.
-                        Not an `aria-label` — a role-less span may not carry a name
-                        (`aria-prohibited-attr`).
-                    -->
-                    <span class="font-mono text-sm" :title="t('locale-entries-page.key-immutable')">
+                    <span class="font-mono text-sm wrap-anywhere" data-test="dictionary-key">
                         {{ item.key }}
                     </span>
-                    <span class="sr-only">{{ t('locale-entries-page.key-immutable') }}</span>
                 </template>
 
                 <template
@@ -517,10 +588,11 @@ onMounted(() => {
                     v-slot:[`item.${language.tag}`]="{ item }"
                 >
                     <!--
-                        Three looks for three states — see the component note. The baseline
-                        class tints the field and the title says which baseline; the missing
-                        class is the only one with an outline, so a gap is visible from across
-                        the room.
+                        Three looks for three states — see the component note. The baseline is a
+                        tinted fill with a file icon, the missing cell a red outline with an alert
+                        icon; the legend above spells them out, so none depends on colour alone.
+                        The baseline's placeholder is drawn at the theme's medium emphasis, not
+                        Vuetify's disabled opacity: it is text the translator must read.
                     -->
                     <v-text-field
                         :model-value="
@@ -531,20 +603,17 @@ onMounted(() => {
                         :placeholder="baselineAt(language.tag, item.key)"
                         persistent-placeholder
                         :aria-label="cellLabel(language, item.key)"
-                        :title="
-                            cellState(language.tag, item.key) === 'entry'
-                                ? undefined
-                                : cellState(language.tag, item.key) === 'missing'
-                                  ? t('locales-dictionary-page.cell-missing')
-                                  : t(`locales-dictionary-page.cell-baseline-${appKind}`)
-                        "
                         :dir="language.direction"
                         :error-messages="cellErrors[cellId(language.tag, item.key)]"
-                        :clearable="cellState(language.tag, item.key) === 'entry'"
+                        v-bind="cellFieldProps(language.tag, item.key)"
                         density="compact"
                         hide-details="auto"
                         class="min-w-48"
-                        :class="`cell-${cellState(language.tag, item.key)}`"
+                        :class="
+                            cellState(language.tag, item.key) === 'baseline'
+                                ? BASELINE_PLACEHOLDER_CLASS
+                                : ''
+                        "
                         data-test="dictionary-cell"
                         :data-state="cellState(language.tag, item.key)"
                         :data-key="item.key"
@@ -553,6 +622,19 @@ onMounted(() => {
                         @keydown.enter.prevent="handleCellEnter(language, item.key, $event)"
                         @click:clear="handleCellClear(language, item.key, $event)"
                     >
+                        <template
+                            v-if="cellState(language.tag, item.key) !== 'entry'"
+                            #prepend-inner
+                        >
+                            <component
+                                :is="CELL_STATE_ICONS[cellState(language.tag, item.key)]"
+                                :size="16"
+                                :class="{
+                                    'text-error': cellState(language.tag, item.key) === 'missing'
+                                }"
+                                aria-hidden="true"
+                            />
+                        </template>
                         <template v-if="savedCells[cellId(language.tag, item.key)]" #append-inner>
                             <Check
                                 :size="16"
@@ -590,46 +672,3 @@ onMounted(() => {
         </LanguageFormDialog>
     </div>
 </template>
-
-<style scoped>
-/*
- * The key column stays put while the languages scroll: five columns of text fields overflow any
- * viewport, and a row is meaningless without its key. The background is required — a sticky
- * cell with none lets the scrolled cells show through it.
- *
- * The column has a fixed width so the board can tell the browser how much of its left edge the
- * column covers (`scroll-padding-inline-start`): without it, tabbing to a field in the next row
- * scrolls the field under the sticky key, where nothing can reach it.
- */
-.dictionary-board {
-    --key-column: 12rem;
-
-    scroll-padding-inline-start: var(--key-column);
-}
-
-.dictionary-board :deep(td:first-child),
-.dictionary-board :deep(th:first-child) {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    min-width: var(--key-column);
-    max-width: var(--key-column);
-    overflow-wrap: anywhere;
-    background: rgb(var(--v-theme-surface));
-}
-
-/* A baseline cell: the text is real, just not yet overridden here. */
-.dictionary-board :deep(.cell-baseline .v-field) {
-    background: rgba(var(--v-theme-secondary), 0.06);
-}
-
-.dictionary-board :deep(.cell-baseline input::placeholder) {
-    opacity: 0.85;
-    font-style: italic;
-}
-
-/* A missing cell: nothing renders for this key in this language. */
-.dictionary-board :deep(.cell-missing .v-field) {
-    box-shadow: inset 0 0 0 1px rgba(var(--v-theme-error), 0.5);
-}
-</style>

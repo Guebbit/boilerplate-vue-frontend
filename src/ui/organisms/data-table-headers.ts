@@ -21,6 +21,19 @@ interface CoreDataTableFieldHeader<T> {
      * Column width, when one column has to be wider than the table would choose.
      */
     width?: string | number;
+    /**
+     * Pins the column to the start edge while the rest scrolls sideways; Vuetify gives it a
+     * background and a sticky position.
+     */
+    fixed?: 'start';
+    /**
+     * The narrowest the column may get.
+     */
+    minWidth?: string | number;
+    /**
+     * The widest the column may get.
+     */
+    maxWidth?: string | number;
 }
 
 /**
@@ -38,6 +51,19 @@ interface CoreDataTableSyntheticHeader {
      * Column width, when one column has to be wider than the table would choose.
      */
     width?: string | number;
+    /**
+     * Pins the column to the start edge while the rest scrolls sideways; Vuetify gives it a
+     * background and a sticky position.
+     */
+    fixed?: 'start';
+    /**
+     * The narrowest the column may get.
+     */
+    minWidth?: string | number;
+    /**
+     * The widest the column may get.
+     */
+    maxWidth?: string | number;
 }
 
 /**
