@@ -72,8 +72,8 @@ export const formatDate = (value?: string | null) =>
 
 /**
  * A date the server fixed as a UTC calendar day (a withdrawal deadline is the last instant of its
- * UTC day), printed as that same day. {@link formatDate} would use the browser's zone and show the
- * NEXT day east of UTC.
+ * UTC day), printed as that same day, the month in words ("5 December 2026"), never a time.
+ * {@link formatDate} would use the browser's zone and show the NEXT day east of UTC.
  *
  * @param value - ISO 8601 date/datetime string, possibly nullish.
  * @returns The localized date string, or {@link EMPTY_VALUE}.
@@ -82,7 +82,7 @@ export const formatUtcDate = (value?: string | null) =>
     formatDateTimeBase(value, {
         locale: getLocale(),
         empty: EMPTY_VALUE,
-        format: { year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'UTC' }
+        format: { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }
     });
 
 /**

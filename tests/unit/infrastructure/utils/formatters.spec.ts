@@ -95,6 +95,17 @@ describe('formatUtcDate', () => {
         expect(formatUtcDate(deadline)).not.toContain('31');
     });
 
+    it('prints the month in words and no time of day, whatever zone the browser is in', () => {
+        process.env.TZ = 'Pacific/Auckland';
+
+        const printed = formatUtcDate('2026-12-05T23:59:59.999Z');
+
+        expect(printed).toContain('5');
+        expect(printed).toContain('2026');
+        expect(printed).toMatch(/december|dicembre/i);
+        expect(printed).not.toMatch(/\d:\d\d/);
+    });
+
     it('falls back for undefined, null and empty input', () => {
         expect(formatUtcDate()).toBe(EMPTY_VALUE);
         expect(formatUtcDate(null)).toBe(EMPTY_VALUE);

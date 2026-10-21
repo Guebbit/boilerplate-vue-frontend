@@ -184,7 +184,7 @@
         "type-delay_notice_sent": "Delay notice sent",
         "type-address_corrected": "Shipping address corrected by staff",
         "detail-method": "Paid by {value}",
-        "detail-withdraw-until": "Right of withdrawal until {value}",
+        "detail-withdraw-until": "Right of withdrawal until the end of {value}",
         "detail-by": "Cancelled by {value}",
         "detail-move": "From {from} to {to}",
         "detail-reason": "Reason: {value}",

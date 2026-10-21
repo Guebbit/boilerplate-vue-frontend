@@ -69,7 +69,7 @@
     },
     "withdrawal-panel": {
         "title": "Resi e recesso",
-        "until": "Puoi recedere da questo contratto fino al {date}.",
+        "until": "Puoi recedere da questo contratto fino a tutto il {date}.",
         "until-delivery": "Puoi recedere da questo contratto. Il periodo di recesso inizia alla consegna della merce.",
         "button": "Recedi dal contratto qui",
         "confirm": "Recedere dall'ordine {id}? Riceverai una conferma scritta con data e ora.",

@@ -184,7 +184,7 @@
         "type-delay_notice_sent": "Avviso di ritardo inviato",
         "type-address_corrected": "Indirizzo di spedizione corretto dal personale",
         "detail-method": "Pagato con {value}",
-        "detail-withdraw-until": "Diritto di recesso fino al {value}",
+        "detail-withdraw-until": "Diritto di recesso fino a tutto il {value}",
         "detail-by": "Annullato da {value}",
         "detail-move": "Da {from} a {to}",
         "detail-reason": "Motivo: {value}",
