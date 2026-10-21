@@ -19,14 +19,15 @@ removing a module would make the component meaningless.
 
 Small, single-purpose, and composed into the organisms below.
 
-| File                                   | What it is                                                                                         | Read next                                        |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `src/ui/molecules/DefinitionRow.vue`   | One label/value row of a `<dl>` — the dense list shape, for a panel stating a dozen facts at once. | [UI Kit](./src-ui.md)                            |
-| `src/ui/molecules/FormImageUpload.vue` | The image field: file picker, preview, and the client-side limits before a request is made.        | [Infrastructure](./src-infrastructure.md)        |
-| `src/ui/molecules/ItemDetailField.vue` | One read-only label/value pair, the atom every detail page is built from.                          | [UI Kit](./src-ui.md)                            |
-| `src/ui/molecules/ListPagination.vue`  | The paginator: page count in, page changes out, no knowledge of what is being paged.               | [State & Routing](../tools/state-and-routing.md) |
-| `src/ui/molecules/SortSelect.vue`      | The "Sort by" picker for a card list: server sort tokens, with a default order first.              | [UI Kit](./src-ui.md)                            |
-| `src/ui/molecules/TableLoadingBar.vue` | The loading bar a `v-data-table` renders through its `#loader` slot.                               | [UI Kit](./src-ui.md)                            |
+| File                                   | What it is                                                                                                     | Read next                                        |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `src/ui/molecules/CopyButton.vue`      | An icon button that copies one text to the clipboard and toasts the outcome — the one copy control in the app. | [UI Kit](./src-ui.md)                            |
+| `src/ui/molecules/DefinitionRow.vue`   | One label/value row of a `<dl>` — the dense list shape, for a panel stating a dozen facts at once.             | [UI Kit](./src-ui.md)                            |
+| `src/ui/molecules/FormImageUpload.vue` | The image field: file picker, preview, and the client-side limits before a request is made.                    | [Infrastructure](./src-infrastructure.md)        |
+| `src/ui/molecules/ItemDetailField.vue` | One read-only label/value pair, the atom every detail page is built from.                                      | [UI Kit](./src-ui.md)                            |
+| `src/ui/molecules/ListPagination.vue`  | The paginator: page count in, page changes out, no knowledge of what is being paged.                           | [State & Routing](../tools/state-and-routing.md) |
+| `src/ui/molecules/SortSelect.vue`      | The "Sort by" picker for a card list: server sort tokens, with a default order first.                          | [UI Kit](./src-ui.md)                            |
+| `src/ui/molecules/TableLoadingBar.vue` | The loading bar a `v-data-table` renders through its `#loader` slot.                                           | [UI Kit](./src-ui.md)                            |
 
 `src/ui/composables/use-translation-tab-order.ts` derives "which tabs are open, fallback first"
 from any per-locale record — the one piece of logic `TranslationTabs.vue` below does not own,

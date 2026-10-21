@@ -20,7 +20,6 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -33,17 +32,11 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Generics
  */
 const { t, locale } = useI18n();
-
-/**
- * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -118,11 +111,6 @@ const createdSubscriptionId = ref<string>();
 const revealedSecret = ref<string>();
 
 /**
- * Hands focus back to the control that opened the one-time secret dialog once it closes.
- */
-useReturnFocus(() => revealedSecret.value !== undefined);
-
-/**
  * This form's own blocked state — a single dedicated submit, so a failed create blocks it in
  * place rather than joining a toast queue the visitor may have looked away from.
  */
@@ -175,21 +163,12 @@ const handleSecretDone = () => {
 
 <template>
     <div id="webhook-create-page">
-        <v-dialog
-            :fullscreen="fullscreen"
-            :model-value="!!revealedSecret"
-            persistent
-            max-width="640"
-            aria-labelledby="secret-reveal-title"
-        >
-            <SecretRevealModal
-                v-if="revealedSecret"
-                :secret="revealedSecret"
-                :title="t('webhook-secret-modal.title')"
-                :intro="t('webhook-secret-modal.intro')"
-                @done="handleSecretDone"
-            />
-        </v-dialog>
+        <SecretRevealModal
+            :secret="revealedSecret"
+            :title="t('webhook-secret-modal.title')"
+            :intro="t('webhook-secret-modal.intro')"
+            @done="handleSecretDone"
+        />
 
         <FormCard
             ref="card"

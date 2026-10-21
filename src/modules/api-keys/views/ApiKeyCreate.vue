@@ -19,7 +19,6 @@ export default {
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
@@ -32,17 +31,11 @@ import { getFirstApiError } from '@/infrastructure/http/envelope.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { MintApiKeyRequest } from '@types';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Generics
  */
 const { t, locale } = useI18n();
-
-/**
- * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -95,11 +88,6 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  * but this component; the store's own cache never sees it (`store.ts`'s `mintCredential`).
  */
 const revealedSecret = ref<string>();
-
-/**
- * Hands focus back to the control that opened the one-time secret dialog once it closes.
- */
-useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * Reads the offending permission keys off a mint refusal — `details.permissions`, beside
@@ -179,21 +167,12 @@ const handleSecretDone = () => {
 
 <template>
     <div id="api-key-create-page">
-        <v-dialog
-            :fullscreen="fullscreen"
-            :model-value="!!revealedSecret"
-            persistent
-            max-width="640"
-            aria-labelledby="secret-reveal-title"
-        >
-            <SecretRevealModal
-                v-if="revealedSecret"
-                :secret="revealedSecret"
-                :title="t('api-key-secret-modal.title')"
-                :intro="t('api-key-secret-modal.intro')"
-                @done="handleSecretDone"
-            />
-        </v-dialog>
+        <SecretRevealModal
+            :secret="revealedSecret"
+            :title="t('api-key-secret-modal.title')"
+            :intro="t('api-key-secret-modal.intro')"
+            @done="handleSecretDone"
+        />
 
         <FormCard
             ref="card"

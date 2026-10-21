@@ -28,7 +28,7 @@ export const useCopyToClipboard = (failureKey: string): ((text: string) => Promi
 
     return (text) =>
         copyToClipboard(text).then((succeeded) => {
-            if (succeeded) addMessage(t('generic.secret-reveal-copied'));
+            if (succeeded) addMessage(t('generic.copied'));
             else addMessage(t(failureKey), EToastType.DANGER);
         });
 };
