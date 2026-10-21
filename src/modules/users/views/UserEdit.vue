@@ -157,6 +157,23 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
+ * Sends the PATCH body, tracking upload progress when a picture rides along.
+ *
+ * @param id - The user being edited.
+ * @param body - The changed fields.
+ * @param imageUpload - The picked file, if any.
+ * @returns The update call's promise.
+ */
+const sendUser = (
+    id: string,
+    body: Omit<Parameters<typeof updateUser>[1], 'imageUpload'>,
+    imageUpload: Parameters<typeof trackUpload>[0]
+) =>
+    trackUpload(imageUpload, (options) =>
+        updateUser(id, { ...body, imageUpload }, { requestOptions: options })
+    );
+
+/**
  * Auto-hydrate the form from the fetched record once it resolves. `role`/`active` fall back to
  * `''`/`true` (the record's own least-privileged defaults) rather than `undefined`, so
  * {@link roleChanged}/{@link activeChanged} in `submitForm` compare against a concrete baseline
@@ -338,11 +355,7 @@ const submitForm = () => {
                 { username, role, active, locale, phone, website },
                 target
             )
-                .then((body) =>
-                    trackUpload(imageUpload, (options) =>
-                        updateUser(id, { ...body, imageUpload }, { requestOptions: options })
-                    )
-                )
+                .then((body) => sendUser(id, body, imageUpload))
                 .then(() => {
                     // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
                     // local File has done its job and holding it would only re-upload the same bytes on

@@ -55,6 +55,49 @@ export const stripSensitiveUrlParts = (url: string): string => {
 };
 
 /**
+ * One OTLP key/value pair on a span; only string values can carry a URL.
+ */
+interface SpanAttribute {
+    key?: string;
+    value?: { stringValue?: string };
+}
+
+/**
+ * The OTLP trace payload shape this file walks: resource → scope → span → attributes.
+ */
+interface OtlpPayload {
+    resourceSpans?: { scopeSpans?: { spans?: { attributes?: SpanAttribute[] }[] }[] }[];
+}
+
+/**
+ * Flattens an OTLP trace payload into its span attributes: a flat `{ key, value }` array on every
+ * span, under every scope, under every resource.
+ *
+ * @param payload - The item payload, which for non-trace items has no `resourceSpans`.
+ * @returns Every span attribute, empty for payloads that are not traces.
+ */
+const spanAttributes = (payload: OtlpPayload): SpanAttribute[] =>
+    (payload.resourceSpans ?? [])
+        .flatMap((resource) => resource.scopeSpans ?? [])
+        .flatMap((scope) => scope.spans ?? [])
+        .flatMap((span) => span.attributes ?? []);
+
+/**
+ * Redacts a span attribute in place when it holds a URL. `url.full` is the current OTel
+ * semantic-convention key; `http.url` is what older instrumentation versions still emit.
+ *
+ * @param kv - One span attribute.
+ */
+const stripSpanUrlAttribute = (kv: SpanAttribute): void => {
+    if (
+        (kv.key !== 'url.full' && kv.key !== 'http.url') ||
+        typeof kv.value?.stringValue !== 'string'
+    )
+        return;
+    kv.value.stringValue = stripSensitiveUrlParts(kv.value.stringValue);
+};
+
+/**
  * Faro `beforeSend` hook: strips one-time email tokens (verification, password reset, account
  * deletion, email change all pass them as a `#token=` fragment — which `stripSensitiveUrlParts` drops along with any query) out of every telemetry item
  * before it leaves the browser — the page URL every item's `meta.page` carries, the URL
@@ -70,20 +113,7 @@ export const stripTokensFromTelemetry = (item: TransportItem): TransportItem => 
         item.meta.page = { ...item.meta.page, url: stripSensitiveUrlParts(item.meta.page.url) };
     }
 
-    // Trace spans carry their own URL, OTLP-style: a flat `attributes` array of `{ key, value }`
-    // pairs on every span, under every scope, under every resource. `url.full` is the current
-    // OTel semantic-convention key; `http.url` is what older instrumentation versions still emit.
-    for (const resourceSpan of (item.payload as { resourceSpans?: unknown[] }).resourceSpans ?? [])
-        for (const scopeSpan of (resourceSpan as { scopeSpans?: unknown[] }).scopeSpans ?? [])
-            for (const span of (scopeSpan as { spans?: unknown[] }).spans ?? [])
-                for (const attribute of (span as { attributes?: unknown[] }).attributes ?? []) {
-                    const kv = attribute as { key?: string; value?: { stringValue?: string } };
-                    if (
-                        (kv.key === 'url.full' || kv.key === 'http.url') &&
-                        typeof kv.value?.stringValue === 'string'
-                    )
-                        kv.value.stringValue = stripSensitiveUrlParts(kv.value.stringValue);
-                }
+    for (const kv of spanAttributes(item.payload as OtlpPayload)) stripSpanUrlAttribute(kv);
 
     stripEventUrls(item.payload as EventPayload);
 

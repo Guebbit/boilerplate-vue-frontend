@@ -45,13 +45,13 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 
 ## `observability`
 
-| Term          | What it means here                                                                              |
-| ------------- | ----------------------------------------------------------------------------------------------- |
-| **KPI**       | One headline number on the console. Read from the observability endpoints, never computed here. |
-| **Audit log** | The server’s record of who did what. This module renders it and owns none of it.                |
-| **Health**    | Whether the API can serve. A liveness answer, not a correctness one.                            |
+| Term          | What it means here                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| **KPI**       | One headline number on the console. Read from the observability endpoints, never computed here.     |
+| **Audit log** | The server’s record of who did what. This module renders it and owns none of it.                    |
+| **Health**    | Whether the API can serve. A liveness answer, not a correctness one.                                |
 | **Stream**    | The live SSE feed of observability metrics. Opened by this module, transported by `infrastructure`. |
-| **Frame**     | One message off the stream, shown raw so the shape is visible rather than described.            |
+| **Frame**     | One message off the stream, shown raw so the shape is visible rather than described.                |
 
 ## `cart`
 

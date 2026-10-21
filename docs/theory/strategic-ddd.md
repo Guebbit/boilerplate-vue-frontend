@@ -116,11 +116,11 @@ prose moved to the glossary page.
 DDD's own advice is the part most often skipped: tactical patterns belong in the **core** domain,
 and everything else should use the simplest thing that works.
 
-| Subdomain    | Meaning                                                         | Here                                                     |
-| ------------ | --------------------------------------------------------------- | -------------------------------------------------------- |
-| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                             |
+| Subdomain    | Meaning                                                         | Here                                                                                                 |
+| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                         |
 | `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`, `stats`, `notifications`, `returns`, `stock-alerts` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `api-keys`, `example`, `feedback`, `locales`, `observability`, `webhooks` |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `api-keys`, `example`, `feedback`, `locales`, `observability`, `webhooks`        |
 
 The rule of thumb that follows: **a `generic` module should not carry a `domain/` folder.** A
 pure-rules layer inside authentication or i18n is effort spent on the part of the client that should

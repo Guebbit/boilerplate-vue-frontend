@@ -66,6 +66,36 @@ export const useAuthStore = defineStore('accountAuth', () => {
     });
 
     /**
+     * Turns a login response into a {@link LoginOutcome}: an MFA challenge as-is, or an adopted
+     * session plus the freshly fetched profile.
+     *
+     * @param data - The raw login response.
+     * @param remember - The "remember me" choice, forwarded to the session.
+     * @returns The outcome to hand back to the caller.
+     */
+    const toLoginOutcome = (
+        data: Awaited<ReturnType<typeof apiLogin>>,
+        remember: boolean
+    ): Promise<LoginOutcome> | LoginOutcome => {
+        const payload = getPayloadFromResponse<ApiLoginOutcome>(data);
+        // `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
+        // all, so the union needs a guard TS can narrow on rather than an optional access.
+        if (payload && 'mfaRequired' in payload)
+            return {
+                kind: 'mfa',
+                challenge: payload.challenge,
+                expiresAt: payload.expiresAt,
+                methods: payload.methods,
+                defaultMethod: payload.defaultMethod
+            } as const;
+
+        session.adoptSession(data, remember);
+        return useProfileStore()
+            .fetchProfile(true)
+            .then(() => ({ kind: 'session' }) as const);
+    };
+
+    /**
      * Authenticates the user. A plain account adopts the session (the access token in `jwt` mode,
      * the granted cookie in `cookie` mode), flags the `isAuth` cookie
      * and loads the profile; an account with two-factor armed resolves with the step-up challenge
@@ -100,24 +130,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
                     remember: remember ? RememberTier.long : undefined
                 },
                 options
-            ).then((data) => {
-                const payload = getPayloadFromResponse<ApiLoginOutcome>(data);
-                // `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
-                // all, so the union needs a guard TS can narrow on rather than an optional access.
-                if (payload && 'mfaRequired' in payload)
-                    return {
-                        kind: 'mfa',
-                        challenge: payload.challenge,
-                        expiresAt: payload.expiresAt,
-                        methods: payload.methods,
-                        defaultMethod: payload.defaultMethod
-                    } as const;
-
-                session.adoptSession(data, remember);
-                return useProfileStore()
-                    .fetchProfile(true)
-                    .then(() => ({ kind: 'session' }) as const);
-            })
+            ).then((data) => toLoginOutcome(data, remember))
         ).then((outcome) => {
             if (!outcome) throw new Error('login(): fetchAny resolved without a value');
             return outcome;
