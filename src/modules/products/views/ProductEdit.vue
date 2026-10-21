@@ -259,23 +259,6 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
- * Sends the PATCH body, tracking upload progress when a picture rides along.
- *
- * @param id - The product being edited.
- * @param body - The changed fields.
- * @param imageUpload - The picked file, if any.
- * @returns The update call's promise.
- */
-const sendProduct = (
-    id: string,
-    body: Omit<Parameters<typeof updateProduct>[1], 'imageUpload'>,
-    imageUpload: Parameters<typeof trackUpload>[0]
-) =>
-    trackUpload(imageUpload, (options) =>
-        updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
-    );
-
-/**
  * Auto-hydrate the form from the fetched admin record once it resolves.
  */
 activateAutoHydrate(
@@ -373,6 +356,39 @@ const { confirmReleaseDateMove: confirmRestockDateMove } = useReleaseDateConfirm
 );
 
 /**
+ * Sends one product's `PATCH`, with the picked image when there is one, behind the upload bar.
+ *
+ * @param productId - The routed product.
+ * @param body - The `PATCH` body.
+ * @param imageUpload - The picked replacement image, when there is one.
+ * @returns The store's update promise.
+ */
+const sendProductUpdate = (
+    productId: string,
+    body: Omit<Parameters<typeof updateProduct>[1], 'imageUpload'>,
+    imageUpload?: File
+) =>
+    trackUpload(imageUpload, (options) =>
+        updateProduct(productId, { ...body, imageUpload }, { requestOptions: options })
+    );
+
+/**
+ * After a save. The API answered with the stored `imageUrl` and the merged translations; the
+ * admin record is the only place both live, so it is reloaded rather than patched by hand — the
+ * store's own optimistic patch skips `translations` for the same reason (see `products/store.ts`).
+ *
+ * @param productId - The saved product.
+ * @returns A promise resolving `void` once the admin record is reloaded (`handleSubmit`'s
+ *  callback must resolve `void`; the reload, not its value, is the point).
+ */
+const onProductSaved = (productId: string): Promise<void> => {
+    form.value.imageUpload = undefined;
+    markSaved();
+    addMessage(t('product-edit-page.success-update'));
+    return loadAdminProduct(productId).then(() => undefined);
+};
+
+/**
  * Validates the form and persists the product changes.
  *
  * @returns A promise resolving once the flow settles: a success toast and a fresh admin-record
@@ -408,37 +424,23 @@ const submitForm = () => {
             .then((confirmed) => confirmed && confirmRestockDateMove(id, restockDate))
             .then((confirmed) => {
                 if (!confirmed) return;
-                return (
-                    toRequestBody('UpdateProductByIdBody', {
-                        price,
-                        active,
-                        purchasable,
-                        releaseDate: releaseDateChange(releaseDate),
-                        allowBackorder,
-                        restockDate: restockDateChange(restockDate),
-                        requiresShipping,
-                        noWithdrawal,
-                        weight,
-                        taxClass,
-                        categories,
-                        tags,
-                        translations: toPatchTranslations(translations)
-                    })
-                        .then((body) => sendProduct(id, body, imageUpload))
-                        .then(() => {
-                            // The API has answered with the stored `imageUrl` and the merged translations; the
-                            // admin record is the only place both live, so it is reloaded rather than patched by
-                            // hand — the store's own optimistic patch already skips `translations` for the same
-                            // reason (see `products/store.ts`).
-                            form.value.imageUpload = undefined;
-                            markSaved();
-                            addMessage(t('product-edit-page.success-update'));
-                        })
-                        .then(() => loadAdminProduct(id))
-                        // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
-                        // and the reload itself (not what it returns) is the point.
-                        .then(() => undefined)
-                );
+                return toRequestBody('UpdateProductByIdBody', {
+                    price,
+                    active,
+                    purchasable,
+                    releaseDate: releaseDateChange(releaseDate),
+                    allowBackorder,
+                    restockDate: restockDateChange(restockDate),
+                    requiresShipping,
+                    noWithdrawal,
+                    weight,
+                    taxClass,
+                    categories,
+                    tags,
+                    translations: toPatchTranslations(translations)
+                })
+                    .then((body) => sendProductUpdate(id, body, imageUpload))
+                    .then(() => onProductSaved(id));
             });
     }).catch(handleSubmitFailure);
 };

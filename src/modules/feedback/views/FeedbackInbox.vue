@@ -17,10 +17,10 @@ export default {
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Inbox, Search } from 'lucide-vue-next';
+import { Inbox } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useFeedbackStore } from '../store.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
+import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
@@ -34,6 +34,7 @@ import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import { FeedbackCategory, FeedbackRequestStatus } from '@/types/enums.ts';
 import type { FeedbackRequest, FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 
@@ -203,6 +204,14 @@ const {
 } = useBlockingError();
 
 /**
+ * The row-write pipelines, straight and confirmed, failing into {@link rowActionError}.
+ */
+const { run, runConfirmed } = useRowActions({
+    report: reportRowActionError,
+    clear: clearRowActionError
+});
+
+/**
  * Moves one ticket to a new status. The page is reloaded afterwards, since an active status
  * filter may no longer match the row.
  *
@@ -211,13 +220,12 @@ const {
  * @returns A promise settling once the write and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleStatus = (requestId: string, status: TFeedbackRequestStatus) => {
-    clearRowActionError();
-    return updateRequest(requestId, { status })
-        .then(() => addMessage(t('feedback-inbox-page.success-status')))
-        .then(() => search(true))
-        .catch((error: unknown) => reportRowActionError(error));
-};
+const handleStatus = (requestId: string, status: TFeedbackRequestStatus) =>
+    run({
+        action: () => updateRequest(requestId, { status }),
+        success: t('feedback-inbox-page.success-status'),
+        afterwards: () => search(true)
+    });
 
 /**
  * Unsaved internal-notes edits, keyed by ticket id — separate from the record itself so typing
@@ -245,17 +253,16 @@ const noteValueOf = (request: FeedbackRequest) =>
  * @returns A promise settling once the write and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleSaveNotes = (request: FeedbackRequest) => {
-    clearRowActionError();
-    // No baseline: the textarea is this save's whole intent, so an emptied one is always a clear.
-    return toRequestBody('UpdateFeedbackRequestStatusBody', {
-        adminNotes: noteValueOf(request).trim()
-    })
-        .then((body) => updateRequest(request.id, body))
-        .then(() => addMessage(t('feedback-inbox-page.success-notes')))
-        .then(() => search(true))
-        .catch((error: unknown) => reportRowActionError(error));
-};
+const handleSaveNotes = (request: FeedbackRequest) =>
+    run({
+        // No baseline: the textarea is this save's whole intent, so an emptied one is always a clear.
+        action: () =>
+            toRequestBody('UpdateFeedbackRequestStatusBody', {
+                adminNotes: noteValueOf(request).trim()
+            }).then((body) => updateRequest(request.id, body)),
+        success: t('feedback-inbox-page.success-notes'),
+        afterwards: () => search(true)
+    });
 
 /**
  * Permanently removes one ticket, after an explicit confirmation — the erasure path a GDPR
@@ -266,17 +273,12 @@ const handleSaveNotes = (request: FeedbackRequest) => {
  * ticket rather than "the one I last clicked".
  * @returns Nothing; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleDelete = (requestId: string, subject: string) => {
-    return useDialogStore()
-        .confirm({ message: t('feedback-inbox-page.confirm-delete', { subject }), color: 'error' })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return deleteRequest(requestId)
-                .then(() => addMessage(t('feedback-inbox-page.success-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
-};
+const handleDelete = (requestId: string, subject: string) =>
+    runConfirmed({
+        confirm: t('feedback-inbox-page.confirm-delete', { subject }),
+        action: () => deleteRequest(requestId),
+        success: t('feedback-inbox-page.success-delete')
+    });
 </script>
 
 <template>
@@ -323,25 +325,7 @@ const handleDelete = (requestId: string, subject: string) => {
                     />
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        :loading="loading"
-                        data-test="search-submit"
-                    >
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn
-                        variant="tonal"
-                        :disabled="loading"
-                        data-test="search-reset"
-                        @click="handleReset"
-                    >
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 

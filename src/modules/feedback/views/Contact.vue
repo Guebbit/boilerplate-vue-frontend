@@ -15,11 +15,11 @@ export default {
  * submitted through the feedback store; success resets the form in place.
  */
 import { computed, ref } from 'vue';
-import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useFeedbackStore } from '../store.ts';
+import { contactSchema } from '../schemas.ts';
 import { FeedbackCategory } from '@/types/enums.ts';
 import type { FeedbackCategory as TFeedbackCategory } from '@types';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
@@ -133,17 +133,7 @@ const {
         orderNumber: orderFromLink(),
         website: ''
     },
-    z.object({
-        name: z.string().optional(),
-        email: z.email({ error: () => t('contact-page.email-invalid') }),
-        subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
-        message: z.string().min(10, { error: () => t('contact-page.message-min') }),
-        category: z.enum(FeedbackCategory).optional(),
-        orderNumber: z.string().max(40).optional(),
-        // Never shown to a visitor, so never validated — the BE decides what a filled value
-        // means; this form only has to carry it through unedited.
-        website: z.string().optional()
-    }),
+    contactSchema,
     {
         formElement,
         revalidateOn: locale,

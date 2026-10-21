@@ -19,7 +19,7 @@ import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search, Plus } from 'lucide-vue-next';
+import { Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useExampleStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -34,12 +34,13 @@ import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 
 /**
  * Translation function.
@@ -158,6 +159,14 @@ const {
 } = useBlockingError();
 
 /**
+ * The confirm → delete → toast pipeline, failing into {@link rowActionError}.
+ */
+const { runConfirmed } = useRowActions({
+    report: reportRowActionError,
+    clear: clearRowActionError
+});
+
+/**
  * Deletes an example after an explicit confirmation.
  *
  * @param example - The example to delete.
@@ -165,18 +174,11 @@ const {
  *  a failure blocks the list in place.
  */
 const handleDelete = (example: Example) =>
-    useDialogStore()
-        .confirm({
-            message: t('examples-list-page.confirm-delete', { title: example.title }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return deleteExample(example.id)
-                .then(() => addMessage(t('examples-list-page.success-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('examples-list-page.confirm-delete', { title: example.title }),
+        action: () => deleteExample(example.id),
+        success: t('examples-list-page.success-delete')
+    });
 </script>
 
 <template>
@@ -202,14 +204,7 @@ const handleDelete = (example: Example) =>
                     />
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary" data-test="search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
+                <ListSearchActions @reset="handleReset">
                     <v-spacer />
                     <v-btn
                         v-if="session.can('create', 'Example')"
@@ -220,7 +215,7 @@ const handleDelete = (example: Example) =>
                         <Plus :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('examples-list-page.button-create') }}
                     </v-btn>
-                </div>
+                </ListSearchActions>
             </form>
         </v-card>
 

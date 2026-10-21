@@ -18,7 +18,7 @@ export default {
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search, Undo2 } from 'lucide-vue-next';
+import { Undo2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useReturnsStore } from '../store.ts';
@@ -29,6 +29,7 @@ import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import { ReturnStatus, ReturnReason } from '@/types/enums.ts';
 
 /**
@@ -153,25 +154,7 @@ const { handleSearch, handleReset } = useListSearch({
                     />
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        :loading="loading"
-                        data-test="search-submit"
-                    >
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn
-                        variant="tonal"
-                        :disabled="loading"
-                        data-test="search-reset"
-                        @click="handleReset"
-                    >
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 

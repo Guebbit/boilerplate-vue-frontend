@@ -28,6 +28,7 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
+import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
@@ -39,12 +40,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import {
-    EMPTY_VALUE,
-    formatText,
-    formatDateTime,
-    formatCurrency
-} from '@/infrastructure/utils/formatters.ts';
+import { EMPTY_VALUE, formatDateTime, formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -359,33 +355,13 @@ activateAutoHydrate(
 );
 
 /**
- * Hero heading.
- *
- * @returns The loaded order id, the route id while loading, or the generic page
- *  title as a last resort.
+ * Hero heading, subheading and translated status.
  */
-const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-edit-page.page-title'));
-
-/**
- * Hero subheading.
- *
- * @returns The order notes, falling back to the customer email, then to the
- *  empty-value glyph.
- */
-const heroDescription = computed(() =>
-    formatText(currentOrder.value?.notes || currentOrder.value?.email)
+const { heroTitle, heroDescription, orderStatus } = useOrderHero(
+    currentOrder,
+    () => id,
+    'order-edit-page.page-title'
 );
-
-/**
- * Localized order status.
- *
- * @returns The translated status label, or the empty-value glyph when the order
- *  carries no status yet.
- */
-const orderStatus = computed(() => {
-    const status = currentOrder.value?.status;
-    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
-});
 
 /**
  * The edit form's own blocked state — a failed save blocks this specific form, separate from

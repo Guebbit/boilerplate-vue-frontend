@@ -24,7 +24,8 @@ import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useStatsStore } from '../store.ts';
-import { bucketLabel, periodFromQuery } from '../domain';
+import { periodFromQuery } from '../domain';
+import { formatBucketStart } from '@/infrastructure/utils/formatters.ts';
 import type { ChartModel, StatsPeriodChoice } from '../domain';
 import StatsPeriodForm from '../components/StatsPeriodForm.vue';
 import ChartWithTable from '../components/ChartWithTable.vue';
@@ -38,9 +39,9 @@ const props = defineProps<{
 }>();
 
 /**
- * Translation function and locale.
+ * Translation function.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 /**
  * Router and current route, for the period in the query and the orders link.
@@ -108,11 +109,10 @@ const chart = computed<ChartModel>(() => {
     const series = productSeries.value;
     const buckets = series?.buckets ?? [];
     const labels = buckets.map(({ start }) =>
-        bucketLabel(
+        formatBucketStart(
             start,
             series?.period.timeZone ?? 'UTC',
-            series?.period.interval ?? period.value.interval,
-            locale.value
+            series?.period.interval ?? period.value.interval
         )
     );
     return {

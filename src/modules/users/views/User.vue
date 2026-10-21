@@ -27,6 +27,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
+import { useUserSummary } from '../composables/use-user-summary.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { Calendar, Circle, Clock, Hash, Mail, CirclePause, Shield, User } from 'lucide-vue-next';
@@ -41,7 +42,7 @@ import UserAccessDialog from '../components/UserAccessDialog.vue';
 import UserPurchaseHoldDialog from '../components/UserPurchaseHoldDialog.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
 import type { SetPurchaseHoldRequest } from '@types';
-import { formatText, formatDateTime, formatFlag } from '@/infrastructure/utils/formatters.ts';
+import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * Translations helper.
@@ -91,39 +92,12 @@ const auditLogTo = computed(() =>
 );
 
 /**
- * Hero heading.
- *
- * @returns The loaded username, the route id while loading, or the generic page
- *  title as a last resort.
+ * Hero heading and subheading, role and status chip labels for the routed user.
  */
-const heroTitle = computed(
-    () => currentUser.value?.username ?? id ?? t('user-target-page.page-title')
-);
-
-/**
- * Hero subheading.
- *
- * @returns The user email, or the empty-value glyph when unknown.
- */
-const heroDescription = computed(() => formatText(currentUser.value?.email));
-
-/**
- * Label of the role chip.
- *
- * @returns The role's own name, or the empty-value glyph while the user is
- *  unknown. Not a translated administrator/standard pair: roles are data a
- *  deployment may add to, and only the rules say what each one may do.
- */
-const userRole = computed(() => formatText(currentUser.value?.role));
-
-/**
- * Label of the status chip.
- *
- * @returns The localized enabled/disabled wording, or the empty-value glyph
- *  while the user is unknown.
- */
-const userStatus = computed(() =>
-    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
+const { heroTitle, heroDescription, userRole, userStatus } = useUserSummary(
+    currentUser,
+    () => id,
+    'user-target-page.page-title'
 );
 
 /**

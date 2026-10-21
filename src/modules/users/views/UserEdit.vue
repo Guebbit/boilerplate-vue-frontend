@@ -35,6 +35,7 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
+import { useUserSummary } from '../composables/use-user-summary.ts';
 import { usersSchema } from '../schemas.ts';
 import { useRoleOptions } from '../composables/use-role-options.ts';
 import { supportedLanguages } from '@/i18n';
@@ -49,12 +50,7 @@ import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
-import {
-    EMPTY_VALUE,
-    formatText,
-    formatDateTime,
-    formatFlag
-} from '@/infrastructure/utils/formatters.ts';
+import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -157,23 +153,6 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
- * Sends the PATCH body, tracking upload progress when a picture rides along.
- *
- * @param id - The user being edited.
- * @param body - The changed fields.
- * @param imageUpload - The picked file, if any.
- * @returns The update call's promise.
- */
-const sendUser = (
-    id: string,
-    body: Omit<Parameters<typeof updateUser>[1], 'imageUpload'>,
-    imageUpload: Parameters<typeof trackUpload>[0]
-) =>
-    trackUpload(imageUpload, (options) =>
-        updateUser(id, { ...body, imageUpload }, { requestOptions: options })
-    );
-
-/**
  * Auto-hydrate the form from the fetched record once it resolves. `role`/`active` fall back to
  * `''`/`true` (the record's own least-privileged defaults) rather than `undefined`, so
  * {@link roleChanged}/{@link activeChanged} in `submitForm` compare against a concrete baseline
@@ -246,39 +225,12 @@ const {
 } = useUserAccessDialog();
 
 /**
- * Hero heading.
- *
- * @returns The loaded username, the route id while loading, or the generic page
- *  title as a last resort.
+ * Hero heading and subheading, role and status chip labels for the routed user.
  */
-const heroTitle = computed(
-    () => currentUser.value?.username ?? id ?? t('user-edit-page.page-title')
-);
-
-/**
- * Hero subheading.
- *
- * @returns The user email, or the empty-value glyph when unknown.
- */
-const heroDescription = computed(() => formatText(currentUser.value?.email));
-
-/**
- * Label of the role chip.
- *
- * @returns The role's own name, or the empty-value glyph while the user is
- *  unknown. Not a translated administrator/standard pair: roles are data a
- *  deployment may add to, and only the rules say what each one may do.
- */
-const userRole = computed(() => formatText(currentUser.value?.role));
-
-/**
- * Label of the status chip.
- *
- * @returns The localized enabled/disabled wording, or the empty-value glyph
- *  while the user is unknown.
- */
-const userStatus = computed(() =>
-    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
+const { heroTitle, heroDescription, userRole, userStatus } = useUserSummary(
+    currentUser,
+    () => id,
+    'user-edit-page.page-title'
 );
 
 /**
@@ -306,6 +258,33 @@ const {
 } = useStaleRecord({ warn: warnSubmit, clear: clearSubmitError }, () =>
     id ? fetchUser(id, { forced: true }) : Promise.resolve()
 );
+
+/**
+ * Sends one user's `PATCH`, with the picked image when there is one, behind the upload bar.
+ *
+ * @param userId - The routed user.
+ * @param body - The merging `PATCH` body.
+ * @param imageUpload - The picked replacement image, when there is one.
+ * @returns The store's update promise.
+ */
+const sendUserUpdate = (
+    userId: string,
+    body: Omit<Parameters<typeof updateUser>[1], 'imageUpload'>,
+    imageUpload?: File
+) =>
+    trackUpload(imageUpload, (options) =>
+        updateUser(userId, { ...body, imageUpload }, { requestOptions: options })
+    );
+
+/**
+ * After a save: the served `imageUrl` is back in `currentUser`, so the local File has done its
+ * job — holding it would re-upload the same bytes on the next save.
+ */
+const onUserSaved = () => {
+    form.value.imageUpload = undefined;
+    markSaved();
+    addMessage(t('user-edit-page.success-update'));
+};
 
 /**
  * Validates the form and persists the user changes.
@@ -355,15 +334,8 @@ const submitForm = () => {
                 { username, role, active, locale, phone, website },
                 target
             )
-                .then((body) => sendUser(id, body, imageUpload))
-                .then(() => {
-                    // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
-                    // local File has done its job and holding it would only re-upload the same bytes on
-                    // the next save.
-                    form.value.imageUpload = undefined;
-                    markSaved();
-                    addMessage(t('user-edit-page.success-update'));
-                });
+                .then((body) => sendUserUpdate(id, body, imageUpload))
+                .then(onUserSaved);
         });
     }).catch((error) => {
         if (handleStaleSave(error)) return;

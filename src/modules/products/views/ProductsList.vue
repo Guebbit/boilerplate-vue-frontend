@@ -20,7 +20,7 @@ import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { PackagePlus, Search } from 'lucide-vue-next';
+import { PackagePlus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -41,12 +41,14 @@ import SortSelect from '@/ui/molecules/SortSelect.vue';
 import ProductCard from '../components/ProductCard.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
+import RowDeletedChip from '@/ui/molecules/RowDeletedChip.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
+import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
 /**
@@ -309,6 +311,14 @@ const {
 } = useBlockingError();
 
 /**
+ * The row-write pipelines, straight and confirmed, failing into {@link rowActionError}.
+ */
+const { run, runConfirmed } = useRowActions({
+    report: reportRowActionError,
+    clear: clearRowActionError
+});
+
+/**
  * Deletes a product after an explicit confirmation.
  *
  * @param productId - Identifier of the product to delete.
@@ -317,18 +327,11 @@ const {
  *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleDelete = (productId: string, title: string) =>
-    useDialogStore()
-        .confirm({
-            message: t('products-list-page.confirm-delete', { name: title }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return deleteProduct(productId)
-                .then(() => addMessage(t('products-list-page.success-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('products-list-page.confirm-delete', { name: title }),
+        action: () => deleteProduct(productId),
+        success: t('products-list-page.success-delete')
+    });
 
 /**
  * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
@@ -338,13 +341,12 @@ const handleDelete = (productId: string, title: string) =>
  * @returns A promise settling once the restore and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleRestore = (productId: string) => {
-    clearRowActionError();
-    return restoreProduct(productId)
-        .then(() => addMessage(t('products-list-page.success-restore')))
-        .then(() => search(true))
-        .catch((error: unknown) => reportRowActionError(error));
-};
+const handleRestore = (productId: string) =>
+    run({
+        action: () => restoreProduct(productId),
+        success: t('products-list-page.success-restore'),
+        afterwards: () => search(true)
+    });
 
 /**
  * Permanently deletes a product after an explicit confirmation. Unlike {@link handleDelete}, this
@@ -356,18 +358,11 @@ const handleRestore = (productId: string) => {
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleHardDelete = (productId: string, title: string) =>
-    useDialogStore()
-        .confirm({
-            message: t('products-list-page.confirm-hard-delete', { name: title }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return hardDeleteProduct(productId)
-                .then(() => addMessage(t('products-list-page.success-hard-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('products-list-page.confirm-hard-delete', { name: title }),
+        action: () => hardDeleteProduct(productId),
+        success: t('products-list-page.success-hard-delete')
+    });
 </script>
 
 <template>
@@ -490,14 +485,7 @@ const handleHardDelete = (productId: string, title: string) =>
                     />
                     <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary" data-test="search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
+                <ListSearchActions @reset="handleReset">
                     <v-spacer />
                     <v-btn
                         v-if="session.can('create', 'Product')"
@@ -508,7 +496,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         <PackagePlus :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('products-list-page.button-create-product') }}
                     </v-btn>
-                </div>
+                </ListSearchActions>
             </form>
         </v-card>
 
@@ -583,16 +571,7 @@ const handleHardDelete = (productId: string, title: string) =>
                 <v-chip size="small" variant="tonal" :color="item.active ? 'success' : 'error'">
                     {{ item.active ? t('generic.enabled') : t('generic.disabled') }}
                 </v-chip>
-                <v-chip
-                    v-if="item.deletedAt"
-                    size="small"
-                    variant="tonal"
-                    color="warning"
-                    class="ml-1"
-                    data-test="row-deleted"
-                >
-                    {{ t('generic.deleted') }}
-                </v-chip>
+                <RowDeletedChip v-if="item.deletedAt" />
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">

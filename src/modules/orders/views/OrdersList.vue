@@ -24,7 +24,7 @@ import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Download, Search } from 'lucide-vue-next';
+import { Download } from 'lucide-vue-next';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
@@ -51,11 +51,13 @@ import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
 import { OrderSortItem } from '@/types/enums.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
+import RowDeletedChip from '@/ui/molecules/RowDeletedChip.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
+import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
 /**
@@ -393,6 +395,14 @@ const {
 } = useBlockingError();
 
 /**
+ * The row-write pipelines, straight and confirmed, failing into {@link rowActionError}.
+ */
+const { run, runConfirmed } = useRowActions({
+    report: reportRowActionError,
+    clear: clearRowActionError
+});
+
+/**
  * Deletes an order after an explicit confirmation.
  *
  * @param orderId - Identifier of the order to delete.
@@ -400,18 +410,11 @@ const {
  *  delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleDelete = (orderId: string) =>
-    useDialogStore()
-        .confirm({
-            message: t('orders-list-page.confirm-delete', { id: orderId }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return deleteOrder(orderId)
-                .then(() => addMessage(t('orders-list-page.success-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('orders-list-page.confirm-delete', { id: orderId }),
+        action: () => deleteOrder(orderId),
+        success: t('orders-list-page.success-delete')
+    });
 
 /**
  * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
@@ -421,13 +424,12 @@ const handleDelete = (orderId: string) =>
  * @returns A promise settling once the restore and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleRestore = (orderId: string) => {
-    clearRowActionError();
-    return restoreOrder(orderId)
-        .then(() => addMessage(t('orders-list-page.success-restore')))
-        .then(() => search(true))
-        .catch((error: unknown) => reportRowActionError(error));
-};
+const handleRestore = (orderId: string) =>
+    run({
+        action: () => restoreOrder(orderId),
+        success: t('orders-list-page.success-restore'),
+        afterwards: () => search(true)
+    });
 
 /**
  * Permanently deletes an order after an explicit confirmation. Unlike {@link handleDelete}, this
@@ -438,18 +440,11 @@ const handleRestore = (orderId: string) => {
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleHardDelete = (orderId: string) =>
-    useDialogStore()
-        .confirm({
-            message: t('orders-list-page.confirm-hard-delete', { id: orderId }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return hardDeleteOrder(orderId)
-                .then(() => addMessage(t('orders-list-page.success-hard-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('orders-list-page.confirm-hard-delete', { id: orderId }),
+        action: () => hardDeleteOrder(orderId),
+        success: t('orders-list-page.success-hard-delete')
+    });
 
 /**
  * Whether an export is running. Its own flag, not the store's `loading`: the table stays usable
@@ -623,14 +618,7 @@ const handleExport = () => {
                     hide-details
                     class="mt-2"
                 />
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" data-test="search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
+                <ListSearchActions @reset="handleReset">
                     <v-btn
                         v-if="isStaff && session.can('export', 'Order')"
                         variant="tonal"
@@ -644,7 +632,7 @@ const handleExport = () => {
                         <Download :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('orders-export.button') }}
                     </v-btn>
-                </div>
+                </ListSearchActions>
                 <InlineErrorAlert
                     :message="exportError"
                     :type="exportErrorType"
@@ -704,16 +692,7 @@ const handleExport = () => {
                 >
                     {{ t(`order-target-page.fulfillment-status-${item.fulfillmentStatus}`) }}
                 </v-chip>
-                <v-chip
-                    v-if="item.deletedAt"
-                    size="small"
-                    variant="tonal"
-                    color="warning"
-                    class="ml-1"
-                    data-test="row-deleted"
-                >
-                    {{ t('generic.deleted') }}
-                </v-chip>
+                <RowDeletedChip v-if="item.deletedAt" />
             </template>
 
             <template v-slot:[`item.payment`]="{ item }">

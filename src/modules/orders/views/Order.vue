@@ -18,7 +18,7 @@ export default {
  */
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { shopCurrency } from '@/infrastructure/shop.ts';
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
@@ -29,6 +29,8 @@ import { useOrdersStore } from '../store.ts';
 import { leftOutByReorder } from '../domain';
 import OrderTimeline from '../components/OrderTimeline.vue';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
+import { useOrderDocuments } from '../composables/use-order-documents.ts';
+import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useCartStore } from '@/modules/cart';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import {
@@ -56,7 +58,7 @@ import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
-    EMPTY_VALUE,
+    formatAddressLine,
     formatText,
     formatDate,
     formatDateTime,
@@ -65,14 +67,12 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel } from '@/modules/payments';
 import { WithdrawalPanel } from '@/modules/returns';
 import { ShipmentPanel, ShippingMethodName } from '@/modules/delivery';
 import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import TourButton from '@/ui/molecules/TourButton.vue';
-import type { CreditNoteSummary } from '@types';
 
 /**
  * Generic translation and notification accessors.
@@ -94,8 +94,7 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { watchOrder, fetchOrder, fetchInvoice, fetchCreditNotes, fetchCreditNote, cancelOrder } =
-    useOrdersStore();
+const { watchOrder, fetchOrder, cancelOrder } = useOrdersStore();
 
 /**
  * The session, for the `meta.can` rules that gate the "History" link and the "Edit" button — a
@@ -163,16 +162,6 @@ const timelineRefreshKey = computed(() =>
  * @returns `true` while this order can still be cancelled by whoever is looking at it.
  */
 const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
-
-/**
- * Whether the server has actually issued this order's invoice — true once its `pending → paid`
- * transition landed, per the same rule {@link cancellable} follows: read from the server rather
- * than re-derived, so a lifecycle rule that changes there cannot leave this button offering a
- * download the API refuses with 404.
- *
- * @returns `true` once `GET /orders/{id}/invoice` would answer a PDF rather than a 404.
- */
-const invoiceAvailable = computed(() => currentOrder.value?.actions?.invoice === true);
 
 /**
  * The order's own frozen currency — every price on this page is `currentOrder`'s own money,
@@ -252,197 +241,42 @@ const handleReorder = () => {
 };
 
 /**
- * Hero heading.
- *
- * @returns The loaded order id, the route id while loading, or the generic page
- *  title as a last resort.
+ * Hero heading, subheading and translated status.
  */
-const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-target-page.page-title'));
-
-/**
- * Hero subheading.
- *
- * @returns The order notes, falling back to the customer email, then to the
- *  empty-value glyph.
- */
-const heroDescription = computed(() =>
-    formatText(currentOrder.value?.notes || currentOrder.value?.email)
+const { heroTitle, heroDescription, orderStatus } = useOrderHero(
+    currentOrder,
+    () => id,
+    'order-target-page.page-title'
 );
-
-/**
- * Localized order status.
- *
- * @returns The translated status label, or the empty-value glyph when the order
- *  carries no status yet.
- */
-const orderStatus = computed(() => {
-    const status = currentOrder.value?.status;
-    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
-});
-
-/**
- * One frozen address as one readable line.
- *
- * @param address - The order's `shippingAddress` or `billingAddress`, when it carries one.
- * @returns The address as one line, or `undefined` when the order has none.
- */
-const addressLine = (
-    address:
-        { fullName: string; street: string; zip: string; city: string; country: string } | undefined
-) =>
-    address
-        ? `${address.fullName}, ${address.street}, ${address.zip} ${address.city}, ${address.country}`
-        : undefined;
 
 /**
  * The frozen shipping address, one line — whoever fulfils the order needs to see it without
  * opening the address book, which may since have changed or lost the entry this order was placed
  * against. Absent on an order with nothing to ship to an address (digital-only, or a pickup).
  */
-const shippingAddressText = computed(() => addressLine(currentOrder.value?.shippingAddress));
+const shippingAddressText = computed(() => formatAddressLine(currentOrder.value?.shippingAddress));
 
 /**
  * The frozen billing address, one line — the address the invoice is made out to. Every order a
  * checkout placed carries one, whether or not anything ships.
  */
-const billingAddressText = computed(() => addressLine(currentOrder.value?.billingAddress));
+const billingAddressText = computed(() => formatAddressLine(currentOrder.value?.billingAddress));
 
 /**
- * Whether an invoice request — either action below — is in flight. Its own flag, not the store's
- * shared `loading`, so paging through or cancelling the order doesn't spin this button too.
- */
-const invoiceLoading = ref(false);
-
-/**
- * The invoice actions' own blocked state — download and view are the same {@link withInvoice}
- * call rendering the PDF two different ways, so one blocked state covers both buttons.
+ * The invoice and its credit notes: whether they exist, the download/view actions, and each
+ * action's own loading and blocked state.
  */
 const {
-    message: invoiceError,
-    report: reportInvoiceError,
-    clear: clearInvoiceError
-} = useBlockingError();
-
-/**
- * Renders the invoice once and hands the bytes to `action` — the one request either button below
- * makes.
- *
- * @param action - What to do with the fetched PDF.
- * @returns A promise resolving once `action` ran; a missing route id or an empty response (the
- *  toolkit's `fetchAny` declining to run) is a no-op, and a render failure blocks both invoice
- *  buttons in place ({@link invoiceError}).
- */
-const withInvoice = (action: (blob: Blob) => void) => {
-    if (!id) return;
-    invoiceLoading.value = true;
-    clearInvoiceError();
-    return fetchInvoice(id)
-        .then((blob) => {
-            if (blob) action(blob);
-        })
-        .catch((error: unknown) => reportInvoiceError(error))
-        .finally(() => {
-            invoiceLoading.value = false;
-        });
-};
-
-/**
- * Downloads the server-rendered invoice as a PDF file.
- *
- * @returns A promise resolving once the download has been triggered.
- */
-const downloadInvoice = () => withInvoice((blob) => downloadBlob(blob, `order-${id}-invoice.pdf`));
-
-/**
- * Opens the server-rendered invoice in a new tab, for a look before deciding whether to keep it.
- * The object URL is revoked once that tab has loaded it, or right away if the popup was blocked.
- *
- * @returns A promise resolving once the tab has been opened.
- */
-const viewInvoice = () =>
-    withInvoice((blob) => {
-        const url = URL.createObjectURL(blob);
-        const tab = window.open(url, '_blank');
-        if (tab) tab.addEventListener('load', () => URL.revokeObjectURL(url));
-        else URL.revokeObjectURL(url);
-    });
-
-/**
- * The order's credit notes, oldest first — one per settled refund. The list itself says which
- * exist; a boolean flag could not pick among several partial-refund notes.
- */
-const creditNotes = ref<CreditNoteSummary[]>([]);
-
-/**
- * Which credit note is being downloaded, so only that row's button spins. `undefined` when none.
- */
-const creditNoteLoadingId = ref<string>();
-
-/**
- * The credit-note download's own blocked state, separate from the invoice's.
- */
-const {
-    message: creditNoteError,
-    report: reportCreditNoteError,
-    clear: clearCreditNoteError
-} = useBlockingError();
-
-/**
- * Reloads {@link creditNotes}. Runs for invoiced orders only — a credit note reverses an invoice,
- * so an order without one has none. A failure leaves the list as it was: the section is
- * supplementary, and the order itself is still fully usable.
- *
- * @returns A promise resolving once the list is replaced.
- */
-const loadCreditNotes = () => {
-    if (!id || !invoiceAvailable.value) {
-        creditNotes.value = [];
-        return Promise.resolve();
-    }
-    return fetchCreditNotes(id)
-        .then((list) => {
-            creditNotes.value = list;
-        })
-        .catch(() => {
-            creditNotes.value = [];
-        });
-};
-
-/**
- * Refetches the notes whenever the order's invoiced/refunded state moves. The refund path writes
- * the note after the response, so this reacts to the order changing rather than to a click.
- */
-watch(
-    () => [
-        id,
-        invoiceAvailable.value,
-        currentOrder.value?.status,
-        currentOrder.value?.paymentStatus
-    ],
-    loadCreditNotes,
-    { immediate: true }
-);
-
-/**
- * Downloads one credit note as a PDF file — one note per click, since each download counts
- * against the invoicing rate limit.
- *
- * @param note - The note the visitor picked.
- * @returns A promise resolving once the download has been triggered.
- */
-const downloadCreditNote = (note: CreditNoteSummary) => {
-    if (!id) return;
-    creditNoteLoadingId.value = note.id;
-    clearCreditNoteError();
-    return fetchCreditNote(id, note.id)
-        .then((blob) => {
-            if (blob) downloadBlob(blob, `order-${id}-credit-note-${note.number}.pdf`);
-        })
-        .catch((error: unknown) => reportCreditNoteError(error))
-        .finally(() => {
-            creditNoteLoadingId.value = undefined;
-        });
-};
+    invoiceAvailable,
+    invoiceLoading,
+    invoiceError,
+    downloadInvoice,
+    viewInvoice,
+    creditNotes,
+    creditNoteLoadingId,
+    creditNoteError,
+    downloadCreditNote
+} = useOrderDocuments(currentOrder, () => id);
 
 /**
  * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
