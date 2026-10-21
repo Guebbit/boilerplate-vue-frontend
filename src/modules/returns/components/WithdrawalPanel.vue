@@ -29,7 +29,7 @@ import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { formatCurrency, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatUtcDate } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
 import CancelRemainderDialog from './CancelRemainderDialog.vue';
@@ -53,7 +53,7 @@ const props = defineProps<{
      * disabled with this reason instead of vanishing.
      */
     withdrawBlocked?: WithdrawBlockedReason;
-    /** `Order.actions.withdrawUntil` — the last instant a withdrawal is valid, once the clock runs. */
+    /** `Order.actions.withdrawUntil` — the end of the last day a withdrawal is announced valid (UTC), once the clock runs. Shown as a date only. */
     withdrawUntil?: string;
     /** The order's number, for the "contact us" link that names it. */
     orderNumber?: string;
@@ -253,7 +253,7 @@ onMounted(loadOpened);
             <p class="m-0 text-sm opacity-75" data-test="withdrawal-until">
                 {{
                     withdrawUntil
-                        ? t('withdrawal-panel.until', { date: formatDateTime(withdrawUntil) })
+                        ? t('withdrawal-panel.until', { date: formatUtcDate(withdrawUntil) })
                         : t('withdrawal-panel.until-delivery')
                 }}
             </p>

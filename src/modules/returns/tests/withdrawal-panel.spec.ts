@@ -114,6 +114,19 @@ describe('WithdrawalPanel', () => {
         expect(wrapper.get('[data-test=withdrawal-until]').text()).toContain('2026');
     });
 
+    it('names the last day as a date only, never a time of day', async () => {
+        const { wrapper } = mountPanel({
+            canWithdraw: true,
+            withdrawUntil: '2026-12-05T23:59:59.999Z'
+        });
+        await flushPromises();
+
+        const text = wrapper.get('[data-test=withdrawal-until]').text();
+
+        expect(text).toMatch(/until the end of .*December 5, 2026/);
+        expect(text).not.toMatch(/\d:\d\d/);
+    });
+
     it('says the period starts at delivery while the window has no end yet', async () => {
         const { wrapper } = mountPanel({ canWithdraw: true });
         await flushPromises();

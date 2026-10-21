@@ -57,7 +57,7 @@ the panel lists the new `Return` like any other. The return page says "no goods 
 where its lines would be.
 
 **The button is server-driven.** `WithdrawalPanel` shows it when `Order.actions.withdraw` is true and
-prints `Order.actions.withdrawUntil`; it never counts the withdrawal period. Clicking asks once more —
+prints `Order.actions.withdrawUntil` as a UTC date only ("until the end of 5 December", no time of day; the shop accepts one more day, which the client never shows); it never counts the withdrawal period. Clicking asks once more —
 the directive wants a confirmation step — and the backend mails the acknowledgement with the date and
 time. A withdrawal takes no reason and covers the whole order. The panel also lists the returns
 already opened on that order, so a customer sees what became of a withdrawal.

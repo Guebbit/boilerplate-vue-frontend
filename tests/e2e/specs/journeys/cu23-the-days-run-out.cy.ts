@@ -103,7 +103,7 @@ describe('CU23 · The days run out', () => {
         });
     });
 
-    it('the button is offered through the last day, and switched off after it', () => {
+    it('the button is offered through the last day and one silent day after it, then switched off', () => {
         cy.skipUnlessDemo();
         cy.subjectId('order.deliveredRecent').then((orderId) => {
             cy.step('the customer reads the deadline the server decided');
@@ -129,9 +129,19 @@ describe('CU23 · The days run out', () => {
             cy.get('[data-test=withdraw-button]').should('exist');
             cy.get('[data-test=withdrawal-until]').should('exist');
 
-            cy.step('the day after, the button is off and the API says why');
+            cy.step('the day after the announced last day is the silent grace day: still offered');
             cy.then(() => {
                 travelTo(deadline.at + 2 * HOUR_MS);
+            });
+            cy.clearAllCookies();
+            cy.loginAs('user');
+            cy.visit(`/en/orders/${orderId}`);
+            cy.get('[data-test=withdraw-button]').should('not.be.disabled');
+            cy.get('[data-test=withdrawal-until]').should('exist');
+
+            cy.step('a day later the grace day is over: the button is off and the API says why');
+            cy.then(() => {
+                travelTo(deadline.at + 26 * HOUR_MS);
             });
             cy.clearAllCookies();
             cy.loginAs('user');

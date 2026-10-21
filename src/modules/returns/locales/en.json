@@ -69,7 +69,7 @@
     },
     "withdrawal-panel": {
         "title": "Returns and withdrawal",
-        "until": "You may withdraw from this contract until {date}.",
+        "until": "You may withdraw from this contract until the end of {date}.",
         "until-delivery": "You may withdraw from this contract. The withdrawal period starts when the goods are delivered.",
         "button": "Withdraw from contract here",
         "confirm": "Withdraw from order {id}? You will receive a written confirmation with the date and time.",
