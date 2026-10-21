@@ -18,6 +18,7 @@ export default {
  * at the call site. Modeled on `account/components/TwoFactorBackupCodes.vue`: blocking, the
  * checkbox is the only way out.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -69,7 +70,7 @@ watch(
 </script>
 
 <template>
-    <DialogShell :model-value="secret !== undefined" persistent max-width="640">
+    <DialogShell :model-value="secret !== undefined" persistent :max-width="DIALOG_MAX_WIDTH.wide">
         <template v-slot="{ titleId }">
             <v-card data-test="secret-reveal">
                 <v-card-title :id="titleId">{{

@@ -6,6 +6,7 @@
  * sit below what is already outstanding: those orders stay, only new ones are refused — the hint says
  * so. "Unlimited" sends no cap at all.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -98,7 +99,7 @@ const submit = () => {
 <template>
     <DialogShell
         v-model="isOpen"
-        max-width="480"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="backorder-limit-dialog"
         v-slot="{ titleId }"
     >

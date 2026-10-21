@@ -8,6 +8,7 @@
  * ends the session here a moment before the server would. The server enforces the limit either
  * way — this is the courtesy. See docs/theory/sessions.md#the-staff-idle-timeout.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -106,7 +107,7 @@ onUnmounted(() => {
         :fullscreen="fullscreen"
         :model-value="isOpen"
         persistent
-        max-width="420"
+        :max-width="DIALOG_MAX_WIDTH.narrow"
         role="alertdialog"
         aria-labelledby="idle-session-title"
         aria-describedby="idle-session-message"

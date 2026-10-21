@@ -9,6 +9,7 @@
  * above the buttons, since this dialog has no opinion of its own on what a blocked import looks
  * like.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -164,7 +165,7 @@ const handleImport = () => {
 </script>
 
 <template>
-    <DialogShell v-model="isOpen" max-width="640" v-slot="{ titleId }">
+    <DialogShell v-model="isOpen" :max-width="DIALOG_MAX_WIDTH.wide" v-slot="{ titleId }">
         <v-card class="p-5" data-test="entries-import">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ t('entries-import.title') }}

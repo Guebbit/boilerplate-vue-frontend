@@ -12,6 +12,7 @@
  * only the confirm step before submitting. Both go through `useUserAccessDialog()`, which is what
  * turns this plain `v-model` component into an awaitable request.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -186,7 +187,7 @@ const handleCancel = () => {
 <template>
     <DialogShell
         v-model="isOpen"
-        max-width="480"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="user-access-dialog"
         v-slot="{ titleId }"
     >

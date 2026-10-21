@@ -6,6 +6,7 @@
  * is closed. The dialog owns its call and reports the outcome in place; the server re-checks every
  * limit, so the form only keeps staff from asking for the impossible.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -158,7 +159,7 @@ const submit = singleFlight(() => {
 <template>
     <DialogShell
         v-model="isOpen"
-        max-width="520"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="ship-items-dialog"
         v-slot="{ titleId }"
     >

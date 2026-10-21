@@ -7,6 +7,7 @@
  * staff holding the refund key, who say why in a note; the step-up prompt for that key is the http
  * layer's, so it appears before the call resolves.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -128,7 +129,7 @@ const submit = () => {
 <template>
     <DialogShell
         v-model="isOpen"
-        max-width="480"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="cancel-remainder-dialog"
         v-slot="{ titleId }"
     >

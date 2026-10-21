@@ -5,6 +5,7 @@
  * renders the front entry as a Vuetify alertdialog; answering (confirm, cancel, dismiss) always
  * resolves the store's pending promise.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, useId } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -80,7 +81,7 @@ useReturnFocus(() => isOpen.value);
     -->
     <v-dialog
         v-model="isOpen"
-        max-width="480"
+        :max-width="DIALOG_MAX_WIDTH.form"
         :fullscreen="fullscreen"
         role="alertdialog"
         :aria-labelledby="current?.title ? titleId : messageId"

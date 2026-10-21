@@ -21,6 +21,7 @@ export default {
  * rather than toasting — the dialog itself never closes on failure, so the message stays where
  * the visitor is looking. See docs/theory/request-flow.md.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -456,7 +457,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <v-dialog
             :fullscreen="fullscreen"
             :model-value="!!enrolling"
-            max-width="480"
+            :max-width="DIALOG_MAX_WIDTH.form"
             persistent
             aria-labelledby="two-factor-enroll-title"
         >
@@ -472,7 +473,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <v-dialog
             :fullscreen="fullscreen"
             :model-value="!!revealedBackupCodes"
-            max-width="480"
+            :max-width="DIALOG_MAX_WIDTH.form"
             persistent
             aria-labelledby="two-factor-backup-codes-title"
         >
@@ -487,7 +488,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <v-dialog
             :fullscreen="fullscreen"
             :model-value="!!codePrompt"
-            max-width="420"
+            :max-width="DIALOG_MAX_WIDTH.narrow"
             persistent
             aria-labelledby="two-factor-code-prompt-title"
         >

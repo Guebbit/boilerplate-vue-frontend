@@ -6,6 +6,7 @@
  * its call and reports the outcome in place. A second, separate text is the message the BUYER
  * reads: the note stays staff's.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -125,7 +126,12 @@ const submit = () => {
 </script>
 
 <template>
-    <DialogShell v-model="isOpen" max-width="480" data-test="hold-dialog" v-slot="{ titleId }">
+    <DialogShell
+        v-model="isOpen"
+        :max-width="DIALOG_MAX_WIDTH.form"
+        data-test="hold-dialog"
+        v-slot="{ titleId }"
+    >
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ t('hold-dialog.title', { number: fulfillmentOrder.number }) }}

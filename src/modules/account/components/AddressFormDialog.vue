@@ -15,6 +15,7 @@ export default {
  * (the checkout side) can offer the same "add an address" flow without a second copy of the
  * form, its schema, or its save logic.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -199,7 +200,7 @@ const handleSave = () =>
 </script>
 
 <template>
-    <DialogShell v-model="open" max-width="480" v-slot="{ titleId }">
+    <DialogShell v-model="open" :max-width="DIALOG_MAX_WIDTH.form" v-slot="{ titleId }">
         <v-card class="p-6" data-test="address-dialog">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ editing ? t('profile-page.addresses-edit') : t('profile-page.addresses-add') }}

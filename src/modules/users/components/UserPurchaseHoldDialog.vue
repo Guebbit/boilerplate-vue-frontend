@@ -5,6 +5,7 @@
  * The note is written to be read by the person it is about (the reason and a way to contest it,
  * GDPR Art. 22(3)), so the form says so. A plain `v-model` component; the page owns the write.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -92,7 +93,7 @@ const handleCancel = () => {
 <template>
     <DialogShell
         v-model="isOpen"
-        max-width="480"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="user-purchase-hold-dialog"
         v-slot="{ titleId }"
     >

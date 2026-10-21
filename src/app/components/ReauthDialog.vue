@@ -10,6 +10,7 @@
  * to know when a fresh session exists, not how one gets there — and a wrong answer stays open for
  * another try rather than closing. See docs/modules/account.md.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -246,7 +247,7 @@ const sendCode = () => {
 <template>
     <DialogShell
         v-model="isOpen"
-        max-width="420"
+        :max-width="DIALOG_MAX_WIDTH.narrow"
         persistent
         role="alertdialog"
         :aria-describedby="messageId"

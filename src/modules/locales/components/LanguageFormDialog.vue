@@ -11,6 +11,7 @@
  * by two different parents (`LocalesList.vue`'s own row edit, `LocalesDictionary.vue`'s add), each
  * filling it with its own state.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -134,7 +135,7 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <DialogShell v-model="isOpen" max-width="480" v-slot="{ titleId }">
+    <DialogShell v-model="isOpen" :max-width="DIALOG_MAX_WIDTH.form" v-slot="{ titleId }">
         <v-card class="p-5" data-test="language-form">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}

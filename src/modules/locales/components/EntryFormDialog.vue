@@ -8,6 +8,7 @@
  * duplicate key, a transport failure); the parent renders its `InlineErrorAlert` here, above the
  * buttons, since this dialog has no opinion of its own on what a blocked save looks like.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
@@ -106,7 +107,7 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <DialogShell v-model="isOpen" max-width="560" v-slot="{ titleId }">
+    <DialogShell v-model="isOpen" :max-width="DIALOG_MAX_WIDTH.wide" v-slot="{ titleId }">
         <v-card class="p-5" data-test="entry-form">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h2>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">
