@@ -30,9 +30,7 @@ describe('flattenDictionary', () => {
     });
 
     it('skips a null or non-string leaf instead of throwing', () => {
-        const pasted = { a: null, b: 3, c: { d: 'kept', e: null } } as unknown as Parameters<
-            typeof flattenDictionary
-        >[0];
+        const pasted = { a: null, b: 3, c: { d: 'kept', e: null } };
         expect(flattenDictionary(pasted)).toEqual([{ key: 'c.d', value: 'kept' }]);
     });
 });

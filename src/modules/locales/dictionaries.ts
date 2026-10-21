@@ -24,20 +24,21 @@ import type { TranslationDictionaries } from '@/i18n';
  * and flatten to numeric segments: `{ list: ['a', 'b'] }` becomes `list.0` and `list.1`, which is
  * exactly what {@link expandEntries} folds back into an array.
  *
- * @param dictionary - The nested dictionary, e.g. a parsed `src/locales/en.json`.
+ * @param dictionary - The nested dictionary (or array), e.g. a parsed `src/locales/en.json`.
  * @param prefix - Internal recursion state; leave empty.
  * @returns One `{ key, value }` pair per leaf string, dotted; non-string leaves are skipped.
  */
 export const flattenDictionary = (
-    dictionary: TranslationDictionaries | TranslationDictionaries[] | string[],
+    dictionary: Record<string, unknown> | unknown[],
     prefix = ''
 ): { key: string; value: string }[] =>
-    Object.entries(dictionary).flatMap(([segment, value]) => {
+    // `unknown` values: pasted JSON may hold a null, a number or a boolean where a message goes.
+    Object.entries<unknown>(dictionary).flatMap(([segment, value]) => {
         const key = prefix === '' ? segment : `${prefix}.${segment}`;
         if (typeof value === 'string') return [{ key, value }];
         // A null, number or boolean is no message: pasted JSON may hold one, and it is skipped.
         if (typeof value !== 'object' || value === null) return [];
-        return flattenDictionary(value, key);
+        return flattenDictionary(value as Record<string, unknown> | unknown[], key);
     });
 
 /**
