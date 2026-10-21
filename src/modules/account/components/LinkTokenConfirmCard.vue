@@ -11,6 +11,7 @@
  * A submit button rather than an auto-fire on mount, so a mail scanner prefetching the URL cannot
  * spend the token before the human arrives.
  */
+import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
@@ -98,10 +99,9 @@ const router = useRouter();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, error surface and submit handler, from the toolkit's form validation.
@@ -115,7 +115,8 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServe
             token: z.string().min(1, { error: () => t(props.copy.tokenRequired) })
         }),
         {
-            formElement,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+            formElement: () => card.value?.formElement,
             revalidateOn: locale,
             invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -162,38 +163,40 @@ const submitForm = () => {
 </script>
 
 <template>
-    <v-card class="mx-auto mt-10 w-full max-w-md p-8">
-        <v-alert v-if="copy.warning" type="warning" class="mb-6">
-            {{ t(copy.warning) }}
-        </v-alert>
-        <p v-if="copy.intro" class="mb-4 opacity-80">{{ t(copy.intro) }}</p>
-        <form ref="formElement" novalidate @submit.prevent="submitForm">
-            <v-text-field
-                v-model="form.token"
-                type="text"
-                :data-test="testIds.token"
-                :label="t(copy.label)"
-                :error-messages="showFormErrors ? (formErrors.token ?? []) : []"
-                class="mb-4"
-            />
-            <v-btn
-                type="submit"
-                :color="destructive ? 'error' : 'primary'"
-                block
-                :data-test="testIds.submit"
-                :loading="isSubmitting"
-                :disabled="isSubmitting"
-            >
-                {{ t(copy.submit) }}
-            </v-btn>
+    <FormCard
+        ref="card"
+        size="md"
+        :submit-label="t(copy.submit)"
+        :submit-color="destructive ? 'error' : 'primary'"
+        :submit-test="testIds.submit"
+        :loading="isSubmitting"
+        @submit="submitForm"
+    >
+        <template #before>
+            <v-alert v-if="copy.warning" type="warning" class="mb-6">
+                {{ t(copy.warning) }}
+            </v-alert>
+            <p v-if="copy.intro" class="mb-4 opacity-80">{{ t(copy.intro) }}</p>
+        </template>
+        <v-text-field
+            v-model="form.token"
+            type="text"
+            :data-test="testIds.token"
+            :label="t(copy.label)"
+            :error-messages="showFormErrors ? (formErrors.token ?? []) : []"
+            class="mb-4"
+        />
+        <template #after-submit>
             <InlineErrorAlert
                 :message="spendError"
                 :type="spendErrorType"
                 class="mt-4"
                 :data-test="testIds.error"
             />
-        </form>
-        <!-- Page-owned way out, e.g. a back link. -->
-        <slot name="footer" />
-    </v-card>
+        </template>
+        <template #footer>
+            <!-- Page-owned way out, e.g. a back link. -->
+            <slot name="footer" />
+        </template>
+    </FormCard>
 </template>

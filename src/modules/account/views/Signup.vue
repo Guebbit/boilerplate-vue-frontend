@@ -17,6 +17,7 @@ export default {
  * file), wrapped in `trackUpload` so `FormImageUpload` can show real upload progress. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
+import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
@@ -91,10 +92,9 @@ const signupSchema = usersSchema
     });
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, error surface and submit handler, from the toolkit's form validation.
@@ -116,7 +116,8 @@ const {
     },
     signupSchema,
     {
-        formElement,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+        formElement: () => card.value?.formElement,
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -224,109 +225,106 @@ const submitForm = () => {
 
 <template>
     <div id="signup-page">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('signup-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('signup-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                    class="mb-2"
-                />
-                <PasswordStrengthMeter :password="form.password ?? ''" />
-                <!-- Advisory only, never a submit gate — the four password-SET paths remain the
+        <FormCard
+            ref="card"
+            size="md"
+            :submit-label="t('signup-page.button-submit')"
+            :loading="isSubmitting"
+            @submit="submitForm"
+        >
+            <v-text-field
+                v-model="form.email"
+                type="email"
+                autocomplete="email"
+                :label="t('signup-page.label-email')"
+                :error-messages="showErrors ? formErrors.email : []"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.password"
+                type="password"
+                autocomplete="new-password"
+                :label="t('signup-page.label-password')"
+                :error-messages="showErrors ? formErrors.password : []"
+                class="mb-2"
+            />
+            <PasswordStrengthMeter :password="form.password ?? ''" />
+            <!-- Advisory only, never a submit gate — the four password-SET paths remain the
                      actual authority, checked again server-side regardless of this warning. -->
-                <v-alert
-                    v-if="passwordBreached"
-                    type="warning"
-                    density="compact"
-                    variant="tonal"
-                    class="mb-2"
-                    data-test="password-breach-warning"
-                >
-                    {{ t('users-form.password-breached-warning') }}
-                </v-alert>
-                <v-text-field
-                    v-model="form.passwordConfirm"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('users-form.label-passwordConfirm')"
-                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
-                />
-                <FormImageUpload
-                    v-model="form.imageUpload"
-                    :error-messages="showErrors ? formErrors.imageUpload : []"
-                    :progress="uploadProgress"
-                    :disabled="isSubmitting"
-                    class="mt-2"
-                />
-                <v-checkbox
-                    v-model="form.termsAccepted"
-                    data-test="signup-terms-accepted"
-                    :error-messages="showErrors ? formErrors.termsAccepted : []"
-                >
-                    <!-- `i18n-t` interpolates the two links into the translated sentence; `@click.stop`
+            <v-alert
+                v-if="passwordBreached"
+                type="warning"
+                density="compact"
+                variant="tonal"
+                class="mb-2"
+                data-test="password-breach-warning"
+            >
+                {{ t('users-form.password-breached-warning') }}
+            </v-alert>
+            <v-text-field
+                v-model="form.passwordConfirm"
+                type="password"
+                autocomplete="new-password"
+                :label="t('users-form.label-passwordConfirm')"
+                :error-messages="showErrors ? formErrors.passwordConfirm : []"
+            />
+            <FormImageUpload
+                v-model="form.imageUpload"
+                :error-messages="showErrors ? formErrors.imageUpload : []"
+                :progress="uploadProgress"
+                :disabled="isSubmitting"
+                class="mt-2"
+            />
+            <v-checkbox
+                v-model="form.termsAccepted"
+                data-test="signup-terms-accepted"
+                :error-messages="showErrors ? formErrors.termsAccepted : []"
+            >
+                <!-- `i18n-t` interpolates the two links into the translated sentence; `@click.stop`
                          keeps a link click from also toggling the checkbox, since Vuetify makes the
                          whole label clickable. -->
-                    <template #label>
-                        <i18n-t keypath="signup-page.text-terms" tag="span">
-                            <template #terms>
-                                <RouterLink
-                                    :to="routerLinkI18n({ name: 'StaticTerms' })"
-                                    class="underline"
-                                    @click.stop
-                                >
-                                    {{ t('static-pages.terms.title') }}
-                                </RouterLink>
-                            </template>
-                            <template #privacy>
-                                <RouterLink
-                                    :to="routerLinkI18n({ name: 'StaticPrivacy' })"
-                                    class="underline"
-                                    @click.stop
-                                >
-                                    {{ t('static-pages.privacy.title') }}
-                                </RouterLink>
-                            </template>
-                        </i18n-t>
-                    </template>
-                </v-checkbox>
-                <!-- Opt-in, unlike the checkbox above: unchecked is a fully valid submission, so
+                <template #label>
+                    <i18n-t keypath="signup-page.text-terms" tag="span">
+                        <template #terms>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'StaticTerms' })"
+                                class="underline"
+                                @click.stop
+                            >
+                                {{ t('static-pages.terms.title') }}
+                            </RouterLink>
+                        </template>
+                        <template #privacy>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'StaticPrivacy' })"
+                                class="underline"
+                                @click.stop
+                            >
+                                {{ t('static-pages.privacy.title') }}
+                            </RouterLink>
+                        </template>
+                    </i18n-t>
+                </template>
+            </v-checkbox>
+            <!-- Opt-in, unlike the checkbox above: unchecked is a fully valid submission, so
                      there is no error-messages binding — `analyticsConsent` cannot fail validation. -->
-                <v-checkbox
-                    v-model="form.analyticsConsent"
-                    data-test="signup-analytics-consent"
-                    :label="t('signup-page.text-analytics-consent')"
-                />
-                <HumanCheck ref="humanCheck" class="mb-2" />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
-                    class="mt-2"
-                >
-                    {{ t('signup-page.button-submit') }}
-                </v-btn>
+            <v-checkbox
+                v-model="form.analyticsConsent"
+                data-test="signup-analytics-consent"
+                :label="t('signup-page.text-analytics-consent')"
+            />
+            <HumanCheck ref="humanCheck" class="mb-2" />
+            <template #after-submit>
                 <InlineErrorAlert
                     :message="signupError"
                     :type="signupErrorType"
                     class="mt-4"
                     data-test="signup-error"
                 />
-            </form>
-            <OAuthButtons />
-        </v-card>
+            </template>
+            <template #footer>
+                <OAuthButtons />
+            </template>
+        </FormCard>
     </div>
 </template>

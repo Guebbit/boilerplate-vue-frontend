@@ -15,6 +15,7 @@ export default {
  * acknowledgement whether or not the account exists — see the e2e for the enumeration-safety
  * assertion.
  */
+import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -49,10 +50,9 @@ const { requestPasswordReset } = useAuthStore();
 const humanCheck = ref<InstanceType<typeof HumanCheck>>();
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, error surface and submit handler, from the toolkit's form validation.
@@ -67,7 +67,8 @@ const {
 } = useStructureFormValidation<{
     email?: string;
 }>({ email: '' }, usersSchema.pick({ email: true }), {
-    formElement,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+    formElement: () => card.value?.formElement,
     revalidateOn: locale,
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -109,40 +110,32 @@ const submitForm = () => {
 
 <template>
     <div id="password-reset-request-page">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    data-test="password-reset-email"
-                    :label="t('password-reset-request-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                />
-                <HumanCheck ref="humanCheck" class="mt-2" />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
-                    class="mt-4"
-                >
-                    {{ t('password-reset-request-page.button-submit') }}
-                </v-btn>
+        <FormCard
+            ref="card"
+            size="md"
+            :submit-label="t('password-reset-request-page.button-submit')"
+            :loading="isSubmitting"
+            :back-to="routerLinkI18n({ name: 'Login' })"
+            :back-label="t('password-reset-request-page.button-go-to-login')"
+            @submit="submitForm"
+        >
+            <v-text-field
+                v-model="form.email"
+                type="email"
+                autocomplete="email"
+                data-test="password-reset-email"
+                :label="t('password-reset-request-page.label-email')"
+                :error-messages="showErrors ? formErrors.email : []"
+            />
+            <HumanCheck ref="humanCheck" class="mt-2" />
+            <template #after-submit>
                 <InlineErrorAlert
                     :message="requestError"
                     :type="requestErrorType"
                     class="mt-4"
                     data-test="password-reset-request-error"
                 />
-            </form>
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
-                    {{ t('password-reset-request-page.button-go-to-login') }}
-                </v-btn>
-            </div>
-        </v-card>
+            </template>
+        </FormCard>
     </div>
 </template>

@@ -16,6 +16,7 @@ export default {
  * the challenge to `useTwoFactorStore` and pushes `TwoFactorChallenge` instead — see the store's
  * `LoginOutcome` for the branch this reads.
  */
+import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -84,10 +85,9 @@ const loginSchema = usersSchema.pick({ email: true }).extend({
 const showPassword = ref(false);
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, error surface and submit handler, from the toolkit's form validation.
@@ -112,7 +112,8 @@ const {
     },
     loginSchema,
     {
-        formElement,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+        formElement: () => card.value?.formElement,
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -192,70 +193,67 @@ const submitForm = () => {
 
 <template>
     <div id="login-page">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('login-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    :type="showPassword ? 'text' : 'password'"
-                    autocomplete="current-password"
-                    :label="t('login-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                >
-                    <template #append-inner>
-                        <v-btn
-                            icon
-                            variant="text"
-                            :size="toggleSize"
-                            :aria-label="t('login-page.label-toggle-password')"
-                            @click="showPassword = !showPassword"
-                        >
-                            <EyeOff v-if="showPassword" :size="18" aria-hidden="true" />
-                            <Eye v-else :size="18" aria-hidden="true" />
-                        </v-btn>
-                    </template>
-                </v-text-field>
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <v-checkbox
-                        v-model="form.remember"
-                        :label="t('login-page.label-remember')"
-                        hide-details
-                        density="compact"
-                    />
-                    <RouterLink
-                        :to="routerLinkI18n({ name: 'PasswordResetRequest' })"
-                        class="text-sm text-link underline"
+        <FormCard
+            ref="card"
+            size="md"
+            :submit-label="t('login-page.button-submit')"
+            :loading="isSubmitting"
+            @submit="submitForm"
+        >
+            <v-text-field
+                v-model="form.email"
+                type="email"
+                autocomplete="email"
+                :label="t('login-page.label-email')"
+                :error-messages="showErrors ? formErrors.email : []"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                :label="t('login-page.label-password')"
+                :error-messages="showErrors ? formErrors.password : []"
+            >
+                <template #append-inner>
+                    <v-btn
+                        icon
+                        variant="text"
+                        :size="toggleSize"
+                        :aria-label="t('login-page.label-toggle-password')"
+                        @click="showPassword = !showPassword"
                     >
-                        {{ t('login-page.link-password-reset') }}
-                    </RouterLink>
-                </div>
-                <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mt-2" />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    class="mt-4"
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
+                        <EyeOff v-if="showPassword" :size="18" aria-hidden="true" />
+                        <Eye v-else :size="18" aria-hidden="true" />
+                    </v-btn>
+                </template>
+            </v-text-field>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <v-checkbox
+                    v-model="form.remember"
+                    :label="t('login-page.label-remember')"
+                    hide-details
+                    density="compact"
+                />
+                <RouterLink
+                    :to="routerLinkI18n({ name: 'PasswordResetRequest' })"
+                    class="text-sm text-link underline"
                 >
-                    {{ t('login-page.button-submit') }}
-                </v-btn>
+                    {{ t('login-page.link-password-reset') }}
+                </RouterLink>
+            </div>
+            <HumanCheck v-if="requiresHumanCheck" ref="humanCheck" class="mt-2" />
+            <template #after-submit>
                 <InlineErrorAlert
                     :message="loginError"
                     :type="loginErrorType"
                     class="mt-4"
                     data-test="login-error"
                 />
-            </form>
-            <OAuthButtons />
-        </v-card>
+            </template>
+            <template #footer>
+                <OAuthButtons />
+            </template>
+        </FormCard>
     </div>
 </template>

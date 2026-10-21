@@ -27,14 +27,16 @@ const router = createRouter({
 });
 
 /** Mounts the card with the plugins it needs. */
-const mountCard = () =>
+const mountCard = (
+    props: Record<string, unknown> = {
+        backTo: { name: 'ProductsList' },
+        backLabel: 'Back to the list'
+    },
+    slots: Record<string, string> = {}
+) =>
     mount(FormCard, {
-        props: {
-            submitLabel: 'Save',
-            backTo: { name: 'ProductsList' },
-            backLabel: 'Back to the list'
-        },
-        slots: { default: '<input class="field" name="title" />' },
+        props: { submitLabel: 'Save', ...props },
+        slots: { default: '<input class="field" name="title" />', ...slots },
         global: { plugins: [vuetify, router] }
     });
 
@@ -74,5 +76,47 @@ describe('FormCard — the seam between the page and its form', () => {
             .then(() => {
                 expect(wrapper.emitted('submit')).toHaveLength(1);
             });
+    });
+});
+
+describe('FormCard — size, back link and slots', () => {
+    it('defaults to the wide card and narrows with size="md"', () => {
+        expect(mountCard().classes()).toContain('max-w-xl');
+        expect(mountCard({ size: 'md' }).classes()).toEqual(
+            expect.arrayContaining(['max-w-md', 'mt-16'])
+        );
+    });
+
+    it('renders no back link without a target', () => {
+        const wrapper = mountCard({});
+
+        expect(wrapper.text()).not.toContain('Back');
+        expect(wrapper.findAll('a')).toHaveLength(0);
+    });
+
+    it('lays the slots out in order: before, fields, submit, after-submit, footer', () => {
+        const wrapper = mountCard(
+            {},
+            {
+                before: '<p data-test="s-before" />',
+                'after-submit': '<p data-test="s-after" />',
+                footer: '<p data-test="s-footer" />'
+            }
+        );
+        const html = wrapper.html();
+        const order = ['s-before', 'class="field"', 'Save', 's-after', 's-footer'].map((needle) =>
+            html.indexOf(needle)
+        );
+
+        expect(order.every((position) => position >= 0)).toBe(true);
+        expect(order).toEqual(order.toSorted((a, b) => a - b));
+        expect(wrapper.get('form').find('[data-test=s-after]').exists()).toBe(true);
+        expect(wrapper.get('form').find('[data-test=s-footer]').exists()).toBe(false);
+    });
+
+    it('passes the submit colour and test hook to the button', () => {
+        const wrapper = mountCard({ submitColor: 'error', submitTest: 'go' });
+
+        expect(wrapper.get('[data-test=go]').classes()).toContain('bg-error');
     });
 });

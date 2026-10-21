@@ -211,7 +211,7 @@ to see it":
   it with its own `InlineErrorAlert` — the same instantiation any other shape uses, just placed
   inside a `<template #error>` rather than directly in the parent's template. The dialog never
   imports `InlineErrorAlert` or learns that an error exists; it only leaves the slot, the same way
-  `FormCard.vue` leaves its default slot for whatever the parent's fields are. This is what a
+  `FormCard.vue` leaves slots for whatever the parent's fields are (default) and for its blocking error (`#after-submit`). This is what a
   dialog reused by more than one parent (`LanguageFormDialog.vue`, shared by `LocalesList.vue` and
   `LocalesDictionary.vue`) needs — each caller fills the slot with its own state, and the dialog
   stays ignorant of both.

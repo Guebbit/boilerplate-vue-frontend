@@ -17,6 +17,7 @@ export default {
  * submit, and works unauthenticated same as this page itself. Not on `LinkTokenConfirmCard`: a
  * multi-field form with a cross-field rule and server field errors.
  */
+import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref, watch } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
@@ -69,10 +70,9 @@ const { addMessage } = useNotificationsStore();
 const { confirmPasswordReset } = useAuthStore();
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, error surface and submit handler, from the toolkit's form validation.
@@ -103,7 +103,8 @@ const {
             path: ['passwordConfirm']
         }),
     {
-        formElement,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+        formElement: () => card.value?.formElement,
         revalidateOn: locale,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -164,66 +165,57 @@ const submitForm = () => {
 
 <template>
     <div id="password-reset-confirm-page">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.token"
-                    :label="t('password-reset-confirm-page.label-token')"
-                    :error-messages="showErrors ? formErrors.token : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('password-reset-confirm-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                    class="mb-2"
-                />
-                <PasswordStrengthMeter :password="form.password ?? ''" />
-                <!-- Advisory only, never a submit gate — the four password-SET paths remain the
+        <FormCard
+            ref="card"
+            size="md"
+            :submit-label="t('password-reset-confirm-page.button-submit')"
+            :loading="isSubmitting"
+            :back-to="routerLinkI18n({ name: 'Login' })"
+            :back-label="t('password-reset-confirm-page.button-go-to-login')"
+            @submit="submitForm"
+        >
+            <v-text-field
+                v-model="form.token"
+                :label="t('password-reset-confirm-page.label-token')"
+                :error-messages="showErrors ? formErrors.token : []"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.password"
+                type="password"
+                autocomplete="new-password"
+                :label="t('password-reset-confirm-page.label-password')"
+                :error-messages="showErrors ? formErrors.password : []"
+                class="mb-2"
+            />
+            <PasswordStrengthMeter :password="form.password ?? ''" />
+            <!-- Advisory only, never a submit gate — the four password-SET paths remain the
                      actual authority, checked again server-side regardless of this warning. -->
-                <v-alert
-                    v-if="passwordBreached"
-                    type="warning"
-                    density="compact"
-                    variant="tonal"
-                    class="mb-2"
-                    data-test="password-breach-warning"
-                >
-                    {{ t('users-form.password-breached-warning') }}
-                </v-alert>
-                <v-text-field
-                    v-model="form.passwordConfirm"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('password-reset-confirm-page.label-password-confirm')"
-                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
-                />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
-                    class="mt-4"
-                >
-                    {{ t('password-reset-confirm-page.button-submit') }}
-                </v-btn>
+            <v-alert
+                v-if="passwordBreached"
+                type="warning"
+                density="compact"
+                variant="tonal"
+                class="mb-2"
+                data-test="password-breach-warning"
+            >
+                {{ t('users-form.password-breached-warning') }}
+            </v-alert>
+            <v-text-field
+                v-model="form.passwordConfirm"
+                type="password"
+                autocomplete="new-password"
+                :label="t('password-reset-confirm-page.label-password-confirm')"
+                :error-messages="showErrors ? formErrors.passwordConfirm : []"
+            />
+            <template #after-submit>
                 <InlineErrorAlert
                     :message="confirmError"
                     :type="confirmErrorType"
                     class="mt-4"
                     data-test="password-reset-confirm-error"
                 />
-            </form>
-
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
-                    {{ t('password-reset-confirm-page.button-go-to-login') }}
-                </v-btn>
-            </div>
-        </v-card>
+            </template>
+        </FormCard>
     </div>
 </template>
