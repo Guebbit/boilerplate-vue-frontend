@@ -96,7 +96,6 @@ const DUE_SOON_DAYS = 7;
  */
 const STATES = [
     'waiting',
-    'awaiting_yes',
     'allocated',
     'shipped',
     'cancelled'
@@ -205,7 +204,6 @@ const orderLink = (orderId: string) => {
  */
 const STATE_COLORS = {
     waiting: undefined,
-    awaiting_yes: 'warning',
     allocated: 'info',
     shipped: 'success',
     cancelled: 'error'
@@ -330,13 +328,6 @@ const STATE_COLORS = {
                 >
                     {{ t('preorder-board.late') }}
                 </v-chip>
-                <p
-                    v-if="item.state === 'awaiting_yes' && item.consentDeadline"
-                    class="m-0 mt-1 text-xs"
-                    data-test="preorder-answer-by"
-                >
-                    {{ t('preorder-board.answer-by', { date: formatDate(item.consentDeadline) }) }}
-                </p>
                 <p
                     v-if="item.cancelReason"
                     class="m-0 mt-1 text-xs"

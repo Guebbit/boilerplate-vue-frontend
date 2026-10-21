@@ -44,8 +44,6 @@ export const TIMELINE_AUDIENCE: Readonly<Record<OrderTimelineType, TimelineAudie
     credit_note_issued: 'buyer',
     release_date_moved: 'buyer',
     delay_notice_sent: 'buyer',
-    wait_confirmed: 'buyer',
-    wait_expired: 'buyer',
     address_corrected: 'staff'
 };
 
@@ -242,19 +240,18 @@ const dateMove: DetailBuilder = (tools, data) => {
 };
 
 /**
- * What a delay notice told the buyer: the date now expected, and whether silence cancels.
+ * What a delay notice told the buyer: the date now expected.
  *
  * @param tools - The injected helpers.
  * @param data - The row's `data`.
- * @returns The expected-date and answer-needed fragments.
+ * @returns The expected-date fragment.
  */
 const delayNotice: DetailBuilder = (tools, data) => {
     const expected = textOf(data, 'expectedAt');
     return [
         expected
             ? tools.t('order-timeline.detail-expected', { value: tools.date(expected) })
-            : undefined,
-        data.needsAnswer === true ? tools.t('order-timeline.detail-needs-answer') : undefined
+            : undefined
     ];
 };
 

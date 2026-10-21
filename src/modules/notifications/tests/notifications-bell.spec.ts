@@ -333,18 +333,18 @@ describe('the open panel, audited', () => {
 });
 
 describe('a notice about an order', () => {
-    it('links to the order, where the reader answers or cancels', async () => {
+    it('links to the order, where the reader can cancel', async () => {
         signIn();
         inboxOnServer = [
             {
                 id: 'n1',
-                code: 'notifications.fulfillment-confirm-wait',
+                code: 'notifications.fulfillment-delayed',
                 params: {
                     orderId: 'o7',
                     fulfillmentOrderId: 'fo1',
                     titles: ['Limited vinyl'],
                     agreedAt: '2027-03-01T00:00:00.000Z',
-                    answerBy: '2027-04-19T00:00:00.000Z'
+                    expectedAt: '2027-04-19T00:00:00.000Z'
                 },
                 severity: 'warning',
                 createdAt: '2026-10-04T10:00:00.000Z'

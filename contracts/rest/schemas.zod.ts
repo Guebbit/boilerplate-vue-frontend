@@ -9768,17 +9768,13 @@ export const GetFulfillmentByOrderResponse = zod.strictObject({
                     .optional(),
                 agreedAt: zod.iso.datetime({ offset: true }).optional(),
                 expectedAt: zod.iso.datetime({ offset: true }).optional(),
-                consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
-                consentDeadline: zod.iso.datetime({ offset: true }).optional(),
-                revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
                 lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-                cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
+                cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
                 actions: zod.strictObject({
                     ship: zod.boolean(),
                     fulfill: zod.boolean(),
                     hold: zod.boolean(),
-                    release: zod.boolean(),
-                    confirmWait: zod.boolean()
+                    release: zod.boolean()
                 }),
                 createdAt: zod.iso.datetime({ offset: true }),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10067,13 +10063,12 @@ export const StartFulfilmentResponse = zod.strictObject({
 });
 /**
  * One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
- * board: the fulfillment orders of preorders, where they stand with their buyer, and which are late.
+ * board: the fulfillment orders of preorders, where they stand, and which are late.
  * `cause` keeps one kind of wait: `preorder`, `backorder`, or `any` that carries an agreed date.
  *
  * `late=true` is the Late view: the expected date has passed and units remain, whether still waiting
  * for stock, allocated and not yet shipped, or part shipped. `dueWithin=N` is its warning: still
- * waiting for stock, and expected within the next N days — see it coming, since a slip moved before
- * the date passes is a notice, and one moved after is a question.
+ * waiting for stock, and expected within the next N days — see it coming.
  *
  * Same audience as the orders it belongs to: staff holding `display:Order` see every row, anyone
  * else only their own orders'. `delivered` is true once nothing remains and every shipment arrived.
@@ -10098,7 +10093,7 @@ export const ListPreorderFulfillmentOrdersQueryParams = zod.strictObject({
         .max(listPreorderFulfillmentOrdersQueryPageSizeMax)
         .default(listPreorderFulfillmentOrdersQueryPageSizeDefault),
     cause: zod.enum(['preorder', 'backorder', 'any']).optional(),
-    state: zod.enum(['waiting', 'awaiting_yes', 'allocated', 'shipped', 'cancelled']).optional(),
+    state: zod.enum(['waiting', 'allocated', 'shipped', 'cancelled']).optional(),
     productId: zod
         .string()
         .min(1)
@@ -10153,7 +10148,7 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                 orderNumber: zod.string(),
                 number: zod.number().min(1),
                 status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
-                state: zod.enum(['waiting', 'awaiting_yes', 'allocated', 'shipped', 'cancelled']),
+                state: zod.enum(['waiting', 'allocated', 'shipped', 'cancelled']),
                 lines: zod.array(
                     zod.strictObject({
                         productId: zod
@@ -10204,11 +10199,8 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
                 holdReason: zod
                     .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
                     .optional(),
-                consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
-                consentDeadline: zod.iso.datetime({ offset: true }).optional(),
-                revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
                 lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-                cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
+                cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
                 createdAt: zod.iso.datetime({ offset: true })
             })
         ),
@@ -10232,7 +10224,7 @@ export const ListPreorderFulfillmentOrdersResponse = zod.strictObject({
 });
 /**
  * For each product sold as a preorder, how its units stand across every fulfillment order made from it:
- * paid, waiting for stock, waiting for the buyer's answer, allocated, shipped, cancelled, and late. Units,
+ * paid, waiting for stock, allocated, shipped, cancelled, and late. Units,
  * not fulfillment orders. `firstAgreedAt` is the earliest date any buyer was promised. For the Products
  * tab of the preorder board; same audience and scope as the list.
  * @summary Preorder units by product and state
@@ -10269,7 +10261,6 @@ export const summarizePreorderFulfillmentOrdersResponseDataItemsItemProductIdReg
 );
 export const summarizePreorderFulfillmentOrdersResponseDataItemsItemPaidMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseDataItemsItemWaitingMin = 0;
-export const summarizePreorderFulfillmentOrdersResponseDataItemsItemAwaitingYesMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseDataItemsItemAllocatedMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseDataItemsItemShippedMin = 0;
 export const summarizePreorderFulfillmentOrdersResponseDataItemsItemCancelledMin = 0;
@@ -10300,9 +10291,6 @@ export const SummarizePreorderFulfillmentOrdersResponse = zod.strictObject({
                 waiting: zod
                     .number()
                     .min(summarizePreorderFulfillmentOrdersResponseDataItemsItemWaitingMin),
-                awaitingYes: zod
-                    .number()
-                    .min(summarizePreorderFulfillmentOrdersResponseDataItemsItemAwaitingYesMin),
                 allocated: zod
                     .number()
                     .min(summarizePreorderFulfillmentOrdersResponseDataItemsItemAllocatedMin),
@@ -10576,17 +10564,13 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
         holdNote: zod.string().max(holdFulfillmentOrderResponseDataHoldNoteMax).optional(),
         agreedAt: zod.iso.datetime({ offset: true }).optional(),
         expectedAt: zod.iso.datetime({ offset: true }).optional(),
-        consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
-        consentDeadline: zod.iso.datetime({ offset: true }).optional(),
-        revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
         lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-        cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
+        cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
         actions: zod.strictObject({
             ship: zod.boolean(),
             fulfill: zod.boolean(),
             hold: zod.boolean(),
-            release: zod.boolean(),
-            confirmWait: zod.boolean()
+            release: zod.boolean()
         }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10664,108 +10648,13 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
         holdNote: zod.string().max(releaseFulfillmentOrderResponseDataHoldNoteMax).optional(),
         agreedAt: zod.iso.datetime({ offset: true }).optional(),
         expectedAt: zod.iso.datetime({ offset: true }).optional(),
-        consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
-        consentDeadline: zod.iso.datetime({ offset: true }).optional(),
-        revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
         lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-        cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
+        cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
         actions: zod.strictObject({
             ship: zod.boolean(),
             fulfill: zod.boolean(),
             hold: zod.boolean(),
-            release: zod.boolean(),
-            confirmWait: zod.boolean()
-        }),
-        createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * The buyer's answer to a notice that their preorder will be later than promised (or that its date passed): yes, keep waiting. Clears the deadline after which silence would cancel the fulfillment order and refund it. Only the order's own buyer may answer, and only while `consent` is `awaiting` (`DELIVERY_NOT_AWAITING_ANSWER` otherwise). The buyer's other answer, cancel, is the existing cancel or remainder cancel.
- * @summary Keep waiting for a late preorder
- */
-export const confirmFulfillmentOrderWaitPathIdMax = 64;
-export const confirmFulfillmentOrderWaitPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ConfirmFulfillmentOrderWaitParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(confirmFulfillmentOrderWaitPathIdMax)
-        .regex(confirmFulfillmentOrderWaitPathIdRegExp)
-});
-export const confirmFulfillmentOrderWaitResponseDataIdMax = 64;
-export const confirmFulfillmentOrderWaitResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const confirmFulfillmentOrderWaitResponseDataOrderIdMax = 64;
-export const confirmFulfillmentOrderWaitResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const confirmFulfillmentOrderWaitResponseDataLinesItemProductIdMax = 64;
-export const confirmFulfillmentOrderWaitResponseDataLinesItemProductIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const confirmFulfillmentOrderWaitResponseDataLinesItemShippedQuantityMin = 0;
-export const confirmFulfillmentOrderWaitResponseDataLinesItemCancelledQuantityMin = 0;
-export const confirmFulfillmentOrderWaitResponseDataLinesItemRemainingMin = 0;
-export const confirmFulfillmentOrderWaitResponseDataHoldMessageMax = 500;
-export const confirmFulfillmentOrderWaitResponseDataHoldNoteMax = 1000;
-export const ConfirmFulfillmentOrderWaitResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(confirmFulfillmentOrderWaitResponseDataIdMax)
-            .regex(confirmFulfillmentOrderWaitResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(confirmFulfillmentOrderWaitResponseDataOrderIdMax)
-            .regex(confirmFulfillmentOrderWaitResponseDataOrderIdRegExp),
-        number: zod.number().min(1),
-        kind: zod.enum(['physical', 'digital']),
-        status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
-        lines: zod.array(
-            zod.strictObject({
-                productId: zod
-                    .string()
-                    .min(1)
-                    .max(confirmFulfillmentOrderWaitResponseDataLinesItemProductIdMax)
-                    .regex(confirmFulfillmentOrderWaitResponseDataLinesItemProductIdRegExp),
-                title: zod.string(),
-                quantity: zod.number().min(1),
-                shippedQuantity: zod
-                    .number()
-                    .min(confirmFulfillmentOrderWaitResponseDataLinesItemShippedQuantityMin),
-                cancelledQuantity: zod
-                    .number()
-                    .min(confirmFulfillmentOrderWaitResponseDataLinesItemCancelledQuantityMin),
-                remaining: zod
-                    .number()
-                    .min(confirmFulfillmentOrderWaitResponseDataLinesItemRemainingMin)
-            })
-        ),
-        holdNotice: zod.enum(['awaiting_stock', 'check_address', 'delayed']).optional(),
-        holdMessage: zod
-            .string()
-            .max(confirmFulfillmentOrderWaitResponseDataHoldMessageMax)
-            .optional(),
-        holdReason: zod
-            .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
-            .optional(),
-        holdNote: zod.string().max(confirmFulfillmentOrderWaitResponseDataHoldNoteMax).optional(),
-        agreedAt: zod.iso.datetime({ offset: true }).optional(),
-        expectedAt: zod.iso.datetime({ offset: true }).optional(),
-        consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
-        consentDeadline: zod.iso.datetime({ offset: true }).optional(),
-        revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
-        lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-        cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional(),
-        actions: zod.strictObject({
-            ship: zod.boolean(),
-            fulfill: zod.boolean(),
-            hold: zod.boolean(),
-            release: zod.boolean(),
-            confirmWait: zod.boolean()
+            release: zod.boolean()
         }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -10928,7 +10817,7 @@ export const ListReturnsQueryParams = zod.strictObject({
         .regex(listReturnsQueryOrderIdRegExp)
         .optional(),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']).optional(),
-    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']).optional()
+    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']).optional()
 });
 export const listReturnsResponseDataItemsItemIdMax = 64;
 export const listReturnsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -10972,7 +10861,7 @@ export const ListReturnsResponse = zod.strictObject({
                 orderNumber: zod.string(),
                 currency: zod.string(),
                 status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-                reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+                reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
                 kind: zod.enum(['return', 'cancellation']),
                 fulfillmentOrderId: zod
                     .string()
@@ -11118,7 +11007,7 @@ export const CreateReturnResponse = zod.strictObject({
         orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
         kind: zod.enum(['return', 'cancellation']),
         fulfillmentOrderId: zod
             .string()
@@ -11284,7 +11173,7 @@ export const GetReturnByIdResponse = zod.strictObject({
         orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
         kind: zod.enum(['return', 'cancellation']),
         fulfillmentOrderId: zod
             .string()
@@ -11365,7 +11254,7 @@ export const ApproveReturnResponse = zod.strictObject({
         orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
         kind: zod.enum(['return', 'cancellation']),
         fulfillmentOrderId: zod
             .string()
@@ -11450,7 +11339,7 @@ export const DeclineReturnResponse = zod.strictObject({
         orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
         kind: zod.enum(['return', 'cancellation']),
         fulfillmentOrderId: zod
             .string()
@@ -11546,7 +11435,7 @@ export const ReceiveReturnResponse = zod.strictObject({
         orderNumber: zod.string(),
         currency: zod.string(),
         status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+        reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
         kind: zod.enum(['return', 'cancellation']),
         fulfillmentOrderId: zod
             .string()
@@ -12906,24 +12795,13 @@ export const downloadAccountExportResponseNotificationsItemFiveParamsOrderIdRegE
 export const downloadAccountExportResponseNotificationsItemFiveParamsFulfillmentOrderIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemFiveParamsFulfillmentOrderIdRegExp =
     new RegExp('^[0-9A-Za-z_-]+$');
+export const downloadAccountExportResponseNotificationsItemFiveParamsMessageMax = 500;
 export const downloadAccountExportResponseNotificationsItemSixIdMax = 64;
 export const downloadAccountExportResponseNotificationsItemSixIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const downloadAccountExportResponseNotificationsItemSixParamsOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSixParamsOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
-export const downloadAccountExportResponseNotificationsItemSixParamsMessageMax = 500;
-export const downloadAccountExportResponseNotificationsItemSevenIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSevenIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const downloadAccountExportResponseNotificationsItemSevenParamsProductIdMax = 64;
-export const downloadAccountExportResponseNotificationsItemSevenParamsProductIdRegExp = new RegExp(
+export const downloadAccountExportResponseNotificationsItemSixParamsProductIdMax = 64;
+export const downloadAccountExportResponseNotificationsItemSixParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const downloadAccountExportResponseStockAlertsItemProductIdMax = 64;
@@ -13362,8 +13240,6 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 'credit_note_issued',
                 'release_date_moved',
                 'delay_notice_sent',
-                'wait_confirmed',
-                'wait_expired',
                 'address_corrected'
             ]),
             actor: zod
@@ -13572,11 +13448,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .optional(),
             agreedAt: zod.iso.datetime({ offset: true }).optional(),
             expectedAt: zod.iso.datetime({ offset: true }).optional(),
-            consent: zod.enum(['awaiting', 'confirmed', 'expired']).optional(),
-            consentDeadline: zod.iso.datetime({ offset: true }).optional(),
-            revisedShipDate: zod.iso.datetime({ offset: true }).optional(),
             lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-            cancelReason: zod.enum(['buyer', 'staff', 'no_answer', 'order']).optional()
+            cancelReason: zod.enum(['buyer', 'staff', 'order']).optional()
         })
     ),
     returns: zod.array(
@@ -13592,7 +13465,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .max(downloadAccountExportResponseReturnsItemOrderIdMax)
                 .regex(downloadAccountExportResponseReturnsItemOrderIdRegExp),
             status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']),
-            reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other', 'no_answer']),
+            reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']),
             note: zod.string().optional(),
             declineReason: zod.string().optional(),
             lines: zod.array(
@@ -13753,8 +13626,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         ),
                     titles: zod.array(zod.string()),
                     agreedAt: zod.iso.datetime({ offset: true }),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional(),
-                    answerBy: zod.iso.datetime({ offset: true }).optional()
+                    expectedAt: zod.iso.datetime({ offset: true }).optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -13766,7 +13638,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .min(1)
                     .max(downloadAccountExportResponseNotificationsItemFiveIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemFiveIdRegExp),
-                code: zod.enum(['notifications.fulfillment-confirm-wait']),
+                code: zod.enum(['notifications.fulfillment-held']),
                 params: zod.strictObject({
                     orderId: zod
                         .string()
@@ -13784,10 +13656,11 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .regex(
                             downloadAccountExportResponseNotificationsItemFiveParamsFulfillmentOrderIdRegExp
                         ),
-                    titles: zod.array(zod.string()),
-                    agreedAt: zod.iso.datetime({ offset: true }),
-                    expectedAt: zod.iso.datetime({ offset: true }).optional(),
-                    answerBy: zod.iso.datetime({ offset: true }).optional()
+                    notice: zod.enum(['check_address', 'delayed']),
+                    message: zod
+                        .string()
+                        .max(downloadAccountExportResponseNotificationsItemFiveParamsMessageMax)
+                        .optional()
                 }),
                 severity: zod.enum(['info', 'success', 'warning', 'error']),
                 readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -13799,48 +13672,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
                     .min(1)
                     .max(downloadAccountExportResponseNotificationsItemSixIdMax)
                     .regex(downloadAccountExportResponseNotificationsItemSixIdRegExp),
-                code: zod.enum(['notifications.fulfillment-held']),
-                params: zod.strictObject({
-                    orderId: zod
-                        .string()
-                        .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemSixParamsOrderIdMax)
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemSixParamsOrderIdRegExp
-                        ),
-                    fulfillmentOrderId: zod
-                        .string()
-                        .min(1)
-                        .max(
-                            downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdMax
-                        )
-                        .regex(
-                            downloadAccountExportResponseNotificationsItemSixParamsFulfillmentOrderIdRegExp
-                        ),
-                    notice: zod.enum(['check_address', 'delayed']),
-                    message: zod
-                        .string()
-                        .max(downloadAccountExportResponseNotificationsItemSixParamsMessageMax)
-                        .optional()
-                }),
-                severity: zod.enum(['info', 'success', 'warning', 'error']),
-                readAt: zod.iso.datetime({ offset: true }).optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            }),
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(downloadAccountExportResponseNotificationsItemSevenIdMax)
-                    .regex(downloadAccountExportResponseNotificationsItemSevenIdRegExp),
                 code: zod.enum(['notifications.stock-alert']),
                 params: zod.strictObject({
                     productId: zod
                         .string()
                         .min(1)
-                        .max(downloadAccountExportResponseNotificationsItemSevenParamsProductIdMax)
+                        .max(downloadAccountExportResponseNotificationsItemSixParamsProductIdMax)
                         .regex(
-                            downloadAccountExportResponseNotificationsItemSevenParamsProductIdRegExp
+                            downloadAccountExportResponseNotificationsItemSixParamsProductIdRegExp
                         ),
                     titles: zod.record(zod.string(), zod.string())
                 }),
@@ -14267,8 +14106,6 @@ export const GetOrderTimelineResponse = zod.strictObject({
                 'credit_note_issued',
                 'release_date_moved',
                 'delay_notice_sent',
-                'wait_confirmed',
-                'wait_expired',
                 'address_corrected'
             ]),
             actor: zod
@@ -15149,12 +14986,11 @@ export const ListPaymentAttentionResponse = zod.strictObject({
 });
 /**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the
- * orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * orders whose waiting fulfillment orders for this product would get a delay email (`notify`), counted once per order. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
- * `releaseDate` absent or blank previews a CLEARED date, which asks every waiting buyer. The same
+ * `releaseDate` absent or blank previews a CLEARED date, which tells every waiting buyer. The same
  * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
  * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
  * is never cached.
@@ -15171,25 +15007,21 @@ export const PreviewReleaseDateImpactQueryParams = zod.strictObject({
     releaseDate: zod.iso.datetime({ offset: true }).optional()
 });
 export const previewReleaseDateImpactResponseDataNotifyMin = 0;
-export const previewReleaseDateImpactResponseDataAskMin = 0;
 export const PreviewReleaseDateImpactResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        notify: zod.number().min(previewReleaseDateImpactResponseDataNotifyMin),
-        ask: zod.number().min(previewReleaseDateImpactResponseDataAskMin),
-        answerBy: zod.iso.datetime({ offset: true }).optional()
+        notify: zod.number().min(previewReleaseDateImpactResponseDataNotifyMin)
     })
 });
 /**
  * A preview for staff about to save a restock date, so the save is never a surprise. Counts the
- * orders whose backordered units for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * orders whose backordered units for this product would get a delay email (`notify`), counted once per order. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
- * `restockDate` absent or blank previews a CLEARED date, which asks every buyer who was promised that date. A buyer promised the 30-day default is left alone. The same
+ * `restockDate` absent or blank previews a CLEARED date, which tells every buyer who was promised that date. A buyer promised the 30-day default is left alone. The same
  * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
  * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
  * is never cached.
@@ -15206,15 +15038,12 @@ export const PreviewRestockDateImpactQueryParams = zod.strictObject({
     restockDate: zod.iso.datetime({ offset: true }).optional()
 });
 export const previewRestockDateImpactResponseDataNotifyMin = 0;
-export const previewRestockDateImpactResponseDataAskMin = 0;
 export const PreviewRestockDateImpactResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        notify: zod.number().min(previewRestockDateImpactResponseDataNotifyMin),
-        ask: zod.number().min(previewRestockDateImpactResponseDataAskMin),
-        answerBy: zod.iso.datetime({ offset: true }).optional()
+        notify: zod.number().min(previewRestockDateImpactResponseDataNotifyMin)
     })
 });
 /**
@@ -16043,21 +15872,11 @@ export const listNotificationsResponseDataItemsItemFiveParamsFulfillmentOrderIdM
 export const listNotificationsResponseDataItemsItemFiveParamsFulfillmentOrderIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
+export const listNotificationsResponseDataItemsItemFiveParamsMessageMax = 500;
 export const listNotificationsResponseDataItemsItemSixIdMax = 64;
 export const listNotificationsResponseDataItemsItemSixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseDataItemsItemSixParamsOrderIdMax = 64;
-export const listNotificationsResponseDataItemsItemSixParamsOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listNotificationsResponseDataItemsItemSixParamsFulfillmentOrderIdMax = 64;
-export const listNotificationsResponseDataItemsItemSixParamsFulfillmentOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const listNotificationsResponseDataItemsItemSixParamsMessageMax = 500;
-export const listNotificationsResponseDataItemsItemSevenIdMax = 64;
-export const listNotificationsResponseDataItemsItemSevenIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const listNotificationsResponseDataItemsItemSevenParamsProductIdMax = 64;
-export const listNotificationsResponseDataItemsItemSevenParamsProductIdRegExp = new RegExp(
+export const listNotificationsResponseDataItemsItemSixParamsProductIdMax = 64;
+export const listNotificationsResponseDataItemsItemSixParamsProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
 export const ListNotificationsResponse = zod.strictObject({
@@ -16157,8 +15976,7 @@ export const ListNotificationsResponse = zod.strictObject({
                             ),
                         titles: zod.array(zod.string()),
                         agreedAt: zod.iso.datetime({ offset: true }),
-                        expectedAt: zod.iso.datetime({ offset: true }).optional(),
-                        answerBy: zod.iso.datetime({ offset: true }).optional()
+                        expectedAt: zod.iso.datetime({ offset: true }).optional()
                     }),
                     severity: zod.enum(['info', 'success', 'warning', 'error']),
                     readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16170,7 +15988,7 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseDataItemsItemFiveIdMax)
                         .regex(listNotificationsResponseDataItemsItemFiveIdRegExp),
-                    code: zod.enum(['notifications.fulfillment-confirm-wait']),
+                    code: zod.enum(['notifications.fulfillment-held']),
                     params: zod.strictObject({
                         orderId: zod
                             .string()
@@ -16186,10 +16004,11 @@ export const ListNotificationsResponse = zod.strictObject({
                             .regex(
                                 listNotificationsResponseDataItemsItemFiveParamsFulfillmentOrderIdRegExp
                             ),
-                        titles: zod.array(zod.string()),
-                        agreedAt: zod.iso.datetime({ offset: true }),
-                        expectedAt: zod.iso.datetime({ offset: true }).optional(),
-                        answerBy: zod.iso.datetime({ offset: true }).optional()
+                        notice: zod.enum(['check_address', 'delayed']),
+                        message: zod
+                            .string()
+                            .max(listNotificationsResponseDataItemsItemFiveParamsMessageMax)
+                            .optional()
                     }),
                     severity: zod.enum(['info', 'success', 'warning', 'error']),
                     readAt: zod.iso.datetime({ offset: true }).optional(),
@@ -16201,47 +16020,13 @@ export const ListNotificationsResponse = zod.strictObject({
                         .min(1)
                         .max(listNotificationsResponseDataItemsItemSixIdMax)
                         .regex(listNotificationsResponseDataItemsItemSixIdRegExp),
-                    code: zod.enum(['notifications.fulfillment-held']),
-                    params: zod.strictObject({
-                        orderId: zod
-                            .string()
-                            .min(1)
-                            .max(listNotificationsResponseDataItemsItemSixParamsOrderIdMax)
-                            .regex(listNotificationsResponseDataItemsItemSixParamsOrderIdRegExp),
-                        fulfillmentOrderId: zod
-                            .string()
-                            .min(1)
-                            .max(
-                                listNotificationsResponseDataItemsItemSixParamsFulfillmentOrderIdMax
-                            )
-                            .regex(
-                                listNotificationsResponseDataItemsItemSixParamsFulfillmentOrderIdRegExp
-                            ),
-                        notice: zod.enum(['check_address', 'delayed']),
-                        message: zod
-                            .string()
-                            .max(listNotificationsResponseDataItemsItemSixParamsMessageMax)
-                            .optional()
-                    }),
-                    severity: zod.enum(['info', 'success', 'warning', 'error']),
-                    readAt: zod.iso.datetime({ offset: true }).optional(),
-                    createdAt: zod.iso.datetime({ offset: true })
-                }),
-                zod.strictObject({
-                    id: zod
-                        .string()
-                        .min(1)
-                        .max(listNotificationsResponseDataItemsItemSevenIdMax)
-                        .regex(listNotificationsResponseDataItemsItemSevenIdRegExp),
                     code: zod.enum(['notifications.stock-alert']),
                     params: zod.strictObject({
                         productId: zod
                             .string()
                             .min(1)
-                            .max(listNotificationsResponseDataItemsItemSevenParamsProductIdMax)
-                            .regex(
-                                listNotificationsResponseDataItemsItemSevenParamsProductIdRegExp
-                            ),
+                            .max(listNotificationsResponseDataItemsItemSixParamsProductIdMax)
+                            .regex(listNotificationsResponseDataItemsItemSixParamsProductIdRegExp),
                         titles: zod.record(zod.string(), zod.string())
                     }),
                     severity: zod.enum(['info', 'success', 'warning', 'error']),

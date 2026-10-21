@@ -86,9 +86,6 @@ beforeEach(() => {
             aFulfillmentOrder({ status: 'on_hold', holdReason: 'high_risk' })
         ),
         'POST /delivery/fulfillment-orders/fo1/release': orvalEnvelope(aFulfillmentOrder()),
-        'POST /delivery/fulfillment-orders/fo1/confirm-wait': orvalEnvelope(
-            aFulfillmentOrder({ consent: 'confirmed' })
-        ),
         'PATCH /delivery/shipments/s1': orvalEnvelope(aShipment({ trackingCode: 'TRK-9' })),
         'POST /delivery/shipments/s1/deliver': orvalEnvelope(aShipment({ status: 'delivered' })),
         'POST /delivery/order/order-3/start': orvalEnvelope({
@@ -326,27 +323,6 @@ describe('the preorder board reads', () => {
         await store.fetchPreorderSummaries();
 
         expect(store.preorderSummaries.map(({ productId }) => productId)).toEqual(['p1', 'p2']);
-    });
-});
-
-describe('confirmWait', () => {
-    it('answers "keep waiting" with no body and re-reads the order', async () => {
-        const store = useDeliveryStore();
-        const confirmed = await store.confirmWait('fo1');
-
-        expect(confirmed?.consent).toBe('confirmed');
-        expect(
-            await sentBody('POST', '/delivery/fulfillment-orders/fo1/confirm-wait')
-        ).toBeUndefined();
-        expect(store.fulfillmentOrders).toHaveLength(1);
-    });
-
-    it('rejects when the server is no longer waiting for an answer', () => {
-        responses['POST /delivery/fulfillment-orders/fo1/confirm-wait'] = new Error(
-            'DELIVERY_NOT_AWAITING_ANSWER'
-        );
-        const store = useDeliveryStore();
-        return expect(store.confirmWait('fo1')).rejects.toBeDefined();
     });
 });
 

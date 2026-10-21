@@ -95,7 +95,7 @@ describe('PreorderProductsTable', () => {
     it('shows only the states that hold units, the late ones flagged', () =>
         mountTable(
             [aPreorderLevel()],
-            [aPreorderSummary({ waiting: 2, awaitingYes: 1, late: 1, shipped: 0 })]
+            [aPreorderSummary({ waiting: 2, allocated: 1, late: 1, shipped: 0 })]
         ).then((wrapper) => {
             const counts = wrapper
                 .findAll('[data-count]')
@@ -103,7 +103,7 @@ describe('PreorderProductsTable', () => {
 
             expect(counts).toEqual([
                 ['waiting', '2 waiting'],
-                ['awaitingYes', '1 awaiting an answer'],
+                ['allocated', '1 allocated'],
                 ['late', '1 late']
             ]);
         }));

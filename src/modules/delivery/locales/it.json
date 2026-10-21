@@ -42,20 +42,10 @@
         "fulfilled": "Segnato come evaso.",
         "released": "Sospensione rimossa.",
         "promised": "Promesso per il {date}",
-        "consent-awaiting-buyer": "È in ritardo. Vuoi ancora aspettarlo?",
-        "consent-awaiting-staff": "In attesa che l'acquirente dica se continuare ad aspettare",
-        "consent-confirmed": "Attesa confermata",
-        "agreed-until": "Attesa concordata fino al {date}",
-        "agreed-open-ended": "Attesa concordata senza una data fissa: si può annullare in qualsiasi momento prima della spedizione",
-        "consent-expired": "Nessuna risposta in tempo: annullamento e rimborso in corso",
-        "answer-by": "Rispondi entro il {date}, altrimenti ciò che resta viene annullato e rimborsato.",
         "last-notice": "Ultimo avviso inviato il {date}",
         "cancel-reason-buyer": "Annullato dall'acquirente",
         "cancel-reason-staff": "Annullato dallo staff",
-        "cancel-reason-no_answer": "Annullato: nessuna risposta",
-        "cancel-reason-order": "Annullato con l'ordine",
-        "button-confirm-wait": "Continua ad aspettare",
-        "wait-confirmed": "Grazie, lo teniamo per te."
+        "cancel-reason-order": "Annullato con l'ordine"
     },
     "shipment-row": {
         "title": "Spedizione n. {number}",
@@ -117,9 +107,7 @@
         "slipped": "+{days} g",
         "no-date-yet": "Ancora nessuna data",
         "late": "In ritardo",
-        "answer-by": "Risposta entro il {date}",
         "state-waiting": "In attesa di merce",
-        "state-awaiting_yes": "In attesa della risposta",
         "state-allocated": "Assegnato",
         "state-shipped": "Spedito",
         "state-cancelled": "Annullato"

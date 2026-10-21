@@ -174,7 +174,6 @@ export const aPreorderSummary = (
     firstAgreedAt: '2027-03-15T12:00:00.000Z',
     paid: 3,
     waiting: 3,
-    awaitingYes: 0,
     allocated: 0,
     shipped: 0,
     cancelled: 0,
@@ -241,7 +240,7 @@ export const aFulfillmentOrder = (overrides: Partial<FulfillmentOrder> = {}): Fu
             remaining: 2
         }
     ],
-    actions: { ship: false, fulfill: false, hold: false, release: false, confirmWait: false },
+    actions: { ship: false, fulfill: false, hold: false, release: false },
     createdAt: '2026-09-01T10:00:00.000Z',
     ...overrides
 });

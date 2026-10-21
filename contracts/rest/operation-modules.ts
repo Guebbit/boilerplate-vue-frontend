@@ -21,7 +21,6 @@ export const OPERATION_MODULES: Record<string, string> = {
     confirmAccountDelete: 'account',
     confirmEmailChange: 'account',
     confirmEmailVerification: 'account',
-    confirmFulfillmentOrderWait: 'delivery',
     confirmPasswordReset: 'account',
     confirmPayment: 'payments',
     confirmTwoFactorMethod: 'account',

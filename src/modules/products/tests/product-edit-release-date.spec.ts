@@ -272,39 +272,30 @@ describe('ProductEdit — the preview before a later or cleared date', () => {
         confirmSpy = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
     });
 
-    it('asks before saving a later date, naming the notices and the questions', () =>
-        submitWith(
-            { notify: 12, ask: 3, answerBy: '2027-11-16T00:00:00.000Z' },
-            '2027-04-01T10:00'
-        ).then(() => {
+    it('asks before saving a later date, naming how many orders get an email', () =>
+        submitWith({ notify: 12 }, '2027-04-01T10:00').then(() => {
             expect(previewCalls()).toHaveLength(1);
             expect(previewCalls()[0][0]).toMatchObject({
                 params: { productId: 'p1', releaseDate: new Date(2027, 3, 1, 10, 0).toISOString() }
             });
             expect(confirmSpy).toHaveBeenCalledOnce();
             const request = confirmSpy.mock.calls[0][0] as { message: string; color: string };
-            expect(request.message).toContain('12 orders get a notice');
-            expect(request.message).toContain('3 orders must say yes, the first by');
-            expect(request.message).toContain('silence cancels and refunds');
+            expect(request.message).toContain('12 orders get an email about the new date');
+            // The shop asks nothing of the buyers: no question, no deadline, no silence rule.
+            expect(request.message).not.toContain('must say yes');
+            expect(request.message).not.toContain('silence');
             expect(request.color).toBe('warning');
             expect(patched()).toBe(true);
         }));
 
-    it('names only the notices when nobody has to answer', () =>
-        submitWith({ notify: 1, ask: 0 }, '2027-04-01T10:00').then(() => {
+    it('names one order in the singular', () =>
+        submitWith({ notify: 1 }, '2027-04-01T10:00').then(() => {
             const request = confirmSpy.mock.calls[0][0] as { message: string };
-            expect(request.message).toBe('1 order gets a notice');
-        }));
-
-    it('names no date when the preview gives none', () =>
-        submitWith({ notify: 0, ask: 2 }, '2027-04-01T10:00').then(() => {
-            const request = confirmSpy.mock.calls[0][0] as { message: string };
-            expect(request.message).toContain('2 orders must say yes');
-            expect(request.message).not.toContain(' by ');
+            expect(request.message).toBe('1 order gets an email about the new date');
         }));
 
     it('asks for a cleared date without sending a releaseDate', () =>
-        submitWith({ notify: 0, ask: 2, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(() => {
+        submitWith({ notify: 2 }, '').then(() => {
             expect(previewCalls()[0][0]).toMatchObject({ params: { productId: 'p1' } });
             expect(
                 (previewCalls()[0][0] as { params: Record<string, unknown> }).params.releaseDate
@@ -315,16 +306,14 @@ describe('ProductEdit — the preview before a later or cleared date', () => {
     it('does not save when the staff go back', () => {
         confirmSpy.mockResolvedValue(false);
 
-        return submitWith({ notify: 0, ask: 1, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(
-            () => {
-                expect(confirmSpy).toHaveBeenCalledOnce();
-                expect(patched()).toBe(false);
-            }
-        );
+        return submitWith({ notify: 1 }, '').then(() => {
+            expect(confirmSpy).toHaveBeenCalledOnce();
+            expect(patched()).toBe(false);
+        });
     });
 
     it('saves without a dialog when nobody is reached', () =>
-        submitWith({ notify: 0, ask: 0 }, '').then(() => {
+        submitWith({ notify: 0 }, '').then(() => {
             expect(confirmSpy).not.toHaveBeenCalled();
             expect(patched()).toBe(true);
         }));
@@ -338,24 +327,18 @@ describe('ProductEdit — the preview before a later or cleared date', () => {
     it('does not even ask the server when the visitor cannot read orders', () => {
         signIn([{ action: 'update', subject: 'Product' }]);
 
-        return submitWith({ notify: 5, ask: 5, answerBy: '2027-11-16T00:00:00.000Z' }, '').then(
-            () => {
-                expect(previewCalls()).toHaveLength(0);
-                expect(confirmSpy).not.toHaveBeenCalled();
-                expect(patched()).toBe(true);
-            }
-        );
+        return submitWith({ notify: 5 }, '').then(() => {
+            expect(previewCalls()).toHaveLength(0);
+            expect(confirmSpy).not.toHaveBeenCalled();
+            expect(patched()).toBe(true);
+        });
     });
 
     it.each([
         ['an earlier date', '2027-03-01T10:00', RELEASE_ISO],
         ['a product that never had a date', '2027-04-01T10:00', null]
     ])('does not ask for %s', (_name, next, original) =>
-        submitWith(
-            { notify: 5, ask: 5, answerBy: '2027-11-16T00:00:00.000Z' },
-            next,
-            original
-        ).then(() => {
+        submitWith({ notify: 5 }, next, original).then(() => {
             expect(previewCalls()).toHaveLength(0);
             expect(patched()).toBe(true);
         })

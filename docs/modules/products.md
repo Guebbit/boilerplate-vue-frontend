@@ -188,9 +188,9 @@ flowchart TD
     C -- no --> S
     C -- yes --> D[GET /delivery/fulfillment-orders/release-date-impact]
     D -- failed --> S
-    D -- ok --> E{notify + ask = 0?}
+    D -- ok --> E{notify = 0?}
     E -- yes --> S
-    E -- no --> F[Confirm dialog: counts and answer-by date]
+    E -- no --> F[Confirm dialog: how many orders get an email]
     F -- Save --> S
     F -- Back --> X[Nothing saved]
 ```

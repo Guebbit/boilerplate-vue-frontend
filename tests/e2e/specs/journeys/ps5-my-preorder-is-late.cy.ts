@@ -2,14 +2,15 @@
 /**
  * @module
  * PS5 · My preorder is late. A customer pays for two preorders of the same product. The shop moves
- * the release date a fortnight later: that is only a notice. When the new date has passed too, the
- * sweep asks each buyer whether they still want to wait. One answers and keeps waiting; the other
- * stays silent, and a month later the sweep cancels that one. The first is untouched.
+ * the release date a fortnight later: the buyer is told. When the new date has passed too, the
+ * sweep tells each buyer once more. Nobody is asked anything: one buyer cancels from the order
+ * page, the other does nothing, and a month later the sweep has cancelled nothing, so the second is
+ * still waiting.
  *
- * The story is the buyer's side of a delay: what the order page shows at each stage, and that a
- * silence never costs the one who answered. The staff board is PS4's. The refund amount, the credit
- * note and the mails that follow a cancel are the job's integration test's. Demo only: the dates
- * are clock jumps and the sweeps are pulled with the job lever.
+ * The story is the buyer's side of a delay: what the order page shows at each stage, and that
+ * silence never costs the buyer their order. The staff board is PS4's. The refund amount, the credit
+ * note and the mails that follow a cancel are the cancel's own tests. Demo only: the dates are clock
+ * jumps and the sweeps are pulled with the job lever.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
 import { eventually, idFromLocation, preorderOnSale } from '../../../support/e2e/steps';
@@ -60,7 +61,7 @@ describe('PS5 · My preorder is late', () => {
         cy.visit('/en');
     });
 
-    it('a slip is a notice, a lateness is a question, and only silence is cancelled', () => {
+    it('a slip and a lateness are only told, and nobody is cancelled for staying silent', () => {
         const title = `PS5 preorder ${String(Date.now())}`;
         preorderOnSale({ releaseInDays: 10, limit: 5, title }).then((productId) => {
             cy.step('the customer pays for two preorders: each waits for stock, with a date');
@@ -75,7 +76,7 @@ describe('PS5 · My preorder is late', () => {
                     }
 
                     cy.step(
-                        'the date moves a fortnight later: a notice, and nothing to answer yet'
+                        'the date moves a fortnight later: the buyer is told, with nothing to answer'
                     );
                     cy.apiAs('editor', 'PATCH', `/products/${productId}`, {
                         releaseDate: new Date(Date.now() + 24 * DAY_MS).toISOString()
@@ -92,12 +93,12 @@ describe('PS5 · My preorder is late', () => {
                     );
 
                     cy.step(
-                        'the new date passes: the sweep asks, in the mail, the bell and the order'
+                        'the new date passes: the sweep tells each buyer, in the mail and the bell'
                     );
                     cy.travel(25 * DAY_MS);
                     cy.runJob('sweep-preorders');
                     cy.loginAs('user');
-                    mailedToCustomer('Part of your order is late: do you want to keep waiting?');
+                    mailedToCustomer('Part of your order is late');
                     cy.visit('/en');
                     cy.get('[data-test=notifications-bell]').click();
                     cy.get('[data-test=notifications-panel]')
@@ -105,41 +106,29 @@ describe('PS5 · My preorder is late', () => {
                         .should('have.length.at.least', 2);
                     for (const orderId of [first, second]) {
                         cy.visit(`/en/orders/${orderId}`);
-                        cy.get('[data-test=fulfillment-order-consent]').should('exist');
-                        cy.get('[data-test=fulfillment-order-answer-by]').should('exist');
-                        cy.get('[data-test=confirm-wait]').should('exist');
+                        cy.get('[data-test=fulfillment-order-consent]').should('not.exist');
+                        cy.get('[data-test=fulfillment-order-answer-by]').should('not.exist');
+                        cy.get('[data-test=confirm-wait]').should('not.exist');
+                        cy.get('[data-test=order-cancel]').should('exist');
                     }
 
-                    cy.step(
-                        'the first buyer keeps waiting: it is on record and the question is gone'
-                    );
+                    cy.step('the first buyer cancels from the order page');
                     cy.visit(`/en/orders/${first}`);
-                    cy.get('[data-test=confirm-wait]').click();
-                    cy.get('[data-test=confirm-wait]').should('not.exist');
-                    cy.reload();
-                    cy.get('[data-test=order-timeline-entry][data-type=wait_confirmed]').should(
-                        'exist'
-                    );
+                    cy.get('[data-test=order-cancel]').click();
+                    cy.get('[data-test=app-dialog-confirm]').click();
+                    eventually(
+                        () => cy.apiAs<OrderLike>('user', 'GET', `/orders/${first}`),
+                        (order) => order?.status === 'cancelled'
+                    ).should((order) => expect(order?.status).to.equal('cancelled'));
 
-                    cy.step('a month of silence from the second: the sweep cancels only that one');
+                    cy.step('a month of silence from the second: the sweep cancels nothing');
                     cy.travel(31 * DAY_MS);
                     cy.runJob('sweep-preorders');
                     cy.loginAs('user');
-                    eventually(
-                        () => cy.apiAs<OrderLike>('user', 'GET', `/orders/${second}`),
-                        (order) => order?.status === 'cancelled'
-                    ).should((order) => expect(order?.status).to.equal('cancelled'));
-                    cy.visit(`/en/orders/${second}`);
-                    cy.get('[data-test=order-timeline-entry][data-type=wait_expired]').should(
-                        'exist'
-                    );
-                    cy.get('[data-test=order-timeline-entry][data-type=cancelled]').should('exist');
-
-                    cy.step('the one that answered is still waiting');
-                    cy.apiAs<OrderLike>('user', 'GET', `/orders/${first}`).should((order) =>
+                    cy.apiAs<OrderLike>('user', 'GET', `/orders/${second}`).should((order) =>
                         expect(order?.status, 'not cancelled').to.not.equal('cancelled')
                     );
-                    cy.visit(`/en/orders/${first}`);
+                    cy.visit(`/en/orders/${second}`);
                     cy.get('[data-test=fulfillment-order-awaiting-stock]').should('exist');
                     cy.get('[data-test=confirm-wait]').should('not.exist');
                 });

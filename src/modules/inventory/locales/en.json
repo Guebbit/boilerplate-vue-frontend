@@ -86,7 +86,6 @@
         "column-states": "Units by state",
         "outstanding-split": "{held} unpaid, {paid} paid",
         "count-waiting": "{count} waiting",
-        "count-awaiting-yes": "{count} awaiting an answer",
         "count-allocated": "{count} allocated",
         "count-shipped": "{count} shipped",
         "count-cancelled": "{count} cancelled",

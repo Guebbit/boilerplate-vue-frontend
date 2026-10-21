@@ -163,7 +163,6 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "DELETE", pattern: /^\/cart\/[^/]+$/, schemaName: "RemoveCartItemResponse", bodySchemaName: undefined, module: "cart" },
     { method: "PUT", pattern: /^\/cart\/[^/]+$/, schemaName: "UpdateCartItemByIdResponse", bodySchemaName: "UpdateCartItemByIdBody", module: "cart" },
     { method: "POST", pattern: /^\/cart\/reorder\/[^/]+$/, schemaName: "ReorderResponse", bodySchemaName: undefined, module: "cart" },
-    { method: "POST", pattern: /^\/delivery\/fulfillment-orders\/[^/]+\/confirm-wait$/, schemaName: "ConfirmFulfillmentOrderWaitResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "POST", pattern: /^\/delivery\/fulfillment-orders\/[^/]+\/fulfill$/, schemaName: "FulfillFulfillmentOrderResponse", bodySchemaName: undefined, module: "delivery" },
     { method: "POST", pattern: /^\/delivery\/fulfillment-orders\/[^/]+\/hold$/, schemaName: "HoldFulfillmentOrderResponse", bodySchemaName: "HoldFulfillmentOrderBody", module: "delivery" },
     { method: "POST", pattern: /^\/delivery\/fulfillment-orders\/[^/]+\/release$/, schemaName: "ReleaseFulfillmentOrderResponse", bodySchemaName: undefined, module: "delivery" },

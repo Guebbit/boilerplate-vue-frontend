@@ -1,7 +1,7 @@
 /**
  * @module
  * The product form's check before a later or cleared release date (or restock date) is saved: it asks
- * the backend how many orders the move would notify or ask
+ * the backend how many orders the move would email
  * (`GET /delivery/fulfillment-orders/release-date-impact`, or `restock-date-impact` for the owed
  * units of a backorder) and puts the answer in a confirm dialog. It informs and never refuses.
  *
@@ -11,7 +11,6 @@
 import { useI18n } from 'vue-i18n';
 import { previewReleaseDateImpact, previewRestockDateImpact } from '@api';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { fromDateTimeLocal, isReleaseDateSlip } from '../domain';
 
@@ -20,18 +19,9 @@ import { fromDateTimeLocal, isReleaseDateSlip } from '../domain';
  */
 interface ReleaseDateImpact {
     /**
-     * Orders that get a notice only.
+     * Orders that would get an email: the move tells them, and they may cancel.
      */
     notify: number;
-    /**
-     * Orders that get a question; silence cancels and refunds.
-     */
-    ask: number;
-    /**
-     * The earliest date a buyer who gets a question must answer by, were the move saved now. Absent
-     * when nobody is asked.
-     */
-    answerBy?: string;
 }
 
 /**
@@ -50,25 +40,12 @@ export const useReleaseDateConfirm = (
     const dialog = useDialogStore();
 
     /**
-     * What the dialog says: one clause per kind of contact, joined by a dot.
+     * What the dialog says: how many orders the move would email.
      *
-     * @param impact - The preview's counts and deadline.
+     * @param impact - The preview's count.
      */
-    const messageOf = ({ notify, ask, answerBy }: ReleaseDateImpact): string =>
-        [
-            notify > 0 && t('product-edit-page.impact-notify', { count: notify }, notify),
-            ask > 0 &&
-                (answerBy === undefined
-                    ? t('product-edit-page.impact-ask-undated', { count: ask }, ask)
-                    : t(
-                          'product-edit-page.impact-ask',
-                          { count: ask, date: formatDate(answerBy) },
-                          ask
-                      )),
-            ask > 0 && t('product-edit-page.impact-silence')
-        ]
-            .filter(Boolean)
-            .join(' · ');
+    const messageOf = ({ notify }: ReleaseDateImpact): string =>
+        t('product-edit-page.impact-notify', { count: notify }, notify);
 
     /**
      * Skipped, so the save goes ahead, when: the date is not a slip, the visitor may not read
@@ -94,7 +71,7 @@ export const useReleaseDateConfirm = (
                     : previewRestockDateImpact({ productId, restockDate: date })
             )
                 .then(({ data }) =>
-                    data.notify + data.ask === 0
+                    data.notify === 0
                         ? true
                         : dialog.confirm({
                               title: t('product-edit-page.impact-title'),

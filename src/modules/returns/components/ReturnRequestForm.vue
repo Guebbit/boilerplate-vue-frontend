@@ -26,7 +26,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import type { ReturnOptionLine, ReturnRequestReason } from '@types';
+import type { ReturnOptionLine, ReturnReason } from '@types';
 
 /**
  * The order and what can still come back from it.
@@ -36,7 +36,7 @@ const props = defineProps<{
     /** The lines the form offers, each with how many are still returnable (`quantity`). */
     lines: ReturnOptionLine[];
     /** The reasons the server says can still be named (`ReturnOptions.reasons`). */
-    reasons: ReturnRequestReason[];
+    reasons: ReturnReason[];
 }>();
 
 /**
