@@ -51,6 +51,8 @@ import { SHARD_SINK_PORT_BASE, sinkUrlForPort } from './webhook-sink';
 import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 import { printFlakyReport, resetFlakyReport } from './flaky-report';
 import { readSpecDurations } from './spec-durations';
+import { runWatched } from './shard-process';
+import { countFinishedSpecs, judgeShard } from './shard-verdict';
 
 /*
  * Two levels: this file is `scripts/e2e/run-shards.ts`, so one `..` reaches `scripts/`, where
@@ -341,22 +343,28 @@ const bootDemoBackends = async (count: number, antibotIndex: number): Promise<()
 };
 
 /**
- * One Cypress process for one shard.
+ * The longest a shard may print nothing before it counts as hung, in minutes. A healthy Cypress
+ * logs every few seconds; `E2E_SHARD_QUIET_MINUTES` exists so the watchdog can be proven fast.
+ */
+const QUIET_MINUTES = Number(process.env.E2E_SHARD_QUIET_MINUTES) || 10;
+
+/**
+ * One Cypress process for one shard, under the no-progress watchdog (`shard-process.ts`).
  *
  * Output is buffered rather than inherited: four interleaved Cypress reporters are unreadable, and
  * the only output anyone needs is that of a shard that failed. Successes collapse to one line.
+ * The verdict is `judgeShard`'s: a hang, a signal or missing specs fail it whatever the exit code.
  */
 const runShard = (files: string[], index: number) =>
-    new Promise<{ index: number; code: number; output: string; seconds: number }>((resolve) => {
+    new Promise<{ index: number; reason?: string; output: string; seconds: number }>((resolve) => {
         const startedAt = Date.now();
-        let output = '';
 
         // Staggered, not concurrent-from-zero — see SHARD_STAGGER_MS. The clock starts before the
         // wait so a shard's reported seconds stay comparable with the weights in SECONDS.
         setTimeout(() => {
-            const cypress = spawn('npx', ['cypress', 'run', '--e2e', '--spec', files.join(',')], {
+            void runWatched('npx', ['cypress', 'run', '--e2e', '--spec', files.join(',')], {
                 cwd: REPO_ROOT,
-                stdio: ['ignore', 'pipe', 'pipe'],
+                quietMs: QUIET_MINUTES * 60_000,
                 env: {
                     ...process.env,
                     // This shard's own backend — see `bootDemoBackends` below.
@@ -368,18 +376,22 @@ const runShard = (files: string[], index: number) =>
                     // Where this process hosts the webhook sink its backend was told about.
                     E2E_WEBHOOK_SINK_PORT: String(SHARD_SINK_PORT_BASE + index)
                 }
-            });
-
-            cypress.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
-            cypress.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
-            cypress.on('close', (code) =>
+            }).then(({ code, signal, hung, output }) => {
+                const verdict = judgeShard({
+                    code,
+                    signal,
+                    hung,
+                    quietMinutes: QUIET_MINUTES,
+                    assigned: files.length,
+                    ran: countFinishedSpecs(output)
+                });
                 resolve({
                     index,
-                    code: code ?? 1,
+                    reason: verdict.ok ? undefined : verdict.reason,
                     output,
                     seconds: Math.round((Date.now() - startedAt) / 1000)
-                })
-            );
+                });
+            });
         }, index * SHARD_STAGGER_MS);
     });
 
@@ -392,9 +404,9 @@ const main = async () => {
     const results = await Promise.all(active.map((shard, index) => runShard(shard.files, index)));
     killBackends();
 
-    for (const { index, code, output, seconds } of results) {
+    for (const { index, reason, output, seconds } of results) {
         const specCount = active[index].files.length;
-        if (code === 0) {
+        if (reason === undefined) {
             console.log(`[e2e-shard] shard ${index + 1}: ${specCount} specs OK in ${seconds}s`);
             continue;
         }
@@ -408,7 +420,7 @@ const main = async () => {
         mkdirSync(LOG_DIR, { recursive: true });
         writeFileSync(logFile, output);
 
-        console.error(`\n[e2e-shard] shard ${index + 1} FAILED (${seconds}s) —\n`);
+        console.error(`\n[e2e-shard] shard ${index + 1} FAILED (${seconds}s): ${reason} —\n`);
         console.error(output);
         console.error(`[e2e-shard] the above is also at ${path.relative(REPO_ROOT, logFile)}\n`);
     }
@@ -416,7 +428,7 @@ const main = async () => {
     // Retry-passes: printed (and annotated in CI) whatever the verdict, never counted against it.
     printFlakyReport();
 
-    const failed = results.filter(({ code }) => code !== 0).length;
+    const failed = results.filter(({ reason }) => reason !== undefined).length;
     const elapsed = Math.round((Date.now() - startedAt) / 1000);
     console.log(
         `\n[e2e-shard] ${results.length - failed}/${results.length} shards passed in ${elapsed}s`
