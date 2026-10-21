@@ -234,6 +234,7 @@ onMounted(() => {
         v-model="levelsPage"
         :length="levelsPageTotal"
         :aria-label="t('inventory-page.pagination-board')"
+        test-id="board-pagination"
         class="mb-6"
     />
 </template>

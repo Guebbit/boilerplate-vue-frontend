@@ -443,5 +443,6 @@ onMounted(() => {
         v-model="movementsPage"
         :length="movementsPageTotal"
         :aria-label="t('inventory-page.pagination-ledger')"
+        test-id="ledger-pagination"
     />
 </template>

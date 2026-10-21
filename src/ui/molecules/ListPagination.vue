@@ -14,7 +14,8 @@ import { useDisplay } from 'vuetify';
 const {
     length = 0,
     ariaLabel,
-    focusFallback = 'main'
+    focusFallback = 'main',
+    testId = 'pagination'
 } = defineProps<{
     /**
      * Total number of pages
@@ -32,6 +33,10 @@ const {
      * app's own layout markup, so a caller with a more specific target overrides this instead.
      */
     focusFallback?: string;
+    /**
+     * The pager's test hook. A page with two pagers names each, as `DataTable.rowTest` does.
+     */
+    testId?: string;
 }>();
 
 /**
@@ -77,7 +82,7 @@ watch(
             :length="length"
             :total-visible="mobile ? MOBILE_PAGES : 7"
             :aria-label="ariaLabel"
-            data-test="pagination"
+            :data-test="testId"
             density="comfortable"
             class="mt-4"
         />
