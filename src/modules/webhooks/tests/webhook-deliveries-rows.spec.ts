@@ -44,4 +44,24 @@ describe('WebhookDeliveriesFilters rows', () => {
         expect(rows[0].text()).toContain('order.created');
         expect(rows[1].text()).toContain('order.paid');
     });
+
+    it('offers Replay on an in-flight row too: the server answers a busy lease with a 409', async () => {
+        const wrapper = mount(WebhookDeliveriesFilters, {
+            props: {
+                deliveries: [{ ...delivery('d1', 'order.created'), status: 'in-flight' }],
+                total: 1,
+                pages: 1,
+                loading: false,
+                subscriptions: [],
+                replayingIds: new Set<string>()
+            },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await nextRenderTick(wrapper);
+
+        const replay = wrapper.get('[data-test=webhook-delivery-replay]');
+        expect(replay.attributes('disabled')).toBeUndefined();
+        await replay.trigger('click');
+        expect(wrapper.emitted('replay')).toEqual([['d1']]);
+    });
 });

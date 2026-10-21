@@ -4,7 +4,8 @@
  * One shipment inside its fulfillment order's card: its lines, status, tracking code and dates,
  * and the two staff controls the shipment's own `actions` offer — correct the tracking code inline,
  * mark it delivered (with the forced door for an `override:Order` holder). Controls come from
- * `actions`, never from a rule re-derived here.
+ * `actions`, never from a rule re-derived here; the forced door is `actions.deliver` plus the
+ * caller's `override:Order` permission.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -13,16 +14,15 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDeliveryStore } from '../store.ts';
 import type { Shipment } from '@types';
 
 /**
- * The shipment, and whether the caller may force an arrival.
+ * The shipment.
  */
 const props = defineProps<{
     shipment: Shipment;
-    /** Whether `Order.actions.override` lists `delivered`: offers the forced arrival. */
-    canForce?: boolean;
 }>();
 
 /**
@@ -44,6 +44,11 @@ const { t } = useI18n();
  * Toast dispatcher, used to report each outcome.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The caller's permissions, read for the forced arrival.
+ */
+const session = useSessionStore();
 
 /**
  * The store's writes and its in-flight flag.
@@ -76,16 +81,16 @@ const forceReason = ref('');
 const { message: rowError, report: reportRowError, clear: clearRowError } = useBlockingError();
 
 /**
- * Whether the forced arrival is offered: the shipment is still in transit and the caller may force.
+ * Whether the forced arrival is offered: the server accepts an arrival and the caller holds `override`.
  */
-const offerForce = computed(() => props.shipment.status === 'shipped' && props.canForce);
+const offerForce = computed(
+    () => props.shipment.actions.deliver && session.can('override', 'Order')
+);
 
 /**
  * Whether the arrival button shows at all.
  */
-const offerDeliver = computed(
-    () => props.shipment.actions.deliver || (offerForce.value && force.value)
-);
+const offerDeliver = computed(() => props.shipment.actions.deliver);
 
 /**
  * Whether the tracking field holds a new, non-empty code.

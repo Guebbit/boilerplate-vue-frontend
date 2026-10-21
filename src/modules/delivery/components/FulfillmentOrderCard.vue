@@ -88,11 +88,6 @@ const { message: cardError, report: reportCardError, clear: clearCardError } = u
 const canForceShip = computed(() => (props.override ?? []).includes(OrderStatus.shipped));
 
 /**
- * Whether the caller may force an arrival on one of this card's shipments.
- */
-const canForceDeliver = computed(() => (props.override ?? []).includes(OrderStatus.delivered));
-
-/**
  * The statuses a forced shipment may leave from. Typed against the generated union, so a status
  * the contract drops stops compiling here.
  */
@@ -360,7 +355,6 @@ const release = () =>
                 v-for="shipment in shipments"
                 :key="'shipment-' + shipment.id"
                 :shipment="shipment"
-                :can-force="canForceDeliver"
                 @moved="emit('moved')"
             />
         </ul>

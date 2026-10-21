@@ -185,6 +185,8 @@ application follows without being edited, because it never held an opinion to up
 The test for whether a new screen is doing this right: **if you can delete the API and still say
 what the button would do, the rule is in the wrong repository.**
 
+A permission alone (`session.can`) may gate a control (see Security); a state rule may not.
+
 ## 5. Published language — the barrel, held to a size
 
 **A module publishes exactly what a sibling imports. No sibling, no barrel.**
