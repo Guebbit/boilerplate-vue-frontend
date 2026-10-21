@@ -27,6 +27,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency, formatUtcDate } from '@/infrastructure/utils/formatters.ts';
@@ -188,11 +189,12 @@ const loadOpened = () =>
     });
 
 /**
- * Asks for confirmation, then withdraws from the whole order.
+ * Asks for confirmation, then withdraws from the whole order. A repeat press while the first is
+ * still asking or writing does nothing.
  *
  * @returns A promise settling once the withdrawal was sent; a refusal blocks the button in place.
  */
-const handleWithdraw = () =>
+const handleWithdraw = singleFlight(() =>
     useDialogStore()
         .confirm({
             message: t('withdrawal-panel.confirm', { id: props.orderId }),
@@ -208,7 +210,8 @@ const handleWithdraw = () =>
                     return loadOpened();
                 })
                 .catch((error: unknown) => reportWithdrawError(error));
-        });
+        })
+);
 
 /**
  * A return from the form went through: re-read this order's list (it shrinks what is left to

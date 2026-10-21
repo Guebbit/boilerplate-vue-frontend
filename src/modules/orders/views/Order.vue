@@ -63,6 +63,7 @@ import {
     formatCurrency,
     formatPercent
 } from '@/infrastructure/utils/formatters.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel } from '@/modules/payments';
@@ -190,12 +191,13 @@ const {
 } = useBlockingError();
 
 /**
- * Cancels this order after an explicit confirmation.
+ * Cancels this order after an explicit confirmation. A second press while the first is still
+ * asking or writing does nothing, so a double press cancels once.
  *
  * @returns Nothing; success is reported as a toast, a failure blocks the button in place
  *  ({@link cancelError}), and the page re-renders the new status either way.
  */
-const handleCancel = () => {
+const handleCancel = singleFlight(() => {
     const order = currentOrder.value;
     if (!order) return;
     return useDialogStore()
@@ -210,7 +212,7 @@ const handleCancel = () => {
                 .then(() => addMessage(t('order-target-page.success-cancel')))
                 .catch((error) => reportCancelError(error));
         });
-};
+});
 
 /**
  * The reorder button's own blocked state — its own dedicated control, separate from cancel.
