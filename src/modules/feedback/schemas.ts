@@ -15,12 +15,6 @@ import {
 } from '@api/schemas';
 
 /**
- * The shortest message the contact form accepts: a nudge toward a message the shop can act on.
- * Stricter than the contract, which only asks for one character.
- */
-const CONTACT_MESSAGE_MIN = 10;
-
-/**
  * A string capped at a contract length, with the cap named in the message.
  *
  * @param max - The contract's `maxLength`.
@@ -43,8 +37,8 @@ export const contactSchema = z.object({
     subject: cappedText(createFeedbackRequestBodySubjectMax).min(1, {
         error: () => translate('contact-page.subject-required')
     }),
-    message: cappedText(createFeedbackRequestBodyMessageMax).min(CONTACT_MESSAGE_MIN, {
-        error: () => translate('contact-page.message-min')
+    message: cappedText(createFeedbackRequestBodyMessageMax).min(1, {
+        error: () => translate('contact-page.message-required')
     }),
     category: z.enum(FeedbackCategory).optional(),
     orderNumber: cappedText(createFeedbackRequestBodyOrderNumberMax).optional(),
