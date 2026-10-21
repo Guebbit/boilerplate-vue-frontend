@@ -57,41 +57,23 @@ const LINE_SEPARATOR = '; ';
 const NAME_SEPARATOR = ', ';
 
 /**
- * A notification's `params` for the preorder codes: what is late, and when.
+ * A notification's `params` for the late-preorder code: what is late, and when.
  */
 type PreorderParameters = Extract<
     DescribableNotification,
-    { code: 'notifications.fulfillment-delayed' | 'notifications.fulfillment-confirm-wait' }
+    { code: 'notifications.fulfillment-delayed' }
 >['params'];
 
 /**
- * Each preorder code's two dictionary entries, as literals so the unused-key check can see them:
- * the full sentence, and the one for a notice whose optional date is missing (`expectedAt` for the
- * delayed notice, `answerBy` for the confirm-wait one).
- */
-const PREORDER_KEYS = {
-    'notifications.fulfillment-delayed': {
-        full: 'notifications.fulfillment-delayed',
-        withoutDate: 'notifications.fulfillment-delayed-undated'
-    },
-    'notifications.fulfillment-confirm-wait': {
-        full: 'notifications.fulfillment-confirm-wait',
-        withoutDate: 'notifications.fulfillment-confirm-wait-bare'
-    }
-};
-
-/**
- * The sentence of a preorder's late notice: the delayed notice says the new date (or that there is
- * none yet), the confirm-wait notice asks for an answer by its deadline (or without one).
+ * The sentence of a late preorder's notice: the new date, or that there is none yet. The notice
+ * asks nothing: the reader can cancel from the order, and doing nothing keeps them waiting.
  *
- * @param code - Which of the two preorder codes.
  * @param parameters - The notice's facts.
  * @param format - Date spelling.
  * @param translate - The translate function.
  * @returns The finished text.
  */
 const describePreorder = (
-    code: 'notifications.fulfillment-delayed' | 'notifications.fulfillment-confirm-wait',
     parameters: PreorderParameters,
     format: FormatDate,
     translate: Translate
@@ -99,15 +81,14 @@ const describePreorder = (
     const named = {
         titles: parameters.titles.join(NAME_SEPARATOR),
         agreed: format(parameters.agreedAt),
-        expected: parameters.expectedAt === undefined ? '' : format(parameters.expectedAt),
-        answerBy: parameters.answerBy === undefined ? '' : format(parameters.answerBy)
+        expected: parameters.expectedAt === undefined ? '' : format(parameters.expectedAt)
     };
-    const keys = PREORDER_KEYS[code];
-    const dateMissing =
-        code === 'notifications.fulfillment-delayed'
-            ? parameters.expectedAt === undefined
-            : parameters.answerBy === undefined;
-    return translate(dateMissing ? keys.withoutDate : keys.full, named);
+    return translate(
+        parameters.expectedAt === undefined
+            ? 'notifications.fulfillment-delayed-undated'
+            : 'notifications.fulfillment-delayed',
+        named
+    );
 };
 
 /**
@@ -142,14 +123,13 @@ const describeHeld = (
 };
 
 /**
- * The order a notification is about, when it is about one — where the reader answers or cancels.
+ * The order a notification is about, when it is about one — where the reader can cancel.
  *
  * @param notification - The stored row's `code` and `params`.
  * @returns The order id, or `undefined` for a notification that concerns no order.
  */
 export const notificationOrderId = (notification: DescribableNotification): string | undefined =>
     notification.code === 'notifications.fulfillment-delayed' ||
-    notification.code === 'notifications.fulfillment-confirm-wait' ||
     notification.code === 'notifications.fulfillment-held'
         ? notification.params.orderId
         : undefined;
@@ -229,9 +209,8 @@ export const describeNotification = (
                 ? translate(MERGE_REFUSED_BARE_KEY)
                 : translate(notification.code, { lines: lines.join(LINE_SEPARATOR) });
         }
-        case 'notifications.fulfillment-delayed':
-        case 'notifications.fulfillment-confirm-wait': {
-            return describePreorder(notification.code, notification.params, formatDate, translate);
+        case 'notifications.fulfillment-delayed': {
+            return describePreorder(notification.params, formatDate, translate);
         }
         case 'notifications.fulfillment-held': {
             return describeHeld(notification.params, translate);

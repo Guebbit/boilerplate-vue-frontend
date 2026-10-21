@@ -156,9 +156,9 @@ product carries `noWithdrawal` says so on the page. The operator's "Refund payme
 optional amount for a partial refund — empty still means everything still refundable.
 
 A line sold before its release date (`product.preorder`, frozen at checkout) reads "Preorder: ships
-from {date}". When that preorder runs late, the buyer answers on this same page: the
-`ShipmentPanel`'s card shows the new date and a "Keep waiting" button (see
-[delivery](./delivery.md#a-late-preorder)), and the order's own cancel is the other answer.
+from {date}". When that preorder runs late, the buyer reads it on this same page: the
+`ShipmentPanel`'s card shows the new date (see [delivery](./delivery.md#a-late-preorder)), and the
+order's own cancel is there if they do not want to wait. Nothing is asked of them.
 
 ## State
 

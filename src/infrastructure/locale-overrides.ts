@@ -59,13 +59,80 @@ export const localeApp = (): string =>
     runtimeValue('LOCALE_APP') || import.meta.env.VITE_LOCALE_APP?.trim() || 'demo-fe';
 
 /**
+ * this is a boot-blocking read — `main.ts` awaits it before the app can mount at all — so it
+ * gets a much shorter budget than the client's ordinary 10s default. A visitor's first paint
+ * should not sit behind a slow or unreachable API for longer than this.
+ */
+const BOOT_READ_TIMEOUT_MS = 1500;
+
+/** What the manifest says about the languages this app may offer. */
+interface RemoteLocales {
+    /** Tags to offer: every language that has some dictionary and is not switched off. */
+    offered: string[];
+    /**
+     * Languages the manifest lists as switched off for this caller: a language this build may
+     * bundle a file for that the shop has since switched off, and that the caller cannot preview.
+     */
+    switchedOff: string[];
+    /** The deployment's default and fallback languages: never taken away, so a redirect has a target. */
+    keep: string[];
+}
+
+/**
+ * Whether the manifest row is a language switched off that this caller cannot see into.
+ *
+ * A language with a deployed file keeps its row in every caller's manifest, as `active: false`
+ * when it is off. A caller who may preview drafts also gets the language's own row, so its source
+ * is `both` (or `dynamic`); a visitor gets the deployed file alone, `static`. That difference is
+ * what separates "off, and none of the caller's business" from "off, and a draft to preview".
+ *
+ * @param language - one row of `GET /locales`
+ */
+const isSwitchedOffForThisCaller = (language: { active: boolean; source: string }): boolean =>
+    !language.active && language.source === 'static';
+
+/**
+ * The manifest, split into what to offer and what to take away.
+ *
+ * Never rejects: an unreachable or older API is an empty answer, and the folder stands alone.
+ */
+const readRemoteLocales = (): Promise<RemoteLocales> =>
+    getLocales({ timeout: BOOT_READ_TIMEOUT_MS })
+        .then((response): RemoteLocales => {
+            const offered: string[] = [];
+            const switchedOff: string[] = [];
+
+            for (const language of response.data.locales) {
+                // Any app at all is "offers some dictionary", which is all the switcher asks.
+                if (language.apps.length === 0) continue;
+
+                if (isSwitchedOffForThisCaller(language)) {
+                    switchedOff.push(language.tag);
+                    continue;
+                }
+
+                localeDirections[language.tag] = language.direction;
+                localeNativeNames[language.tag] = language.nativeName;
+                offered.push(language.tag);
+            }
+
+            return {
+                offered,
+                switchedOff,
+                keep: [response.data.default, response.data.fallback]
+            };
+        })
+        .catch((): RemoteLocales => ({ offered: [], switchedOff: [], keep: [] }));
+
+/**
  * Languages the deployment offers, from the API's manifest.
  *
  * Every app is kept, and they answer different questions. A frontend app means a dictionary
- * can be downloaded for it; the backend app means the API can ANSWER in it. A language with
- * only the backend app still belongs in the switcher — the UI falls back per key while every
- * error message arrives in the right language — and a language with only a frontend app is
- * the opposite: the interface translates and the API answers in the fallback.
+ * can be downloaded for it; the backend app means the API has its own wording in it. A language
+ * with only the backend app still belongs in the switcher — the UI falls back per key while the
+ * API's messages arrive in its own wording — and a language with only a frontend app is the
+ * opposite: the interface translates, the API answers in it, and the few messages it has no
+ * wording for arrive in the default language.
  *
  * NEITHER IS CHECKED AGAINST THE OTHER, deliberately. This app can bundle `it.json` while the API
  * has no Italian at all, in which case the interface is Italian and the API's messages arrive in
@@ -73,38 +140,17 @@ export const localeApp = (): string =>
  * and did not care about the backend's half — so nothing here prevents it or warns about it. If it
  * is ever wrong, it is wrong in a way only a person can judge.
  *
- * The writing direction and native name of every language the manifest lists are recorded on the
- * way past, into {@link localeDirections} and {@link localeNativeNames}: both are things the
- * manifest knows that the dictionary does not, and this is the only moment either is in hand.
+ * A language the shop has SWITCHED OFF is left out of the result, whatever else the manifest knows
+ * about it. {@link mergeRemoteLocales} is what also takes a bundled one away from the switcher.
+ *
+ * The writing direction and native name of every language offered are recorded on the way past,
+ * into {@link localeDirections} and {@link localeNativeNames}: both are things the manifest knows
+ * that the dictionary does not, and this is the only moment either is in hand.
  *
  * @returns The API's language tags, or an empty list when it cannot be reached. Never rejects.
  */
-/**
- * this is a boot-blocking read — `main.ts` awaits it before the app can mount at all — so it
- * gets a much shorter budget than the client's ordinary 10s default. A visitor's first paint
- * should not sit behind a slow or unreachable API for longer than this.
- */
-const BOOT_READ_TIMEOUT_MS = 1500;
-
-/**
- *
- */
 export const fetchRemoteLocales = (): Promise<string[]> =>
-    getLocales({ timeout: BOOT_READ_TIMEOUT_MS })
-        .then((response) =>
-            response.data.locales
-                .filter(
-                    (language) =>
-                        // Any app at all is "offers some dictionary", which is all the switcher asks.
-                        language.apps.length > 0
-                )
-                .map((language) => {
-                    localeDirections[language.tag] = language.direction;
-                    localeNativeNames[language.tag] = language.nativeName;
-                    return language.tag;
-                })
-        )
-        .catch(() => []);
+    readRemoteLocales().then(({ offered }) => offered);
 
 /**
  * The edited overrides for one language, nested exactly like a bundled dictionary.
@@ -121,11 +167,17 @@ export const fetchLocaleOverrides = (locale: string): Promise<TranslationDiction
         .catch(() => ({}));
 
 /**
- * Adds any language the API offers and this build does not bundle to {@link supportedLanguages}.
+ * Brings {@link supportedLanguages} in line with the API's manifest: adds the languages the API
+ * offers and this build does not bundle, and takes away a bundled one the shop has switched off.
  *
- * The union, not a replacement: the folder scan stays the offline default, so a build with no
- * network still offers everything it shipped. A language only the API knows about appears in the
- * switcher and degrades per key rather than all-or-nothing.
+ * The union for the first half, not a replacement: the folder scan stays the offline default, so a
+ * build with no network still offers everything it shipped. A language only the API knows about
+ * appears in the switcher and degrades per key rather than all-or-nothing.
+ *
+ * The second half is what makes a switched-off language unreachable from the frontend as well:
+ * the locale guard redirects a `/it/…` address to the default language once `it` is no longer
+ * supported, and the switcher stops offering it. The deployment's default and fallback languages
+ * are never taken away, so there is always a language to redirect to.
  *
  * Mutates the exported array rather than returning a new one, because `supportedLanguages` is
  * imported by value in a dozen places and reassigning the binding would leave them on the old list.
@@ -133,10 +185,15 @@ export const fetchLocaleOverrides = (locale: string): Promise<TranslationDiction
  * @returns The languages that were added, for logging or tests. Never rejects.
  */
 export const mergeRemoteLocales = (): Promise<string[]> =>
-    fetchRemoteLocales().then((discovered) => {
-        const added = discovered.filter((locale) => !supportedLanguages.includes(locale));
+    readRemoteLocales().then(({ offered, switchedOff, keep }) => {
+        const added = offered.filter((locale) => !supportedLanguages.includes(locale));
 
         supportedLanguages.push(...added);
+
+        for (const locale of switchedOff) {
+            const index = supportedLanguages.indexOf(locale);
+            if (index !== -1 && !keep.includes(locale)) supportedLanguages.splice(index, 1);
+        }
 
         return added;
     });

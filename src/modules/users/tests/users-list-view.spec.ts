@@ -155,6 +155,38 @@ describe('UsersList — the purchase-hold filter', () => {
     });
 });
 
+describe('UsersList — the needs-review filter', () => {
+    it('sends purchaseHoldReview: true to the API once picked, and nothing for "Any"', async () => {
+        const wrapper = await mountWithRows();
+        const store = useUsersStore();
+
+        expect(store.filters.purchaseHoldReview).toBeUndefined();
+
+        store.filters.purchaseHoldReview = true;
+        await wrapper.get('form').trigger('submit');
+        await flushPromises();
+
+        expect(searchUsers).toHaveBeenLastCalledWith(
+            expect.objectContaining({ purchaseHoldReview: true })
+        );
+    });
+
+    it('marks a flagged row, whether or not a hold is still running', async () => {
+        const wrapper = await mountWithRows([
+            aUser({ id: 'u9', purchaseHoldFlaggedAt: '2026-10-19T10:00:00.000Z' })
+        ]);
+
+        expect(wrapper.get('[data-test=row-needs-review]').text()).toBe('Needs review');
+        expect(wrapper.find('[data-test=row-purchase-hold]').exists()).toBe(false);
+    });
+
+    it('marks no row that was never flagged', async () => {
+        const wrapper = await mountWithRows();
+
+        expect(wrapper.find('[data-test=row-needs-review]').exists()).toBe(false);
+    });
+});
+
 /**
  * The row actions are the server's answer for THIS admin on THIS account (the route's key and the
  * rank rule together), not the session's: a moderator may edit, ban and erase a customer and none

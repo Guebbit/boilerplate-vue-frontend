@@ -56,9 +56,11 @@ configured; there is no separate flag. Faro follows the same answer
 with their own legal basis. That also makes the banner's promise untrue, so change its copy too.
 
 The tag sends the page URL, the full referrer, screen size and language, and no account id: the
-browser never calls `identify`. The backend writes into the same Umami website, and its own events do
-carry the account id of a consenting signed-in caller. The shipped Umami v2.14 cannot meet
-CNIL's audience-measurement exemption, so consent is the basis, not an exemption.
+browser never calls `identify`. The backend writes into the same Umami website and sends no account
+id either, so a signed-in visitor is not identifiable through Umami. A deployer who picks PostHog
+instead gets the account id as its `distinct_id` from the backend, and must add that to the banner
+copy. The shipped Umami v2.14 cannot meet CNIL's audience-measurement exemption, so consent is the
+basis, not an exemption.
 
 ## Who sends which event
 

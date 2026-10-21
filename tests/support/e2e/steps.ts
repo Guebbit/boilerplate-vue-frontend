@@ -553,13 +553,13 @@ export const shipThroughTheApi = (
 
 /**
  * The sentence the "your shipment arrived" mail closes with on the delivery that ends the order,
- * as the English template renders it: the deadline in long form, read in UTC, because the
- * deadline is a UTC calendar day and a local rendering could print the day before.
+ * as the English template renders it: the announced last day in long form, a date only, read in
+ * UTC, because the deadline is a UTC calendar day and a local rendering could print the day before.
  *
  * @param withdrawUntil - the order's `actions.withdrawUntil`, an ISO timestamp
  */
 export const withdrawUntilLine = (withdrawUntil: string): string =>
-    `You may withdraw from the purchase until ${new Intl.DateTimeFormat('en', {
+    `You may withdraw from the purchase until the end of ${new Intl.DateTimeFormat('en', {
         dateStyle: 'long',
         timeZone: 'UTC'
     }).format(new Date(withdrawUntil))}.`;

@@ -98,7 +98,8 @@ describe('PurchaseHoldNotice', () => {
         return mountNotice().then((wrapper) => {
             const text = wrapper.get('[data-test=purchase-hold-notice]').text();
             expect(text).toContain('Checkout is paused for your account');
-            expect(text).toContain('cancelled several orders');
+            expect(text).toContain('cancelled or left unpaid');
+            expect(text).toContain('at most 7 days');
             expect(text).toContain('still pay for, cancel or return');
             expect(wrapper.find('[data-test=purchase-hold-note]').exists()).toBe(false);
         });

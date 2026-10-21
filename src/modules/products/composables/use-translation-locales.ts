@@ -3,7 +3,9 @@
  * The locale list a product form needs for its language tabs: every locale `GET /locales` offers
  * the caller, plus the deployment's fallback tag. For staff holding `display:Locale` that includes
  * the languages switched off, so an editor can start a DRAFT in one — saved, kept, and not shown to
- * shoppers until the language goes live. A caller without that read is only ever sent the live ones.
+ * shoppers until the language goes live. A caller without that read is sent the live ones, and a
+ * deployed language the shop switched off as `active: false` (so a client bundling it can stop
+ * offering it); no one without the read edits a product's translations.
  *
  * Calls `getLocales` from `@api` directly rather than reaching `useLocalesStore` — the `locales`
  * module publishes no barrel (no `src/modules/locales/index.ts`), on purpose, mirroring the

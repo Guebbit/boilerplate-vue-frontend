@@ -6,11 +6,15 @@
  * Designed for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
  *
  * Language: every endpoint honours `Accept-Language` (q-weights and region tags
- * included). It selects the language of user-facing copy only — `errors[].message` and a
- * success envelope's `message` — never the response shape, the status code, or a
- * machine-readable field such as `errors[].code`. An unsupported language falls back
- * instead of erroring; `Content-Language` states what was used and `Vary:
- * Accept-Language` is always set. `GET /locales` lists what a deployment supports.
+ * included). One language is picked per request, from the languages switched on in
+ * `GET /locales`, and it selects the language of user-facing copy and of translated entity
+ * fields (a product's `title`, `description`) — `errors[].message`, a success envelope's
+ * `message` — never the response shape, the status code, or a machine-readable field such
+ * as `errors[].code`. A message the API has no wording for in that language falls back to
+ * the default language, one message at a time. An unknown or switched-off language falls
+ * back instead of erroring; `Content-Language` states the language picked, the audience the
+ * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
+ * `GET /locales` lists what a deployment offers.
  *
  * The header is intentionally not declared per operation: it applies to all of them and
  * clients set it once in an interceptor, so declaring it on every operation would only add a
@@ -163,7 +167,7 @@ export const PurchaseHoldReason = {
 } as const;
 
 export interface PurchaseHold {
-    /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window; staff can lift it earlier. */
+    /** When checkout opens again without anyone acting. For `repeated_cancellations` it is the instant the counted cancellations fall back under the limit, so the oldest one counted plus the window, but at most 7 days after the hold was placed; staff can lift it earlier. A `staff` hold has no maximum. */
     until: string;
     reason: PurchaseHoldReason;
     /**
@@ -198,6 +202,8 @@ export interface User {
     deletedAt?: string;
     actions?: UserActions;
     purchaseHold?: PurchaseHold;
+    /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
+    purchaseHoldFlaggedAt?: string;
 }
 
 export interface UserEnvelope {
@@ -281,7 +287,7 @@ export interface LocaleCapability {
     direction: LocaleDirection;
     active: boolean;
     /**
-     * Which apps have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend app), or whether it may download a Spanish UI dictionary (a frontend app). Those are different questions.
+     * Which apps have words in this language. Without it a client seeing `es` in the list cannot tell whether the API has its own Spanish wording for error messages (the backend app), or whether it may download a Spanish UI dictionary (a frontend app). Those are different questions; a request in the language is answered either way.
      * @minItems 1
      */
     apps: LocaleApp[];
@@ -2109,6 +2115,7 @@ export interface SearchUsersRequest {
     active?: boolean;
     deleted?: boolean;
     purchaseHold?: true;
+    purchaseHoldReview?: true;
 }
 
 export type FeedbackCategory = (typeof FeedbackCategory)[keyof typeof FeedbackCategory];
@@ -3136,7 +3143,7 @@ export interface OrderActions {
     withdraw: boolean;
     /** Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it. */
     withdrawBlocked?: WithdrawBlockedReason;
-    /** The last instant a withdrawal is valid, frozen when the period started — delivery for goods, payment for digital content. Absent before that: the right already exists, the window has no end yet. */
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
     withdrawUntil?: string;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
     invoice: boolean;
@@ -3775,18 +3782,7 @@ export const FulfillmentHoldReason = {
 } as const;
 
 /**
- * Where a waiting preorder stands with its buyer after a late date. Absent: the buyer was never asked. `awaiting`: asked to say whether to keep waiting, and silence until `consentDeadline` cancels and refunds (FTC 16 CFR 435.2 (b)(1)(iii), (b)(2)(ii); in the EU this is the shop's own cancellation). `confirmed`: the buyer said keep waiting, so a later slip asks again. `expired`: the window closed in silence and the cancel and refund are on their way; too late to answer.
- */
-export type FulfillmentConsent = (typeof FulfillmentConsent)[keyof typeof FulfillmentConsent];
-
-export const FulfillmentConsent = {
-    awaiting: 'awaiting',
-    confirmed: 'confirmed',
-    expired: 'expired'
-} as const;
-
-/**
- * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `no_answer`: the buyer was asked to keep waiting and never answered. `order`: the whole order was cancelled.
+ * Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled.
  */
 export type FulfillmentCancelReason =
     (typeof FulfillmentCancelReason)[keyof typeof FulfillmentCancelReason];
@@ -3794,12 +3790,11 @@ export type FulfillmentCancelReason =
 export const FulfillmentCancelReason = {
     buyer: 'buyer',
     staff: 'staff',
-    no_answer: 'no_answer',
     order: 'order'
 } as const;
 
 /**
- * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`; `confirmWait` is the order's own buyer's.
+ * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
  */
 export interface FulfillmentOrderActions {
     /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
@@ -3810,8 +3805,6 @@ export interface FulfillmentOrderActions {
     hold: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
     release: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/confirm-wait` would be accepted — the caller is the buyer and `consent` is `awaiting`. */
-    confirmWait: boolean;
 }
 
 /**
@@ -3844,11 +3837,6 @@ export interface FulfillmentOrder {
     agreedAt?: string;
     /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
     expectedAt?: string;
-    consent?: FulfillmentConsent;
-    /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
-    consentDeadline?: string;
-    /** The definite revised shipping date (16 CFR 435.2 (b)), meaning the one offered while `consent` is `awaiting`, otherwise the one the buyer accepted, by answering or by silence. Absent with `consent` `confirmed` when the buyer agreed to wait with no end date and can still cancel any time before it ships. */
-    revisedShipDate?: string;
     /** When the buyer was last told the date had moved or passed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
@@ -3929,14 +3917,13 @@ export interface OrderFulfillmentEnvelope {
 }
 
 /**
- * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `awaiting_yes`: held for stock, and the buyer was asked to keep waiting (or let the window close and the cancel is on its way). `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who.
+ * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who.
  */
 export type PreorderFulfillmentState =
     (typeof PreorderFulfillmentState)[keyof typeof PreorderFulfillmentState];
 
 export const PreorderFulfillmentState = {
     waiting: 'waiting',
-    awaiting_yes: 'awaiting_yes',
     allocated: 'allocated',
     shipped: 'shipped',
     cancelled: 'cancelled'
@@ -3977,10 +3964,6 @@ export interface PreorderFulfillmentOrder {
     /** Nothing remains, something shipped, and every shipment arrived. */
     delivered: boolean;
     holdReason?: FulfillmentHoldReason;
-    consent?: FulfillmentConsent;
-    consentDeadline?: string;
-    /** The definite revised shipping date (16 CFR 435.2 (b)), meaning the one offered while `consent` is `awaiting`, otherwise the one the buyer accepted, by answering or by silence. Absent with `consent` `confirmed` when the buyer agreed to wait with no end date and can still cancel any time before it ships. */
-    revisedShipDate?: string;
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
     createdAt: string;
@@ -3999,7 +3982,7 @@ export interface PreorderFulfillmentOrdersResponseEnvelope {
 }
 
 /**
- * One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + awaitingYes + allocated + shipped + cancelled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed.
+ * One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + allocated + shipped + cancelled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed.
  */
 export interface PreorderProductSummary {
     productId: Id;
@@ -4011,8 +3994,6 @@ export interface PreorderProductSummary {
     paid: number;
     /** @minimum 0 */
     waiting: number;
-    /** @minimum 0 */
-    awaitingYes: number;
     /** @minimum 0 */
     allocated: number;
     /** @minimum 0 */
@@ -4140,7 +4121,7 @@ export const ReturnStatus = {
 } as const;
 
 /**
- * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached. `no_answer` is the shop's own: a preorder's buyer was asked to keep waiting for a late date and never answered, so what had not shipped was cancelled and refunded. Written only by that cancellation, so a request cannot name it (`ReturnRequestReason`).
+ * Why the goods come back. `withdrawal` is the EU right of withdrawal — the same object a faulty-goods return uses, with a legal deadline and an acknowledgement attached.
  */
 export type ReturnReason = (typeof ReturnReason)[keyof typeof ReturnReason];
 
@@ -4148,8 +4129,7 @@ export const ReturnReason = {
     withdrawal: 'withdrawal',
     defective: 'defective',
     wrong_item: 'wrong_item',
-    other: 'other',
-    no_answer: 'no_answer'
+    other: 'other'
 } as const;
 
 /**
@@ -4255,18 +4235,6 @@ export interface ReturnsResponseEnvelope {
     data: ReturnsResponse;
 }
 
-/**
- * What a request may name as the reason — every `ReturnReason` but the shop's own `no_answer`.
- */
-export type ReturnRequestReason = (typeof ReturnRequestReason)[keyof typeof ReturnRequestReason];
-
-export const ReturnRequestReason = {
-    withdrawal: 'withdrawal',
-    defective: 'defective',
-    wrong_item: 'wrong_item',
-    other: 'other'
-} as const;
-
 export type CreateReturnRequestLinesItem = {
     productId: Id;
     /** @minimum 1 */
@@ -4275,7 +4243,7 @@ export type CreateReturnRequestLinesItem = {
 
 export interface CreateReturnRequest {
     orderId: Id;
-    reason: ReturnRequestReason;
+    reason: ReturnReason;
     /**
      * @minLength 1
      * @maxLength 1000
@@ -4344,7 +4312,7 @@ export interface ReturnOptions {
     /** ISO-4217 code of the order's own currency. */
     currency: string;
     /** The reasons THIS caller can still name, so a client offers no door that is shut. Empty for staff (the right is the buyer's own) and once every deadline has passed. `withdrawal` and `other` last for the withdrawal period; `defective` and `wrong_item` for two years from delivery (the legal guarantee of conformity), made-to-order goods included. */
-    reasons?: ReturnRequestReason[];
+    reasons?: ReturnReason[];
     /** Per product, what has shipped and not yet been returned. Empty unless `reasons` is not. Goods excluded from withdrawal (Art. 16) are listed only while a `defective` or `wrong_item` reason is open, and carry `withdrawable: false`. */
     returnable: ReturnOptionLine[];
     cancellable: CancellableFulfillmentOrder[];
@@ -4926,7 +4894,7 @@ export interface WishlistExportItem {
 }
 
 /**
- * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`, `wait_confirmed`, `wait_expired`. Staff-only: `address_corrected`.
+ * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
  */
 export type OrderTimelineType = (typeof OrderTimelineType)[keyof typeof OrderTimelineType];
 
@@ -4956,13 +4924,11 @@ export const OrderTimelineType = {
     credit_note_issued: 'credit_note_issued',
     release_date_moved: 'release_date_moved',
     delay_notice_sent: 'delay_notice_sent',
-    wait_confirmed: 'wait_confirmed',
-    wait_expired: 'wait_expired',
     address_corrected: 'address_corrected'
 } as const;
 
 /**
- * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineEntryData = { [key: string]: unknown };
 
@@ -4970,11 +4936,11 @@ export interface OrderTimelineEntry {
     id: Id;
     at: string;
     type: OrderTimelineType;
-    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. */
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
-    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
     data: OrderTimelineEntryData;
 }
 
@@ -5063,11 +5029,6 @@ export interface ExportFulfillmentOrder {
     holdNote?: string;
     agreedAt?: string;
     expectedAt?: string;
-    consent?: FulfillmentConsent;
-    /** When silence turns into a cancel and a refund. Present exactly while `consent` is `awaiting`. */
-    consentDeadline?: string;
-    /** The definite revised shipping date (16 CFR 435.2 (b)), meaning the one offered while `consent` is `awaiting`, otherwise the one the buyer accepted, by answering or by silence. Absent with `consent` `confirmed` when the buyer agreed to wait with no end date and can still cancel any time before it ships. */
-    revisedShipDate?: string;
     /** When the buyer was last told the date had moved or passed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
@@ -5210,7 +5171,7 @@ export interface NotificationCartMergeRefused {
 }
 
 /**
- * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised, the date now expected (absent when there is none) and, for `notifications.fulfillment-confirm-wait`, by when silence cancels.
+ * What the buyer needs to read a late-preorder notice: which order and fulfillment order, what is waiting, the date they were promised and the date now expected (absent when there is none).
  */
 export interface FulfillmentDelayedParams {
     orderId: Id;
@@ -5219,7 +5180,6 @@ export interface FulfillmentDelayedParams {
     titles: string[];
     agreedAt: string;
     expectedAt?: string;
-    answerBy?: string;
 }
 
 export type NotificationFulfillmentDelayedCode =
@@ -5235,26 +5195,6 @@ export const NotificationFulfillmentDelayedCode = {
 export interface NotificationFulfillmentDelayed {
     id: Id;
     code: NotificationFulfillmentDelayedCode;
-    params: FulfillmentDelayedParams;
-    severity: NotificationSeverity;
-    /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
-    readAt?: string;
-    createdAt: string;
-}
-
-export type NotificationFulfillmentConfirmWaitCode =
-    (typeof NotificationFulfillmentConfirmWaitCode)[keyof typeof NotificationFulfillmentConfirmWaitCode];
-
-export const NotificationFulfillmentConfirmWaitCode = {
-    'notificationsfulfillment-confirm-wait': 'notifications.fulfillment-confirm-wait'
-} as const;
-
-/**
- * A preorder the caller paid for is late and the shop needs an answer — keep waiting, or cancel; silence until `answerBy` cancels and refunds.
- */
-export interface NotificationFulfillmentConfirmWait {
-    id: Id;
-    code: NotificationFulfillmentConfirmWaitCode;
     params: FulfillmentDelayedParams;
     severity: NotificationSeverity;
     /** When the owner opened the bell past it; absent while unread. The badge counts the ones without it. */
@@ -5326,7 +5266,6 @@ export type Notification =
     | NotificationWishlistItemRemoved
     | NotificationCartMergeRefused
     | NotificationFulfillmentDelayed
-    | NotificationFulfillmentConfirmWait
     | NotificationFulfillmentHeld
     | NotificationStockAlert;
 
@@ -5576,21 +5515,14 @@ export interface PaymentAttentionResponseEnvelope {
 }
 
 /**
- * Orders a release-date move would tell, counted in orders, never fulfillment orders.
+ * Orders a release-date move would email, counted in orders, never fulfillment orders.
  */
 export interface ReleaseDateImpact {
     /**
-     * Orders that get a notice only (a short first slip); silence keeps them waiting.
+     * Orders that would get a delay email (the date moves later or is cleared); silence always means the buyer keeps waiting, and they can cancel any time before it ships.
      * @minimum 0
      */
     notify: number;
-    /**
-     * Orders that get a question; silence until the buyer's deadline cancels and refunds. Includes an order that also has a notice.
-     * @minimum 0
-     */
-    ask: number;
-    /** The earliest date by which a buyer who gets a question must say yes, if the move were saved now; each buyer's own deadline is 28 days after the date they were promised, or the date they already accepted. Absent when `ask` is 0. */
-    answerBy?: string;
 }
 
 export interface ReleaseDateImpactEnvelope {
@@ -6353,6 +6285,10 @@ export type ListUsersParams = {
      * `true` lists only the accounts under a purchase hold right now; absent lists everyone. There is no `false`: a lifted or expired hold is not a state to search for.
      */
     purchaseHold?: true;
+    /**
+     * `true` lists only the accounts the shop's rule flagged for review and no staff member has acted on yet, whether or not a hold is still running. Absent lists everyone. There is no `false`.
+     */
+    purchaseHoldReview?: true;
 };
 
 export type DeleteUserParams = {
@@ -7022,19 +6958,25 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * actually do.
  *
  * `apps` is the field doing the real work: which apps have words in that
- * language. The backend app means the API can answer requests in it — its
+ * language. The backend app means the API has its own wording in it — its
  * dictionary is deployed and i18next holds it. A frontend app means a client
  * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
- * have either, or both, and the two are not the same capability: a language added
- * through the admin routes below carries only the frontend app until a file is
- * deployed for it.
+ * have either, or both: a language added through the admin routes below carries
+ * only the frontend app until a file is deployed for it, and a request in it is
+ * still answered in it, with the API's own messages in the default language.
+ *
+ * `active: false` marks a language switched off. A client that bundles its own copy
+ * of a language must stop offering it when it reads that flag; the API never picks
+ * it for a request.
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
  * API is exactly who needs it.
  *
- * An ADMIN gets the same manifest plus the rows a visitor is not offered: inactive
- * languages, each carrying `active: false`. The flag gates selection by visitors and
- * nothing else — the same rule products and users follow.
+ * An ADMIN gets the same manifest plus the rows of the languages a visitor never
+ * sees: a registered language that is switched off, carrying `active: false`. A
+ * language with a deployed file that is switched off is listed for everyone, as
+ * `active: false`. The flag gates selection by visitors and nothing else — the same
+ * rule products and users follow.
  * @summary Supported languages
  */
 export const getLocales = (
@@ -7046,9 +6988,10 @@ export const getLocales = (
 /**
  * Registers a language in the dynamic tier so entries can be translated into it.
  *
- * This does NOT teach the API to answer in the new language — that needs a dictionary
- * file and a deploy. A language created here carries only the frontend app until
- * one exists.
+ * A language created switched on is served at once: a request in it is answered in
+ * it (product text, search, `Content-Language`). The API's own messages have no
+ * wording of their own in it until a dictionary file is deployed, so each falls back
+ * to the default language. It carries only the frontend app until one exists.
  * @summary Add a language
  */
 export const createLocale = (
@@ -10164,13 +10107,12 @@ export const startFulfilment = (
 
 /**
  * One row per fulfillment order, with the buyer and when the order was paid, for the admin's preorder
- * board: the fulfillment orders of preorders, where they stand with their buyer, and which are late.
+ * board: the fulfillment orders of preorders, where they stand, and which are late.
  * `cause` keeps one kind of wait: `preorder`, `backorder`, or `any` that carries an agreed date.
  *
  * `late=true` is the Late view: the expected date has passed and units remain, whether still waiting
  * for stock, allocated and not yet shipped, or part shipped. `dueWithin=N` is its warning: still
- * waiting for stock, and expected within the next N days — see it coming, since a slip moved before
- * the date passes is a notice, and one moved after is a question.
+ * waiting for stock, and expected within the next N days — see it coming.
  *
  * Same audience as the orders it belongs to: staff holding `display:Order` see every row, anyone
  * else only their own orders'. `delivered` is true once nothing remains and every shipment arrived.
@@ -10188,7 +10130,7 @@ export const listPreorderFulfillmentOrders = (
 
 /**
  * For each product sold as a preorder, how its units stand across every fulfillment order made from it:
- * paid, waiting for stock, waiting for the buyer's answer, allocated, shipped, cancelled, and late. Units,
+ * paid, waiting for stock, allocated, shipped, cancelled, and late. Units,
  * not fulfillment orders. `firstAgreedAt` is the earliest date any buyer was promised. For the Products
  * tab of the preorder board; same audience and scope as the list.
  * @summary Preorder units by product and state
@@ -10267,20 +10209,6 @@ export const releaseFulfillmentOrder = (
 ) => {
     return orvalMutator<FulfillmentOrderEnvelope>(
         { url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST' },
-        options
-    );
-};
-
-/**
- * The buyer's answer to a notice that their preorder will be later than promised (or that its date passed): yes, keep waiting. Clears the deadline after which silence would cancel the fulfillment order and refund it. Only the order's own buyer may answer, and only while `consent` is `awaiting` (`DELIVERY_NOT_AWAITING_ANSWER` otherwise). The buyer's other answer, cancel, is the existing cancel or remainder cancel.
- * @summary Keep waiting for a late preorder
- */
-export const confirmFulfillmentOrderWait = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
-) => {
-    return orvalMutator<FulfillmentOrderEnvelope>(
-        { url: `/delivery/fulfillment-orders/${id}/confirm-wait`, method: 'POST' },
         options
     );
 };
@@ -10900,7 +10828,7 @@ export const downloadAccountExport = (
 };
 
 /**
- * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Audited as `admin.user.purchase_hold_set`.
+ * Replaces any hold the account has with a manual one ending at `until`. Checkout then answers 409 `CART_PURCHASE_HOLD` until that instant, or until `DELETE` lifts it. Clears the account's review flag: placing a hold is acting on it. Audited as `admin.user.purchase_hold_set`.
  * @summary Put a purchase hold on a user
  */
 export const setUserPurchaseHold = (
@@ -10920,7 +10848,7 @@ export const setUserPurchaseHold = (
 };
 
 /**
- * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` only when a hold was in force.
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row.
  * @summary Lift a user's purchase hold
  */
 export const liftUserPurchaseHold = (
@@ -11073,12 +11001,11 @@ export const listPaymentAttention = (
 
 /**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the
- * orders whose waiting fulfillment orders for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * orders whose waiting fulfillment orders for this product would get a delay email (`notify`), counted once per order. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
- * `releaseDate` absent or blank previews a CLEARED date, which asks every waiting buyer. The same
+ * `releaseDate` absent or blank previews a CLEARED date, which tells every waiting buyer. The same
  * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
  * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
  * is never cached.
@@ -11096,12 +11023,11 @@ export const previewReleaseDateImpact = (
 
 /**
  * A preview for staff about to save a restock date, so the save is never a surprise. Counts the
- * orders whose backordered units for this product would get a notice (`notify`: a short first
- * slip, silence keeps them waiting) or a question (`ask`: silence cancels and refunds once the buyer's deadline passes, 28 days after the date they were promised or the date they already agreed to; `answerBy` is the earliest of those). An order with groups in both counts once, under `ask`. It judges with the same rule
+ * orders whose backordered units for this product would get a delay email (`notify`), counted once per order. It judges with the same rule
  * the save does and writes nothing: the counts are a snapshot, and a payment or shipment between the
  * preview and the save can shift them.
  *
- * `restockDate` absent or blank previews a CLEARED date, which asks every buyer who was promised that date. A buyer promised the 30-day default is left alone. The same
+ * `restockDate` absent or blank previews a CLEARED date, which tells every buyer who was promised that date. A buyer promised the 30-day default is left alone. The same
  * format and "at most one year ahead" rule as the product save apply (422). An unchanged date counts
  * nothing. For the product form; a holder of both `update:Product` and `display:Order`. The response
  * is never cached.
@@ -11852,9 +11778,6 @@ export type HoldFulfillmentOrderResult = NonNullable<
 >;
 export type ReleaseFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof releaseFulfillmentOrder>>
->;
-export type ConfirmFulfillmentOrderWaitResult = NonNullable<
-    Awaited<ReturnType<typeof confirmFulfillmentOrderWait>>
 >;
 export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>;
 export type UpdateShipmentWithMergePatchJsonResult = NonNullable<

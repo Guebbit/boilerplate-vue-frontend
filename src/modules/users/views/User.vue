@@ -230,6 +230,17 @@ const holdSummary = computed(() => {
 });
 
 /**
+ * The review line shown under the hold: since when the shop's rule flagged the account for a
+ * person to look at. `undefined` once staff acted on it (setting or lifting a hold clears it).
+ */
+const reviewSummary = computed(() => {
+    const flaggedAt = currentUser.value?.purchaseHoldFlaggedAt;
+    return flaggedAt
+        ? t('user-target-page.needs-review', { date: formatDateTime(flaggedAt) })
+        : undefined;
+});
+
+/**
  * Pauses checkout with what the dialog collected.
  *
  * @param hold - The end date and optional note.
@@ -247,17 +258,28 @@ const handleSetHold = (hold: SetPurchaseHoldRequest) => {
 
 /**
  * Lifts the hold after a confirmation that names the account: this is also the staff review, and
- * it restarts the count of cancellations.
+ * it restarts the count of cancellations. With no hold in force it is the review alone ("mark as
+ * reviewed"): the flag clears and the count restarts, nothing else changes.
  *
  * @returns A promise settling once the dialog closed and, if accepted, the write finished.
  */
 const handleLiftHold = () => {
     const target = currentUser.value;
     if (!target) return;
+    const inForce = target.purchaseHold !== undefined;
     return dialog
         .confirm({
-            message: t('user-target-page.confirm-lift-hold', { name: target.username }),
-            confirmLabel: t('user-target-page.button-lift-hold')
+            message: t(
+                inForce
+                    ? 'user-target-page.confirm-lift-hold'
+                    : 'user-target-page.confirm-mark-reviewed',
+                { name: target.username }
+            ),
+            confirmLabel: t(
+                inForce
+                    ? 'user-target-page.button-lift-hold'
+                    : 'user-target-page.button-mark-reviewed'
+            )
         })
         .then((accepted) => {
             if (!accepted) return;
@@ -338,6 +360,14 @@ const handleLiftHold = () => {
                         full-width
                     />
                     <ItemDetailField
+                        v-if="reviewSummary"
+                        :label="t('user-target-page.label-review')"
+                        :value="reviewSummary"
+                        :icon="CirclePause"
+                        data-test="user-needs-review"
+                        full-width
+                    />
+                    <ItemDetailField
                         :label="t('user-target-page.label-updated-at')"
                         :value="formatDateTime(currentUser.updatedAt)"
                         :icon="Clock"
@@ -403,6 +433,15 @@ const handleLiftHold = () => {
                         @click="holdDialogOpen = true"
                     >
                         {{ t('user-target-page.button-pause-checkout') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="currentUser.purchaseHoldFlaggedAt && !currentUser.purchaseHold"
+                        variant="tonal"
+                        color="secondary"
+                        data-test="user-mark-reviewed"
+                        @click="handleLiftHold"
+                    >
+                        {{ t('user-target-page.button-mark-reviewed') }}
                     </v-btn>
                     <InlineErrorAlert :message="holdError" data-test="user-purchase-hold-error" />
                 </div>

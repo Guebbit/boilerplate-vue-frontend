@@ -4,7 +4,8 @@
  * AT1 · Launch a new language. An editor registers German switched off, fills its dictionary
  * three ways (one key by hand, a JSON import that merges, an inline edit), trims it, exports it
  * back, then switches it on: a guest sees it in the switcher and reads a German string on the
- * storefront. Last, the fallback `en` refuses to be deleted and the new language deletes.
+ * storefront, and a product's German text, drafted while it was off, shows on the product page.
+ * Last, the fallback `en` refuses to be deleted and the new language deletes.
  *
  * The editor holds every `locales.any.*` key (`shared/authorization-roles.yaml`), so this is
  * their story, not the admin's. An editor also READS inactive languages, which is why the
@@ -214,6 +215,12 @@ describe('AT1 · Launch a new language', () => {
             cy.get('[data-test=language-active] input').check({ force: true });
             cy.get('[data-test=language-save]').click();
             cy.get('[data-test=language-form]').should('not.exist');
+
+            // The language has rows and no deployed file, and it is served all the same: one
+            // language per request, so the product text drafted above reaches the page now.
+            cy.step('with German back on, the product page reads the German title');
+            cy.visit(`/${TAG}/products/${product.id}`);
+            cy.contains('Hundekorb 2').should('exist');
         });
 
         cy.step('the fallback language refuses deletion, the new one is deleted');

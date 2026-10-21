@@ -117,7 +117,7 @@ The trace-propagation origin is derived from `VITE_API_URL`, the same value the 
 ### What it captures
 
 - **Pageviews** — automatic. The tracker script hooks SPA history changes, so there is **no manual `page_view` event** in the router.
-- **No user identity** — the browser never calls Umami's `identify`, so the pageviews carry no account id. The backend's own events do, for a consenting signed-in caller; see [Umami: Consent](./umami.md#consent).
+- **No user identity** — the browser never calls Umami's `identify`, so the pageviews carry no account id, and the backend sends none to Umami either; see [Umami: Consent](./umami.md#consent).
 - **Nothing before consent** — the tracker loads only after the visitor accepts the banner; see [Umami: Consent](./umami.md#consent).
 
 ### Rules

@@ -52,22 +52,6 @@ const held = (notice: 'check_address' | 'delayed', message?: string) =>
         format
     );
 
-/**
- * A confirm-wait notice's sentence, with or without a deadline.
- *
- * @param answerBy - The deadline, when the notice has one.
- */
-const confirmNotice = (answerBy?: string) =>
-    describeNotification(
-        {
-            code: 'notifications.fulfillment-confirm-wait',
-            params: { ...base, ...(answerBy ? { answerBy } : {}) }
-        },
-        ['en'],
-        translate,
-        format
-    );
-
 describe('productName', () => {
     it("takes the reader's language first", () => {
         expect(productName({ en: 'Collar', it: 'Collare' }, ['it', 'en'], translate)).toBe(
@@ -202,9 +186,7 @@ describe('describeNotification', () => {
                     translate,
                     format
                 )
-            ).toBe(
-                'notifications.fulfillment-delayed|titles=Vinyl, Poster|agreed=A!|expected=E!|answerBy='
-            );
+            ).toBe('notifications.fulfillment-delayed|titles=Vinyl, Poster|agreed=A!|expected=E!');
         });
 
         it('says there is no new date yet when the delay has none', () => {
@@ -216,12 +198,6 @@ describe('describeNotification', () => {
                     format
                 )
             ).toMatch(/^notifications\.fulfillment-delayed-undated\|/);
-        });
-
-        it('asks for an answer by the deadline, or without one when there is none', () => {
-            expect(confirmNotice('D')).toContain('answerBy=D!');
-            expect(confirmNotice('D')).toMatch(/^notifications\.fulfillment-confirm-wait\|/);
-            expect(confirmNotice()).toMatch(/^notifications\.fulfillment-confirm-wait-bare\|/);
         });
 
         it('names the order it is about, and no order for any other code', () => {

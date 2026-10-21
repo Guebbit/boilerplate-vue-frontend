@@ -73,8 +73,7 @@ describe('what a card shows', () => {
                     ship: false,
                     fulfill: false,
                     hold: false,
-                    release: false,
-                    confirmWait: false
+                    release: false
                 }
             })
         );
@@ -223,8 +222,7 @@ describe('the buttons come from `actions`', () => {
                     ship: true,
                     fulfill: false,
                     hold: true,
-                    release: false,
-                    confirmWait: false
+                    release: false
                 }
             })
         );
@@ -260,8 +258,7 @@ describe('the buttons come from `actions`', () => {
                     ship: false,
                     fulfill: true,
                     hold: false,
-                    release: false,
-                    confirmWait: false
+                    release: false
                 }
             })
         );
@@ -286,8 +283,7 @@ describe('the buttons come from `actions`', () => {
                     ship: false,
                     fulfill: false,
                     hold: false,
-                    release: true,
-                    confirmWait: false
+                    release: true
                 }
             })
         );
@@ -311,8 +307,7 @@ describe('the buttons come from `actions`', () => {
                     ship: false,
                     fulfill: true,
                     hold: false,
-                    release: false,
-                    confirmWait: false
+                    release: false
                 }
             })
         );
@@ -332,108 +327,37 @@ describe('the buttons come from `actions`', () => {
 });
 
 describe('a late preorder', () => {
-    it("asks the buyer, with the deadline, and sends the answer through the record's own action", () => {
-        const { wrapper, store } = mountCard(
+    it('shows the promised date, and offers no question and no answer button', () => {
+        const { wrapper } = mountCard(
             aFulfillmentOrder({
                 status: 'on_hold',
                 holdReason: 'awaiting_stock',
                 agreedAt: '2027-03-01T00:00:00.000Z',
-                expectedAt: '2027-03-20T00:00:00.000Z',
-                consent: 'awaiting',
-                consentDeadline: '2027-04-19T00:00:00.000Z',
-                actions: {
-                    ship: false,
-                    fulfill: false,
-                    hold: false,
-                    release: false,
-                    confirmWait: true
-                }
+                expectedAt: '2027-03-20T00:00:00.000Z'
             })
         );
-        const confirm = vi.spyOn(store, 'confirmWait').mockResolvedValue(aFulfillmentOrder());
 
-        expect(wrapper.get('[data-test=fulfillment-order-consent]').text()).toContain(
-            'Do you still want to wait'
-        );
-        expect(wrapper.get('[data-test=fulfillment-order-answer-by]').text()).toContain(
-            'Answer by'
-        );
         expect(wrapper.get('[data-test=fulfillment-order-promised]').text()).toContain('Promised');
-
-        return wrapper
-            .get('[data-test=confirm-wait]')
-            .trigger('click')
-            .then(() => nextRenderTick(wrapper))
-            .then(() => {
-                expect(confirm).toHaveBeenCalledWith('fo1');
-                expect(wrapper.emitted('moved')).toHaveLength(1);
-            });
-    });
-
-    it('tells staff the answer is awaited, and offers no button', () => {
-        const { wrapper } = mountCard(
-            aFulfillmentOrder({
-                status: 'on_hold',
-                consent: 'awaiting',
-                consentDeadline: '2027-04-19T00:00:00.000Z'
-            })
-        );
-
-        expect(wrapper.get('[data-test=fulfillment-order-consent]').text()).toContain(
-            'Waiting for the buyer'
-        );
-        expect(wrapper.find('[data-test=confirm-wait]').exists()).toBe(false);
-    });
-
-    it.each([
-        ['confirmed', 'Keep waiting confirmed'],
-        ['expired', 'No answer in time']
-    ] as const)('reads a %s consent in words, with no deadline left to show', (consent, words) => {
-        const { wrapper } = mountCard(aFulfillmentOrder({ consent }));
-
-        expect(wrapper.get('[data-test=fulfillment-order-consent]').text()).toContain(words);
-        expect(wrapper.find('[data-test=fulfillment-order-answer-by]').exists()).toBe(false);
-    });
-
-    it.each([
-        [
-            'a date agreed to by silence',
-            { consent: undefined, revisedShipDate: '2027-04-19T00:00:00.000Z' },
-            'Waiting agreed until'
-        ],
-        [
-            'a date the buyer said yes to',
-            { consent: 'confirmed', revisedShipDate: '2027-04-19T00:00:00.000Z' },
-            'Waiting agreed until'
-        ],
-        ['a yes with no end date', { consent: 'confirmed' }, 'Waiting agreed with no fixed date']
-    ] as const)('says what was agreed for %s', (_name, state, words) => {
-        const { wrapper } = mountCard(aFulfillmentOrder(state));
-
-        expect(wrapper.get('[data-test=fulfillment-order-agreed-wait]').text()).toContain(words);
-    });
-
-    it.each([
-        ['an open question', { consent: 'awaiting', revisedShipDate: '2027-04-19T00:00:00.000Z' }],
-        ['an expired one', { consent: 'expired', revisedShipDate: '2027-04-19T00:00:00.000Z' }],
-        ['nothing agreed', {}]
-    ] as const)('says nothing about an agreed wait for %s', (_name, state) => {
-        const { wrapper } = mountCard(aFulfillmentOrder(state));
-
-        expect(wrapper.find('[data-test=fulfillment-order-agreed-wait]').exists()).toBe(false);
+        // The shop only tells the buyer: nothing here asks or waits for a yes.
+        for (const hook of [
+            'confirm-wait',
+            'fulfillment-order-consent',
+            'fulfillment-order-answer-by'
+        ])
+            expect(wrapper.find(`[data-test=${hook}]`).exists()).toBe(false);
     });
 
     it('says who cancelled what was left, and when the buyer was last told', () => {
         const { wrapper } = mountCard(
             aFulfillmentOrder({
                 status: 'cancelled',
-                cancelReason: 'no_answer',
+                cancelReason: 'order',
                 lastNoticeAt: '2027-03-02T10:00:00.000Z'
             })
         );
 
         expect(wrapper.get('[data-test=fulfillment-order-cancel-reason]').text()).toBe(
-            'Cancelled: no answer'
+            'Cancelled with the order'
         );
         expect(wrapper.get('[data-test=fulfillment-order-last-notice]').text()).toContain(
             'Last notice sent'
@@ -443,7 +367,7 @@ describe('a late preorder', () => {
     it('shows none of it on an ordinary fulfillment order', () => {
         const { wrapper } = mountCard(aFulfillmentOrder());
 
-        for (const hook of ['consent', 'promised', 'last-notice', 'cancel-reason'])
+        for (const hook of ['promised', 'last-notice', 'cancel-reason'])
             expect(wrapper.find(`[data-test=fulfillment-order-${hook}]`).exists()).toBe(false);
     });
 });

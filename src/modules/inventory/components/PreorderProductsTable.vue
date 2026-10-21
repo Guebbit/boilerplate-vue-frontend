@@ -148,7 +148,6 @@ const headers = computed<CoreDataTableHeader<PreorderRow>[]>(() => [
  */
 const STATE_COUNTS = [
     ['waiting', 'preorders-page.count-waiting'],
-    ['awaitingYes', 'preorders-page.count-awaiting-yes'],
     ['allocated', 'preorders-page.count-allocated'],
     ['shipped', 'preorders-page.count-shipped'],
     ['cancelled', 'preorders-page.count-cancelled'],

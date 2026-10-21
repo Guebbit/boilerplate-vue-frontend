@@ -44,7 +44,11 @@
         "filter-purchase-hold": "Blocco acquisti",
         "filter-purchase-hold-all": "Qualsiasi",
         "filter-purchase-hold-yes": "Checkout in pausa",
-        "chip-purchase-hold": "Checkout in pausa"
+        "chip-purchase-hold": "Checkout in pausa",
+        "filter-needs-review": "Controllo",
+        "filter-needs-review-all": "Qualsiasi",
+        "filter-needs-review-yes": "Da controllare",
+        "chip-needs-review": "Da controllare"
     },
     "users-form": {
         "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
@@ -82,6 +86,10 @@
         "purchase-hold-none": "Nessuno",
         "purchase-hold-staff": "In pausa per decisione dello staff fino al {date}",
         "purchase-hold-automatic": "In pausa per annullamenti ripetuti fino al {date}",
+        "label-review": "Controllo",
+        "needs-review": "Da controllare dal {date}: la regola del negozio ha segnalato questo account dopo annullamenti ripetuti. Impostare o togliere un blocco lo segna come controllato.",
+        "button-mark-reviewed": "Segna come controllato",
+        "confirm-mark-reviewed": "Segnare {name} come controllato? Non viene impostato nessun blocco; la segnalazione sparisce e il conteggio degli annullamenti riparte da adesso.",
         "button-pause-checkout": "Metti in pausa il checkout",
         "button-lift-hold": "Togli il blocco",
         "confirm-lift-hold": "Togliere il blocco acquisti a {name}? Il conteggio degli annullamenti riparte da adesso.",
