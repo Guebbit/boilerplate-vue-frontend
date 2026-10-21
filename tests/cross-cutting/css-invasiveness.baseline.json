@@ -2,12 +2,6 @@
     "$comment": "Known invasive-CSS hits, frozen. New hits fail tests/cross-cutting/css-invasiveness.spec.ts; so does an entry that no longer occurs. Shrink with `npm run audit:css -- --shrink-baseline`; never add by hand.",
     "entries": [
         {
-            "file": "src/modules/observability/views/RealtimePlayground.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-card.border-s-4",
-            "count": 1
-        },
-        {
             "file": "src/styles/main.css",
             "check": "important",
             "anchor": "*, *::before, *::after",
@@ -71,12 +65,6 @@
             "file": "src/styles/main.css",
             "check": "z-index",
             "anchor": ".skip-link",
-            "count": 1
-        },
-        {
-            "file": "src/ui/organisms/CardMaterialStat.vue",
-            "check": "vuetify-prop-first",
-            "anchor": "v-card.border-t-4",
             "count": 1
         }
     ]

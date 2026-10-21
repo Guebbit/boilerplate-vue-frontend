@@ -2,7 +2,7 @@
 /**
  * @module
  * A stat tile: title, big value, optional subtitle, with a top border keyed to a theme accent.
- * `accentBorderClass` is the only logic — everything else is layout.
+ * The border prop string is the only logic — everything else is layout.
  */
 import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
@@ -30,25 +30,17 @@ const props = defineProps<{
 }>();
 
 /**
- * Top-border classes per theme accent. A top-level `*_CLASSES` const, so the Tailwind lint reads
- * the strings.
- */
-const ACCENT_BORDER_CLASSES = {
-    primary: 'border-t-primary',
-    secondary: 'border-t-secondary',
-    tertiary: 'border-t-tertiary'
-} as const;
-
-/**
- * Colored top border keyed to the theme accent.
+ * Vuetify's `border` prop: a 4px top edge (`t-lg`) in the accent colour at full opacity. The card
+ * has no other border, so the all-sides colour class it adds shows only on top.
+ * https://vuetifyjs.com/en/styles/borders/
  *
- * @returns The border utility class for the requested accent, falling back to `primary`.
+ * @returns The border prop string for the requested accent, falling back to `primary`.
  */
-const accentBorderClass = computed(() => ACCENT_BORDER_CLASSES[props.accent ?? 'primary']);
+const border = computed(() => `t-lg ${props.accent ?? 'primary'} opacity-100`);
 </script>
 
 <template>
-    <v-card class="min-w-44 border-t-4" :class="accentBorderClass">
+    <v-card class="min-w-44" :border="border">
         <v-card-text>
             <p class="text-xs font-medium uppercase tracking-widest opacity-80">{{ title }}</p>
             <p class="mt-2 text-3xl/tight font-semibold">{{ value }}</p>

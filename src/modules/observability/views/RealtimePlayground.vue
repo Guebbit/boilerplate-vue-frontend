@@ -38,15 +38,16 @@ onUnmounted(disconnectObservability);
 const showRawEvents = ref(false);
 
 /**
- * Icon, chip color and left-border accent for each SSE event kind.
+ * Icon, chip color and the start-edge stripe colour for each SSE event kind. The stripe is its own
+ * element: Vuetify's border colour is one value for every side, so the card cannot colour one edge.
  */
 const KIND_META: Record<
     RealtimeMetricsEntry['kind'],
-    { icon: typeof Camera; color: ThemeColor; border: string }
+    { icon: typeof Camera; color: ThemeColor; stripe: string }
 > = {
-    snapshot: { icon: Camera, color: 'info', border: 'border-s-info' },
-    update: { icon: RefreshCw, color: 'primary', border: 'border-s-primary' },
-    heartbeat: { icon: HeartPulse, color: 'secondary', border: 'border-s-secondary' }
+    snapshot: { icon: Camera, color: 'info', stripe: 'bg-info' },
+    update: { icon: RefreshCw, color: 'primary', stripe: 'bg-primary' },
+    heartbeat: { icon: HeartPulse, color: 'secondary', stripe: 'bg-secondary' }
 };
 
 /**
@@ -178,9 +179,13 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                                 :key="entry.id"
                                 variant="flat"
                                 border
-                                class="mb-2 border-s-4 px-4 py-3 last:mb-0"
-                                :class="KIND_META[entry.kind].border"
+                                class="mb-2 py-3 ps-5 pe-4 last:mb-0"
                             >
+                                <span
+                                    class="absolute inset-y-0 start-0 w-1"
+                                    :class="KIND_META[entry.kind].stripe"
+                                    aria-hidden="true"
+                                />
                                 <div class="flex flex-wrap items-center gap-2">
                                     <v-chip
                                         size="small"
