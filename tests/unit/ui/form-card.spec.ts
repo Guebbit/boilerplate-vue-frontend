@@ -26,12 +26,12 @@ const router = createRouter({
     ]
 });
 
+/** The default props: a back link to the products list. */
+const BACK_LINK = { backTo: { name: 'ProductsList' }, backLabel: 'Back to the list' };
+
 /** Mounts the card with the plugins it needs. */
 const mountCard = (
-    props: Record<string, unknown> = {
-        backTo: { name: 'ProductsList' },
-        backLabel: 'Back to the list'
-    },
+    props: Record<string, unknown> = BACK_LINK,
     slots: Record<string, string> = {}
 ) =>
     mount(FormCard, {
