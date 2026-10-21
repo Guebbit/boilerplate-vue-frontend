@@ -94,6 +94,16 @@ sweepA11y(
                 cy.get('[data-test=address-add]').click();
                 cy.get('[data-test=address-dialog]').should('be.visible');
             }
+        },
+        {
+            // The authenticator-app enrolment dialog: persistent, named by its title, with the
+            // secret and the code field inside it.
+            name: 'profile, authenticator enrolment dialog open',
+            route: '/en/profile',
+            prepare: () => {
+                cy.get('[data-test=two-factor-add-totp]').click();
+                cy.get('[data-test=two-factor-enroll-secret]').should('be.visible');
+            }
         }
     ],
     'user'

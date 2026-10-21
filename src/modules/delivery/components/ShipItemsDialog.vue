@@ -14,6 +14,7 @@ import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useDeliveryStore } from '../store.ts';
 import { readShipLines, shippableLines } from '../domain/ship-lines.ts';
 import type { FulfillmentOrder } from '@types';
@@ -148,11 +149,12 @@ watch(isOpen, (open) => {
 });
 
 /**
- * Cuts the shipment from the quantities on screen.
+ * Cuts the shipment from the quantities on screen. A repeat submit while the first is in flight
+ * does nothing, so a double press cuts one shipment.
  *
  * @returns A promise settling once the call finished; a refusal blocks the dialog in place.
  */
-const submit = () => {
+const submit = singleFlight(() => {
     clearShipError();
     return deliveryStore
         .ship(props.fulfillmentOrder.id, {
@@ -166,7 +168,7 @@ const submit = () => {
             emit('shipped');
         })
         .catch((error: unknown) => reportShipError(error));
-};
+});
 </script>
 
 <template>

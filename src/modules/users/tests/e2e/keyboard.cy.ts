@@ -12,6 +12,16 @@ describe('users dialogs by keyboard', () => {
         cy.loginAs('admin');
     });
 
+    it('the pause-checkout dialog traps Tab, closes on Escape and hands focus back', () => {
+        cy.accountInRole('user').then((account) => {
+            cy.visit(`/en/users/${account.id}`);
+            expectDialogKeyboardPattern(
+                '[data-test=user-pause-checkout]',
+                '[data-test=user-purchase-hold-dialog]'
+            );
+        });
+    });
+
     it('the manage-access dialog traps Tab, closes on Escape and hands focus back', () => {
         cy.accountInRole('user').then((account) => {
             cy.visit(`/en/users/${account.id}`);

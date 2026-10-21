@@ -8,20 +8,30 @@
  * such cap and carries on past the same day.
  *
  * Both clocks move together (`travelEverywhere`): the server's decides when the session ends. The
- * editor "stays busy" by reloading the page every 25 minutes, inside the 30-minute idle limit, so
- * the only rule left to end the session is the cap. Both session modes: a bearer session and a
- * cookie session end the same way.
+ * editor "stays busy" by moving between two pages every 27 minutes, inside the 30-minute idle limit
+ * and inside the 28.5 minutes at which the page itself asks "still there?", so the only rule left
+ * to end the session is the cap. Both session modes: a bearer session and a cookie session end the
+ * same way.
+ *
+ * Why not reload to stay busy: fifty page loads in one test wear the browser down (the renderer
+ * crashes, or hangs on an uncaught error in a reload, about every other run). A move between pages
+ * inside the app sends the same authenticated reads, and every request that is not passive counts
+ * as the person acting, in the page's idle clock and in the server's. One reload is left, at the
+ * end, because the end is a page load.
  */
 import { answerChallengePage } from '../../../support/e2e/login-challenge';
 
 /** One minute, in milliseconds. */
 const MINUTE_MS = 60_000;
 
-/** How far each reload of the busy editor is from the last: under the 30-minute staff idle limit. */
-const HOP_MINUTES = 25;
+/**
+ * How far each move of the busy editor is from the last: under the 30-minute staff idle limit and
+ * under the 28.5 minutes at which the page's own countdown opens its dialog.
+ */
+const HOP_MINUTES = 27;
 
-/** Hops that keep the editor busy up to 23 h 45 min after sign-in: inside the 24-hour cap. */
-const HOPS_INSIDE_THE_CAP = 57;
+/** Hops that keep the editor busy up to 23 h 51 min after sign-in: inside the 24-hour cap. */
+const HOPS_INSIDE_THE_CAP = 53;
 
 /** The code the idle rule answers with: the journey must see the CAP end the session, not this. */
 const IDLE_CODE = 'SESSION_IDLE';
@@ -45,6 +55,23 @@ const signInRemembering = (role: 'editor' | 'user'): void => {
         if (totpSecret) answerChallengePage(totpSecret);
         cy.url().should('not.include', '/login');
     });
+};
+
+/**
+ * Counts as the editor acting, without loading a page: opens the product list through the nav and
+ * comes back to the edit page with the browser's Back button. Both are moves inside the app, and
+ * the edit page reads the product again, which is an authenticated request.
+ *
+ * @param editPath - the edit page the editor is working on
+ */
+const stayBusy = (editPath: string): void => {
+    cy.navigateTo('/en/products');
+    cy.location('pathname').should('equal', '/en/products');
+    cy.go('back');
+    cy.location('pathname').should('equal', editPath);
+    // The price arrives from an authenticated read: waiting for it is waiting for the move to have
+    // counted as the editor acting, before the clock moves again.
+    cy.get('[data-test=product-price-field] input').should('not.have.value', '');
 };
 
 describe('FR23 · A busy staff session still ends after a day', () => {
@@ -74,14 +101,10 @@ describe('FR23 · A busy staff session still ends after a day', () => {
             cy.visit(editPath);
             cy.get('[data-test=product-price-field] input').should('not.have.value', '');
 
-            cy.step('every 25 minutes they reload the page: never idle, and still signed in');
+            cy.step('every 27 minutes they move between pages: never idle, and still signed in');
             for (let hop = 0; hop < HOPS_INSIDE_THE_CAP; hop += 1) {
                 cy.travelEverywhere(HOP_MINUTES * MINUTE_MS);
-                cy.reload();
-                // The price arrives from an authenticated read: waiting for it is waiting for the
-                // reload to have counted as the editor acting, before the clock moves again.
-                cy.get('[data-test=product-price-field] input').should('not.have.value', '');
-                cy.location('pathname').should('equal', editPath);
+                stayBusy(editPath);
             }
 
             cy.step('past the 24 hours since sign-in, the very next load ends the session');

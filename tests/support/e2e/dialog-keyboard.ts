@@ -16,6 +16,12 @@ const FOCUSABLE_SELECTOR =
 /** The element Vuetify gives every open dialog: Tab must never leave it. */
 const ACTIVE_OVERLAY = '.v-overlay--active';
 
+/**
+ * The API's search doors answer a `POST` but only read (`/products/search`): the stock board
+ * refreshes its names through one while a dialog is open, and that is not a write.
+ */
+const READ_BY_POST = /\/search(\?|$)/;
+
 /** Options for {@link expectDialogKeyboardPattern}. */
 export interface DialogKeyboardOptions {
     /** A selector that must hold focus after Escape when the opener no longer exists (a removed row). */
@@ -41,7 +47,8 @@ export const expectDialogKeyboardPattern = (
         cy.intercept(
             { method: /^(POST|PUT|PATCH|DELETE)$/, url: `${String(apiUrl)}/**` },
             (request) => {
-                writes.push(`${request.method} ${request.url}`);
+                if (!READ_BY_POST.test(request.url))
+                    writes.push(`${request.method} ${request.url}`);
                 request.continue();
             }
         );

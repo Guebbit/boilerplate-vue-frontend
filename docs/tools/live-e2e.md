@@ -202,6 +202,8 @@ export NODE_RATE_LIMIT_REDIS_URL=redis://127.0.0.1:6379   # the same value as th
 MAILPIT_URL=http://localhost:8025 npm run test:e2e:live
 ```
 
+The run refuses to start when `NODE_RATE_LIMIT_REDIS_URL` is missing from this shell (`scripts/e2e/live-rate-limit-guard.ts`, called from `cypress.config.ts`). The reseed does warn, but `cy.exec` hides its output, so without the guard the symptom would be a 429 hours later.
+
 Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#backend_path)), which reseeds through the backend checkout. It needs the same `NODE_PSEUDONYM_KEY` and encryption keys as the running backend, so export them in this shell too, and the same `NODE_RATE_LIMIT_REDIS_URL`: the reseed is a separate process, and it clears the limiter's counters only through that URL. Do NOT export `NODE_ENV=development` here: `vite build` then makes a development bundle, which throws on a contract mismatch instead of validating like the real one. Put `NODE_ENV=development` in the backend checkout's `.env` instead, where the reseed reads it; CI puts them on the command itself.
 
 With no `MAILPIT_URL`, the mail-driven specs report as skipped (`cy.skipUnlessMailbox()`) rather than failing. `test:e2e:live` builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
