@@ -43,6 +43,14 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Session**          | Whether someone is signed in. Owned by `infrastructure/session`, not by this module — the router guards read it before any domain code runs. |
 | **Account deletion** | A two-step exit: a request, then a confirm. Never one click.                                                                                 |
 
+## `api-keys`
+
+| Term        | What it means here                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| **API key** | A machine credential a caller uses in place of a session. Its fields are fixed when it is minted.     |
+| **Mint**    | Creating a key. The plaintext secret comes back once, in the reveal dialog, and is never stored here. |
+| **Revoke**  | Ending a key. The list is where it happens; there is no edit page.                                    |
+
 ## `cart`
 
 | Term          | What it means here                                                                                                      |
@@ -114,6 +122,21 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **Catalogue** | The list view, with its filters and paging. The filters are query parameters — the server does the filtering. |
 | **Stock**     | Units on the shelf, read from the response. This client displays availability and never decides it.           |
 
+## `returns`
+
+| Term             | What it means here                                                                                        |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| **Return**       | The customer's request to send goods back, its own record beside the order.                               |
+| **Withdrawal**   | A return whose reason is `withdrawal`: the EU "withdraw from contract here" button, the same create call. |
+| **Return queue** | The staff side: approve, receive, or cancel what has not shipped.                                         |
+
+## `stock-alerts`
+
+| Term             | What it means here                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| **Notify me**    | The request a shopper makes where a product cannot be ordered, to be told when it can. |
+| **Open request** | A Notify me still waiting; the account page lists them.                                |
+
 ## `observability`
 
 | Term          | What it means here                                                                                    |
@@ -149,6 +172,14 @@ than rendering an answer. See [Security](../tools/security.md#route-guards).
 | **User**        | The person record, staff-facing. The same row `account` edits from the inside.                                                |
 | **Role**        | The named bundle of keys this person holds, e.g. `manager`. A name the API owns; what it ALLOWS is the rules, never the name. |
 | **Field rules** | The Zod schemas every user-shaped form validates against. This module’s one export, and the reason `account` depends on it.   |
+
+## `webhooks`
+
+| Term             | What it means here                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| **Subscription** | Who gets notified of what: an endpoint plus the events it wants.                           |
+| **Secret ring**  | The signing secrets of a subscription. Rotating one returns the plaintext once.            |
+| **Delivery**     | One attempt to send an event to a subscription's endpoint. The delivery log can replay it. |
 
 ## `wishlist`
 

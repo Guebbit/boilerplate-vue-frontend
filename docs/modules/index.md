@@ -149,25 +149,25 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
-| [`account`](./account.md)                                      | `generic`    | `foundation` | 8       | `account`                | 18        | 1          | 0              |
+| [`account`](./account.md)                                      | `generic`    | `foundation` | 12      | `account`                | 18        | 1          | 1              |
 | [`api-keys`](./api-keys.md)                                    | `generic`    | `foundation` | 2       | `api-keys`               | 3         | 0          | 0              |
-| [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 1          | 3              |
+| [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 4          | 2              |
 | [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 13        | 0          | 3              |
 | [`example`](../theory/modules.md#adding-and-deleting-a-domain) | —            | `example`    | 5       | `example`                | 6         | 0          | 0              |
 | [`feedback`](./feedback.md)                                    | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
 | [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
-| [`locales`](./locales.md)                                      | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
+| [`locales`](./locales.md)                                      | `generic`    | `foundation` | 4       | `locales`                | 9         | 0          | 0              |
 | [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
 | [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
 | [`orders`](./orders.md)                                        | `core`       | `shop`       | 4       | `orders`                 | 11        | 4          | 0              |
-| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 1              |
-| [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
+| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 2              |
+| [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 0          | 4              |
 | [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
 | [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |
-| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 0          | 0              |
+| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 1          | 0              |
 | [`users`](./users.md)                                          | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
 | [`webhooks`](./webhooks.md)                                    | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
-| [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 1          | 1              |
+| [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 2          | 0              |
 
 ## The two repositories
 
