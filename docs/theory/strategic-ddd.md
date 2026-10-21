@@ -13,7 +13,8 @@ re-implements them has two implementations of one rule.
 ::: tip This page mirrors the backend's
 `boilerplate-node-backend/docs/theory/strategic-ddd.md` states the same four ideas for
 the API. Read them together — the interesting parts are where the two **disagree**, and each of
-those disagreements is a fact about where the domain actually lives.
+those disagreements is a fact about where the domain actually lives. The client-capability half of
+§4 below is the backend's `docs/theory/tactical-ddd.md` §2.
 :::
 
 ---
@@ -178,7 +179,11 @@ flowchart LR
     class API src;
 ```
 
-A control is enabled when the server says so and disabled otherwise. The rules can change on the
+A control is enabled when the server says so and disabled otherwise.
+An operation's description that states the rule in prose does not count: the client would still hold a copy.
+When the flag a control needs is missing, the fix is a flag on the backend's `*Actions`, not a mirror here.
+
+The rules can change on the
 API — a new status, a different role boundary, a cancel window that closes earlier — and this
 application follows without being edited, because it never held an opinion to update.
 

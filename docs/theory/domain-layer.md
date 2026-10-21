@@ -15,6 +15,9 @@ a frontend has far less to put in this folder.
 > **A rule the UI needs _before_ it calls the API goes in `src/modules/<name>/domain/`**, as a
 > function that takes data and returns a value.
 
+The same holds for a closed set the API defines: a status union or literal list is imported from the generated
+types, never retyped.
+
 ### Why it is thin here — and why that is correct
 
 Prices, totals, checkout eligibility and permissions are decided by the API. Restating them on the
@@ -184,7 +187,7 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 
 ### The folder is optional
 
-Eight of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`,
+Nine of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`, `locales`,
 `notifications`, `orders`, `products` and `stats` — and the rest have no rule that clears the floor
 above. `ls -d src/modules/*/domain` is the current list; this sentence is not checked against it.
 
