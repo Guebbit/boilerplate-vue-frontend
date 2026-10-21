@@ -64,6 +64,12 @@ const templateChecks = (template: string): CheckId[] =>
         scanTemplate('Sample.vue', `<template>${template}</template>`, templateContext())
     ).map((finding) => finding.check);
 
+/** The checks that fire on a whole SFC source (template and style blocks together). */
+const sfcChecks = (source: string): CheckId[] =>
+    applyAllowances(scanTemplate('Sample.vue', source, templateContext())).map(
+        (finding) => finding.check
+    );
+
 /** A ratchet list, one key per line, for a failure message. */
 const listed = (entries: BaselineEntry[]): string =>
     entries.map((entry) => `×${String(entry.count)} ${keyOf(entry)}`).join('\n');
@@ -80,8 +86,8 @@ describe('invasive CSS, against the baseline', () => {
     });
 
     it('reads the CSS, the templates and the scripts', () => {
-        // Not vacuous: main.css, six SFC style blocks, the splash; and over a hundred SFCs.
-        expect(cssSources().length + documentCssSources().length).toBeGreaterThanOrEqual(8);
+        // Not vacuous: main.css, the splash and the remaining SFC style blocks; over a hundred SFCs.
+        expect(cssSources().length + documentCssSources().length).toBeGreaterThanOrEqual(3);
         expect(vueFiles().length).toBeGreaterThan(100);
         expect(documentCssSources().length).toBeGreaterThanOrEqual(1);
     });
@@ -170,6 +176,16 @@ describe('each template and script check fires on a sample', () => {
     it('lets a title prop, a layout class and a non-theme class through', () => {
         // `v-card` renders `title` visibly; `w-full` on a card is layout; `bg-gradient` is no colour.
         expect(templateChecks('<v-card title="Orders" class="w-full bg-gradient" />')).toEqual([]);
+    });
+
+    it('fires vuetify-root-override on a scoped rule that restyles a Vuetify tag by its class', () => {
+        const override =
+            '<template><v-list-item-subtitle class="when" /></template><style scoped>.when { white-space: normal }</style>';
+        const feedsOurCss =
+            '<template><v-list-item-subtitle class="when" /></template><style scoped>.when { --x: 1 }</style>';
+
+        expect(sfcChecks(override)).toEqual(['vuetify-root-override']);
+        expect(sfcChecks(feedsOurCss)).toEqual([]);
     });
 
     it('fires vuetify-dom-query on a Vuetify class in a DOM query', () => {

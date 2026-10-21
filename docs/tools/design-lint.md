@@ -99,28 +99,29 @@ Vuetify or Tailwind instead of using them. It reads three things:
 The template checks live there too, not in ESLint, so every check shares one ratchet. An ESLint
 error cannot be frozen without a disable on each known line.
 
-| Check                              | Refuses                                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| `vuetify-internal`                 | A selector naming a `.v-*` class, `:deep()` contents included                               |
-| `deep`                             | `:deep()`, `::v-deep`, `>>>`                                                                |
-| `vuetify-variable`                 | A declaration that sets a `--v-*` property                                                  |
-| `important`                        | `!important`                                                                                |
-| `max-specificity`                  | A selector above `0,2,0`, or any id; `:deep(x)` counts `x`, `:where` counts 0               |
-| `max-compound`                     | More than 3 compound selectors; `:deep` counts as a combinator                              |
-| `scoped-type-selector`             | A bare element selector in a scoped block, outside `:deep`                                  |
-| `z-index`                          | A `z-index` that is not `var(--z-index-*)` and not -1…9                                     |
-| `magic-length`                     | A px length, or a rem off the 0.25rem step, on a spacing or sizing property                 |
-| `utility-redefinition`             | A selector on a class Tailwind generates (`.opacity-70`)                                    |
-| `block-size`                       | An SFC `<style>` block over 15 declarations                                                 |
-| `unit-disallowed-list`             | A `vh` length (use `dvh`: the mobile address bar moves the viewport)                        |
-| `duplicate-in-rule`                | The same property twice in a rule                                                           |
-| `repeated-custom-property`         | The same `--*` declaration in two SFC blocks                                                |
-| `vuetify-prop-first`               | A static utility on a `v-*` tag that duplicates a prop the component has                    |
-| `tailwind-important`               | The `!` modifier                                                                            |
-| `vuetify-arbitrary-variant`        | An arbitrary variant into a Vuetify class (`[&_.v-field]:`)                                 |
-| `native-title`                     | A native `title` (an HTML tag, or a Vuetify tag without a `title` prop)                     |
-| `vuetify-dom-query`                | `closest`/`querySelector`/`matches` on a Vuetify class in a script                          |
-| `stale-allowance`, `bad-allowance` | A `css-allow` that covers nothing, or has no reason, an unknown check, or two Vuetify parts |
+| Check                              | Refuses                                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `vuetify-internal`                 | A selector naming a `.v-*` class, `:deep()` contents included                                          |
+| `deep`                             | `:deep()`, `::v-deep`, `>>>`                                                                           |
+| `vuetify-variable`                 | A declaration that sets a `--v-*` property                                                             |
+| `important`                        | `!important`                                                                                           |
+| `max-specificity`                  | A selector above `0,2,0`, or any id; `:deep(x)` counts `x`, `:where` counts 0                          |
+| `max-compound`                     | More than 3 compound selectors; `:deep` counts as a combinator                                         |
+| `scoped-type-selector`             | A bare element selector in a scoped block, outside `:deep`                                             |
+| `z-index`                          | A `z-index` that is not `var(--z-index-*)` and not -1…9                                                |
+| `magic-length`                     | A px length, or a rem off the 0.25rem step, on a spacing or sizing property                            |
+| `utility-redefinition`             | A selector on a class Tailwind generates (`.opacity-70`)                                               |
+| `block-size`                       | An SFC `<style>` block over 15 declarations                                                            |
+| `unit-disallowed-list`             | A `vh` length (use `dvh`: the mobile address bar moves the viewport)                                   |
+| `duplicate-in-rule`                | The same property twice in a rule                                                                      |
+| `repeated-custom-property`         | The same `--*` declaration in two SFC blocks                                                           |
+| `vuetify-prop-first`               | A static utility on a `v-*` tag that duplicates a prop the component has                               |
+| `tailwind-important`               | The `!` modifier                                                                                       |
+| `vuetify-arbitrary-variant`        | An arbitrary variant into a Vuetify class (`[&_.v-field]:`)                                            |
+| `native-title`                     | A native `title` (an HTML tag, or a Vuetify tag without a `title` prop)                                |
+| `vuetify-root-override`            | A scoped rule on a class set on a `v-*` tag that declares a real property (custom properties are fine) |
+| `vuetify-dom-query`                | `closest`/`querySelector`/`matches` on a Vuetify class in a script                                     |
+| `stale-allowance`, `bad-allowance` | A `css-allow` that covers nothing, or has no reason, an unknown check, or two Vuetify parts            |
 
 ### The ratchet
 

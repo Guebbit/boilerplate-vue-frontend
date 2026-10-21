@@ -148,10 +148,7 @@ describe('the context map between the module pages and the overview', () => {
 
     it('counts the edges and modules the totals row claims', () => {
         const index = readFileSync(path.join(DOCS, 'index.md'), 'utf8');
-        const row =
-            /\|\s*(\d+)(?:\s*\|\s*\d+){5}\s*\|\s*(\d+)\s*\|/.exec(
-                index
-            );
+        const row = /\|\s*(\d+)(?:\s*\|\s*\d+){5}\s*\|\s*(\d+)\s*\|/.exec(index);
         const folders = readdirSync(path.join(ROOT, 'src/modules'), { withFileTypes: true }).filter(
             (entry) => entry.isDirectory()
         );

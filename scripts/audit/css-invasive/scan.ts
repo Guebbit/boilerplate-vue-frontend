@@ -91,6 +91,10 @@ export const CHECKS = {
         title: 'An SFC `<style>` block over `cssInvasiveness.maxScopedDeclarations` declarations.',
         fix: 'Move the styling to utilities and props; keep only what has no class.'
     },
+    'vuetify-root-override': {
+        title: 'A scoped rule restyles a Vuetify component through a class set on its tag.',
+        fix: 'Use the component prop that owns the property (`opacity`, `lines`, `tile`, …) or a theme `variables` key.'
+    },
     'unit-disallowed-list': {
         title: 'A declaration uses a disallowed unit (`vh`: the mobile address bar makes it overflow).',
         fix: 'Use `dvh` (or `svh`/`lvh`), which tracks the visible viewport.'
@@ -1003,6 +1007,52 @@ const templateAllowances = (file: string, nodes: TemplateNode[]): Allowance[] =>
     });
 
 /**
+ * The scoped rules that restyle a Vuetify component through a class set on its tag: the selector
+ * names a static class carried by a `v-*` element, and the rule declares a real property (a custom
+ * property such as `--glow-x` only feeds our own CSS, so it is not an override).
+ *
+ * @param file - The SFC, relative to the repo root.
+ * @param text - Its source.
+ * @param elements - The template's elements.
+ * @returns The raw hits.
+ */
+const rootOverrideHits = (
+    file: string,
+    text: string,
+    elements: (TemplateNode & { tag: string })[]
+): RawHit[] => {
+    const onVuetify = new Set(
+        elements
+            .filter((node) => vuetifyComponent(node.tag) !== undefined)
+            .flatMap((node) => classTokens(node))
+    );
+    if (onVuetify.size === 0) return [];
+    return parseSfc(text, { filename: file }).descriptor.styles.flatMap((style) => {
+        const found: RawHit[] = [];
+        postcss.parse(style.content).walkRules((rule) => {
+            const named = selectorParser()
+                .astSync(rule.selector)
+                .nodes.flatMap((selector) => classesOf(selector))
+                .filter((name) => onVuetify.has(name));
+            const real = declsOf(rule).filter((decl) => !decl.prop.startsWith('--'));
+            if (named.length === 0 || real.length === 0) return;
+            const line = style.loc.start.line + (rule.source?.start?.line ?? 1) - 1;
+            found.push(
+                hitOf({
+                    file,
+                    line,
+                    check: 'vuetify-root-override',
+                    anchor: squash(rule.selector),
+                    snippet: real.map((decl) => declText(decl)).join(' · '),
+                    target: `${file}:${String(line)}`
+                })
+            );
+        });
+        return found;
+    });
+};
+
+/**
  * Every template hit and allowance of one SFC.
  *
  * @param file - The SFC, relative to the repo root.
@@ -1016,6 +1066,7 @@ export const scanTemplate = (file: string, text: string, context: TemplateContex
         templateParseOptions: { comments: true }
     }).descriptor.template?.ast;
     const roots = isTemplateNode(ast) ? childrenOf(ast) : [];
+    const rootOverrides = rootOverrideHits(file, text, elementsOf(roots));
     const hits = elementsOf(roots).flatMap((node) =>
         ELEMENT_CHECKS.flatMap(([check, run]) =>
             run(node, context).map(({ line, ...offence }) =>
@@ -1029,7 +1080,7 @@ export const scanTemplate = (file: string, text: string, context: TemplateContex
             )
         )
     );
-    return { hits, allowances: templateAllowances(file, roots) };
+    return { hits: [...hits, ...rootOverrides], allowances: templateAllowances(file, roots) };
 };
 
 /**
