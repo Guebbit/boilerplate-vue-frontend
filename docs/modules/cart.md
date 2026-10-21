@@ -10,6 +10,7 @@
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                            |
 | **Screens**             | 1 — `Cart`, which shows a guest `GuestCart` and a signed-in visitor `Cart`                                          |
+| **Shared parts**        | `CartLineCard` (one line, both carts) · `CartEmptyState` (the empty basket, both carts)                             |
 | **Store**               | `cart`                                                                                                              |
 | **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)                                              |
 | **API calls**           | 10                                                                                                                  |

@@ -19,7 +19,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useOrderLink } from '@/kernel/order-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
@@ -27,6 +26,8 @@ import { useCartStore } from '../store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
 // clamping half of that rule lives with the stepping itself, in `use-line-quantity.ts`.
 import { MIN_LINE_QUANTITY, classifyCheckoutError } from '../domain';
+import CartEmptyState from '../components/CartEmptyState.vue';
+import CartLineCard from '../components/CartLineCard.vue';
 import type { CheckoutShortfallLine } from '../domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -475,16 +476,7 @@ onMounted(() =>
         -->
         <MergeReportAlert class="mx-auto mb-4 w-full max-w-4xl" />
 
-        <v-empty-state v-if="cartItems.length === 0" :title="t('cart-page.empty-cart')">
-            <template #media>
-                <ShoppingCart :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-            <template #actions>
-                <v-btn color="primary" :to="routerLinkI18n({ name: 'ProductsList' })">
-                    {{ t('cart-page.button-go-to-products') }}
-                </v-btn>
-            </template>
-        </v-empty-state>
+        <CartEmptyState v-if="cartItems.length === 0" />
 
         <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-cart">
             <div class="flex justify-end lg:col-span-2">
@@ -585,24 +577,21 @@ onMounted(() =>
             />
 
             <div class="flex flex-col gap-4" data-tour="checkout-lines">
-                <v-card
+                <CartLineCard
                     v-for="item in cartItems"
                     :key="'cart-item-' + item.productId"
-                    data-test="cart-item"
-                    class="p-5"
+                    test-prefix="cart"
+                    :title="titleOf(item.productId)"
+                    :quantity="lineQuantity(item)"
+                    :unit-price="productOf(item.productId)?.price"
+                    :currency="productOf(item.productId)?.currency ?? ''"
+                    :can-decrease="!placing && lineQuantity(item) > MIN_LINE_QUANTITY"
+                    :can-increase="!placing"
+                    :remove-disabled="loading"
+                    @step="(delta) => stepQuantity(item.productId, item.quantity, delta)"
+                    @remove="removeLine(item.productId)"
                 >
-                    <h2 class="text-lg font-semibold">
-                        <b>{{ titleOf(item.productId) }}</b>
-                    </h2>
-                    <!--
-                        A status: the steppers below change it, and a reader should hear the new number.
-                        The availability marker lives inside it, so a line turning short is announced
-                        without a live region of its own per row. Text, not colour alone.
-                    -->
-                    <p class="mt-1" role="status">
-                        <span class="opacity-80">
-                            {{ t('cart-page.label-quantity') }}: {{ lineQuantity(item) }}
-                        </span>
+                    <template #badges>
                         <v-chip
                             v-if="availabilityLabel(item.availability)"
                             size="small"
@@ -631,75 +620,8 @@ onMounted(() =>
                         >
                             {{ t('cart-page.label-no-withdrawal') }}
                         </v-chip>
-                    </p>
-                    <!-- Absent until the product read has answered for this line — no price
-                         guessed ahead of the server's own answer. -->
-                    <p
-                        v-if="productOf(item.productId)"
-                        class="mt-1 opacity-80"
-                        data-test="cart-line-price"
-                    >
-                        {{
-                            formatCurrency(
-                                productOf(item.productId)?.price,
-                                productOf(item.productId)?.currency ?? ''
-                            )
-                        }}
-                        ×
-                        {{ lineQuantity(item) }}
-                        =
-                        {{
-                            formatCurrency(
-                                (productOf(item.productId)?.price ?? 0) * lineQuantity(item),
-                                productOf(item.productId)?.currency ?? ''
-                            )
-                        }}
-                    </p>
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="tonal"
-                            data-test="cart-decrease"
-                            :disabled="placing || lineQuantity(item) <= MIN_LINE_QUANTITY"
-                            :aria-label="
-                                t('cart-page.button-decrease-named', {
-                                    id: titleOf(item.productId)
-                                })
-                            "
-                            @click="stepQuantity(item.productId, item.quantity, -1)"
-                        >
-                            <Minus :size="16" aria-hidden="true" />
-                        </v-btn>
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="tonal"
-                            data-test="cart-increase"
-                            :disabled="placing"
-                            :aria-label="
-                                t('cart-page.button-increase-named', {
-                                    id: titleOf(item.productId)
-                                })
-                            "
-                            @click="stepQuantity(item.productId, item.quantity, 1)"
-                        >
-                            <Plus :size="16" aria-hidden="true" />
-                        </v-btn>
-                        <v-btn
-                            variant="text"
-                            color="error"
-                            data-test="cart-remove"
-                            :disabled="loading"
-                            :aria-label="
-                                t('cart-page.button-remove-named', { id: titleOf(item.productId) })
-                            "
-                            @click="removeLine(item.productId)"
-                        >
-                            {{ t('cart-page.button-remove') }}
-                        </v-btn>
-                    </div>
-                </v-card>
+                    </template>
+                </CartLineCard>
             </div>
 
             <div class="flex flex-col gap-4">

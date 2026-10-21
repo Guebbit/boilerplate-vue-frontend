@@ -12,7 +12,6 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { shopCurrency } from '@/infrastructure/shop.ts';
@@ -24,6 +23,8 @@ import { useProductLines } from '@/modules/products';
 import { MAX_GUEST_LINE_QUANTITY } from '../domain';
 import type { GuestCartLine } from '../domain';
 import { useCartStore } from '../store';
+import CartEmptyState from './CartEmptyState.vue';
+import CartLineCard from './CartLineCard.vue';
 
 /**
  * Translation function, and the language on screen: a product read that a language switch
@@ -172,16 +173,7 @@ onMounted(refreshLines);
 
 <template>
     <div id="cart-page" data-test="guest-cart">
-        <v-empty-state v-if="guestLines.length === 0" :title="t('cart-page.empty-cart')">
-            <template #media>
-                <ShoppingCart :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-            <template #actions>
-                <v-btn color="primary" :to="routerLinkI18n({ name: 'ProductsList' })">
-                    {{ t('cart-page.button-go-to-products') }}
-                </v-btn>
-            </template>
-        </v-empty-state>
+        <CartEmptyState v-if="guestLines.length === 0" />
 
         <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-cart">
             <InlineErrorAlert
@@ -191,18 +183,20 @@ onMounted(refreshLines);
             />
 
             <div class="flex flex-col gap-4">
-                <v-card
+                <CartLineCard
                     v-for="line in guestLines"
                     :key="'guest-cart-item-' + line.productId"
-                    data-test="guest-cart-item"
-                    class="p-5"
+                    test-prefix="guest-cart"
+                    :title="titleOf(line.productId)"
+                    :quantity="line.quantity"
+                    :unit-price="productOf(line.productId)?.price"
+                    :currency="productOf(line.productId)?.currency ?? ''"
+                    :can-decrease="line.quantity > 1"
+                    :can-increase="line.quantity < MAX_GUEST_LINE_QUANTITY"
+                    @step="(delta) => stepLine(line, delta)"
+                    @remove="removeLine(line.productId)"
                 >
-                    <h2 class="text-lg font-semibold">
-                        <b>{{ titleOf(line.productId) }}</b>
-                    </h2>
-                    <!-- A status: the steppers below change it, and a reader should hear the new number. -->
-                    <p class="mt-1 opacity-80" role="status">
-                        {{ t('cart-page.label-quantity') }}: {{ line.quantity }}
+                    <template #badges>
                         <v-chip
                             v-if="isGone(line.productId)"
                             size="small"
@@ -225,72 +219,8 @@ onMounted(refreshLines);
                         >
                             {{ availabilityLabel('unavailable') }}
                         </v-chip>
-                    </p>
-                    <p
-                        v-if="productOf(line.productId)"
-                        class="mt-1 opacity-80"
-                        data-test="guest-cart-line-price"
-                    >
-                        {{
-                            formatCurrency(
-                                productOf(line.productId)?.price,
-                                productOf(line.productId)?.currency ?? ''
-                            )
-                        }}
-                        × {{ line.quantity }} =
-                        {{
-                            formatCurrency(
-                                (productOf(line.productId)?.price ?? 0) * line.quantity,
-                                productOf(line.productId)?.currency ?? ''
-                            )
-                        }}
-                    </p>
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="tonal"
-                            data-test="guest-cart-decrease"
-                            :disabled="line.quantity <= 1"
-                            :aria-label="
-                                t('cart-page.button-decrease-named', {
-                                    id: titleOf(line.productId)
-                                })
-                            "
-                            @click="stepLine(line, -1)"
-                        >
-                            <Minus :size="16" aria-hidden="true" />
-                        </v-btn>
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="tonal"
-                            data-test="guest-cart-increase"
-                            :disabled="line.quantity >= MAX_GUEST_LINE_QUANTITY"
-                            :aria-label="
-                                t('cart-page.button-increase-named', {
-                                    id: titleOf(line.productId)
-                                })
-                            "
-                            @click="stepLine(line, 1)"
-                        >
-                            <Plus :size="16" aria-hidden="true" />
-                        </v-btn>
-                        <v-btn
-                            variant="text"
-                            color="error"
-                            data-test="guest-cart-remove"
-                            :aria-label="
-                                t('cart-page.button-remove-named', {
-                                    id: titleOf(line.productId)
-                                })
-                            "
-                            @click="removeLine(line.productId)"
-                        >
-                            {{ t('cart-page.button-remove') }}
-                        </v-btn>
-                    </div>
-                </v-card>
+                    </template>
+                </CartLineCard>
             </div>
 
             <div class="flex flex-col gap-4">
