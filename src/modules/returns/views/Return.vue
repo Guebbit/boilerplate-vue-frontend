@@ -19,10 +19,9 @@ import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
 import { Undo2 } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { useReturnsStore } from '../store.ts';
 import { formatCurrency, formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -44,11 +43,6 @@ const { id } = defineProps<{
 const { t } = useI18n();
 
 /**
- * Router, for the link back to the order.
- */
-const router = useRouter();
-
-/**
  * Store reads: the selected return and the forced re-read a move needs.
  */
 const { watchReturn, fetchReturn } = useReturnsStore();
@@ -59,14 +53,14 @@ const { watchReturn, fetchReturn } = useReturnsStore();
 const { currentReturn } = storeToRefs(useReturnsStore());
 
 /**
- * The link to the order this return belongs to — `undefined`, hiding it, on a build with no
- * `orders` module: a route name is a dependency `MODULE_EDGES` cannot see, so it is guarded.
+ * The order's page, or nothing when this build ships none.
  */
-const orderTo = computed(() =>
-    currentReturn.value
-        ? linkIfRouted(router, 'OrderTarget', { id: currentReturn.value.orderId })
-        : undefined
-);
+const orderLink = useOrderLink();
+
+/**
+ * The routed return's order page.
+ */
+const orderTo = computed(() => orderLink(currentReturn.value?.orderId));
 
 /**
  * What a 404 or 403 on the routed record does: the Error page, not a page left on its placeholders.
@@ -182,12 +176,7 @@ onMounted(refresh);
 
             <template #actions>
                 <ReturnStaffActions v-if="currentReturn" :item="currentReturn" @changed="refresh" />
-                <v-btn
-                    v-if="orderTo"
-                    variant="tonal"
-                    data-test="return-order-link"
-                    :to="routerLinkI18n(orderTo)"
-                >
+                <v-btn v-if="orderTo" variant="tonal" data-test="return-order-link" :to="orderTo">
                     {{ t('return-target-page.button-order') }}
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ReturnsList' })">

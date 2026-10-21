@@ -20,12 +20,10 @@ export default {
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { X } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { EMPTY_VALUE, formatDate, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import type { ThemeColor } from '@/ui/types.ts';
@@ -64,11 +62,6 @@ const { t } = useI18n();
  * Toast dispatcher: a failed read is ambient, the table just did not refresh.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The router, for the order link's `hasRoute` guard.
- */
-const router = useRouter();
 
 /**
  * The store: the page of rows, its total and the loading flag.
@@ -190,14 +183,9 @@ const headers = computed<CoreDataTableHeader<PreorderFulfillmentOrder>[]>(() => 
 ]);
 
 /**
- * An order's page, or nothing when this build ships no `orders` module.
- *
- * @param orderId - The order.
+ * The order's page, or nothing when this build ships none.
  */
-const orderLink = (orderId: string) => {
-    const target = linkIfRouted(router, 'OrderTarget', { id: orderId });
-    return target ? routerLinkI18n(target) : undefined;
-};
+const orderLink = useOrderLink();
 
 /**
  * State chip colours; `satisfies` makes a new contract state fail the type check.

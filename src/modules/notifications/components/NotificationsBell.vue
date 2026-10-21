@@ -10,13 +10,11 @@
  * notifications is signed in.
  */
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import type { ComponentPublicInstance } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { Bell, Trash2 } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useInboxLifecycle } from '../composables/use-inbox-lifecycle';
 import { useInboxStore } from '../store';
@@ -58,21 +56,9 @@ const open = ref(false);
 const freshIds = ref<ReadonlySet<string>>(new Set());
 
 /**
- * Router, asked whether this build has an order page to link a notice to: `orders` is not a
- * sibling this module imports, so the link is resolved by route name or left out.
+ * The notice's order page, or nothing when it has none or this build ships no order page.
  */
-const router = useRouter();
-
-/**
- * The order page a notice points at, or `undefined` when it concerns no order or this build ships
- * no `orders` module.
- *
- * @param orderId - The notice's order, when it has one.
- */
-const orderLink = (orderId: string | undefined) => {
-    const target = orderId ? linkIfRouted(router, 'OrderTarget', { id: orderId }) : undefined;
-    return target ? routerLinkI18n(target) : undefined;
-};
+const orderLink = useOrderLink();
 
 /**
  * The panel card, so focus can move into it when it opens.

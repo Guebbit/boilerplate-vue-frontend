@@ -21,6 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useCartStore } from '../store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`; the
@@ -267,14 +268,19 @@ const shortfallText = ({ title, requested, availability }: CheckoutShortfallLine
 };
 
 /**
+ * The order page's link-maker; `undefined` when this build ships no order page.
+ */
+const orderLink = useOrderLink();
+
+/**
  * Where each unpaid order `CART_OPEN_ORDER_LIMIT` named lives, as links the shopper can follow to
  * pay or cancel one. An order page is the orders module's: a build without
  * it has nowhere to send the shopper, so those ids simply get no link.
  */
 const openOrderTargets = computed(() =>
     openOrderIds.value.flatMap((id) => {
-        const target = linkIfRouted(router, 'OrderTarget', { id });
-        return target ? [{ id, to: routerLinkI18n(target) }] : [];
+        const to = orderLink(id);
+        return to ? [{ id, to }] : [];
     })
 );
 

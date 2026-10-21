@@ -25,7 +25,7 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
 import { usePagedTable } from '../composables/use-paged-table.ts';
-import { useOrderLink } from '../composables/use-order-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { useRowSelect } from '../composables/use-row-select.ts';
 
 /**

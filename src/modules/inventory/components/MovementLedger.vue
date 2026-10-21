@@ -17,15 +17,13 @@ export default {
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { BookOpen, Timer } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { useInventoryStore } from '../store.ts';
 import { useProductLines } from '@/modules/products';
 import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
@@ -46,19 +44,9 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 const { t } = useI18n();
 
 /**
- * Router instance, for the `hasRoute` check below — `orders` is not a coupling this module's
- * `MODULE_EDGES` entry declares, so the reference column's link is guarded rather than assumed.
+ * A movement's order page, when its reference is an order and this build ships the page.
  */
-const router = useRouter();
-
-/**
- * A movement's own order page, or `undefined` when this build ships no `orders` module — the
- * reference then renders as plain text instead of a dead link.
- *
- * @param reference - The movement's own reference, an order id, when it has one at all.
- */
-const orderTargetTo = (reference: string | null | undefined) =>
-    reference ? linkIfRouted(router, 'OrderTarget', { id: reference }) : undefined;
+const orderTargetTo = useOrderLink();
 
 /**
  * The session, asked whether the sweep is this account's to press: `sweep:StockLevel` is the
@@ -438,7 +426,7 @@ onMounted(() => {
                      build actually ships one to link to. -->
                 <router-link
                     v-if="orderTargetTo(item.reference)"
-                    :to="routerLinkI18n(orderTargetTo(item.reference)!)"
+                    :to="orderTargetTo(item.reference)!"
                     class="underline"
                 >
                     {{ item.reference }}
