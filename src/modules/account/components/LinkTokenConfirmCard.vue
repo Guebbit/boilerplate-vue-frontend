@@ -3,7 +3,8 @@
  * @module
  * The card behind every "the link in your mail is the credential" page: one token field prefilled
  * from the URL fragment, one submit button, one in-place error. The page supplies its wording, its
- * `data-test` hooks, the store call that spends the token and where success lands; everything else
+ * `data-test` hooks, the store call that spends the token and where success lands, and optionally a
+ * warning, a destructive tone and a footer; everything else
  * — reading and scrubbing the fragment, validation, the toast, the redirect — is the same on every
  * such page and lives here once.
  *
@@ -30,8 +31,10 @@ const props = defineProps<{
      * a plain grep can both find.
      */
     copy: {
-        /** The paragraph above the field. */
-        intro: string;
+        /** The paragraph above the field, when the page has one. */
+        intro?: string;
+        /** A warning alert above the form, when the action cannot be undone. */
+        warning?: string;
         /** The token field's label. */
         label: string;
         /** The submit button's text. */
@@ -61,6 +64,10 @@ const props = defineProps<{
      * when the server ended it.
      */
     successRoute: 'Home' | 'Login';
+    /**
+     * An irreversible spend; the button says so in colour.
+     */
+    destructive?: boolean;
 }>();
 
 /**
@@ -99,7 +106,7 @@ const formElement = ref<HTMLFormElement>();
 /**
  * Form state, error surface and submit handler, from the toolkit's form validation.
  */
-const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
+const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServerErrors } =
     useStructureFormValidation<LinkTokenForm>(
         {
             token: readLinkToken(route)
@@ -134,7 +141,7 @@ const {
  * Spends the token, then toasts and leaves for {@link props.successRoute}.
  *
  * @returns A promise resolving once the call settles: success is a toast and a navigation, a
- *  failure blocks the form in place ({@link spendError}).
+ *  failure lands on the field the server named, or blocks the form in place ({@link spendError}).
  */
 const submitForm = () => {
     clearSpendError();
@@ -148,13 +155,18 @@ const submitForm = () => {
             // Swallows `router.push`'s resolved value — a failed navigation is the router's own
             // `onError` to report, not this form's.
             .then(() => undefined)
-    ).catch((error) => reportSpendError(error));
+    ).catch((error) => {
+        applyServerErrors(error, { onUnmapped: () => reportSpendError(error) });
+    });
 };
 </script>
 
 <template>
     <v-card class="mx-auto mt-10 w-full max-w-md p-8">
-        <p class="mb-4 opacity-80">{{ t(copy.intro) }}</p>
+        <v-alert v-if="copy.warning" type="warning" class="mb-6">
+            {{ t(copy.warning) }}
+        </v-alert>
+        <p v-if="copy.intro" class="mb-4 opacity-80">{{ t(copy.intro) }}</p>
         <form ref="formElement" novalidate @submit.prevent="submitForm">
             <v-text-field
                 v-model="form.token"
@@ -166,7 +178,7 @@ const submitForm = () => {
             />
             <v-btn
                 type="submit"
-                color="primary"
+                :color="destructive ? 'error' : 'primary'"
                 block
                 :data-test="testIds.submit"
                 :loading="isSubmitting"
@@ -181,5 +193,7 @@ const submitForm = () => {
                 :data-test="testIds.error"
             />
         </form>
+        <!-- Page-owned way out, e.g. a back link. -->
+        <slot name="footer" />
     </v-card>
 </template>

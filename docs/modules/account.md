@@ -105,6 +105,8 @@ Seven stores, listed by what each one's setup function returns — an internal r
 
 ## Screens
 
+`VerifyEmailConfirm`, `EmailChangeConfirm`, `EmailChangeUndo` and `AccountDeleteConfirm` render `components/LinkTokenConfirmCard.vue`; `PasswordResetConfirm` is its own form (three fields, a cross-field rule, field-level server errors).
+
 | Path                     | Route name              | Access   | Permission | View                              |
 | ------------------------ | ----------------------- | -------- | ---------- | --------------------------------- |
 | `login`                  | `Login`                 | `guest`  | —          | `views/Login.vue`                 |

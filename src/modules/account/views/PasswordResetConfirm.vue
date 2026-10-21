@@ -14,7 +14,8 @@ export default {
  * Public confirm page for a password reset: the emailed one-time token is the credential, and
  * the zod schema chains a `.refine` to check the two password fields match before the store is
  * called. The breach check (`usePasswordBreachCheck`) is advisory only — it never blocks this
- * submit, and works unauthenticated same as this page itself.
+ * submit, and works unauthenticated same as this page itself. Not on `LinkTokenConfirmCard`: a
+ * multi-field form with a cross-field rule and server field errors.
  */
 import { ref, watch } from 'vue';
 import { z } from 'zod';
