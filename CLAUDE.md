@@ -13,6 +13,9 @@
 - Every `v-dialog` binds `:fullscreen` from `useFullscreenDialog()`. No hover-only cue: `hover:` refines
   a visible resting state, never replaces it.
 - Every `eslint-disable`, in a script or a template, carries ` -- <why>`; an unused one fails.
+- Override Vuetify through a prop, `defaults` or the theme, never its classes;
+  `tests/cross-cutting/css-invasiveness.spec.ts` refuses new invasive CSS (`npm run audit:css` lists it).
+  The calls no check can make: `scripts/audit/css-invasive/SKILL.md`. Run it to find them.
 - See `docs/theory/design-system.md`.
 
 ## Function design

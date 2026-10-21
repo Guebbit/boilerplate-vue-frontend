@@ -146,7 +146,8 @@ to the theme's values. The address bar follows the theme through `useThemeColorM
 ## Scoped styles
 
 Tailwind classes are the default. A SFC `<style scoped>` block is for what a class cannot say: a
-multi-layer gradient, a sticky table cell, a Vuetify token raise with a written reason.
+multi-layer gradient, a sticky table cell, or the last step of the
+[order of resort](#overriding-vuetify-the-order-of-resort) below.
 
 - Theme colours only (`var(--v-theme-X)`, `--detail-accent`), never a literal.
 - A declaration used in two SFCs moves to a class in `src/styles/main.css`, parameterised by custom
@@ -163,6 +164,46 @@ flowchart LR
     Spec -->|"repeated"| Main["class in main.css<br/><i>.surface-glow</i>"]
     Spec -->|"unique"| Stay["stays scoped"]
 ```
+
+## Overriding Vuetify: the order of resort
+
+Vuetify answers most styling questions itself. CSS that reaches into its classes is a second answer,
+and a minor release can rename the class under it. So a change to a Vuetify component goes down this
+list and stops at the first step that works:
+
+```mermaid
+flowchart TD
+    Want["a Vuetify component should look different"] --> Prop{"a prop?<br/><i>rounded, border, opacity, lines, base-color</i>"}
+    Prop -->|yes| UseProp["set the prop in the template"]
+    Prop -->|no| Defaults{"the same everywhere?"}
+    Defaults -->|yes| UseDefaults["createVuetify({ defaults })<br/><i>src/ui/vuetify/index.ts</i>"]
+    Defaults -->|no| Theme{"an emphasis or a colour?"}
+    Theme -->|yes| UseTheme["theme variables / colors<br/><i>src/ui/vuetify/theme.ts</i>"]
+    Theme -->|no| Hook{"a public --v-component-* hook?"}
+    Hook -->|yes| UseHook["set the hook on our own element"]
+    Hook -->|no| Allow["an unlayered rule with<br/>/* css-allow check -- why */"]
+```
+
+- `tests/cross-cutting/css-invasiveness.spec.ts` holds it: a `.v-*` selector, `:deep`, `!important`,
+  a `--v-*` override, a raw z-index, a utility that duplicates a prop. `npm run audit:css` lists every
+  hit with its fix. Today's hits are frozen in a baseline that only shrinks
+  ([Design Lint](../tools/design-lint.md#the-invasive-css-scan)).
+- **The allowance** is the last step, never the first. It goes right before the one rule or element
+  it covers, names one check, and says why:
+
+    ```css
+    /* css-allow vuetify-internal -- no prop reaches the field outline */
+    .board .v-field { … }
+    ```
+
+    In a template it is `<!-- css-allow <check> -- <why> -->`, in a script `// css-allow <check> -- <why>`
+    on the line above. One that covers nothing, has no reason, or names two Vuetify parts in one rule
+    is itself a finding, like an unused `eslint-disable`.
+
+- **z-index** is a token. A raw value is local stacking only (-1 to 9); anything that layers over the
+  app is a `--z-index-*` in `@theme`, read as `var(--z-index-…)`.
+- What no check can judge (is an allowance still earned, is a declaration dead, is a stacking order
+  coherent) is the `css-invasive` audit skill: `scripts/audit/css-invasive/SKILL.md`.
 
 ## Hover is not a cue on touch
 

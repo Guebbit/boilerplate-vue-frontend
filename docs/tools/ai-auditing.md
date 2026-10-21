@@ -43,26 +43,29 @@ Two consequences, both non-negotiable:
 
 ## The prompts
 
-| File                                          | Asks                                                                                                                                                          | Writes to                             |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                 | `reports/audit/spec-drift/`           |
-| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                          | `reports/audit/spec-gaps/`            |
-| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
-| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                    | `reports/audit/test-honesty/`         |
-| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
-| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                            | `reports/audit/design-manual/`        |
-| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see?          | `reports/audit/ddd-drift/`            |
+| File                                          | Asks                                                                                                                                                                   | Writes to                             |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                          | `reports/audit/spec-drift/`           |
+| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                                   | `reports/audit/spec-gaps/`            |
+| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                                     | `reports/audit/suite-bloat/`          |
+| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                             | `reports/audit/test-honesty/`         |
+| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)?          | `reports/audit/accessibility-manual/` |
+| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                                     | `reports/audit/design-manual/`        |
+| `scripts/audit/css-invasive/SKILL.md`         | Which CSS answers a question Vuetify or Tailwind already answer, beyond the hits `npm run audit:css` gates? See [Design Lint](./design-lint.md#the-invasive-css-scan). | `reports/audit/css-invasive/`         |
+| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see?                   | `reports/audit/ddd-drift/`            |
 
 The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
 the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
 still a gap. `design-manual` does the same and adds `shell` (the app-level sweep) as a scope; a
 whole-app run starts with a ~45 minute capture, so it prints the command and waits for a person.
+`css-invasive` takes the same scopes, defaults to the whole app, and reads source only: it starts
+from `npm run audit:css -- --json` and judges what the scanner cannot.
 
 ### Each repo keeps the prompts its own stack needs
 
-The two repos do **not** hold one set, and no longer try to. `accessibility-manual` and
-`design-manual` audit UI/UX judgement calls with no backend equivalent; the backend's own
+The two repos do **not** hold one set, and no longer try to. `accessibility-manual`,
+`design-manual` and `css-invasive` audit UI/UX judgement calls with no backend equivalent; the backend's own
 `boilerplate-node-backend/scripts/audit/reachability/SKILL.md` and
 `boilerplate-node-backend/scripts/audit/rate-limit-keys/SKILL.md` reason about a mounted Express request
 path and have no counterpart here.
