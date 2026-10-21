@@ -282,7 +282,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                 >
                     {{ t('example-target-page.button-delete') }}
                 </v-btn>
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'ExamplesList' })">
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ExamplesList' })">
                     {{ t('example-target-page.button-go-to-list') }}
                 </v-btn>
                 <InlineErrorAlert :message="deleteError" data-test="example-target-delete-error" />

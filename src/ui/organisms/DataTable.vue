@@ -11,6 +11,7 @@
  * caller that opts in, and the footer stays hidden either way.
  */
 import { computed, getCurrentInstance, useSlots } from 'vue';
+import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
@@ -263,7 +264,7 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
                     :value="getValue(slotProps.item, header.key)"
                     :column="header"
                 >
-                    {{ getValue(slotProps.item, header.key) ?? '-' }}
+                    {{ getValue(slotProps.item, header.key) ?? EMPTY_VALUE }}
                 </slot>
             </template>
         </v-data-table>
