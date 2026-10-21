@@ -47,6 +47,11 @@ flowchart TD
     class API,OUT,R1,R2,R3,R4 no;
 ```
 
+`formatters` means locale display (`Intl`: dates, numbers, money). A pure serializer that escapes
+for a target format (CSV, Mermaid source) is a rule with a trap, so it stays in `domain/`: see
+`stats/domain/csv.ts` and `stats/domain/mermaid.ts`. The import fence around `domain/` is a feature
+there, because it guards escaping code.
+
 ### The worked example
 
 ```ts
@@ -166,9 +171,10 @@ everything `canDecrement(item.quantity)` said, minus an import, a barrel line an
 
 Both halves are live:
 
-| Kept              | Why it clears the floor                                                              |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| `steppedQuantity` | One caller, but a real trap: the clamp catches a double click outrunning `:disabled` |
+| Kept                         | Why it clears the floor                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `steppedQuantity`            | One caller, but a real trap: the clamp catches a double click outrunning `:disabled` |
+| `escapeCsvCell`, `safeLabel` | A security trap each: the CSV formula-injection prefix, the Mermaid label allow-list |
 
 | Removed        | Why it did not                                |
 | -------------- | --------------------------------------------- |
