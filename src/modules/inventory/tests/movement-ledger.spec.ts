@@ -11,7 +11,7 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import { searchProducts } from '@api';
 import MovementLedger from '../components/MovementLedger.vue';
 import { useInventoryStore } from '../store.ts';
-import { useProductsStore } from '@/modules/products';
+import { seedProducts } from '../../../../tests/support/unit/products-store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -138,7 +138,7 @@ describe('MovementLedger product titles', () => {
     });
 
     it('asks only for titles the products dictionary does not hold yet', () => {
-        useProductsStore().addProduct({
+        seedProducts({
             id: 'p1',
             title: 'Known',
             price: 1,
@@ -155,7 +155,7 @@ describe('MovementLedger product titles', () => {
     });
 
     it('sends no batched search when every title is already known', () => {
-        useProductsStore().addProduct({
+        seedProducts({
             id: 'p1',
             title: 'Known',
             price: 1,

@@ -21,8 +21,9 @@
  * **component** or a **schema** are answering a narrower question, and are the better shape:
  * `PaymentPanel` renders a payment without its caller learning what a provider is.
  *
- * A module's own specs deliberately do not count as consumers. A spec importing its own barrel is
- * the module talking to itself; it should reach `../store` like the rest of the module.
+ * Specs, a sibling's or the module's own, do not count as consumers. A spec importing its own
+ * barrel is the module talking to itself, and test plumbing reaches internals through
+ * `tests/support/`, so a seam only a spec uses never earns a place in the barrel.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -80,17 +81,21 @@ const importedNames = (source: string, target: string): string[] => {
     );
 };
 
+/** Whether a path sits under a `tests` folder, a module's own or the shared one. */
+const isInTestsFolder = (file: string): boolean =>
+    path.relative(SOURCE_ROOT, file).split(path.sep).includes('tests');
+
 /** `<module> → the names other modules actually import from its barrel`. */
 const consumedFromBarrels = (): Map<string, Set<string>> => {
     const consumed = new Map(moduleNames().map((name) => [name, new Set<string>()]));
 
-    for (const file of listFiles(SOURCE_ROOT)) {
+    for (const file of listFiles(SOURCE_ROOT).filter((entry) => !isInTestsFolder(entry))) {
         const owner = file.startsWith(MODULES_ROOT)
             ? path.relative(MODULES_ROOT, file).split(path.sep)[0]
             : undefined;
         const source = readFileSync(file, 'utf8');
 
-        // Own files, specs included: a module is not a consumer of itself.
+        // Own files: a module is not a consumer of itself.
         for (const target of moduleNames().filter((name) => name !== owner))
             for (const name of importedNames(source, target)) consumed.get(target)!.add(name);
     }

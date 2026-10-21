@@ -9,7 +9,6 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import StockMovementForm from '../components/StockMovementForm.vue';
 import { useInventoryStore } from '../store.ts';
-import { useProductsStore } from '@/modules/products';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -43,22 +42,12 @@ const V_AUTOCOMPLETE_STUB = {
 };
 
 /**
- * Mounts one instance of the form, seeded with one product so the select has something to carry.
+ * Mounts one instance of the form; the stubbed select carries the one option it needs.
  *
  * @param mode - Which branch of the schema is under test.
  * @returns The mounted wrapper.
  */
 const mountForm = (mode: 'receipt' | 'adjust') => {
-    const products = useProductsStore();
-    products.addProduct({
-        id: 'p1',
-        title: 'Widget',
-        price: 9.99,
-        currency: 'EUR',
-        inStock: true,
-        lowStock: false
-    });
-
     return mount(StockMovementForm, {
         props: { mode },
         global: { plugins: [vuetify, i18n], stubs: { VAutocomplete: V_AUTOCOMPLETE_STUB } }

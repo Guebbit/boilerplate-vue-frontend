@@ -114,7 +114,7 @@ import { widgetsResponseSchemas } from './response-schemas';
 /**
  * Widgets: a supporting subdomain, specific to this business but not a differentiator.
  *
- * Reaches into `products` — a `conformist` read of `useProductsStore` as it is, to name the
+ * Reaches into `products` — a `conformist` read of `useProductLines` as it is, to name the
  * product a widget belongs to.
  */
 export default {

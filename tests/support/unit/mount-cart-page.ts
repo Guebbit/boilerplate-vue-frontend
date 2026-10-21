@@ -17,7 +17,7 @@ import type { VueWrapper } from '@vue/test-utils';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Cart from '@/modules/cart/views/Cart.vue';
 import { useCartStore } from '@/modules/cart/store.ts';
-import { useProductsStore } from '@/modules/products';
+import { spyOnProductReads } from './products-store.ts';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -111,7 +111,7 @@ export interface MountedCartPage {
 export const mountCartPage = (held?: CartResponse): Promise<MountedCartPage> => {
     const cart = useCartStore();
     if (held) cart.cart = held;
-    vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+    spyOnProductReads().mockResolvedValue([]);
     const wrapper = mount(Cart, {
         global: {
             plugins: [router, vuetify, i18n],
