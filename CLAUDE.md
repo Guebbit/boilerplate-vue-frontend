@@ -62,6 +62,8 @@
 - Docs describing flow, architecture or process MUST include Mermaid diagrams.
 - Never narrate history — no "this used to...", "previously...", "was renamed from...". A comment
   describes the code as it is now; git log is where the past lives.
+  The same holds for `docs/`: a page states why the design is what it is, in the present tense
+  ("there is no X, because…"), never how it got there.
 - Never link to a `.md` file outside `docs/*` — a root-level plan, audit, or report doc is
   ephemeral; only `docs/` is a stable target for a comment to point at.
 
