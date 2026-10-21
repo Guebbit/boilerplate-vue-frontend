@@ -392,7 +392,7 @@ const handleExport = () => {
             <div v-if="capability" class="flex flex-wrap items-baseline gap-2">
                 <span class="font-mono text-lg font-semibold">{{ capability.tag }}</span>
                 <span :dir="capability.direction">{{ capability.nativeName }}</span>
-                <span class="text-sm opacity-70" role="status">
+                <span class="text-sm opacity-muted" role="status">
                     {{ t('locale-entries-page.meta-entries', { count: capability.entryCount }) }} ·
                     {{ t('locale-entries-page.meta-revision', { revision: capability.revision }) }}
                 </span>

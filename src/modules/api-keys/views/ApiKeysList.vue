@@ -184,11 +184,13 @@ const handleRevoke = (apiKey: ApiKey) =>
             :no-data-text="t('generic.no-data')"
         >
             <template v-slot:[`item.name`]="{ item }">
-                <span :class="{ 'opacity-60': statusOf(item) === 'revoked' }">{{ item.name }}</span>
+                <span :class="{ 'opacity-muted': statusOf(item) === 'revoked' }">{{
+                    item.name
+                }}</span>
             </template>
 
             <template v-slot:[`item.publicPrefix`]="{ item }">
-                <span class="font-mono" :class="{ 'opacity-60': statusOf(item) === 'revoked' }">
+                <span class="font-mono" :class="{ 'opacity-muted': statusOf(item) === 'revoked' }">
                     {{ item.publicPrefix }}
                 </span>
             </template>
@@ -200,8 +202,7 @@ const handleRevoke = (apiKey: ApiKey) =>
                         :key="permission"
                         size="small"
                         variant="tonal"
-                        color="tertiary"
-                        :class="{ 'opacity-60': statusOf(item) === 'revoked' }"
+                        :color="statusOf(item) === 'revoked' ? undefined : 'tertiary'"
                     >
                         {{ permission }}
                     </v-chip>

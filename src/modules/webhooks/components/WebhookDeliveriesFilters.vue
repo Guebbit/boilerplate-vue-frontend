@@ -221,7 +221,7 @@ const handlePageChange = (page: number) => {
             </form>
         </v-card>
 
-        <p class="m-0 text-sm opacity-70" role="status">
+        <p class="m-0 text-sm opacity-muted" role="status">
             {{
                 t('webhook-deliveries-page.showing', {
                     shown: props.deliveries.length,

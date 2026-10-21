@@ -246,7 +246,7 @@ const handleSave = () => {
                 <ArrowLeft :size="16" class="mr-1" aria-hidden="true" />
                 {{ t('entity-translations-page.back') }}
             </v-btn>
-            <span class="font-mono text-sm opacity-70" data-test="entity-subject">
+            <span class="font-mono text-sm opacity-muted" data-test="entity-subject">
                 {{ entityType }} / {{ entityId }}
             </span>
         </div>

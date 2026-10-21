@@ -227,12 +227,12 @@ onMounted(refreshLines);
                 <v-card data-test="guest-cart-summary" class="p-5 lg:sticky lg:top-20">
                     <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
                     <dl class="mt-3 grid grid-cols-summary gap-y-1">
-                        <dt class="opacity-70">{{ t('cart-page.label-items-count') }}</dt>
+                        <dt class="opacity-muted">{{ t('cart-page.label-items-count') }}</dt>
                         <dd class="text-right font-medium">{{ guestLines.length }}</dd>
-                        <dt class="opacity-70">{{ t('cart-page.label-total-quantity') }}</dt>
+                        <dt class="opacity-muted">{{ t('cart-page.label-total-quantity') }}</dt>
                         <dd class="text-right font-medium">{{ guestQuantity }}</dd>
                         <template v-if="allPriced">
-                            <dt class="opacity-70">{{ t('cart-page.label-items-total') }}</dt>
+                            <dt class="opacity-muted">{{ t('cart-page.label-items-total') }}</dt>
                             <dd class="text-right font-medium" data-test="guest-cart-total">
                                 {{ formatCurrency(itemsTotal, currency) }}
                             </dd>

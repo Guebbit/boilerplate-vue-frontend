@@ -157,7 +157,7 @@ onMounted(fetchAddresses);
             data-test="address-row-action-error"
         />
 
-        <p v-if="addresses.length === 0" class="opacity-70" data-test="addresses-empty">
+        <p v-if="addresses.length === 0" class="opacity-muted" data-test="addresses-empty">
             {{ t('profile-page.addresses-empty') }}
         </p>
 

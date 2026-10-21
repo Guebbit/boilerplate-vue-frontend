@@ -38,7 +38,7 @@ const continueTo = computed(() =>
 
 <template>
     <template v-if="oauthProviders.length > 0">
-        <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-70">
+        <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-muted">
             <v-divider />
             {{ t('oauth.divider') }}
             <v-divider />
@@ -60,7 +60,7 @@ const continueTo = computed(() =>
         <i18n-t
             keypath="oauth.text-terms-notice"
             tag="p"
-            class="mt-2 text-xs opacity-70"
+            class="mt-2 text-xs opacity-muted"
             data-test="oauth-terms-notice"
         >
             <template #terms>

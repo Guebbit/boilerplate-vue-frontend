@@ -168,7 +168,7 @@ onMounted(fetchSessions);
                     <span v-if="session.device" data-test="session-device">{{
                         session.device
                     }}</span>
-                    <code class="text-xs opacity-70">{{ session.id }}</code>
+                    <code class="text-xs opacity-muted">{{ session.id }}</code>
                     <v-chip
                         v-if="session.current"
                         size="small"

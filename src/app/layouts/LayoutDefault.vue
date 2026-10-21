@@ -270,12 +270,15 @@ watch(abilitiesSignal, () => {
     <v-app>
         <!--
             Skip link (WCAG 2.4.1): the first focusable thing on every page, visible only while it
-            has focus — see `.skip-link` in main.css. Lands on `<v-main>` below, which is focusable
+            has focus (utilities on the anchor, `z-skip-link` above everything). Lands on `<v-main>` below, which is focusable
             for exactly this reason.
         -->
-        <a href="#main" class="skip-link" @click.prevent="skipToContent">{{
-            t('navigation.skip-to-content')
-        }}</a>
+        <a
+            href="#main"
+            class="fixed inset-s-2 -top-20 z-skip-link rounded-lg bg-surface px-4 py-2 font-semibold text-on-surface focus-visible:top-2"
+            @click.prevent="skipToContent"
+            >{{ t('navigation.skip-to-content') }}</a
+        >
 
         <AppHealthBanner />
 

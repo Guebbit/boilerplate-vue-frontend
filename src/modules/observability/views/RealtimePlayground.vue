@@ -152,7 +152,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                         scroll into — focusable, since a scroll box without focus is keyboard-dead.
                     -->
                     <p
-                        class="m-0 text-xs opacity-70"
+                        class="m-0 text-xs opacity-muted"
                         role="status"
                         aria-live="polite"
                         data-test="realtime-feed-summary"
@@ -182,7 +182,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                                 class="mb-2 py-3 ps-5 pe-4 last:mb-0"
                             >
                                 <span
-                                    class="absolute inset-y-0 start-0 w-1"
+                                    class="absolute inset-y-0 inset-s-0 w-1"
                                     :class="KIND_META[entry.kind].stripe"
                                     aria-hidden="true"
                                 />
@@ -200,7 +200,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                                         />
                                         {{ entry.kind }}
                                     </v-chip>
-                                    <span class="text-xs opacity-70">
+                                    <span class="text-xs opacity-muted">
                                         {{ formatTime(entry.timestamp) }}
                                     </span>
                                 </div>
@@ -214,13 +214,13 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                                     class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs sm:grid-cols-4"
                                 >
                                     <div class="flex justify-between gap-2">
-                                        <dt class="opacity-60">
+                                        <dt class="opacity-muted">
                                             {{ t('realtime-playground-page.stat-uptime') }}
                                         </dt>
                                         <dd>{{ formatUptime(entry.payload.uptimeSeconds) }}</dd>
                                     </div>
                                     <div class="flex justify-between gap-2">
-                                        <dt class="opacity-60">
+                                        <dt class="opacity-muted">
                                             {{ t('realtime-playground-page.stat-heap') }}
                                         </dt>
                                         <dd>
@@ -229,7 +229,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                                         </dd>
                                     </div>
                                     <div class="flex justify-between gap-2">
-                                        <dt class="opacity-60">
+                                        <dt class="opacity-muted">
                                             {{ t('realtime-playground-page.stat-requests') }}
                                         </dt>
                                         <dd>
@@ -240,7 +240,7 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                                         </dd>
                                     </div>
                                     <div class="flex justify-between gap-2">
-                                        <dt class="opacity-60">
+                                        <dt class="opacity-muted">
                                             {{ t('realtime-playground-page.stat-sse-clients') }}
                                         </dt>
                                         <dd>{{ entry.payload.realtime.sseClients }}</dd>

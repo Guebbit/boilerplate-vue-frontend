@@ -264,7 +264,7 @@ const STATE_COLORS = {
                     {{ item.orderNumber }}
                 </router-link>
                 <span v-else>{{ item.orderNumber }}</span>
-                <span v-if="item.number > 1" class="ml-1 text-xs opacity-70">
+                <span v-if="item.number > 1" class="ml-1 text-xs opacity-muted">
                     #{{ item.number }}
                 </span>
             </template>

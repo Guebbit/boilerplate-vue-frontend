@@ -352,13 +352,13 @@ const handleDelete = (requestId: string, subject: string) =>
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
                         <h2 class="text-lg font-semibold">{{ request.subject }}</h2>
-                        <p class="text-sm opacity-70">
+                        <p class="text-sm opacity-muted">
                             {{ request.name || t('feedback-inbox-page.anonymous') }} —
                             {{ request.email }} · {{ formatDateTime(request.createdAt) }}
                         </p>
                         <p
                             v-if="request.category || request.orderNumber"
-                            class="text-sm opacity-70"
+                            class="text-sm opacity-muted"
                             data-test="feedback-category"
                         >
                             <v-chip v-if="request.category" size="x-small" variant="tonal" label>
@@ -374,7 +374,7 @@ const handleDelete = (requestId: string, subject: string) =>
                         </p>
                         <p
                             v-if="request.respondedAt"
-                            class="text-sm opacity-70"
+                            class="text-sm opacity-muted"
                             data-test="feedback-responded-at"
                         >
                             {{

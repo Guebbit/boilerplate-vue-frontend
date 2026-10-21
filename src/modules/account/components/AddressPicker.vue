@@ -229,7 +229,7 @@ watch(
                 </template>
             </v-radio>
         </v-radio-group>
-        <p v-else class="mb-2 opacity-70" :data-test="prefix + '-empty'">
+        <p v-else class="mb-2 opacity-muted" :data-test="prefix + '-empty'">
             {{ copy.empty }}
         </p>
         <v-btn variant="tonal" size="small" :data-test="prefix + '-add'" @click="dialogOpen = true">

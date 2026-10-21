@@ -239,7 +239,7 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
                 <RefreshCw :size="16" class="mr-1" aria-hidden="true" />
                 {{ props.loading ? t('generic.loading-state') : t('admin-page.button-refresh') }}
             </v-btn>
-            <span v-if="props.health?.timestamp" class="text-sm opacity-70">
+            <span v-if="props.health?.timestamp" class="text-sm opacity-muted">
                 {{ t('admin-page.label-last-updated') }}:
                 {{ formatTime(props.health.timestamp) }}
             </span>

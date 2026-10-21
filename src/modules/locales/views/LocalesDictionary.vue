@@ -410,9 +410,9 @@ onMounted(() => {
                 <ArrowLeft :size="16" class="mr-1" aria-hidden="true" />
                 {{ t('locales-dictionary-page.back') }}
             </v-btn>
-            <p class="max-w-2xl text-sm opacity-70">{{ t('locales-dictionary-page.intro') }}</p>
+            <p class="max-w-2xl text-sm opacity-muted">{{ t('locales-dictionary-page.intro') }}</p>
             <v-spacer />
-            <span class="text-sm opacity-70" role="status" data-test="dictionary-key-count">
+            <span class="text-sm opacity-muted" role="status" data-test="dictionary-key-count">
                 {{ t('locales-dictionary-page.meta-keys', { count: filteredKeys.length }) }}
             </span>
             <v-btn color="primary" data-test="language-create" @click="languageFormOpen = true">

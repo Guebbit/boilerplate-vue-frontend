@@ -177,7 +177,7 @@ onMounted(() => {
             data-test="levels-low-only"
         />
         <v-spacer />
-        <span class="text-sm opacity-70" role="status" data-test="levels-total">
+        <span class="text-sm opacity-muted" role="status" data-test="levels-total">
             {{ t('inventory-page.total-items', { total: levelsTotal }) }}
         </span>
     </div>

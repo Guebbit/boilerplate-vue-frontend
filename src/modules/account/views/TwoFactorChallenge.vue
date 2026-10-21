@@ -271,7 +271,7 @@ onUnmounted(twoFactor.clearChallenge);
                      above — NOT a live region: re-rendering `role="status"` every second is what
                      used to flood a screen reader with "299… 298… 297…". The paired live
                      region right below speaks only at 60/30/10s and expired. -->
-                    <p class="mb-1 text-sm opacity-70">
+                    <p class="mb-1 text-sm opacity-muted">
                         {{
                             secondsUntilChallengeExpires > 0
                                 ? t('two-factor-challenge-page.expires-in', {

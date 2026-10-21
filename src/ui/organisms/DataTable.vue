@@ -222,12 +222,18 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
             back to the app-wide display.mobile on its own — `mobile-breakpoint` is what switches
             it to its built-in stacked card-per-row layout below 600px ('sm').
         -->
+        <!--
+            `fixed-header`: Vuetify dims header cells while loading unless the header is fixed; the
+            labels must stay legible (WCAG 1.4.3) and the a11y gate must not depend on timing. The
+            table sets no height, so the header never actually sticks.
+        -->
         <v-data-table
             v-model:sort-by="sortBy"
             :headers="vuetifyHeaders"
             :items="items"
             :item-value="itemValue"
             :loading="loading"
+            fixed-header
             :loading-text="loadingText"
             :no-data-text="noDataText"
             items-per-page="-1"

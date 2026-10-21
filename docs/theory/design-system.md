@@ -153,8 +153,10 @@ multi-layer gradient, a sticky table cell, or the last step of the
 - A declaration used in two SFCs moves to a class in `src/styles/main.css`, parameterised by custom
   properties. `.surface-glow` is the example: the hero glow's structure lives once, each hero sets
   its own colour and numbers.
-- A shared class that must beat a Vuetify component background sits outside `@layer`, as the other
-  unlayered rules there do.
+- A shared class that must beat a Vuetify component background sits in `@layer components`, which
+  is declared after Vuetify's component layer.
+- Secondary text is the theme's medium emphasis (`variables['medium-emphasis-opacity']`, 0.82):
+  use `opacity-muted`, never a `.v-*` opacity rule.
 - `tests/cross-cutting/design-tokens.spec.ts` guards it: no literal, no unknown theme name, no
   undeclared breakpoint, and no colour-bearing declaration repeated across SFC blocks.
 

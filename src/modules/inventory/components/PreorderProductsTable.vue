@@ -213,7 +213,7 @@ const editLink = (productId: string) => {
             <template v-slot:[`item.outstanding`]="{ item }">
                 <template v-if="item.level">
                     <strong data-test="preorder-outstanding">{{ item.level.backordered }}</strong>
-                    <span class="ml-1 text-xs opacity-70">
+                    <span class="ml-1 text-xs opacity-muted">
                         {{
                             t('preorders-page.outstanding-split', {
                                 held: item.level.held,

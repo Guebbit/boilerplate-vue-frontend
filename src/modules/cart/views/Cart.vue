@@ -633,9 +633,9 @@ onMounted(() =>
                 >
                     <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
                     <dl class="mt-3 grid grid-cols-summary gap-y-1">
-                        <dt class="opacity-70">{{ t('cart-page.label-items-count') }}</dt>
+                        <dt class="opacity-muted">{{ t('cart-page.label-items-count') }}</dt>
                         <dd class="text-right font-medium">{{ cartSummary.itemsCount }}</dd>
-                        <dt class="opacity-70">{{ t('cart-page.label-total-quantity') }}</dt>
+                        <dt class="opacity-muted">{{ t('cart-page.label-total-quantity') }}</dt>
                         <dd class="text-right font-medium">{{ cartSummary.totalQuantity }}</dd>
                     </dl>
                     <v-divider class="my-3" />
@@ -694,11 +694,11 @@ onMounted(() =>
                     />
                     <v-divider class="my-3" />
                     <dl class="grid grid-cols-summary gap-y-1">
-                        <dt class="opacity-70">{{ t('cart-page.label-items-total') }}</dt>
+                        <dt class="opacity-muted">{{ t('cart-page.label-items-total') }}</dt>
                         <dd class="text-right font-medium" data-test="cart-items-total">
                             {{ formatCurrency(cartSummary.itemsTotal, cartSummary.currency) }}
                         </dd>
-                        <dt v-if="shippingMethodId" class="opacity-70">
+                        <dt v-if="shippingMethodId" class="opacity-muted">
                             {{ t('cart-page.label-shipping-cost') }}
                         </dt>
                         <dd
@@ -711,7 +711,7 @@ onMounted(() =>
                     </dl>
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
-                        <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
+                        <span class="opacity-muted">{{ t('cart-page.label-total') }}</span>
                         <span
                             class="text-xl font-bold"
                             role="status"
@@ -726,7 +726,7 @@ onMounted(() =>
                     <i18n-t
                         keypath="cart-page.text-order-terms"
                         tag="p"
-                        class="mt-4 text-xs opacity-70"
+                        class="mt-4 text-xs opacity-muted"
                         data-test="cart-order-terms"
                     >
                         <template #terms>

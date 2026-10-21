@@ -110,7 +110,7 @@ error cannot be frozen without a disable on each known line.
 | `scoped-type-selector`             | A bare element selector in a scoped block, outside `:deep`                                                |
 | `z-index`                          | A `z-index` that is not `var(--z-index-*)` and not -1…9                                                   |
 | `magic-length`                     | A px length, or a rem off the 0.25rem step, on a spacing or sizing property                               |
-| `utility-redefinition`             | A selector on a class Tailwind generates (`.opacity-70`)                                                  |
+| `utility-redefinition`             | A selector on a class Tailwind generates (`.opacity-0`)                                                   |
 | `block-size`                       | An SFC `<style>` block over 15 declarations                                                               |
 | `unit-disallowed-list`             | A `vh` length (use `dvh`: the mobile address bar moves the viewport)                                      |
 | `duplicate-in-rule`                | The same property twice in a rule                                                                         |

@@ -139,7 +139,7 @@ defineExpose({ applyServerErrors });
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}
             </h2>
-            <p v-if="!isEdit" class="mb-4 text-sm opacity-70">
+            <p v-if="!isEdit" class="mb-4 text-sm opacity-muted">
                 {{ t('locale-form.hint-create') }}
             </p>
 

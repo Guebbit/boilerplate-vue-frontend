@@ -169,7 +169,7 @@ const handleImport = () => {
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ t('entries-import.title') }}
             </h2>
-            <p class="mb-4 text-sm opacity-70">{{ t('entries-import.intro') }}</p>
+            <p class="mb-4 text-sm opacity-muted">{{ t('entries-import.intro') }}</p>
 
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleImport">
                 <!--

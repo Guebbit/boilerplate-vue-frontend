@@ -231,7 +231,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     :key="index"
                     :product="currentProduct"
                 />
-                <p v-if="!isAuth" class="text-sm opacity-70">
+                <p v-if="!isAuth" class="text-sm opacity-muted">
                     {{ t('product-target-page.login-to-buy') }}
                 </p>
             </v-card>

@@ -355,7 +355,7 @@ onMounted(() => {
             The audit's honest number: how many rows MATCH, not how many are shown. A read
             that returned only the newest rows would misreport history as complete.
         -->
-        <span class="text-sm opacity-70" role="status" data-test="movements-total">
+        <span class="text-sm opacity-muted" role="status" data-test="movements-total">
             {{ t('inventory-page.total-items', { total: movementsTotal }) }}
         </span>
         <v-btn

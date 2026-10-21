@@ -68,13 +68,13 @@ const groupedReference = computed(
         </p>
         <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- label, value, copy button: three columns, this panel only -->
         <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
-            <dt class="opacity-70">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>
+            <dt class="opacity-muted">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>
             <dd class="font-medium" data-test="transfer-beneficiary">
                 {{ instructions.beneficiary }}
             </dd>
             <span />
 
-            <dt class="opacity-70">{{ t('transfer-instructions-panel.label-iban') }}</dt>
+            <dt class="opacity-muted">{{ t('transfer-instructions-panel.label-iban') }}</dt>
             <dd class="font-medium" data-test="transfer-iban">{{ instructions.iban }}</dd>
             <CopyButton
                 :text="instructions.iban"
@@ -84,7 +84,7 @@ const groupedReference = computed(
             />
 
             <template v-if="instructions.bic">
-                <dt class="opacity-70">{{ t('transfer-instructions-panel.label-bic') }}</dt>
+                <dt class="opacity-muted">{{ t('transfer-instructions-panel.label-bic') }}</dt>
                 <dd class="font-medium" data-test="transfer-bic">{{ instructions.bic }}</dd>
                 <span />
             </template>
@@ -99,7 +99,7 @@ const groupedReference = computed(
             class="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3"
             data-test="transfer-reference-block"
         >
-            <p class="m-0 text-xs opacity-70">
+            <p class="m-0 text-xs opacity-muted">
                 {{ t('transfer-instructions-panel.label-reference') }}
             </p>
             <div class="mt-1 flex flex-wrap items-center gap-2">

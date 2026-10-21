@@ -208,7 +208,7 @@ void fetchPage({ ...filters });
             </form>
         </v-card>
 
-        <p class="m-0 text-sm opacity-70" role="status">
+        <p class="m-0 text-sm opacity-muted" role="status">
             {{
                 t('admin-page.audit-showing', {
                     shown: entries.length,

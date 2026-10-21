@@ -463,7 +463,7 @@ const handleHardDelete = (userId: string, username: string) =>
                 <v-chip v-if="item.role" size="small" variant="tonal" color="tertiary">
                     {{ item.role }}
                 </v-chip>
-                <span v-else class="opacity-60">—</span>
+                <span v-else class="opacity-muted">—</span>
             </template>
 
             <template v-slot:[`item.active`]="{ item }">

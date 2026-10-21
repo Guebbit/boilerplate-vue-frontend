@@ -373,7 +373,7 @@ const handleHardDelete = (productId: string, title: string) =>
             data-test="facet-chips"
         >
             <div v-if="facets.categories.length > 0" class="flex flex-wrap items-center gap-2">
-                <span class="text-sm opacity-70">{{
+                <span class="text-sm opacity-muted">{{
                     t('products-list-page.label-categories')
                 }}</span>
                 <!--
@@ -396,7 +396,7 @@ const handleHardDelete = (productId: string, title: string) =>
                 </v-chip>
             </div>
             <div v-if="facets.tags.length > 0" class="mt-2 flex flex-wrap items-center gap-2">
-                <span class="text-sm opacity-70">{{ t('products-list-page.label-tags') }}</span>
+                <span class="text-sm opacity-muted">{{ t('products-list-page.label-tags') }}</span>
                 <v-chip
                     v-for="facet in facets.tags"
                     :key="'tag-' + facet.name"

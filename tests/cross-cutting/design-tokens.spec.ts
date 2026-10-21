@@ -53,8 +53,8 @@ const holdsColorLiteral = ({ prop, value }: Declaration): boolean => {
 
 describe('design tokens, the stylesheet half', () => {
     it('reads some CSS at all', () => {
-        // Not vacuous: main.css and the six SFC style blocks.
-        expect(parsed.length).toBeGreaterThanOrEqual(7);
+        // Not vacuous: main.css and the remaining SFC style blocks.
+        expect(parsed.length).toBeGreaterThanOrEqual(2);
         expect(declarations().length).toBeGreaterThan(20);
     });
 
@@ -201,5 +201,57 @@ describe('design tokens, the boot surfaces', () => {
         expect(html).toContain(`background: ${light.colors.background};`);
         expect(html).toContain(`color: ${dark.colors['on-background']};`);
         expect(html).toContain(`background: ${dark.colors.background};`);
+    });
+});
+
+/** WCAG relative luminance of a `#rrggbb` colour. */
+const luminance = (hex: string): number => {
+    const [red, green, blue] = [1, 3, 5].map((at) => {
+        const channel = Number.parseInt(hex.slice(at, at + 2), 16) / 255;
+        return channel <= 0.039_28 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+};
+
+/** Composites `foreground` at `alpha` over `background`, per channel. */
+const over = (foreground: string, background: string, alpha: number): string =>
+    `#${[1, 3, 5]
+        .map((at) =>
+            Math.round(
+                Number.parseInt(foreground.slice(at, at + 2), 16) * alpha +
+                    Number.parseInt(background.slice(at, at + 2), 16) * (1 - alpha)
+            )
+                .toString(16)
+                .padStart(2, '0')
+        )
+        .join('')}`;
+
+/** WCAG contrast ratio of two `#rrggbb` colours. */
+const contrast = (a: string, b: string): number => {
+    const [high, low] = [luminance(a), luminance(b)].toSorted((x, y) => y - x);
+    return (high + 0.05) / (low + 0.05);
+};
+
+describe('design tokens, secondary text', () => {
+    const themes = [
+        ['light', light],
+        ['dark', dark]
+    ] as const;
+    const surfaces = ['surface', 'background', 'surface-variant'] as const;
+
+    it.each(
+        themes.flatMap(([name, theme]) =>
+            surfaces.flatMap((surface) =>
+                (['on-surface', 'error'] as const).map(
+                    (ink) => [name, theme, surface, ink] as const
+                )
+            )
+        )
+    )('%s theme, %#: medium-emphasis text passes AA', (_name, theme, surface, ink) => {
+        const alpha = theme.variables['medium-emphasis-opacity'];
+        const background = theme.colors[surface];
+        const text = over(theme.colors[ink], background, alpha);
+
+        expect(contrast(text, background)).toBeGreaterThanOrEqual(4.5);
     });
 });

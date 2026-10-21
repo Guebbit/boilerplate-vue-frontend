@@ -227,7 +227,7 @@ onMounted(() => {
 <template>
     <div id="locales-list-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
-            <p class="max-w-2xl text-sm opacity-70">{{ t('locales-list-page.intro') }}</p>
+            <p class="max-w-2xl text-sm opacity-muted">{{ t('locales-list-page.intro') }}</p>
             <v-spacer />
             <v-btn
                 variant="tonal"
