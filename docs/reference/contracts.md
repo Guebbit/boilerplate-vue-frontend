@@ -79,7 +79,7 @@ Both entries are produced in the backend and arrive here as outputs, so a fork h
 resolution: the backend's copy is right, and `npm run sync:frontend` **over there** applies it.
 Editing this side's copy is the failure the list is worst at describing and best at catching.
 
-A third entry used to sit there: the analytics event names this app emitted. It emits none any more
+There is no third entry for analytics event names: this app emits none
 — pageviews are automatic and everything with a request behind it is reported by the backend — so
 there is no catalogue to publish and nothing to keep in step. See
 [Observability](../tools/observability.md#event-taxonomy).

@@ -58,24 +58,27 @@ and the kinds differ enormously in what they cost when the upstream moves:
 
 ### Where the map lives
 
-In the docblock at the top of each module's `module.ts`, in prose, next to the imports it describes.
-`cart` reaches four siblings, and its docblock says how it depends on each: three `published-language`
-vocabularies (`delivery`, `payments`, `account`) and one `customer-supplier` call (`products`, whose
-cached catalogue it drops after each cart write). `published-language` is the cheapest relationship in
-the table and the one to copy: `delivery` publishes a component and no storage at all.
+On each module's docs page, under "The map": a Mermaid diagram plus one bullet per edge. That is the
+only place a kind is written. [Modules](../modules/index.md#the-whole-map) draws the overview, and
+`tests/cross-cutting/module-map.spec.ts` holds the overview and the pages to each other. A
+`module.ts` docblock points at its page and states no kind. `cart` reaches four siblings, and its
+page says how it depends on each: three `published-language` vocabularies (`delivery`, `payments`,
+`account`) and one `customer-supplier` call (`products`, whose cached catalogue it drops after each
+cart write). `published-language` is the cheapest relationship in the table and the one to copy:
+`delivery` publishes a component and no storage at all.
 
-This used to be a `dependsOn` field on the manifest — a typed array of `{ module, as, because }`
-edges — held to a 108-line cross-cutting spec that checked every edge was really imported, every
-import had a declared edge, and every `because` was a written sentence. Both are gone, and it is
-worth saying why, because the reasoning applies to any labelled-graph field someone is tempted to add
-back:
+### Why there is no dependency field on the manifest
 
-- **Nothing read it at runtime.** Not the router, not a store, not a guard. It was documentation
-  with a type annotation.
-- **It was self-reported.** Because it was not derived from real imports, it could only prove a
-  developer's annotations agreed with each other — the actual proof still needed a spec scanning
-  every `.ts` and `.vue` file for `@/modules/` strings.
-- **The enforcement that matters is structural and still there.** `eslint.config.ts` generates one
+A typed `dependsOn: { module, as, because }[]` on the manifest, checked by a spec against real
+imports, looks like the natural home. It is not, and the reasoning applies to any labelled-graph
+field someone is tempted to add:
+
+- **Nothing would read it at runtime.** Not the router, not a store, not a guard. It would be
+  documentation with a type annotation.
+- **It would be self-reported.** Because it is not derived from real imports, it could only prove a
+  developer's annotations agree with each other — the actual proof still needs a spec scanning every
+  `.ts` and `.vue` file for `@/modules/` strings.
+- **The enforcement that matters is structural.** `eslint.config.ts` generates one
   `eslint-plugin-boundaries` policy per module from a hand-maintained `MODULE_EDGES` map: a module
   may reach only the siblings that map names for it — and only through their `index.ts` barrel,
   never an internal file — checked at the resolved import on every `npm run lint`, dynamic
@@ -106,10 +109,9 @@ glossary would have to pick one and be wrong in the other place.
 Writing the client's definition down is also the cheapest guard there is against someone deciding
 the store should compute a total.
 
-::: tip It used to be a manifest field
-Each module declared a `language: {}` map. It was removed: nothing read it, nothing checked it was
-true, and it sat in `module.ts` rather than beside the store or component each entry described. The
-prose moved to the glossary page.
+::: tip Why the language is not a manifest field
+A `language: {}` map in `module.ts` would be read by nothing, checked by nothing, and sit away from
+the store or component each entry describes. The glossary sits beside the meaning instead.
 :::
 
 ## 4. Subdomain distillation — where to spend effort
@@ -132,11 +134,7 @@ The rule of thumb that follows: **a `generic` module should not carry a `domain/
 pure-rules layer inside authentication or i18n is effort spent on the part of the client that should
 stay replaceable.
 
-This used to be a required `subdomain` field on the manifest, held to that rule by a cross-cutting
-spec. Both are gone: nothing read the field at runtime, and the check it enabled — refusing a
-`domain/` folder inside a module classified `generic` — was a test acting on a label nothing else
-ever consulted. The classification above is still true and still useful to a reader deciding where
-to put a new rule; it just is not proven by a passing test any more, the same way `core` never was.
+There is no `subdomain` field on the manifest, and no spec holding it. Nothing would read it at runtime, and the one check it enables — refusing `domain/` inside a `generic` module — would be a test acting on a label nothing else consults. The table above is guidance for a reader deciding where a rule goes; no test proves it, the same as `core`.
 
 There is deliberately **no** rule, enforced or otherwise, that `core` must have a `domain/`. `cart`
 has one because quantity clamping is a genuine client-side rule. `products` and `orders` have one
@@ -162,12 +160,11 @@ in this table is an argument for building an aggregate.
 has to know whether to show a cancel button, which statuses to offer, whether to render a card form
 — and the shortest path to each answer is a comparison written here.
 
-Three of them existed. A status dropdown listed every value of the enum, a cancel button tested for
-`pending` or `paid`, a pay form tested for `pending`. All three agreed with the API on the day they
-were written, and nothing could have told us when they stopped.
-
-They are gone, and what replaced them is not a better comparison — it is no comparison. Every read
-of an order or a payment carries an `actions` block the server computed for that caller:
+Three shapes are tempting: a status dropdown listing every value of the enum, a cancel button
+testing for `pending` or `paid`, a pay form testing for `pending`. Each agrees with the API on the
+day it is written, and nothing tells you when it stops. The answer is not a better comparison — it
+is no comparison. Every read of an order or a payment carries an `actions` block the server computed
+for that caller:
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
@@ -192,11 +189,10 @@ what the button would do, the rule is in the wrong repository.**
 
 **A module publishes exactly what a sibling imports. No sibling, no barrel.**
 
-Applying that removed whole barrels (`admin`, `orders`, `realtime`, and later `wishlist`, once the
-product page's heart became a contribution to a slot instead of an import) and the stores nobody had
-ever imported.
+So `orders` and `wishlist` publish no barrel: no sibling imports them, and `wishlist`'s heart reaches
+the product page through a slot contribution, not an import.
 
-What survived says something specific about a client. The modules that publish **state access** are
+What remains says something specific about a client. The modules that publish **state access** are
 the ones siblings read or ask to change state: `cart` publishes its store (asked to refetch by
 `wishlist`, to refill by `orders`), and `products` publishes narrow handles on its store — read by
 `cart`, `wishlist`, `inventory` and `stock-alerts` through `useProductLines` and `shelfStateOf`, and

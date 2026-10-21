@@ -27,7 +27,7 @@ Dependencies point one way — `i18n → infrastructure → ui → kernel → mo
 classified into exactly one of these tiers (`boundaries/no-unknown-files`), and every edge between
 two tiers is denied by default until a policy names it allowed (`boundaries/dependencies`).
 
-`kernel` used to be allowed to read `@/modules` — the registry list — and that exemption is gone.
+`kernel` may not read `@/modules`, not even the registry list.
 The registry names every enabled domain, so anything reading it knows THIS application rather than
 this kind of application, which is exactly what `src/app` is for. `src/app/router/index.ts` still
 names no individual domain: it walks the registry.
@@ -241,7 +241,7 @@ Two signals, wired through a single Pinia store:
 
 Both are initialized in `src/main.ts` and accessed via `useObservabilityStore()`. Page views are tracked automatically by the Umami tracker.
 
-## Two decisions the source files no longer argue
+## Two decisions the source files do not argue
 
 ### The session store is not the account module
 
@@ -274,11 +274,10 @@ nothing else. Neither depends on the other for its own strings, which is what le
 boilerplate be recombined with a different counterpart.
 
 The API's own copy never reaches this app. It resolves its own keys and puts finished text on the
-wire, so a response arrives already translated and the client prints what it was sent. There used
-to be a reserved `api.*` namespace holding the API's dictionary for the one case that needed this
-app's own words — no response at all, a 401 with an empty body, a bare 502 — and it is gone: those
-messages are `api-errors.*` in this app's dictionary, and they are now translatable for every
-language, including the ones this build does not bundle.
+wire, so a response arrives already translated and the client prints what it was sent. There is no
+reserved `api.*` namespace holding the API's dictionary. The one case that needs this app's own
+words — no response at all, a 401 with an empty body, a bare 502 — reads `api-errors.*` in this
+app's dictionary, translatable for every language, including the ones this build does not bundle.
 
 ### Files are defaults, the database overrides them
 

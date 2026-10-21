@@ -83,8 +83,8 @@ the API.
 | `OrdersList`  | `mine` | everyone signed in            | the viewer's own orders — the owner is **pinned** in the search, always  |
 | `SalesOrders` | `all`  | whoever holds `display:Order` | every order, with the id/user/product/email boxes and the transfer queue |
 
-The split is the A2 decision of the sales plan, and it fixes a real bug: the account page used to send
-`userId` only when set, so a staff account saw the whole shop under "My orders". Now the account
+The split is the A2 decision of the sales plan, and it prevents a real bug: an account page that sends
+`userId` only when set shows a staff account the whole shop under "My orders". So the account
 page pins the viewer's id (`pinOwner`, re-applied after Reset, kept out of the URL), and the staff
 page drops an owner left behind by it. `SalesOrders` asks `can: ['display', 'Order']`, because `['read',
 'Order']` would admit a customer holding `read:Order`; it sits in the admin menu's

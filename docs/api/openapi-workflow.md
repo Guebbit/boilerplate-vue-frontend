@@ -54,7 +54,7 @@ below) and a copy that has fallen behind the backend (`spec-identity`).
 
 The `api-freshness` job regenerates the client and fails if the committed output differs. Two details matter when editing it:
 
-- **The pathspec must list every orval output.** It previously read `api/` — a directory this repo has never had — so `git diff` matched nothing, exited 0, and the job passed without checking anything from the day it was written. If you add or retarget an output block in `orval.config.ts`, update the pathspec in the same commit.
+- **The pathspec must list every orval output.** A pathspec naming a directory that does not exist matches nothing: `git diff` exits 0 and the job passes without checking anything. If you add or retarget an output block in `orval.config.ts`, update the pathspec in the same commit.
 - **Formatting must be normalised before diffing.** Orval emits 2-space indentation while this repo's Prettier config uses 4, and the committed output is formatted. Without `npx prettier --write` before the diff, the job reports thousands of lines of pure indentation churn on every run.
 
 The AsyncAPI side has the matching pair of jobs, `lint-asyncapi` and `asyncapi-types-freshness`.

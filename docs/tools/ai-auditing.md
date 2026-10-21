@@ -348,10 +348,8 @@ footnote exists is that the previous round of claims had quietly gone stale.
 
 Two notes worth keeping, because they outlived the tools:
 
-- **The reason for rejecting the review bots changed.** It used to be "a hosted bot cannot read
-  `CLAUDE.md`". That is no longer true — CodeRabbit reads that exact filename by default now. They
-  are rejected on redundancy and cost, which is a different argument, and the old one should not be
-  repeated.
+- **The reason for rejecting the review bots is redundancy and cost.** "A hosted bot cannot read
+  `CLAUDE.md`" is not a reason: CodeRabbit reads that exact filename by default.
 - **Nothing in this niche is alive.** StrykerJS has not added LLM-authored mutants either. Meta run
   the idea in production internally, but it is not a product. If that changes, the prompt files here
   are the thing that would be replaced.

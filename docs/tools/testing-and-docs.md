@@ -158,7 +158,7 @@ flowchart TB
 - **"Give me _a_ product, I do not care which."** → the backend's `src/modules/<name>/factories.ts`. The opposite need: fresh, isolated, overridable per test, and never the demo data — the backend's test files would interfere with each other if they shared rows.
 - **"Give me one the API must _reject_."** → `boilerplate-node-backend/tests/support/contract-data.ts`. Derived from the zod schemas so each payload violates exactly one declared constraint. Nothing else can produce something deliberately illegal, which is the difference between a contract test and a fixture.
 
-Merging any two would mean one of those questions stops being asked. The merge that _was_ worth doing — the demo dataset, previously written out by hand on both sides — is the one already done.
+Merging any two would mean one of those questions stops being asked. The merge that _was_ worth doing — the demo dataset, which would otherwise be written out by hand on both sides — is the one already done.
 
 **The one gap:** this repo has no counterpart to the backend's per-module `src/modules/<name>/factories.ts`, so "give me a product" is hand-rolled wherever it is needed — `src/modules/products/tests/store.spec.ts` carries its own literal. One literal is not yet a pattern; worth folding into a shared builder when a second call site appears.
 

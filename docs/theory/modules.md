@@ -58,11 +58,11 @@ the "extractable i18n runtime" note under [Layers](./layers.md).
 | **UI**             | `src/ui`             | nothing but design                                               | infra                      |
 | **Infrastructure** | `src/infrastructure` | nothing above it                                                 | —                          |
 
-### Why `app` exists, and what it fixed
+### Why `app` exists
 
-The module-system tier — then called `platform`, now `kernel` — used to hold the router, the
-layouts, the route guards, the app views and `AppNavigation`, and the tier rule carried an explicit
-exemption letting it import `@/modules`, the registry. That exemption was the whole problem: **the
+The module-system tier, `kernel`, must not hold the router, the layouts, the route guards, the app
+views or `AppNavigation`, because they would need an exemption to import `@/modules`, the registry.
+That exemption is the whole problem: **the
 registry names every enabled domain**, so anything reading it knows this application rather than
 this kind of application.
 
@@ -121,9 +121,8 @@ worth keeping.
 
 `core` is not an unusual name — it is an **overloaded** one, which is worse. Nest and Angular use
 `@nestjs/core` and `@angular/core` for the DI container and call their substrate `common`; Spring
-and Backstage use "core" for the substrate, as this repo did. The paragraph above used to open by
-insisting that `core` did not mean what a reader arriving from Vue tooling would assume — and a name
-that needs a standing disclaimer is doing negative work. A novel name makes someone look it up; an
+and Backstage use "core" for the substrate, as an earlier name here did. A name
+that needs a standing disclaimer for readers arriving from Vue tooling is doing negative work. A novel name makes someone look it up; an
 overloaded one makes them think they already know, and that failure is silent.
 
 `platform` was borrowed from VS Code, where `vs/base` is utility code, `vs/platform` is the service
@@ -181,13 +180,12 @@ accessor returns (the cart's total). `section` and `pinned` are placement only; 
 is still the route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
 
 What subdomain a module sits in, and what kind of relationship each arrow to a sibling is, are the
-module's **strategic** declarations too — but they are not fields here. They are prose in the
-docblock at the top of each `module.ts`, next to the imports and the navigation entries they
-describe, because a reader meets a claim and the code it describes in the same place that way. See
-[Strategic DDD](./strategic-ddd.md) for why that reads better than a typed `subdomain` and
-`dependsOn` used to.
+module's **strategic** declarations too — but they are not fields here. They are prose: the subdomain in the
+docblock at the top of each `module.ts`, and each arrow's kind on the module's docs page under "The
+map". See [Strategic DDD](./strategic-ddd.md) for why that reads better than a typed `subdomain`
+and `dependsOn`.
 
-Each optional field replaced a shared file that used to enumerate domains — the navigation list,
+Each optional field replaces a shared file that would otherwise enumerate domains — the navigation list,
 the response-schema table, the locale bundle. That is most of the point: `src/modules.ts` is the
 only place that HAS to. The corner loading indicator follows the same rule: a module opts its
 stores in with `loadingKeys` (their `resourceKey` prefixes), and `LayoutDefault.vue` collects them.

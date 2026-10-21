@@ -87,8 +87,8 @@ state — the key header, the in-flight retry ladder, the empty-cart shape — l
 `composables/idempotent-calls.ts` and `domain/empty-cart.ts`.
 
 Stepping a line's quantity does not call the store directly. `composables/use-line-quantity.ts`
-debounces per-product clicks into one trailing request each — three quick clicks on `+` used to put
-three requests in flight, and the cart ended up showing whichever one the server answered LAST.
+debounces per-product clicks into one trailing request each — three quick clicks on `+` would put
+three requests in flight, and the cart would end up showing whichever one the server answered LAST.
 A step still inside its debounce when the page goes away (a reload, a closed tab) is not lost: on
 `pagehide` the view hands it to `sendKeepalive` (`src/infrastructure/http/keepalive.ts`), a `fetch` with
 `keepalive`, because axios's request is cancelled with the page and `sendBeacon` can send neither a

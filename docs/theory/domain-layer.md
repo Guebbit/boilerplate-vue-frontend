@@ -71,8 +71,8 @@ re-renders `:disabled`, and the second one would send `quantity: 0` to an endpoi
 "remove". Someone tidying the template would delete that guard as dead code and reopen the bug,
 which is exactly the kind of trap that earns a name.
 
-A companion that did **not** earn one: `canDecrement(q) => q > MIN_LINE_QUANTITY` used to sit here,
-and is now `:disabled="item.quantity <= MIN_LINE_QUANTITY"` in the template. One caller, no trap —
+A companion that did **not** earn one: `canDecrement(q) => q > MIN_LINE_QUANTITY` does not belong here:
+the template says `:disabled="item.quantity <= MIN_LINE_QUANTITY"` in the template. One caller, no trap —
 see [the floor](#the-floor-testable-without-mounting-a-component-is-necessary-not-sufficient).
 
 ### The rule, enforced by lint
