@@ -75,7 +75,7 @@ const { redirectAfterLogin } = usePostLoginRedirect();
  * screen, which no schema shape can do — `formErrors` holds resolved strings by then.
  */
 const loginSchema = usersSchema.pick({ email: true }).extend({
-    password: z.string().min(8, { error: () => t('users-form.password-required') })
+    password: z.string().min(1, { error: () => t('users-form.password-required') })
 });
 
 /**

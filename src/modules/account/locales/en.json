@@ -94,6 +94,7 @@
         "addresses-required-city": "A city is required",
         "addresses-required-zip": "A ZIP is required",
         "addresses-required-country": "A country is required",
+        "addresses-too-long": "At most {max} characters",
         "sessions-revoke-named": "Revoke session {id}",
         "sessions-revoke-current": "Revoke this session (signs you out)",
         "avatar-title": "Profile picture",

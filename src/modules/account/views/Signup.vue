@@ -76,7 +76,7 @@ const signupSchema = usersSchema
         password: usersPasswordSchema,
         passwordConfirm: z
             .string()
-            .min(8, { error: () => t('users-form.password-confirm-required') }),
+            .min(1, { error: () => t('users-form.password-confirm-required') }),
         // The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
         // enforces this server-side too, so a client that skipped this refine would still 422.
         termsAccepted: z.boolean().refine((value) => value, {

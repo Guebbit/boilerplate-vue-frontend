@@ -96,7 +96,7 @@ const {
             password: usersPasswordSchema,
             passwordConfirm: z
                 .string()
-                .min(8, { error: () => t('users-form.password-confirm-required') })
+                .min(1, { error: () => t('users-form.password-confirm-required') })
         })
         .refine((data) => data.password === data.passwordConfirm, {
             error: () => t('users-form.password-dont-match'),

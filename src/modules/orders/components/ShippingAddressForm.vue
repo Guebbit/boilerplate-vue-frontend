@@ -28,6 +28,7 @@ import { countryLabel } from '@/i18n/country-label.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useOrdersStore } from '../store.ts';
 import type { OrderAddress } from '@types';
+import { ADDRESS_MAX } from '@/infrastructure/utils/address-limits.ts';
 
 /**
  * The order, and the address it ships to now (the form starts from it).
@@ -86,12 +87,12 @@ const required = () =>
  * The form's rules; `phone` is optional and cleared by leaving it empty.
  */
 const schema = z.object({
-    fullName: required().max(100),
-    street: required().max(200),
-    city: required().max(100),
-    zip: required().max(20),
+    fullName: required().max(ADDRESS_MAX.fullName),
+    street: required().max(ADDRESS_MAX.street),
+    city: required().max(ADDRESS_MAX.city),
+    zip: required().max(ADDRESS_MAX.zip),
     country: required(),
-    phone: z.string().trim().max(32)
+    phone: z.string().trim().max(ADDRESS_MAX.phone)
 });
 
 /**
