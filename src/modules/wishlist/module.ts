@@ -12,9 +12,9 @@ import routes from './routes';
 /**
  * The visitor's saved products.
  *
- * Two arrows go out. `cart` is `conformist`: the move-to-cart is a WISHLIST endpoint, and the cart
+ * Two arrows go out. `cart` is `customer-supplier`: the move-to-cart is a WISHLIST endpoint, and the cart
 store is then asked to refetch itself so the header's badge cannot lag a write this module
-initiated — the cart is never asked to write. `products` is `customer-supplier`: the page reads
+initiated — the cart is never asked to write. `products` is `conformist`: the page only reads
 its saved lines' titles from the products dictionary (`useProductLines`). The reverse arrows do
 not exist: the product page's heart is contributed to the `product-actions` slot by this
 manifest, so `products` never imports the wishlist.

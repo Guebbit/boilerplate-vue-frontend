@@ -38,7 +38,7 @@ export interface RuntimeConfig {
 /**
  * Reads one runtime-configurable value, trimmed, `undefined` when unset or blank — never `''`, so
  * every call site can chain `|| import.meta.env.VITE_X` without a runtime `''` masking that
- * fallback the way an empty build arg used to. `||`, not `??`: a blank `VITE_*` line in `.env` is `''`
+ * fallback. `||`, not `??`: a blank `VITE_*` line in `.env` is `''`
  * too, and must read as unset.
  *
  * @param name - The `RuntimeConfig` key to read.

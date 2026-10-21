@@ -178,7 +178,7 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 
 ### The folder is optional
 
-Four modules have one today — `cart`, `locales`, `payments` and `users` — and most never will.
+Nine modules have one today — `cart`, `delivery`, `example`, `inventory`, `locales`, `notifications`, `orders`, `products` and `stats` — and the rest never will.
 
 Worth noting: `canAccess()` in `app/guards/authentications.ts` is already exactly this pattern
 — a pure function, requirement in, boolean out. It stays in `app/` because it is a rule about _this

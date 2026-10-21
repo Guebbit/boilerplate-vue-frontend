@@ -1,8 +1,7 @@
 /**
  * @module
  * Vitest spec mocking `orvalMutator` directly, so the assertions can inspect the raw request body
- * sent for `overrideStatus` — the operator's manual correction door, replacing what `PUT
- * /orders/:id` used to accept for `shipped`/`delivered`.
+ * sent for `overrideStatus` — the operator's manual correction door for `shipped`/`delivered`.
  *
  * Transport-mocked like `cancel.spec.ts`; what is pinned here is that the corrected record
  * REPLACES the cached one, and that `to`/`reason` both reach the body unchanged.

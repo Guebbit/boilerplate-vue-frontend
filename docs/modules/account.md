@@ -43,7 +43,7 @@ flowchart LR
 
 ## The story
 
-Twelve screens, six stores, and the widest API surface of any module here — which makes it a
+Twelve screens, seven stores, and the widest API surface of any module here — which makes it a
 misleadingly ordinary-looking domain. Five things about it are worth knowing before you edit it.
 
 **The session is not in here.** The credential (an access token in `jwt` mode, a held-cookie flag in `cookie` mode: the backend's `NODE_SESSION_MODE`, read from `GET /account/session-config`) lives in `infrastructure/session`, because
@@ -51,7 +51,7 @@ misleadingly ordinary-looking domain. Five things about it are worth knowing bef
 caller's own rules before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
 _editable record_, not the credential.
 
-**One domain, six stores.** They split by lifecycle, not by screen: `accountAuth` establishes and
+**One domain, seven stores.** They split by lifecycle, not by screen: `accountAuth` establishes and
 ends a session, `accountProfile` owns the editable record once one exists, and `accountSessions`,
 `accountAddresses`, `accountOAuthProviders` and `accountTwoFactor` each own a panel's own slice.
 A store that outlives its panel would be a cache nobody invalidates.

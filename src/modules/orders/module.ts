@@ -22,6 +22,9 @@ import routes from './routes';
  * `payments`' side of the barrel, so this module gains no edge to that endpoint. The withdrawal
  * button is the same shape again: `Order.vue` mounts `returns`' `WithdrawalPanel`, which owns the
  * confirmation and the order's returns list, so `orders` never calls a returns operation itself.
+ * `Order.vue` also mounts `delivery`'s `ShippingMethodName` on the same terms. The one exception is
+ * `OrderEdit.vue`'s `useOrderRefund`, a `payments` composable that performs a refund: a
+ * `customer-supplier` edge.
  *
  * The customer’s history, the staff's own page over the same list (`SalesOrders`), the payments
  * admin status screens. Where the shop’s outcome becomes visible — but the invariants that decide a

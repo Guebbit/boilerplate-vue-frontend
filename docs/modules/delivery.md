@@ -43,8 +43,8 @@ flowchart LR
 
 ## The story
 
-**No routes and no navigation entries**, and three modules pointing at it — the only module here with
-that shape.
+**No routes and no navigation entries**, and three modules pointing at it — shared only with
+`notifications`.
 
 | Surface                    | Used by                       | On                        |
 | -------------------------- | ----------------------------- | ------------------------- |

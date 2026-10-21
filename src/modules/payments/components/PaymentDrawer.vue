@@ -142,10 +142,14 @@ const orderEditLink = computed(() => {
 });
 
 /**
+ * Viewport width, the input of {@link drawerWidth}.
+ */
+const { width: screenWidth } = useDisplay();
+
+/**
  * The drawer's width: 440 px, but never wider than the screen. Vuetify does not cap a drawer's
  * width, so on a 320 px phone 120 px of it would fall off the edge.
  */
-const { width: screenWidth } = useDisplay();
 const drawerWidth = computed(() => Math.min(DRAWER_WIDTH, screenWidth.value));
 
 /**

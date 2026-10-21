@@ -30,8 +30,8 @@ import { ROUTES } from '@api/routes';
  * The method+pattern+schema-name triple is generated (`scripts/contracts/generate-route-table.ts`
  * → `contracts/rest/routes.ts` → `npm run gen:api`) straight from `openapi.yaml`: an
  * `AxiosRequestConfig` does not carry which operation issued it, so the SCHEMA still has to be
- * resolved here at runtime, but the METHOD, PATTERN and WHICH SCHEMA are no longer hand-typed,
- * and so can no longer drift out of step with the contract the way two hand copies once did.
+ * resolved here at runtime, but the METHOD, PATTERN and WHICH SCHEMA are never hand-typed,
+ * so they cannot drift out of step with the contract.
  *
  * A missing row is not fatal — `resolveResponseSchema` returns `undefined` and the caller warns in
  * dev, because an unmapped route is a maintenance gap, not proof the response is wrong.

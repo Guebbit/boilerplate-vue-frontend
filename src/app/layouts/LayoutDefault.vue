@@ -43,8 +43,7 @@ import { enabledModules } from '@/modules';
 
 /**
  * The active route, read for `meta.title`/`meta.customHero`/`meta.centered` — the three things a
- * view used to pass this layout as props, now that there is no view-to-layout slot or prop to
- * pass them through at all.
+ * view declares on its route, since a layout has no slot or prop a view could fill.
  */
 const route = useRoute();
 

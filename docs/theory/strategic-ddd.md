@@ -53,7 +53,7 @@ and the kinds differ enormously in what they cost when the upstream moves:
 | Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                |
 | -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
 | `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `inventory → products` |
-| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → products`  |
+| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → cart`      |
 | `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`    |
 
 ### Where the map lives
@@ -119,8 +119,8 @@ and everything else should use the simplest thing that works.
 | Subdomain    | Meaning                                                         | Here                                                     |
 | ------------ | --------------------------------------------------------------- | -------------------------------------------------------- |
 | `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                             |
-| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`, `stats` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `admin`, `feedback`, `realtime`      |
+| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`, `stats`, `notifications`, `returns`, `stock-alerts` |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `api-keys`, `example`, `feedback`, `locales`, `observability`, `webhooks` |
 
 The rule of thumb that follows: **a `generic` module should not carry a `domain/` folder.** A
 pure-rules layer inside authentication or i18n is effort spent on the part of the client that should
@@ -133,9 +133,10 @@ ever consulted. The classification above is still true and still useful to a rea
 to put a new rule; it just is not proven by a passing test any more, the same way `core` never was.
 
 There is deliberately **no** rule, enforced or otherwise, that `core` must have a `domain/`. `cart`
-has one because quantity clamping is a genuine client-side rule. `products` and `orders` are core and
-have none — prices and status transitions are the server's to decide, and a second implementation
-here would be drift, not thoroughness.
+has one because quantity clamping is a genuine client-side rule. `products` and `orders` are core, and
+their `domain/` folders stay thin (`shelf-state.ts`, `release-date.ts`, `timeline.ts`) — prices
+and status transitions are the server's to decide, and a second implementation here would be
+drift, not thoroughness.
 
 ::: tip These values are this project's, not a rule for the next one
 A boilerplate has no core domain. The table above is this shop's answer, and the first thing a real
@@ -193,7 +194,7 @@ ones siblings read or ask to change state: `cart` (asked to refetch by `wishlist
 `orders`) and `products` (read by `cart`, `wishlist` and `inventory`, through `useProductLines` and
 its store). The ones that publish a **component** or a **schema** are answering a narrower question,
 and are the better shape — `PaymentPanel` renders a payment without its caller learning what a
-provider is. `delivery` publishes two components and deliberately not its store, because offering
+provider is. `delivery` publishes four components and one read-only composable (`usePreorderSummaries`, a state read handed to `inventory`) and deliberately not its store, because offering
 both would mean offering a wider way to do the same thing, and the wider one always wins.
 
 ### Why the backend's rule is the opposite

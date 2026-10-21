@@ -26,7 +26,7 @@
 flowchart LR
     orders["<b>orders</b>"] ==>|"customer-supplier"| cart["cart"]
     orders["<b>orders</b>"] -.->|"published-language"| delivery["delivery"]
-    orders["<b>orders</b>"] -.->|"published-language"| payments["payments"]
+    orders["<b>orders</b>"] ==>|"customer-supplier"| payments["payments"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -39,7 +39,7 @@ flowchart LR
 
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
-- → `payments` **published-language** — Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
+- → `payments` **customer-supplier** — `OrderEdit` calls `useOrderRefund`, which performs a refund. Otherwise **published-language**: Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
 
 ## The story
 
