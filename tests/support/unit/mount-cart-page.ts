@@ -10,7 +10,6 @@
  * picker holds the page's `v-model` (readable as `data-selected`) and the address pickers choose
  * the way a shopper leaving them alone would.
  */
-import { vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
