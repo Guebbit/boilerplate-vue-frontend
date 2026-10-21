@@ -26,6 +26,7 @@ import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
+import { returnNoteSchema } from '../schemas.ts';
 import type { ReturnOptionLine, ReturnReason } from '@types';
 
 /**
@@ -141,10 +142,7 @@ const schema = z.object({
     reason: z.string().refine((value) => reasonNames.value.includes(value), {
         error: () => t('returns-request.error-reason-required')
     }),
-    note: z
-        .string()
-        .trim()
-        .max(1000, { error: () => t('returns-request.error-note-too-long') }),
+    note: returnNoteSchema,
     lines: z
         .record(z.string(), z.string())
         .refine((picked) => Object.keys(picked).length > 0, {

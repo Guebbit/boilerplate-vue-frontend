@@ -3,10 +3,10 @@
  * Zod schemas for the product create/edit forms, built from the API contract's own constraints
  * (e.g. the price minimum) so the form cannot validate more loosely than the server.
  *
- * `title`/`description` stopped being flat fields once the write body moved to a `translations`
- * map, one slot per locale. `productTranslationsSchema` validates that map with `z.record`, so a
- * failing title's Zod issue path is `['translations', <locale>, 'title']` rather than the single
- * flat `'title'` the old schema produced. That locale-shaped path is deliberate:
+ * `title`/`description` live in the write body's `translations` map, one slot per locale.
+ * `productTranslationsSchema` validates that map with `z.record`, so a failing title's Zod issue
+ * path is `['translations', <locale>, 'title']`, not a flat `'title'`. That locale-shaped path is
+ * deliberate:
  * `ProductCreate.vue`/`ProductEdit.vue` group `safeParse(...).error.issues` by `path[1]` to know
  * which language tab owes an error badge.
  */

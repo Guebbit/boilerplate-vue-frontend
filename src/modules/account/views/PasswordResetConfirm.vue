@@ -24,6 +24,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useAuthStore } from '../stores/auth.ts';
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
+import { resetPasswordConfirmSchema } from '../schemas.ts';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -94,9 +95,7 @@ const {
                 .string()
                 .min(1, { error: () => t('password-reset-confirm-page.token-required') }),
             password: usersPasswordSchema,
-            passwordConfirm: z
-                .string()
-                .min(1, { error: () => t('users-form.password-confirm-required') })
+            passwordConfirm: resetPasswordConfirmSchema
         })
         .refine((data) => data.password === data.passwordConfirm, {
             error: () => t('users-form.password-dont-match'),

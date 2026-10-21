@@ -16,20 +16,19 @@ export default {
  * form, its schema, or its save logic.
  */
 import { computed, ref, useId, watch } from 'vue';
-import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '../stores/addresses.ts';
+import { addressSchema } from '../schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
 import { countryLabel } from '@/i18n/country-label.ts';
 import type { Address } from '@types';
-import { ADDRESS_MAX } from '@/infrastructure/utils/address-limits.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -150,43 +149,6 @@ const countryOptions = computed(() =>
         .map((code) => ({ value: code, title: countryLabel(code, locale.value) }))
         .toSorted((a, b) => a.title.localeCompare(b.title, locale.value))
 );
-
-/**
- * Message for a field over its contract bound; a thunk so it resolves in the active locale.
- *
- * @param max - The contract's `maxLength` for the field.
- * @returns The zod `error` option.
- */
-const tooLong = (max: number) => ({
-    error: () => t('profile-page.addresses-too-long', { max })
-});
-
-/**
- * The contract's own rule — five non-empty strings within the API's `maxLength` bounds — said in
- * the visitor's language. Messages are thunks so they resolve in the active locale, like every
- * other schema here.
- */
-const addressSchema = z.object({
-    label: z.string().max(ADDRESS_MAX.label, tooLong(ADDRESS_MAX.label)),
-    fullName: z
-        .string()
-        .min(1, { error: () => t('profile-page.addresses-required-full-name') })
-        .max(ADDRESS_MAX.fullName, tooLong(ADDRESS_MAX.fullName)),
-    street: z
-        .string()
-        .min(1, { error: () => t('profile-page.addresses-required-street') })
-        .max(ADDRESS_MAX.street, tooLong(ADDRESS_MAX.street)),
-    city: z
-        .string()
-        .min(1, { error: () => t('profile-page.addresses-required-city') })
-        .max(ADDRESS_MAX.city, tooLong(ADDRESS_MAX.city)),
-    zip: z
-        .string()
-        .min(1, { error: () => t('profile-page.addresses-required-zip') })
-        .max(ADDRESS_MAX.zip, tooLong(ADDRESS_MAX.zip)),
-    country: z.string().min(1, { error: () => t('profile-page.addresses-required-country') }),
-    phone: z.string().max(ADDRESS_MAX.phone, tooLong(ADDRESS_MAX.phone))
-});
 
 /*
  * No `formElement`: the dialog traps focus already — a dialog's `revealErrors` is a state

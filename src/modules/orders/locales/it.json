@@ -241,6 +241,7 @@
         "label-phone": "Telefono (facoltativo)",
         "button-submit": "Sostituisci l'indirizzo",
         "success": "Indirizzo di spedizione corretto.",
-        "error-required": "Questo campo è obbligatorio"
+        "error-required": "Questo campo è obbligatorio",
+        "error-too-long": "Troppo lungo: massimo {max} caratteri"
     }
 }

@@ -32,6 +32,7 @@ import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
+import { signupPasswordConfirmSchema } from '../schemas.ts';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -74,9 +75,7 @@ const signupSchema = usersSchema
     .pick({ email: true })
     .extend({
         password: usersPasswordSchema,
-        passwordConfirm: z
-            .string()
-            .min(1, { error: () => t('users-form.password-confirm-required') }),
+        passwordConfirm: signupPasswordConfirmSchema,
         // The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
         // enforces this server-side too, so a client that skipped this refine would still 422.
         termsAccepted: z.boolean().refine((value) => value, {

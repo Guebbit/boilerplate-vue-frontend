@@ -19,7 +19,6 @@ export default {
 import { ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '../stores/auth.ts';
@@ -27,6 +26,7 @@ import { useTwoFactorStore } from '../stores/two-factor.ts';
 import OAuthButtons from '../components/OAuthButtons.vue';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
+import { loginPasswordSchema } from '../schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -69,13 +69,13 @@ const { redirectAfterLogin } = usePostLoginRedirect();
 /**
  * Form logics.
  *
- * Login only needs the email rule from the shared user schema, plus a password presence check.
+ * Login only needs the email rule from the shared user schema, plus the login operation's password bounds.
  * Built once: its messages are thunks, so it already speaks the active language at parse time
  * (see `@/modules/users/schemas.ts`). `revalidateOn` is what re-translates an error already on
  * screen, which no schema shape can do — `formErrors` holds resolved strings by then.
  */
 const loginSchema = usersSchema.pick({ email: true }).extend({
-    password: z.string().min(1, { error: () => t('users-form.password-required') })
+    password: loginPasswordSchema
 });
 
 /**

@@ -241,6 +241,7 @@
         "label-phone": "Phone (optional)",
         "button-submit": "Replace the address",
         "success": "Shipping address corrected.",
-        "error-required": "This field is required"
+        "error-required": "This field is required",
+        "error-too-long": "Too long: {max} characters at most"
     }
 }

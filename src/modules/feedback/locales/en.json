@@ -11,6 +11,7 @@
         "email-invalid": "Check your email address for typos or a missing domain",
         "subject-required": "A subject is required",
         "message-min": "Tell us a little more — at least 10 characters",
+        "too-long": "Too long: {max} characters at most",
         "label-category": "What is it about? (optional)",
         "label-order-number": "Order number (optional)",
         "category-none": "Not sure",

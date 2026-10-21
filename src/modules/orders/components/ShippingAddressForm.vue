@@ -19,7 +19,6 @@ export default {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -27,8 +26,8 @@ import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
 import { countryLabel } from '@/i18n/country-label.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useOrdersStore } from '../store.ts';
+import { shippingAddressCorrectionSchema } from '../schemas.ts';
 import type { OrderAddress } from '@types';
-import { ADDRESS_MAX } from '@/infrastructure/utils/address-limits.ts';
 
 /**
  * The order, and the address it ships to now (the form starts from it).
@@ -74,28 +73,6 @@ const { loading } = storeToRefs(ordersStore);
 const formElement = ref<HTMLFormElement>();
 
 /**
- * The contract's own rule — five non-empty strings — said in the operator's language. Messages are
- * thunks so they resolve in the active locale.
- */
-const required = () =>
-    z
-        .string()
-        .trim()
-        .min(1, { error: () => t('shipping-address-form.error-required') });
-
-/**
- * The form's rules; `phone` is optional and cleared by leaving it empty.
- */
-const schema = z.object({
-    fullName: required().max(ADDRESS_MAX.fullName),
-    street: required().max(ADDRESS_MAX.street),
-    city: required().max(ADDRESS_MAX.city),
-    zip: required().max(ADDRESS_MAX.zip),
-    country: required(),
-    phone: z.string().trim().max(ADDRESS_MAX.phone)
-});
-
-/**
  * Field state, errors and submit gating; starts from the address the order has now.
  */
 const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
@@ -108,7 +85,7 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
             country: props.address?.country ?? '',
             phone: props.address?.phone ?? ''
         },
-        schema,
+        shippingAddressCorrectionSchema,
         {
             formElement,
             revalidateOn: locale,
