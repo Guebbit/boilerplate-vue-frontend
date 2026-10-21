@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * CLI for the cross-repo contract check — `npm run check:spec-identity`.
+ * CLI for the cross-repo contract check — `npm run check`.
  *
  * Wired into `ci.yml` (which checks out the sibling repo first and passes `BACKEND_PATH`), into
  * `npm run complete`, and available on its own.

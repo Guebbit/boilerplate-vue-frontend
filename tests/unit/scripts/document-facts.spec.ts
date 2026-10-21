@@ -1,6 +1,6 @@
 /**
  * The docs' claims about scripts, dependencies and the contract — `scripts/docs/document-facts.ts`, the
- * pure half of `check:docs-references`. Each rule is driven with a fixture page, so a rule that
+ * pure half of the docs-reference check. Each rule is driven with a fixture page, so a rule that
  * stopped seeing what it is for fails here rather than passing a tree it can no longer read.
  */
 import { describe, expect, it } from 'vitest';

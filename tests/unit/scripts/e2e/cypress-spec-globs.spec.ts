@@ -47,7 +47,7 @@ const scripts = (): Record<string, string> => {
 /**
  * The `--spec` argument of an npm script, as the globs it names.
  *
- * `test:e2e:spec` wraps its default in `${E2E_SPEC:-...}`; the default is what is checked, since
+ * `test:e2e:serial` wraps its default in `${E2E_SPEC:-...}`; the default is what is checked, since
  * the override is the caller's business.
  */
 const specArgumentOf = (scriptName: string): string[] => {
@@ -58,7 +58,7 @@ const specArgumentOf = (scriptName: string): string[] => {
 };
 
 describe('every spelling of the spec set resolves to the same files', () => {
-    it.each(['test:e2e:serial', 'test:e2e:live', 'test:e2e:live:spec', 'test:e2e:spec'])(
+    it.each(['test:e2e:serial', 'test:e2e:live'])(
         '%s runs exactly the functional suite',
         (scriptName) => {
             expect(resolve(specArgumentOf(scriptName))).toEqual(resolve(FUNCTIONAL_SPEC_GLOBS));

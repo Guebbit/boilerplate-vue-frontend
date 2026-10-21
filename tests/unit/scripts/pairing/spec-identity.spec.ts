@@ -15,7 +15,7 @@
  *     same dumper.
  *
  * The live assertion that the two repos agree today — the sibling checkout actually present, not
- * a fixture — is the dedicated `check:spec-identity` CI job, not this suite.
+ * a fixture — is the dedicated spec-identity CI job, not this suite.
  *
  * The fixtures are built from `SHARED_FILES` rather than from a hardcoded list, so a file added
  * to the check is covered by every case below without touching this file — and, more to the

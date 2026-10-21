@@ -31,7 +31,7 @@ If the contract changes, always start with the contract, in the backend.
 ## Keeping the two copies in sync
 
 The two repos stay independently clonable, so each carries its own copy of the contract. What
-keeps the copies identical is `npm run check:spec-identity`: it compares this repo's `openapi.yaml`
+keeps the copies identical is `npm run check`: it compares this repo's `openapi.yaml`
 and `asyncapi.yaml` with the backend's `boilerplate-node-backend/openapi.yaml` and `boilerplate-node-backend/asyncapi.public.yaml` (the async contract
 minus the internal queues no API client can reach), skips when the backend is not on disk, and is
 fatal under CI (the `spec-identity` job).
@@ -41,7 +41,7 @@ sync:frontend`; here you regenerate and read the diff:
 
 ```bash
 npm run regenerate     # gen:api + gen:asyncapi, then Prettier over contracts/rest
-npm run check:spec-identity
+npm run check
 ```
 
 Reading the diff is the human step: a spec change may require store or view updates. To confirm parity by hand,

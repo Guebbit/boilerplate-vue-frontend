@@ -10,7 +10,7 @@
 # paired backend, a Mongo and a Redis, so it runs in CI as a required job instead. A green commit
 # hook is not a claim that this frontend agrees with that backend; the PR is.
 #
-# `check:spec-identity` SKIPS rather than fails when the paired backend is not on disk, so a
+# The spec-identity check SKIPS rather than fails when the paired backend is not on disk, so a
 # half-cloned pair can still commit. It stays fatal under CI, where a missing sibling means the
 # workflow is misconfigured rather than absent.
 #

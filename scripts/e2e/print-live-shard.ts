@@ -6,7 +6,7 @@
  * `tsx … print-live-shard.ts all 4` prints every slice of four, one per line, from ONE read of the
  * durations file — what a caller that wants several slices uses, so a file another run appends to
  * in between cannot make two slices disagree.
- * `e2e-live.yml`'s matrix feeds either to `npm run test:e2e:live:spec`.
+ * `e2e-live.yml`'s matrix feeds either to `npm run test:e2e:live`.
  */
 import { globSync } from 'node:fs';
 import path from 'node:path';

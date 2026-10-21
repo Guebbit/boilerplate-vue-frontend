@@ -5,7 +5,7 @@ The contract is the source of truth, and **this repo does not author it.** `open
 byte-for-byte; everything under `contracts/` is generated from them.
 
 That is the whole shape: the backend decides what the API is, this repo generates a client from
-the answer, and `npm run check:spec-identity` fails the build on the commit that forks the two
+the answer, and `npm run check` fails the build on the commit that forks the two
 copies.
 
 ---
@@ -71,7 +71,7 @@ start calling — worth raising cross-repo rather than adopting here.
 ## Keeping the pair in step
 
 `scripts/pairing/spec-identity.ts` holds the files that must be byte-identical in both checkouts, and
-`npm run check:spec-identity` is what enforces it. The membership test is not "are these the same
+`npm run check` is what enforces it. The membership test is not "are these the same
 today" but **"does a fork cause a silent bug?"** — everything on the list fails quietly, with both
 sides building and passing their own suites.
 
@@ -84,7 +84,7 @@ A third entry used to sit there: the analytics event names this app emitted. It 
 there is no catalogue to publish and nothing to keep in step. See
 [Observability](../tools/observability.md#event-taxonomy).
 
-**Which backend `check:spec-identity` compares against is `.env`'s `BACKEND_PATH`, not whichever
+**Which backend the spec-identity check compares against is `.env`'s `BACKEND_PATH`, not whichever
 one synced last.** This repo pairs with one backend at a time (`boilerplate-node-backend` or
 `boilerplate-php-laravel-backend`), and `BACKEND_PATH` says which — unset, it defaults to the Node
 one. Switching which backend you mean to work against means flipping that variable, not just

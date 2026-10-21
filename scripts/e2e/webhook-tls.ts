@@ -6,7 +6,7 @@
  * through a proxy that serves the same leaf.
  *
  * The three files are the backend's, copied by its `sync:frontend` and compared by
- * `check:spec-identity`. Never edit them here: the backend remakes them (`npm run scenario:tls`).
+ * the spec-identity check. Never edit them here: the backend remakes them (`npm run scenario:tls`).
  * The private key is public on purpose, and only good for loopback.
  *
  * Alone in its file so the code that serves (`./webhook-sink.ts`) and the code that reads

@@ -116,7 +116,7 @@ reporting them.
 Most of that is the two Cypress runs. Start it and do something else; do not sit and watch it.
 :::
 
-`check:spec-identity` inside it compares the shared contract files against the paired backend. It
+The spec-identity check inside it compares the shared contract files against the paired backend. It
 **skips** when that checkout is not on disk, so a half-cloned pair can still commit — set
 `BACKEND_PATH` in `.env` to point at it, or clone it beside this repo. Under CI a missing sibling
 is fatal instead, because there it means the workflow is misconfigured.

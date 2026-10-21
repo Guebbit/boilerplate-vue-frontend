@@ -27,7 +27,7 @@ A browser can neither publish to nor consume from a broker, so `worker.email.sen
 `worker.pdf.generate` are not this repo's business. Carrying their payload types would mean holding
 the shape of a message this app cannot send, presented as a contract it is expected to honour.
 
-`check:spec-identity` compares `boilerplate-node-backend/asyncapi.public.yaml` against this file byte for byte
+The spec-identity check compares `boilerplate-node-backend/asyncapi.public.yaml` against this file byte for byte
 — a cross-path pair, like the demo dataset. It is an OUTPUT of the backend's fragments: never edit
 it here, or the next `npm run sync:frontend` over there reverts you and the diff reads as if the
 backend broke something.
@@ -77,7 +77,7 @@ import { OBSERVABILITY_CHANNELS } from '@types';
 ```bash
 npm run lint:asyncapi         # validate asyncapi.yaml
 npm run gen:asyncapi          # regenerate contracts/asyncapi.generated.ts
-npm run check:asyncapi-types  # fail if the committed types are not what asyncapi.yaml generates
+npm run check                 # among its checks: fail if the committed types are not what asyncapi.yaml generates
 ```
 
 ## Shared with the backend
@@ -101,7 +101,7 @@ The INPUT still differs the way it always did: only the backend's output carries
 the public subset it hands this repo.
 
 `asyncapi.yaml` is in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`), so
-`check:spec-identity` fails on the commit that forks it. **This script is not, and neither are the
+The spec-identity check fails on the commit that forks it. **This script is not, and neither are the
 generated outputs.** The script is held to the same shared machinery by hand, not to identical
 bytes — nothing fails if the two drift further, so compare them with `diff` when you change one.
 The outputs are off the list for a different
@@ -111,7 +111,7 @@ would only re-ask a question the two entries above already answer, at the price 
 file between the repos on every contract change.
 
 What that comparison _would_ have added — "did this repo regenerate after the last spec edit" —
-`check:asyncapi-types` answers here, with no sibling checkout to find. The backend runs the same
+The AsyncAPI-types check answers here, with no sibling checkout to find. The backend runs the same
 gate over its own copy.
 
 ### One alias per payload shape
