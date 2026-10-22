@@ -22,8 +22,7 @@ const props = defineProps<{
     description: string;
     /**
      * Theme accent for the icon tile. Defaults to `primary`. Named `accent` to match every other
-     * theme-color prop in this kit (`CardMaterialStat`, `ItemDetailLayout`) — this one used to be
-     * `variant`, its own name for the same idea.
+     * theme-color prop in this kit (`CardMaterialStat`, `ItemDetailLayout`).
      */
     accent?: ThemeAccent;
 }>();

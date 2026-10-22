@@ -15,6 +15,7 @@ export default {
  * transfer. One call, `useRecordOfflinePayment`, settles the order exactly as a card payment would;
  * this component owns only the field state and reports back once it lands.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -23,7 +24,6 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { RecordOfflinePaymentRequestMethod } from '@/types/enums.ts';
 import { usePaymentsStore } from '../store.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -98,7 +98,6 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
     useStructureFormValidation({ method: methods[0], reference: '', receivedAt: '' }, schema, {
         formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 
@@ -157,7 +156,7 @@ const submitForm = () =>
                 }))
             "
             :label="t('record-offline-payment-form.label-method')"
-            :error-messages="showFormErrors ? (formErrors.method ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.method ?? []) : [])"
             data-test="record-offline-method"
             class="min-w-48"
             hide-details="auto"
@@ -165,7 +164,7 @@ const submitForm = () =>
         <v-text-field
             v-model="form.reference"
             :label="t('record-offline-payment-form.label-reference')"
-            :error-messages="showFormErrors ? (formErrors.reference ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.reference ?? []) : [])"
             data-test="record-offline-reference"
             class="min-w-40 grow"
             hide-details="auto"
@@ -174,7 +173,7 @@ const submitForm = () =>
             v-model="form.receivedAt"
             type="date"
             :label="t('record-offline-payment-form.label-received-at')"
-            :error-messages="showFormErrors ? (formErrors.receivedAt ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.receivedAt ?? []) : [])"
             data-test="record-offline-received-at"
             class="max-w-48"
             hide-details="auto"

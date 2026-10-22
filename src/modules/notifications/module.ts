@@ -17,6 +17,8 @@ import type { AppModule } from '@/kernel/registry';
  * what arrives, so no producer module is imported here and none imports this one.
  *
  * A courtesy surface. Deleting it costs the reader a message, never a capability.
+ *
+ * Context map: `docs/modules/notifications.md` § "The map".
  */
 export default {
     name: 'notifications',

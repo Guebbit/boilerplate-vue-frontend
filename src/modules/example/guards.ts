@@ -1,7 +1,10 @@
 /**
  * @module
- * A Vue Router `beforeEnter` guard, scoped to the edit route. It teaches what is, and is not,
- * reachable from a guard: a Pinia store works anywhere, translations may not be loaded yet.
+ * In any module: a `beforeEnter` guard runs before one route, with a store at hand but possibly no
+ * translations yet.
+ * Here: it teaches what is, and is not, reachable from a guard, on the edit route.
+ * Delete it if: no route needs a check beyond `meta.access` (and drop its `beforeEnter`).
+ * See: docs/theory/request-flow.md
  */
 import { useExampleStore } from './store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';

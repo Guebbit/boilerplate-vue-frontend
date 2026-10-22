@@ -22,6 +22,8 @@ import routes from './routes';
  * Depends on nothing. It reads the observability endpoints directly rather than any other
  * domain's store, so dropping it costs nothing anywhere else — which is the point, since it is
  * the first thing a downstream project without an ops dashboard deletes.
+ *
+ * Context map: `docs/modules/observability.md` § "The map".
  */
 export default {
     name: 'observability',

@@ -13,61 +13,21 @@
  * 4. Every width media query uses a breakpoint `main.css` declares.
  * 5. The names `scripts/design-policy.ts` derives equal the names Vuetify computes, so a Vuetify
  *    upgrade that adds or renames a generated colour fails here, not as a false lint finding.
- * 6. The boot surfaces (`index.html`'s splash and meta tags, the manifest, `browserconfig.xml`)
+ * 6. No colour-bearing declaration is repeated across SFC `<style>` blocks: a value used twice
+ *    becomes a class in `main.css`.
+ * 7. The boot surfaces (`index.html`'s splash and meta tags, the manifest, `browserconfig.xml`)
  *    show only colours the theme has, and the address bar has a light and a dark colour.
  */
 import { describe, expect, it } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
-import path from 'node:path';
 import postcss from 'postcss';
-import type { AtRule, Declaration, Node } from 'postcss';
+import type { Declaration } from 'postcss';
 import { createVuetify } from 'vuetify';
+import { cssSources, insideTheme, MAIN_CSS, readRoot } from '../../scripts/css-sources';
 import { isColorLiteral, themeColorNames, CSS_NAMED_COLORS } from '../../scripts/design-policy';
 import { dark, light, variations } from '../../src/ui/vuetify/theme';
 
-/** The repo root (tests run from it). */
-const ROOT = process.cwd();
-
-/** The Tailwind entry stylesheet, the one global stylesheet of the app. */
-const MAIN_CSS = path.resolve(ROOT, 'src/styles/main.css');
-
-/** One piece of CSS and where it came from, for the failure message. */
-interface CssSource {
-    file: string;
-    css: string;
-}
-
-/** Every `.vue` file under `src/`, tests excluded. */
-const vueFiles = (directory: string): string[] =>
-    readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-        const full = path.join(directory, entry.name);
-        if (entry.isDirectory()) return entry.name === 'tests' ? [] : vueFiles(full);
-        return entry.name.endsWith('.vue') ? [full] : [];
-    });
-
-/** The stylesheet and the body of every SFC `<style>` block, each tagged with its file. */
-const cssSources = (): CssSource[] => {
-    const blocks = vueFiles(path.resolve(ROOT, 'src')).flatMap((file) =>
-        [...readFileSync(file, 'utf8').matchAll(/<style[^>]*>([\S\s]*?)<\/style>/g)].map(
-            (match) => ({ file: path.relative(ROOT, file), css: match[1] ?? '' })
-        )
-    );
-    return [
-        { file: path.relative(ROOT, MAIN_CSS), css: readFileSync(MAIN_CSS, 'utf8') },
-        ...blocks
-    ];
-};
-
 /** Every declaration and at-rule of every source, parsed. */
 const parsed = cssSources().map(({ file, css }) => ({ file, root: postcss.parse(css) }));
-
-/** Whether a node sits inside an `@theme` block (plain or `inline`). */
-const insideTheme = (node: Node | undefined): boolean => {
-    if (node === undefined) return false;
-    // `type === 'atrule'` is what makes the node an AtRule; PostCSS types `parent` more widely.
-    if (node.type === 'atrule' && (node as AtRule).name === 'theme') return true;
-    return insideTheme(node.parent);
-};
 
 /** Every declaration, with its file. */
 const declarations = (): { file: string; decl: Declaration }[] =>
@@ -93,8 +53,8 @@ const holdsColorLiteral = ({ prop, value }: Declaration): boolean => {
 
 describe('design tokens, the stylesheet half', () => {
     it('reads some CSS at all', () => {
-        // Not vacuous: main.css and the six SFC style blocks.
-        expect(parsed.length).toBeGreaterThanOrEqual(7);
+        // Not vacuous: main.css and the remaining SFC style blocks.
+        expect(parsed.length).toBeGreaterThanOrEqual(2);
         expect(declarations().length).toBeGreaterThan(20);
     });
 
@@ -102,6 +62,26 @@ describe('design tokens, the stylesheet half', () => {
         const offenders = declarations()
             .filter(({ decl }) => !insideTheme(decl.parent) && holdsColorLiteral(decl))
             .map(({ file, decl }) => `${file}: ${decl.prop}: ${decl.value}`);
+        expect(offenders).toEqual([]);
+    });
+
+    it('repeats no colour-bearing declaration across SFC style blocks', () => {
+        const sfcDeclarations = declarations().filter(
+            ({ file, decl }) => file !== MAIN_CSS && COLOR_PROPERTY.test(decl.prop)
+        );
+        // Not vacuous: the SFC blocks do hold colour-bearing declarations.
+        expect(sfcDeclarations.length).toBeGreaterThanOrEqual(1);
+        const places = new Map<string, Set<string>>();
+        for (const { file, decl } of sfcDeclarations) {
+            const key = `${decl.prop}: ${decl.value.replaceAll(/\s+/g, ' ')}`;
+            places.set(key, (places.get(key) ?? new Set<string>()).add(file));
+        }
+        const offenders = [...places]
+            .filter(([, files]) => files.size > 1)
+            .map(
+                ([key, files]) =>
+                    `${key} — in ${[...files].join(', ')}: move it to a class in src/styles/main.css`
+            );
         expect(offenders).toEqual([]);
     });
 
@@ -176,9 +156,6 @@ describe('design tokens, the stylesheet half', () => {
     });
 });
 
-/** Reads a file at the repo root. */
-const readRoot = (file: string): string => readFileSync(path.resolve(ROOT, file), 'utf8');
-
 /** Every colour value the theme declares, either theme, lower case. */
 const themeValues = (): Set<string> =>
     new Set(
@@ -224,5 +201,57 @@ describe('design tokens, the boot surfaces', () => {
         expect(html).toContain(`background: ${light.colors.background};`);
         expect(html).toContain(`color: ${dark.colors['on-background']};`);
         expect(html).toContain(`background: ${dark.colors.background};`);
+    });
+});
+
+/** WCAG relative luminance of a `#rrggbb` colour. */
+const luminance = (hex: string): number => {
+    const [red, green, blue] = [1, 3, 5].map((at) => {
+        const channel = Number.parseInt(hex.slice(at, at + 2), 16) / 255;
+        return channel <= 0.039_28 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+};
+
+/** Composites `foreground` at `alpha` over `background`, per channel. */
+const over = (foreground: string, background: string, alpha: number): string =>
+    `#${[1, 3, 5]
+        .map((at) =>
+            Math.round(
+                Number.parseInt(foreground.slice(at, at + 2), 16) * alpha +
+                    Number.parseInt(background.slice(at, at + 2), 16) * (1 - alpha)
+            )
+                .toString(16)
+                .padStart(2, '0')
+        )
+        .join('')}`;
+
+/** WCAG contrast ratio of two `#rrggbb` colours. */
+const contrast = (a: string, b: string): number => {
+    const [high, low] = [luminance(a), luminance(b)].toSorted((x, y) => y - x);
+    return (high + 0.05) / (low + 0.05);
+};
+
+describe('design tokens, secondary text', () => {
+    const themes = [
+        ['light', light],
+        ['dark', dark]
+    ] as const;
+    const surfaces = ['surface', 'background', 'surface-variant'] as const;
+
+    it.each(
+        themes.flatMap(([name, theme]) =>
+            surfaces.flatMap((surface) =>
+                (['on-surface', 'error'] as const).map(
+                    (ink) => [name, theme, surface, ink] as const
+                )
+            )
+        )
+    )('%s theme, %#: medium-emphasis text passes AA', (_name, theme, surface, ink) => {
+        const alpha = theme.variables['medium-emphasis-opacity'];
+        const background = theme.colors[surface];
+        const text = over(theme.colors[ink], background, alpha);
+
+        expect(contrast(text, background)).toBeGreaterThanOrEqual(4.5);
     });
 });

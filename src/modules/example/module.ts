@@ -1,9 +1,11 @@
 /**
  * @module
- * The module manifest: the one file the application loads directly. It wires this domain's
- * routes, navigation entry, response schemas and locale loaders into the registry, and declares
- * the keys its stores report loading under. Every module has one; this one has no backend domain
- * of its own to guard, only a small one to copy.
+ * In any module: the manifest is the one file the application loads directly. It wires the domain's
+ * routes, navigation entry, response schemas and locale loaders into the registry, and declares the
+ * keys its stores report loading under.
+ * Here: a small domain to copy, with no backend rules of its own to guard.
+ * Instead see: `cart` for a barrel, `wishlist` for a slot contribution.
+ * See: docs/theory/modules.md#the-module-template
  */
 import { NotebookPen } from 'lucide-vue-next';
 import { dictionary } from '@/kernel/registry';
@@ -31,6 +33,8 @@ declare module '@/infrastructure/utils/logger.ts' {
  * route needs neither.
  *
  * It is on `DEMO_MODULE_NAMES`, so `npm run demo:remove` deletes it with the shop: copy it first.
+ *
+ * It sits on no context-map edge: `docs/modules/index.md` § "The whole map".
  */
 export default {
     name: 'example',

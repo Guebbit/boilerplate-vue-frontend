@@ -6,12 +6,12 @@
  * is closed. The dialog owns its call and reports the outcome in place; the server re-checks every
  * limit, so the form only keeps staff from asking for the impossible.
  */
-import { computed, ref, watch, useId } from 'vue';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
@@ -20,17 +20,12 @@ import { readShipLines, shippableLines } from '../domain/ship-lines.ts';
 import type { FulfillmentOrder } from '@types';
 
 /**
- * The fulfillment order being shipped from, and what the caller may do beyond the ordinary door.
+ * The fulfillment order being shipped from.
  */
 const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
     /** Whether the order's shipping method needs a tracking code on every shipment. */
     trackingRequired?: boolean;
-    /**
-     * Whether the caller may force a shipment (`Order.actions.override` lists `shipped`). Offered
-     * only while the ordinary door (`fulfillmentOrder.actions.ship`) is closed.
-     */
-    canForce?: boolean;
 }>();
 
 /**
@@ -57,21 +52,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
- * Whether the dialog fills the screen — it does on a phone.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
 
 /**
  * The store's ship call and its in-flight flag.
@@ -119,9 +99,12 @@ const lines = computed(() => shippableLines(props.fulfillmentOrder.lines));
 const verdict = computed(() => readShipLines(props.fulfillmentOrder.lines, quantities.value));
 
 /**
- * Whether the force controls show: only when the ordinary door is closed and the caller may force.
+ * Whether the force controls show: the server says a forced ship would open while the ordinary
+ * door is closed (`actions.forceShip`).
  */
-const offerForce = computed(() => !props.fulfillmentOrder.actions.ship && props.canForce);
+const offerForce = computed(
+    () => !props.fulfillmentOrder.actions.ship && props.fulfillmentOrder.actions.forceShip
+);
 
 /**
  * Whether the form can be sent right now.
@@ -172,12 +155,11 @@ const submit = singleFlight(() => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
-        max-width="520"
-        :fullscreen="fullscreen"
-        :aria-labelledby="titleId"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="ship-items-dialog"
+        v-slot="{ titleId }"
     >
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">
@@ -250,5 +232,5 @@ const submit = singleFlight(() => {
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

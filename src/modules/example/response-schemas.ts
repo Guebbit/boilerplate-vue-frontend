@@ -1,8 +1,10 @@
 /**
  * @module
- * This module's response-schema rows — every operation the generated table
- * (`contracts/rest/routes.ts`, from `openapi.yaml`'s `x-module` stamps) attributes to the backend
- * `example` module. {@link ResponseSchemaRoute}'s own docblock states the two rules every row obeys.
+ * In any module: the response-schema rows of the operations the generated table attributes to the
+ * backend module of the same name; {@link ResponseSchemaRoute}'s docblock states the two rules every
+ * row obeys.
+ * Here: every `example` operation, picked up by the table without a line per route.
+ * See: docs/theory/modules.md#the-module-template
  */
 import * as schemas from '@api/schemas';
 import { routesForModules } from '@/infrastructure/http/response-schema-map';

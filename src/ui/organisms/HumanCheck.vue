@@ -167,6 +167,23 @@ const renderTurnstile = (siteKey: string): void => {
 };
 
 /**
+ * Renders the chosen provider's widget, once its DOM branch exists.
+ *
+ * @param activeProvider - Which provider the API selected.
+ * @param parameters - The provider parameters from the antibot config.
+ * @returns Resolves when the widget is rendered; no-op for a Turnstile config missing its keys.
+ */
+const mountProvider = (
+    activeProvider: 'turnstile' | 'altcha',
+    parameters: { siteKey?: string; scriptUrl?: string }
+) => {
+    if (activeProvider === 'altcha') return configureAltcha();
+    const { siteKey, scriptUrl } = parameters;
+    if (!siteKey || !scriptUrl) return;
+    return loadVendorScript(scriptUrl).then(() => renderTurnstile(siteKey));
+};
+
+/**
  * Reads the active provider and renders its branch. `nextTick` is required, not defensive: setting
  * `provider` only SCHEDULES the `v-if`/`v-else-if` branch's DOM update, so `altchaElement`/
  * `turnstileElement` are still `undefined` in the microtask right after the assignment.
@@ -178,14 +195,7 @@ onMounted(() => {
             const activeProvider = provider.value;
             if (activeProvider !== 'turnstile' && activeProvider !== 'altcha') return;
 
-            return nextTick().then(() => {
-                if (activeProvider === 'turnstile') {
-                    const { siteKey, scriptUrl } = envelope.data.parameters;
-                    if (!siteKey || !scriptUrl) return;
-                    return loadVendorScript(scriptUrl).then(() => renderTurnstile(siteKey));
-                }
-                return configureAltcha();
-            });
+            return nextTick().then(() => mountProvider(activeProvider, envelope.data.parameters));
         })
         // An unreachable API or a vendor script that would not load leaves the widget absent, and
         // nothing else: the health banner already says the API is down, and the form's own submit

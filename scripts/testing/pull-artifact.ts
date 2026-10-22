@@ -43,6 +43,39 @@ export interface PulledFile {
 }
 
 /**
+ * Builds the copier that moves one downloaded file to its target, creating the target's folder.
+ *
+ * @param directory - Where the artifact was downloaded.
+ * @returns A function copying one `PulledFile`.
+ */
+const copyInto =
+    (directory: string) =>
+    ({ inArtifact, target }: PulledFile): Promise<void> =>
+        mkdir(path.dirname(target), { recursive: true }).then(() =>
+            copyFile(path.join(directory, inArtifact), target)
+        );
+
+/**
+ * Downloads a run's artifact into a scratch folder, copies its files out, and removes the folder.
+ *
+ * @param runId - The workflow run that uploaded the artifact.
+ * @param artifact - What to fetch and where each file goes.
+ * @param artifact.name - The artifact's name.
+ * @param artifact.files - The files to copy out.
+ * @returns Resolves once the files are in place and the scratch folder is gone.
+ */
+const downloadAndCopy = (
+    runId: number,
+    artifact: { name: string; files: readonly PulledFile[] }
+): Promise<void> =>
+    mkdtemp(path.join(tmpdir(), `${artifact.name}-`)).then((directory) =>
+        download(runId, artifact.name, directory)
+            .then(() => Promise.all(artifact.files.map(copyInto(directory))))
+            .finally(() => rm(directory, { recursive: true, force: true }))
+            .then(() => undefined)
+    );
+
+/**
  * Downloads the newest unexpired `name` artifact of a run on `main` and copies files out of it.
  *
  * @param artifact - what to fetch
@@ -58,23 +91,10 @@ export const pullArtifact = (
     listArtifacts(artifact.name).then((artifacts) => {
         const chosen = newestArtifact(artifacts, artifact.name);
         if (!chosen) throw new Error(`no unexpired ${artifact.name} artifact from a run on main`);
-        return mkdtemp(path.join(tmpdir(), `${artifact.name}-`)).then((directory) =>
-            download(chosen.workflow_run.id, artifact.name, directory)
-                .then(() =>
-                    Promise.all(
-                        artifact.files.map(({ inArtifact, target }) =>
-                            mkdir(path.dirname(target), { recursive: true }).then(() =>
-                                copyFile(path.join(directory, inArtifact), target)
-                            )
-                        )
-                    )
-                )
-                .finally(() => rm(directory, { recursive: true, force: true }))
-                .then(() => {
-                    console.log(
-                        `[${log}] ${artifact.files.map(({ target }) => target).join(', ')} ← ` +
-                            `run ${String(chosen.workflow_run.id)} (${chosen.created_at}).`
-                    );
-                })
-        );
+        return downloadAndCopy(chosen.workflow_run.id, artifact).then(() => {
+            console.log(
+                `[${log}] ${artifact.files.map(({ target }) => target).join(', ')} ← ` +
+                    `run ${String(chosen.workflow_run.id)} (${chosen.created_at}).`
+            );
+        });
     });

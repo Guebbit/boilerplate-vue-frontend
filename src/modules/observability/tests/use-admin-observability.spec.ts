@@ -5,7 +5,7 @@
  * The two endpoints are mocked at `@api`: what this file owns is the composition — that each
  * fetcher writes its own slice of state without touching the other, and that a dead endpoint
  * degrades to an error message beside the panel that did answer. The audit trail is covered by
- * `use-audit-trail.spec.ts` instead — see that composable's own docs for why it moved out of here.
+ * `use-audit-trail.spec.ts` instead — see that composable's own docs for why it is separate.
  *
  * The loading/error bookkeeping itself belongs to `useAsyncAction` and is covered in
  * `tests/unit/infrastructure/use-async-action.spec.ts`; only the parts this composable configures —

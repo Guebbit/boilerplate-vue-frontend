@@ -227,7 +227,7 @@ const handleConfirm = () => {
                 <!-- Ticking countdown, NOT a live region — re-rendering `role="status"` every
                      second is what used to flood a screen reader with "59… 58… 57…". The
                      paired live region right below speaks only at 60/30/10s and expired. -->
-                <p v-if="delivery" class="mb-1 text-sm opacity-70">
+                <p v-if="delivery" class="mb-1 text-sm opacity-muted">
                     {{
                         secondsUntilSetupExpires > 0
                             ? t('two-factor.code-expires-in', {

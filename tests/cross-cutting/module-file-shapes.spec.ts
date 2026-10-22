@@ -113,6 +113,11 @@ const FILE_SHAPES: readonly FileShape[] = [
         onlyIn: 'example'
     },
     {
+        match: /^deactivate-then-delete\.ts$/,
+        what: '`locales` only. Deactivates a language, deletes it, and restores it if the delete fails — orchestration around the API’s guard rail, not a rule.',
+        onlyIn: 'locales'
+    },
+    {
         match: /^dictionaries\.ts$/,
         what: '`locales` only. The runtime override merge — server rows layered over what the app bundles, key by key.',
         onlyIn: 'locales'

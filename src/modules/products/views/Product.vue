@@ -28,7 +28,8 @@ import { Calendar, Circle, Clock, Euro, FileText, Hash, Package, Tag } from 'luc
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
@@ -161,6 +162,22 @@ const stockLabel = computed(() => {
         ? t('product-target-page.in-stock')
         : formatText(shown.available.toString());
 });
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('product-target-page.label-created-at'),
+        value: formatDateTime(currentProduct.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('product-target-page.label-updated-at'),
+        value: formatDateTime(currentProduct.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -214,14 +231,12 @@ const stockLabel = computed(() => {
                     :key="index"
                     :product="currentProduct"
                 />
-                <p v-if="!isAuth" class="text-sm opacity-70">
+                <p v-if="!isAuth" class="text-sm opacity-muted">
                     {{ t('product-target-page.login-to-buy') }}
                 </p>
             </v-card>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentProduct" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('product-target-page.label-id')"
@@ -287,21 +302,14 @@ const stockLabel = computed(() => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="primary">
-                        <template #icon><Package :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('product-target-page.label-created-at')"
-                        :value="formatDateTime(currentProduct?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-updated-at')"
-                        :value="formatDateTime(currentProduct?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="primary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Package :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

@@ -6,41 +6,43 @@
 **Breaks if you change** — those components' props. [`orders`](./orders.md) mounts the panel and the staff forms; [`cart`](./cart.md) mounts `PaymentMethodSelector`.
 :::
 
-| Fact                    | This module                                                                                                                                     |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain.                                                                  |
-| **Screens**             | 1 — `PaymentsList`                                                                                                                              |
-| **Store**               | `payments`                                                                                                                                      |
-| **Menu entries**        | `PaymentsList`                                                                                                                                  |
-| **API calls**           | 11                                                                                                                                              |
-| **Depends on**          | _nothing_                                                                                                                                       |
-| **Depended on by**      | [`orders`](./orders.md) · [`cart`](./cart.md)                                                                                                   |
-| **Languages**           | `en` · `it`                                                                                                                                     |
-| **Publishes**           | `PaymentPanel` · `PaymentMethodSelector` · `TransferInstructionsPanel` · `RecordOfflinePaymentForm` · `OrderReferenceSearch` · `useOrderRefund` |
-| **Backend counterpart** | `payments` in `boilerplate-node-backend`                                                                                                        |
+| Fact                    | This module                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain.                                    |
+| **Screens**             | 1 — `PaymentsList`                                                                                                |
+| **Store**               | `payments`                                                                                                        |
+| **Menu entries**        | `PaymentsList`                                                                                                    |
+| **API calls**           | 11                                                                                                                |
+| **Depends on**          | _nothing_                                                                                                         |
+| **Depended on by**      | [`orders`](./orders.md) · [`cart`](./cart.md)                                                                     |
+| **Languages**           | `en` · `it`                                                                                                       |
+| **Publishes**           | `PaymentPanel` · `PaymentMethodSelector` · `RecordOfflinePaymentForm` · `OrderReferenceSearch` · `useOrderRefund` |
+| **Backend counterpart** | `payments` in `boilerplate-node-backend`                                                                          |
 
 ## The map
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    orders["orders"] -.->|"published-language"| payments["<b>payments</b>"]
+    orders["orders"] ==>|"customer-supplier"| payments["<b>payments</b>"]
+    cart["cart"] -.->|"published-language"| payments["<b>payments</b>"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
-    class orders core;
+    class orders,cart core;
     class payments self;
 ```
 
-- `orders` → **published-language** — Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
+- `orders` → **customer-supplier** — Calls `useOrderRefund` to refund an order from the staff edit screen, and mounts `PaymentPanel`, which on its own would be `published-language`: paying happens on the order page without this module knowing a provider exists.
+- `cart` → **published-language** — Mounts `PaymentMethodSelector`; the checkout learns which method ids exist, never what one costs to offer.
 
 ## The story
 
 **Paying has no route.** Paying happens _on_ the order, so this module contributes a component
-through its barrel and [`orders`](./orders.md) mounts it. That arrow is declared over there, as
-`published-language`, because the order page learns nothing about payments by rendering one. The
+through its barrel and [`orders`](./orders.md) mounts it. The map above says how each
+sibling depends on this module; the order page learns nothing about payments by rendering one. The
 module's one route, `PaymentsList`, is for staff and is described [below](#the-staff-payments-page).
 
 ::: tip What deleting this module costs, precisely

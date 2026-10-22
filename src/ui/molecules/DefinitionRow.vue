@@ -16,7 +16,7 @@ defineProps<{
 
 <template>
     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-        <dt class="opacity-70">{{ label }}</dt>
+        <dt class="opacity-muted">{{ label }}</dt>
         <dd class="font-medium"><slot /></dd>
     </div>
 </template>

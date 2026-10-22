@@ -4,6 +4,7 @@
  * neither side of the union has to import the other.
  */
 
+import type { Component } from 'vue';
 import type { light, VARIATION_FAMILIES, VUETIFY_DEFAULT_COLORS } from '@/ui/vuetify/theme';
 
 /**
@@ -45,3 +46,26 @@ export type ThemeColor = BaseThemeColor | VariationColor | `on-${BaseThemeColor 
  * copies of the same three strings is four places to edit for a fourth accent.
  */
 export type ThemeAccent = Extract<ThemeColor, 'primary' | 'secondary' | 'tertiary'>;
+
+/**
+ * One labelled row of a record's summary card (`RecordAsideCard`): the caller supplies the
+ * already-translated label and the already-formatted value.
+ */
+export interface DetailFieldRow {
+    /**
+     * The row's label. Also its key, so it is unique within one card.
+     */
+    label: string;
+    /**
+     * The value to print; an empty one renders the dash placeholder.
+     */
+    value?: string | number | null;
+    /**
+     * Icon component shown in the row's accent tile.
+     */
+    icon?: Component;
+    /**
+     * Test hook for the row.
+     */
+    test?: string;
+}

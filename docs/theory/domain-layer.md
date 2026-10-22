@@ -15,6 +15,9 @@ a frontend has far less to put in this folder.
 > **A rule the UI needs _before_ it calls the API goes in `src/modules/<name>/domain/`**, as a
 > function that takes data and returns a value.
 
+The same holds for a closed set the API defines: a status union or literal list is imported from the generated
+types, never retyped.
+
 ### Why it is thin here — and why that is correct
 
 Prices, totals, checkout eligibility and permissions are decided by the API. Restating them on the
@@ -47,6 +50,11 @@ flowchart TD
     class API,OUT,R1,R2,R3,R4 no;
 ```
 
+`formatters` means locale display (`Intl`: dates, numbers, money). A pure serializer that escapes
+for a target format (CSV, Mermaid source) is a rule with a trap, so it stays in `domain/`: see
+`stats/domain/csv.ts` and `stats/domain/mermaid.ts`. The import fence around `domain/` is a feature
+there, because it guards escaping code.
+
 ### The worked example
 
 ```ts
@@ -66,8 +74,8 @@ re-renders `:disabled`, and the second one would send `quantity: 0` to an endpoi
 "remove". Someone tidying the template would delete that guard as dead code and reopen the bug,
 which is exactly the kind of trap that earns a name.
 
-A companion that did **not** earn one: `canDecrement(q) => q > MIN_LINE_QUANTITY` used to sit here,
-and is now `:disabled="item.quantity <= MIN_LINE_QUANTITY"` in the template. One caller, no trap —
+A companion that did **not** earn one: `canDecrement(q) => q > MIN_LINE_QUANTITY` does not belong here:
+the template says `:disabled="item.quantity <= MIN_LINE_QUANTITY"` in the template. One caller, no trap —
 see [the floor](#the-floor-testable-without-mounting-a-component-is-necessary-not-sufficient).
 
 ### The rule, enforced by lint
@@ -166,9 +174,11 @@ everything `canDecrement(item.quantity)` said, minus an import, a barrel line an
 
 Both halves are live:
 
-| Kept              | Why it clears the floor                                                              |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| `steppedQuantity` | One caller, but a real trap: the clamp catches a double click outrunning `:disabled` |
+| Kept                         | Why it clears the floor                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| `steppedQuantity`            | One caller, but a real trap: the clamp catches a double click outrunning `:disabled`             |
+| `escapeCsvCell`, `safeLabel` | A security trap each: the CSV formula-injection prefix, the Mermaid label allow-list             |
+| `publicationOf`              | Two callers, and a trap: `publishedAt` survives an archive, so the date alone would read as live |
 
 | Removed        | Why it did not                                |
 | -------------- | --------------------------------------------- |
@@ -178,7 +188,9 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 
 ### The folder is optional
 
-Four modules have one today — `cart`, `locales`, `payments` and `users` — and most never will.
+Nine of the nineteen modules have one — `cart`, `delivery`, `example`, `inventory`, `locales`,
+`notifications`, `orders`, `products` and `stats` — and the rest have no rule that clears the floor
+above. `ls -d src/modules/*/domain` is the current list; this sentence is not checked against it.
 
 Worth noting: `canAccess()` in `app/guards/authentications.ts` is already exactly this pattern
 — a pure function, requirement in, boolean out. It stays in `app/` because it is a rule about _this
@@ -277,14 +289,14 @@ being valid_, not by where you put files.
 [Strategic DDD](./strategic-ddd.md) for what each one enforces, what it refuses, and — for context
 map and subdomain distillation — why the enforcement moved off a manifest field.
 
-| Concept                | Where                                                                                                                 |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Bounded context        | one folder per module; `rm -rf` deletes the domain                                                                    |
-| Published language     | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports                            |
-| Context map            | prose in each `module.ts`'s docblock, next to its imports; which siblings it may reach is a generated ESLint rule     |
-| Ubiquitous language    | the code's own identifiers, per context — and often deliberately different from the server's word for the same thing  |
-| Subdomain distillation | prose in each `module.ts`'s docblock; a `generic` module carrying a `domain/` folder is a review question, not a spec |
-| Domain service         | `cart/domain/quantity.ts`                                                                                             |
+| Concept                | Where                                                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Bounded context        | one folder per module; `rm -rf` deletes the domain                                                                            |
+| Published language     | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports                                    |
+| Context map            | the module pages under `docs/modules/`, next to each module's imports; which siblings it may reach is a generated ESLint rule |
+| Ubiquitous language    | the code's own identifiers, per context — and often deliberately different from the server's word for the same thing          |
+| Subdomain distillation | the table in `strategic-ddd.md` §4; a `generic` module carrying a `domain/` folder is a review question, not a spec           |
+| Domain service         | `cart/domain/quantity.ts`                                                                                                     |
 
 **Tactical DDD — absent, and mostly correctly so:**
 

@@ -16,6 +16,7 @@ export default {
  * store's multipart-aware `createProduct`. See `translation-tab-errors.ts` for how a validation
  * failure reaches the right tab's badge.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -298,10 +299,12 @@ const submitForm = () => {
                         v-model="form.translations[tag]!.title"
                         type="text"
                         :label="t('product-create-page.label-title')"
-                        :error-messages="
-                            showErrors && !form.translations[tag]?.title
-                                ? [t('products-form.title-required')]
-                                : []
+                        v-bind="
+                            fieldErrorProps(
+                                showErrors && !form.translations[tag]?.title
+                                    ? [t('products-form.title-required')]
+                                    : []
+                            )
                         "
                         data-test="translation-title-field"
                         class="mb-2"
@@ -323,7 +326,7 @@ const submitForm = () => {
                 :precision="pricePrecision"
                 control-variant="stacked"
                 :suffix="shopCurrency"
-                :error-messages="showErrors ? formErrors.price : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.price : [])"
                 data-test="product-price-field"
                 class="mb-2 mt-4"
             />
@@ -413,7 +416,7 @@ const submitForm = () => {
             />
             <FormImageUpload
                 v-model="form.imageUpload"
-                :error-messages="showErrors ? formErrors.imageUpload : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.imageUpload : [])"
                 :progress="uploadProgress"
                 :disabled="isSubmitting"
                 class="mt-2"

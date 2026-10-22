@@ -48,10 +48,10 @@ describe('keyboard', () => {
         // first real Tab lands on the runner's iframe boundary before it enters the page.
         cy.get('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
             .first()
-            .should('have.class', 'skip-link');
+            .should('have.attr', 'data-test', 'skip-link');
 
-        cy.get('.skip-link').focus();
-        cy.focused().should('have.class', 'skip-link').and('be.visible');
+        cy.get('[data-test=skip-link]').focus();
+        cy.focused().should('have.attr', 'data-test', 'skip-link').and('be.visible');
         cy.focused().realPress('Enter');
         // `<v-main tabindex="-1">`: focusable by the link and by script, never by Tab.
         cy.focused().should('have.attr', 'data-main-content');
@@ -113,7 +113,7 @@ describe('keyboard', () => {
         cy.get('h1').should('exist');
 
         // Skip link → logo → first entry (the hamburger sits at the far right, hidden here).
-        cy.get('.skip-link').focus();
+        cy.get('[data-test=skip-link]').focus();
         cy.realPress('Tab');
         cy.realPress('Tab');
         cy.focused().should('match', 'nav a').and('not.have.attr', 'aria-label');

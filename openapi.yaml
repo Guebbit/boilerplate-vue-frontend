@@ -8939,11 +8939,13 @@ paths:
       tags:
         - Examples
       summary: Create an example
-      description: Creates a draft example owned by the caller.
+      description: Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
       operationId: createExample
       security:
         - bearerAuth: []
         - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
         content:
@@ -8966,6 +8968,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -9066,7 +9070,7 @@ paths:
       tags:
         - Examples
       summary: Replace an example
-      description: Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+      description: Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
       operationId: replaceExampleById
       security:
         - bearerAuth: []
@@ -9190,6 +9194,54 @@ paths:
           $ref: "#/components/responses/NotFound"
         "412":
           $ref: "#/components/responses/PreconditionFailed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: example
+  /examples/{id}/transitions:
+    post:
+      tags:
+        - Examples
+      summary: Move an example to another status
+      description: Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
+      operationId: transitionExample
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionExampleRequest"
+      responses:
+        "200":
+          description: The example, moved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExampleEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -14660,6 +14712,8 @@ components:
         - correctAddress
         - invoice
         - withdraw
+        - delete
+        - hardDelete
       description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included."
       properties:
         transitions:
@@ -14704,6 +14758,12 @@ components:
           type: string
           format: date-time
           description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
+        delete:
+          type: boolean
+          description: "Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden."
+        hardDelete:
+          type: boolean
+          description: "Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it)."
         invoice:
           type: boolean
           description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
@@ -15639,6 +15699,7 @@ components:
       additionalProperties: false
       required:
         - ship
+        - forceShip
         - fulfill
         - hold
         - release
@@ -15647,6 +15708,9 @@ components:
         ship:
           type: boolean
           description: Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining.
+        forceShip:
+          type: boolean
+          description: "Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship."
         fulfill:
           type: boolean
           description: Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open.
@@ -17803,6 +17867,29 @@ components:
         - draft
         - published
         - archived
+    ExampleActions:
+      type: object
+      additionalProperties: false
+      required:
+        - transitions
+        - update
+        - delete
+      description: "What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree."
+      properties:
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExampleStatus"
+          description: The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it.
+          example:
+            - published
+            - archived
+        update:
+          type: boolean
+          description: Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller.
+        delete:
+          type: boolean
+          description: Whether `DELETE /examples/{id}` would be accepted for this caller.
     Example:
       type: object
       additionalProperties: false
@@ -17843,6 +17930,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        actions:
+          $ref: "#/components/schemas/ExampleActions"
     ProductTitles:
       type: object
       additionalProperties:
@@ -19276,7 +19365,6 @@ components:
       required:
         - title
         - body
-        - status
       properties:
         title:
           type: string
@@ -19286,8 +19374,6 @@ components:
           type: string
           minLength: 1
           maxLength: 20000
-        status:
-          $ref: "#/components/schemas/ExampleStatus"
     UpdateExampleRequest:
       type: object
       additionalProperties: false
@@ -19300,7 +19386,13 @@ components:
           type: string
           minLength: 1
           maxLength: 20000
-        status:
+    TransitionExampleRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - to
+      properties:
+        to:
           $ref: "#/components/schemas/ExampleStatus"
     ReplaceExampleCoverRequestMultipart:
       type: object
@@ -19565,6 +19657,9 @@ x-error-codes:
   EMAIL_VERIFY_RESEND_TOO_SOON:
     status: 429
     description: A verification email was already sent recently — carries `details.retryAfter`.
+  EXAMPLE_TRANSITION_NOT_ALLOWED:
+    status: 409
+    description: The example cannot move from its current status to the one asked, or another request moved it first. `errors[].details` is `{ from, to }`; `Example.actions.transitions` lists the moves still open.
   FORBIDDEN:
     status: 403
     description: The caller is authenticated but lacks the permission this route requires. A key's own `deniedCode` can replace this default with a more specific one.

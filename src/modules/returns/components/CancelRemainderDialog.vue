@@ -7,12 +7,12 @@
  * staff holding the refund key, who say why in a note; the step-up prompt for that key is the http
  * layer's, so it appears before the call resolves.
  */
-import { computed, ref, watch, useId } from 'vue';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -56,21 +56,6 @@ const { t } = useI18n();
  * Toast dispatcher, used to report the outcome.
  */
 const { addMessage } = useNotificationsStore();
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
- * Whether the dialog fills the screen — it does on a phone.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
 
 /**
  * The store's opening call.
@@ -142,12 +127,11 @@ const submit = () => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
-        max-width="480"
-        :fullscreen="fullscreen"
-        :aria-labelledby="titleId"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="cancel-remainder-dialog"
+        v-slot="{ titleId }"
     >
         <v-card class="p-5">
             <h2 :id="titleId" class="mb-3 text-lg font-semibold">
@@ -203,5 +187,5 @@ const submit = () => {
                 </v-btn>
             </div>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

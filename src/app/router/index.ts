@@ -386,7 +386,7 @@ router.afterEach((to, from, failure) => {
     if (!isPageChange) return;
 
     // `LayoutDefault` mounts once for the whole session, not per view, so its own
-    // `onMounted` can no longer consume this — this is the SOLE place that does, on every page
+    // `onMounted` cannot consume this — this is the SOLE place that does, on every page
     // change. The tick waits for the new page's own content to actually be in the DOM first.
     requestMainFocus();
     void nextTick(consumeMainFocus);

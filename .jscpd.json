@@ -1,0 +1,9 @@
+{
+    "path": ["src", "scripts"],
+    "format": ["typescript", "markup"],
+    "ignore": ["**/*.generated.ts", "src/modules/*/tests/**", "**/*.json"],
+    "minTokens": 50,
+    "similarity": 0.85,
+    "reporters": ["json"],
+    "output": "reports/audit/code-shape/jscpd"
+}

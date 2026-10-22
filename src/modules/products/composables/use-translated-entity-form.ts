@@ -13,7 +13,6 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import type { ZodType } from 'zod';
 import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import {
     translationTabErrorCountsFromZodError,
     translationTabErrorCountsFromServerError,
@@ -104,7 +103,6 @@ export const useTranslatedEntityForm = <TForm extends TranslatedForm>(
     const validation = useStructureFormValidation<TForm>(options.initial, options.schema, {
         formElement: options.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 

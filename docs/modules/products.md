@@ -3,43 +3,45 @@
 ::: tip At a glance
 **Owns** — the catalogue screens: the list (storefront grid for shoppers, table for staff) and detail, admin create and edit.
 **Depends on** — nothing but its own locales. [`cart`](./cart.md) and [`wishlist`](./wishlist.md) depend on it, and put their buttons on the product page through the `product-actions` slot.
-**Breaks if you change** — `useProductsStore`'s shape. [`inventory`](./inventory.md) reads it as-is.
+**Breaks if you change** — the shape of `useProductLines`, `shelfStateOf` or `invalidateProductsCache`. [`cart`](./cart.md), [`wishlist`](./wishlist.md), [`inventory`](./inventory.md) and [`stock-alerts`](./stock-alerts.md) call them.
 :::
 
-| Fact                    | This module                                                                       |
-| ----------------------- | --------------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.          |
-| **Screens**             | 4 — `ProductsList` · `ProductCreate` · `ProductTarget` · `ProductEdit`            |
-| **Store**               | `products`                                                                        |
-| **Menu entries**        | `ProductsList`                                                                    |
-| **API calls**           | 10                                                                                |
-| **Depends on**          | —                                                                                 |
-| **Depended on by**      | [`inventory`](./inventory.md) · [`cart`](./cart.md) · [`wishlist`](./wishlist.md) |
-| **Languages**           | `en` · `it`                                                                       |
-| **Publishes**           | `useProductsStore` · `useProductLines`                                            |
-| **Backend counterpart** | `products` in `boilerplate-node-backend`                                          |
+| Fact                    | This module                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                                |
+| **Screens**             | 4 — `ProductsList` · `ProductCreate` · `ProductTarget` · `ProductEdit`                                                  |
+| **Store**               | `products`                                                                                                              |
+| **Menu entries**        | `ProductsList`                                                                                                          |
+| **API calls**           | 10                                                                                                                      |
+| **Depends on**          | —                                                                                                                       |
+| **Depended on by**      | [`inventory`](./inventory.md) · [`cart`](./cart.md) · [`wishlist`](./wishlist.md) · [`stock-alerts`](./stock-alerts.md) |
+| **Languages**           | `en` · `it`                                                                                                             |
+| **Publishes**           | `useProductLines` · `shelfStateOf` · `invalidateProductsCache`                                                          |
+| **Backend counterpart** | `products` in `boilerplate-node-backend`                                                                                |
 
 ## The map
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    inventory["inventory"] -->|"conformist"| products["<b>products</b>"]
+    inventory["inventory"] ==>|"customer-supplier"| products["<b>products</b>"]
     cart["cart"] ==>|"customer-supplier"| products["<b>products</b>"]
-    wishlist["wishlist"] ==>|"customer-supplier"| products["<b>products</b>"]
+    wishlist["wishlist"] -->|"conformist"| products["<b>products</b>"]
+    stockAlerts["stock-alerts"] -->|"conformist"| products["<b>products</b>"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class cart core;
-    class wishlist,inventory supporting;
+    class wishlist,inventory,stockAlerts supporting;
     class products self;
 ```
 
-- `inventory` → **conformist** — Reads `useProductsStore` as it is, to name products in the receipt select and the ledger titles.
-- `cart` → **customer-supplier** — Reads its lines' products through `useProductLines`.
-- `wishlist` → **customer-supplier** — Same join for its saved lines.
+- `inventory` → **customer-supplier** — Asks the products store to drop its cached catalogue after a recorded movement (`invalidateProductsCache`), and reads the ledger's titles through `useProductLines`.
+- `cart` → **customer-supplier** — Reads its lines' products through `useProductLines` and asks the cache to drop after a checkout (`invalidateProductsCache`).
+- `wishlist` → **conformist** — Joins its saved lines to their product records through `useProductLines`, read as they are.
+- `stock-alerts` → **conformist** — Reads the shelf state (`shelfStateOf`) and the titles (`useProductLines`) as they are.
 
 ## The story
 
@@ -53,11 +55,11 @@ What it publishes for them is `fetchProductsByIds`, behind `useProductLines`: on
 `POST /products/search` for a set of id-only lines, landing in the same dictionary the product
 page reads.
 
-::: tip The one arrow pointing in
-[`inventory`](./inventory.md) reads `useProductsStore` as it is, to name products in its receipt
-select and its ledger titles. That is `conformist`: no translation, no say in the shape. It is also
-the same one-way arrow the backend's `inventory → products` edge has, which is a small piece of
-evidence that both context maps are describing the same system.
+::: tip What it publishes
+The barrel offers narrow handles on the store, never the store: `useProductLines` joins id-only
+lines to their records, `shelfStateOf` ranks the flags the API sent into one badge, and
+`invalidateProductsCache` drops the cached catalogue after a stock-moving write. Specs seed the
+dictionary through `tests/support/unit/products-store.ts`, so no production sibling holds the store.
 :::
 
 ## How fresh the numbers are

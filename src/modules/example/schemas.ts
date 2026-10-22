@@ -1,13 +1,13 @@
 /**
  * @module
- * Zod validation schemas for the example forms, with i18n-thunked error messages resolved at parse
- * time rather than at schema-definition time. Bounds come from the generated contract schemas,
- * never restated here.
+ * In any module: Zod schemas validate a form, with i18n-thunked messages resolved at parse time.
+ * Bounds come from the generated contract schemas, never restated.
+ * Here: one schema for create and edit, because the status is not a form field.
+ * See: docs/theory/request-flow.md
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
 import { createExampleBodyBodyMax, createExampleBodyTitleMax } from '@api/schemas';
-import { EXAMPLE_STATUSES } from './domain';
 
 /**
  * A title: required, and no longer than the contract allows.
@@ -27,16 +27,10 @@ const exampleBodySchema = z
     .max(createExampleBodyBodyMax, { error: () => translate('example-form.body-too-long') });
 
 /**
- * Creating an example: a title and a body. A new example is always a draft.
+ * Creating or editing an example: a title and a body. A new example is always a draft, and the
+ * status moves through its own door, so the one form has no status field.
  */
-export const exampleCreateSchema = z.object({
+export const exampleFormSchema = z.object({
     title: exampleTitleSchema,
     body: exampleBodySchema
-});
-
-/**
- * Editing an example: the create fields plus the status.
- */
-export const exampleEditSchema = exampleCreateSchema.extend({
-    status: z.enum(EXAMPLE_STATUSES)
 });

@@ -27,6 +27,7 @@
 
 import { defineStore } from 'pinia';
 import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
+import { writeJson } from '@/infrastructure/utils/safe-storage.ts';
 import { ref } from 'vue';
 import { mapValues } from 'lodash-es';
 import type { Faro, TransportItem } from '@grafana/faro-web-sdk';
@@ -55,6 +56,49 @@ export const stripSensitiveUrlParts = (url: string): string => {
 };
 
 /**
+ * One OTLP key/value pair on a span; only string values can carry a URL.
+ */
+interface SpanAttribute {
+    key?: string;
+    value?: { stringValue?: string };
+}
+
+/**
+ * The OTLP trace payload shape this file walks: resource → scope → span → attributes.
+ */
+interface OtlpPayload {
+    resourceSpans?: { scopeSpans?: { spans?: { attributes?: SpanAttribute[] }[] }[] }[];
+}
+
+/**
+ * Flattens an OTLP trace payload into its span attributes: a flat `{ key, value }` array on every
+ * span, under every scope, under every resource.
+ *
+ * @param payload - The item payload, which for non-trace items has no `resourceSpans`.
+ * @returns Every span attribute, empty for payloads that are not traces.
+ */
+const spanAttributes = (payload: OtlpPayload): SpanAttribute[] =>
+    (payload.resourceSpans ?? [])
+        .flatMap((resource) => resource.scopeSpans ?? [])
+        .flatMap((scope) => scope.spans ?? [])
+        .flatMap((span) => span.attributes ?? []);
+
+/**
+ * Redacts a span attribute in place when it holds a URL. `url.full` is the current OTel
+ * semantic-convention key; `http.url` is what older instrumentation versions still emit.
+ *
+ * @param kv - One span attribute.
+ */
+const stripSpanUrlAttribute = (kv: SpanAttribute): void => {
+    if (
+        (kv.key !== 'url.full' && kv.key !== 'http.url') ||
+        typeof kv.value?.stringValue !== 'string'
+    )
+        return;
+    kv.value.stringValue = stripSensitiveUrlParts(kv.value.stringValue);
+};
+
+/**
  * Faro `beforeSend` hook: strips one-time email tokens (verification, password reset, account
  * deletion, email change all pass them as a `#token=` fragment — which `stripSensitiveUrlParts` drops along with any query) out of every telemetry item
  * before it leaves the browser — the page URL every item's `meta.page` carries, the URL
@@ -70,20 +114,7 @@ export const stripTokensFromTelemetry = (item: TransportItem): TransportItem => 
         item.meta.page = { ...item.meta.page, url: stripSensitiveUrlParts(item.meta.page.url) };
     }
 
-    // Trace spans carry their own URL, OTLP-style: a flat `attributes` array of `{ key, value }`
-    // pairs on every span, under every scope, under every resource. `url.full` is the current
-    // OTel semantic-convention key; `http.url` is what older instrumentation versions still emit.
-    for (const resourceSpan of (item.payload as { resourceSpans?: unknown[] }).resourceSpans ?? [])
-        for (const scopeSpan of (resourceSpan as { scopeSpans?: unknown[] }).scopeSpans ?? [])
-            for (const span of (scopeSpan as { spans?: unknown[] }).spans ?? [])
-                for (const attribute of (span as { attributes?: unknown[] }).attributes ?? []) {
-                    const kv = attribute as { key?: string; value?: { stringValue?: string } };
-                    if (
-                        (kv.key === 'url.full' || kv.key === 'http.url') &&
-                        typeof kv.value?.stringValue === 'string'
-                    )
-                        kv.value.stringValue = stripSensitiveUrlParts(kv.value.stringValue);
-                }
+    for (const kv of spanAttributes(item.payload as OtlpPayload)) stripSpanUrlAttribute(kv);
 
     stripEventUrls(item.payload as EventPayload);
 
@@ -170,19 +201,14 @@ const UMAMI_OPT_OUT_KEY = BROWSER_STORAGE_NAME.umamiDisabled;
 
 /**
  * Sets or clears the tracker's own opt-out switch. Storage can be blocked (private mode, a
- * browser setting) and then there is nothing to flip, so a refusal is swallowed: the script is
- * only ever injected on consent, and a blocked-storage visitor who never consented never loads it.
+ * browser setting) and then `writeJson` swallows the refusal: the script is only ever injected on
+ * consent, and a blocked-storage visitor who never consented never loads it.
  *
  * @param disabled - `true` to silence the tracker, `false` to let it send again.
  */
 const setUmamiOptOut = (disabled: boolean): void => {
-    // eslint-disable-next-line no-restricted-syntax -- `localStorage` access itself throws when storage is blocked; there is no non-throwing probe
-    try {
-        if (disabled) localStorage.setItem(UMAMI_OPT_OUT_KEY, '1');
-        else localStorage.removeItem(UMAMI_OPT_OUT_KEY);
-    } catch {
-        logger.debug('observability', '[Umami] localStorage unavailable, opt-out not persisted');
-    }
+    // `1` (JSON) is the truthy value Umami reads; `undefined` removes the key.
+    writeJson('local', UMAMI_OPT_OUT_KEY, disabled ? 1 : undefined);
 };
 
 /**

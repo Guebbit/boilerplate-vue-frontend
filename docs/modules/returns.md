@@ -28,6 +28,16 @@ the staff queue that approves and receives them, cancelling what has not shipped
 order by route name, guarded by `linkIfRouted`, so no edge points the other way.
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
+flowchart LR
+    orders["orders"] -.->|"published-language"| returns["<b>returns</b>"]
+```
+
+- `orders` → **published-language** — Mounts `WithdrawalPanel`; the withdrawal and the order's returns list are the component's own business.
+
+Inside the module, the pieces connect like this:
+
+```mermaid
 flowchart LR
     orders["orders (Order.vue)"] -.->|mounts| panel["WithdrawalPanel"]
     panel --> form["ReturnRequestForm"]

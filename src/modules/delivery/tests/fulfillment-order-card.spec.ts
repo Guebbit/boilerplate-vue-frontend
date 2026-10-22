@@ -12,7 +12,6 @@ import FulfillmentOrderCard from '../components/FulfillmentOrderCard.vue';
 import { useDeliveryStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import { OrderStatus } from '@/types/enums.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import { aFulfillmentOrder, aShipment } from '../../../../tests/support/unit/fixtures.ts';
@@ -24,13 +23,10 @@ wireModulesIntoCore();
  * Mounts the card, with `v-dialog` stubbed to render its content inline.
  *
  * @param fulfillmentOrder - The record under test.
- * @param extra - Shipments and the order's `override`.
+ * @param extra - Shipments.
  * @returns The wrapper and the store.
  */
-const mountCard = (
-    fulfillmentOrder: FulfillmentOrder,
-    extra: { shipments?: Shipment[]; override?: OrderStatus[] } = {}
-) => {
+const mountCard = (fulfillmentOrder: FulfillmentOrder, extra: { shipments?: Shipment[] } = {}) => {
     const store = useDeliveryStore();
     const wrapper = mount(FulfillmentOrderCard, {
         props: { shipments: [], ...extra, fulfillmentOrder },
@@ -71,6 +67,7 @@ describe('what a card shows', () => {
                 holdNotice: 'awaiting_stock',
                 actions: {
                     ship: false,
+                    forceShip: false,
                     fulfill: false,
                     hold: false,
                     release: false
@@ -220,6 +217,7 @@ describe('the buttons come from `actions`', () => {
             aFulfillmentOrder({
                 actions: {
                     ship: true,
+                    forceShip: false,
                     fulfill: false,
                     hold: true,
                     release: false
@@ -231,23 +229,29 @@ describe('the buttons come from `actions`', () => {
         expect(wrapper.find('[data-test=open-hold]').exists()).toBe(true);
     });
 
-    it('offers the forced ship to an override holder while the ordinary door is closed', () => {
-        const { wrapper } = mountCard(aFulfillmentOrder(), { override: [OrderStatus.shipped] });
+    it('offers the forced ship when the server says forceShip, the ordinary door closed', () => {
+        const { wrapper } = mountCard(
+            aFulfillmentOrder({
+                actions: {
+                    ship: false,
+                    forceShip: true,
+                    fulfill: false,
+                    hold: true,
+                    release: false
+                }
+            })
+        );
 
         expect(wrapper.find('[data-test=open-ship]').exists()).toBe(true);
     });
 
-    it('never offers the forced ship on a held or finished group, nor a digital one', () => {
+    it('offers no ship without ship or forceShip, whatever the group looks like', () => {
         for (const order of [
             aFulfillmentOrder({ status: 'on_hold' }),
             aFulfillmentOrder({ status: 'closed' }),
             aFulfillmentOrder({ kind: 'digital' })
         ])
-            expect(
-                mountCard(order, { override: [OrderStatus.shipped] })
-                    .wrapper.find('[data-test=open-ship]')
-                    .exists()
-            ).toBe(false);
+            expect(mountCard(order).wrapper.find('[data-test=open-ship]').exists()).toBe(false);
     });
 
     it('fulfils a digital group and tells the page', () => {
@@ -256,6 +260,7 @@ describe('the buttons come from `actions`', () => {
                 kind: 'digital',
                 actions: {
                     ship: false,
+                    forceShip: false,
                     fulfill: true,
                     hold: false,
                     release: false
@@ -281,6 +286,7 @@ describe('the buttons come from `actions`', () => {
                 holdReason: 'other',
                 actions: {
                     ship: false,
+                    forceShip: false,
                     fulfill: false,
                     hold: false,
                     release: true
@@ -305,6 +311,7 @@ describe('the buttons come from `actions`', () => {
                 kind: 'digital',
                 actions: {
                     ship: false,
+                    forceShip: false,
                     fulfill: true,
                     hold: false,
                     release: false

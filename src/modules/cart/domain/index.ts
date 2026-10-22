@@ -7,6 +7,7 @@
 export { MIN_LINE_QUANTITY, steppedQuantity } from './quantity';
 export { classifyCheckoutError } from './checkout-errors';
 export { checkoutFingerprint } from './checkout-attempt';
+export { emptyCart } from './empty-cart';
 export { expectedTotalOf, fromMinorUnits, toMinorUnits } from './expected-total';
 export type { ExpectedTotal } from './expected-total';
 export {

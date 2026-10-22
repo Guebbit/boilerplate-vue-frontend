@@ -14,15 +14,16 @@ export default {
  * Public contact form, validated with `useStructureFormValidation` against a Zod schema and
  * submitted through the feedback store; success resets the form in place.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
+import FormCard from '@/ui/organisms/FormCard.vue';
 import { computed, ref } from 'vue';
-import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useFeedbackStore } from '../store.ts';
+import { contactSchema } from '../schemas.ts';
 import { FeedbackCategory } from '@/types/enums.ts';
 import type { FeedbackCategory as TFeedbackCategory } from '@types';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
@@ -108,9 +109,9 @@ const { submitContact } = useFeedbackStore();
 const humanCheck = ref<InstanceType<typeof HumanCheck>>();
 
 /**
- * The `<form>` element, handed to `useStructureFormValidation` so it can trigger native validation UI.
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 /**
  * Form state, validation and submit wiring, built on the schema below.
@@ -133,21 +134,11 @@ const {
         orderNumber: orderFromLink(),
         website: ''
     },
-    z.object({
-        name: z.string().optional(),
-        email: z.email({ error: () => t('contact-page.email-invalid') }),
-        subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
-        message: z.string().min(10, { error: () => t('contact-page.message-min') }),
-        category: z.enum(FeedbackCategory).optional(),
-        orderNumber: z.string().max(40).optional(),
-        // Never shown to a visitor, so never validated — the BE decides what a filled value
-        // means; this form only has to carry it through unedited.
-        website: z.string().optional()
-    }),
+    contactSchema,
     {
-        formElement,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
+        formElement: () => card.value?.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -194,10 +185,17 @@ const submitForm = () =>
 
 <template>
     <div id="contact-page">
-        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <p class="mb-4 opacity-80">{{ t('contact-page.intro') }}</p>
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <!--
+        <FormCard
+            ref="card"
+            size="xl"
+            :submit-label="t('contact-page.button-submit')"
+            :loading="isSubmitting"
+            @submit="submitForm"
+        >
+            <template #before>
+                <p class="mb-4 opacity-80">{{ t('contact-page.intro') }}</p>
+            </template>
+            <!--
                     Honeypot. `aria-hidden` and `tabindex="-1"` take it out of the accessibility
                     tree and the tab order entirely, rather than merely out of sight — a
                     `display:none` field a screen reader still exposed would fail every a11y check
@@ -205,84 +203,74 @@ const submitForm = () =>
                     filling in something that marks their own message as spam. `autocomplete="off"`
                     keeps a browser from ever offering to fill it for a real visitor either.
                 -->
-                <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the honeypot must sit off-screen yet stay filled by bots: not sr-only, not hidden -->
-                <div class="absolute left-[-9999px] size-0 overflow-hidden" aria-hidden="true">
-                    <input
-                        v-model="form.website"
-                        type="text"
-                        tabindex="-1"
-                        autocomplete="off"
-                        name="website"
-                        data-test="contact-website"
-                    />
-                </div>
-                <v-text-field
-                    v-model="form.name"
+            <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- the honeypot must sit off-screen yet stay filled by bots: not sr-only, not hidden -->
+            <div class="absolute left-[-9999px] size-0 overflow-hidden" aria-hidden="true">
+                <input
+                    v-model="form.website"
                     type="text"
-                    autocomplete="name"
-                    data-test="contact-name"
-                    :label="t('contact-page.label-name')"
-                    class="mb-2"
+                    tabindex="-1"
+                    autocomplete="off"
+                    name="website"
+                    data-test="contact-website"
                 />
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    data-test="contact-email"
-                    :label="t('contact-page.label-email')"
-                    :error-messages="showFormErrors ? (formErrors.email ?? []) : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.subject"
-                    type="text"
-                    data-test="contact-subject"
-                    :label="t('contact-page.label-subject')"
-                    :error-messages="showFormErrors ? (formErrors.subject ?? []) : []"
-                    class="mb-2"
-                />
-                <v-select
-                    v-model="form.category"
-                    data-test="contact-category"
-                    :label="t('contact-page.label-category')"
-                    :items="categoryOptions"
-                    item-title="title"
-                    item-value="value"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.orderNumber"
-                    type="text"
-                    maxlength="40"
-                    data-test="contact-order-number"
-                    :label="t('contact-page.label-order-number')"
-                    class="mb-2"
-                />
-                <v-textarea
-                    v-model="form.message"
-                    data-test="contact-message"
-                    :label="t('contact-page.label-message')"
-                    :error-messages="showFormErrors ? (formErrors.message ?? []) : []"
-                    rows="5"
-                />
-                <HumanCheck ref="humanCheck" class="mb-2" />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    block
-                    class="mt-4"
-                    data-test="contact-submit"
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
-                >
-                    {{ t('contact-page.button-submit') }}
-                </v-btn>
+            </div>
+            <v-text-field
+                v-model="form.name"
+                type="text"
+                autocomplete="name"
+                data-test="contact-name"
+                :label="t('contact-page.label-name')"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.email"
+                type="email"
+                autocomplete="email"
+                data-test="contact-email"
+                :label="t('contact-page.label-email')"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.email ?? []) : [])"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.subject"
+                type="text"
+                data-test="contact-subject"
+                :label="t('contact-page.label-subject')"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.subject ?? []) : [])"
+                class="mb-2"
+            />
+            <v-select
+                v-model="form.category"
+                data-test="contact-category"
+                :label="t('contact-page.label-category')"
+                :items="categoryOptions"
+                item-title="title"
+                item-value="value"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.orderNumber"
+                type="text"
+                maxlength="40"
+                data-test="contact-order-number"
+                :label="t('contact-page.label-order-number')"
+                class="mb-2"
+            />
+            <v-textarea
+                v-model="form.message"
+                data-test="contact-message"
+                :label="t('contact-page.label-message')"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.message ?? []) : [])"
+                rows="5"
+            />
+            <HumanCheck ref="humanCheck" class="mb-2" />
+            <template #after-submit>
                 <InlineErrorAlert
                     :message="submitError"
                     class="mt-2"
                     data-test="contact-submit-error"
                 />
-            </form>
-        </v-card>
+            </template>
+        </FormCard>
     </div>
 </template>

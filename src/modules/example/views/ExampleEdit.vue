@@ -11,11 +11,13 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The edit screen. Hydrates from the store's cache by route id (the route guard has already
- * loaded it) and holds every editable field: title, body, status and the cover image. Built on
- * `useStructureFormValidation`; a save sends only what changed, and a cover goes up as its own
- * multipart request after the JSON save.
+ * In any module: an edit screen hydrates from the cache by route id, sends only what changed, and
+ * says so when the record moved under it (412, with "reload latest").
+ * Here: title, body and a cover; the status is not a field but the server's own moves, and the form
+ * is read-only when the row's `actions.update` is false.
+ * See: docs/theory/request-flow.md#conditional-writes
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -25,19 +27,20 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useExampleStore } from '../store';
-import { exampleEditSchema } from '../schemas.ts';
-import { EXAMPLE_STATUSES } from '../domain';
-import type { ExampleStatus } from '@types';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
+import { exampleFormSchema } from '../schemas.ts';
+import { provideExample } from '../provided.ts';
+import ExampleStatusActions from '../components/ExampleStatusActions.vue';
+import { useExampleTransition } from '../composables/use-example-transition.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { EMPTY_VALUE, formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
+import { formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
@@ -62,7 +65,7 @@ const { id } = defineProps<{
 /**
  * Store actions.
  */
-const { watchExample, updateExample, setCover } = useExampleStore();
+const { watchExample, updateExample, setCover, fetchExample } = useExampleStore();
 
 /**
  * The example being edited, and whether the store is busy with it.
@@ -75,7 +78,6 @@ const { currentExample, loading } = storeToRefs(useExampleStore());
 interface ExampleEditForm {
     title?: string;
     body?: string;
-    status?: ExampleStatus;
     imageUpload?: File;
 }
 
@@ -97,10 +99,9 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<ExampleEditForm>({}, exampleEditSchema, {
+} = useStructureFormValidation<ExampleEditForm>({}, exampleFormSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -122,20 +123,10 @@ activateAutoHydrate(
         currentExample.value
             ? {
                   title: currentExample.value.title,
-                  body: currentExample.value.body,
-                  status: currentExample.value.status
+                  body: currentExample.value.body
               }
             : undefined
     )
-);
-
-/**
- * The status select's options, localized.
- *
- * @returns One option per status, re-translated on locale change.
- */
-const statusOptions = computed(() =>
-    EXAMPLE_STATUSES.map((value) => ({ value, label: t(`example-status.${value}`) }))
 );
 
 /**
@@ -155,7 +146,41 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 /**
  * This form's own blocked state: a failed save blocks this form in place.
  */
-const { message: formError, report: reportFormError, clear: clearFormError } = useBlockingError();
+const {
+    message: formError,
+    report: reportFormError,
+    warn: warnFormError,
+    clear: clearFormError
+} = useBlockingError();
+
+/**
+ * The save came back 412: the example changed since it was loaded (a peer moved its status, say).
+ * "Reload latest" re-reads the record past the cache, which re-hydrates the form and refreshes the
+ * `ETag` the next save sends.
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest
+} = useStaleRecord({ warn: warnFormError, clear: clearFormError }, () =>
+    id ? fetchExample(id, { forced: true }) : Promise.resolve()
+);
+
+/**
+ * The status door: the same composable the detail screen uses. The buttons render the moves the
+ * server lists for this caller, so an editor cannot offer what the row would refuse.
+ */
+const { changeStatus, error: statusError } = useExampleTransition(() => id);
+
+provideExample({ example: currentExample, changeStatus });
+
+/**
+ * Whether the server lets this caller edit this row. The route's coarse `meta.can` let them in; the
+ * row has the final say, and a read-only caller sees the form disabled and told why.
+ *
+ * @returns `false` only when the record says so; true while it loads.
+ */
+const mayEdit = computed(() => currentExample.value?.actions?.update !== false);
 
 /**
  * Validates the form and saves it: the changed fields as one JSON PATCH, then the cover, if one
@@ -170,8 +195,8 @@ const submitForm = () => {
     clearFormError();
     return handleSubmit(() => {
         if (!id) return;
-        const { title, body, status, imageUpload } = form.value;
-        return toRequestBody('UpdateExampleByIdBody', { title, body, status }, currentExample.value)
+        const { title, body, imageUpload } = form.value;
+        return toRequestBody('UpdateExampleByIdBody', { title, body }, currentExample.value)
             .then((changes) => updateExample(id, changes))
             .then(() =>
                 imageUpload
@@ -186,6 +211,7 @@ const submitForm = () => {
                 addMessage(t('example-edit-page.success-update'));
             });
     }).catch((error: unknown) => {
+        if (handleStaleSave(error)) return;
         applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
 };
@@ -199,6 +225,23 @@ const onMissingRecord = useMissingRecord();
  * Selects and hydrates the example whenever the route id changes.
  */
 watchExample(() => id, { onError: onMissingRecord });
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('example-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('example-target-page.label-created-at'),
+        value: formatDateTime(currentExample.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('example-target-page.label-updated-at'),
+        value: formatDateTime(currentExample.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -214,20 +257,24 @@ watchExample(() => id, { onError: onMissingRecord });
                 </ItemDetailHero>
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('example-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('example-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
+                    <v-alert
+                        v-if="!mayEdit"
+                        type="info"
+                        variant="tonal"
+                        class="mb-2"
+                        data-test="example-read-only"
+                    >
+                        {{ t('example-edit-page.read-only') }}
+                    </v-alert>
                     <fieldset
-                        :disabled="loading"
+                        :disabled="loading || !mayEdit"
                         class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
                     >
                         <v-text-field
@@ -235,23 +282,14 @@ watchExample(() => id, { onError: onMissingRecord });
                             type="text"
                             data-test="example-title"
                             :label="t('example-edit-page.label-title')"
-                            :error-messages="showFormErrors ? formErrors.title : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.title : [])"
                         />
                         <v-textarea
                             v-model="form.body"
                             data-test="example-body"
                             :label="t('example-edit-page.label-body')"
-                            :error-messages="showFormErrors ? formErrors.body : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.body : [])"
                             rows="6"
-                        />
-                        <v-select
-                            v-model="form.status"
-                            data-test="example-status"
-                            :label="t('example-edit-page.label-status')"
-                            :items="statusOptions"
-                            item-title="label"
-                            item-value="value"
-                            :error-messages="showFormErrors ? formErrors.status : []"
                         />
                         <FormImageUpload
                             v-model="form.imageUpload"
@@ -278,37 +316,43 @@ watchExample(() => id, { onError: onMissingRecord });
 
                         <InlineErrorAlert
                             :message="formError"
+                            :type="isStale ? 'warning' : 'error'"
                             data-test="example-edit-form-error"
                         />
+                        <v-btn
+                            v-if="isStale"
+                            variant="tonal"
+                            color="warning"
+                            data-test="example-reload-latest"
+                            :loading="loading"
+                            @click="reloadLatest"
+                        >
+                            {{ t('generic.action-reload-latest') }}
+                        </v-btn>
                     </fieldset>
                 </form>
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo
-                        :title="heroTitle"
-                        :description="formatText(currentExample?.ownerName)"
-                        accent="secondary"
-                    >
-                        <template #icon><NotebookPen :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('example-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-created-at')"
-                        :value="formatDateTime(currentExample?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-updated-at')"
-                        :value="formatDateTime(currentExample?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="formatText(currentExample?.ownerName)"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><NotebookPen :size="28" /></template>
+                    <div v-if="currentExample?.actions?.transitions.length">
+                        <h3 class="mb-3 text-lg font-semibold">
+                            {{ t('example-target-page.section-status') }}
+                        </h3>
+                        <ExampleStatusActions />
+                        <InlineErrorAlert
+                            :message="statusError"
+                            class="mt-3"
+                            data-test="example-edit-status-error"
+                        />
+                    </div>
+                </RecordAsideCard>
             </template>
         </ItemDetailLayout>
     </div>

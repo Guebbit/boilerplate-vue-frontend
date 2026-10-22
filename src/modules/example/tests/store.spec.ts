@@ -91,6 +91,13 @@ const answerWithPage = (items: unknown[]) =>
         )
     );
 
+/** The `Idempotency-Key` header of the most recent request. */
+const keyOfLastRequest = () =>
+    (
+        vi.mocked(orvalMutator).mock.calls.at(-1)?.[1] as
+            { headers?: Record<string, string> } | undefined
+    )?.headers?.['Idempotency-Key'];
+
 describe('useExampleStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -175,6 +182,61 @@ describe('useExampleStore', () => {
                     expect(created?.id).toBe(EXAMPLE.id);
                     expect(useExampleStore().examples[EXAMPLE.id]).toBeDefined();
                 }));
+    });
+
+    describe('createExample, idempotently', () => {
+        it('sends an Idempotency-Key', () =>
+            useExampleStore()
+                .createExample({ title: 'A title', body: 'A body' })
+                .then(() => {
+                    expect(keyOfLastRequest()).toBeTruthy();
+                }));
+
+        it('resends the same key after a network error, and a fresh one after a 4xx', () => {
+            const store = useExampleStore();
+            vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
+
+            return store
+                .createExample({ title: 'A title', body: 'A body' })
+                .catch(() => undefined)
+                .then(() => {
+                    const first = keyOfLastRequest();
+                    return store.createExample({ title: 'A title', body: 'A body' }).then(() => {
+                        expect(keyOfLastRequest()).toBe(first);
+                    });
+                });
+        });
+    });
+
+    describe('transitionExample', () => {
+        it('posts { to } to the door and replaces the cached record with the answer', () => {
+            const store = useExampleStore();
+            store.addExampleRecord({ ...EXAMPLE } as never);
+            vi.mocked(orvalMutator).mockImplementationOnce(
+                (config: { url?: string; method?: string }) =>
+                    Promise.resolve(
+                        parseOrvalFixture(
+                            config.method,
+                            config.url,
+                            orvalEnvelope({
+                                ...EXAMPLE,
+                                status: 'published',
+                                actions: { transitions: ['archived'], update: true, delete: true }
+                            })
+                        )
+                    )
+            );
+
+            return store.transitionExample(EXAMPLE.id, 'published').then(() => {
+                expect(lastRequest()).toMatchObject({
+                    url: `/examples/${EXAMPLE.id}/transitions`,
+                    method: 'POST'
+                });
+                expect(lastBody(schemas.TransitionExampleBody)).toEqual({ to: 'published' });
+                expect(store.examples[EXAMPLE.id]?.status).toBe('published');
+                expect(store.examples[EXAMPLE.id]?.actions?.transitions).toEqual(['archived']);
+            });
+        });
     });
 
     describe('updateExample', () => {

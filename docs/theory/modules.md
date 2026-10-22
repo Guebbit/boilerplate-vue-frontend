@@ -58,11 +58,11 @@ the "extractable i18n runtime" note under [Layers](./layers.md).
 | **UI**             | `src/ui`             | nothing but design                                               | infra                      |
 | **Infrastructure** | `src/infrastructure` | nothing above it                                                 | —                          |
 
-### Why `app` exists, and what it fixed
+### Why `app` exists
 
-The module-system tier — then called `platform`, now `kernel` — used to hold the router, the
-layouts, the route guards, the app views and `AppNavigation`, and the tier rule carried an explicit
-exemption letting it import `@/modules`, the registry. That exemption was the whole problem: **the
+The module-system tier, `kernel`, must not hold the router, the layouts, the route guards, the app
+views or `AppNavigation`, because they would need an exemption to import `@/modules`, the registry.
+That exemption is the whole problem: **the
 registry names every enabled domain**, so anything reading it knows this application rather than
 this kind of application.
 
@@ -103,7 +103,7 @@ of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modu
 | `route-link.ts` | its whole reason to exist is a route that may not resolve because the module owning it may not be in this build — meaningless in an app with no modules |
 
 Three near misses show where the line falls, because each survives perfectly well in an app with no
-modules and none is imported by the registry: `src/ui/molecules/FormCounterInput.vue` imports
+modules and none is imported by the registry: `src/ui/molecules/PageSizeSelect.vue` imports
 nothing at all, `src/app/components/AppLanguageSwitcher.vue` reads this app's locale list and
 drives its locale-prefixed routes, and `src/modules/example/store.ts` is one domain's own state
 rather than shared state. None of the three belongs to the module system; each
@@ -121,9 +121,8 @@ worth keeping.
 
 `core` is not an unusual name — it is an **overloaded** one, which is worse. Nest and Angular use
 `@nestjs/core` and `@angular/core` for the DI container and call their substrate `common`; Spring
-and Backstage use "core" for the substrate, as this repo did. The paragraph above used to open by
-insisting that `core` did not mean what a reader arriving from Vue tooling would assume — and a name
-that needs a standing disclaimer is doing negative work. A novel name makes someone look it up; an
+and Backstage use "core" for the substrate, as an earlier name here did. A name
+that needs a standing disclaimer for readers arriving from Vue tooling is doing negative work. A novel name makes someone look it up; an
 overloaded one makes them think they already know, and that failure is silent.
 
 `platform` was borrowed from VS Code, where `vs/base` is utility code, `vs/platform` is the service
@@ -181,13 +180,12 @@ accessor returns (the cart's total). `section` and `pinned` are placement only; 
 is still the route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
 
 What subdomain a module sits in, and what kind of relationship each arrow to a sibling is, are the
-module's **strategic** declarations too — but they are not fields here. They are prose in the
-docblock at the top of each `module.ts`, next to the imports and the navigation entries they
-describe, because a reader meets a claim and the code it describes in the same place that way. See
-[Strategic DDD](./strategic-ddd.md) for why that reads better than a typed `subdomain` and
-`dependsOn` used to.
+module's **strategic** declarations too — but they are not fields here. They are prose: the subdomain in the
+docblock at the top of each `module.ts`, and each arrow's kind on the module's docs page under "The
+map". See [Strategic DDD](./strategic-ddd.md) for why that reads better than a typed `subdomain`
+and `dependsOn`.
 
-Each optional field replaced a shared file that used to enumerate domains — the navigation list,
+Each optional field replaces a shared file that would otherwise enumerate domains — the navigation list,
 the response-schema table, the locale bundle. That is most of the point: `src/modules.ts` is the
 only place that HAS to. The corner loading indicator follows the same rule: a module opts its
 stores in with `loadingKeys` (their `resourceKey` prefixes), and `LayoutDefault.vue` collects them.
@@ -206,13 +204,49 @@ may import, and a reach outside that list fails `npm run lint` at the offending 
   this build enables.
 - `responseSchemas` is eager: the http client needs the table before the first request.
 
+## The module template
+
+`src/modules/example` is this template in code: the module to copy when you start a new domain, and
+to delete once you have your own. Every non-test file opens with the same header —
+`In any module:` (the pattern the file is), `Here:` (what it does in `example`), an optional
+`Delete it if:`, an optional `Instead see:` and a closing `See:` — and a spec holds them to it.
+Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the same patterns.
+
+| Pattern                                 | Show / point | Where                                                         |
+| --------------------------------------- | ------------ | ------------------------------------------------------------- |
+| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                          |
+| Store over the generated client         | show         | `store.ts`                                                    |
+| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`      |
+| An action door and its 409              | show         | `composables/use-example-transition.ts`                       |
+| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                       |
+| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                              |
+| A reading rule in `domain/`             | show         | `domain/publication.ts`                                       |
+| Upload with progress                    | show         | `views/ExampleEdit.vue`                                       |
+| Typed provide/inject, teaching guard    | show         | `provided.ts`, `guards.ts`                                    |
+| A barrel                                | point        | `cart/index.ts` (forbidden here: nothing imports `example`)   |
+| A slot contribution                     | point        | `wishlist/module.ts`                                          |
+| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `feedback`, `observability` |
+
+```mermaid
+flowchart LR
+    List["list / detail / edit<br/>render example.actions"] -->|"press a move"| Door["POST /examples/{id}/transitions"]
+    Door -->|"200 + new actions"| Cache["store replaces the record"]
+    Door -->|"409: a peer moved it"| Reread["re-read past the cache<br/>buttons show the server's new answer"]
+    Cache --> List
+    Reread --> List
+```
+
+Copy the folder, rename it, delete the screens and the patterns you do not need (each header says
+when), and delete `example` once you have your own domain. The transition table lives on the
+backend; a client never holds one (`actions.transitions` is the server's list).
+
 ## Adding and deleting a domain
 
 One folder and one line, in both directions. The procedure — the manifest fields and the commands —
 is [Adding & removing a module](./module-lifecycle.md). What belongs here is
 what the exercise taught.
 
-The template to copy is `src/modules/example`: a small note domain with a list, a detail, a create
+The template to copy is `src/modules/example` ([The module template](#the-module-template)): a small note domain with a list, a detail, a create
 form, an edit form (with a cover upload) and one public screen, a store over the generated client,
 the Zod schemas, the response-schema rows, a teaching route guard, a provide/inject pair and both
 languages. It has no page of its own and no barrel (nothing imports it, and a barrel is published
@@ -277,7 +311,10 @@ remembering:
    `stores/addresses.ts` / `stores/oauth.ts` / `stores/two-factor.ts` each hold state scoped to the
    one component that renders it. The shell knows only _someone is signed in, here is their name and
    picture, here is their role_ — the second seam divides responsibilities within the account
-   domain, without moving anything across the session/account boundary.
+   domain, without moving anything across the session/account boundary. The shell's other calls
+   that need a session but not the credential lifecycle — the step-up re-proof, the verification
+   resend and the language preference — sit in their own files beside `session.ts`
+   (`reauth.ts`, `email-verification.ts`, `locale-preference.ts`).
 
 ### The honest scorecard
 

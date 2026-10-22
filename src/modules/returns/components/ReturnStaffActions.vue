@@ -15,15 +15,16 @@ export default {
  * receive (with an optional handling deduction). Which of them is open is the server's
  * `Return.actions`; this component renders that answer and re-implements none of the lifecycle.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
+import { declineReasonSchema } from '../schemas.ts';
 import type { Return } from '@types';
 
 /**
@@ -79,11 +80,7 @@ const declineElement = ref<HTMLFormElement>();
  * Decline needs a reason — a refusal nobody explains is not one.
  */
 const declineSchema = z.object({
-    reason: z
-        .string()
-        .trim()
-        .min(1, { error: () => t('return-staff-actions.error-reason-required') })
-        .max(500)
+    reason: declineReasonSchema
 });
 
 /**
@@ -98,7 +95,6 @@ const {
 } = useStructureFormValidation({ reason: '' }, declineSchema, {
     formElement: declineElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -129,7 +125,6 @@ const {
 } = useStructureFormValidation({ handlingDeduction: '' }, receiveSchema, {
     formElement: receiveElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -230,7 +225,7 @@ const submitReceive = () =>
             <v-text-field
                 v-model="declineForm.reason"
                 :label="t('return-staff-actions.label-reason')"
-                :error-messages="showDeclineErrors ? (declineErrors.reason ?? []) : []"
+                v-bind="fieldErrorProps(showDeclineErrors ? (declineErrors.reason ?? []) : [])"
                 maxlength="500"
                 class="w-full grow sm:w-auto sm:min-w-64"
                 hide-details="auto"
@@ -261,7 +256,11 @@ const submitReceive = () =>
                 min="0"
                 step="0.01"
                 :label="t('return-staff-actions.label-deduction', { currency: item.currency })"
-                :error-messages="showReceiveErrors ? (receiveErrors.handlingDeduction ?? []) : []"
+                v-bind="
+                    fieldErrorProps(
+                        showReceiveErrors ? (receiveErrors.handlingDeduction ?? []) : []
+                    )
+                "
                 class="min-w-48"
                 hide-details="auto"
                 data-test="return-receive-deduction"

@@ -99,11 +99,15 @@ Those two, the authorization keys and the demo webhook sink's three TLS files (`
 The programs an AI audit runs (`scripts/audit/*/scripts/`). The audits themselves are prompts, not
 scripts: see [AI Auditing](./ai-auditing.md).
 
-| Script                 | Job                                                                                                                                      | Read more                           |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `audit:design:capture` | Photographs the app for the design review: runs the sweeps in capture mode, writes PNG tiles and a manifest. A live e2e; not in the gate | [Design Review](./design-review.md) |
-| `audit:design:plan`    | Splits the last design capture into batches small enough for one reviewer's context                                                      | [AI Auditing](./ai-auditing.md)     |
-| `audit:design:check`   | Checks that every tile and `file:line` a design review cites exists; exits 1 when one does not                                           | [AI Auditing](./ai-auditing.md)     |
+| Script                 | Job                                                                                                                                                                       | Read more                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `audit:design:capture` | Photographs the app for the design review: runs the sweeps in capture mode, writes PNG tiles and a manifest. A live e2e; not in the gate                                  | [Design Review](./design-review.md)                   |
+| `audit:design:plan`    | Splits the last design capture into batches small enough for one reviewer's context                                                                                       | [AI Auditing](./ai-auditing.md)                       |
+| `audit:design:check`   | Checks that every tile and `file:line` a design review cites exists; exits 1 when one does not                                                                            | [AI Auditing](./ai-auditing.md)                       |
+| `audit:css`            | Prints every invasive-CSS hit (`file:line`, check, snippet, fix); `-- --json` for a machine. The gate is `css-invasiveness.spec.ts`. Reads source only                    | [Design Lint](./design-lint.md#the-invasive-css-scan) |
+| `audit:shallow`        | The `code-shape` audit's shallow-code counter (small functions, pass-throughs, lazy files), reading each SFC's script too; writes `reports/audit/code-shape/shallow.json` | [AI Auditing](./ai-auditing.md)                       |
+| `audit:unused`         | `knip`: unused files, exports and dependencies, as candidates for `code-shape`; never a gate                                                                              | [AI Auditing](./ai-auditing.md)                       |
+| `audit:duplicates`     | `jscpd`: copy-paste clones, as candidates for `code-shape`; writes `reports/audit/code-shape/jscpd/`                                                                      | [AI Auditing](./ai-auditing.md)                       |
 
 ## Related pages
 

@@ -18,7 +18,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Wishlist from '../views/Wishlist.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useWishlistStore } from '../store';
-import { useProductsStore } from '@/modules/products';
+import { seedProducts, spyOnProductReads } from '../../../../tests/support/unit/products-store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -61,13 +61,12 @@ const mountWishlist = (
     availabilities: Record<string, LineAvailability> = {}
 ) => {
     const wishlist = useWishlistStore();
-    const products = useProductsStore();
 
     wishlist.items = productIds.map((productId) => ({
         productId,
         availability: availabilities[productId] ?? 'in_stock'
     }));
-    products.addProduct({
+    seedProducts({
         id: PRODUCT_ID,
         title: PRODUCT_TITLE,
         price: 1,
@@ -78,7 +77,7 @@ const mountWishlist = (
     // `onMounted` fetches the lines and then the products; both are seeded above, so both are
     // answered from state rather than from a transport this spec does not exercise.
     vi.spyOn(wishlist, 'fetchWishlist').mockResolvedValue(wishlist.items);
-    vi.spyOn(products, 'fetchProductsByIds').mockResolvedValue([]);
+    spyOnProductReads().mockResolvedValue([]);
 
     return mount(Wishlist, {
         global: {

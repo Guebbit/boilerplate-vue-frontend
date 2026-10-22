@@ -86,7 +86,7 @@ const featuredProducts = computed<
 <template>
     <div id="home-page">
         <section class="mb-8 flex justify-center">
-            <v-card class="hero-card w-full max-w-3xl p-8 text-center sm:text-left">
+            <v-card class="hero-card surface-glow w-full max-w-3xl p-8 text-center sm:text-left">
                 <h2 class="text-2xl font-bold sm:text-3xl">{{ t('home-page.hero-title') }}</h2>
                 <p class="mt-3 leading-relaxed opacity-80">
                     {{ t('home-page.hero-description') }}
@@ -124,15 +124,12 @@ const featuredProducts = computed<
 </template>
 
 <style scoped>
-/* soft brand-colored glow, driven by the active theme */
+/* soft brand-colored glow, driven by the active theme: `.surface-glow` in main.css, with these numbers */
 .hero-card {
-    background:
-        radial-gradient(circle at top right, rgb(var(--v-theme-primary) / 0.14), transparent 45%),
-        radial-gradient(
-            circle at bottom left,
-            rgb(var(--v-theme-secondary) / 0.1),
-            transparent 45%
-        ),
-        rgb(var(--v-theme-surface));
+    --glow-color: var(--v-theme-primary);
+    --glow-strength: 0.14;
+    --glow-reach: 45%;
+    --glow-far-color: var(--v-theme-secondary);
+    --glow-far-strength: 0.1;
 }
 </style>

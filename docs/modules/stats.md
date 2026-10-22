@@ -85,7 +85,7 @@ toggle — the table is the accessible alternative to a picture, and the source 
 Three rules keep it safe:
 
 - **Labels are escaped before they enter Mermaid's text.** A product or category title is text a shop
-  owner typed. `safeLabel` keeps letters and digits of any script and a few plain marks, and turns
+  owner typed. `safeLabel` (`domain/mermaid.ts`) keeps letters and digits of any script and a few plain marks, and turns
   everything else (quotes, `#`, `;`, brackets, `%` directives, line breaks) into a space.
 - **`securityLevel: 'strict'`** stays on: no clickable nodes, no HTML in labels.
 - **The SVG is attached as a parsed node**, not set as `innerHTML`.

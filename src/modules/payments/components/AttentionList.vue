@@ -23,6 +23,7 @@ import { storeToRefs } from 'pinia';
 import { RotateCw } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDateTime } from '@/infrastructure/utils/formatters.ts';
@@ -89,14 +90,9 @@ const headers = computed<CoreDataTableHeader<(typeof rows.value)[number]>[]>(() 
 ]);
 
 /**
- * An order's page, or nothing when this build ships no `orders` module.
- *
- * @param orderId - The order.
+ * The order's page, or nothing when this build ships none.
  */
-const orderLink = (orderId: string) => {
-    const target = linkIfRouted(router, 'OrderTarget', { id: orderId });
-    return target ? routerLinkI18n(target) : undefined;
-};
+const orderLink = useOrderLink();
 
 /**
  * The audit log's page, or nothing when this build ships none.

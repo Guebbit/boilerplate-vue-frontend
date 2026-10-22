@@ -2,7 +2,7 @@
 
 ::: tip At a glance
 **Owns** — a customer's order history, the staff's page over every order, the detail screen, and the admin status edit.
-**Depends on** — four modules, and three of those are components it mounts rather than state it reads.
+**Depends on** — four modules: two only for components it mounts, two for a call that makes something happen (the cart's refill, a payment's refund).
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
@@ -26,35 +26,42 @@
 flowchart LR
     orders["<b>orders</b>"] ==>|"customer-supplier"| cart["cart"]
     orders["<b>orders</b>"] -.->|"published-language"| delivery["delivery"]
-    orders["<b>orders</b>"] -.->|"published-language"| payments["payments"]
+    orders["<b>orders</b>"] ==>|"customer-supplier"| payments["payments"]
+    orders["<b>orders</b>"] -.->|"published-language"| returns["returns"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class cart core;
-    class delivery,payments supporting;
+    class delivery,payments,returns supporting;
     class orders self;
 ```
 
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
-- → `payments` **published-language** — Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
+- → `payments` **customer-supplier** — Calls `useOrderRefund` to refund an order from the staff edit screen; also mounts `PaymentPanel`, `RecordOfflinePaymentForm` and `OrderReferenceSearch`, which on their own would be `published-language`.
+- → `returns` **published-language** — Mounts `WithdrawalPanel`; the withdrawal and the order's returns list are the component's own business.
 
 ## The story
 
 The order page is the most composed screen in the application, and it is composed out of other
-people's components. Two of its three edges are `published-language`:
+people's components. Most of its edges are components:
 
-| Mounted         | From                        | What this module learns                                  |
-| --------------- | --------------------------- | -------------------------------------------------------- |
-| `PaymentPanel`  | [`payments`](./payments.md) | nothing — not that a provider exists, not what a card is |
-| `ShipmentPanel` | [`delivery`](./delivery.md) | nothing — not what a tracking code is                    |
+| Mounted           | From                        | What this module learns                                  |
+| ----------------- | --------------------------- | -------------------------------------------------------- |
+| `PaymentPanel`    | [`payments`](./payments.md) | nothing — not that a provider exists, not what a card is |
+| `ShipmentPanel`   | [`delivery`](./delivery.md) | nothing — not what a tracking code is                    |
+| `WithdrawalPanel` | [`returns`](./returns.md)   | nothing — not what a return record holds                 |
 
-That is the strongest kind of edge on the map: neither side touches the other's store. The panels
+That is the strongest kind of edge: neither side touches the other's store. The panels
 render their own concern, fetch their own data, and this module holds the layout around them.
 
-::: tip The third edge runs against the server's arrow, deliberately
+The `payments` edge is not only components, because of one import: the staff edit screen
+refunds through `useOrderRefund`. That composable answers one question (is a refund open?) and
+performs one action, so the edge stays narrow, but it is a call, not vocabulary.
+
+::: tip The cart edge runs against the server's arrow, deliberately
 Reaching into `cart` is the **reorder button** — the order page refills the visitor's cart through
 the cart barrel. On the server the arrow points the other way, because a checkout creates an order.
 
@@ -76,8 +83,8 @@ the API.
 | `OrdersList`  | `mine` | everyone signed in            | the viewer's own orders — the owner is **pinned** in the search, always  |
 | `SalesOrders` | `all`  | whoever holds `display:Order` | every order, with the id/user/product/email boxes and the transfer queue |
 
-The split is the A2 decision of the sales plan, and it fixes a real bug: the account page used to send
-`userId` only when set, so a staff account saw the whole shop under "My orders". Now the account
+The split is the A2 decision of the sales plan, and it prevents a real bug: an account page that sends
+`userId` only when set shows a staff account the whole shop under "My orders". So the account
 page pins the viewer's id (`pinOwner`, re-applied after Reset, kept out of the URL), and the staff
 page drops an owner left behind by it. `SalesOrders` asks `can: ['display', 'Order']`, because `['read',
 'Order']` would admit a customer holding `read:Order`; it sits in the admin menu's
@@ -89,9 +96,9 @@ as inclusive instants (`src/infrastructure/utils/day-range.ts`), in the browser'
 
 ## Permanent delete: cancel first
 
-The list offers **Hard delete** on a row only when the order is `cancelled` and its
-`paymentStatus` is `unpaid` (`src/modules/orders/domain/hard-delete.ts`). That mirrors the API: an open order answers
-`409 ORDER_NOT_CANCELLED`, a paid one `409 ORDER_INVOICED`. Cancelling is what releases the stock
+The list offers **Delete** and **Hard delete** from `actions.delete` and `actions.hardDelete`; the
+server decides, from the caller's `delete:Order` key and the order's state. A refused one would answer
+`409 ORDER_NOT_CANCELLED` for an open order, `409 ORDER_INVOICED` for a paid one. Cancelling is what releases the stock
 and cancels the open payment intent, so the delete is pure cleanup. A refusal that slips through
 (the order changed under the viewer) shows the API's own sentence in the row-action alert; the
 copy is the API's, in the viewer's language, so this app holds none for it.

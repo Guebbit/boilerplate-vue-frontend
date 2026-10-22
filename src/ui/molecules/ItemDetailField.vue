@@ -52,7 +52,7 @@ const displayValue = computed(() => {
         :class="props.fullWidth && 'col-span-full'"
     >
         <div
-            class="detail-field-icon grid size-12 place-items-center rounded-2xl"
+            class="grid size-12 place-items-center rounded-2xl bg-linear-160 from-detail-accent/20 to-detail-accent/8 text-detail-accent"
             aria-hidden="true"
         >
             <component :is="props.icon" v-if="props.icon" :size="20" />
@@ -65,14 +65,3 @@ const displayValue = computed(() => {
         </div>
     </article>
 </template>
-
-<style scoped>
-.detail-field-icon {
-    background: linear-gradient(
-        160deg,
-        rgb(var(--detail-accent) / 0.2),
-        rgb(var(--detail-accent) / 0.08)
-    );
-    color: rgb(var(--detail-accent));
-}
-</style>

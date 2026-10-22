@@ -110,6 +110,28 @@ const hitsOf = (probe: TouchProbe): { kind: TouchFindingKind; detail: string }[]
 };
 
 /**
+ * Folds one hit into its (kind, detail) group: counts it, and keeps the first few selectors.
+ *
+ * @param grouped - The groups so far, keyed by kind and detail.
+ * @param hit - The rule hit.
+ * @param selector - The probed element's selector.
+ */
+const addHit = (
+    grouped: Map<string, TouchFinding>,
+    { kind, detail }: { kind: TouchFinding['kind']; detail: string },
+    selector: string
+): void => {
+    const key = `${kind}\u0000${detail}`;
+    const known = grouped.get(key);
+    if (!known) {
+        grouped.set(key, { kind, detail, count: 1, selectors: [selector] });
+        return;
+    }
+    known.count += 1;
+    if (known.selectors.length < SELECTORS_PER_FINDING) known.selectors.push(selector);
+};
+
+/**
  * Applies the four rules to a page's probes.
  *
  * Findings with the same kind and detail are grouped: a dictionary of identical cells would
@@ -121,15 +143,7 @@ const hitsOf = (probe: TouchProbe): { kind: TouchFindingKind; detail: string }[]
 export const classifyTouchProbes = (probes: readonly TouchProbe[]): TouchFinding[] => {
     const grouped = new Map<string, TouchFinding>();
     for (const probe of probes)
-        for (const { kind, detail } of hitsOf(probe)) {
-            const key = `${kind}\u0000${detail}`;
-            const known = grouped.get(key);
-            if (known) {
-                known.count += 1;
-                if (known.selectors.length < SELECTORS_PER_FINDING)
-                    known.selectors.push(probe.selector);
-            } else grouped.set(key, { kind, detail, count: 1, selectors: [probe.selector] });
-        }
+        for (const hit of hitsOf(probe)) addHit(grouped, hit, probe.selector);
     return [...grouped.values()];
 };
 

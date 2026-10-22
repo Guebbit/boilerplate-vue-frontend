@@ -14,7 +14,7 @@ import axe from 'axe-core';
 import Cart from '../views/Cart.vue';
 import { useCartStore } from '../store.ts';
 import type { MergeReportLine } from '../domain';
-import { useProductsStore } from '@/modules/products';
+import { seedProducts, spyOnProductReads } from '../../../../tests/support/unit/products-store.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { checkout as apiCheckout, getAccount } from '@api';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -28,7 +28,7 @@ import vuetify from '@/ui/vuetify';
 import { AddressPickerStub, router } from '../../../../tests/support/unit/mount-cart-page.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn, nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
-import type { CartResponse, Order } from '@types';
+import type { CartResponse, Order, Product } from '@types';
 
 wireModulesIntoCore();
 
@@ -116,14 +116,14 @@ const mountCart = ({
     /** Whether to attach to the document, for the checks that need real layout (axe). */
     attach?: boolean;
     /** The products the lines join to, put in the products store before the page mounts. */
-    products?: Parameters<ReturnType<typeof useProductsStore>['addProduct']>[0][];
+    products?: Product[];
 } = {}) => {
     const cart = useCartStore();
     cart.cart = held;
     cart.mergeReport = report;
     vi.spyOn(cart, 'fetchCart').mockResolvedValue(held);
-    vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
-    for (const product of products) useProductsStore().addProduct(product);
+    spyOnProductReads().mockResolvedValue([]);
+    seedProducts(...products);
     // Stubbed, not exercised here: this suite is about checkout's own refusals, and the stubbed
     // `ShippingSelector` below emits a method on mount purely to unblock the checkout button —
     // the real `PUT /cart/shipping-method` round trip has its own coverage in `store.spec.ts`.
@@ -210,6 +210,23 @@ describe('the checkout refusals', () => {
                     // Once from `onMounted`, once more from the refusal handler — the second
                     // is what this case exists to prove.
                     expect(cart.fetchCart).toHaveBeenCalledTimes(2);
+                });
+        }));
+
+    it('blocks the button in place when the refetch after CART_CHANGED fails, rather than going silent', () =>
+        mountCart().then(({ wrapper, checkoutSpy, cart }) => {
+            checkoutSpy.mockRejectedValueOnce(checkoutRejection(409, 'CART_CHANGED'));
+            vi.mocked(cart.fetchCart).mockRejectedValueOnce(
+                checkoutRejection(500, 'INTERNAL_ERROR')
+            );
+
+            return wrapper
+                .get('[data-test=cart-checkout]')
+                .trigger('click')
+                .then(flushPromises)
+                .then(() => {
+                    expect(cart.fetchCart).toHaveBeenCalledTimes(2);
+                    expect(wrapper.find('[data-test=cart-checkout-error]').exists()).toBe(true);
                 });
         }));
 
@@ -480,7 +497,7 @@ describe('the checkout refusals', () => {
         const cart = useCartStore();
         cart.cart = A_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
-        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        spyOnProductReads().mockResolvedValue([]);
         // Stubbed, not exercised: the `v-model` events below drive `shippingMethodId` directly,
         // which the page's own `watch` persists through this action — its real round trip is
         // `store.spec.ts`'s concern.
@@ -537,7 +554,7 @@ describe('the checkout payload', () => {
         const cart = useCartStore();
         cart.cart = A_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
-        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        spyOnProductReads().mockResolvedValue([]);
         // Stubbed, not exercised: same reasoning as the CART_SHIPPING_METHOD_WEIGHT case above.
         vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
@@ -668,7 +685,7 @@ describe('the checkout payload — billing', () => {
         const cart = useCartStore();
         cart.cart = A_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(A_CART);
-        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        spyOnProductReads().mockResolvedValue([]);
         vi.spyOn(cart, 'setShippingMethod').mockResolvedValue(A_CART);
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
         const CourierStub = defineComponent({
@@ -724,7 +741,7 @@ describe('the checkout payload — billing', () => {
         const cart = useCartStore();
         cart.cart = { ...A_CART, shipping: { required: false, selected: null, options: [] } };
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(cart.cart);
-        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        spyOnProductReads().mockResolvedValue([]);
         vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
         const wrapper = mount(Cart, {
             global: {
@@ -802,7 +819,7 @@ describe('a cart with nothing to ship', () => {
         const cart = useCartStore();
         cart.cart = DIGITAL_CART;
         vi.spyOn(cart, 'fetchCart').mockResolvedValue(DIGITAL_CART);
-        vi.spyOn(useProductsStore(), 'fetchProductsByIds').mockResolvedValue([]);
+        spyOnProductReads().mockResolvedValue([]);
         // Before mounting: `Cart.vue` captures `checkout` from the store at setup time.
         const checkoutSpy = vi.spyOn(cart, 'checkout').mockResolvedValue(undefined);
         const wrapper = mount(Cart, {

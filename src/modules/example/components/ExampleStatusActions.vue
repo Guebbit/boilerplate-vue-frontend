@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
  * @module
- * The injecting half of the provide/inject pair: reads the example and the status mutation the
- * detail screen provides, and offers the moves its status allows.
+ * In any module: the injecting half of a provide/inject pair reads what its screen provides, so the
+ * value crosses a boundary and the mechanism is visible.
+ * Here: renders the moves the server listed in `example.actions.transitions`; it decides nothing.
+ * Delete it if: no control hangs off a server-listed set.
+ * See: docs/theory/strategic-ddd.md#4-subdomain-distillation-where-to-spend-effort
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NEXT_STATUSES } from '../domain';
 import { useProvidedExample } from '../provided.ts';
 
 /**
@@ -26,9 +28,10 @@ const { t } = useI18n();
 const { example, changeStatus } = useProvidedExample();
 
 /**
- * The statuses the shown example may move to; none while it loads.
+ * The statuses the server says this caller may move the shown example to; none while it loads, and
+ * none when the record carries no `actions`.
  */
-const nextStatuses = computed(() => (example.value ? NEXT_STATUSES[example.value.status] : []));
+const nextStatuses = computed(() => example.value?.actions?.transitions ?? []);
 </script>
 
 <template>

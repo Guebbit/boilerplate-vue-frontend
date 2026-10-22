@@ -19,6 +19,7 @@ export default {
  * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST, so
  * nobody reaches it on the way to the password form or the sessions list.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -36,11 +37,10 @@ import ProfileDeleteAccount from '../components/ProfileDeleteAccount.vue';
 import ProfileSessions from '../components/ProfileSessions.vue';
 import ProfileAddresses from '../components/ProfileAddresses.vue';
 import ProfileExportData from '../components/ProfileExportData.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
-import { emailVerifyResendRetryAfter } from '@/infrastructure/session.ts';
+import { emailVerifyResendRetryAfter } from '@/infrastructure/email-verification.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -133,7 +133,6 @@ const {
 } = useStructureFormValidation<ProfileForm>({}, usersSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -376,7 +375,7 @@ const cancelPendingEmail = () => {
                     autocomplete="username"
                     data-test="profile-username"
                     :label="t('profile-page.label-username')"
-                    :error-messages="showErrors ? formErrors.username : []"
+                    v-bind="fieldErrorProps(showErrors ? formErrors.username : [])"
                     class="mb-2"
                 />
                 <v-text-field
@@ -384,7 +383,7 @@ const cancelPendingEmail = () => {
                     type="email"
                     autocomplete="email"
                     :label="t('profile-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
+                    v-bind="fieldErrorProps(showErrors ? formErrors.email : [])"
                     class="mb-2"
                 />
                 <div
@@ -433,7 +432,7 @@ const cancelPendingEmail = () => {
                     autocomplete="tel"
                     data-test="profile-phone"
                     :label="t('profile-page.label-phone')"
-                    :error-messages="showErrors ? formErrors.phone : []"
+                    v-bind="fieldErrorProps(showErrors ? formErrors.phone : [])"
                     class="mb-2"
                 />
                 <v-text-field
@@ -442,7 +441,7 @@ const cancelPendingEmail = () => {
                     autocomplete="url"
                     data-test="profile-website"
                     :label="t('profile-page.label-website')"
-                    :error-messages="showErrors ? formErrors.website : []"
+                    v-bind="fieldErrorProps(showErrors ? formErrors.website : [])"
                     class="mb-2"
                 />
                 <v-select

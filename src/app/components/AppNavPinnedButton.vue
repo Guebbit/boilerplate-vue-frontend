@@ -9,6 +9,7 @@
 import { mergeProps, useAttrs } from 'vue';
 import type { Component } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
+import { useTouchTarget } from '@/ui/composables/use-touch-friendly-size.ts';
 import { useFocusTooltip } from './use-focus-tooltip.ts';
 
 /**
@@ -52,6 +53,11 @@ const props = defineProps<{
  * {@link buttonProps}.
  */
 const attributes = useAttrs();
+
+/**
+ * 44px tap target on touch; Vuetify's default size (36 × 64) otherwise.
+ */
+const touchTarget = useTouchTarget();
 
 /**
  * The tooltip's open state and the focus listeners that drive it — see `useFocusTooltip`.
@@ -108,7 +114,9 @@ const accessibleName = () =>
                 <v-btn
                     v-bind="buttonProps(tooltipProps)"
                     variant="text"
-                    class="min-h-11 min-w-11 px-2 sm:min-h-0 sm:min-w-16"
+                    class="px-2"
+                    :min-height="touchTarget"
+                    :min-width="touchTarget"
                     :to="to"
                     :aria-label="accessibleName()"
                 >

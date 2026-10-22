@@ -73,6 +73,21 @@ export interface RestrictedClass {
     message: string;
 }
 
+/**
+ * A utility class that duplicates a prop of a Vuetify component: the prop is the sanctioned way,
+ * the class a second answer that fights Vuetify's own styling.
+ */
+export interface VuetifyPropUtility {
+    /** A regular expression, anchored, over the bare class name (variants stripped). */
+    pattern: string;
+    /** The props to use instead, first match wins; one must exist on the component. */
+    props: readonly string[];
+    /** When set, the first capture group must be a theme colour name (`bg-primary`). */
+    themeColor?: boolean;
+    /** When set, only tags matching this regular expression are checked. */
+    tags?: string;
+}
+
 /** The design policy object. */
 export const DESIGN_POLICY = {
     /**
@@ -200,6 +215,53 @@ export const DESIGN_POLICY = {
         plainTableTag: 'v-table',
         scrollDirective: 'focusable-scroll'
     },
+
+    /**
+     * The thresholds of the CSS invasiveness audit (`scripts/audit/css-invasive/scan.ts`).
+     * Names follow stylelint's rules, so a move to stylelint stays mechanical.
+     */
+    cssInvasiveness: {
+        /** `selector-max-specificity`: the `[id, class, type]` ceiling of an authored selector. */
+        maxSpecificity: [0, 2, 0],
+        /** `selector-max-compound-selectors`; `:deep()` counts as a combinator. */
+        maxCompound: 3,
+        /** Declarations one SFC `<style>` block may hold before it should be classes or props. */
+        maxScopedDeclarations: 15,
+        /** The highest raw `z-index` allowed: local stacking only; anything above is a token. */
+        localZIndexMax: 9,
+        /** The spacing step (`--spacing`) a rem length must be a multiple of. */
+        spacingRem: 0.25,
+        /** `unit-disallowed-list`: units a declaration may not use (`vh` jumps with the mobile URL bar). */
+        disallowedUnits: ['vh']
+    },
+
+    /**
+     * Utilities that duplicate a Vuetify prop, matched on `v-*` tags with a static `class`.
+     * The prop must exist on the component (Vuetify's `dist/json/attributes.json`).
+     */
+    vuetifyPropUtilities: [
+        { pattern: '^rounded(?:-.+)?$', props: ['rounded'] },
+        { pattern: String.raw`^border(?:-[sebtxy])?(?:-\d+)?$`, props: ['border'] },
+        { pattern: '^border(?:-[sebtxy])?-([a-z-]+)$', props: ['border'], themeColor: true },
+        { pattern: '^bg-([a-z-]+)$', props: ['bg-color', 'color'], themeColor: true },
+        { pattern: '^text-([a-z-]+)$', props: ['color'], themeColor: true },
+        ...(
+            [
+                ['h', 'height'],
+                ['min-h', 'min-height'],
+                ['max-h', 'max-height'],
+                ['w', 'width'],
+                ['min-w', 'min-width'],
+                ['max-w', 'max-width'],
+                ['size', 'size']
+            ] as const
+        ).map(([prefix, prop]) => ({
+            pattern: `^${prefix}-.+$`,
+            props: [prop],
+            // Sized controls only: on a layout component a width class is layout, not a size.
+            tags: '^v-(?:btn|chip|avatar|icon|progress-.+)$'
+        }))
+    ] satisfies VuetifyPropUtility[],
 
     /** The theme's stylesheet entry, read live by the Tailwind plugin. */
     tailwindEntryPoint: 'src/styles/main.css',

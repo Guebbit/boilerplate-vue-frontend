@@ -1,5 +1,5 @@
 /**
- * The catalogue's own stake in image upload — moved out of the central
+ * The catalogue's own stake in image upload, kept here rather than in the central
  * `tests/e2e/specs/uploads.cy.ts`: "Product edit"/"Product create" exercise the shared
  * upload mechanism (`FormImageUpload.vue`, `multer`, the digest/thumbnail worker) through a
  * product form specifically, and "Live backend" reuses that same hydrated edit form, so all three

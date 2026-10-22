@@ -12,15 +12,14 @@ import { useI18n } from 'vue-i18n';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import CopyButton from '@/ui/molecules/CopyButton.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { Copy, Search } from 'lucide-vue-next';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
-import { useCopyToClipboard } from '@/ui/composables/use-copy-to-clipboard.ts';
-import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * i18n translator for this component's template and messages.
@@ -160,17 +159,6 @@ const handleReset = () => {
 const truncateId = (value?: string, length = 8) =>
     value ? `${value.slice(0, length)}...` : EMPTY_VALUE;
 
-/**
- * Copies a full correlation id: the cell shows only its first characters, and a title would
- * give a finger no way to read the rest.
- */
-const copyId = useCopyToClipboard('admin-page.audit-copy-failed');
-
-/**
- * Size of the copy buttons: a finger's 44 px on a touch screen.
- */
-const copySize = useTouchFriendlySize();
-
 // The initial load: the first page, unfiltered.
 void fetchPage({ ...filters });
 </script>
@@ -213,28 +201,14 @@ void fetchPage({ ...filters });
                     <PageSizeSelect
                         v-model="filters.pageSize"
                         :sizes="pageSizeOptions"
-                        :label="t('generic.page-size')"
                         @update:model-value="handleSearch"
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        :disabled="loading"
-                        data-test="search-submit"
-                    >
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 
-        <p class="m-0 text-sm opacity-70" role="status">
+        <p class="m-0 text-sm opacity-muted" role="status">
             {{
                 t('admin-page.audit-showing', {
                     shown: entries.length,
@@ -306,16 +280,12 @@ void fetchPage({ ...filters });
                     <span class="font-mono text-xs" aria-hidden="true">
                         {{ truncateId(item.requestId) }}
                     </span>
-                    <v-btn
-                        icon
-                        variant="text"
-                        :size="copySize"
-                        :data-test="`audit-copy-requestId`"
-                        :aria-label="t('admin-page.audit-copy-request-id', { id: item.requestId })"
-                        @click="copyId(item.requestId)"
-                    >
-                        <Copy :size="14" aria-hidden="true" />
-                    </v-btn>
+                    <CopyButton
+                        :text="item.requestId"
+                        :label="t('admin-page.audit-copy-request-id', { id: item.requestId })"
+                        failure-key="admin-page.audit-copy-failed"
+                        data-test="audit-copy-requestId"
+                    />
                 </span>
                 <template v-else>{{ EMPTY_VALUE }}</template>
             </template>
@@ -329,16 +299,12 @@ void fetchPage({ ...filters });
                     <span class="font-mono text-xs" aria-hidden="true">
                         {{ truncateId(item.traceId) }}
                     </span>
-                    <v-btn
-                        icon
-                        variant="text"
-                        :size="copySize"
-                        :data-test="`audit-copy-traceId`"
-                        :aria-label="t('admin-page.audit-copy-trace-id', { id: item.traceId })"
-                        @click="copyId(item.traceId)"
-                    >
-                        <Copy :size="14" aria-hidden="true" />
-                    </v-btn>
+                    <CopyButton
+                        :text="item.traceId"
+                        :label="t('admin-page.audit-copy-trace-id', { id: item.traceId })"
+                        failure-key="admin-page.audit-copy-failed"
+                        data-test="audit-copy-traceId"
+                    />
                 </span>
                 <template v-else>{{ EMPTY_VALUE }}</template>
             </template>

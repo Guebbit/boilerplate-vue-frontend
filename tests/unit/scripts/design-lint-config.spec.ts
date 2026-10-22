@@ -75,7 +75,7 @@ describe('design lint, Tailwind class rules', () => {
         expect(await ruleIdsOf('<div class="text-red-500" />')).toContain(
             'better-tailwindcss/no-unknown-classes'
         );
-        expect(await ruleIdsOf('<div class="skip-link elevation-4" />')).toEqual([]);
+        expect(await ruleIdsOf('<div class="surface-glow elevation-4" />')).toEqual([]);
     });
 
     it('does not know a Vuetify utility Tailwind spells differently', async () => {

@@ -11,6 +11,7 @@
  * caller that opts in, and the footer stays hidden either way.
  */
 import { computed, getCurrentInstance, useSlots } from 'vue';
+import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
@@ -137,6 +138,10 @@ const vuetifyHeaders = computed(() =>
         title: header.title,
         key: header.key,
         width: header.width,
+        // `fixed: 'start'` pins the column; min/max bound it — https://vuetifyjs.com/en/api/v-data-table/#props-headers
+        fixed: header.fixed,
+        minWidth: header.minWidth,
+        maxWidth: header.maxWidth,
         sortable:
             isSortable.value &&
             !('synthetic' in header) &&
@@ -217,12 +222,18 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
             back to the app-wide display.mobile on its own — `mobile-breakpoint` is what switches
             it to its built-in stacked card-per-row layout below 600px ('sm').
         -->
+        <!--
+            `fixed-header`: Vuetify dims header cells while loading unless the header is fixed; the
+            labels must stay legible (WCAG 1.4.3) and the a11y gate must not depend on timing. The
+            table sets no height, so the header never actually sticks.
+        -->
         <v-data-table
             v-model:sort-by="sortBy"
             :headers="vuetifyHeaders"
             :items="items"
             :item-value="itemValue"
             :loading="loading"
+            fixed-header
             :loading-text="loadingText"
             :no-data-text="noDataText"
             items-per-page="-1"
@@ -263,7 +274,7 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
                     :value="getValue(slotProps.item, header.key)"
                     :column="header"
                 >
-                    {{ getValue(slotProps.item, header.key) ?? '-' }}
+                    {{ getValue(slotProps.item, header.key) ?? EMPTY_VALUE }}
                 </slot>
             </template>
         </v-data-table>

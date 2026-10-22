@@ -10,6 +10,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DefinitionRow from '@/ui/molecules/DefinitionRow.vue';
 import { loadShop, shopRecord } from '@/infrastructure/shop.ts';
+import { formatAddressLine } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * Translation function for the row labels.
@@ -25,11 +26,7 @@ void loadShop();
 /**
  * The address on one line, the way a letter head prints it.
  */
-const addressLine = computed(() =>
-    shopRecord.value
-        ? `${shopRecord.value.street}, ${shopRecord.value.zip} ${shopRecord.value.city}, ${shopRecord.value.country}`
-        : ''
-);
+const addressLine = computed(() => formatAddressLine(shopRecord.value) ?? '');
 </script>
 
 <template>

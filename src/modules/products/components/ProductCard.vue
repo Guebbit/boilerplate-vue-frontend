@@ -127,7 +127,7 @@ const shelfText = computed(() =>
                     :key="index"
                     :product="product"
                 />
-                <p v-if="!isAuth" class="text-sm opacity-70" data-test="product-card-login">
+                <p v-if="!isAuth" class="text-sm opacity-muted" data-test="product-card-login">
                     {{ t('product-card.login-to-buy') }}
                 </p>
             </div>

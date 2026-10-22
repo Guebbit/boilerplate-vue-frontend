@@ -16,15 +16,15 @@ export default {
  * `mode` (strictly positive for a receipt, signed non-zero for an adjustment) and is handed to
  * `useStructureFormValidation`, which owns the field state and submit gating.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useInventoryStore } from '../store.ts';
-import { useProductsStore } from '@/modules/products';
+import { invalidateProductsCache } from '@/modules/products';
 import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -58,12 +58,6 @@ const { addMessage } = useNotificationsStore();
  * Owns the receipt/adjustment writes and their loading flag.
  */
 const inventoryStore = useInventoryStore();
-
-/**
- * Refreshes the catalogue's own copy of the stock counters after a successful write — the
- * product picker itself is search-as-you-type now (see below), not this store's cache.
- */
-const productsStore = useProductsStore();
 
 /**
  * True while the pending write is in flight; binds to the submit button.
@@ -112,7 +106,6 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
         {
             formElement,
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -160,10 +153,10 @@ const submitForm = () =>
                     )
                 );
                 form.value.note = '';
-                // The catalogue carries its own copy of the counters, so it has to hear about this too.
-                return productsStore.fetchProducts();
+                // The catalogue caches its own copy of the counters: mark it stale so every
+                // product screen refetches. Fire-and-forget — a failed refetch is not a failed write.
+                invalidateProductsCache();
             })
-            .then(() => undefined)
             .catch((error: unknown) => {
                 // A refusal that names a field lands on it; the 409 has no field, so it blocks here.
                 applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
@@ -196,7 +189,7 @@ const submitForm = () =>
                 item-value="value"
                 no-filter
                 :label="t('inventory-page.label-product')"
-                :error-messages="showFormErrors ? (formErrors.productId ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.productId ?? []) : [])"
                 :data-test="isReceipt ? 'receipt-product' : 'adjust-product'"
                 class="min-w-56"
                 hide-details="auto"
@@ -210,7 +203,7 @@ const submitForm = () =>
                 "
                 :hint="isReceipt ? undefined : t('inventory-page.hint-delta')"
                 :persistent-hint="!isReceipt"
-                :error-messages="showFormErrors ? (formErrors.amount ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.amount ?? []) : [])"
                 :data-test="isReceipt ? 'receipt-quantity' : 'adjust-delta'"
                 class="max-w-28"
                 :hide-details="isReceipt ? 'auto' : undefined"

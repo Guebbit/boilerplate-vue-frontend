@@ -8,13 +8,13 @@
  * duplicate key, a transport failure); the parent renders its `InlineErrorAlert` here, above the
  * buttons, since this dialog has no opinion of its own on what a blocked save looks like.
  */
-import { watch, computed, useId } from 'vue';
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
+import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '../schemas.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import type { LocaleAppDescriptor } from '@types';
 
 /**
@@ -60,21 +60,6 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the entry dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
  * The first app the registry lists — the default when the page has no filter on.
  */
 const defaultApp = computed(() => props.initialApp ?? props.apps.at(0)?.id ?? '');
@@ -85,7 +70,6 @@ const defaultApp = computed(() => props.initialApp ?? props.apps.at(0)?.id ?? ''
 const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
     useStructureFormValidation({ app: '', key: '', value: '' }, localesEntrySchema, {
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 
@@ -122,7 +106,7 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="560" :fullscreen="fullscreen" :aria-labelledby="titleId">
+    <DialogShell v-model="isOpen" :max-width="DIALOG_MAX_WIDTH.wide" v-slot="{ titleId }">
         <v-card class="p-5" data-test="entry-form">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h2>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">
@@ -130,14 +114,14 @@ defineExpose({ applyServerErrors });
                     v-model="form.app"
                     :items="appOptions"
                     :label="t('entry-form.label-app')"
-                    :error-messages="showFormErrors ? (formErrors.app ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.app ?? []) : [])"
                     data-test="entry-app"
                 />
                 <v-text-field
                     v-model="form.key"
                     :label="t('entry-form.label-key')"
                     :hint="t('entry-form.hint-key')"
-                    :error-messages="showFormErrors ? (formErrors.key ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.key ?? []) : [])"
                     persistent-hint
                     class="font-mono"
                     data-test="entry-key"
@@ -145,7 +129,7 @@ defineExpose({ applyServerErrors });
                 <v-textarea
                     v-model="form.value"
                     :label="t('entry-form.label-value')"
-                    :error-messages="showFormErrors ? (formErrors.value ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.value ?? []) : [])"
                     rows="2"
                     auto-grow
                     data-test="entry-value"
@@ -172,5 +156,5 @@ defineExpose({ applyServerErrors });
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

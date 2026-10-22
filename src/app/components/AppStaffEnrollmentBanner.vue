@@ -39,7 +39,7 @@ const { viewer, secondFactorRequired } = storeToRefs(useSessionStore());
         type="warning"
         variant="tonal"
         density="compact"
-        class="rounded-none"
+        tile
         data-test="staff-enrollment-banner"
     >
         {{ t('staff-enrollment-banner.message') }}

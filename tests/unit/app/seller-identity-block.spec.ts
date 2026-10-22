@@ -50,7 +50,7 @@ describe('SellerIdentityBlock', () => {
         const text = await renderedText();
 
         expect(text).toContain('Guebbit Demo Shop Srl');
-        expect(text).toContain('Via Roma 1, 20100 Milano, IT');
+        expect(text).toContain('Via Roma 1, 20100 Milano, Italy');
         expect(text).toContain('shop@example.com');
         expect(text).toContain('+39 02 1234567');
     });

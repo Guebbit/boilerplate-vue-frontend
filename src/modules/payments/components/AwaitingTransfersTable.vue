@@ -15,20 +15,18 @@ export default {
  * `GET /payments` (the server sorts and filters). Each row shows the deadline, the RF reference
  * the payer quotes and the amount; a row opens the payment's drawer, like the All tab.
  */
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
+import { usePagedTable } from '../composables/use-paged-table.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
+import { useRowSelect } from '../composables/use-row-select.ts';
 
 /**
  * Emitted when a row is opened.
@@ -41,19 +39,9 @@ const emit = defineEmits<
 >();
 
 /**
- * Translation function and toast dispatcher.
+ * Translation function.
  */
 const { t } = useI18n();
-
-/**
- * Toast dispatcher: a failed read is ambient — the table just did not refresh.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
- * The router, for the order link's `hasRoute` guard (`orders` is not an edge of this module).
- */
-const router = useRouter();
 
 /**
  * The store: the owed transfers, their total and the loading flag.
@@ -66,48 +54,16 @@ const store = usePaymentsStore();
 const { awaitingPage, awaitingTotal, loading } = storeToRefs(store);
 
 /**
- * Rows per page.
+ * The page shown and the page count; the read runs on mount and on every page change.
  */
-const PAGE_SIZE = 10;
+const { page, pageTotal } = usePagedTable(awaitingTotal, (pageNumber, pageSize) =>
+    store.fetchAwaitingPage(pageNumber, pageSize)
+);
 
 /**
- * The page shown, 1-based.
+ * The row the visitor picked: opens the drawer, then is forgotten so it can be opened again.
  */
-const page = ref(1);
-
-/**
- * How many pages are owed.
- */
-const pageTotal = computed(() => Math.ceil(awaitingTotal.value / PAGE_SIZE));
-
-/**
- * Loads the page named by {@link page}.
- *
- * @returns A promise settling once the read finished or the failure was toasted.
- */
-const load = () =>
-    store
-        .fetchAwaitingPage(page.value, PAGE_SIZE)
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
-
-watch(page, () => void load());
-
-onMounted(() => {
-    void load();
-});
-
-/**
- * The row the visitor picked. A pick opens the drawer and is then forgotten, so the same row can
- * be opened again.
- */
-const selectedId = ref<string>();
-
-watch(selectedId, (id) => {
-    if (id === undefined) return;
-    const picked = awaitingPage.value.find((payment) => payment.id === id);
-    selectedId.value = undefined;
-    if (picked) emit('select', picked);
-});
+const selectedId = useRowSelect(awaitingPage, (payment) => emit('select', payment));
 
 /**
  * Columns of the table; the server fixes the order, so none sorts.
@@ -122,13 +78,8 @@ const headers = computed<CoreDataTableHeader<Payment>[]>(() => [
 
 /**
  * An order's page, or nothing when this build ships no `orders` module.
- *
- * @param orderId - The order.
  */
-const orderLink = (orderId: string) => {
-    const target = linkIfRouted(router, 'OrderTarget', { id: orderId });
-    return target ? routerLinkI18n(target) : undefined;
-};
+const orderLink = useOrderLink();
 </script>
 
 <template>

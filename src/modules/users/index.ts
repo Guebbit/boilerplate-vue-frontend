@@ -8,10 +8,8 @@
  * Exporting them is what stops that agreement being re-typed — and re-diverging — in the other
  * domain.
  *
- * That makes this edge `published-language` rather than a shared store, which is the whole
- * difference between the client and the server. On the backend `account → users` is a
- * `shared-kernel`: both write the same record. Here neither writes anything — the API does — so
- * what the two modules share is vocabulary, and vocabulary is the cheap kind of sharing.
+ * What the two modules share is vocabulary, not a store: neither writes anything — the API does.
+ * `docs/modules/users.md` § "The map" names the relationship.
  */
 
 export { usersSchema, usersPasswordSchema } from './schemas';

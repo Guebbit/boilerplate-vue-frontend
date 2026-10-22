@@ -142,10 +142,14 @@ const orderEditLink = computed(() => {
 });
 
 /**
+ * Viewport width, the input of {@link drawerWidth}.
+ */
+const { width: screenWidth } = useDisplay();
+
+/**
  * The drawer's width: 440 px, but never wider than the screen. Vuetify does not cap a drawer's
  * width, so on a 320 px phone 120 px of it would fall off the edge.
  */
-const { width: screenWidth } = useDisplay();
 const drawerWidth = computed(() => Math.min(DRAWER_WIDTH, screenWidth.value));
 
 /**
@@ -213,35 +217,35 @@ const handleRefund = () => {
             </div>
 
             <dl class="mb-4 grid grid-cols-term gap-x-4 gap-y-1 text-sm">
-                <dt class="opacity-70">{{ t('payments-list-page.column-order') }}</dt>
+                <dt class="opacity-muted">{{ t('payments-list-page.column-order') }}</dt>
                 <dd>{{ payment.orderNumber ?? payment.orderId }}</dd>
-                <dt class="opacity-70">{{ t('payments-list-page.column-email') }}</dt>
+                <dt class="opacity-muted">{{ t('payments-list-page.column-email') }}</dt>
                 <dd>{{ payment.email ?? EMPTY_VALUE }}</dd>
-                <dt class="opacity-70">{{ t('payments-list-page.column-method') }}</dt>
+                <dt class="opacity-muted">{{ t('payments-list-page.column-method') }}</dt>
                 <dd>{{ t(`payments-list-page.method-${payment.method}`) }}</dd>
-                <dt class="opacity-70">{{ t('payments-list-page.column-provider') }}</dt>
+                <dt class="opacity-muted">{{ t('payments-list-page.column-provider') }}</dt>
                 <dd>{{ payment.provider }}</dd>
                 <template v-if="payment.providerRef">
-                    <dt class="opacity-70">{{ t('payments-list-page.label-provider-ref') }}</dt>
+                    <dt class="opacity-muted">{{ t('payments-list-page.label-provider-ref') }}</dt>
                     <dd data-test="drawer-provider-ref">
                         <code class="text-xs">{{ payment.providerRef }}</code>
                     </dd>
                 </template>
                 <template v-if="payment.cardLast4">
-                    <dt class="opacity-70">{{ t('payments-list-page.label-card') }}</dt>
+                    <dt class="opacity-muted">{{ t('payments-list-page.label-card') }}</dt>
                     <dd>•••• {{ payment.cardLast4 }}</dd>
                 </template>
                 <template v-if="payment.reference">
-                    <dt class="opacity-70">{{ t('payments-list-page.filter-reference') }}</dt>
+                    <dt class="opacity-muted">{{ t('payments-list-page.filter-reference') }}</dt>
                     <dd>{{ payment.reference }}</dd>
                 </template>
                 <template v-if="payment.receivedAt">
-                    <dt class="opacity-70">{{ t('payments-list-page.label-received') }}</dt>
+                    <dt class="opacity-muted">{{ t('payments-list-page.label-received') }}</dt>
                     <dd>{{ formatDateTime(payment.receivedAt) }}</dd>
                 </template>
-                <dt class="opacity-70">{{ t('payments-list-page.column-date') }}</dt>
+                <dt class="opacity-muted">{{ t('payments-list-page.column-date') }}</dt>
                 <dd>{{ formatDateTime(payment.createdAt) }}</dd>
-                <dt class="opacity-70">{{ t('payments-list-page.column-refunded') }}</dt>
+                <dt class="opacity-muted">{{ t('payments-list-page.column-refunded') }}</dt>
                 <dd>{{ formatCurrency(payment.amountRefunded, payment.currency) }}</dd>
             </dl>
 
@@ -264,7 +268,7 @@ const handleRefund = () => {
                     <div class="flex flex-wrap items-center gap-2">
                         <strong>{{ formatCurrency(refund.amount, refund.currency) }}</strong>
                         <span>{{ t(`payments-list-page.refund-status-${refund.status}`) }}</span>
-                        <span class="opacity-70">{{
+                        <span class="opacity-muted">{{
                             t(`payments-list-page.refund-reason-${refund.reason}`)
                         }}</span>
                     </div>
@@ -274,7 +278,7 @@ const handleRefund = () => {
                     <p v-if="refund.providerRefundRef" class="mt-1 text-xs">
                         <code>{{ refund.providerRefundRef }}</code>
                     </p>
-                    <p class="mt-1 text-xs opacity-70">
+                    <p class="mt-1 text-xs opacity-muted">
                         {{ formatDateTime(refund.settledAt ?? refund.createdAt) }}
                     </p>
                 </li>

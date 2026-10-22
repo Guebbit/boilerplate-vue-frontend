@@ -10,8 +10,8 @@ the code DOES.
 GOAL: Report every place where a claim about the module structure, or a rule the server should decide, has
 drifted from the code. BE strict, FE elastic: rules and state ownership, never styling.
 
-WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context map is prose in each
-`module.ts` docblock. A barrel is the published language. `domain/` is thin and pure. The server decides the
+WHAT DDD MEANS HERE: strategic only. Modules are bounded contexts. The context map is each module's docs page
+(`docs/modules/<m>.md` § "The map"); `module.ts` docblocks point at it. A barrel is the published language. `domain/` is thin and pure. The server decides the
 rules; the client reads the `*Actions` flags (`docs/theory/strategic-ddd.md` §4). There is no tactical DDD
 on purpose (`docs/theory/domain-layer.md` §4). Do not ask for aggregates, entities or repositories.
 
@@ -22,7 +22,7 @@ touches. If empty, audit the whole repo (`full`).
 
 Output is `reports/audit/ddd-drift/<SCOPE>.md`, where `<SCOPE>` is:
 
-- empty → `full`
+- empty → `all`
 - a module → the module name (`orders`)
 - a path → the path slugged, `src/` dropped (`src/infrastructure/http` → `infrastructure-http`)
 - `--diff` → the current branch name slugged (`git branch --show-current`)
@@ -31,15 +31,15 @@ Copy the exclusion list from "Out of scope" below into the report header.
 
 ## The drift classes
 
-| class                           | drift when                                                                                            | fine when                                                              | sev                                       |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
-| F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`             | the claim is generated and checked (the sitemap block)                 | high                                      |
-| F2 client decides a server rule | a button or option is gated on status literals the server should answer through an `*Actions` flag    | the literal only labels or colours, or the contract states the formula | high (the fix is a backend contract flag) |
-| F3 context-map label wrong      | a docblock's relationship label disagrees with what the import does (the table in `strategic-ddd.md`) | the label matches the import                                           | med                                       |
-| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling          | the sibling must read the state                                        | med                                       |
-| F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`  | one caller, no trap: inline is right                                   | low                                       |
-| F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones      | `core` with no `domain/`                                               | low                                       |
-| F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                | the values are client-only state                                       | low                                       |
+| class                           | drift when                                                                                               | fine when                                                              | sev                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| F1 doc claim                    | a count, list or "only X" in `docs/` or a `module.ts` docblock disagrees with `ls` / `rg`                | the claim is generated and checked (the sitemap block)                 | high                                      |
+| F2 client decides a server rule | a button or option is gated on status literals the server should answer through an `*Actions` flag       | the literal only labels, colours or picks a notice, and gates no write | high (the fix is a backend contract flag) |
+| F3 context-map label wrong      | a module page's relationship label disagrees with what the import does (the table in `strategic-ddd.md`) | the label matches the import                                           | med                                       |
+| F4 barrel wider than needed     | a barrel publishes a store or composable where a component or schema would serve the sibling             | the sibling must read the state                                        | med                                       |
+| F5 `domain/` floor, both ways   | a rule with 2+ callers, or a trap, lives in a view or store; or `domain/` holds formatting or `Intl`     | one caller, no trap: inline is right                                   | low                                       |
+| F6 label vs depth               | a `generic` module grows a `domain/`; the subdomain table names gone modules or misses real ones         | `core` with no `domain/`                                               | low                                       |
+| F7 enum restated                | a `.ts` union or literal array copies a generated enum                                                   | the values are client-only state                                       | low                                       |
 
 ## Procedure
 
@@ -69,19 +69,27 @@ rg -n "status\s*(===|!==)\s*'|\[\s*'[a-z_]+',.*\]\.includes\(.*status" src -g '!
 rg -n "[A-Z]\w*Status\.\w+\s*(===|!==)" src
 rg -n "price\s*\*|\*\s*\w*quantity" src
 rg -n "^    \w+Actions:" openapi.yaml
+rg -n "new Set\(\[|\.has\(\s*\w*(props\.)?\w+\.status|override.*includes\(" src -g '!**/tests/**'
+rg -n "^export const can[A-Z]" src/modules/*/domain
 ```
+
+The last two catch a server rule held in a set, or moved into `domain/`.
 
 For each hit, find the `*Actions` schema of that resource. Verdict:
 
 - a flag for it exists and the view ignores it → **DRIFT**
-- no flag exists → **ROUTE**, naming the `openapi.yaml` schema that needs one
-- the contract states the formula, or the literal only labels → **OK**
+- no flag exists → **ROUTE**, naming the `openapi.yaml` schema that needs one — even when an operation's
+  description states the rule in prose: prose is documentation, a flag is the answer
+  (`docs/theory/strategic-ddd.md` §4, "delete the API" test)
+- the literal only labels, colours or picks a notice → **OK**
 
 A ROUTE is a BACKEND contract change and needs the user's yes. Report it. Never fix it, never edit the contract.
+A ROUTE is an open finding, not a pass: list every ROUTE in the report's totals line as "open, owner: backend",
+and copy each one into `HANDOFF.md`'s follow-ups so the backend audit's C1 picks it up.
 
 ### 3 — F3 and F4: edges and barrels
 
-For each docblock edge label and each barrel export, check what the sibling does with it: reads state, asks
+For each edge label on a module page and each barrel export, check what the sibling does with it: reads state, asks
 for a write, or mounts a component. A swapped label is F3. A store or composable published where a component
 or schema would do is F4.
 
@@ -114,7 +122,8 @@ Write `reports/audit/ddd-drift/<SCOPE>.md`:
 | class | claim (file:line) | evidence | verdict | suggested fix |
 
 Verdicts: **DRIFT**, **OK**, **ROUTE** (name the `openapi.yaml` schema that needs the flag),
-**NEEDS-DECISION**. Keep the OK rows that are false-positive controls; they show the search was honest.
+**DELIBERATE** (needs the quoted doc sentence that allows it), **NOT-TRACED** (plus the question).
+Keep the OK rows that are false-positive controls; they show the search was honest.
 
 Then print only the DRIFT and ROUTE rows, F2 first, and one totals line.
 
@@ -125,7 +134,7 @@ Already guarded elsewhere — do not report these:
 - Lint: `index.ts`-only reach and `MODULE_EDGES`, foundation → shop, the tier ladder, `domain/` purity, a
   module importing its own barrel, a `.vue` calling `@api` or runtime `@types`.
 - Specs: `published-language`, `module-coupling`, `backend-pairing`, `route-name-coupling`, `store-location`,
-  `module-file-shapes`, `module-groups`, `registry`, and the sitemap block.
+  `module-file-shapes`, `module-groups`, `registry`, `module-map`, and the sitemap block.
 - Neighbouring audits: spec-drift, spec-gaps, test-honesty, suite-bloat (tests), design-manual (styling),
   and compliance (run from the backend).
 
@@ -137,8 +146,12 @@ finds far fewer than about six, the procedure was too loose. Far more means pres
 - F1 DRIFT: `domain-layer.md` (the `domain/` list), `strategic-ddd.md` ("products/orders have none", and the
   barrel-size example), `glossary.md` (`admin`, `realtime`: both modules are gone), `account.md` (six stores,
   there are seven), `delivery.md` ("only module" with no routes).
-- F2 ROUTE: `orders/domain/hard-delete.ts` (no delete flag in `OrderActions`) and `FulfillmentOrderCard.vue`
-  (forced ship and deliver). F2 OK, as the control: the status check in `Order.vue` that only labels.
+- F2 ROUTE: none expected once `OrderActions.delete`/`hardDelete` and
+  `FulfillmentOrderActions.forceShip` are in the contract and used. Run against a checkout from
+  before that (FE `655c56bd`), it finds `orders/domain/hard-delete.ts` and `FulfillmentOrderCard.vue`
+  (forced ship) as ROUTE, `ShipmentRow.vue` (forced deliver) and `WebhookDeliveriesFilters.vue`
+  (replay) as DRIFT — and `hard-delete.ts` must NOT come out OK because `DELETE /orders` states the
+  rule in prose. F2 OK, as the control: the status check in `Order.vue` that only labels.
 - F3 DRIFT: the swapped label in `wishlist/module.ts`.
 
 Rows move as the code is fixed. The point is the count and the false-positive control, not these exact lines.
@@ -148,5 +161,6 @@ Rows move as the code is fixed. The point is the count and the false-positive co
 - Do NOT edit code, tests, docs or the contract. Do NOT use `--fix`. Do NOT stash or commit. This is a report.
 - Never propose a spec, a census or a generator to guard a count. A count that needs a guard is a count that
   should not be written down.
-- A rule the contract states is not drift, even when the client repeats it.
+- A rule the contract describes in prose is still ROUTE when the client gates a control on it. Only an
+  `*Actions` flag (or a field the server computes) makes the client's copy unnecessary.
 - `reports/` is gitignored. These files are working evidence, not deliverables.

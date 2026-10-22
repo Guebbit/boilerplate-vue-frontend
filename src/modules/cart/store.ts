@@ -19,7 +19,6 @@ import {
     clearCart,
     mergeCart,
     setCartShippingMethod,
-    checkout as apiCheckout,
     reorder as apiReorder
 } from '@api';
 import type {
@@ -30,11 +29,7 @@ import type {
     CheckoutRequest,
     MergeCartResponse
 } from '@types';
-import {
-    rethrowUnlessAbsent,
-    isRetryableFailure,
-    isTransportFailure
-} from '@/infrastructure/utils/errors';
+import { rethrowUnlessAbsent, isRetryableFailure } from '@/infrastructure/utils/errors';
 import { useResetOnViewerChange } from '@/infrastructure/utils/use-reset-on-viewer-change.ts';
 import { createRequestTickets } from '@/infrastructure/utils/request-ticket.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -42,13 +37,18 @@ import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
 import { invalidateProductsCache } from '@/modules/products';
 import {
     changedMergeLines,
-    checkoutFingerprint,
     classifyCheckoutError,
+    emptyCart,
     expectedTotalOf,
     subtractGuestLines
 } from './domain';
 import type { GuestCartLine, MergeReportLine } from './domain';
-import { readCheckoutAttempt, writeCheckoutAttempt } from './composables/checkout-attempt-storage';
+import { checkoutKeyFor, endCheckoutAttempt } from './composables/checkout-attempt-storage';
+import {
+    IDEMPOTENCY_KEY_HEADER,
+    isMergeRefusedForGood,
+    sendCheckout
+} from './composables/idempotent-calls';
 import {
     linesOfMergeAttempt,
     readMergeAttempt,
@@ -61,53 +61,6 @@ import { useGuestCart } from './composables/use-guest-cart';
  * which the store reads off the cart it holds.
  */
 export type CheckoutBody = Omit<CheckoutRequest, 'expectedTotal'>;
-
-/**
- * The header the paired backend's `idempotency` middleware reads off `POST /cart/checkout` — see
- * `IdempotencyKeyHeader` in the contract.
- */
-const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
-
-/**
- * How long a checkout waits before asking again, one entry per retry, when the server answers
- * `IDEMPOTENCY_IN_FLIGHT`: the first attempt is still running, so the same key is sent again until
- * it replays the order. A 409 here means "not yet", never "no".
- */
-export const IN_FLIGHT_RETRY_DELAYS_MS: readonly number[] = [1000, 2000, 4000];
-
-/**
- * The statuses that say the stored guest list itself is bad (malformed, too many lines, too big):
- * the same request will never succeed, so it is not kept for the next sign-in.
- */
-const MERGE_REFUSED_FOR_GOOD: ReadonlySet<number> = new Set([400, 413, 422]);
-
-/**
- * Whether the server refused a merge in a way a retry cannot fix.
- *
- * @param error - What the merge call rejected with.
- * @returns `true` for an answered 400, 413 or 422.
- */
-const isMergeRefusedForGood = (error: unknown): boolean =>
-    !isTransportFailure(error) && MERGE_REFUSED_FOR_GOOD.has((error as { status: number }).status);
-
-/**
- * Ends the checkout attempt under way: the next checkout is a new call, with a new key.
- */
-const endCheckoutAttempt = (): void => {
-    writeCheckoutAttempt(undefined);
-};
-
-/**
- * Waits.
- * https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout
- *
- * @param milliseconds - How long to wait.
- * @returns A promise resolving after that long.
- */
-const wait = (milliseconds: number): Promise<void> =>
-    new Promise((resolve) => {
-        setTimeout(resolve, milliseconds);
-    });
 
 /**
  * Owns the shopping cart: the signed-in user's, where every action replaces the local cart with
@@ -131,9 +84,8 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * Counts every start and end of a call that replaces `cart`, and every viewer change. A
-     * background
-     * read ({@link pollCart}) remembers the count when it leaves and drops its answer if the count
-     * moved: something fresher, or someone else's, has happened since.
+     * background read ({@link pollCart}) remembers the count when it leaves and drops its answer if
+     * the count moved: something fresher, or someone else's, has happened since.
      */
     let cartEpoch = 0;
 
@@ -202,7 +154,7 @@ export const useCartStore = defineStore('cart', () => {
 
     /**
      * What this basket needs from shipping, and what it may choose from — the server's own
-     * answer, replacing a client-computed basket weight and free-above math.
+     * answer: the basket weight and the free-above threshold are never computed here.
      */
     const cartShipping = computed<CartShipping | undefined>(() => cart.value?.shipping);
 
@@ -263,34 +215,13 @@ export const useCartStore = defineStore('cart', () => {
     /**
      * What the header writes beside the badge: the cart's money total (before shipping) paired
      * with its currency — one computed, not two, so a caller can never read one half of a summary
-     * that has not loaded yet (`formatCurrency` now takes currency as a required argument).
+     * that has not loaded yet (`formatCurrency` takes the currency as a required argument).
      */
     const badgeMoney = computed(() =>
         liveSummary.value === undefined
             ? undefined
             : { total: liveSummary.value.itemsTotal, currency: liveSummary.value.currency }
     );
-
-    /**
-     * The key of the checkout attempt under way, or a new one when the order is not the one the
-     * saved attempt was made for.
-     *
-     * The key follows a fingerprint of the order (body, cart lines, shipping choice) and the person:
-     * the same order asked again is the same call, so the server replays it; anything else is a
-     * different call and gets a fresh key. Saved in the tab's storage, so a reload keeps it.
-     *
-     * @param body - The checkout request body about to be sent, total included.
-     * @returns The `Idempotency-Key` to send it under.
-     */
-    const checkoutKeyFor = (body: CheckoutRequest): string => {
-        const viewerId = useSessionStore().viewer?.id ?? '';
-        const fingerprint = checkoutFingerprint(body, cart.value);
-        const saved = readCheckoutAttempt();
-        if (saved?.viewerId === viewerId && saved.fingerprint === fingerprint) return saved.key;
-        const attempt = { viewerId, fingerprint, key: crypto.randomUUID() };
-        writeCheckoutAttempt(attempt);
-        return attempt.key;
-    };
 
     /**
      * The merge or summary read in flight for the sign-in, shared so a second ask joins it.
@@ -467,52 +398,6 @@ export const useCartStore = defineStore('cart', () => {
     const clearCartAction = () => replaceCart(() => clearCart());
 
     /**
-     * What the local cart becomes once checkout empties it server-side — a known state,
-     * not a guess, since the server always empties the cart on a successful checkout. Takes the
-     * currency as an argument rather than hardcoding one: the shop's currency does not change
-     * just because the basket emptied.
-     *
-     * @param currency - ISO-4217 code the emptied cart's zeroed summary should still carry.
-     * @returns The known-empty cart shape.
-     */
-    const emptyCart = (currency: string): CartResponse => ({
-        items: [],
-        summary: {
-            itemsCount: 0,
-            totalQuantity: 0,
-            itemsTotal: 0,
-            shippingCost: 0,
-            totalPrice: 0,
-            currency
-        },
-        shipping: { required: false, selected: null, options: [] }
-    });
-
-    /**
-     * Sends the checkout under its key, asking again with the SAME key while the server says the
-     * first attempt is still running ({@link IN_FLIGHT_RETRY_DELAYS_MS}): the retry then replays the
-     * order instead of making a second one.
-     *
-     * @param checkoutData - The checkout request body.
-     * @param key - The `Idempotency-Key` this attempt travels under.
-     * @param delays - The waits still left, one per remaining retry.
-     * @returns A promise resolving with the API's answer.
-     */
-    const sendCheckout = (
-        checkoutData: CheckoutRequest,
-        key: string,
-        delays: readonly number[]
-    ): ReturnType<typeof apiCheckout> =>
-        apiCheckout(checkoutData, { headers: { [IDEMPOTENCY_KEY_HEADER]: key } }).catch(
-            (error: unknown) => {
-                const next = delays.at(0);
-                if (next === undefined || classifyCheckoutError(error).kind !== 'in-flight')
-                    throw error;
-                return wait(next).then(() => sendCheckout(checkoutData, key, delays.slice(1)));
-            }
-        );
-
-    /**
      * What a failed checkout does to the attempt, and to the cart the page shows.
      *
      * - Nothing conclusive (no answer, 502/503/504, or the first attempt still running): the key is
@@ -577,8 +462,8 @@ export const useCartStore = defineStore('cart', () => {
                 ...checkoutData,
                 expectedTotal: expectedTotalOf(shown, currencyDigits(shown.currency))
             };
-            const key = checkoutKeyFor(body);
-            return sendCheckout(body, key, IN_FLIGHT_RETRY_DELAYS_MS)
+            const key = checkoutKeyFor(body, cart.value, useSessionStore().viewer?.id ?? '');
+            return sendCheckout(body, key)
                 .then((response) => {
                     // The server empties the cart on success: setting it to the known-empty
                     // shape, rather than dropping it to `undefined`, is what keeps the header badge

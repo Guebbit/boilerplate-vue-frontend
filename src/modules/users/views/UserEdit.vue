@@ -24,6 +24,7 @@ export default {
  * opened on Save whenever either differs from the loaded record, before the `PATCH` is sent at
  * all — see `submitForm`'s own note on why an unchanged `role` must never ride along regardless.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -35,27 +36,22 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
+import { useUserSummary } from '../composables/use-user-summary.ts';
 import { usersSchema } from '../schemas.ts';
 import { useRoleOptions } from '../composables/use-role-options.ts';
 import { supportedLanguages } from '@/i18n';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { z } from 'zod';
 import { Calendar, Clock, Hash, Pencil, User } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
-import {
-    EMPTY_VALUE,
-    formatText,
-    formatDateTime,
-    formatFlag
-} from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
+import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
@@ -142,7 +138,6 @@ const {
 } = useStructureFormValidation<UserEditForm>({}, editSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -229,39 +224,12 @@ const {
 } = useUserAccessDialog();
 
 /**
- * Hero heading.
- *
- * @returns The loaded username, the route id while loading, or the generic page
- *  title as a last resort.
+ * Hero heading and subheading, role and status chip labels for the routed user.
  */
-const heroTitle = computed(
-    () => currentUser.value?.username ?? id ?? t('user-edit-page.page-title')
-);
-
-/**
- * Hero subheading.
- *
- * @returns The user email, or the empty-value glyph when unknown.
- */
-const heroDescription = computed(() => formatText(currentUser.value?.email));
-
-/**
- * Label of the role chip.
- *
- * @returns The role's own name, or the empty-value glyph while the user is
- *  unknown. Not a translated administrator/standard pair: roles are data a
- *  deployment may add to, and only the rules say what each one may do.
- */
-const userRole = computed(() => formatText(currentUser.value?.role));
-
-/**
- * Label of the status chip.
- *
- * @returns The localized enabled/disabled wording, or the empty-value glyph
- *  while the user is unknown.
- */
-const userStatus = computed(() =>
-    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
+const { heroTitle, heroDescription, userRole, userStatus } = useUserSummary(
+    currentUser,
+    () => id,
+    'user-edit-page.page-title'
 );
 
 /**
@@ -289,6 +257,33 @@ const {
 } = useStaleRecord({ warn: warnSubmit, clear: clearSubmitError }, () =>
     id ? fetchUser(id, { forced: true }) : Promise.resolve()
 );
+
+/**
+ * Sends one user's `PATCH`, with the picked image when there is one, behind the upload bar.
+ *
+ * @param userId - The routed user.
+ * @param body - The merging `PATCH` body.
+ * @param imageUpload - The picked replacement image, when there is one.
+ * @returns The store's update promise.
+ */
+const sendUserUpdate = (
+    userId: string,
+    body: Omit<Parameters<typeof updateUser>[1], 'imageUpload'>,
+    imageUpload?: File
+) =>
+    trackUpload(imageUpload, (options) =>
+        updateUser(userId, { ...body, imageUpload }, { requestOptions: options })
+    );
+
+/**
+ * After a save: the served `imageUrl` is back in `currentUser`, so the local File has done its
+ * job — holding it would re-upload the same bytes on the next save.
+ */
+const onUserSaved = () => {
+    form.value.imageUpload = undefined;
+    markSaved();
+    addMessage(t('user-edit-page.success-update'));
+};
 
 /**
  * Validates the form and persists the user changes.
@@ -338,19 +333,8 @@ const submitForm = () => {
                 { username, role, active, locale, phone, website },
                 target
             )
-                .then((body) =>
-                    trackUpload(imageUpload, (options) =>
-                        updateUser(id, { ...body, imageUpload }, { requestOptions: options })
-                    )
-                )
-                .then(() => {
-                    // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
-                    // local File has done its job and holding it would only re-upload the same bytes on
-                    // the next save.
-                    form.value.imageUpload = undefined;
-                    markSaved();
-                    addMessage(t('user-edit-page.success-update'));
-                });
+                .then((body) => sendUserUpdate(id, body, imageUpload))
+                .then(onUserSaved);
         });
     }).catch((error) => {
         if (handleStaleSave(error)) return;
@@ -367,6 +351,23 @@ const onMissingRecord = useMissingRecord();
  * Selects and (re)fetches the user whenever the route id changes.
  */
 watchUser(() => id, { onError: onMissingRecord });
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('user-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('user-target-page.label-created-at'),
+        value: formatDateTime(currentUser.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('user-target-page.label-updated-at'),
+        value: formatDateTime(currentUser.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -395,12 +396,7 @@ watchUser(() => id, { onError: onMissingRecord });
                 />
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('user-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('user-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -417,7 +413,7 @@ watchUser(() => id, { onError: onMissingRecord });
                             data-test="user-edit-username"
                             :label="t('user-edit-page.label-username')"
                             :disabled="!rowActions?.update"
-                            :error-messages="showFormErrors ? formErrors.username : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.username : [])"
                         />
                         <v-text-field
                             v-model="form.phone"
@@ -426,7 +422,7 @@ watchUser(() => id, { onError: onMissingRecord });
                             data-test="user-edit-phone"
                             :label="t('user-edit-page.label-phone')"
                             :disabled="!rowActions?.update"
-                            :error-messages="showFormErrors ? formErrors.phone : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.phone : [])"
                         />
                         <v-text-field
                             v-model="form.website"
@@ -435,7 +431,7 @@ watchUser(() => id, { onError: onMissingRecord });
                             data-test="user-edit-website"
                             :label="t('user-edit-page.label-website')"
                             :disabled="!rowActions?.update"
-                            :error-messages="showFormErrors ? formErrors.website : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.website : [])"
                         />
                         <v-select
                             v-model="form.locale"
@@ -465,7 +461,7 @@ watchUser(() => id, { onError: onMissingRecord });
                             v-model="form.imageUpload"
                             data-test="user-edit-avatar"
                             :current-image-url="currentUser?.imageUrl"
-                            :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.imageUpload : [])"
                             :progress="uploadProgress"
                             :disabled="isSubmitting || !rowActions?.update"
                         />
@@ -508,26 +504,14 @@ watchUser(() => id, { onError: onMissingRecord });
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><User :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('user-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-created-at')"
-                        :value="formatDateTime(currentUser?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-updated-at')"
-                        :value="formatDateTime(currentUser?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><User :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

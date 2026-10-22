@@ -19,6 +19,7 @@ export default {
  * same spot: one shared `useBlockingError()`, rendered next to the picker. See
  * docs/theory/request-flow.md.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -143,7 +144,7 @@ const handleRemove = () =>
         <FormImageUpload
             v-model="pickedFile"
             :current-image-url="profile?.imageUrl"
-            :error-messages="errorMessage ? [errorMessage] : []"
+            v-bind="fieldErrorProps(errorMessage ? [errorMessage] : [])"
             :progress="uploadProgress"
             :disabled="busy"
             data-test="profile-avatar-input"

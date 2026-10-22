@@ -88,7 +88,7 @@ export default withMermaid(
                             { text: 'api-keys', link: '/modules/api-keys' },
                             {
                                 text: 'example',
-                                link: '/theory/modules#adding-and-deleting-a-domain'
+                                link: '/theory/modules#the-module-template'
                             },
                             { text: 'feedback', link: '/modules/feedback' },
                             {

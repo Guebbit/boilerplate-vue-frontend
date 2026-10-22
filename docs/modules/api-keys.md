@@ -50,8 +50,8 @@ field directly rather than as a toast.
 
 **The secret-reveal modal is shared with `webhooks`, not copied.** Minting a credential returns a
 plaintext secret exactly once, the same shape webhooks' subscription-create/rotate flow already
-had — `src/ui/organisms/SecretRevealModal.vue` is the promoted, module-agnostic version of what
-used to live only in `webhooks/components/`, with `title`/`intro` as overridable props.
+had — `src/ui/organisms/SecretRevealModal.vue` is the module-agnostic reveal dialog both modules
+share, with `title`/`intro` as overridable props.
 
 ::: tip Deleting this module
 Nothing outside `src/modules/api-keys/` references it — no store, no schema, no component beyond

@@ -21,6 +21,7 @@ export default {
  * rather than toasting — the dialog itself never closes on failure, so the message stays where
  * the visitor is looking. See docs/theory/request-flow.md.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -346,14 +347,14 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <p class="mb-4 opacity-80">{{ t('two-factor.panel-intro') }}</p>
 
         <div v-if="status?.methods.length" class="mb-4" data-test="two-factor-armed">
-            <h3 class="mb-2 text-sm font-semibold uppercase opacity-70">
+            <h3 class="mb-2 text-sm font-semibold uppercase opacity-muted">
                 {{ t('two-factor.armed-title') }}
             </h3>
             <v-list density="compact">
                 <v-list-item v-for="row in status.methods" :key="row.method">
                     <v-list-item-title>
                         {{ methodLabel(row.method) }}
-                        <span v-if="row.target" class="opacity-70">— {{ row.target }}</span>
+                        <span v-if="row.target" class="opacity-muted">— {{ row.target }}</span>
                     </v-list-item-title>
                     <template #append>
                         <v-btn
@@ -388,7 +389,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         </div>
 
         <div v-if="availableToEnroll?.length" class="mb-4" data-test="two-factor-available">
-            <h3 class="mb-2 text-sm font-semibold uppercase opacity-70">
+            <h3 class="mb-2 text-sm font-semibold uppercase opacity-muted">
                 {{ t('two-factor.available-title') }}
             </h3>
             <v-list density="compact">
@@ -412,7 +413,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <p
             v-for="row in unavailable"
             :key="row.method"
-            class="mb-2 text-sm opacity-70"
+            class="mb-2 text-sm opacity-muted"
             data-test="two-factor-unavailable"
         >
             {{ row.reason }}
@@ -421,7 +422,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <div v-if="status && status.enabled" class="mb-4 flex items-center justify-between gap-2">
             <p
                 class="text-sm"
-                :class="status.backupCodesRemaining === 0 ? 'text-error' : 'opacity-70'"
+                :class="status.backupCodesRemaining === 0 ? 'text-error' : 'opacity-muted'"
             >
                 {{
                     status.backupCodesRemaining === 0
@@ -456,7 +457,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <v-dialog
             :fullscreen="fullscreen"
             :model-value="!!enrolling"
-            max-width="480"
+            :max-width="DIALOG_MAX_WIDTH.form"
             persistent
             aria-labelledby="two-factor-enroll-title"
         >
@@ -472,7 +473,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <v-dialog
             :fullscreen="fullscreen"
             :model-value="!!revealedBackupCodes"
-            max-width="480"
+            :max-width="DIALOG_MAX_WIDTH.form"
             persistent
             aria-labelledby="two-factor-backup-codes-title"
         >
@@ -487,7 +488,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
         <v-dialog
             :fullscreen="fullscreen"
             :model-value="!!codePrompt"
-            max-width="420"
+            :max-width="DIALOG_MAX_WIDTH.narrow"
             persistent
             aria-labelledby="two-factor-code-prompt-title"
         >
@@ -496,7 +497,7 @@ const unavailable = computed(() => status.value?.available.filter((row) => !row.
                     t('two-factor.label-code')
                 }}</v-card-title>
                 <v-card-text>
-                    <p class="mb-2 text-sm opacity-70">{{ t('two-factor.label-code-hint') }}</p>
+                    <p class="mb-2 text-sm opacity-muted">{{ t('two-factor.label-code-hint') }}</p>
                     <v-btn
                         v-if="deliveredMethod"
                         variant="tonal"

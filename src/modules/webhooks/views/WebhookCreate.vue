@@ -16,11 +16,11 @@ export default {
  * ever reaches the new subscription's detail page — the store itself never caches it, see
  * `store.ts`.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
@@ -30,20 +30,13 @@ import { webhookCreateSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Generics
  */
 const { t, locale } = useI18n();
-
-/**
- * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -90,7 +83,6 @@ const {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
         formElement: () => card.value?.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -116,11 +108,6 @@ const createdSubscriptionId = ref<string>();
  * but this component; the store's own cache never sees it (`store.ts`'s `createSubscription`).
  */
 const revealedSecret = ref<string>();
-
-/**
- * Hands focus back to the control that opened the one-time secret dialog once it closes.
- */
-useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * This form's own blocked state — a single dedicated submit, so a failed create blocks it in
@@ -175,21 +162,12 @@ const handleSecretDone = () => {
 
 <template>
     <div id="webhook-create-page">
-        <v-dialog
-            :fullscreen="fullscreen"
-            :model-value="!!revealedSecret"
-            persistent
-            max-width="640"
-            aria-labelledby="secret-reveal-title"
-        >
-            <SecretRevealModal
-                v-if="revealedSecret"
-                :secret="revealedSecret"
-                :title="t('webhook-secret-modal.title')"
-                :intro="t('webhook-secret-modal.intro')"
-                @done="handleSecretDone"
-            />
-        </v-dialog>
+        <SecretRevealModal
+            :secret="revealedSecret"
+            :title="t('webhook-secret-modal.title')"
+            :intro="t('webhook-secret-modal.intro')"
+            @done="handleSecretDone"
+        />
 
         <FormCard
             ref="card"
@@ -206,7 +184,7 @@ const handleSecretDone = () => {
                 :label="t('webhook-create-page.label-url')"
                 :hint="t('webhook-create-page.hint-url')"
                 persistent-hint
-                :error-messages="showErrors ? formErrors.url : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.url : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -214,7 +192,7 @@ const handleSecretDone = () => {
                 type="text"
                 data-test="webhook-description"
                 :label="t('webhook-create-page.label-description')"
-                :error-messages="showErrors ? formErrors.description : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.description : [])"
                 class="mb-2"
             />
             <v-select
@@ -227,7 +205,7 @@ const handleSecretDone = () => {
                 item-value="name"
                 :loading="loadingEventCatalogue"
                 :label="t('webhook-create-page.label-event-types')"
-                :error-messages="showErrors ? formErrors.eventTypes : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.eventTypes : [])"
             />
 
             <InlineErrorAlert :message="submitError" data-test="webhook-create-error" />

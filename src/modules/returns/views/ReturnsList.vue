@@ -15,10 +15,11 @@ export default {
  * other list. A customer sees the returns on their own orders and staff see every one — the server
  * decides, so this page is the same for both.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search, Undo2 } from 'lucide-vue-next';
+import { Undo2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useReturnsStore } from '../store.ts';
@@ -29,6 +30,7 @@ import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import { ReturnStatus, ReturnReason } from '@/types/enums.ts';
 
 /**
@@ -151,38 +153,18 @@ const { handleSearch, handleReset } = useListSearch({
                         item-value="value"
                         hide-details
                     />
-                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
+                    <PageSizeSelect v-model="pageSize" />
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        :loading="loading"
-                        data-test="search-submit"
-                    >
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn
-                        variant="tonal"
-                        :disabled="loading"
-                        data-test="search-reset"
-                        @click="handleReset"
-                    >
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 
-        <v-empty-state
+        <ListEmptyState
             v-if="pageItemList.length === 0"
             :title="isFiltered ? t('returns-list-page.empty-search') : t('returns-list-page.empty')"
+            :icon="Undo2"
         >
-            <template #media>
-                <Undo2 :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-        </v-empty-state>
+        </ListEmptyState>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
             <v-card
@@ -196,7 +178,7 @@ const { handleSearch, handleReset } = useListSearch({
                         <h2 class="text-lg font-semibold">
                             {{ t(`returns-form.reason-${item.reason}`) }}
                         </h2>
-                        <p class="text-sm opacity-70">
+                        <p class="text-sm opacity-muted">
                             {{ item.orderNumber }} ·
                             {{ formatDateTime(item.createdAt) }}
                         </p>

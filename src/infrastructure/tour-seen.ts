@@ -8,6 +8,7 @@
  * again. See `docs/tools/tours.md`.
  */
 import { BROWSER_STORAGE_NAME, SIX_MONTHS_DAYS } from '@/infrastructure/browser-storage.ts';
+import { readJson, writeJson } from '@/infrastructure/utils/safe-storage.ts';
 
 /**
  * Name of the `localStorage` key holding the record.
@@ -52,18 +53,12 @@ export const tourSeenKey = (
  *  `{ savedAt, keys }` — a tour showing again is the whole cost of any of those.
  */
 const readKeys = (now: number): string[] => {
-    // eslint-disable-next-line no-restricted-syntax -- `localStorage` throws when blocked and JSON.parse when the text is damaged; either means "nothing seen", never a failure
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        // `JSON.parse` returns `any`; the record is narrowed field by field below.
-        const { savedAt, keys } = JSON.parse(raw) as { savedAt?: unknown; keys?: unknown };
-        if (typeof savedAt !== 'number' || now - savedAt > MAX_AGE_MS || !Array.isArray(keys))
-            return [];
-        return (keys as unknown[]).filter((key): key is string => typeof key === 'string');
-    } catch {
+    const record = readJson('local', STORAGE_KEY);
+    if (typeof record !== 'object' || record === null) return [];
+    const { savedAt, keys } = record as { savedAt?: unknown; keys?: unknown };
+    if (typeof savedAt !== 'number' || now - savedAt > MAX_AGE_MS || !Array.isArray(keys))
         return [];
-    }
+    return (keys as unknown[]).filter((key): key is string => typeof key === 'string');
 };
 
 /**
@@ -85,10 +80,5 @@ export const hasSeenTour = (key: string, now: number = Date.now()): boolean =>
  */
 export const markTourSeen = (key: string, now: number = Date.now()): void => {
     const keys = [...readKeys(now).filter((existing) => existing !== key), key].slice(-MAX_KEYS);
-    // eslint-disable-next-line no-restricted-syntax -- `localStorage` throws when blocked or full; losing the record costs one more showing of a tour
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ savedAt: now, keys }));
-    } catch {
-        // Nothing to report to: the tour was shown either way.
-    }
+    writeJson('local', STORAGE_KEY, { savedAt: now, keys });
 };

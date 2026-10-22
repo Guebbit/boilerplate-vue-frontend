@@ -18,7 +18,7 @@ import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search, UserPlus } from 'lucide-vue-next';
+import { UserPlus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '../store';
 import { useUserAccessDialog } from '../composables/use-user-access-dialog.ts';
@@ -35,13 +35,15 @@ import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
 import { UserSortItem } from '@/types/enums.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
+import RowDeletedChip from '@/ui/molecules/RowDeletedChip.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
+import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
@@ -261,6 +263,14 @@ const {
 } = useBlockingError();
 
 /**
+ * The row-write pipelines, straight and confirmed, failing into {@link rowActionError}.
+ */
+const { run, runConfirmed } = useRowActions({
+    report: reportRowActionError,
+    clear: clearRowActionError
+});
+
+/**
  * Deletes a user after an explicit confirmation.
  *
  * A soft delete, not a removal: the row is expected to stay visible (with its `row-deleted`
@@ -276,19 +286,12 @@ const {
  *  ({@link rowActionError}).
  */
 const handleDelete = (userId: string, username: string) =>
-    useDialogStore()
-        .confirm({
-            message: t('users-list-page.confirm-delete', { name: username }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return deleteUser(userId)
-                .then(() => addMessage(t('users-list-page.success-delete')))
-                .then(() => search(true))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('users-list-page.confirm-delete', { name: username }),
+        action: () => deleteUser(userId),
+        success: t('users-list-page.success-delete'),
+        afterwards: () => search(true)
+    });
 
 /**
  * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
@@ -298,13 +301,12 @@ const handleDelete = (userId: string, username: string) =>
  * @returns A promise settling once the restore and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleRestore = (userId: string) => {
-    clearRowActionError();
-    return restoreUser(userId)
-        .then(() => addMessage(t('users-list-page.success-restore')))
-        .then(() => search(true))
-        .catch((error: unknown) => reportRowActionError(error));
-};
+const handleRestore = (userId: string) =>
+    run({
+        action: () => restoreUser(userId),
+        success: t('users-list-page.success-restore'),
+        afterwards: () => search(true)
+    });
 
 /**
  * Opens `UserAccessDialog` for one row and, once the admin confirms a role or active-status
@@ -322,13 +324,14 @@ const handleManageAccess = (item: User) =>
         role: item.role,
         active: item.active,
         actions: item.actions
-    }).then((result) => {
-        if (!result) return;
-        clearRowActionError();
-        return updateUser(item.id, result)
-            .then(() => addMessage(t('users-list-page.success-access-update')))
-            .catch((error: unknown) => reportRowActionError(error));
-    });
+    }).then((result) =>
+        result
+            ? run({
+                  action: () => updateUser(item.id, result),
+                  success: t('users-list-page.success-access-update')
+              })
+            : undefined
+    );
 
 /**
  * Permanently deletes a user after an explicit confirmation. Unlike {@link handleDelete}, this
@@ -340,18 +343,11 @@ const handleManageAccess = (item: User) =>
  *  hard-delete has finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleHardDelete = (userId: string, username: string) =>
-    useDialogStore()
-        .confirm({
-            message: t('users-list-page.confirm-hard-delete', { name: username }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return hardDeleteUser(userId)
-                .then(() => addMessage(t('users-list-page.success-hard-delete')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('users-list-page.confirm-hard-delete', { name: username }),
+        action: () => hardDeleteUser(userId),
+        success: t('users-list-page.success-hard-delete')
+    });
 </script>
 
 <template>
@@ -420,16 +416,9 @@ const handleHardDelete = (userId: string, username: string) =>
                         data-test="filter-deleted"
                         hide-details
                     />
-                    <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" />
+                    <PageSizeSelect v-model="pageSize" />
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <v-btn type="submit" color="primary" data-test="search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
+                <ListSearchActions @reset="handleReset">
                     <v-spacer />
                     <v-btn
                         v-if="session.can('create', 'User')"
@@ -439,7 +428,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         <UserPlus :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('users-list-page.button-create-user') }}
                     </v-btn>
-                </div>
+                </ListSearchActions>
             </form>
         </v-card>
 
@@ -474,7 +463,7 @@ const handleHardDelete = (userId: string, username: string) =>
                 <v-chip v-if="item.role" size="small" variant="tonal" color="tertiary">
                     {{ item.role }}
                 </v-chip>
-                <span v-else class="opacity-60">—</span>
+                <span v-else class="opacity-muted">—</span>
             </template>
 
             <template v-slot:[`item.active`]="{ item }">
@@ -501,16 +490,7 @@ const handleHardDelete = (userId: string, username: string) =>
                 >
                     {{ t('users-list-page.chip-needs-review') }}
                 </v-chip>
-                <v-chip
-                    v-if="item.deletedAt"
-                    size="small"
-                    variant="tonal"
-                    color="warning"
-                    class="ml-1"
-                    data-test="row-deleted"
-                >
-                    {{ t('generic.deleted') }}
-                </v-chip>
+                <RowDeletedChip v-if="item.deletedAt" />
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">

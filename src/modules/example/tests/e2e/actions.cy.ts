@@ -7,7 +7,7 @@
 import { actionTable } from '../../../../../tests/support/e2e/action-table';
 
 /** The editor's seeded published example, the same pinned id the a11y sweep edits. */
-const CUSTOMER_PUBLISHED = '65e1a0000000000000000e01';
+const EDITOR_PUBLISHED = '65e1a0000000000000000e01';
 
 actionTable('example', [
     {
@@ -30,7 +30,7 @@ actionTable('example', [
     {
         name: 'a failed edit keeps the form and its typed values, and a retry succeeds',
         persona: 'editor',
-        route: `/en/examples/${CUSTOMER_PUBLISHED}/edit`,
+        route: `/en/examples/${EDITOR_PUBLISHED}/edit`,
         prepare: () => {
             cy.get('[data-test=example-title] input').should('not.have.value', '');
             cy.get('[data-test=example-title] input').type(' (edited)');
@@ -40,7 +40,7 @@ actionTable('example', [
         },
         intercept: {
             method: 'PATCH',
-            url: `**/examples/${CUSTOMER_PUBLISHED}`,
+            url: `**/examples/${EDITOR_PUBLISHED}`,
             operation: '/examples/{id}'
         },
         kind: 'form',
@@ -65,19 +65,36 @@ actionTable('example', [
     {
         name: 'a failed delete from the detail page keeps the example and its button, and a retry succeeds',
         persona: 'editor',
-        route: `/en/examples/${CUSTOMER_PUBLISHED}`,
+        route: `/en/examples/${EDITOR_PUBLISHED}`,
         trigger: () => {
             cy.get('[data-test=example-delete]').click();
             cy.get('[data-test=app-dialog-confirm]').click();
         },
         intercept: {
             method: 'DELETE',
-            url: `**/examples/${CUSTOMER_PUBLISHED}`,
+            url: `**/examples/${EDITOR_PUBLISHED}`,
             operation: '/examples/{id}'
         },
         kind: 'row',
         alert: 'example-target-delete-error',
         message: 'The delete failed',
         listed: '[data-test=example-delete]'
+    },
+    {
+        name: 'a failed status move shows the alert in place and keeps the buttons, and a retry succeeds',
+        persona: 'editor',
+        route: `/en/examples/${EDITOR_PUBLISHED}`,
+        trigger: () => {
+            cy.get('[data-test^=example-move-]').first().click();
+        },
+        intercept: {
+            method: 'POST',
+            url: `**/examples/${EDITOR_PUBLISHED}/transitions`,
+            operation: '/examples/{id}/transitions'
+        },
+        kind: 'row',
+        alert: 'example-target-status-error',
+        message: 'The move failed',
+        listed: '[data-test=example-status-actions]'
     }
 ]);

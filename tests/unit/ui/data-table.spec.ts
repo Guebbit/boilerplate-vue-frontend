@@ -199,3 +199,25 @@ describe('DataTable — keyboard selection', () => {
         expect(wrapper.findAll('[data-test=list-row]')[1].attributes('aria-selected')).toBe('true');
     });
 });
+
+describe('DataTable — header options and loading', () => {
+    it('renders a fixed-start header on its th and td', () => {
+        const wrapper = mount(DataTable, {
+            props: {
+                headers: [
+                    { title: 'Name', key: 'name', fixed: 'start', width: '12rem' }
+                ] as CoreDataTableHeader<object>[],
+                items,
+                caption: 'Things'
+            },
+            global: { plugins: [vuetify, i18n] }
+        });
+
+        expect(wrapper.find('th.v-data-table-column--fixed').exists()).toBe(true);
+        expect(wrapper.find('td.v-data-table-column--fixed').exists()).toBe(true);
+    });
+
+    it('keeps the header legible while loading: the table is fixed-header', () => {
+        expect(mountTable({ loading: true }).find('.v-table--fixed-header').exists()).toBe(true);
+    });
+});

@@ -30,7 +30,8 @@ named `<SCOPE>…`; batch files are named by module, never by number.
 Read, in order, and build an **exclusion list** from them. Write it at the top of the report.
 
 1. `docs/tools/accessibility-testing.md`: what axe, the keyboard suite and the lint plugin gate.
-2. `docs/tools/design-lint.md`: off-scale spacing, raw colours and the refused classes.
+2. `docs/tools/design-lint.md`: off-scale spacing, raw colours, the refused classes, and the
+   invasive-CSS scan (`npm run audit:css`, `tests/cross-cutting/css-invasiveness.spec.ts`).
 3. `docs/tools/layout-sweep.md`: overflow, clipping, covered controls, 24 px tap targets
    everywhere and 44 px at phone widths, text modes, 200 % text.
 4. `docs/tools/touch-testing.md`: a control only a hover reveals, data only a `title` holds, a

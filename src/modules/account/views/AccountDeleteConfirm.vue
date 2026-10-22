@@ -13,45 +13,17 @@ export default {
  * @module
  * Public confirm page for account deletion: the one-time token from the email link is the
  * credential, so the route carries no auth guard and the form works for a signed-out visitor too.
+ * The form is `LinkTokenConfirmCard`, in its destructive tone with a way back to the profile.
  */
-import { ref } from 'vue';
-import { z } from 'zod';
-import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '../stores/profile.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
-import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
-import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';
-import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
+import LinkTokenConfirmCard from '../components/LinkTokenConfirmCard.vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
+import { useI18n } from 'vue-i18n';
 
 /**
- * Form state: only the one-time token, prefilled from the email link.
+ * Translation function.
  */
-interface AccountDeleteConfirmForm {
-    token?: string;
-}
-
-/**
- * Translation function, and the currently active locale code.
- */
-const { t, locale } = useI18n();
-
-/**
- * Current route, read for its params, query and name.
- */
-const route = useRoute();
-
-/**
- * Router instance, for the navigations this file performs.
- */
-const router = useRouter();
-
-/**
- * Toast dispatcher, used to report every outcome to the visitor.
- */
-const { addMessage } = useNotificationsStore();
+const { t } = useI18n();
 
 /**
  * Finishes the deletion the emailed link started.
@@ -59,114 +31,42 @@ const { addMessage } = useNotificationsStore();
 const { confirmAccountDelete } = useProfileStore();
 
 /**
- * The `<form>` itself, so `useStructureFormValidation` can focus the first invalid field
- * on submit.
+ * This page's translation keys.
  */
-const formElement = ref<HTMLFormElement>();
+const copy = {
+    warning: 'account-delete-confirm-page.warning-message',
+    label: 'account-delete-confirm-page.label-token',
+    submit: 'account-delete-confirm-page.button-submit',
+    tokenRequired: 'account-delete-confirm-page.token-required',
+    success: 'account-delete-confirm-page.success'
+};
 
 /**
- * Form state, error surface and submit handler, from the toolkit's form validation.
+ * This page's `data-test` hooks.
  */
-const {
-    form,
-    formErrors,
-    showFormErrors: showErrors,
-    isSubmitting,
-    handleSubmit,
-    applyServerErrors
-} = useStructureFormValidation<AccountDeleteConfirmForm>(
-    {
-        token: readLinkToken(route)
-    },
-    z.object({
-        token: z.string().min(1, { error: () => t('account-delete-confirm-page.token-required') })
-    }),
-    {
-        formElement,
-        revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
-);
-
-// The token is the only credential for this action; it must not linger in the URL (a `#token=` fragment) for every
-// pageview and observability event after mount to carry to Umami, Faro and browser history.
-useLinkTokenCleanup(route, router);
-
-/**
- * This submit's own blocked state — a spent or unknown token names no field, so it lands here
- * instead of a toast, next to the button the visitor just pressed.
- */
-const {
-    message: confirmError,
-    type: confirmErrorType,
-    report: reportConfirmError,
-    clear: clearConfirmError
-} = useBlockingError();
-
-/**
- * Validates the token and deletes the account for good.
- *
- * @returns A promise resolving once the flow settles: on success a toast is
- *  shown and the user is sent `Home`. Invalid input is revealed, announced and focused by the
- *  toolkit before the handler runs; API failures land on the field the server named, or block the
- *  form in place ({@link confirmError}).
- */
-const submitForm = () => {
-    clearConfirmError();
-    return handleSubmit(() =>
-        confirmAccountDelete(form.value.token!)
-            .then(() => {
-                addMessage(t('account-delete-confirm-page.success'));
-                return router.push(routerLinkI18n({ name: 'Home' }));
-            })
-            // Swallows `router.push`'s resolved value: it is a `NavigationFailure | undefined`,
-            // which the submit handler's `Promise<void>` will not take, and a failed navigation is
-            // the router's own `onError` to report rather than this form's.
-            .then(() => undefined)
-    ).catch((error) => {
-        applyServerErrors(error, { onUnmapped: () => reportConfirmError(error) });
-    });
+const testIds = {
+    token: 'account-delete-confirm-token',
+    submit: 'account-delete-confirm-submit',
+    error: 'account-delete-confirm-error'
 };
 </script>
 
 <template>
     <div id="account-delete-confirm-page">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <v-alert type="warning" class="mb-6">
-                {{ t('account-delete-confirm-page.warning-message') }}
-            </v-alert>
-
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.token"
-                    :label="t('account-delete-confirm-page.label-token')"
-                    :error-messages="showErrors ? formErrors.token : []"
-                />
-                <v-btn
-                    type="submit"
-                    color="error"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    :disabled="isSubmitting"
-                    class="mt-4"
-                >
-                    {{ t('account-delete-confirm-page.button-submit') }}
-                </v-btn>
-                <InlineErrorAlert
-                    :message="confirmError"
-                    :type="confirmErrorType"
-                    class="mt-4"
-                    data-test="account-delete-confirm-error"
-                />
-            </form>
-
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'Profile' })">
-                    {{ t('account-delete-confirm-page.button-go-back') }}
-                </v-btn>
-            </div>
-        </v-card>
+        <LinkTokenConfirmCard
+            :copy="copy"
+            :test-ids="testIds"
+            :spend="confirmAccountDelete"
+            success-route="Home"
+            destructive
+        >
+            <template #footer>
+                <div class="mt-4 flex justify-center">
+                    <v-btn variant="text" :to="routerLinkI18n({ name: 'Profile' })">
+                        {{ t('account-delete-confirm-page.button-go-back') }}
+                    </v-btn>
+                </div>
+            </template>
+        </LinkTokenConfirmCard>
     </div>
 </template>

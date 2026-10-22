@@ -152,7 +152,13 @@ onMounted(fetchSessions);
             data-test="sessions-action-error"
         />
 
-        <v-list v-if="sessions.length > 0" density="compact" data-test="sessions-list">
+        <!-- `lines="false"` lifts Vuetify's one-line clamp on subtitles: the dates are the whole row. -->
+        <v-list
+            v-if="sessions.length > 0"
+            density="compact"
+            :lines="false"
+            data-test="sessions-list"
+        >
             <v-list-item
                 v-for="session in sessions"
                 :key="'session-' + session.id"
@@ -162,7 +168,7 @@ onMounted(fetchSessions);
                     <span v-if="session.device" data-test="session-device">{{
                         session.device
                     }}</span>
-                    <code class="text-xs opacity-70">{{ session.id }}</code>
+                    <code class="text-xs opacity-muted">{{ session.id }}</code>
                     <v-chip
                         v-if="session.current"
                         size="small"
@@ -172,15 +178,19 @@ onMounted(fetchSessions);
                         {{ t('profile-page.sessions-current') }}
                     </v-chip>
                 </v-list-item-title>
-                <v-list-item-subtitle class="session-started" data-test="session-started">
+                <v-list-item-subtitle opacity="1" data-test="session-started">
                     {{ t('profile-page.sessions-started') }}:
                     {{ formatDateTime(session.createdAt) }}
                 </v-list-item-subtitle>
-                <v-list-item-subtitle v-if="session.lastUsedAt" class="session-last-used">
+                <v-list-item-subtitle
+                    v-if="session.lastUsedAt"
+                    opacity="1"
+                    data-test="session-last-used"
+                >
                     {{ t('profile-page.sessions-last-used') }}:
                     {{ formatDateTime(session.lastUsedAt) }}
                 </v-list-item-subtitle>
-                <v-list-item-subtitle class="session-expiry">
+                <v-list-item-subtitle opacity="1">
                     {{ t('profile-page.sessions-expires') }}:
                     {{ formatDateTime(session.expiration) }}
                 </v-list-item-subtitle>
@@ -216,25 +226,3 @@ onMounted(fetchSessions);
         </v-btn>
     </v-card>
 </template>
-
-<style scoped>
-/*
- * Vuetify renders a list subtitle at `--v-medium-emphasis-opacity` (0.6). On this card's surface
- * that lands under the 4.5:1 WCAG AA threshold, and `account/tests/e2e/a11y.cy.ts` fails on it —
- * all three strings it dims below legibility saying something the visitor is here to check: when a
- * device signed in, when it last used the session, and when they will be signed out.
- *
- * The TOKEN is raised rather than `opacity` overridden, because Vuetify owns what emphasis means
- * here and a hard-coded value would be a second answer to the same question. Scoped, so no other
- * subtitle in the app inherits a decision made for this list.
- */
-.session-started,
-.session-last-used,
-.session-expiry {
-    --v-medium-emphasis-opacity: 1;
-
-    /* Vuetify clamps a subtitle to one line; these dates are the whole point of the row. */
-    -webkit-line-clamp: unset;
-    white-space: normal;
-}
-</style>

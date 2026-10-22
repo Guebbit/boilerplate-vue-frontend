@@ -15,13 +15,13 @@ management — is answered through that one prompt.
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                  |
 | **Screens**             | 12 — `Login` · `Signup` · `TwoFactorChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountDeleteConfirm` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `EmailChangeUndo` · `OAuthCallback` · `Profile` · `Logout` |
-| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountTwoFactor`                                                                                                             |
+| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountOAuthLinks` · `accountTwoFactor`                                                                                       |
 | **Menu entries**        | `Profile`                                                                                                                                                                                                                            |
 | **API calls**           | 31                                                                                                                                                                                                                                   |
 | **Depends on**          | [`users`](./users.md)                                                                                                                                                                                                                |
-| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing)                                                                                                                                                           |
+| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`                                                                                                                                 |
 | **Languages**           | `en` · `it`                                                                                                                                                                                                                          |
-| **Publishes**           | `AddressPicker`                                                                                                                                                                                                                      |
+| **Publishes**           | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                                                               |
 | **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                                              |
 
 ## The map
@@ -29,21 +29,24 @@ management — is answered through that one prompt.
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
+    cart["cart"] -.->|"published-language"| account["<b>account</b>"]
     account["<b>account</b>"] -.->|"published-language"| users["users"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
+    class cart core;
     class users generic;
     class account self;
 ```
 
+- `cart` → **published-language** — Mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`; the checkout never reads an account store.
 - → `users` **published-language** — Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.
 
 ## The story
 
-Twelve screens, six stores, and the widest API surface of any module here — which makes it a
+Twelve screens, seven stores, and the widest API surface of any module here — which makes it a
 misleadingly ordinary-looking domain. Five things about it are worth knowing before you edit it.
 
 **The session is not in here.** The credential (an access token in `jwt` mode, a held-cookie flag in `cookie` mode: the backend's `NODE_SESSION_MODE`, read from `GET /account/session-config`) lives in `infrastructure/session`, because
@@ -51,9 +54,10 @@ misleadingly ordinary-looking domain. Five things about it are worth knowing bef
 caller's own rules before any domain code runs. A module cannot sit below the layer that needs it. This module owns the
 _editable record_, not the credential.
 
-**One domain, six stores.** They split by lifecycle, not by screen: `accountAuth` establishes and
+**One domain, seven stores.** They split by lifecycle, not by screen: `accountAuth` establishes and
 ends a session, `accountProfile` owns the editable record once one exists, and `accountSessions`,
-`accountAddresses`, `accountOAuthProviders` and `accountTwoFactor` each own a panel's own slice.
+`accountAddresses`, `accountOAuthLinks` and `accountTwoFactor` each own a panel's own slice, and
+`accountOAuthProviders` holds the deployment's provider list — a public fact, not the visitor's.
 A store that outlives its panel would be a cache nobody invalidates.
 
 **Connecting a provider is a signed-in step.** A sign-in with a provider whose email matches an
@@ -83,24 +87,28 @@ the same pair shares only the validation vocabulary, and the server remains the 
 because the two sides genuinely have different relationships to the same data.
 :::
 
-There is no `index.ts` next to the manifest, and that is an answer rather than an omission: no other
-domain has ever needed anything from this one. A barrel exists when a module exports something; an
-empty one is a promise nobody asked for.
+The `index.ts` next to the manifest publishes two components and no store: `AddressPicker` and
+`PurchaseHoldNotice`, both mounted by `cart`'s checkout. A component is the narrowest thing a
+sibling can be handed — the checkout renders an address choice and a purchase hold without
+learning what an address book or a hold record is.
 
 ## State
 
-Six stores, listed by what each one's setup function returns — an internal ref is not part of the surface.
+Seven stores, listed by what each one's setup function returns — an internal ref is not part of the surface.
 
-| Store                   | File                   | Surface                                                                                                                                                                                                                                                                                                    |
-| ----------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `accountAuth`           | `stores/auth.ts`       | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
-| `accountProfile`        | `stores/profile.ts`    | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete` · `requestAccountExport` · `downloadAccountExport`                                                                                 |
-| `accountSessions`       | `stores/sessions.ts`   | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
-| `accountAddresses`      | `stores/addresses.ts`  | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
-| `accountOAuthProviders` | `stores/oauth.ts`      | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
-| `accountTwoFactor`      | `stores/two-factor.ts` | `status` · `setup` · `confirmed` · `challenge` · `delivery` · `secondsUntilResend` · `loading` · `fetchStatus` · `setupMethod` · `confirmMethod` · `removeMethod` · `disableAll` · `regenerateBackupCodes` · `clearSetup` · `beginLoginChallenge` · `clearChallenge` · `sendLoginCode` · `submitLoginCode` |
+| Store                   | File                    | Surface                                                                                                                                                                                                                                                                                                    |
+| ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `accountAuth`           | `stores/auth.ts`        | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
+| `accountProfile`        | `stores/profile.ts`     | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete` · `requestAccountExport` · `downloadAccountExport`                                                                                 |
+| `accountSessions`       | `stores/sessions.ts`    | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
+| `accountAddresses`      | `stores/addresses.ts`   | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
+| `accountOAuthProviders` | `stores/oauth.ts`       | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
+| `accountOAuthLinks`     | `stores/oauth-links.ts` | `links` · `loading` · `fetchLinks` · `unlinkProvider`                                                                                                                                                                                                                                                      |
+| `accountTwoFactor`      | `stores/two-factor.ts`  | `status` · `setup` · `confirmed` · `challenge` · `delivery` · `secondsUntilResend` · `loading` · `fetchStatus` · `setupMethod` · `confirmMethod` · `removeMethod` · `disableAll` · `regenerateBackupCodes` · `clearSetup` · `beginLoginChallenge` · `clearChallenge` · `sendLoginCode` · `submitLoginCode` |
 
 ## Screens
+
+`VerifyEmailConfirm`, `EmailChangeConfirm`, `EmailChangeUndo` and `AccountDeleteConfirm` render `components/LinkTokenConfirmCard.vue`; `PasswordResetConfirm` is its own form (three fields, a cross-field rule, field-level server errors).
 
 | Path                     | Route name              | Access   | Permission | View                              |
 | ------------------------ | ----------------------- | -------- | ---------- | --------------------------------- |
@@ -350,7 +358,7 @@ flowchart TD
 ```
 
 **Which proof the dialog asks for is the server's answer, not the client's guess.** On open it calls
-`GET /account/reauth` (`reauthMethods()` on the session store) and shows the first method listed:
+`GET /account/reauth` (`reauthMethods()` in `infrastructure/reauth.ts`) and shows the first method listed:
 
 - `password` — the password field.
 - `email` — an account with no password (it signed up through a provider): a "send code" button
@@ -375,7 +383,7 @@ the dialog that is the difference between one prompt and five stacked on top of 
 
 `ReauthDialog.vue` lives in `app/` and the call it makes lives in the session store (`infrastructure/session.ts`),
 so the shell never imports this module — nor does the "resend verification" banner, which reads the
-session viewer's `verified` flag and calls the session store's `requestEmailVerification()`. The
+session viewer's `verified` flag and calls `requestEmailVerification()` from `infrastructure/email-verification.ts`. The
 store holding the dialog's open/closed state lives in
 `infrastructure/http/` rather than `ui/` — the interceptor reads it directly, and the
 infrastructure tier may not import `ui`. See [Layers](../theory/layers.md) for the rule.

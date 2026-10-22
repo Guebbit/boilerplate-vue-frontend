@@ -67,9 +67,7 @@ describe('useCopyToClipboard', () => {
 
         return build()('req-0123456789').then(() => {
             expect(copyToClipboardMock).toHaveBeenCalledWith('req-0123456789');
-            expect(addMessageMock).toHaveBeenCalledExactlyOnceWith(
-                enMessages.generic['secret-reveal-copied']
-            );
+            expect(addMessageMock).toHaveBeenCalledExactlyOnceWith(enMessages.generic.copied);
         });
     });
 

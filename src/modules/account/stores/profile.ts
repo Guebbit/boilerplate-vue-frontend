@@ -51,10 +51,11 @@ const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undef
 };
 
 /**
- * The visitor's own editable record, and every operation on it: fetch/update, the role-view
- * widget, the live password change, email verification and account deletion.
+ * The visitor's own editable record, and every operation on it: fetch/update, the avatar upload
+ * and removal, the live password change, email verification, the email change (confirm, undo,
+ * resend, cancel), account deletion and the data export.
  *
- * Separate from `session`, which holds the minimal `{ id, email, admin }` projection the shell
+ * Separate from `session`, which holds the minimal `{ id, email, role, … }` projection the shell
  * and the guards need. This store holds the whole `User` — the split `docs/theory/layers.md`
  * describes.
  *
@@ -63,7 +64,6 @@ const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undef
  * (`stores/sessions.ts`'s `useAccountSessionsStore`, `stores/addresses.ts`'s `useAddressesStore`).
  * See `docs/theory/modules.md` for why this domain is split this many ways.
  */
-
 export const useProfileStore = defineStore('accountProfile', () => {
     /**
      * The session store, whose token and viewer this store writes.

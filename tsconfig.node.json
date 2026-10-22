@@ -4,6 +4,7 @@
         "vite.config.*",
         "vitest.config.*",
         "orval.config.*",
+        "knip.config.*",
         "scripts/**/*.ts",
         "src/ui/vuetify/theme.ts",
         "src/ui/vuetify/breakpoints.ts",

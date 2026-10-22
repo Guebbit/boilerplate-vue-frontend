@@ -11,9 +11,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The detail screen: one example read from the store's cache by route id, laid out with the shared
- * detail skeleton. It provides the example and a status mutation to `ExampleStatusActions`
- * (provide/inject), and owns the delete.
+ * In any module: a detail screen reads one record from the cache by route id and lays it out with the
+ * shared detail skeleton; every control follows the record's own `actions`.
+ * Here: provides the example and a status mutation to `ExampleStatusActions`, and owns the delete.
+ * See: docs/theory/request-flow.md
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -25,7 +26,6 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useExampleStore } from '../store';
 import { provideExample } from '../provided.ts';
 import ExampleStatusActions from '../components/ExampleStatusActions.vue';
-import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
@@ -34,11 +34,13 @@ import LazyImage from '@/ui/molecules/LazyImage.vue';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
-import type { ExampleStatus } from '@types';
+import { publicationOf } from '../domain';
+import { useExampleTransition } from '../composables/use-example-transition.ts';
 
 /**
  * Translation function.
@@ -56,11 +58,6 @@ const router = useRouter();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The session, for the rules that gate each action.
- */
-const session = useSessionStore();
-
-/**
  * Route example id.
  */
 const { id } = defineProps<{
@@ -70,7 +67,7 @@ const { id } = defineProps<{
 /**
  * Store actions.
  */
-const { watchExample, updateExample, deleteExample } = useExampleStore();
+const { watchExample, deleteExample } = useExampleStore();
 
 /**
  * The example being displayed.
@@ -88,28 +85,12 @@ const onMissingRecord = useMissingRecord();
 watchExample(() => id, { onError: onMissingRecord });
 
 /**
- * The status buttons' own blocked state: they are dedicated controls, so a failure blocks them in
- * place rather than joining a toast queue.
+ * The status buttons' own blocked state and the move itself: they are dedicated controls, so a
+ * failure blocks them in place rather than joining a toast queue, and a 409 re-reads the record.
+ * `changeStatus` is handed down through provide/inject, so the descendant that renders the buttons
+ * never touches the store.
  */
-const {
-    message: statusError,
-    report: reportStatusError,
-    clear: clearStatusError
-} = useBlockingError();
-
-/**
- * Moves the example to another status. Handed down through provide/inject, so the descendant that
- * renders the buttons never touches the store.
- *
- * @param status - The status to move to.
- */
-const changeStatus = (status: ExampleStatus) => {
-    if (!id) return Promise.resolve();
-    clearStatusError();
-    return updateExample(id, { status })
-        .then(() => addMessage(t('example-target-page.success-status')))
-        .catch((error: unknown) => reportStatusError(error));
-};
+const { changeStatus, error: statusError } = useExampleTransition(() => id);
 
 /**
  * The providing half of the provide/inject pair; `ExampleStatusActions` is the injecting half.
@@ -158,6 +139,39 @@ const handleDelete = () => {
                 .catch((error: unknown) => reportDeleteError(error));
         });
 };
+
+/**
+ * What the example's publication reads as: live, withdrawn (with the first publish) or never.
+ *
+ * @returns The localized sentence, empty while the example loads.
+ */
+const publicationText = computed(() => {
+    if (!currentExample.value) return '';
+    const { state, firstPublishedAt } = publicationOf(currentExample.value);
+    return t(`example-publication.${state}`, { date: formatDateTime(firstPublishedAt) });
+});
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('example-target-page.label-publication'),
+        value: publicationText.value,
+        icon: Calendar,
+        test: 'example-publication'
+    },
+    {
+        label: t('example-target-page.label-created-at'),
+        value: formatDateTime(currentExample.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('example-target-page.label-updated-at'),
+        value: formatDateTime(currentExample.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -181,9 +195,7 @@ const handleDelete = () => {
                 />
             </template>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentExample" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('example-target-page.label-body')"
@@ -220,7 +232,7 @@ const handleDelete = () => {
                 </div>
                 <p v-else class="m-0 opacity-75">{{ t('generic.loading-state') }}</p>
 
-                <div v-if="currentExample && session.can('update', 'Example')" class="mt-8">
+                <div v-if="currentExample?.actions?.transitions.length" class="mt-8">
                     <h3 class="mb-3 text-lg font-semibold">
                         {{ t('example-target-page.section-status') }}
                     </h3>
@@ -234,35 +246,19 @@ const handleDelete = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo
-                        :title="heroTitle"
-                        :description="formatText(currentExample?.ownerName)"
-                        accent="secondary"
-                    >
-                        <template #icon><NotebookPen :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('example-target-page.label-published-at')"
-                        :value="formatDateTime(currentExample?.publishedAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-created-at')"
-                        :value="formatDateTime(currentExample?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('example-target-page.label-updated-at')"
-                        :value="formatDateTime(currentExample?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="formatText(currentExample?.ownerName)"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><NotebookPen :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>
                 <v-btn
-                    v-if="currentExample && session.can('update', 'Example')"
+                    v-if="currentExample?.actions?.update"
                     color="secondary"
                     data-test="example-go-to-edit"
                     :to="routerLinkI18n({ name: 'ExampleEdit', params: { id } })"
@@ -270,7 +266,7 @@ const handleDelete = () => {
                     {{ t('example-target-page.button-go-to-edit') }}
                 </v-btn>
                 <v-btn
-                    v-if="currentExample && session.can('delete', 'Example')"
+                    v-if="currentExample?.actions?.delete"
                     color="error"
                     variant="tonal"
                     data-test="example-delete"
@@ -278,7 +274,7 @@ const handleDelete = () => {
                 >
                     {{ t('example-target-page.button-delete') }}
                 </v-btn>
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'ExamplesList' })">
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ExamplesList' })">
                     {{ t('example-target-page.button-go-to-list') }}
                 </v-btn>
                 <InlineErrorAlert :message="deleteError" data-test="example-target-delete-error" />

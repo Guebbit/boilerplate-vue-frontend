@@ -6,7 +6,7 @@
  * can close it; and it is ONE polite live region. The products lookup is the real composable over
  * the real products store, with its network read stubbed to answer from a small catalogue.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -14,7 +14,7 @@ import axe from 'axe-core';
 import MergeReportAlert from '../components/MergeReportAlert.vue';
 import { useCartStore } from '../store';
 import type { MergeReportLine } from '../domain';
-import { useProductsStore } from '@/modules/products';
+import { seedProducts, spyOnProductReads } from '../../../../tests/support/unit/products-store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
@@ -41,11 +41,10 @@ let wrapper: VueWrapper | undefined;
  * @returns The store and the read stub, once the first read has settled.
  */
 const mountAlert = async (report: MergeReportLine[]) => {
-    const products = useProductsStore();
-    const read = vi.spyOn(products, 'fetchProductsByIds').mockImplementation((ids) => {
+    const read = spyOnProductReads().mockImplementation((ids) => {
         for (const id of ids) {
             const product = catalogue[id];
-            if (product) products.addProduct(product);
+            if (product) seedProducts(product);
         }
         return Promise.resolve([]);
     });
@@ -247,8 +246,7 @@ describe('what it shows', () => {
     });
 
     it('still shows the lines when the products read fails', async () => {
-        const products = useProductsStore();
-        vi.spyOn(products, 'fetchProductsByIds').mockRejectedValue(new Error('offline'));
+        spyOnProductReads().mockRejectedValue(new Error('offline'));
         useCartStore().mergeReport = [
             aLine({ productId: 'p1', requested: 2, resulting: 5, reason: 'summed' })
         ];

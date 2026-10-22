@@ -98,12 +98,26 @@ describe('TranslationTabs — the tab/panel link a caller completes', () => {
     });
 });
 
-describe('TranslationTabs — a draft language', () => {
-    const WITH_DRAFT = [
-        ...LOCALES,
-        { tag: 'fr', nativeName: 'Français', direction: 'ltr' as const, active: false }
-    ];
+/** The locales plus one draft language. */
+const WITH_DRAFT = [
+    ...LOCALES,
+    { tag: 'fr', nativeName: 'Français', direction: 'ltr' as const, active: false }
+];
 
+/** Mounts the tabs on a list with one draft language, with `modelValue` as the active tab. */
+const mountOn = (modelValue: string) =>
+    mount(TranslationTabs, {
+        props: {
+            locales: WITH_DRAFT,
+            openTags: ['en', 'fr'],
+            fallbackTag: 'en',
+            modelValue
+        },
+        global: { plugins: [vuetify, i18n] },
+        attachTo: document.body
+    });
+
+describe('TranslationTabs — a draft language', () => {
     it('marks an open draft tab, with its real name and not the bare code', () => {
         wrapper = mount(TranslationTabs, {
             props: {
@@ -120,6 +134,15 @@ describe('TranslationTabs — a draft language', () => {
         expect(tab.text()).toContain('Français');
         expect(wrapper.find('[data-test="translation-tab-draft-fr"]').exists()).toBe(true);
         expect(wrapper.find('[data-test="translation-tab-draft-en"]').exists()).toBe(false);
+    });
+
+    it('says in words, under the tabs, that the active draft is hidden from shoppers', () => {
+        wrapper = mountOn('fr');
+        expect(wrapper.get('[data-test="translation-draft-hint"]').text()).toContain('Draft');
+        wrapper.unmount();
+
+        wrapper = mountOn('en');
+        expect(wrapper.find('[data-test="translation-draft-hint"]').exists()).toBe(false);
     });
 
     it('still nests no focusable control inside a draft tab', async () => {

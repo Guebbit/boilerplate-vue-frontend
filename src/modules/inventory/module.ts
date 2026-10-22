@@ -13,16 +13,15 @@ import routes from './routes';
 /**
  * The stock ledger and the preorder board, admin-side.
  *
- * Reaches into `products` — a `conformist` read of `useProductsStore` as it is, to name products in
- * the receipt select and the ledger titles — because the page names products (the receipt select,
- * the title lookup) through the products barrel, the same one-way arrow the BE's inventory module
- * has. The preorder board also mounts `delivery`'s second tab and reads its per-product counts
- * through that barrel, a `published-language` reach: the fulfillment orders are `delivery`'s, and
- * this module learns nothing of a shipment. Deleting this module removes the boards and the ledger
- * behind them; every shelf count stays correct, every WHY goes unrecorded.
+ * A recorded movement changes stock, so the stock-movement form asks `products` to drop its cached
+ * catalogue (`invalidateProductsCache`); the preorder board mounts `delivery`'s second tab. Deleting
+ * this module removes the boards and the ledger behind them; every shelf count stays correct, every
+ * WHY goes unrecorded.
  *
  * A ledger that explains stock without owning it — specific to running a shop, not the reason
  * anyone shops here.
+ *
+ * Context map: `docs/modules/inventory.md` § "The map".
  */
 export default {
     name: 'inventory',

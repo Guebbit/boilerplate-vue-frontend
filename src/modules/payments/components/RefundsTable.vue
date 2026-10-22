@@ -16,22 +16,18 @@ export default {
  * the server's closed `failureReason`, which is staff-only data; the raw provider text stays in the
  * server's logs.
  */
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { RefundReason, RefundStatus } from '@/types/enums.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
+import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type {
     RefundListItem,
@@ -39,21 +35,13 @@ import type {
     RefundStatus as TRefundStatus
 } from '@types';
 import { usePaymentsStore } from '../store.ts';
+import { usePagedTable } from '../composables/use-paged-table.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 
 /**
- * Translation function and toast dispatcher.
+ * Translation function.
  */
 const { t } = useI18n();
-
-/**
- * Toast dispatcher: a failed read is ambient — the table just did not refresh.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
- * The router, for the order link's `hasRoute` guard.
- */
-const router = useRouter();
 
 /**
  * The store: the page of refunds, its total and the loading flag.
@@ -64,11 +52,6 @@ const store = usePaymentsStore();
  * The reactive slice of the store this table renders.
  */
 const { refundsPage, refundsTotal, loading } = storeToRefs(store);
-
-/**
- * Rows per page.
- */
-const PAGE_SIZE = 10;
 
 /**
  * What the form edits.
@@ -87,54 +70,25 @@ interface RefundFilters {
 const filters = ref<RefundFilters>({});
 
 /**
- * The page shown, 1-based.
+ * The page shown, the page count and the read of the page the current filters name; it runs on
+ * mount and on every page change.
  */
-const page = ref(1);
+const { page, pageTotal, load } = usePagedTable(refundsTotal, (pageNumber, pageSize) =>
+    store.fetchRefundsPage({
+        page: pageNumber,
+        pageSize,
+        status: filters.value.status,
+        reason: filters.value.reason,
+        orderId: filters.value.orderId?.trim() || undefined,
+        createdFrom: startOfDayInstant(filters.value.createdFrom),
+        createdTo: endOfDayInstant(filters.value.createdTo)
+    })
+);
 
 /**
- * How many pages the current filters span.
+ * Apply the filters from the first page, or clear them all and reload.
  */
-const pageTotal = computed(() => Math.ceil(refundsTotal.value / PAGE_SIZE));
-
-/**
- * Loads the page the current filters and page number name.
- *
- * @returns A promise settling once the page loaded or the failure was toasted.
- */
-const load = () =>
-    store
-        .fetchRefundsPage({
-            page: page.value,
-            pageSize: PAGE_SIZE,
-            status: filters.value.status,
-            reason: filters.value.reason,
-            orderId: filters.value.orderId?.trim() || undefined,
-            createdFrom: startOfDayInstant(filters.value.createdFrom),
-            createdTo: endOfDayInstant(filters.value.createdTo)
-        })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
-
-/**
- * Applies the filters from the first page.
- */
-const handleSearch = () => {
-    page.value = 1;
-    return load();
-};
-
-/**
- * Clears every filter and reloads the first page.
- */
-const handleReset = () => {
-    filters.value = {};
-    return handleSearch();
-};
-
-watch(page, () => void load());
-
-onMounted(() => {
-    void load();
-});
+const { handleSearch, handleReset } = useListSearch({ filters, page, search: load });
 
 /**
  * The status select's options, "any" first (value `null`).
@@ -193,13 +147,8 @@ const headers = computed<CoreDataTableHeader<RefundListItem>[]>(() => [
 
 /**
  * An order's page, or nothing when this build ships no `orders` module.
- *
- * @param orderId - The order.
  */
-const orderLink = (orderId: string) => {
-    const target = linkIfRouted(router, 'OrderTarget', { id: orderId });
-    return target ? routerLinkI18n(target) : undefined;
-};
+const orderLink = useOrderLink();
 
 /**
  * Refund status colours; `satisfies` makes a new contract status fail the type check.
@@ -255,15 +204,7 @@ const STATUS_COLORS = {
                         hide-details
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" data-test="refunds-search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="refunds-search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions hook-prefix="refunds" :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 

@@ -65,7 +65,7 @@ const CREDIT_NOTES = [
 ];
 
 // `meta` matches the real `PaginationMeta` shape — `search:` (`store.ts`) reads
-// `meta.totalPages` for `pageTotal`, so an envelope without one no longer represents a real
+// `meta.totalPages` for `pageTotal`, so an envelope without one does not represent a real
 // response.
 const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1 } };
 
@@ -162,8 +162,8 @@ describe('useOrdersStore', () => {
     });
 
     describe('updateOrder', () => {
-        // `status` is no longer a field of `UpdateOrderByIdRequest` — `email` is the only field this
-        // body still carries.
+        // `status` is not a field of `UpdateOrderByIdRequest` — `email` is the only field this
+        // body carries.
         it('sends the id in the path and the changes in the body', () =>
             useOrdersStore()
                 .updateOrder('o1', { email: 'new@example.com' })

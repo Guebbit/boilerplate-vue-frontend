@@ -1,51 +1,41 @@
 /**
  * @module
- * The example form schemas: what a form refuses, with the bounds read from the generated
- * contract rather than restated, and the status limited to the closed set.
+ * The example form schema: what the create and the edit form refuse, with the bounds read from the
+ * generated contract rather than restated. The status is not a form field: it has its own door.
  */
 import { describe, expect, it } from 'vitest';
-import { exampleCreateSchema, exampleEditSchema } from '../schemas';
+import { exampleFormSchema } from '../schemas';
 import { createExampleBodyBodyMax, createExampleBodyTitleMax } from '@api/schemas';
 
-/** The fields a valid create carries. */
+/** The fields a valid submission carries. */
 const VALID = { title: 'A title', body: 'A body' };
 
-describe('exampleCreateSchema', () => {
+describe('exampleFormSchema', () => {
+    it('ignores a status: the form does not carry one', () => {
+        expect(exampleFormSchema.parse({ ...VALID, status: 'published' })).toEqual(VALID);
+    });
+
     it('accepts a title and a body', () => {
-        expect(exampleCreateSchema.safeParse(VALID).success).toBe(true);
+        expect(exampleFormSchema.safeParse(VALID).success).toBe(true);
     });
 
     it.each(['title', 'body'])('refuses an empty %s', (field) => {
-        expect(exampleCreateSchema.safeParse({ ...VALID, [field]: '' }).success).toBe(false);
+        expect(exampleFormSchema.safeParse({ ...VALID, [field]: '' }).success).toBe(false);
     });
 
     it('accepts a title exactly at the contract’s ceiling and refuses one over it', () => {
         const atCeiling = { ...VALID, title: 'x'.repeat(createExampleBodyTitleMax) };
         const over = { ...VALID, title: 'x'.repeat(createExampleBodyTitleMax + 1) };
 
-        expect(exampleCreateSchema.safeParse(atCeiling).success).toBe(true);
-        expect(exampleCreateSchema.safeParse(over).success).toBe(false);
+        expect(exampleFormSchema.safeParse(atCeiling).success).toBe(true);
+        expect(exampleFormSchema.safeParse(over).success).toBe(false);
     });
 
     it('accepts a body exactly at the contract’s ceiling and refuses one over it', () => {
         const atCeiling = { ...VALID, body: 'x'.repeat(createExampleBodyBodyMax) };
         const over = { ...VALID, body: 'x'.repeat(createExampleBodyBodyMax + 1) };
 
-        expect(exampleCreateSchema.safeParse(atCeiling).success).toBe(true);
-        expect(exampleCreateSchema.safeParse(over).success).toBe(false);
-    });
-});
-
-describe('exampleEditSchema', () => {
-    it.each(['draft', 'published', 'archived'])('accepts the status %s', (status) => {
-        expect(exampleEditSchema.safeParse({ ...VALID, status }).success).toBe(true);
-    });
-
-    it('refuses a status outside the closed set', () => {
-        expect(exampleEditSchema.safeParse({ ...VALID, status: 'deleted' }).success).toBe(false);
-    });
-
-    it('requires the status: an edit names the whole state', () => {
-        expect(exampleEditSchema.safeParse(VALID).success).toBe(false);
+        expect(exampleFormSchema.safeParse(atCeiling).success).toBe(true);
+        expect(exampleFormSchema.safeParse(over).success).toBe(false);
     });
 });

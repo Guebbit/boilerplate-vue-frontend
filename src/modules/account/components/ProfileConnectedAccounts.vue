@@ -158,7 +158,7 @@ onMounted(() => {
                 data-test="connected-item"
             >
                 <v-list-item-title>{{ providerLabel(link.provider) }}</v-list-item-title>
-                <v-list-item-subtitle class="connected-since">
+                <v-list-item-subtitle opacity="1">
                     {{ t('profile-page.connected-since') }}: {{ formatDateTime(link.connectedAt) }}
                 </v-list-item-subtitle>
                 <template #append>
@@ -199,14 +199,3 @@ onMounted(() => {
         </div>
     </v-card>
 </template>
-
-<style scoped>
-/*
- * The same contrast raise `ProfileSessions.vue` applies to its list subtitles: Vuetify's 0.6
- * medium emphasis lands under 4.5:1 on this card's surface, and the date is what the visitor
- * is here to read.
- */
-.connected-since {
-    --v-medium-emphasis-opacity: 1;
-}
-</style>

@@ -1,9 +1,10 @@
 /**
  * @module
- * The route table: each record pairs a path with its lazy-loaded view and the rule the router
- * checks. Each screen names the action it performs, so reading the list is not the same
- * permission as creating an example. One route is public and carries no `meta.access`; a
- * teaching guard runs on the edit route only.
+ * In any module: the route table pairs each path with its lazy-loaded view and the rule the router
+ * checks. Each screen names the action it performs; the coarse `meta.can` lets a caller in, and the
+ * record's own `actions` decide per row.
+ * Here: one public route, and a teaching guard on the edit route only.
+ * See: docs/theory/modules.md#the-module-template
  */
 import type { RouteRecordRaw } from 'vue-router';
 import { exampleEditGuard } from './guards.ts';

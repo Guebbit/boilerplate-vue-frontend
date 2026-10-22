@@ -96,8 +96,9 @@ Nothing needs rescoping to add one: `src/modules/<name>/tests/` is already outsi
 than the app's), `tsconfig.vitest.json` excludes it, and both `cypress.config.ts` and
 `scripts/e2e/run-shards.ts` discover the two homes by glob rather than by list.
 
-`cart` is the reference — it has one of everything, including the `domain/` folder that nothing may
-import a framework into.
+`example` is the template to copy ([The module template](./modules.md#the-module-template)); `cart`
+is the next read — it has one of everything, including the `domain/` folder that nothing may import a
+framework into.
 
 ### 2 · The manifest
 
@@ -114,7 +115,7 @@ import { widgetsResponseSchemas } from './response-schemas';
 /**
  * Widgets: a supporting subdomain, specific to this business but not a differentiator.
  *
- * Reaches into `products` — a `conformist` read of `useProductsStore` as it is, to name the
+ * Reaches into `products` — a `conformist` read of `useProductLines` as it is, to name the
  * product a widget belongs to.
  */
 export default {
@@ -148,13 +149,12 @@ Three fields need care:
 Two more things need care that are not fields at all:
 
 - **which subdomain the module sits in, and what kind of relationship each import to a sibling is** —
-  write both in the docblock above the manifest, the way the `widgets` example above does. Nothing
-  reads either at runtime; both used to be typed fields (`subdomain`, `dependsOn`) held to a
-  cross-cutting spec, and both are gone — see [Strategic DDD](./strategic-ddd.md) §2 and §4 for why
-  prose next to the import turned out to be the better home.
+  write the subdomain in the docblock above the manifest, the way the `widgets` example above does,
+  and each edge's kind on the module's docs page under "The map". Nothing reads either at runtime,
+  so neither is a typed field — see [Strategic DDD](./strategic-ddd.md) §2 and §4 for why.
 - **which siblings the module may import at all** — add the module to `MODULE_EDGES` in
   `eslint.config.ts` the moment it reaches a sibling, naming which one(s). This is the part that
-  stays enforced, just no longer on the manifest: an import to a sibling not in that list fails
+  stays enforced, on `MODULE_EDGES` rather than the manifest: an import to a sibling not in that list fails
   `npm run lint` at the offending line.
 
 The temptation is to fill the docblock in later. Do not — the questions are easiest to answer while

@@ -12,11 +12,12 @@ import routes from './routes';
  * The contact form and its admin inbox.
  *
  * Depends on nothing: a ticket references no other domain's records, and both views talk only
- * to this module's own endpoints. The BE module has answered them all along — this is the
- * frontend finally claiming its half.
+ * to this module's own endpoints.
  *
  * A contact form and an inbox. Every application grows one, none of them differ, and this one
  * references no other domain’s records.
+ *
+ * Context map: `docs/modules/feedback.md` § "The map".
  */
 export default {
     name: 'feedback',

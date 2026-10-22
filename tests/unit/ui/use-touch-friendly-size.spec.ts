@@ -1,11 +1,17 @@
 /**
  * @module
  * `useTouchFriendlySize` — row-action buttons stay compact with a mouse on a wide screen and
- * grow to a finger's 44 px below `sm` or whenever the primary pointer is coarse.
+ * grow to a finger's 44 px below `sm` or whenever the primary pointer is coarse. `useTouchTarget`
+ * answers the same question with a pixel size for buttons whose size prop would change the look.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
-import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import {
+    TOUCH_TARGET_PX,
+    useTouchChipSize,
+    useTouchFriendlySize,
+    useTouchTarget
+} from '@/ui/composables/use-touch-friendly-size.ts';
 import { asStub } from '../../support/stub.ts';
 
 /** Vuetify's `mobile` flag, which the test flips. */
@@ -53,5 +59,39 @@ describe('useTouchFriendlySize', () => {
         mobile.value = true;
 
         expect(size?.value).toBe('large');
+    });
+});
+
+describe('useTouchTarget', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it.each([
+        { mobile: false, coarse: false, px: undefined },
+        { mobile: true, coarse: false, px: TOUCH_TARGET_PX },
+        { mobile: false, coarse: true, px: TOUCH_TARGET_PX }
+    ])('is $px with mobile=$mobile and coarse=$coarse', (row) => {
+        mobile.value = row.mobile;
+        stubPointer(row.coarse);
+
+        expect(effectScope().run(() => useTouchTarget().value)).toBe(row.px);
+    });
+});
+
+describe('useTouchChipSize', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it.each([
+        { mobile: false, coarse: false, size: 'small' },
+        { mobile: true, coarse: false, size: 'x-large' },
+        { mobile: false, coarse: true, size: 'x-large' }
+    ])('is $size with mobile=$mobile and coarse=$coarse', (row) => {
+        mobile.value = row.mobile;
+        stubPointer(row.coarse);
+
+        expect(effectScope().run(() => useTouchChipSize().value)).toBe(row.size);
     });
 });

@@ -24,8 +24,8 @@
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
-    wishlist["<b>wishlist</b>"] -->|"conformist"| cart["cart"]
-    wishlist["<b>wishlist</b>"] ==>|"customer-supplier"| products["products"]
+    wishlist["<b>wishlist</b>"] ==>|"customer-supplier"| cart["cart"]
+    wishlist["<b>wishlist</b>"] -->|"conformist"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -35,8 +35,8 @@ flowchart LR
     class wishlist self;
 ```
 
-- → `products` **customer-supplier** — Joins its saved lines to their product records (`useProductLines`).
-- → `cart` **conformist** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
+- → `products` **conformist** — Joins its saved lines to their product records (`useProductLines`), read as they are.
+- → `cart` **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
 
 ## The story
 
@@ -45,8 +45,8 @@ One screen, one store, product references and nothing else. Read it next to
 
 The interesting line is a single call. Move-to-cart is a **wishlist** endpoint; once it answers,
 this store asks the cart to **refetch itself** through the cart barrel, so the header's badge cannot
-lag a write this module initiated. That one call is the whole of the `wishlist → cart` edge, and it
-is why the edge is `conformist` rather than `customer-supplier` — the cart is never asked to write.
+lag a write this module initiated. That one call is the whole of the `wishlist → cart` edge: the cart is asked to read again, never
+to write.
 
 ::: tip Why this is a line and not a loop
 The reverse arrows do not exist. The cart never reads the wishlist, and the product page never

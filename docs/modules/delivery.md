@@ -43,8 +43,8 @@ flowchart LR
 
 ## The story
 
-**No routes and no navigation entries**, and three modules pointing at it — the only module here with
-that shape.
+**No routes and no navigation entries**, and three modules pointing at it — shared only with
+`notifications`.
 
 | Surface                    | Used by                       | On                        |
 | -------------------------- | ----------------------------- | ------------------------- |
@@ -53,8 +53,7 @@ that shape.
 | `PreorderFulfillmentTable` | [`inventory`](./inventory.md) | the preorder board, tab 2 |
 | `usePreorderSummaries`     | [`inventory`](./inventory.md) | the preorder board, tab 1 |
 
-All three edges are `published-language`, and each is declared by the using module rather than here.
-None learns what a shipping rate or a tracking code is: the components render their own concern
+Each edge is declared by the using module rather than here. None learns what a shipping rate or a tracking code is: the components render their own concern
 and fetch their own data.
 
 ::: tip What deleting this module costs, precisely
@@ -92,9 +91,9 @@ flowchart TD
 **Every button comes from the record's own `actions`.** The order's `actions` no longer carry ship,
 deliver or fulfill; a card offers ship, fulfil (digital), hold and release from the fulfillment
 order's flags, and a shipment row offers mark-delivered and edit-tracking from the shipment's. The one
-order-level control left is "Start fulfilment" (`Order.actions.start`). The single exception is the
-forced door: while the ordinary one is closed, a caller whose `Order.actions.override` lists `shipped`
-(or `delivered`) is offered it with a reason, and the server refuses what does not apply.
+order-level control left is "Start fulfilment" (`Order.actions.start`). The forced ship follows
+`actions.forceShip`; the forced arrival is offered on a deliverable shipment (`actions.deliver`) to
+an `override:Order` holder.
 
 **What the pure helpers do** (`domain/ship-lines.ts`): turn the ship dialog's quantity fields into the
 lines to send (never more than `remaining`, at least one unit) and count "arrives in N shipments"
@@ -199,7 +198,7 @@ Nothing in this domain needs a page of its own — the story above is the whole 
 
 ## Related pages
 
-- [`cart`](./cart.md) · [`orders`](./orders.md) — the two modules that mount these components
+- [`cart`](./cart.md) · [`orders`](./orders.md) · [`inventory`](./inventory.md) — the three modules that mount these components
 - [`payments`](./payments.md) — the other component-only module
 - [Strategic DDD](../theory/strategic-ddd.md) — reading a `published-language` edge
 - [Adding & Removing a Module](../theory/module-lifecycle.md) — the deletability procedure

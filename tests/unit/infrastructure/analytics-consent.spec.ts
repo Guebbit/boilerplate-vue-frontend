@@ -313,6 +313,8 @@ describe('isAnalyticsConsentEnabled', () => {
 
     it('is on whenever Umami is configured, with no other flag', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
+        vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
+        vi.stubEnv('VITE_FARO_URL', '');
 
         expect(isAnalyticsConsentEnabled()).toBe(true);
     });

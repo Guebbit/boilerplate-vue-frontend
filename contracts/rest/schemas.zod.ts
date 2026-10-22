@@ -5719,6 +5719,8 @@ export const CheckoutResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6304,6 +6306,8 @@ export const ListOrdersResponse = zod.strictObject({
                             .enum(['all_excluded', 'window_closed', 'nothing_left'])
                             .optional(),
                         withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                        delete: zod.boolean(),
+                        hardDelete: zod.boolean(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -6570,6 +6574,8 @@ export const CreateOrderResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6966,6 +6972,8 @@ export const SearchOrdersResponse = zod.strictObject({
                             .enum(['all_excluded', 'window_closed', 'nothing_left'])
                             .optional(),
                         withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                        delete: zod.boolean(),
+                        hardDelete: zod.boolean(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -7201,6 +7209,8 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -7438,6 +7448,8 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -7675,6 +7687,8 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -7929,6 +7943,8 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -8180,6 +8196,8 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -8426,6 +8444,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -9021,6 +9041,8 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -9772,6 +9794,7 @@ export const GetFulfillmentByOrderResponse = zod.strictObject({
                 cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
                 actions: zod.strictObject({
                     ship: zod.boolean(),
+                    forceShip: zod.boolean(),
                     fulfill: zod.boolean(),
                     hold: zod.boolean(),
                     release: zod.boolean()
@@ -10052,6 +10075,8 @@ export const StartFulfilmentResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -10568,6 +10593,7 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
         cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
         actions: zod.strictObject({
             ship: zod.boolean(),
+            forceShip: zod.boolean(),
             fulfill: zod.boolean(),
             hold: zod.boolean(),
             release: zod.boolean()
@@ -10652,6 +10678,7 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
         cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
         actions: zod.strictObject({
             ship: zod.boolean(),
+            forceShip: zod.boolean(),
             fulfill: zod.boolean(),
             hold: zod.boolean(),
             release: zod.boolean()
@@ -13197,6 +13224,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .enum(['all_excluded', 'window_closed', 'nothing_left'])
                         .optional(),
                     withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                    delete: zod.boolean(),
+                    hardDelete: zod.boolean(),
                     invoice: zod.boolean()
                 })
                 .optional(),
@@ -13525,7 +13554,14 @@ export const DownloadAccountExportResponse = zod.strictObject({
             thumbnailUrl: zod.string().optional(),
             publishedAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            actions: zod
+                .strictObject({
+                    transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                    update: zod.boolean(),
+                    delete: zod.boolean()
+                })
+                .optional()
         })
     ),
     notifications: zod.array(
@@ -14398,6 +14434,8 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -15430,7 +15468,14 @@ export const GetPublishedExampleResponse = zod.strictObject({
         thumbnailUrl: zod.string().optional(),
         publishedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -15493,7 +15538,14 @@ export const ListExamplesResponse = zod.strictObject({
                 thumbnailUrl: zod.string().optional(),
                 publishedAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod
+                    .strictObject({
+                        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                        update: zod.boolean(),
+                        delete: zod.boolean()
+                    })
+                    .optional()
             })
         ),
         meta: zod.strictObject({
@@ -15513,9 +15565,19 @@ export const ListExamplesResponse = zod.strictObject({
     })
 });
 /**
- * Creates a draft example owned by the caller.
+ * Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
  * @summary Create an example
  */
+export const createExampleHeaderIdempotencyKeyMax = 200;
+export const createExampleHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const CreateExampleHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(createExampleHeaderIdempotencyKeyMax)
+        .regex(createExampleHeaderIdempotencyKeyRegExp)
+        .optional()
+});
 export const createExampleBodyTitleMax = 200;
 export const createExampleBodyBodyMax = 20000;
 export const CreateExampleBody = zod.strictObject({
@@ -15549,7 +15611,14 @@ export const CreateExampleResponse = zod.strictObject({
         thumbnailUrl: zod.string().optional(),
         publishedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -15612,7 +15681,14 @@ export const SearchExamplesResponse = zod.strictObject({
                 thumbnailUrl: zod.string().optional(),
                 publishedAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod
+                    .strictObject({
+                        transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                        update: zod.boolean(),
+                        delete: zod.boolean()
+                    })
+                    .optional()
             })
         ),
         meta: zod.strictObject({
@@ -15667,11 +15743,18 @@ export const GetExampleByIdResponse = zod.strictObject({
         thumbnailUrl: zod.string().optional(),
         publishedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
- * Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
  * @summary Replace an example
  */
 export const replaceExampleByIdPathIdMax = 64;
@@ -15687,8 +15770,7 @@ export const replaceExampleByIdBodyTitleMax = 200;
 export const replaceExampleByIdBodyBodyMax = 20000;
 export const ReplaceExampleByIdBody = zod.strictObject({
     title: zod.string().min(1).max(replaceExampleByIdBodyTitleMax),
-    body: zod.string().min(1).max(replaceExampleByIdBodyBodyMax),
-    status: zod.enum(['draft', 'published', 'archived'])
+    body: zod.string().min(1).max(replaceExampleByIdBodyBodyMax)
 });
 export const replaceExampleByIdResponseDataIdMax = 64;
 export const replaceExampleByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -15717,7 +15799,14 @@ export const ReplaceExampleByIdResponse = zod.strictObject({
         thumbnailUrl: zod.string().optional(),
         publishedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -15737,8 +15826,7 @@ export const updateExampleByIdBodyTitleMax = 200;
 export const updateExampleByIdBodyBodyMax = 20000;
 export const UpdateExampleByIdBody = zod.strictObject({
     title: zod.string().min(1).max(updateExampleByIdBodyTitleMax).optional(),
-    body: zod.string().min(1).max(updateExampleByIdBodyBodyMax).optional(),
-    status: zod.enum(['draft', 'published', 'archived']).optional()
+    body: zod.string().min(1).max(updateExampleByIdBodyBodyMax).optional()
 });
 export const updateExampleByIdResponseDataIdMax = 64;
 export const updateExampleByIdResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -15767,7 +15855,14 @@ export const UpdateExampleByIdResponse = zod.strictObject({
         thumbnailUrl: zod.string().optional(),
         publishedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**
@@ -15787,6 +15882,55 @@ export const DeleteExampleByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+/**
+ * Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
+ * @summary Move an example to another status
+ */
+export const transitionExamplePathIdMax = 64;
+export const transitionExamplePathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const TransitionExampleParams = zod.strictObject({
+    id: zod.string().min(1).max(transitionExamplePathIdMax).regex(transitionExamplePathIdRegExp)
+});
+export const TransitionExampleBody = zod.strictObject({
+    to: zod.enum(['draft', 'published', 'archived'])
+});
+export const transitionExampleResponseDataIdMax = 64;
+export const transitionExampleResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const transitionExampleResponseDataUserIdMax = 64;
+export const transitionExampleResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const TransitionExampleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(transitionExampleResponseDataIdMax)
+            .regex(transitionExampleResponseDataIdRegExp),
+        title: zod.string(),
+        body: zod.string(),
+        status: zod.enum(['draft', 'published', 'archived']),
+        userId: zod
+            .string()
+            .min(1)
+            .max(transitionExampleResponseDataUserIdMax)
+            .regex(transitionExampleResponseDataUserIdRegExp),
+        ownerName: zod.string(),
+        imageUrl: zod.string().min(1).optional(),
+        thumbnailUrl: zod.string().optional(),
+        publishedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
+    })
 });
 /**
  * Replaces the cover image of the example identified by `{id}`. The image is digested in the background; until it is, `imageUrl` is a placeholder.
@@ -15827,7 +15971,14 @@ export const ReplaceExampleCoverResponse = zod.strictObject({
         thumbnailUrl: zod.string().optional(),
         publishedAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod
+            .strictObject({
+                transitions: zod.array(zod.enum(['draft', 'published', 'archived'])),
+                update: zod.boolean(),
+                delete: zod.boolean()
+            })
+            .optional()
     })
 });
 /**

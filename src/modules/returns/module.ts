@@ -12,13 +12,11 @@ import routes from './routes';
  * Returns: the customer's own returns, the staff queue that approves and receives them, and the
  * EU withdrawal button.
  *
- * Depends on nothing. The order page reaches this module (it mounts `WithdrawalPanel`, a
- * `published-language` edge declared on `orders`), never the other way: a return links back to its
- * order by route name, and the order's own money and status are read from the API's answers, not
- * from another store.
- *
  * A return is its own object beside the order — the withdrawal button is its create call, not a
- * separate endpoint.
+ * separate endpoint. The order page mounts this module's `WithdrawalPanel`; a return links back to
+ * its order by route name.
+ *
+ * Context map: `docs/modules/returns.md` § "The map".
  */
 export default {
     name: 'returns',

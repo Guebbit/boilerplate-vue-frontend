@@ -1,7 +1,10 @@
 /**
  * @module
- * A typed provide/inject pair: the example a detail screen shows, plus the one mutation a
- * descendant may ask for, exchanged through a `Symbol` `InjectionKey` rather than a magic string.
+ * In any module: a typed provide/inject pair hands a value down a screen's tree through a `Symbol`
+ * `InjectionKey`, so a rename is a compile error on both sides.
+ * Here: the example a screen shows, plus the one mutation a descendant may ask for.
+ * Delete it if: no descendant needs what its screen holds.
+ * See: docs/theory/modules.md#the-module-template
  */
 import { provide, inject } from 'vue';
 import type { InjectionKey, Ref } from 'vue';

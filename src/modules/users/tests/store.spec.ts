@@ -66,7 +66,7 @@ const lastFormData = () => {
 /**
  * Makes the transport answer with a paginated envelope for this test. `meta` matches the real
  * `PaginationMeta` shape — `search:` (`store.ts`) reads `meta.totalPages` for `pageTotal`, so an
- * envelope without one no longer represents a real response.
+ * envelope without one does not represent a real response.
  */
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>

@@ -94,6 +94,7 @@
         "addresses-required-city": "La città è obbligatoria",
         "addresses-required-zip": "Il CAP è obbligatorio",
         "addresses-required-country": "Il paese è obbligatorio",
+        "addresses-too-long": "Al massimo {max} caratteri",
         "sessions-revoke-named": "Revoca la sessione {id}",
         "sessions-revoke-current": "Revoca questa sessione (esci)",
         "avatar-title": "Immagine del profilo",

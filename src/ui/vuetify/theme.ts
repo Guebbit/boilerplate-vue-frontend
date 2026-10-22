@@ -34,9 +34,9 @@ export const light = {
         'on-surface': '#1d2433',
         'surface-variant': '#eef1f8',
         'on-surface-variant': '#43506b',
-        // #c62828 measured 4.4:1 on the page background (#f6f7fb) under a field's messages;
-        // this is 5.6:1 there and keeps white `on-error` at 8.6:1.
-        error: '#b71c1c',
+        // Drawn at the medium emphasis below (0.82) for a field's label and message: 5.0:1 on the
+        // page background, 4.8:1 on `surface-variant`, and white `on-error` stays above 8:1.
+        error: '#ad1919',
         /*
          * Status colours, dark enough to read as TEXT on their own tonal wash.
          *
@@ -66,6 +66,12 @@ export const light = {
          * a serious accessibility violation. This is the same orange darkened until it passes.
          */
         link: '#a35a00'
+    },
+    variables: {
+        // Vuetify draws labels, hints, messages, list subtitles and sort icons at this opacity.
+        // Its 0.60 default is 4.0-4.2:1 on a white surface; 0.82 is 8.7:1 for `on-surface` there
+        // and 8.0:1 on `surface-variant`. `opacity-muted` reads the same value.
+        'medium-emphasis-opacity': 0.82
     }
 } as const satisfies ThemeDefinition;
 
@@ -99,8 +105,17 @@ export const dark = {
         focus: '#26c6da',
         // Light enough to pass AA against the dark surface — see the light theme for why.
         link: '#ffb74d'
+    },
+    variables: {
+        // Passes at its 0.70 default; 0.82 keeps one "secondary text" value across both themes
+        // (`on-surface` 10.0:1 on the surface, 8.6:1 on `surface-variant`).
+        'medium-emphasis-opacity': 0.82
     }
-} as const satisfies { dark: boolean; colors: Record<keyof typeof light.colors, string> };
+} as const satisfies {
+    dark: boolean;
+    colors: Record<keyof typeof light.colors, string>;
+    variables: Record<keyof typeof light.variables, number>;
+};
 
 /**
  * Which colours get generated `-lighten-N` / `-darken-N` variants, and how many of each.

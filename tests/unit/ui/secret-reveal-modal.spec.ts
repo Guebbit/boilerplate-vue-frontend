@@ -5,6 +5,7 @@
  * the one-time secret was copied when it was not, with no way back to it once the dialog closes.
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent } from 'vue';
 import { mount } from '@vue/test-utils';
 import { EToastType } from '@guebbit/vue-toolkit';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
@@ -39,11 +40,22 @@ beforeEach(() => {
     copyToClipboardMock.mockReset();
 });
 
-/** Mounts the modal with a secret to reveal. */
-const mountModal = () =>
+/**
+ * Mounts the modal. `VDialog` is a pass-through: the real one teleports its card to `document.body`,
+ * and what is under test is the modal's own wiring, not Vuetify's overlay.
+ */
+const mountModal = (props: { secret?: string }) =>
     mount(SecretRevealModal, {
-        props: { secret: 'top-secret-value' },
-        global: { plugins: [vuetify, i18n] }
+        props,
+        global: {
+            plugins: [vuetify, i18n],
+            stubs: {
+                VDialog: {
+                    props: ['modelValue'],
+                    template: '<div v-if="modelValue" v-bind="$attrs"><slot /></div>'
+                }
+            }
+        }
     });
 
 /** Clicks the copy button — the only `v-btn` with an icon and no visible text. */
@@ -54,11 +66,9 @@ describe('SecretRevealModal — copying the secret', () => {
     it('toasts success once the clipboard write resolves true', () => {
         copyToClipboardMock.mockReturnValue(Promise.resolve(true));
 
-        return clickCopy(mountModal()).then(() =>
+        return clickCopy(mountModal({ secret: 'top-secret-value' })).then(() =>
             vi.waitFor(() => {
-                expect(addMessageMock).toHaveBeenCalledWith(
-                    enMessages.generic['secret-reveal-copied']
-                );
+                expect(addMessageMock).toHaveBeenCalledWith(enMessages.generic.copied);
             })
         );
     });
@@ -66,7 +76,7 @@ describe('SecretRevealModal — copying the secret', () => {
     it('toasts a DANGER failure instead of swallowing a copy that resolves false', () => {
         copyToClipboardMock.mockReturnValue(Promise.resolve(false));
 
-        return clickCopy(mountModal()).then(() =>
+        return clickCopy(mountModal({ secret: 'top-secret-value' })).then(() =>
             vi.waitFor(() => {
                 expect(addMessageMock).toHaveBeenCalledWith(
                     enMessages.generic['secret-reveal-copy-failed'],
@@ -74,5 +84,45 @@ describe('SecretRevealModal — copying the secret', () => {
                 );
             })
         );
+    });
+});
+
+describe('SecretRevealModal — owning its dialog', () => {
+    it('shows the card while a secret is set and nothing once it is cleared', () => {
+        const wrapper = mountModal({ secret: 'top-secret-value' });
+        expect(wrapper.find('[data-test=secret-reveal-value]').text()).toBe('top-secret-value');
+
+        return wrapper
+            .setProps({ secret: undefined })
+            .then(() => expect(wrapper.find('[data-test=secret-reveal]').exists()).toBe(false));
+    });
+
+    it('is named by its own title, and two instances on one page get distinct ids', () => {
+        const wrapper = mount(
+            defineComponent({
+                components: { SecretRevealModal },
+                template:
+                    '<div><SecretRevealModal secret="a" /><SecretRevealModal secret="b" /></div>'
+            }),
+            {
+                global: {
+                    plugins: [vuetify, i18n],
+                    stubs: {
+                        VDialog: {
+                            props: ['modelValue'],
+                            template: '<div v-if="modelValue" v-bind="$attrs"><slot /></div>'
+                        }
+                    }
+                }
+            }
+        );
+        const titles = wrapper.findAll('.v-card-title').map((title) => title.attributes('id'));
+        const named = wrapper
+            .findAll('[aria-labelledby]')
+            .map((dialog) => dialog.attributes('aria-labelledby'));
+
+        expect(titles).toHaveLength(2);
+        expect(titles[0]).not.toBe(titles[1]);
+        expect(named).toEqual(titles);
     });
 });

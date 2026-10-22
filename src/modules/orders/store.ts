@@ -324,7 +324,7 @@ export const useOrdersStore = defineStore('orders', () => {
 
     /**
      * Fetches an order's invoice, rendered by the server on every request — there is no pending
-     * state to wait out any more.
+     * state to wait out.
      *
      * @param orderId - Identifier of the order to invoice.
      * @returns A promise resolving with the PDF bytes.

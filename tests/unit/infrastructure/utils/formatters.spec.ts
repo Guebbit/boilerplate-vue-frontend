@@ -13,13 +13,16 @@ import {
     formatDate,
     formatDateTime,
     formatUtcDate,
+    formatBucketStart,
     formatCurrency,
     currencyDigits,
     formatPercent,
     formatFlag,
     formatMegabytes,
     formatTime,
-    formatUptime
+    formatUptime,
+    formatAddressLine,
+    formatCountry
 } from '@/infrastructure/utils/formatters';
 
 describe('formatText', () => {
@@ -110,6 +113,29 @@ describe('formatUtcDate', () => {
         expect(formatUtcDate()).toBe(EMPTY_VALUE);
         expect(formatUtcDate(null)).toBe(EMPTY_VALUE);
         expect(formatUtcDate('')).toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatBucketStart', () => {
+    it('reads a bucket in the shop zone, not the browser zone', () => {
+        // 22:00 UTC on 11 Oct is already 12 Oct in Rome (UTC+2), so the bucket is the 12th.
+        const start = '2026-10-11T22:00:00.000Z';
+
+        expect(formatBucketStart(start, 'Europe/Rome', 'day')).toContain('12');
+        expect(formatBucketStart(start, 'UTC', 'day')).toContain('11');
+    });
+
+    it('shows month and year for a month bucket, and no day', () => {
+        // 22:00 UTC on 30 Sep is 1 Oct in Rome: the October bucket.
+        const label = formatBucketStart('2026-09-30T22:00:00.000Z', 'Europe/Rome', 'month');
+
+        expect(label).toContain('2026');
+        expect(label).not.toMatch(/\b(1|30)\b/);
+    });
+
+    it('falls back for an unreadable start', () => {
+        expect(formatBucketStart('', 'UTC', 'day')).toBe(EMPTY_VALUE);
+        expect(formatBucketStart('not a date', 'UTC', 'day')).toBe(EMPTY_VALUE);
     });
 });
 
@@ -343,5 +369,39 @@ describe('the app-shaped bindings', () => {
 
         expect(() => withoutLocale('2026-08-12T10:00:00.000Z')).not.toThrow();
         expect(withoutLocale('2026-08-12T10:00:00.000Z')).not.toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatAddressLine', () => {
+    const address = { street: 'Via Roma 1', zip: '20100', city: 'Milano', country: 'IT' };
+
+    it('prints the addressee first when there is one', () => {
+        expect(formatAddressLine({ ...address, fullName: 'Ada Lovelace' })).toBe(
+            'Ada Lovelace, Via Roma 1, 20100 Milano, Italy'
+        );
+    });
+
+    it('starts at the street when nobody is named', () => {
+        expect(formatAddressLine(address)).toBe('Via Roma 1, 20100 Milano, Italy');
+    });
+
+    it('is undefined with no address at all', () => {
+        expect(formatAddressLine(undefined)).toBeUndefined();
+        expect(formatAddressLine(null)).toBeUndefined();
+    });
+});
+
+describe('formatCountry', () => {
+    it('prints the country as its name in the viewing language', () => {
+        expect(formatCountry('IT')).toBe('Italy');
+    });
+
+    it('falls back to the code the runtime cannot resolve', () => {
+        expect(formatCountry('ZZZZ')).toBe('ZZZZ');
+    });
+
+    it('is empty for an absent code', () => {
+        expect(formatCountry(undefined)).toBe('');
+        expect(formatCountry('')).toBe('');
     });
 });

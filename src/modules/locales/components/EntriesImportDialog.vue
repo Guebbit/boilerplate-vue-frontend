@@ -9,13 +9,14 @@
  * above the buttons, since this dialog has no opinion of its own on what a blocked import looks
  * like.
  */
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import type { LocaleEntryInput, LocaleAppDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/i18n';
 import { flattenDictionary } from '../dictionaries';
+import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
@@ -60,27 +61,12 @@ const isOpen = defineModel<boolean>({ required: true });
  */
 const { t } = useI18n();
 
-/**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the import dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
 /*
  * Deliberately NOT on `useStructureFormValidation`, unlike the two form dialogs beside it. What this validates is
  * a JSON document, and the useful result is the ROWS it parsed to — data the preview below
  * renders — not a per-field error. A schema would have to carry the parse through a transform to
  * hand back the same thing `parsed` already does.
  */
-
-/**
- * Id for the dialog's name, so it is announced by its title rather than as "dialog".
- */
-const titleId = useId();
 
 /**
  * Id for the parse error both the file picker and the paste area point at.
@@ -128,17 +114,12 @@ const handleFile = (file: File | File[] | null) => {
  */
 const parsed = computed<{ entries?: LocaleEntryInput[]; error?: string }>(() => {
     if (rawJson.value.trim() === '') return {};
-    // eslint-disable-next-line no-restricted-syntax -- JSON.parse has no non-throwing form; the catch turns hand-typed JSON into a form error
-    try {
-        const dictionary: unknown = JSON.parse(rawJson.value);
-        if (typeof dictionary !== 'object' || dictionary === null || Array.isArray(dictionary))
-            return { error: t('entries-import.error-parse') };
-        const entries = flattenDictionary(dictionary as TranslationDictionaries);
-        if (entries.length === 0) return { error: t('entries-import.error-empty') };
-        return { entries };
-    } catch {
+    const dictionary = parseJsonSafe(rawJson.value);
+    if (typeof dictionary !== 'object' || dictionary === null || Array.isArray(dictionary))
         return { error: t('entries-import.error-parse') };
-    }
+    const entries = flattenDictionary(dictionary as TranslationDictionaries);
+    if (entries.length === 0) return { error: t('entries-import.error-empty') };
+    return { entries };
 });
 
 /**
@@ -184,12 +165,12 @@ const handleImport = () => {
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="640" :fullscreen="fullscreen" :aria-labelledby="titleId">
+    <DialogShell v-model="isOpen" :max-width="DIALOG_MAX_WIDTH.wide" v-slot="{ titleId }">
         <v-card class="p-5" data-test="entries-import">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ t('entries-import.title') }}
             </h2>
-            <p class="mb-4 text-sm opacity-70">{{ t('entries-import.intro') }}</p>
+            <p class="mb-4 text-sm opacity-muted">{{ t('entries-import.intro') }}</p>
 
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleImport">
                 <!--
@@ -280,5 +261,5 @@ const handleImport = () => {
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

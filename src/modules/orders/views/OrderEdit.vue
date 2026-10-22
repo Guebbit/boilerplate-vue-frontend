@@ -16,6 +16,7 @@ export default {
  * on the `actions` the server attaches to the loaded record. `status` is not a form field: it
  * moves only through the cancel and override actions below.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -28,24 +29,19 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
+import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
 import { z } from 'zod';
 import type { OrderStatus } from '@types';
 import { Calendar, Clock, Package, Pencil, ShoppingCart } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import {
-    EMPTY_VALUE,
-    formatText,
-    formatDateTime,
-    formatCurrency
-} from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
+import { EMPTY_VALUE, formatDateTime, formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -340,7 +336,6 @@ const {
 } = useStructureFormValidation<OrderEditForm>({}, editSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -359,33 +354,13 @@ activateAutoHydrate(
 );
 
 /**
- * Hero heading.
- *
- * @returns The loaded order id, the route id while loading, or the generic page
- *  title as a last resort.
+ * Hero heading, subheading and translated status.
  */
-const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-edit-page.page-title'));
-
-/**
- * Hero subheading.
- *
- * @returns The order notes, falling back to the customer email, then to the
- *  empty-value glyph.
- */
-const heroDescription = computed(() =>
-    formatText(currentOrder.value?.notes || currentOrder.value?.email)
+const { heroTitle, heroDescription, orderStatus } = useOrderHero(
+    currentOrder,
+    () => id,
+    'order-edit-page.page-title'
 );
-
-/**
- * Localized order status.
- *
- * @returns The translated status label, or the empty-value glyph when the order
- *  carries no status yet.
- */
-const orderStatus = computed(() => {
-    const status = currentOrder.value?.status;
-    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
-});
 
 /**
  * The edit form's own blocked state — a failed save blocks this specific form, separate from
@@ -439,6 +414,27 @@ watchOrder(() => id, { onError: onMissingRecord });
  * control on this page gates on that field.
  */
 useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('order-target-page.label-date'),
+        value: formatDateTime(currentOrder.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('order-target-page.label-updated-at'),
+        value: formatDateTime(currentOrder.value?.updatedAt),
+        icon: Clock
+    },
+    {
+        label: t('order-target-page.label-items'),
+        value: currentOrder.value?.items.length ?? 0,
+        icon: Package
+    }
+]);
 </script>
 
 <template>
@@ -471,12 +467,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                 />
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('order-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('order-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -492,7 +483,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                             data-test="order-edit-email"
                             type="email"
                             :label="t('order-edit-page.label-email')"
-                            :error-messages="showFormErrors ? formErrors.email : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.email : [])"
                         />
 
                         <div class="flex flex-wrap gap-2">
@@ -550,8 +541,12 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         step="0.01"
                         :label="t('order-edit-page.label-refund-amount')"
                         :hint="t('order-edit-page.hint-refund-amount')"
-                        :error-messages="
-                            refundAmountInvalid ? [t('order-edit-page.error-refund-amount')] : []
+                        v-bind="
+                            fieldErrorProps(
+                                refundAmountInvalid
+                                    ? [t('order-edit-page.error-refund-amount')]
+                                    : []
+                            )
                         "
                         persistent-hint
                         class="mb-3 max-w-72"
@@ -659,26 +654,14 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="tertiary">
-                        <template #icon><ShoppingCart :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('order-target-page.label-date')"
-                        :value="formatDateTime(currentOrder?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('order-target-page.label-updated-at')"
-                        :value="formatDateTime(currentOrder?.updatedAt)"
-                        :icon="Clock"
-                    />
-                    <ItemDetailField
-                        :label="t('order-target-page.label-items')"
-                        :value="currentOrder?.items?.length ?? 0"
-                        :icon="Package"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="tertiary"
+                    :fields="asideFields"
+                >
+                    <template #icon><ShoppingCart :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

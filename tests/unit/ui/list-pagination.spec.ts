@@ -161,3 +161,14 @@ describe('ListPagination — the focus fallback', () => {
             });
     });
 });
+
+describe('ListPagination — the test hook', () => {
+    it('is `pagination` by default and the caller-given id when one is passed', () => {
+        expect(mountPager({ length: 2 }).find('[data-test=pagination]').exists()).toBe(true);
+        expect(
+            mountPager({ length: 2, testId: 'ledger-pagination' })
+                .find('[data-test=ledger-pagination]')
+                .exists()
+        ).toBe(true);
+    });
+});

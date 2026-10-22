@@ -18,7 +18,7 @@ export default {
 
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useCopyToClipboard } from '@/ui/composables/use-copy-to-clipboard.ts';
+import CopyButton from '@/ui/molecules/CopyButton.vue';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import type { PaymentBankTransferAction } from '@types';
 
@@ -38,14 +38,6 @@ const { instructions } = defineProps<{
 const { t } = useI18n();
 
 /**
- * Copies one field to the clipboard and toasts either way: a customer who thinks they copied the
- * IBAN and did not would send a transfer to nowhere.
- *
- * @param value - The text to copy.
- */
-const copy = useCopyToClipboard('transfer-instructions-panel.copy-failed');
-
-/**
  * How many characters make up one visual group of the grouped reference below.
  */
 const REFERENCE_GROUP_LENGTH = 4;
@@ -53,7 +45,7 @@ const REFERENCE_GROUP_LENGTH = 4;
 /**
  * The reference, grouped into 4-character blocks for display — `RF132EY8H44VJAVZKX80JRL` becomes
  * `RF13 2EY8 H44V JAVZ KX80 JRL`, the shape a customer expects to copy an RF reference in. Display
- * only: `copy()` still sends the raw, ungrouped value, since the backend already tolerates spaces
+ * only: the copy button still sends the raw, ungrouped value, since the backend already tolerates spaces
  * and there is no reason to add ones of this component's own choosing to it.
  */
 const groupedReference = computed(
@@ -76,25 +68,23 @@ const groupedReference = computed(
         </p>
         <!-- eslint-disable-next-line better-tailwindcss/no-restricted-classes -- label, value, copy button: three columns, this panel only -->
         <dl class="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
-            <dt class="opacity-70">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>
+            <dt class="opacity-muted">{{ t('transfer-instructions-panel.label-beneficiary') }}</dt>
             <dd class="font-medium" data-test="transfer-beneficiary">
                 {{ instructions.beneficiary }}
             </dd>
             <span />
 
-            <dt class="opacity-70">{{ t('transfer-instructions-panel.label-iban') }}</dt>
+            <dt class="opacity-muted">{{ t('transfer-instructions-panel.label-iban') }}</dt>
             <dd class="font-medium" data-test="transfer-iban">{{ instructions.iban }}</dd>
-            <v-btn
-                icon="mdi-content-copy"
-                size="x-small"
-                variant="text"
+            <CopyButton
+                :text="instructions.iban"
+                :label="t('transfer-instructions-panel.button-copy-iban')"
+                failure-key="transfer-instructions-panel.copy-failed"
                 data-test="transfer-copy-iban"
-                :aria-label="t('transfer-instructions-panel.button-copy-iban')"
-                @click="copy(instructions.iban)"
             />
 
             <template v-if="instructions.bic">
-                <dt class="opacity-70">{{ t('transfer-instructions-panel.label-bic') }}</dt>
+                <dt class="opacity-muted">{{ t('transfer-instructions-panel.label-bic') }}</dt>
                 <dd class="font-medium" data-test="transfer-bic">{{ instructions.bic }}</dd>
                 <span />
             </template>
@@ -109,7 +99,7 @@ const groupedReference = computed(
             class="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3"
             data-test="transfer-reference-block"
         >
-            <p class="m-0 text-xs opacity-70">
+            <p class="m-0 text-xs opacity-muted">
                 {{ t('transfer-instructions-panel.label-reference') }}
             </p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
@@ -119,13 +109,11 @@ const groupedReference = computed(
                 >
                     {{ groupedReference }}
                 </p>
-                <v-btn
-                    icon="mdi-content-copy"
-                    size="x-small"
-                    variant="text"
+                <CopyButton
+                    :text="instructions.reference"
+                    :label="t('transfer-instructions-panel.button-copy-reference')"
+                    failure-key="transfer-instructions-panel.copy-failed"
                     data-test="transfer-copy-reference"
-                    :aria-label="t('transfer-instructions-panel.button-copy-reference')"
-                    @click="copy(instructions.reference)"
                 />
             </div>
             <p class="mt-2 mb-0 text-xs opacity-75">

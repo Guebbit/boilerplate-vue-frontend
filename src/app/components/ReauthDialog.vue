@@ -6,18 +6,24 @@
  * for an account with no password — a "send code" button and a field for the mailed code. On
  * An account with a second factor armed gets one more field when the server's challenge asks for
  * it (`details.methods` has `otp`): the code is sent beside the first proof, in one call. On
- * submit it calls `useSessionStore().reauth()` itself — the interceptor that opened it only needed
+ * submit it calls `useReauthStore().reauth()` itself — the interceptor that opened it only needed
  * to know when a fresh session exists, not how one gets there — and a wrong answer stays open for
  * another try rather than closing. See docs/modules/account.md.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import type { VTextField } from 'vuetify/components';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
-import { reauthSendRetryAfter, useSessionStore } from '@/infrastructure/session.ts';
+import {
+    reauthMethods,
+    reauthSendRetryAfter,
+    sendReauthCode,
+    useReauthStore
+} from '@/infrastructure/reauth.ts';
 import { absentIs, getErrorMessage } from '@/infrastructure/utils/errors.ts';
 import type { ReauthMethod, ReauthRequest } from '@types';
 
@@ -34,17 +40,7 @@ const reauthDialog = useReauthPromptStore();
 /**
  * Whether a re-authentication call is in flight.
  */
-const { reauthing } = storeToRefs(useSessionStore());
-
-/**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Ids wiring the dialog's own title and body to `aria-labelledby` / `aria-describedby`.
- */
-const titleId = useId();
+const { reauthing } = storeToRefs(useReauthStore());
 
 /**
  * Id of the body copy, referenced by the dialog's `aria-describedby`.
@@ -146,8 +142,7 @@ onUnmounted(() => {
  * @returns A promise settling once the list is known; a failure shows in the dialog.
  */
 const loadMethods = () =>
-    useSessionStore()
-        .reauthMethods()
+    reauthMethods()
         .then((list) => {
             methods.value = list;
             if (list[0] === 'password') void nextTick(() => passwordField.value?.focus());
@@ -187,11 +182,6 @@ const isOpen = computed({
 });
 
 /**
- * Hands focus back to the control that opened the re-authentication prompt once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
-/**
  * The tagged body for whichever method is on show; `undefined` while its field is empty.
  */
 const proof = computed<ReauthRequest | undefined>(() => {
@@ -218,7 +208,7 @@ const submit = () => {
         proof.value.method === 'password'
             ? 'reauth-dialog.error-wrong-password'
             : 'reauth-dialog.error-wrong-code';
-    return useSessionStore()
+    return useReauthStore()
         .reauth(proof.value)
         .then(() => {
             reauthDialog.resolveStepUp();
@@ -242,8 +232,7 @@ const submit = () => {
  */
 const sendCode = () => {
     errorMessage.value = undefined;
-    return useSessionStore()
-        .sendReauthCode()
+    return sendReauthCode()
         .then((resendAfter) => {
             startCooldown(resendAfter);
             sent.value = true;
@@ -257,15 +246,14 @@ const sendCode = () => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
-        max-width="420"
-        :fullscreen="fullscreen"
+        :max-width="DIALOG_MAX_WIDTH.narrow"
         persistent
         role="alertdialog"
-        :aria-labelledby="titleId"
         :aria-describedby="messageId"
         data-test="reauth-dialog"
+        v-slot="{ titleId }"
     >
         <v-card v-if="reauthDialog.isOpen">
             <v-card-title :id="titleId">{{ t('reauth-dialog.title') }}</v-card-title>
@@ -295,7 +283,7 @@ const sendCode = () => {
                         type="password"
                         autocomplete="current-password"
                         :label="t('reauth-dialog.label-password')"
-                        :error-messages="errorMessage ? [errorMessage] : []"
+                        v-bind="fieldErrorProps(errorMessage ? [errorMessage] : [])"
                         data-test="reauth-dialog-password"
                     />
                     <v-text-field
@@ -332,7 +320,7 @@ const sendCode = () => {
                         inputmode="numeric"
                         autocomplete="one-time-code"
                         :label="t('reauth-dialog.label-code')"
-                        :error-messages="errorMessage ? [errorMessage] : []"
+                        v-bind="fieldErrorProps(errorMessage ? [errorMessage] : [])"
                         data-test="reauth-dialog-code"
                     />
                     <v-text-field
@@ -371,5 +359,5 @@ const sendCode = () => {
                 </v-btn>
             </v-card-actions>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

@@ -59,7 +59,7 @@ describe('the sessions list', () => {
             global: { plugins: [createPinia(), router, vuetify, i18n] }
         });
 
-        expect(wrapper.find('.session-last-used').text()).toContain('Last used');
+        expect(wrapper.find('[data-test=session-last-used]').text()).toContain('Last used');
     });
 
     it('renders when each sign-in began', async () => {

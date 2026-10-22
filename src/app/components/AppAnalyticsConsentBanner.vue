@@ -43,7 +43,7 @@ const consent = useAnalyticsConsentStore();
             type="info"
             variant="tonal"
             density="compact"
-            class="rounded-none"
+            tile
             role="region"
             :aria-label="t('analytics-consent.banner-label')"
             data-test="analytics-consent-banner"

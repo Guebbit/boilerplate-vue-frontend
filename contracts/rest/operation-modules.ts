@@ -220,6 +220,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     sweepReservations: 'inventory',
     syncPayment: 'payments',
     touchSession: 'account',
+    transitionExample: 'example',
     undoEmailChange: 'account',
     unlinkOAuthProvider: 'account',
     updateAccount: 'account',

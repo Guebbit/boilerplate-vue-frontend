@@ -43,31 +43,35 @@ Two consequences, both non-negotiable:
 
 ## The prompts
 
-| File                                          | Asks                                                                                                                                                          | Writes to                             |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                 | `reports/audit/spec-drift/`           |
-| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                          | `reports/audit/spec-gaps/`            |
-| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                            | `reports/audit/suite-bloat/`          |
-| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                    | `reports/audit/test-honesty/`         |
-| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)? | `reports/audit/accessibility-manual/` |
-| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                            | `reports/audit/design-manual/`        |
-| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see?          | `reports/audit/ddd-drift/`            |
+| File                                          | Asks                                                                                                                                                                                                                                                                                                   | Writes to                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `scripts/audit/spec-drift/SKILL.md`           | Which tests assert what the **code** does rather than what the **spec** says?                                                                                                                                                                                                                          | `reports/audit/spec-drift/`           |
+| `scripts/audit/spec-gaps/SKILL.md`            | Which business rules and security boundaries have **zero** coverage?                                                                                                                                                                                                                                   | `reports/audit/spec-gaps/`            |
+| `scripts/audit/suite-bloat/SKILL.md`          | Which tests cost CI time and discriminate nothing?                                                                                                                                                                                                                                                     | `reports/audit/suite-bloat/`          |
+| `scripts/audit/test-honesty/SKILL.md`         | Which tests stay green when the behaviour they claim to check is broken? See [below](#test-honesty-a-test-is-innocent-once-it-has-failed).                                                                                                                                                             | `reports/audit/test-honesty/`         |
+| `scripts/audit/accessibility-manual/SKILL.md` | Which accessibility defects live in the ~60–70% axe/eslint/keyboard.cy.ts structurally can't reach — see [Accessibility Testing](./accessibility-testing.md)?                                                                                                                                          | `reports/audit/accessibility-manual/` |
+| `scripts/audit/design-manual/SKILL.md`        | Which design defects do the screenshots show that no automated check can? See [Design Review](./design-review.md).                                                                                                                                                                                     | `reports/audit/design-manual/`        |
+| `scripts/audit/css-invasive/SKILL.md`         | Which CSS answers a question Vuetify or Tailwind already answer, beyond the hits `npm run audit:css` gates? See [Design Lint](./design-lint.md#the-invasive-css-scan).                                                                                                                                 | `reports/audit/css-invasive/`         |
+| `scripts/audit/ddd-drift/SKILL.md`            | Where do the strategic-DDD claims (module labels, barrels, who decides a rule) and the code disagree, beyond what the module lint and the specs see? Mirrors `../boilerplate-node-backend/scripts/audit/ddd-drift/SKILL.md`; F2 (FE) and C1 (BE) are one rule seen from each side.                     | `reports/audit/ddd-drift/`            |
+| `scripts/audit/code-shape/SKILL.md`           | Which code does not earn its place: shallow functions, pass-throughs, lazy files, speculative generality, large classes, repeated switches, dead code (`knip`) and copy-paste (`jscpd`)? Counters run first (`npm run audit:shallow`, `audit:unused`, `audit:duplicates`); `.vue` callers are counted. | `reports/audit/code-shape/`           |
 
 The first four take one argument — a module (`orders`), a path, or `--diff` for whatever the
 working tree touched. `accessibility-manual` takes the same shape but defaults an empty scope to
 the **whole repo**, not the touched modules — an accessibility gap in an untouched component is
 still a gap. `design-manual` does the same and adds `shell` (the app-level sweep) as a scope; a
 whole-app run starts with a ~45 minute capture, so it prints the command and waits for a person.
+`css-invasive` takes the same scopes, defaults to the whole app, and reads source only: it starts
+from `npm run audit:css -- --json` and judges what the scanner cannot.
 
 ### Each repo keeps the prompts its own stack needs
 
-The two repos do **not** hold one set, and no longer try to. `accessibility-manual` and
-`design-manual` audit UI/UX judgement calls with no backend equivalent; the backend's own
+The two repos do **not** hold one set, and no longer try to. `accessibility-manual`,
+`design-manual` and `css-invasive` audit UI/UX judgement calls with no backend equivalent; the backend's own
 `boilerplate-node-backend/scripts/audit/reachability/SKILL.md` and
 `boilerplate-node-backend/scripts/audit/rate-limit-keys/SKILL.md` reason about a mounted Express request
 path and have no counterpart here.
 
-Only `spec-drift`, `spec-gaps`, `suite-bloat` and `test-honesty` exist on both sides, because what
+`code-shape` is a port of the backend's, made Vue-aware (its shallow counter reads each SFC's script) with two extra shapes. Only `spec-drift`, `spec-gaps`, `suite-bloat` and `test-honesty` exist on both sides, because what
 they ask — does the test agree with the spec, is anything uncovered, is anything redundant, can the
 test fail at all — is about specs and suites rather than about a runtime.
 
@@ -84,6 +88,8 @@ repo, and `boilerplate-node-backend/scripts/audit/compliance-frontend/SKILL.md` 
 **this** checkout. So a rule spanning both repos, like the mandatory signup-consent checkbox, has
 exactly one home and no second copy to drift from. To audit this repo's compliance half, run
 `/audit-compliance-frontend` from the backend.
+It reads this repo at `../boilerplate-vue-frontend` — the main checkout. A worktree branch is not
+what it sees: check the branch out there, or merge it, before running it.
 
 This page is per-repo in the same way. It names this repo's own tools, its own `docs/` count and
 its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
@@ -348,10 +354,8 @@ footnote exists is that the previous round of claims had quietly gone stale.
 
 Two notes worth keeping, because they outlived the tools:
 
-- **The reason for rejecting the review bots changed.** It used to be "a hosted bot cannot read
-  `CLAUDE.md`". That is no longer true — CodeRabbit reads that exact filename by default now. They
-  are rejected on redundancy and cost, which is a different argument, and the old one should not be
-  repeated.
+- **The reason for rejecting the review bots is redundancy and cost.** "A hosted bot cannot read
+  `CLAUDE.md`" is not a reason: CodeRabbit reads that exact filename by default.
 - **Nothing in this niche is alive.** StrykerJS has not added LLM-authored mutants either. Meta run
   the idea in production internally, but it is not a product. If that changes, the prompt files here
   are the thing that would be replaced.

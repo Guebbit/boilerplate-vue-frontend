@@ -19,6 +19,7 @@ export default {
  * (`useBlockingError`) instead of toasting — see docs/theory/request-flow.md. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
@@ -28,7 +29,6 @@ import { useAccountSessionsStore } from '../stores/sessions.ts';
 import PasswordStrengthMeter from './PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -109,7 +109,6 @@ const {
     {
         formElement: passwordFormElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -196,7 +195,11 @@ const submitPasswordChange = () =>
                 autocomplete="current-password"
                 data-test="current-password"
                 :label="t('profile-page.label-current-password')"
-                :error-messages="showPasswordErrors ? (passwordErrors.currentPassword ?? []) : []"
+                v-bind="
+                    fieldErrorProps(
+                        showPasswordErrors ? (passwordErrors.currentPassword ?? []) : []
+                    )
+                "
                 class="mb-2"
             />
             <v-text-field
@@ -205,7 +208,7 @@ const submitPasswordChange = () =>
                 autocomplete="new-password"
                 data-test="new-password"
                 :label="t('profile-page.label-password')"
-                :error-messages="showPasswordErrors ? (passwordErrors.password ?? []) : []"
+                v-bind="fieldErrorProps(showPasswordErrors ? (passwordErrors.password ?? []) : [])"
                 class="mb-2"
             />
             <PasswordStrengthMeter :password="passwordForm.password ?? ''" />
@@ -227,7 +230,11 @@ const submitPasswordChange = () =>
                 autocomplete="new-password"
                 data-test="new-password-confirm"
                 :label="t('profile-page.label-passwordConfirm')"
-                :error-messages="showPasswordErrors ? (passwordErrors.passwordConfirm ?? []) : []"
+                v-bind="
+                    fieldErrorProps(
+                        showPasswordErrors ? (passwordErrors.passwordConfirm ?? []) : []
+                    )
+                "
             />
             <v-btn
                 type="submit"

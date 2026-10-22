@@ -15,6 +15,7 @@ export default {
  * `LocaleCapability` rows, writes through the store's explicit language wrappers, and opens the
  * shared create/edit dialog.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -22,7 +23,7 @@ import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '../store.ts';
-import { deactivateThenDelete } from '../domain/deactivate-then-delete.ts';
+import { deactivateThenDelete } from '../deactivate-then-delete.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -227,7 +228,7 @@ onMounted(() => {
 <template>
     <div id="locales-list-page">
         <div class="mb-4 flex flex-wrap items-center gap-3">
-            <p class="max-w-2xl text-sm opacity-70">{{ t('locales-list-page.intro') }}</p>
+            <p class="max-w-2xl text-sm opacity-muted">{{ t('locales-list-page.intro') }}</p>
             <v-spacer />
             <v-btn
                 variant="tonal"
@@ -249,14 +250,12 @@ onMounted(() => {
             data-test="locales-list-delete-error"
         />
 
-        <v-empty-state
+        <ListEmptyState
             v-if="!loading && capabilities.length === 0"
             :title="t('locales-list-page.empty')"
+            :icon="Languages"
         >
-            <template #media>
-                <Languages :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-        </v-empty-state>
+        </ListEmptyState>
 
         <DataTable
             v-else
@@ -299,25 +298,14 @@ onMounted(() => {
 
             <template v-slot:[`item.apps`]="{ item }">
                 <div class="flex gap-1">
-                    <!--
-                        A native title rather than a v-tooltip: the apps are the field doing
-                        the real work, and the explanation has to reach a screen reader too — an
-                        ARIA tooltip node with no name fails axe. A non-interactive chip renders
-                        as a role-less span, so the explanation is a visually-hidden sibling
-                        rather than an `aria-label` (`aria-prohibited-attr`).
-                    -->
                     <v-chip
                         v-for="app in item.apps"
                         :key="app"
                         size="small"
                         variant="tonal"
                         :color="appKind(app) === 'backend' ? 'tertiary' : 'secondary'"
-                        :title="t(`locales-list-page.app-${appKind(app)}-hint`)"
                     >
                         {{ localesStore.appLabel(app) }}
-                        <span class="sr-only">
-                            {{ t(`locales-list-page.app-${appKind(app)}-hint`) }}
-                        </span>
                     </v-chip>
                 </div>
             </template>
@@ -385,6 +373,28 @@ onMounted(() => {
                 </div>
             </template>
         </DataTable>
+
+        <!-- What the two chip colours in the Apps column mean, visible rather than a tooltip. -->
+        <ul
+            v-if="capabilities.length > 0"
+            class="mt-3 flex list-none flex-col gap-1 p-0 text-sm"
+            data-test="locales-app-legend"
+        >
+            <li
+                v-for="kind in ['backend', 'frontend'] as const"
+                :key="kind"
+                class="flex items-center gap-2"
+            >
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="kind === 'backend' ? 'tertiary' : 'secondary'"
+                >
+                    {{ t(`locales-list-page.app-kind-${kind}`) }}
+                </v-chip>
+                {{ t(`locales-list-page.app-${kind}-hint`) }}
+            </li>
+        </ul>
 
         <LanguageFormDialog
             ref="languageDialog"

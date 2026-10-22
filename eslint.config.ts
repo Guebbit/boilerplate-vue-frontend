@@ -154,6 +154,8 @@ const boundariesFiles = [
     { pattern: 'src/demo-modules.ts', category: 'demo-manifest' },
     { pattern: 'src/modules/*/tests/**/*.ts', category: 'spec' },
     { pattern: 'src/infrastructure/session.ts', category: 'infra-app-state' },
+    { pattern: 'src/infrastructure/reauth.ts', category: 'infra-app-state' },
+    { pattern: 'src/infrastructure/locale-preference.ts', category: 'infra-app-state' },
     { pattern: 'src/infrastructure/observability/**/*.ts', category: 'infra-app-state' }
 ];
 
@@ -860,6 +862,9 @@ export default defineConfigWithVueTs(
              */
             'no-console': 'error',
             'no-debugger': 'warn',
+            /** CLAUDE.md: nesting ≤ 3 levels; extract a helper for anything deeper. */
+            'max-depth': ['error', 3],
+            'max-nested-callbacks': ['error', 3],
             '@eslint-community/eslint-comments/require-description': 'error',
 
             ...unicornTuningRules,
@@ -868,6 +873,11 @@ export default defineConfigWithVueTs(
             ...typeScriptStrictnessReliefRules,
             ...namingConventionRule
         }
+    },
+    {
+        /** `describe`/`it`/hook nesting is the test runner's shape, not logic nesting. */
+        files: [...ALL_SPEC_GLOBS, '**/tests/**'],
+        rules: { 'max-nested-callbacks': 'off' }
     },
 
     /**
@@ -993,6 +1003,24 @@ export default defineConfigWithVueTs(
                         'try/catch in production code is for the rare spot where a throwing API has no safe wrapper and the failure has a local answer. Prefer returning a verdict or letting the rejection reach the caller\u2019s handler; if this spot truly needs one, disable this rule on the line with a description of what is being contained.'
                 }
             ]
+        }
+    },
+
+    /**
+     * CLAUDE.md's "nesting ≤ 3 levels; extract a helper for anything deeper", as two rules:
+     * `max-depth` counts nested blocks (`if`/`for`/`while`), `max-nested-callbacks` counts
+     * functions passed as arguments — a `.then` chain nested inside a `.then`, or an action inside
+     * `defineStore`'s setup. Specs are exempt: `describe` → `it` → a callback is their shape.
+     *
+     * https://eslint.org/docs/latest/rules/max-depth
+     * https://eslint.org/docs/latest/rules/max-nested-callbacks
+     */
+    {
+        files: ['src/**/*.{ts,mts,tsx,vue}'],
+        ignores: ['src/**/__tests__/**', 'src/modules/*/tests/**'],
+        rules: {
+            'max-depth': ['error', 3],
+            'max-nested-callbacks': ['error', 3]
         }
     },
 

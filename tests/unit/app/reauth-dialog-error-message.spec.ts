@@ -17,16 +17,13 @@ import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import vuetify from '@/ui/vuetify';
 
-/** Stub for the session store's `reauth`. */
+/** Stub for the reauth store's `reauth`. */
 const reauthMock = vi.fn();
 
-vi.mock('@/infrastructure/session.ts', () => ({
+vi.mock('@/infrastructure/reauth.ts', () => ({
     reauthSendRetryAfter: () => undefined,
-    useSessionStore: () => ({
-        reauth: reauthMock,
-        reauthMethods: () => Promise.resolve(['password']),
-        reauthing: ref(false)
-    })
+    reauthMethods: () => Promise.resolve(['password']),
+    useReauthStore: () => ({ reauth: reauthMock, reauthing: ref(false) })
 }));
 
 // Identity `t`, so an assertion reads the dictionary KEY rather than a translation that would

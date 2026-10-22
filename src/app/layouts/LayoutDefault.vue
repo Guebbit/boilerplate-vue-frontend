@@ -43,8 +43,7 @@ import { enabledModules } from '@/modules';
 
 /**
  * The active route, read for `meta.title`/`meta.customHero`/`meta.centered` — the three things a
- * view used to pass this layout as props, now that there is no view-to-layout slot or prop to
- * pass them through at all.
+ * view declares on its route, since a layout has no slot or prop a view could fill.
  */
 const route = useRoute();
 
@@ -157,9 +156,9 @@ const isMainLoading = computed(() => isLoading(MAIN_LOADING_KEYS));
 
 /**
  * Whether a domain store is working — the corner indicator's flag. Every domain store's
- * `resourceKey` (`'cart'`, `'accountProfile'`, …) lives on the app's one shared `QueryClient`
- * now, so this reads that instead of `useCoreStore`'s dictionary, which no toolkit composable
- * writes to any more.
+ * `resourceKey` (`'cart'`, `'accountProfile'`, …) lives on the app's one shared `QueryClient`,
+ * so this reads that rather than `useCoreStore`'s dictionary, which no toolkit composable
+ * writes to.
  */
 const isSideLoading = useIsLoading(SIDE_LOADING_KEYS, queryClient);
 
@@ -271,12 +270,16 @@ watch(abilitiesSignal, () => {
     <v-app>
         <!--
             Skip link (WCAG 2.4.1): the first focusable thing on every page, visible only while it
-            has focus — see `.skip-link` in main.css. Lands on `<v-main>` below, which is focusable
+            has focus (utilities on the anchor, `z-skip-link` above everything). Lands on `<v-main>` below, which is focusable
             for exactly this reason.
         -->
-        <a href="#main" class="skip-link" @click.prevent="skipToContent">{{
-            t('navigation.skip-to-content')
-        }}</a>
+        <a
+            href="#main"
+            data-test="skip-link"
+            class="fixed inset-s-2 -top-20 z-skip-link rounded-lg bg-surface px-4 py-2 font-semibold text-on-surface focus-visible:top-2"
+            @click.prevent="skipToContent"
+            >{{ t('navigation.skip-to-content') }}</a
+        >
 
         <AppHealthBanner />
 

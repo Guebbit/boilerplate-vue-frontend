@@ -163,8 +163,8 @@ const inFlight = computed(
 );
 
 /**
- * A hand-paid order was cancelled, but nobody has confirmed the money actually went back (B1b):
- * cancelling a `manual` payment now only leaves it `succeeded` and waits for an operator's own
+ * A hand-paid order was cancelled, but nobody has confirmed the money actually went back:
+ * cancelling a payment not made by card leaves it `succeeded` until an operator records the
  * refund, so the panel must say why a "paid" order is also a cancelled one.
  */
 const refundPending = computed(

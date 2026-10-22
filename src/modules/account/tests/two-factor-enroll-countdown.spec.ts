@@ -62,7 +62,7 @@ describe('TwoFactorEnroll — the delivered code countdown', () => {
             .then(() => mountEnroll())
             .then((wrapper) => flushPromises().then(() => wrapper))
             .then((wrapper) => {
-                const ticking = wrapper.find('p.opacity-70:not([role])');
+                const ticking = wrapper.find('p.opacity-muted:not([role])');
                 const status = wrapper.find('[role=status]');
 
                 expect(ticking.exists()).toBe(true);

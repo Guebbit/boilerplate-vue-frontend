@@ -49,38 +49,40 @@ flowchart LR
         returns["returns"]
         stats["stats"]
         stockAlerts["stock-alerts"]
-        webhooks["webhooks"]
         wishlist["wishlist"]
     end
     subgraph GENERIC["generic"]
         direction TB
         account["account"]
         apiKeys["api-keys"]
-        demo["demo"]
         feedback["feedback"]
         locales["locales"]
         observability["observability"]
         users["users"]
+        webhooks["webhooks"]
     end
+    demo["example"]
     account -.-> users
+    cart -.-> account
     cart -.-> delivery
-    inventory --> products
+    cart -.-> payments
+    cart ==> products
+    inventory ==> products
     inventory -.-> delivery
     orders ==> cart
     orders -.-> delivery
-    orders -.-> payments
+    orders ==> payments
     orders -.-> returns
-    products ==> cart
-    products ==> wishlist
     stockAlerts --> products
-    wishlist --> cart
+    wishlist ==> cart
+    wishlist --> products
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef supporting fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     class cart,orders,products core;
-    class delivery,inventory,notifications,payments,returns,stats,stockAlerts,webhooks,wishlist supporting;
-    class account,apiKeys,demo,feedback,locales,observability,users generic;
+    class delivery,inventory,notifications,payments,returns,stats,stockAlerts,wishlist supporting;
+    class account,apiKeys,feedback,locales,observability,users,webhooks generic;
     style CORE fill:#faf8ff,stroke:#cbd5e1
     style SUPPORTING fill:#f8fafc,stroke:#cbd5e1
     style GENERIC fill:#f8fdfc,stroke:#cbd5e1
@@ -98,6 +100,7 @@ beside it.
 | 🟪 violet | `core`       | The reason the product exists. Worth its own client-side rules.                                                                                         |
 | 🟦 blue   | `supporting` | Specific to this business but not a differentiator. Kept plain.                                                                                         |
 | 🟩 teal   | `generic`    | A solved problem. Modelling effort here is waste — a `domain/` folder inside one is a rule of thumb this codebase asks a reviewer to catch, not a spec. |
+| ⬜ none   | —            | `example` only: the template a domain is copied from, which is not a subdomain.                                                                         |
 
 ::: warning Read `core` with one caveat, on a client
 This application owns almost none of the domain it displays. Prices, totals, eligibility and
@@ -140,29 +143,31 @@ story is [Adding & deleting a domain](../theory/modules.md#adding-and-deleting-a
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 18      | 3    | 8          | 7       | 49      | 18     | 11            |
+| 19      | 3    | 8          | 7       | 49      | 18     | 14            |
+
+`example` is unclassified: it is the template a new domain is copied from, not a subdomain.
 
 | Module                                                         | Subdomain    | Group        | Screens | Store                    | API calls | Depends on | Depended on by |
 | -------------------------------------------------------------- | ------------ | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
-| [`account`](./account.md)                                      | `generic`    | `foundation` | 8       | `account`                | 18        | 1          | 0              |
+| [`account`](./account.md)                                      | `generic`    | `foundation` | 12      | `account`                | 18        | 1          | 1              |
 | [`api-keys`](./api-keys.md)                                    | `generic`    | `foundation` | 2       | `api-keys`               | 3         | 0          | 0              |
-| [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 1          | 3              |
+| [`cart`](./cart.md)                                            | `core`       | `shop`       | 1       | `cart`                   | 8         | 4          | 2              |
 | [`delivery`](./delivery.md)                                    | `supporting` | `shop`       | 0       | `delivery`               | 13        | 0          | 3              |
-| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | `generic`    | `example`    | 5       | `example`                | 6         | 0          | 0              |
+| [`example`](../theory/modules.md#adding-and-deleting-a-domain) | —            | `example`    | 5       | `example`                | 6         | 0          | 0              |
 | [`feedback`](./feedback.md)                                    | `generic`    | `foundation` | 2       | `feedback`               | 3         | 0          | 0              |
 | [`inventory`](./inventory.md)                                  | `supporting` | `shop`       | 2       | `inventory`              | 7         | 2          | 0              |
-| [`locales`](./locales.md)                                      | `generic`    | `foundation` | 3       | `locales`                | 9         | 0          | 0              |
+| [`locales`](./locales.md)                                      | `generic`    | `foundation` | 4       | `locales`                | 9         | 0          | 0              |
 | [`notifications`](./notifications.md)                          | `supporting` | `shop`       | 0       | `inbox`                  | 4         | 0          | 0              |
 | [`observability`](./observability.md)                          | `generic`    | `foundation` | 3       | `realtime-observability` | 5         | 0          | 0              |
 | [`orders`](./orders.md)                                        | `core`       | `shop`       | 4       | `orders`                 | 11        | 4          | 0              |
-| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 1              |
-| [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 2          | 1              |
+| [`payments`](./payments.md)                                    | `supporting` | `shop`       | 1       | `payments`               | 7         | 0          | 2              |
+| [`products`](./products.md)                                    | `core`       | `shop`       | 4       | `products`               | 10        | 0          | 4              |
 | [`returns`](./returns.md)                                      | `supporting` | `shop`       | 2       | `returns`                | 6         | 0          | 1              |
 | [`stats`](./stats.md)                                          | `supporting` | `shop`       | 2       | `stats`                  | 8         | 0          | 0              |
-| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 0          | 0              |
+| [`stock-alerts`](./stock-alerts.md)                            | `supporting` | `shop`       | 1       | `stock-alerts`           | 3         | 1          | 0              |
 | [`users`](./users.md)                                          | `generic`    | `foundation` | 4       | `users`                  | 9         | 0          | 1              |
-| [`webhooks`](./webhooks.md)                                    | `supporting` | `foundation` | 5       | `webhooks`               | 7         | 0          | 0              |
-| [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 1          | 1              |
+| [`webhooks`](./webhooks.md)                                    | `generic`    | `foundation` | 5       | `webhooks`               | 9         | 0          | 0              |
+| [`wishlist`](./wishlist.md)                                    | `supporting` | `shop`       | 1       | `wishlist`               | 4         | 2          | 0              |
 
 ## The two repositories
 

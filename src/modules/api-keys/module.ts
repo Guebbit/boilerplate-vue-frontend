@@ -15,6 +15,8 @@ import routes from './routes';
  * Depends on nothing. Only `admin` holds `apikeys.*` today, so the nav entry and both routes
  * disappear for anyone else — `meta.can` is evaluated against the server's published rules, not a
  * role name.
+ *
+ * Context map: `docs/modules/api-keys.md` § "The map".
  */
 export default {
     name: 'api-keys',

@@ -17,6 +17,7 @@ export default {
  * Removing a tab that existed on the fetched record sends `null` for that locale; removing one
  * opened this session and never saved just drops it — see `handleRemoveLocale`.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -31,11 +32,11 @@ import { useTranslatedEntityForm } from '../composables/use-translated-entity-fo
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { Calendar, Clock, Hash, Languages, Package, Pencil } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import {
@@ -356,6 +357,39 @@ const { confirmReleaseDateMove: confirmRestockDateMove } = useReleaseDateConfirm
 );
 
 /**
+ * Sends one product's `PATCH`, with the picked image when there is one, behind the upload bar.
+ *
+ * @param productId - The routed product.
+ * @param body - The `PATCH` body.
+ * @param imageUpload - The picked replacement image, when there is one.
+ * @returns The store's update promise.
+ */
+const sendProductUpdate = (
+    productId: string,
+    body: Omit<Parameters<typeof updateProduct>[1], 'imageUpload'>,
+    imageUpload?: File
+) =>
+    trackUpload(imageUpload, (options) =>
+        updateProduct(productId, { ...body, imageUpload }, { requestOptions: options })
+    );
+
+/**
+ * After a save. The API answered with the stored `imageUrl` and the merged translations; the
+ * admin record is the only place both live, so it is reloaded rather than patched by hand — the
+ * store's own optimistic patch skips `translations` for the same reason (see `products/store.ts`).
+ *
+ * @param productId - The saved product.
+ * @returns A promise resolving `void` once the admin record is reloaded (`handleSubmit`'s
+ *  callback must resolve `void`; the reload, not its value, is the point).
+ */
+const onProductSaved = (productId: string): Promise<void> => {
+    form.value.imageUpload = undefined;
+    markSaved();
+    addMessage(t('product-edit-page.success-update'));
+    return loadAdminProduct(productId).then(() => undefined);
+};
+
+/**
  * Validates the form and persists the product changes.
  *
  * @returns A promise resolving once the flow settles: a success toast and a fresh admin-record
@@ -406,26 +440,28 @@ const submitForm = () => {
                     tags,
                     translations: toPatchTranslations(translations)
                 })
-                    .then((body) =>
-                        trackUpload(imageUpload, (options) =>
-                            updateProduct(id, { ...body, imageUpload }, { requestOptions: options })
-                        )
-                    )
-                    .then(() => {
-                        // The API has answered with the stored `imageUrl` and the merged translations; the
-                        // admin record is the only place both live, so it is reloaded rather than patched by
-                        // hand — the store's own optimistic patch already skips `translations` for the same
-                        // reason (see `products/store.ts`).
-                        form.value.imageUpload = undefined;
-                        markSaved();
-                        addMessage(t('product-edit-page.success-update'));
-                        // Discard the resolved admin record: `handleSubmit`'s callback must resolve `void`,
-                        // and the reload itself (not what it returns) is the point.
-                        return loadAdminProduct(id).then(() => undefined);
-                    });
+                    .then((body) => sendProductUpdate(id, body, imageUpload))
+                    .then(() => onProductSaved(id));
             });
     }).catch(handleSubmitFailure);
 };
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('product-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('product-target-page.label-created-at'),
+        value: formatDateTime(adminProduct.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('product-target-page.label-updated-at'),
+        value: formatDateTime(adminProduct.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -460,12 +496,8 @@ const submitForm = () => {
                 />
             </template>
 
-            <CardDetail>
-                <div class="mb-5 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                        <p class="mt-1 opacity-75">{{ t('product-edit-page.page-title') }}</p>
-                    </div>
+            <CardDetail :title="t('generic.details')" :subtitle="t('product-edit-page.page-title')">
+                <template #title-actions>
                     <v-btn
                         v-if="id && mayViewTranslations"
                         variant="tonal"
@@ -480,7 +512,7 @@ const submitForm = () => {
                         <Languages :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('product-edit-page.button-translations') }}
                     </v-btn>
-                </div>
+                </template>
 
                 <form
                     ref="formElement"
@@ -521,10 +553,12 @@ const submitForm = () => {
                                     v-model="form.translations[tag]!.title"
                                     type="text"
                                     :label="t('product-edit-page.label-title')"
-                                    :error-messages="
-                                        showFormErrors && !form.translations[tag]?.title
-                                            ? [t('products-form.title-required')]
-                                            : []
+                                    v-bind="
+                                        fieldErrorProps(
+                                            showFormErrors && !form.translations[tag]?.title
+                                                ? [t('products-form.title-required')]
+                                                : []
+                                        )
                                     "
                                     data-test="translation-title-field"
                                 />
@@ -544,7 +578,7 @@ const submitForm = () => {
                             :step="priceStep"
                             :precision="pricePrecision"
                             control-variant="stacked"
-                            :error-messages="showFormErrors ? formErrors.price : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.price : [])"
                             data-test="product-price-field"
                         />
                         <v-number-input
@@ -648,7 +682,7 @@ const submitForm = () => {
                         <FormImageUpload
                             v-model="form.imageUpload"
                             :current-image-url="adminProduct?.imageUrl"
-                            :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.imageUpload : [])"
                             :progress="uploadProgress"
                             :disabled="isSubmitting"
                         />
@@ -687,26 +721,14 @@ const submitForm = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="primary">
-                        <template #icon><Package :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('product-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-created-at')"
-                        :value="formatDateTime(adminProduct?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-updated-at')"
-                        :value="formatDateTime(adminProduct?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="primary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Package :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

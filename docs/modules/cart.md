@@ -2,22 +2,23 @@
 
 ::: tip At a glance
 **Owns** — the cart screen, the cart store, the guest cart that precedes it, and the checkout flow that ends them.
-**Depends on** — [`delivery`](./delivery.md), and only for a component it mounts.
+**Depends on** — [`delivery`](./delivery.md), [`payments`](./payments.md) and [`account`](./account.md) for components it mounts, and [`products`](./products.md) for its cached catalogue and line titles.
 **Breaks if you change** — `badgeQuantity`. The shell's header reads it through the manifest.
 :::
 
-| Fact                    | This module                                                                |
-| ----------------------- | -------------------------------------------------------------------------- |
-| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.   |
-| **Screens**             | 1 — `Cart`, which shows a guest `GuestCart` and a signed-in visitor `Cart` |
-| **Store**               | `cart`                                                                     |
-| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)     |
-| **API calls**           | 10                                                                         |
-| **Depends on**          | [`delivery`](./delivery.md) · [`products`](./products.md)                  |
-| **Depended on by**      | [`orders`](./orders.md) · [`wishlist`](./wishlist.md)                      |
-| **Languages**           | `en` · `it`                                                                |
-| **Publishes**           | `useCartStore`                                                             |
-| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                       |
+| Fact                    | This module                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.                                            |
+| **Screens**             | 1 — `Cart`, which shows a guest `GuestCart` and a signed-in visitor `Cart`                                          |
+| **Shared parts**        | `CartLineCard` (one line, both carts) · `CartEmptyState` (the empty basket, both carts)                             |
+| **Store**               | `cart`                                                                                                              |
+| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)                                              |
+| **API calls**           | 10                                                                                                                  |
+| **Depends on**          | [`account`](./account.md) · [`delivery`](./delivery.md) · [`payments`](./payments.md) · [`products`](./products.md) |
+| **Depended on by**      | [`orders`](./orders.md) · [`wishlist`](./wishlist.md)                                                               |
+| **Languages**           | `en` · `it`                                                                                                         |
+| **Publishes**           | `useCartStore`                                                                                                      |
+| **Backend counterpart** | `cart` in `boilerplate-node-backend`                                                                                |
 
 ## The map
 
@@ -25,8 +26,10 @@
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
 flowchart LR
     orders["orders"] ==>|"customer-supplier"| cart["<b>cart</b>"]
-    wishlist["wishlist"] -->|"conformist"| cart["<b>cart</b>"]
+    wishlist["wishlist"] ==>|"customer-supplier"| cart["<b>cart</b>"]
     cart["<b>cart</b>"] -.->|"published-language"| delivery["delivery"]
+    cart["<b>cart</b>"] -.->|"published-language"| payments["payments"]
+    cart["<b>cart</b>"] -.->|"published-language"| account["account"]
     cart["<b>cart</b>"] ==>|"customer-supplier"| products["products"]
 
     classDef core fill:#ede9fe,stroke:#7c3aed,color:#111827;
@@ -34,29 +37,30 @@ flowchart LR
     classDef generic fill:#ccfbf1,stroke:#0f766e,color:#111827;
     classDef self fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:2px;
     class orders,products core;
-    class delivery,wishlist supporting;
+    class delivery,payments,wishlist supporting;
+    class account generic;
     class cart self;
 ```
 
 - `orders` → **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
-- `wishlist` → **conformist** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
-- → `products` **customer-supplier** — Reads its lines' title and price from the products dictionary in one batched read (`useProductLines`).
+- `wishlist` → **customer-supplier** — Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.
+- → `products` **customer-supplier** — Asks the products store to drop its cached catalogue after each cart write (`invalidateProductsCache`), and reads its lines' title and price from the products dictionary in one batched read (`useProductLines`).
 - → `delivery` **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
+- → `payments` **published-language** — Mounts `PaymentMethodSelector`; the checkout learns which method ids exist, never what one costs to offer.
+- → `account` **published-language** — Mounts `AddressPicker` (shipping and billing) and `PurchaseHoldNotice`; the address book and the hold record stay the account's.
 
 ## The story
 
 [`orders`](./orders.md) reaches the barrel for the reorder button and [`wishlist`](./wishlist.md)
-for its move-to-cart exit. `orders` is `customer-supplier` — it asks this store to write a line —
-and `wishlist` is `conformist`: the move itself is a wishlist endpoint, and this store is only
-asked to refetch.
+for its move-to-cart exit (kinds are on the map above): `orders` asks this store to write a line,
+while the move itself is a wishlist endpoint and this store is only asked to refetch.
 
 The product page's "add to cart" arrives the other way round. This module's manifest contributes
 `components/AddToCartButton.vue` to the `product-actions` slot that [`products`](./products.md)
 owns (see `src/kernel/slots.ts`), so `products` never imports the cart and the graph stays a DAG.
 
-[`delivery`](./delivery.md) is `published-language`: the checkout mounts `ShippingSelector` and
-never learns what a shipping rate is. [`products`](./products.md) is `customer-supplier`: the page
-holds lines as ids only and joins them to their product records in one `POST /products/search`
+[`delivery`](./delivery.md): the checkout mounts `ShippingSelector` and never learns what a
+shipping rate is. [`products`](./products.md): the page holds lines as ids only and joins them to their product records in one `POST /products/search`
 per hundred ids, through `useProductLines` — the same records the product page reads.
 
 ::: tip The badge and its total are the only reactive things this module lends the shell
@@ -76,9 +80,14 @@ Checkout lives in this store and not in the orders store, even though it answers
 cart this store is responsible for. Owned from anywhere else, the local cart survives a completed
 order and the header keeps showing items the server has already turned into one.
 
+The store keeps every write to `cart` and its ordering rules (tickets, epoch, seeding, the reset barrier)
+in one file, so "can a poll land over a merge?" is answered by reading one place. What touches no store
+state — the key header, the in-flight retry ladder, the empty-cart shape — lives in
+`composables/idempotent-calls.ts` and `domain/empty-cart.ts`.
+
 Stepping a line's quantity does not call the store directly. `composables/use-line-quantity.ts`
-debounces per-product clicks into one trailing request each — three quick clicks on `+` used to put
-three requests in flight, and the cart ended up showing whichever one the server answered LAST.
+debounces per-product clicks into one trailing request each — three quick clicks on `+` would put
+three requests in flight, and the cart would end up showing whichever one the server answered LAST.
 A step still inside its debounce when the page goes away (a reload, a closed tab) is not lost: on
 `pagehide` the view hands it to `sendKeepalive` (`src/infrastructure/http/keepalive.ts`), a `fetch` with
 `keepalive`, because axios's request is cancelled with the page and `sendBeacon` can send neither a
@@ -446,13 +455,15 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `composables/use-cart-stock-poll.ts`        | Starts the opt-in stock poll for the lifetime of the page's setup: the interval, the visibility pause, the stop on logout. Registers nothing when the knob is off.                  | [read](../theory/layers.md)           |
 | `composables/use-cart-focus-refresh.ts`     | Reads the cart again when the shopper comes back to the page: the window gets focus or the tab becomes visible.                                                                     | [read](../theory/layers.md)           |
 | `composables/use-guest-cart.ts`             | The guest cart as a composable: the list, its actions, the copy-taking from another tab and the merge key rules.                                                                    | [read](../theory/layers.md)           |
-| `composables/checkout-attempt-storage.ts`   | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded.                                                        | [read](../theory/layers.md)           |
+| `composables/checkout-attempt-storage.ts`   | Where the checkout attempt in progress is remembered: its key, its person and its fingerprint, in `sessionStorage`, guarded; also picks the key for the next checkout.              | [read](../theory/layers.md)           |
+| `composables/idempotent-calls.ts`           | The transport rules of the keyed calls: the `Idempotency-Key` header, the in-flight retry ladder and which merge refusals are final. Stateless.                                     | [read](../theory/layers.md)           |
 | `composables/use-line-quantity.ts`          | Debounces per-product stepper clicks into one trailing API call each, answering the visitor's own last click locally so the UI never waits on the round trip.                       | [read](../theory/layers.md)           |
 | `domain/checkout-errors.ts`                 | Pure rules over plain data — no store, no component, no axios. Classifies a checkout rejection into one of its verdicts.                                                            | [read](../theory/domain-layer.md)     |
 | `domain/guest-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The guest cart's lines, caps and read-back.                                                                          | [read](../theory/domain-layer.md)     |
 | `domain/merge-report.ts`                    | Pure rules over plain data — no store, no component, no axios. Which lines of a merge answer are worth telling the shopper about.                                                   |
 | `domain/expected-total.ts`                  | Pure rules over plain data. The shown total as minor units and its currency, the shape `POST /cart/checkout` requires.                                                              | [read](../theory/domain-layer.md)     |
 | `domain/checkout-attempt.ts`                | Pure rules over plain data — no store, no component, no axios. The fingerprint that decides whether a checkout is the same call as the last one.                                    | [read](../theory/domain-layer.md)     |
+| `domain/empty-cart.ts`                      | Pure rules over plain data — no store, no component, no axios. The known-empty cart a successful checkout leaves.                                                                   | [read](../theory/domain-layer.md)     |
 | `domain/stock-poll.ts`                      | Pure rules over plain data — no store, no component, no axios. What the configured poll interval means: a positive whole number of seconds, else off.                               | [read](../theory/domain-layer.md)     |
 | `domain/index.ts`                           | The domain barrel.                                                                                                                                                                  | [read](../theory/domain-layer.md)     |
 | `domain/quantity.ts`                        | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                          | [read](../theory/domain-layer.md)     |

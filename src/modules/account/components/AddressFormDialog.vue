@@ -15,15 +15,15 @@ export default {
  * (the checkout side) can offer the same "add an address" flow without a second copy of the
  * form, its schema, or its save logic.
  */
-import { computed, ref, useId, watch } from 'vue';
-import { z } from 'zod';
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '../stores/addresses.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
+import { addressSchema } from '../schemas.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
@@ -81,16 +81,6 @@ const offerSetAsDefault = computed(() => !editing && addresses.value.length > 0)
 const setAsDefaultOnAdd = ref(false);
 
 /**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the address dialog once it closes.
- */
-useReturnFocus(() => open.value);
-
-/**
  * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
  */
 interface AddressForm {
@@ -135,11 +125,6 @@ const formFrom = (address: Address | undefined): AddressForm =>
         : emptyForm();
 
 /**
- * The dialog heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const dialogTitleId = useId();
-
-/**
  * The country select's own options: {@link shipToCountries} when the caller named one,
  * every ISO 3166-1 country otherwise — localized in the active locale and sorted by that label,
  * so the list reads correctly whatever language the visitor is in rather than in raw code order.
@@ -150,20 +135,6 @@ const countryOptions = computed(() =>
         .toSorted((a, b) => a.title.localeCompare(b.title, locale.value))
 );
 
-/**
- * The contract's own rule — five non-empty strings — said in the visitor's language. Messages
- * are thunks so they resolve in the active locale, like every other schema here.
- */
-const addressSchema = z.object({
-    label: z.string(),
-    fullName: z.string().min(1, { error: () => t('profile-page.addresses-required-full-name') }),
-    street: z.string().min(1, { error: () => t('profile-page.addresses-required-street') }),
-    city: z.string().min(1, { error: () => t('profile-page.addresses-required-city') }),
-    zip: z.string().min(1, { error: () => t('profile-page.addresses-required-zip') }),
-    country: z.string().min(1, { error: () => t('profile-page.addresses-required-country') }),
-    phone: z.string()
-});
-
 /*
  * No `formElement`: the dialog traps focus already — a dialog's `revealErrors` is a state
  * change, not a focus move.
@@ -171,7 +142,6 @@ const addressSchema = z.object({
 const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
     useStructureFormValidation<AddressForm>(emptyForm(), addressSchema, {
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 
@@ -229,34 +199,29 @@ const handleSave = () =>
 </script>
 
 <template>
-    <v-dialog
-        v-model="open"
-        max-width="480"
-        :fullscreen="fullscreen"
-        :aria-labelledby="dialogTitleId"
-    >
+    <DialogShell v-model="open" :max-width="DIALOG_MAX_WIDTH.form" v-slot="{ titleId }">
         <v-card class="p-6" data-test="address-dialog">
-            <h2 :id="dialogTitleId" class="mb-4 text-lg font-semibold">
+            <h2 :id="titleId" class="mb-4 text-lg font-semibold">
                 {{ editing ? t('profile-page.addresses-edit') : t('profile-page.addresses-add') }}
             </h2>
             <form novalidate @submit.prevent="handleSave">
                 <v-text-field
                     v-model="form.label"
                     :label="t('profile-page.addresses-label-label')"
-                    :error-messages="showFormErrors ? (formErrors.label ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.label ?? []) : [])"
                     class="mb-2"
                 />
                 <v-text-field
                     v-model="form.fullName"
                     :label="t('profile-page.addresses-label-full-name')"
-                    :error-messages="showFormErrors ? (formErrors.fullName ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.fullName ?? []) : [])"
                     autocomplete="name"
                     class="mb-2"
                 />
                 <v-text-field
                     v-model="form.street"
                     :label="t('profile-page.addresses-label-street')"
-                    :error-messages="showFormErrors ? (formErrors.street ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.street ?? []) : [])"
                     autocomplete="street-address"
                     class="mb-2"
                 />
@@ -264,13 +229,13 @@ const handleSave = () =>
                     <v-text-field
                         v-model="form.zip"
                         :label="t('profile-page.addresses-label-zip')"
-                        :error-messages="showFormErrors ? (formErrors.zip ?? []) : []"
+                        v-bind="fieldErrorProps(showFormErrors ? (formErrors.zip ?? []) : [])"
                         autocomplete="postal-code"
                     />
                     <v-text-field
                         v-model="form.city"
                         :label="t('profile-page.addresses-label-city')"
-                        :error-messages="showFormErrors ? (formErrors.city ?? []) : []"
+                        v-bind="fieldErrorProps(showFormErrors ? (formErrors.city ?? []) : [])"
                         autocomplete="address-level2"
                     />
                 </div>
@@ -282,7 +247,7 @@ const handleSave = () =>
                     v-model="form.country"
                     :items="countryOptions"
                     :label="t('profile-page.addresses-label-country')"
-                    :error-messages="showFormErrors ? (formErrors.country ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.country ?? []) : [])"
                     autocomplete="country"
                     data-test="address-country"
                     class="mb-2"
@@ -290,7 +255,7 @@ const handleSave = () =>
                 <v-text-field
                     v-model="form.phone"
                     :label="t('profile-page.addresses-label-phone')"
-                    :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.phone ?? []) : [])"
                     autocomplete="tel"
                     type="tel"
                 />
@@ -323,5 +288,5 @@ const handleSave = () =>
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

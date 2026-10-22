@@ -8,18 +8,21 @@
  * `reauth-dialog.spec.ts`), and what is under test here is this component's mapping, not
  * Vuetify's own menu.
  */
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { VSelect } from 'vuetify/components';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import { DEFAULT_PAGE_SIZES } from '@/ui/molecules/page-size-options.ts';
 import vuetify from '@/ui/vuetify';
+import { i18n, loadLocale } from '@/i18n';
+
+beforeAll(() => loadLocale('en'));
 
 /** Mounts the select; `props` override the defaults. */
 const mountSelect = (props: Record<string, unknown> = {}) =>
     mount(PageSizeSelect, {
-        props: { label: 'Page size', modelValue: 10, ...props },
-        global: { plugins: [vuetify] }
+        props: { modelValue: 10, ...props },
+        global: { plugins: [vuetify, i18n] }
     });
 
 describe('PageSizeSelect — the offered sizes', () => {
@@ -43,7 +46,11 @@ describe('PageSizeSelect — the offered sizes', () => {
 });
 
 describe('PageSizeSelect — the label', () => {
-    it('renders the given, already-translated label — no i18n of its own', () => {
+    it('falls back to the shared page-size label when none is given', () => {
+        expect(mountSelect().text()).toContain('Page size');
+    });
+
+    it('renders the given label instead when a caller passes one', () => {
         const wrapper = mountSelect({ label: 'Dimensione pagina' });
 
         expect(wrapper.text()).toContain('Dimensione pagina');

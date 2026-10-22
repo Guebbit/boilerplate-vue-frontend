@@ -172,6 +172,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "POST", pattern: /^\/delivery\/shipments\/[^/]+\/deliver$/, schemaName: "DeliverShipmentResponse", bodySchemaName: "DeliverShipmentBody", module: "delivery" },
     { method: "PATCH", pattern: /^\/delivery\/shipments\/[^/]+$/, schemaName: "UpdateShipmentResponse", bodySchemaName: "UpdateShipmentBody", module: "delivery" },
     { method: "PUT", pattern: /^\/examples\/[^/]+\/cover$/, schemaName: "ReplaceExampleCoverResponse", bodySchemaName: undefined, module: "example" },
+    { method: "POST", pattern: /^\/examples\/[^/]+\/transitions$/, schemaName: "TransitionExampleResponse", bodySchemaName: "TransitionExampleBody", module: "example" },
     { method: "DELETE", pattern: /^\/examples\/[^/]+$/, schemaName: "DeleteExampleByIdResponse", bodySchemaName: undefined, module: "example" },
     { method: "GET", pattern: /^\/examples\/[^/]+$/, schemaName: "GetExampleByIdResponse", bodySchemaName: undefined, module: "example" },
     { method: "PATCH", pattern: /^\/examples\/[^/]+$/, schemaName: "UpdateExampleByIdResponse", bodySchemaName: "UpdateExampleByIdBody", module: "example" },

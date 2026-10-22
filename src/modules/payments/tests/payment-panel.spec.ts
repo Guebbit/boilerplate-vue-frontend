@@ -135,7 +135,7 @@ describe('PaymentPanel', () => {
     });
 
     /*
-     * B1b: cancelling a hand-paid order no longer auto-marks it refunded — it stays `succeeded`
+     * B1b: cancelling a hand-paid order does not mark it refunded — it stays `succeeded`
      * until an operator confirms the money actually came back. The panel must say why a "paid"
      * payment sits on a cancelled order, rather than showing a plain, misleading "Paid".
      */

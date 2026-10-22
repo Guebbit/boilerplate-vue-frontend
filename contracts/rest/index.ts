@@ -3145,6 +3145,10 @@ export interface OrderActions {
     withdrawBlocked?: WithdrawBlockedReason;
     /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
     withdrawUntil?: string;
+    /** Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden. */
+    delete: boolean;
+    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it). */
+    hardDelete: boolean;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
     invoice: boolean;
 }
@@ -3799,6 +3803,8 @@ export const FulfillmentCancelReason = {
 export interface FulfillmentOrderActions {
     /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
     ship: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
+    forceShip: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
     fulfill: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
@@ -5060,6 +5066,18 @@ export const ExampleStatus = {
     archived: 'archived'
 } as const;
 
+/**
+ * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
+ */
+export interface ExampleActions {
+    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
+    transitions: ExampleStatus[];
+    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
+    update: boolean;
+    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
+    delete: boolean;
+}
+
 export interface Example {
     id: Id;
     /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
@@ -5075,6 +5093,7 @@ export interface Example {
     publishedAt?: string;
     createdAt: string;
     updatedAt?: string;
+    actions?: ExampleActions;
 }
 
 export interface ProductTitles {
@@ -5853,7 +5872,6 @@ export interface ReplaceExampleRequest {
      * @maxLength 20000
      */
     body: string;
-    status: ExampleStatus;
 }
 
 export interface UpdateExampleRequest {
@@ -5867,7 +5885,10 @@ export interface UpdateExampleRequest {
      * @maxLength 20000
      */
     body?: string;
-    status?: ExampleStatus;
+}
+
+export interface TransitionExampleRequest {
+    to: ExampleStatus;
 }
 
 export interface ReplaceExampleCoverRequestMultipart {
@@ -11181,7 +11202,7 @@ export const listExamples = (
 };
 
 /**
- * Creates a draft example owned by the caller.
+ * Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
  * @summary Create an example
  */
 export const createExample = (
@@ -11230,7 +11251,7 @@ export const getExampleById = (
 };
 
 /**
- * Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
  * @summary Replace an example
  */
 export const replaceExampleById = (
@@ -11298,6 +11319,26 @@ export const deleteExampleById = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>({ url: `/examples/${id}`, method: 'DELETE' }, options);
+};
+
+/**
+ * Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
+ * @summary Move an example to another status
+ */
+export const transitionExample = (
+    id: string,
+    transitionExampleRequest: TransitionExampleRequest,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples/${id}/transitions`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: transitionExampleRequest
+        },
+        options
+    );
 };
 
 /**
@@ -11887,6 +11928,7 @@ export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateExampleByIdWithMergePatchJson>>
 >;
 export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>;
+export type TransitionExampleResult = NonNullable<Awaited<ReturnType<typeof transitionExample>>>;
 export type ReplaceExampleCoverResult = NonNullable<
     Awaited<ReturnType<typeof replaceExampleCover>>
 >;

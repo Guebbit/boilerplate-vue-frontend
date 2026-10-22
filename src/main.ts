@@ -121,7 +121,7 @@ const bootstrapApplication = () =>
 
             /*
              * `@api/schemas` (Zod + ~1,700 generated schemas, ~350 KB) is the
-             * biggest single piece of the old entry chunk, and only response VALIDATION needs
+             * biggest single piece the entry chunk would carry, and only response VALIDATION needs
              * it — the generated client's request/response TYPES cost nothing at runtime. Kick
              * off its chunk here, after the first paint above, not before: this call is
              * deliberately not awaited, and never joins the boot chain.

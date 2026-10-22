@@ -16,10 +16,10 @@ export default {
  * on afterwards, unlike webhooks' redirect to its subscription's own page, so `Done` goes back to
  * the list.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
@@ -29,20 +29,13 @@ import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { getFirstApiError } from '@/infrastructure/http/envelope.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { MintApiKeyRequest } from '@types';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 
 /**
  * Generics
  */
 const { t, locale } = useI18n();
-
-/**
- * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.
@@ -75,7 +68,6 @@ const { form, formErrors, showFormErrors, isDirty, isSubmitting, handleSubmit, a
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
             formElement: () => card.value?.formElement,
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -95,11 +87,6 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
  * but this component; the store's own cache never sees it (`store.ts`'s `mintCredential`).
  */
 const revealedSecret = ref<string>();
-
-/**
- * Hands focus back to the control that opened the one-time secret dialog once it closes.
- */
-useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * Reads the offending permission keys off a mint refusal — `details.permissions`, beside
@@ -179,21 +166,12 @@ const handleSecretDone = () => {
 
 <template>
     <div id="api-key-create-page">
-        <v-dialog
-            :fullscreen="fullscreen"
-            :model-value="!!revealedSecret"
-            persistent
-            max-width="640"
-            aria-labelledby="secret-reveal-title"
-        >
-            <SecretRevealModal
-                v-if="revealedSecret"
-                :secret="revealedSecret"
-                :title="t('api-key-secret-modal.title')"
-                :intro="t('api-key-secret-modal.intro')"
-                @done="handleSecretDone"
-            />
-        </v-dialog>
+        <SecretRevealModal
+            :secret="revealedSecret"
+            :title="t('api-key-secret-modal.title')"
+            :intro="t('api-key-secret-modal.intro')"
+            @done="handleSecretDone"
+        />
 
         <FormCard
             ref="card"
@@ -208,7 +186,7 @@ const handleSecretDone = () => {
                 type="text"
                 data-test="api-key-name"
                 :label="t('api-key-create-page.label-name')"
-                :error-messages="showFormErrors ? formErrors.name : []"
+                v-bind="fieldErrorProps(showFormErrors ? formErrors.name : [])"
                 class="mb-2"
             />
             <v-combobox
@@ -220,7 +198,7 @@ const handleSecretDone = () => {
                 :label="t('api-key-create-page.label-permissions')"
                 :hint="t('api-key-create-page.hint-permissions')"
                 persistent-hint
-                :error-messages="showFormErrors ? formErrors.permissions : []"
+                v-bind="fieldErrorProps(showFormErrors ? formErrors.permissions : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -230,7 +208,7 @@ const handleSecretDone = () => {
                 :label="t('api-key-create-page.label-expires-at')"
                 :hint="t('api-key-create-page.hint-expires-at')"
                 persistent-hint
-                :error-messages="showFormErrors ? formErrors.expiresAt : []"
+                v-bind="fieldErrorProps(showFormErrors ? formErrors.expiresAt : [])"
             />
 
             <InlineErrorAlert :message="submitError" data-test="api-key-create-error" />

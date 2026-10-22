@@ -1,5 +1,5 @@
 /**
- * The catalogue's own share of the shell's resilience sweep — moved out of the central
+ * The catalogue's own share of the shell's resilience sweep, kept here rather than in the central
  * `tests/e2e/specs/resilience.cy.ts`: route health for a shop-only page, plus every
  * dataset-shaped assertion that only means something with a catalogue behind it (an empty
  * search, pagination agreeing with the rows on screen, the sparse `barebones` record).

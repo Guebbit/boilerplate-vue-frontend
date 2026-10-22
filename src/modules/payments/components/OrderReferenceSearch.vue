@@ -21,6 +21,9 @@ export default {
  * found order rather than navigating to its edit page itself; `OrdersList.vue`, which owns that
  * route directly, does the jump.
  *
+ * It is a single-field lookup, not a list filter: no form, no list that stays filtered, a button
+ * disabled while the field is blank. That is why it keeps its own button and not `ListSearchActions`.
+ *
  * A miss and a real failure both block this search from completing, so both render through
  * `InlineErrorAlert` rather than a toast — see docs/theory/request-flow.md.
  */

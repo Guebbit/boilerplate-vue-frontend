@@ -221,7 +221,7 @@ const handlePageChange = (page: number) => {
             </form>
         </v-card>
 
-        <p class="m-0 text-sm opacity-70" role="status">
+        <p class="m-0 text-sm opacity-muted" role="status">
             {{
                 t('webhook-deliveries-page.showing', {
                     shown: props.deliveries.length,
@@ -293,7 +293,7 @@ const handlePageChange = (page: number) => {
                     size="small"
                     variant="tonal"
                     color="secondary"
-                    :disabled="item.status === 'in-flight' || props.replayingIds.has(item.id)"
+                    :disabled="props.replayingIds.has(item.id)"
                     :loading="props.replayingIds.has(item.id)"
                     :aria-label="t('webhook-deliveries-page.button-replay-named', { id: item.id })"
                     data-test="webhook-delivery-replay"

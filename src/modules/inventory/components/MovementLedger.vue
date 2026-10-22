@@ -15,17 +15,16 @@ export default {
  * plus the sweep action that expires stale reservation holds. Reads/writes go through
  * `useInventoryStore` directly — filters live as local refs, re-fetched on change via `watch`.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { BookOpen, Timer } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
 import { useInventoryStore } from '../store.ts';
 import { useProductLines } from '@/modules/products';
 import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
@@ -46,19 +45,9 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 const { t } = useI18n();
 
 /**
- * Router instance, for the `hasRoute` check below — `orders` is not a coupling this module's
- * `MODULE_EDGES` entry declares, so the reference column's link is guarded rather than assumed.
+ * A movement's order page, when its reference is an order and this build ships the page.
  */
-const router = useRouter();
-
-/**
- * A movement's own order page, or `undefined` when this build ships no `orders` module — the
- * reference then renders as plain text instead of a dead link.
- *
- * @param reference - The movement's own reference, an order id, when it has one at all.
- */
-const orderTargetTo = (reference: string | null | undefined) =>
-    reference ? linkIfRouted(router, 'OrderTarget', { id: reference }) : undefined;
+const orderTargetTo = useOrderLink();
 
 /**
  * The session, asked whether the sweep is this account's to press: `sweep:StockLevel` is the
@@ -367,7 +356,7 @@ onMounted(() => {
             The audit's honest number: how many rows MATCH, not how many are shown. A read
             that returned only the newest rows would misreport history as complete.
         -->
-        <span class="text-sm opacity-70" role="status" data-test="movements-total">
+        <span class="text-sm opacity-muted" role="status" data-test="movements-total">
             {{ t('inventory-page.total-items', { total: movementsTotal }) }}
         </span>
         <v-btn
@@ -386,11 +375,12 @@ onMounted(() => {
 
     <InlineErrorAlert :message="sweepError" class="mb-4" data-test="sweep-error" />
 
-    <v-empty-state v-if="movements.length === 0" :title="t('inventory-page.empty')">
-        <template #media>
-            <BookOpen :size="64" class="text-secondary" aria-hidden="true" />
-        </template>
-    </v-empty-state>
+    <ListEmptyState
+        v-if="movements.length === 0"
+        :title="t('inventory-page.empty')"
+        :icon="BookOpen"
+    >
+    </ListEmptyState>
 
     <DataTable
         v-else
@@ -438,7 +428,7 @@ onMounted(() => {
                      build actually ships one to link to. -->
                 <router-link
                     v-if="orderTargetTo(item.reference)"
-                    :to="routerLinkI18n(orderTargetTo(item.reference)!)"
+                    :to="orderTargetTo(item.reference)!"
                     class="underline"
                 >
                     {{ item.reference }}
@@ -455,5 +445,6 @@ onMounted(() => {
         v-model="movementsPage"
         :length="movementsPageTotal"
         :aria-label="t('inventory-page.pagination-ledger')"
+        test-id="ledger-pagination"
     />
 </template>

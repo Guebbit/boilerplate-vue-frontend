@@ -7,6 +7,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import ShipmentRow from '../components/ShipmentRow.vue';
 import { useDeliveryStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -22,13 +23,14 @@ wireModulesIntoCore();
  * Mounts the row.
  *
  * @param shipment - The record under test.
- * @param canForce - Whether the caller may force an arrival.
+ * @param canOverride - Whether the caller holds `override:Order`.
  * @returns The wrapper and the store.
  */
-const mountRow = (shipment: Shipment, canForce = false) => {
+const mountRow = (shipment: Shipment, canOverride = false) => {
     const store = useDeliveryStore();
+    vi.spyOn(useSessionStore(), 'can').mockReturnValue(canOverride);
     const wrapper = mount(ShipmentRow, {
-        props: { shipment, canForce },
+        props: { shipment },
         global: { plugins: [vuetify, i18n] }
     });
     return { wrapper, store };
@@ -123,15 +125,26 @@ describe('the controls come from `actions`', () => {
 
 describe('the forced arrival', () => {
     it('is not offered without the override', () => {
-        const { wrapper } = mountRow(aShipment());
+        const { wrapper } = mountRow(
+            aShipment({ actions: { deliver: true, editTracking: false } })
+        );
 
         expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
     });
 
-    it('needs the toggle and a reason before the button works, then sends both', () => {
-        const { wrapper, store } = mountRow(aShipment(), true);
-        const deliver = vi.spyOn(store, 'deliver').mockResolvedValue(aShipment());
+    it('is not offered when the shipment cannot be delivered, override or not', () => {
+        const { wrapper } = mountRow(aShipment(), true);
+
+        expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
         expect(wrapper.find('[data-test=mark-delivered]').exists()).toBe(false);
+    });
+
+    it('needs the toggle and a reason before the button works, then sends both', () => {
+        const { wrapper, store } = mountRow(
+            aShipment({ actions: { deliver: true, editTracking: false } }),
+            true
+        );
+        const deliver = vi.spyOn(store, 'deliver').mockResolvedValue(aShipment());
 
         return wrapper
             .get('[data-test=force-deliver-toggle] input')

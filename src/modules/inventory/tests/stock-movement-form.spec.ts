@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import StockMovementForm from '../components/StockMovementForm.vue';
 import { useInventoryStore } from '../store.ts';
-import { useProductsStore } from '@/modules/products';
+import { queryClient } from '@/infrastructure/query-client.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -17,8 +17,8 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 wireModulesIntoCore();
 
 /**
- * The product field is now a search-as-you-type `v-autocomplete`, stubbed away
- * below like `v-select` used to be — but the composable behind it still calls `searchProducts` on
+ * The product field is a search-as-you-type `v-autocomplete`, stubbed away
+ * below — but the composable behind it still calls `searchProducts` on
  * mount, debounced, for real. Mocked here so that call resolves immediately with nothing rather
  * than leaving a pending network request (and its timer) once the test has already finished.
  */
@@ -42,22 +42,12 @@ const V_AUTOCOMPLETE_STUB = {
 };
 
 /**
- * Mounts one instance of the form, seeded with one product so the select has something to carry.
+ * Mounts one instance of the form; the stubbed select carries the one option it needs.
  *
  * @param mode - Which branch of the schema is under test.
  * @returns The mounted wrapper.
  */
 const mountForm = (mode: 'receipt' | 'adjust') => {
-    const products = useProductsStore();
-    products.addProduct({
-        id: 'p1',
-        title: 'Widget',
-        price: 9.99,
-        currency: 'EUR',
-        inStock: true,
-        lowStock: false
-    });
-
     return mount(StockMovementForm, {
         props: { mode },
         global: { plugins: [vuetify, i18n], stubs: { VAutocomplete: V_AUTOCOMPLETE_STUB } }
@@ -113,6 +103,16 @@ describe('the receipt form', () => {
             expect(receiveSpy).not.toHaveBeenCalled();
         });
     });
+
+    it('marks the catalogue stale after a write lands, so product screens refetch their counters', () => {
+        const wrapper = mountForm('receipt');
+        vi.spyOn(useInventoryStore(), 'receive').mockResolvedValue(undefined);
+        const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+        return submitAmount(wrapper, 5, 'receipt').then(() => {
+            expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['products'] });
+        });
+    });
 });
 
 describe('the adjustment form', () => {
@@ -139,7 +139,6 @@ describe('the adjustment form', () => {
         const wrapper = mountForm('adjust');
         const inventory = useInventoryStore();
         vi.spyOn(inventory, 'adjust').mockResolvedValue(undefined);
-        vi.spyOn(useProductsStore(), 'fetchProducts').mockResolvedValue([]);
 
         return submitAmount(wrapper, -3, 'adjust').then(() => {
             expect(inventory.adjust).toHaveBeenCalledWith('p1', -3, undefined);

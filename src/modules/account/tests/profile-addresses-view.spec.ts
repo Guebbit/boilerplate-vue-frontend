@@ -134,3 +134,12 @@ describe('ProfileAddresses save payload', () => {
             });
     });
 });
+
+describe('ProfileAddresses card', () => {
+    it('prints the country as its name in the viewing language, not the stored code', () => {
+        const { wrapper } = mountPanel();
+
+        expect(wrapper.text()).toContain('22222 Shelbyville — United States');
+        expect(wrapper.text()).not.toContain('— US');
+    });
+});

@@ -11,13 +11,13 @@
  * by two different parents (`LocalesList.vue`'s own row edit, `LocalesDictionary.vue`'s add), each
  * filling it with its own state.
  */
-import { watch, computed, useId } from 'vue';
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
+import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '../schemas.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import type { LocaleCapability, LocaleDirection } from '@types';
 
 /**
@@ -73,24 +73,9 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the language dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
-
-/**
  * Whether the dialog is editing an existing language rather than creating one.
  */
 const isEdit = computed(() => props.language !== undefined);
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
 
 /*
  * Two schemas rather than one with a conditional tag rule: editing shows the tag disabled — it is
@@ -109,7 +94,6 @@ const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErro
         computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
         {
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -150,12 +134,12 @@ defineExpose({ applyServerErrors });
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480" :fullscreen="fullscreen" :aria-labelledby="titleId">
+    <DialogShell v-model="isOpen" :max-width="DIALOG_MAX_WIDTH.form" v-slot="{ titleId }">
         <v-card class="p-5" data-test="language-form">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}
             </h2>
-            <p v-if="!isEdit" class="mb-4 text-sm opacity-70">
+            <p v-if="!isEdit" class="mb-4 text-sm opacity-muted">
                 {{ t('locale-form.hint-create') }}
             </p>
 
@@ -165,20 +149,20 @@ defineExpose({ applyServerErrors });
                     :label="t('locale-form.label-tag')"
                     :hint="t('locale-form.hint-tag')"
                     :disabled="isEdit"
-                    :error-messages="showFormErrors ? (formErrors.tag ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.tag ?? []) : [])"
                     persistent-hint
                     data-test="language-tag"
                 />
                 <v-text-field
                     v-model="form.name"
                     :label="t('locale-form.label-name')"
-                    :error-messages="showFormErrors ? (formErrors.name ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.name ?? []) : [])"
                     data-test="language-name"
                 />
                 <v-text-field
                     v-model="form.nativeName"
                     :label="t('locale-form.label-native-name')"
-                    :error-messages="showFormErrors ? (formErrors.nativeName ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.nativeName ?? []) : [])"
                     data-test="language-native-name"
                 />
                 <v-select
@@ -218,5 +202,5 @@ defineExpose({ applyServerErrors });
                 </div>
             </form>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

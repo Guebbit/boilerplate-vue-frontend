@@ -12,10 +12,10 @@
  * only the confirm step before submitting. Both go through `useUserAccessDialog()`, which is what
  * turns this plain `v-model` component into an awaitable request.
  */
-import { computed, ref, watch, useId } from 'vue';
+import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useRoleOptions } from '../composables/use-role-options.ts';
 import type {
@@ -50,21 +50,6 @@ const isOpen = defineModel<boolean>({ required: true });
  * Translation function.
  */
 const { t } = useI18n();
-
-/**
- * The heading's id, so the dialog is announced by its title rather than as "dialog".
- */
-const titleId = useId();
-
-/**
- * Whether the dialog fills the screen — it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
-
-/**
- * Hands focus back to the control that opened the access dialog once it closes.
- */
-useReturnFocus(() => isOpen.value);
 
 /**
  * The signed-in admin's own id, to warn them specifically when they are deactivating themselves.
@@ -200,12 +185,11 @@ const handleCancel = () => {
 </script>
 
 <template>
-    <v-dialog
+    <DialogShell
         v-model="isOpen"
-        max-width="480"
-        :fullscreen="fullscreen"
-        :aria-labelledby="titleId"
+        :max-width="DIALOG_MAX_WIDTH.form"
         data-test="user-access-dialog"
+        v-slot="{ titleId }"
     >
         <v-card v-if="target" class="p-5">
             <template v-if="step === 'pick'">
@@ -289,5 +273,5 @@ const handleCancel = () => {
                 </div>
             </template>
         </v-card>
-    </v-dialog>
+    </DialogShell>
 </template>

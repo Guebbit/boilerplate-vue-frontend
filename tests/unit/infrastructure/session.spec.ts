@@ -1,9 +1,7 @@
 /**
- * `persistLocalePreference` — `src/infrastructure/session.ts`.
- *
- * The one write the session store makes that is not about the session itself, and the reason
- * `AppLanguageSwitcher` does not know what a session is. Every case below is the same claim from
- * a different side: **choosing a language always succeeds, whatever the account endpoint does.**
+ * The session store — `src/infrastructure/session.ts`: credential, viewer, abilities, idle timeout,
+ * cross-tab sync and logout. The step-up, verification-mail and language-preference calls have
+ * their own specs beside this one.
  *
  * The store is real — `isAuth` derives from token AND viewer, and stubbing it would test the stub.
  * Only `@api` is mocked, at the network boundary.
@@ -17,8 +15,6 @@ import { aUser } from '../../support/unit/fixtures.ts';
 
 // `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
 // the real generated envelope types would refuse, and that looseness is the point of a mock.
-const updateAccountMock = vi.fn();
-
 /** Stub for the account API's `getAccount`. */
 const getAccountMock = vi.fn();
 
@@ -37,18 +33,6 @@ const logoutMock = vi.fn();
 /** Stub for logout-everywhere. */
 const logoutAllMock = vi.fn();
 
-/** Stub for re-authentication. */
-const reauthMock = vi.fn();
-
-/** Stub for the list of re-authentication methods. */
-const getReauthMethodsMock = vi.fn();
-
-/** Stub for sending a re-authentication code. */
-const sendReauthCodeMock = vi.fn();
-
-/** Stub for requesting an email verification. */
-const requestEmailVerificationMock = vi.fn();
-
 // Every arrow below forwards to a deliberately untyped `vi.fn()` (see above), so each return is
 // `any` — one disable per line rather than retyping the mocks against the full generated
 // envelope shapes these fixtures intentionally only build part of.
@@ -65,16 +49,6 @@ vi.mock('@api', () => ({
     logout: () => logoutMock(),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logoutAll: () => logoutAllMock(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    reauth: (body: unknown) => reauthMock(body),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    getReauthMethods: () => getReauthMethodsMock(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    sendReauthCode: (method: string) => sendReauthCodeMock(method),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    requestEmailVerification: () => requestEmailVerificationMock(),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
-    updateAccount: (body: { locale: string }) => updateAccountMock(body),
     // The idle clock is read once per signed-in stretch; a shopper's answer names no timeout.
     touchSession: () => Promise.resolve({ data: { lastActiveAt: new Date().toISOString() } })
 }));
@@ -93,7 +67,6 @@ const signedIn = () => {
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    updateAccountMock.mockResolvedValue(contractResponse(schemas.UpdateAccountResponse, aUser()));
     getMyAbilitiesMock.mockResolvedValue(
         contractResponse(schemas.GetMyAbilitiesResponse, {
             platform: [],
@@ -106,52 +79,6 @@ beforeEach(() => {
     );
     logoutMock.mockResolvedValue(undefined);
     logoutAllMock.mockResolvedValue(undefined);
-});
-
-describe('persistLocalePreference', () => {
-    it('writes the choice onto a signed-in visitor’s account', () => {
-        return signedIn()
-            .persistLocalePreference('it')
-            .then(() => {
-                expect(updateAccountMock).toHaveBeenCalledWith({ locale: 'it' });
-            });
-    });
-
-    /*
-     * The rule belongs to the store, not to the button: a guest has no record to write to, so the
-     * call is not made at all — an anonymous `PATCH /account` would answer 401 and teach nobody
-     * anything.
-     */
-    it('does not call the API for a guest', () => {
-        return useSessionStore()
-            .persistLocalePreference('it')
-            .then(() => {
-                expect(updateAccountMock).not.toHaveBeenCalled();
-            });
-    });
-
-    /* A token with no viewer is a session restored but not yet identified — not signed in. */
-    it('does not call the API for a token whose holder is still unknown', () => {
-        const store = useSessionStore();
-        store.setAccessToken('token');
-        return store.persistLocalePreference('it').then(() => {
-            expect(updateAccountMock).not.toHaveBeenCalled();
-        });
-    });
-
-    it('resolves rather than rejecting when the write fails', () => {
-        updateAccountMock.mockRejectedValue(new Error('account service down'));
-        return expect(signedIn().persistLocalePreference('it')).resolves.toBeUndefined();
-    });
-
-    /*
-     * Stated as its own case because it is the whole point of the seam: the switcher fires this
-     * without awaiting it, so a rejection that escaped would surface as an unhandled rejection in
-     * the console of a page that switched language perfectly well.
-     */
-    it('resolves with nothing on the happy path too, so the caller can ignore it', () => {
-        return expect(signedIn().persistLocalePreference('en')).resolves.toBeUndefined();
-    });
 });
 
 /** Every cookie this store touches, as a plain map — jsdom keeps `document.cookie` real. */
@@ -241,7 +168,7 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
 
             useSessionStore().setAccessToken('token', true);
 
-            expect(cookiesWritten().some((value) => value.includes('; Secure'))).toBe(true);
+            expect(cookiesWritten().some((value) => /; secure/i.test(value))).toBe(true);
         });
 
         it('is absent over plain http', () => {
@@ -249,7 +176,7 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
 
             useSessionStore().setAccessToken('token', true);
 
-            expect(cookiesWritten().some((value) => value.includes('; Secure'))).toBe(false);
+            expect(cookiesWritten().some((value) => /; secure/i.test(value))).toBe(false);
         });
     });
 });
@@ -773,81 +700,6 @@ describe('refreshToken', () => {
         return refreshing.then(() => {
             expect(store.accessToken).toBeUndefined();
         });
-    });
-});
-
-describe('reauth', () => {
-    it('adopts the rotated token and raises its own flag meanwhile', () => {
-        reauthMock.mockResolvedValue(contractResponse(schemas.ReauthResponse, { token: 'fresh' }));
-        const store = useSessionStore();
-
-        const pending = store.reauth({ method: 'password', password: 'hunter2' });
-        expect(store.reauthing).toBe(true);
-        expect(reauthMock).toHaveBeenCalledWith({ method: 'password', password: 'hunter2' });
-
-        return pending.then(() => {
-            expect(store.accessToken).toBe('fresh');
-            expect(store.reauthing).toBe(false);
-        });
-    });
-
-    it('lowers the flag and keeps the old token when the password is refused', () => {
-        reauthMock.mockRejectedValue(new Error('401'));
-        const store = signedIn();
-
-        return store
-            .reauth({ method: 'password', password: 'wrong' })
-            .catch(() => undefined)
-            .then(() => {
-                expect(store.reauthing).toBe(false);
-                expect(store.accessToken).toBe('token');
-            });
-    });
-});
-
-describe('reauthMethods and sendReauthCode', () => {
-    it('lists the methods the server offers this account', () => {
-        getReauthMethodsMock.mockResolvedValue(
-            contractResponse(schemas.GetReauthMethodsResponse, { methods: ['email'] })
-        );
-
-        return useSessionStore()
-            .reauthMethods()
-            .then((methods) => {
-                expect(methods).toEqual(['email']);
-            });
-    });
-
-    it("resolves the code send with the server's own cooldown", () => {
-        sendReauthCodeMock.mockResolvedValue(
-            contractResponse(schemas.SendReauthCodeResponse, {
-                method: 'email',
-                sentTo: 'a***b@example.com',
-                resendAfter: 30,
-                expiresAt: '2030-01-01T00:00:00.000Z'
-            })
-        );
-
-        return useSessionStore()
-            .sendReauthCode()
-            .then((resendAfter) => {
-                expect(sendReauthCodeMock).toHaveBeenCalledWith('email');
-                expect(resendAfter).toBe(30);
-            });
-    });
-});
-
-describe('requestEmailVerification', () => {
-    it("resolves with the server's own resend cooldown", () => {
-        requestEmailVerificationMock.mockResolvedValue(
-            contractResponse(schemas.RequestEmailVerificationResponse, { resendAfter: 60 })
-        );
-
-        return useSessionStore()
-            .requestEmailVerification()
-            .then((resendAfter) => {
-                expect(resendAfter).toBe(60);
-            });
     });
 });
 

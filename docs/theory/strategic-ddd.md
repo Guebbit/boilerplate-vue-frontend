@@ -13,7 +13,8 @@ re-implements them has two implementations of one rule.
 ::: tip This page mirrors the backend's
 `boilerplate-node-backend/docs/theory/strategic-ddd.md` states the same four ideas for
 the API. Read them together — the interesting parts are where the two **disagree**, and each of
-those disagreements is a fact about where the domain actually lives.
+those disagreements is a fact about where the domain actually lives. The client-capability half of
+§4 below is `boilerplate-node-backend/docs/theory/tactical-ddd.md` §2.
 :::
 
 ---
@@ -50,31 +51,35 @@ the domain, and anything that breaks is real coupling worth seeing. Covered in
 A module's imports are its dependency list. What they do not say is what KIND of reach each one is,
 and the kinds differ enormously in what they cost when the upstream moves:
 
-| Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                |
-| -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
-| `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `inventory → products` |
-| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → products`  |
-| `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`    |
+| Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                   |
+| -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
+| `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `stock-alerts → products` |
+| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `wishlist → cart`         |
+| `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`       |
 
 ### Where the map lives
 
-In the docblock at the top of each module's `module.ts`, in prose, next to the imports it describes.
-`cart` reaches four siblings, and its docblock says how it depends on each: three `published-language`
-vocabularies (`delivery`, `payments`, `account`) and one `customer-supplier` read (`products`). `published-language` is the cheapest relationship in
-the table and the one to copy: `delivery` publishes a component and no storage at all.
+On each module's docs page, under "The map": a Mermaid diagram plus one bullet per edge. That is the
+only place a kind is written. [Modules](../modules/index.md#the-whole-map) draws the overview, and
+`tests/cross-cutting/module-map.spec.ts` holds the overview and the pages to each other. A
+`module.ts` docblock points at its page and states no kind. `cart` reaches four siblings, and its
+page says how it depends on each: three `published-language` vocabularies (`delivery`, `payments`,
+`account`) and one `customer-supplier` call (`products`, whose cached catalogue it drops after each
+cart write). `published-language` is the cheapest relationship in the table and the one to copy:
+`delivery` publishes a component and no storage at all.
 
-This used to be a `dependsOn` field on the manifest — a typed array of `{ module, as, because }`
-edges — held to a 108-line cross-cutting spec that checked every edge was really imported, every
-import had a declared edge, and every `because` was a written sentence. Both are gone, and it is
-worth saying why, because the reasoning applies to any labelled-graph field someone is tempted to add
-back:
+### Why there is no dependency field on the manifest
 
-- **Nothing read it at runtime.** Not the router, not a store, not a guard. It was documentation
-  with a type annotation.
-- **It was self-reported.** Because it was not derived from real imports, it could only prove a
-  developer's annotations agreed with each other — the actual proof still needed a spec scanning
-  every `.ts` and `.vue` file for `@/modules/` strings.
-- **The enforcement that matters is structural and still there.** `eslint.config.ts` generates one
+A typed `dependsOn: { module, as, because }[]` on the manifest, checked by a spec against real
+imports, looks like the natural home. It is not, and the reasoning applies to any labelled-graph
+field someone is tempted to add:
+
+- **Nothing would read it at runtime.** Not the router, not a store, not a guard. It would be
+  documentation with a type annotation.
+- **It would be self-reported.** Because it is not derived from real imports, it could only prove a
+  developer's annotations agree with each other — the actual proof still needs a spec scanning every
+  `.ts` and `.vue` file for `@/modules/` strings.
+- **The enforcement that matters is structural.** `eslint.config.ts` generates one
   `eslint-plugin-boundaries` policy per module from a hand-maintained `MODULE_EDGES` map: a module
   may reach only the siblings that map names for it — and only through their `index.ts` barrel,
   never an internal file — checked at the resolved import on every `npm run lint`, dynamic
@@ -105,10 +110,9 @@ glossary would have to pick one and be wrong in the other place.
 Writing the client's definition down is also the cheapest guard there is against someone deciding
 the store should compute a total.
 
-::: tip It used to be a manifest field
-Each module declared a `language: {}` map. It was removed: nothing read it, nothing checked it was
-true, and it sat in `module.ts` rather than beside the store or component each entry described. The
-prose moved to the glossary page.
+::: tip Why the language is not a manifest field
+A `language: {}` map in `module.ts` would be read by nothing, checked by nothing, and sit away from
+the store or component each entry describes. The glossary sits beside the meaning instead.
 :::
 
 ## 4. Subdomain distillation — where to spend effort
@@ -116,26 +120,31 @@ prose moved to the glossary page.
 DDD's own advice is the part most often skipped: tactical patterns belong in the **core** domain,
 and everything else should use the simplest thing that works.
 
-| Subdomain    | Meaning                                                         | Here                                                     |
-| ------------ | --------------------------------------------------------------- | -------------------------------------------------------- |
-| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                             |
-| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`, `stats` |
-| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `admin`, `feedback`, `realtime`      |
+| Subdomain    | Meaning                                                         | Here                                                                                                 |
+| ------------ | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                                                                         |
+| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `wishlist` |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `feedback`, `locales`, `observability`, `users`, `webhooks`                   |
+
+`example` is not classified: it is the template a new domain is copied from. Its `domain/` holds
+one reading rule, `publicationOf`, the smallest case of a client rule that reads an answer and
+never makes one; keep the pattern, delete the file. Its controls are the minimal server-decided
+case: the moves, Edit and Delete all come from `Example.actions`.
+
+The same split is drawn as a map in [Modules](../modules/index.md#the-whole-map).
 
 The rule of thumb that follows: **a `generic` module should not carry a `domain/` folder.** A
 pure-rules layer inside authentication or i18n is effort spent on the part of the client that should
 stay replaceable.
 
-This used to be a required `subdomain` field on the manifest, held to that rule by a cross-cutting
-spec. Both are gone: nothing read the field at runtime, and the check it enabled — refusing a
-`domain/` folder inside a module classified `generic` — was a test acting on a label nothing else
-ever consulted. The classification above is still true and still useful to a reader deciding where
-to put a new rule; it just is not proven by a passing test any more, the same way `core` never was.
+There is no `subdomain` field on the manifest, and no spec holding it. Nothing would read it at runtime, and the one check it enables — refusing `domain/` inside a `generic` module — would be a test acting on a label nothing else consults. The table above is guidance for a reader deciding where a rule goes; no test proves it, the same as `core`.
 
 There is deliberately **no** rule, enforced or otherwise, that `core` must have a `domain/`. `cart`
-has one because quantity clamping is a genuine client-side rule. `products` and `orders` are core and
-have none — prices and status transitions are the server's to decide, and a second implementation
-here would be drift, not thoroughness.
+has one because quantity clamping is a genuine client-side rule. `products` and `orders` have one
+too, and what is in it is the point: reading answers, never making them. `shelfStateOf` ranks the
+flags the API already sent into one badge; `timeline.ts` words an event the server recorded;
+`reorder.ts` diffs the cart the server returned; `publicationOf` (in `example`) reads a status and a first-publish date into one sentence. Prices and status transitions stay the server's to
+decide — a second implementation here would be drift, not thoroughness.
 
 ::: tip These values are this project's, not a rule for the next one
 A boilerplate has no core domain. The table above is this shop's answer, and the first thing a real
@@ -154,12 +163,11 @@ in this table is an argument for building an aggregate.
 has to know whether to show a cancel button, which statuses to offer, whether to render a card form
 — and the shortest path to each answer is a comparison written here.
 
-Three of them existed. A status dropdown listed every value of the enum, a cancel button tested for
-`pending` or `paid`, a pay form tested for `pending`. All three agreed with the API on the day they
-were written, and nothing could have told us when they stopped.
-
-They are gone, and what replaced them is not a better comparison — it is no comparison. Every read
-of an order or a payment carries an `actions` block the server computed for that caller:
+Three shapes are tempting: a status dropdown listing every value of the enum, a cancel button
+testing for `pending` or `paid`, a pay form testing for `pending`. Each agrees with the API on the
+day it is written, and nothing tells you when it stops. The answer is not a better comparison — it
+is no comparison. Every read of an order or a payment carries an `actions` block the server computed
+for that caller:
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
@@ -173,28 +181,36 @@ flowchart LR
     class API src;
 ```
 
-A control is enabled when the server says so and disabled otherwise. The rules can change on the
+A control is enabled when the server says so and disabled otherwise.
+An operation's description that states the rule in prose does not count: the client would still hold a copy.
+When the flag a control needs is missing, the fix is a flag on the backend's `*Actions`, not a mirror here.
+
+The rules can change on the
 API — a new status, a different role boundary, a cancel window that closes earlier — and this
 application follows without being edited, because it never held an opinion to update.
 
 The test for whether a new screen is doing this right: **if you can delete the API and still say
 what the button would do, the rule is in the wrong repository.**
 
+A permission alone (`session.can`) may gate a control (see Security); a state rule may not.
+
 ## 5. Published language — the barrel, held to a size
 
 **A module publishes exactly what a sibling imports. No sibling, no barrel.**
 
-Applying that removed whole barrels (`admin`, `orders`, `realtime`, and later `wishlist`, once the
-product page's heart became a contribution to a slot instead of an import) and the stores nobody had
-ever imported.
+So `orders` and `wishlist` publish no barrel: no sibling imports them, and `wishlist`'s heart reaches
+the product page through a slot contribution, not an import.
 
-What survived says something specific about a client. The modules that publish a **store** are the
-ones siblings read or ask to change state: `cart` (asked to refetch by `wishlist`, to refill by
-`orders`) and `products` (read by `cart`, `wishlist` and `inventory`, through `useProductLines` and
-its store). The ones that publish a **component** or a **schema** are answering a narrower question,
-and are the better shape — `PaymentPanel` renders a payment without its caller learning what a
-provider is. `delivery` publishes two components and deliberately not its store, because offering
-both would mean offering a wider way to do the same thing, and the wider one always wins.
+What remains says something specific about a client. The modules that publish **state access** are
+the ones siblings read or ask to change state: `cart` publishes its store (asked to refetch by
+`wishlist`, to refill by `orders`), and `products` publishes narrow handles on its store — read by
+`cart`, `wishlist`, `inventory` and `stock-alerts` through `useProductLines` and `shelfStateOf`, and
+asked to drop its cached catalogue by `cart` and `inventory` through `invalidateProductsCache`. The
+ones that publish a **component** or a **schema** are answering a narrower question, and are the
+better shape — `PaymentPanel` renders a payment without its caller learning what a provider is.
+`delivery` publishes four components and one read-only composable (`usePreorderSummaries`, for
+`inventory`'s preorder board) and deliberately not its store, because offering both would mean
+offering a wider way to do the same thing, and the wider one always wins.
 
 ### Why the backend's rule is the opposite
 

@@ -15,23 +15,19 @@ export default {
  * filters are local state, not the store's: this is one tab of a page, and a second list on the
  * same screen must not share them. A row opens the payment's drawer.
  */
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { routerLinkI18n } from '@/i18n/router-link.ts';
-import { linkIfRouted } from '@/kernel/route-link.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import { endOfDayInstant, startOfDayInstant } from '@/infrastructure/utils/day-range.ts';
 import { sortFieldsOf, sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import { PaymentDisplayStatus, PaymentMethodKind, PaymentSortItem } from '@/types/enums.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
+import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type {
     Payment,
@@ -39,6 +35,9 @@ import type {
     PaymentMethodKind as TMethod
 } from '@types';
 import { usePaymentsStore } from '../store.ts';
+import { usePagedTable } from '../composables/use-paged-table.ts';
+import { useOrderLink } from '@/kernel/order-link.ts';
+import { useRowSelect } from '../composables/use-row-select.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 
 /**
@@ -52,19 +51,9 @@ const emit = defineEmits<
 >();
 
 /**
- * Translation function and toast dispatcher.
+ * Translation function.
  */
 const { t } = useI18n();
-
-/**
- * Toast dispatcher: a failed read is ambient — the table just did not refresh.
- */
-const { addMessage } = useNotificationsStore();
-
-/**
- * The router, for the order link's `hasRoute` guard (`orders` is not an edge of this module).
- */
-const router = useRouter();
 
 /**
  * The store: the page of payments, its total and the loading flag.
@@ -75,11 +64,6 @@ const store = usePaymentsStore();
  * The reactive slice of the store this table renders.
  */
 const { paymentsPage, paymentsTotal, loading } = storeToRefs(store);
-
-/**
- * Rows per page.
- */
-const PAGE_SIZE = 10;
 
 /**
  * What the form edits. Days for the four date fields, text for the two amounts so an empty box is
@@ -106,16 +90,6 @@ interface PaymentFilters {
 const filters = ref<PaymentFilters>({});
 
 /**
- * The page shown, 1-based.
- */
-const page = ref(1);
-
-/**
- * How many pages the current filters span.
- */
-const pageTotal = computed(() => Math.ceil(paymentsTotal.value / PAGE_SIZE));
-
-/**
  * The columns the API can order by, from the contract's own enum.
  */
 const sortableKeys = sortFieldsOf(PaymentSortItem);
@@ -133,69 +107,42 @@ const amountOf = (text: string | undefined): number | undefined => {
 };
 
 /**
- * Loads the page the current filters and page number name.
- *
- * @returns A promise settling once the page loaded or the failure was toasted.
+ * The page shown, the page count and the read of the page the current filters name; it runs on
+ * mount and on every page change.
  */
-const load = () =>
-    store
-        .fetchPaymentsPage({
-            page: page.value,
-            pageSize: PAGE_SIZE,
-            sort: sortTokensOf(filters.value.sort, PaymentSortItem),
-            displayStatus: filters.value.displayStatus,
-            method: filters.value.method,
-            provider: filters.value.provider?.trim() || undefined,
-            createdFrom: startOfDayInstant(filters.value.createdFrom),
-            createdTo: endOfDayInstant(filters.value.createdTo),
-            receivedFrom: startOfDayInstant(filters.value.receivedFrom),
-            receivedTo: endOfDayInstant(filters.value.receivedTo),
-            amountMin: amountOf(filters.value.amountMin),
-            amountMax: amountOf(filters.value.amountMax),
-            orderId: filters.value.orderId?.trim() || undefined,
-            reference: filters.value.reference?.trim() || undefined
-        })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+const { page, pageTotal, load } = usePagedTable(paymentsTotal, (pageNumber, pageSize) =>
+    store.fetchPaymentsPage({
+        page: pageNumber,
+        pageSize,
+        sort: sortTokensOf(filters.value.sort, PaymentSortItem),
+        displayStatus: filters.value.displayStatus,
+        method: filters.value.method,
+        provider: filters.value.provider?.trim() || undefined,
+        createdFrom: startOfDayInstant(filters.value.createdFrom),
+        createdTo: endOfDayInstant(filters.value.createdTo),
+        receivedFrom: startOfDayInstant(filters.value.receivedFrom),
+        receivedTo: endOfDayInstant(filters.value.receivedTo),
+        amountMin: amountOf(filters.value.amountMin),
+        amountMax: amountOf(filters.value.amountMax),
+        orderId: filters.value.orderId?.trim() || undefined,
+        reference: filters.value.reference?.trim() || undefined
+    })
+);
 
 /**
- * Applies the filters from the first page.
+ * Apply the filters from the first page, or clear them all and reload.
  */
-const handleSearch = () => {
-    page.value = 1;
-    return load();
-};
-
-/**
- * Clears every filter and reloads the first page.
- */
-const handleReset = () => {
-    filters.value = {};
-    return handleSearch();
-};
+const { handleSearch, handleReset } = useListSearch({ filters, page, search: load });
 
 /**
  * The header's sort state, kept in `filters.sort`; a click restarts from page 1.
  */
 const { sortBy } = useServerSort({ filters, apply: handleSearch });
 
-watch(page, () => void load());
-
 /**
- * The row the visitor picked. A pick opens the drawer and is then forgotten, so the same row can
- * be opened again (a held selection would not change, and a watcher would not fire).
+ * The row the visitor picked: opens the drawer, then is forgotten so it can be opened again.
  */
-const selectedId = ref<string>();
-
-watch(selectedId, (id) => {
-    if (id === undefined) return;
-    const picked = paymentsPage.value.find((payment) => payment.id === id);
-    selectedId.value = undefined;
-    if (picked) emit('select', picked);
-});
-
-onMounted(() => {
-    void load();
-});
+const selectedId = useRowSelect(paymentsPage, (payment) => emit('select', payment));
 
 /**
  * The display-status select: every status plus "any" (value `null`, so Vuetify does not post the
@@ -256,13 +203,8 @@ const headers = computed<CoreDataTableHeader<Payment>[]>(() => [
 
 /**
  * An order's page, or nothing when this build ships no `orders` module.
- *
- * @param orderId - The order.
  */
-const orderLink = (orderId: string) => {
-    const target = linkIfRouted(router, 'OrderTarget', { id: orderId });
-    return target ? routerLinkI18n(target) : undefined;
-};
+const orderLink = useOrderLink();
 </script>
 
 <template>
@@ -351,15 +293,7 @@ const orderLink = (orderId: string) => {
                         hide-details
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" data-test="payments-search-submit">
-                        <Search :size="16" class="mr-1" aria-hidden="true" />
-                        {{ t('generic.search') }}
-                    </v-btn>
-                    <v-btn variant="tonal" data-test="payments-search-reset" @click="handleReset">
-                        {{ t('generic.reset') }}
-                    </v-btn>
-                </div>
+                <ListSearchActions hook-prefix="payments" :loading="loading" @reset="handleReset" />
             </form>
         </v-card>
 

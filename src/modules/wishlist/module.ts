@@ -12,14 +12,12 @@ import routes from './routes';
 /**
  * The visitor's saved products.
  *
- * Two arrows go out. `cart` is `conformist`: the move-to-cart is a WISHLIST endpoint, and the cart
-store is then asked to refetch itself so the header's badge cannot lag a write this module
-initiated — the cart is never asked to write. `products` is `customer-supplier`: the page reads
-its saved lines' titles from the products dictionary (`useProductLines`). The reverse arrows do
-not exist: the product page's heart is contributed to the `product-actions` slot by this
-manifest, so `products` never imports the wishlist.
-
-A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
+ * The product page's heart is contributed to the `product-actions` slot by this manifest, so
+ * `products` never imports the wishlist.
+ *
+ * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
+ *
+ * Context map: `docs/modules/wishlist.md` § "The map".
  */
 export default {
     name: 'wishlist',

@@ -16,8 +16,9 @@
  *
  * Three rules, and the third is what makes the first two stick:
  *
- *   1. Every `useStructureFormValidation(...)` call supplies `revalidateOn`, `invalidFieldSelector`
- *      and `onInvalid` — the three answers a call site would otherwise have to re-decide.
+ *   1. Every `useStructureFormValidation(...)` call supplies `revalidateOn` and `onInvalid` — the two
+ *      answers a call site would otherwise have to re-decide. The field to focus is found by
+ *      `aria-invalid`, which `fieldErrorProps` binds on every field.
  *   2. A view does not keep its own "should I show errors yet" flag. The toolkit returns
  *      `showFormErrors`; a second one beside it can only disagree with it.
  *   3. A page form (not a dialog) hands it a `formElement`, so a failed submit has something to
@@ -126,15 +127,11 @@ const optionKeysOf = (call: string): string[] => {
 };
 
 describe('one form idiom', () => {
-    it('gives every form the same three toolkit answers', () => {
+    it('gives every form the same two toolkit answers', () => {
         const incomplete = formComponents().filter((file) =>
             formValidationCallsOf(sourceOf(file)).some((call) => {
                 const keys = optionKeysOf(call);
-                return (
-                    !keys.includes('revalidateOn') ||
-                    !keys.includes('invalidFieldSelector') ||
-                    !keys.includes('onInvalid')
-                );
+                return !keys.includes('revalidateOn') || !keys.includes('onInvalid');
             })
         );
 
@@ -196,7 +193,7 @@ describe('optionKeysOf — real keys, not a substring match', () => {
         const call = `useStructureFormValidation(data, schema, {
             // revalidateOn: locale, — deliberately left out for now
             label: 'no revalidateOn here either',
-            invalidFieldSelector: '[aria-invalid]',
+            formElement,
             onInvalid: noop
         })`;
 

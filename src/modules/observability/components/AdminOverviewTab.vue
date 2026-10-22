@@ -86,6 +86,30 @@ const dependencyStatus = (state?: string): AdminKpiCard['status'] => {
 };
 
 /**
+ * The backing services the health payload reports, in the order their cards appear. Each key is
+ * also its card's title key, `admin-page.kpi-<key>`.
+ */
+const DEPENDENCY_KEYS = [
+    'database',
+    'cache',
+    'queue'
+] as const satisfies readonly (keyof ObservabilityHealth['dependencies'])[];
+
+/**
+ * One KPI card per backing service, built from {@link DEPENDENCY_KEYS}.
+ */
+const dependencyCards = computed((): AdminKpiCard[] =>
+    DEPENDENCY_KEYS.map((key) => {
+        const state = props.health?.dependencies[key].status;
+        return {
+            title: t(`admin-page.kpi-${key}`),
+            value: state ?? EMPTY_VALUE,
+            status: dependencyStatus(state)
+        };
+    })
+);
+
+/**
  * Status color driver of the error cards.
  *
  * @returns `error` above a 10% error rate, `warn` above 2%, `ok` below, and
@@ -112,21 +136,7 @@ const kpiCards = computed<AdminKpiCard[]>(() => [
         hint: props.healthError ?? undefined,
         status: healthStatus.value
     },
-    {
-        title: t('admin-page.kpi-database'),
-        value: props.health?.dependencies.database.status ?? EMPTY_VALUE,
-        status: dependencyStatus(props.health?.dependencies.database.status)
-    },
-    {
-        title: t('admin-page.kpi-cache'),
-        value: props.health?.dependencies.cache.status ?? EMPTY_VALUE,
-        status: dependencyStatus(props.health?.dependencies.cache.status)
-    },
-    {
-        title: t('admin-page.kpi-queue'),
-        value: props.health?.dependencies.queue.status ?? EMPTY_VALUE,
-        status: dependencyStatus(props.health?.dependencies.queue.status)
-    },
+    ...dependencyCards.value,
     {
         title: t('admin-page.kpi-uptime'),
         value: formatUptime(props.health?.uptimeSeconds ?? props.metrics?.process.uptimeSeconds),
@@ -229,7 +239,7 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
                 <RefreshCw :size="16" class="mr-1" aria-hidden="true" />
                 {{ props.loading ? t('generic.loading-state') : t('admin-page.button-refresh') }}
             </v-btn>
-            <span v-if="props.health?.timestamp" class="text-sm opacity-70">
+            <span v-if="props.health?.timestamp" class="text-sm opacity-muted">
                 {{ t('admin-page.label-last-updated') }}:
                 {{ formatTime(props.health.timestamp) }}
             </span>

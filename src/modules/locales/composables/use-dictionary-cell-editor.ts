@@ -24,6 +24,20 @@ const SAVED_MARK_MS = 1500;
 const cellId = (tag: string, key: string) => `${tag}|${key}`;
 
 /**
+ * The nearest ancestor that scrolls sideways, found by its computed style so no component class is
+ * involved.
+ *
+ * @param element - Where to start looking, itself excluded.
+ * @returns The scroller, or `null` when nothing above scrolls.
+ */
+const horizontalScrollerOf = (element: HTMLElement): HTMLElement | null => {
+    let node = element.parentElement;
+    while (node && !['auto', 'scroll'].includes(getComputedStyle(node).overflowX))
+        node = node.parentElement;
+    return node;
+};
+
+/**
  * Per-cell writes on the dictionary board: the draft that lets a blur tell "changed" from
  * "clicked through", the save/clear/enter handlers, and the transient saved-mark and error state
  * a cell shows for its own last write.
@@ -108,7 +122,9 @@ export function useDictionaryCellEditor(
      * The `<input>` a cell event came from, whether the key landed on it or its clear button.
      */
     const inputOf = (event: Event): HTMLElement | null =>
-        (event.target as HTMLElement | null)?.closest('.v-field')?.querySelector('input') ?? null;
+        (event.target as HTMLElement | null)
+            ?.closest('[data-test=dictionary-cell]')
+            ?.querySelector('input') ?? null;
 
     /**
      * What every cell write ends with: the draft gone, the column reloaded, a failure on the cell.
@@ -234,13 +250,33 @@ export function useDictionaryCellEditor(
      */
     const cellLabel = (language: LocaleCapability, key: string) => {
         const baseline = baselineAt(language.tag, key);
-        return baseline === undefined || entryAt(language.tag, key)
-            ? t('locales-dictionary-page.cell-label', { key, language: language.nativeName })
-            : t('locales-dictionary-page.cell-label-baseline', {
-                  key,
-                  language: language.nativeName,
-                  baseline
-              });
+        if (entryAt(language.tag, key))
+            return t('locales-dictionary-page.cell-label', { key, language: language.nativeName });
+        if (baseline === undefined)
+            return t('locales-dictionary-page.cell-label-missing', {
+                key,
+                language: language.nativeName
+            });
+        return t('locales-dictionary-page.cell-label-baseline', {
+            key,
+            language: language.nativeName,
+            baseline
+        });
+    };
+
+    /**
+     * Keeps a focused field clear of the pinned key column: tabbing sideways scrolls the board's
+     * scroller, and a field that lands under the key column cannot be seen or reached. Scrolls back
+     * by exactly the overlap.
+     */
+    const handleBoardFocusin = (event: FocusEvent) => {
+        const field = event.target;
+        const keyCell = boardElement.value
+            ?.querySelector('[data-test=dictionary-key]')
+            ?.closest('td');
+        if (!(field instanceof HTMLElement) || !keyCell) return;
+        const overlap = keyCell.getBoundingClientRect().right - field.getBoundingClientRect().left;
+        if (overlap > 0) horizontalScrollerOf(field)?.scrollBy({ left: -overlap });
     };
 
     return {
@@ -253,6 +289,7 @@ export function useDictionaryCellEditor(
         handleCellClear,
         handleCellEnter,
         handleCellInput,
+        handleBoardFocusin,
         cellLabel
     };
 }

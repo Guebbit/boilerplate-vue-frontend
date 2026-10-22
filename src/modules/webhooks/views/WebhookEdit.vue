@@ -16,6 +16,7 @@ export default {
  * on `useStructureFormValidation`. No secret-ring actions here — those live on the detail page,
  * same split `users` keeps its irreversible/audited actions off the plain field-edit form.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, onMounted, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -27,15 +28,14 @@ import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.
 import { useWebhooksStore } from '../store';
 import { webhookEditSchema } from '../schemas.ts';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
-import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { EMPTY_VALUE, formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
@@ -97,7 +97,6 @@ const {
 } = useStructureFormValidation<WebhookEditForm>({}, webhookEditSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -184,6 +183,23 @@ const submitForm = () => {
  * Selects and hydrates the subscription whenever the route id changes.
  */
 watchSubscription(() => id);
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    { label: t('webhook-target-page.label-id'), value: id, icon: Hash },
+    {
+        label: t('webhook-target-page.label-created-at'),
+        value: formatDateTime(currentSubscription.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('webhook-target-page.label-updated-at'),
+        value: formatDateTime(currentSubscription.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
@@ -195,12 +211,7 @@ watchSubscription(() => id);
                 </ItemDetailHero>
             </template>
 
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('webhook-edit-page.page-title') }}</p>
-                </div>
-
+            <CardDetail :title="t('generic.details')" :subtitle="t('webhook-edit-page.page-title')">
                 <form
                     ref="formElement"
                     novalidate
@@ -216,14 +227,14 @@ watchSubscription(() => id);
                             type="url"
                             data-test="webhook-url"
                             :label="t('webhook-edit-page.label-url')"
-                            :error-messages="showFormErrors ? formErrors.url : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.url : [])"
                         />
                         <v-text-field
                             v-model="form.description"
                             type="text"
                             data-test="webhook-description"
                             :label="t('webhook-edit-page.label-description')"
-                            :error-messages="showFormErrors ? formErrors.description : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.description : [])"
                         />
                         <v-select
                             v-model="form.eventTypes"
@@ -235,7 +246,7 @@ watchSubscription(() => id);
                             item-value="name"
                             :loading="loadingEventCatalogue"
                             :label="t('webhook-edit-page.label-event-types')"
-                            :error-messages="showFormErrors ? formErrors.eventTypes : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.eventTypes : [])"
                         />
                         <v-switch
                             v-model="form.enabled"
@@ -265,26 +276,14 @@ watchSubscription(() => id);
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><Webhook :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        :icon="Hash"
-                    />
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-created-at')"
-                        :value="formatDateTime(currentSubscription?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-updated-at')"
-                        :value="formatDateTime(currentSubscription?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Webhook :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

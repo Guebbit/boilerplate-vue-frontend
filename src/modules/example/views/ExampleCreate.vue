@@ -11,10 +11,12 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The create screen: a form built on `useStructureFormValidation` inside the shared `FormCard`.
- * Validation is the Zod schema, a server refusal that names a field lands on that field, and any
- * other failure blocks the form in place; success toasts and opens the new example.
+ * In any module: a create screen is a form on `useStructureFormValidation` inside the shared
+ * `FormCard`; a refusal naming a field lands on it, any other blocks the form in place.
+ * Here: title and body; a retried submit reuses its `Idempotency-Key` (the store owns it).
+ * See: docs/theory/request-flow.md
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -23,10 +25,9 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useExampleStore } from '../store';
-import { exampleCreateSchema } from '../schemas.ts';
+import { exampleFormSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 
@@ -66,13 +67,12 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<{ title?: string; body?: string }>({}, exampleCreateSchema, {
+} = useStructureFormValidation<{ title?: string; body?: string }>({}, exampleFormSchema, {
     // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
     // failed submit actually needs it, not while the card is still mounting.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
     formElement: () => card.value?.formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -138,14 +138,14 @@ const submitForm = () => {
                 type="text"
                 data-test="example-title"
                 :label="t('example-create-page.label-title')"
-                :error-messages="showErrors ? formErrors.title : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.title : [])"
                 class="mb-2"
             />
             <v-textarea
                 v-model="form.body"
                 data-test="example-body"
                 :label="t('example-create-page.label-body')"
-                :error-messages="showErrors ? formErrors.body : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.body : [])"
                 rows="6"
                 class="mb-2"
             />

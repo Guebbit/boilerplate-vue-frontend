@@ -6,18 +6,18 @@
 **Breaks if you change** — nothing outside this folder. It is designed to be deleted.
 :::
 
-| Fact                    | This module                                                                                  |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain.               |
-| **Screens**             | 5 — `WebhooksList` · `WebhookCreate` · `WebhookTarget` · `WebhookEdit` · `WebhookDeliveries` |
-| **Store**               | `webhooks`                                                                                   |
-| **Menu entries**        | `WebhooksList` · `WebhookDeliveries`                                                         |
-| **API calls**           | 9                                                                                            |
-| **Depends on**          | _nothing_                                                                                    |
-| **Depended on by**      | _nothing_                                                                                    |
-| **Languages**           | `en` · `it`                                                                                  |
-| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                           |
-| **Backend counterpart** | `webhooks` in `boilerplate-node-backend`                                                     |
+| Fact                    | This module                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Subdomain**           | `generic` — delivery, retries and signing are a solved problem; the events themselves belong to the modules that publish them. |
+| **Screens**             | 5 — `WebhooksList` · `WebhookCreate` · `WebhookTarget` · `WebhookEdit` · `WebhookDeliveries`                                   |
+| **Store**               | `webhooks`                                                                                                                     |
+| **Menu entries**        | `WebhooksList` · `WebhookDeliveries`                                                                                           |
+| **API calls**           | 9                                                                                                                              |
+| **Depends on**          | _nothing_                                                                                                                      |
+| **Depended on by**      | _nothing_                                                                                                                      |
+| **Languages**           | `en` · `it`                                                                                                                    |
+| **Publishes**           | _nothing_ — no barrel, so no sibling may import it                                                                             |
+| **Backend counterpart** | `webhooks` in `boilerplate-node-backend`                                                                                       |
 
 ## The map
 

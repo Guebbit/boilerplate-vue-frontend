@@ -20,7 +20,7 @@ export interface Translator {
  * build: one the API added at runtime. The manifest's own {@link localeNativeNames} is tried next
  * (the language's name for itself, e.g. "Español"), then the browser's own `Intl.DisplayNames`
  * (best-effort, in the CURRENT viewing language), and the bare code only if both come up empty —
- * the raw dictionary key this used to fall through to.
+ * never the raw dictionary key.
  *
  * @param code - Locale tag to label, e.g. `es`.
  * @param viewingLocale - The locale the label itself should read in, for `Intl.DisplayNames`.

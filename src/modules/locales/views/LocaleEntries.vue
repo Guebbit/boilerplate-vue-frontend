@@ -392,7 +392,7 @@ const handleExport = () => {
             <div v-if="capability" class="flex flex-wrap items-baseline gap-2">
                 <span class="font-mono text-lg font-semibold">{{ capability.tag }}</span>
                 <span :dir="capability.direction">{{ capability.nativeName }}</span>
-                <span class="text-sm opacity-70" role="status">
+                <span class="text-sm opacity-muted" role="status">
                     {{ t('locale-entries-page.meta-entries', { count: capability.entryCount }) }} ·
                     {{ t('locale-entries-page.meta-revision', { revision: capability.revision }) }}
                 </span>
@@ -496,17 +496,18 @@ const handleExport = () => {
                 </v-chip>
             </template>
 
+            <template v-slot:[`header.key`]="{ column }">
+                <div class="flex flex-col">
+                    <span>{{ column.title }}</span>
+                    <!-- Visible, not a tooltip: a finger cannot hover, a reader gets it in the header. -->
+                    <span class="text-xs font-normal">
+                        {{ t('locale-entries-page.key-immutable') }}
+                    </span>
+                </div>
+            </template>
+
             <template v-slot:[`item.key`]="{ item }">
-                <!--
-                    Same native-title rule as the board's app chips; the visually-hidden
-                    sibling repeats it for the reader, because a title alone is mouse-only. Not
-                    an `aria-label`: a bare span has no role, and axe (`aria-prohibited-attr`)
-                    rightly refuses to let one carry a name.
-                -->
-                <span class="font-mono text-sm" :title="t('locale-entries-page.key-immutable')">
-                    {{ item.key }}
-                </span>
-                <span class="sr-only">{{ t('locale-entries-page.key-immutable') }}</span>
+                <span class="font-mono text-sm">{{ item.key }}</span>
             </template>
 
             <template v-slot:[`item.value`]="{ item }">

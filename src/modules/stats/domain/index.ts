@@ -8,4 +8,3 @@ export * from './csv.ts';
 export * from './figures.ts';
 export * from './mermaid.ts';
 export * from './period.ts';
-export * from './series.ts';

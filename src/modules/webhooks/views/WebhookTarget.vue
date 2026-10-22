@@ -18,7 +18,6 @@ export default {
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useFullscreenDialog } from '@/ui/composables/use-fullscreen-dialog.ts';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -31,10 +30,10 @@ import { Ban, Calendar, Clock, FileText, Hash, Link, Webhook, Zap } from 'lucide
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
-import CardInfo from '@/ui/organisms/CardInfo.vue';
+import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
+import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
 import { vFocusableScroll } from '@/ui/directives/focusable-scroll';
 import {
     formatText,
@@ -47,11 +46,6 @@ import {
  * Translations helper.
  */
 const { t } = useI18n();
-
-/**
- * Whether the dialog fills the screen: it does on a phone, see `useFullscreenDialog`.
- */
-const fullscreen = useFullscreenDialog();
 
 /**
  * Router instance, for the navigation once the rotate-secret reveal modal is dismissed.
@@ -122,11 +116,6 @@ const subscriptionStatus = computed(() =>
  * `rotateSecret`).
  */
 const revealedSecret = ref<string>();
-
-/**
- * Hands focus back to the control that opened the one-time secret dialog once it closes.
- */
-useReturnFocus(() => revealedSecret.value !== undefined);
 
 /**
  * Whether a rotate/remove/delete call is in flight, disabling the secret-ring buttons while one
@@ -231,25 +220,32 @@ const handleDelete = () => {
                 .catch((error: unknown) => reportDeleteError(error));
         });
 };
+
+/**
+ * The rows of the aside summary card: identity and timestamps, formatted for display.
+ */
+const asideFields = computed<DetailFieldRow[]>(() => [
+    {
+        label: t('webhook-target-page.label-created-at'),
+        value: formatDateTime(currentSubscription.value?.createdAt),
+        icon: Calendar
+    },
+    {
+        label: t('webhook-target-page.label-updated-at'),
+        value: formatDateTime(currentSubscription.value?.updatedAt),
+        icon: Clock
+    }
+]);
 </script>
 
 <template>
     <div id="webhook-target">
-        <v-dialog
-            :fullscreen="fullscreen"
-            :model-value="!!revealedSecret"
-            persistent
-            max-width="640"
-            aria-labelledby="secret-reveal-title"
-        >
-            <SecretRevealModal
-                v-if="revealedSecret"
-                :secret="revealedSecret"
-                :title="t('webhook-secret-modal.title')"
-                :intro="t('webhook-secret-modal.intro')"
-                @done="revealedSecret = undefined"
-            />
-        </v-dialog>
+        <SecretRevealModal
+            :secret="revealedSecret"
+            :title="t('webhook-secret-modal.title')"
+            :intro="t('webhook-secret-modal.intro')"
+            @done="revealedSecret = undefined"
+        />
 
         <ItemDetailLayout accent="secondary">
             <template #hero>
@@ -275,9 +271,7 @@ const handleDelete = () => {
                 />
             </template>
 
-            <CardDetail>
-                <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>
-
+            <CardDetail :title="t('generic.details')">
                 <div v-if="currentSubscription" class="grid gap-4 sm:grid-cols-2">
                     <ItemDetailField
                         :label="t('webhook-target-page.label-id')"
@@ -392,21 +386,14 @@ const handleDelete = () => {
             </CardDetail>
 
             <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" accent="secondary">
-                        <template #icon><Webhook :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-created-at')"
-                        :value="formatDateTime(currentSubscription?.createdAt)"
-                        :icon="Calendar"
-                    />
-                    <ItemDetailField
-                        :label="t('webhook-target-page.label-updated-at')"
-                        :value="formatDateTime(currentSubscription?.updatedAt)"
-                        :icon="Clock"
-                    />
-                </CardDetail>
+                <RecordAsideCard
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    accent="secondary"
+                    :fields="asideFields"
+                >
+                    <template #icon><Webhook :size="28" /></template>
+                </RecordAsideCard>
             </template>
 
             <template #actions>

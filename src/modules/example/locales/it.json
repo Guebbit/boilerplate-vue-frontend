@@ -24,7 +24,6 @@
         "column-title": "Titolo",
         "column-status": "Stato",
         "column-owner": "Proprietario",
-        "column-published-at": "Pubblicato",
         "column-created-at": "Creato",
         "column-actions": "Azioni",
         "filter-text": "Cerca",
@@ -38,7 +37,8 @@
         "button-delete": "Elimina",
         "button-delete-named": "Elimina l'esempio {title}",
         "confirm-delete": "Eliminare l'esempio \"{title}\"? L'operazione non si può annullare.",
-        "success-delete": "Esempio eliminato"
+        "success-delete": "Esempio eliminato",
+        "column-publication": "Pubblicazione"
     },
     "example-create-page": {
         "page-title": "Nuovo esempio",
@@ -56,7 +56,6 @@
         "label-status": "Stato",
         "label-cover": "Copertina",
         "cover-alt": "Immagine di copertina di {title}",
-        "label-published-at": "Pubblicato il",
         "label-created-at": "Creato il",
         "label-updated-at": "Aggiornato il",
         "section-status": "Stato",
@@ -65,20 +64,26 @@
         "button-delete": "Elimina",
         "confirm-delete": "Eliminare l'esempio \"{title}\"? L'operazione non si può annullare.",
         "success-delete": "Esempio eliminato",
-        "success-status": "Stato cambiato"
+        "success-status": "Stato cambiato",
+        "label-publication": "Pubblicazione"
     },
     "example-edit-page": {
         "page-title": "Modifica esempio",
         "label-title": "Titolo",
         "label-body": "Testo",
-        "label-status": "Stato",
         "label-cover": "Immagine di copertina",
         "button-submit": "Salva le modifiche",
         "reset-form": "Ripristina",
-        "success-update": "Esempio aggiornato"
+        "success-update": "Esempio aggiornato",
+        "read-only": "Puoi leggere questo esempio ma non modificarlo."
     },
     "example-published-page": {
         "page-title": "Esempio pubblicato",
         "published-by": "Pubblicato da {owner} il {date}"
+    },
+    "example-publication": {
+        "live": "Online, pubblicato per la prima volta il {date}",
+        "withdrawn": "Ritirato, pubblicato per la prima volta il {date}",
+        "never": "Mai pubblicato"
     }
 }

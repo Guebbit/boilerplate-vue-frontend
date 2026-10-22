@@ -35,7 +35,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
+import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
@@ -132,6 +132,14 @@ const {
 } = useBlockingError();
 
 /**
+ * The confirm → write → toast pipeline, failing into {@link rowActionError}.
+ */
+const { runConfirmed } = useRowActions({
+    report: reportRowActionError,
+    clear: clearRowActionError
+});
+
+/**
  * Revokes a credential after an explicit confirmation.
  *
  * @param apiKey - The credential to revoke.
@@ -139,24 +147,17 @@ const {
  *  finished; a failure blocks the list in place ({@link rowActionError}).
  */
 const handleRevoke = (apiKey: ApiKey) =>
-    useDialogStore()
-        .confirm({
-            message: t('api-keys-list-page.confirm-revoke', { name: apiKey.name }),
-            color: 'error'
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearRowActionError();
-            return revokeCredential(apiKey.id)
-                .then(() => addMessage(t('api-keys-list-page.success-revoke')))
-                .catch((error: unknown) => reportRowActionError(error));
-        });
+    runConfirmed({
+        confirm: t('api-keys-list-page.confirm-revoke', { name: apiKey.name }),
+        action: () => revokeCredential(apiKey.id),
+        success: t('api-keys-list-page.success-revoke')
+    });
 </script>
 
 <template>
     <div id="api-keys-list-page">
         <div class="mb-6 flex flex-wrap items-center gap-2">
-            <PageSizeSelect v-model="pageSize" :label="t('generic.page-size')" class="max-w-40" />
+            <PageSizeSelect v-model="pageSize" class="max-w-40" />
             <v-spacer />
             <v-btn
                 v-if="session.can('create', 'ApiKey')"
@@ -183,11 +184,13 @@ const handleRevoke = (apiKey: ApiKey) =>
             :no-data-text="t('generic.no-data')"
         >
             <template v-slot:[`item.name`]="{ item }">
-                <span :class="{ 'opacity-60': statusOf(item) === 'revoked' }">{{ item.name }}</span>
+                <span :class="{ 'opacity-muted': statusOf(item) === 'revoked' }">{{
+                    item.name
+                }}</span>
             </template>
 
             <template v-slot:[`item.publicPrefix`]="{ item }">
-                <span class="font-mono" :class="{ 'opacity-60': statusOf(item) === 'revoked' }">
+                <span class="font-mono" :class="{ 'opacity-muted': statusOf(item) === 'revoked' }">
                     {{ item.publicPrefix }}
                 </span>
             </template>
@@ -199,8 +202,7 @@ const handleRevoke = (apiKey: ApiKey) =>
                         :key="permission"
                         size="small"
                         variant="tonal"
-                        color="tertiary"
-                        :class="{ 'opacity-60': statusOf(item) === 'revoked' }"
+                        :color="statusOf(item) === 'revoked' ? undefined : 'tertiary'"
                     >
                         {{ permission }}
                     </v-chip>

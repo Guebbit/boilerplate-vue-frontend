@@ -14,7 +14,7 @@ export default {
  * Account-deletion trigger: a single confirm-then-request action chained through the app's
  * shared confirmation dialog before it calls the store. Self-wrapped in its own card, like its
  * siblings in the bottom grid (`ProfileSessions`, `ProfileAddresses`) — the most destructive
- * control on the page, moved out of the panels above it rather than sharing their card.
+ * control on the page, kept apart from the panels above it rather than sharing their card.
  *
  * The one action here blocks the visitor in place on failure (`useBlockingError`), next to the
  * button that started it, rather than a toast — see docs/theory/request-flow.md.

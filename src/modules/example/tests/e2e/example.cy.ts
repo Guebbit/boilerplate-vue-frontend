@@ -72,6 +72,13 @@ describe('Example', () => {
                     'contain.text',
                     'Written through the real form.'
                 );
+
+                // The author withdraws it: the list keeps the first publish, and says it is gone.
+                cy.loginAs('editor');
+                cy.visit(`/en/examples/${id}`);
+                cy.get('[data-test=example-move-archived]').click();
+                cy.get('[data-test=example-target-status]').should('contain.text', 'Archived');
+                cy.get('[data-test=example-publication]').should('contain.text', 'Withdrawn');
             });
         });
 

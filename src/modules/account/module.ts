@@ -12,12 +12,9 @@ import routes from './routes';
 /**
  * The visitor's own account: login, signup, profile, password reset and account deletion.
  *
- * Reaches into `users` for the field rules, not the screens — every form here validates against
- * `usersSchema`/`usersPasswordSchema` from the users barrel, so that "what makes a valid username"
- * is answered once for the person editing their own record and for the admin editing someone
- * else's. A build with account but not users would validate nothing. The relationship is
- * `published-language`: shared vocabulary, not a shared store — neither module writes anything, the
- * API does.
+ * Reaches into `users` for the field rules, not the screens — every form validates against
+ * `usersSchema`/`usersPasswordSchema` from the users barrel, so "what makes a valid username" is
+ * answered once for the person editing their own record and for the admin editing someone else's.
  *
  * The session itself is not in here: the token lives in `infrastructure/session`, because
  * `infrastructure/http` has to read it on every request and the router guards have to read
@@ -29,6 +26,8 @@ import routes from './routes';
  *
  * Login, signup, password reset. There is no version of this that is a competitive advantage,
  * and the client half is thinner still — it renders forms over rules the server owns.
+ *
+ * Context map: `docs/modules/account.md` § "The map".
  */
 export default {
     name: 'account',

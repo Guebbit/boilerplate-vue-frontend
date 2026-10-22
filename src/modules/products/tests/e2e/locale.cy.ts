@@ -1,5 +1,5 @@
 /**
- * The catalogue's own stake in the locale layer — moved out of the central
+ * The catalogue's own stake in the locale layer, kept here rather than in the central
  * `tests/e2e/specs/locale.cy.ts`: both cases below are product-specific at the DATA
  * level, not just the page choice, so they go with this module rather than a foundation page that
  * cannot stand in for them.

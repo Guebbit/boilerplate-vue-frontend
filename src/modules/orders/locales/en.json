@@ -219,7 +219,6 @@
     },
     "orders-export": {
         "button": "Export CSV",
-        "button-hint": "Downloads every order matching the filters",
         "done": "Orders exported.",
         "error-too-large": "Too many orders to export at once. Narrow the filters and try again.",
         "error-rate-limited": "Too many exports in a short time. Wait a little and try again."
@@ -241,6 +240,7 @@
         "label-phone": "Phone (optional)",
         "button-submit": "Replace the address",
         "success": "Shipping address corrected.",
-        "error-required": "This field is required"
+        "error-required": "This field is required",
+        "error-too-long": "Too long: {max} characters at most"
     }
 }
