@@ -14,7 +14,7 @@ re-implements them has two implementations of one rule.
 `boilerplate-node-backend/docs/theory/strategic-ddd.md` states the same four ideas for
 the API. Read them together — the interesting parts are where the two **disagree**, and each of
 those disagreements is a fact about where the domain actually lives. The client-capability half of
-§4 below is the backend's `docs/theory/tactical-ddd.md` §2.
+§4 below is `boilerplate-node-backend/docs/theory/tactical-ddd.md` §2.
 :::
 
 ---
