@@ -142,7 +142,7 @@
         "lighthouse": "13.5.0",
         "lint-staged": "^17.6.0",
         "msw": "^2.13.4",
-        "npm-check-updates": "^22.2.3",
+        "npm-check-updates": "^23.1.0",
         "npm-run-all2": "^8.0.4",
         "orval": "^8.17.0",
         "otplib": "^13.5.0",
