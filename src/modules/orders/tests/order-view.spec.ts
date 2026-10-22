@@ -128,7 +128,9 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         override: [],
         correctAddress: false,
         invoice: false,
-        withdraw: false
+        withdraw: false,
+        delete: false,
+        hardDelete: false
     }
 };
 
@@ -169,7 +171,9 @@ describe('the invoice buttons', () => {
                 override: [],
                 correctAddress: false,
                 invoice: true,
-                withdraw: false
+                withdraw: false,
+                delete: false,
+                hardDelete: false
             }
         });
 

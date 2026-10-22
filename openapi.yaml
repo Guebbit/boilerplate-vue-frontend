@@ -14660,6 +14660,8 @@ components:
         - correctAddress
         - invoice
         - withdraw
+        - delete
+        - hardDelete
       description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included."
       properties:
         transitions:
@@ -14704,6 +14706,12 @@ components:
           type: string
           format: date-time
           description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
+        delete:
+          type: boolean
+          description: "Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden."
+        hardDelete:
+          type: boolean
+          description: "Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it)."
         invoice:
           type: boolean
           description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
@@ -15639,6 +15647,7 @@ components:
       additionalProperties: false
       required:
         - ship
+        - forceShip
         - fulfill
         - hold
         - release
@@ -15647,6 +15656,9 @@ components:
         ship:
           type: boolean
           description: Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining.
+        forceShip:
+          type: boolean
+          description: "Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship."
         fulfill:
           type: boolean
           description: Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open.
@@ -16693,7 +16705,7 @@ components:
         * `receive` — a supplier delivery. `onHand` up.
         * `adjust` — a stocktake correction, signed. `onHand` moves either way.
         * `restock` — returned goods were received back on the shelf. `onHand` up.
-        * `preorder` — an order claimed units that do not exist yet. `backordered` up; the shelf is untouched.
+        * `backorder` — an order claimed units that do not exist yet. `backordered` up; the shelf is untouched.
         * `allocate` — stock arrived for a paid preorder. `backordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
 
         `release` and `expire` of a preorder claim give back the allowance (`backordered` down) instead of `reserved`.

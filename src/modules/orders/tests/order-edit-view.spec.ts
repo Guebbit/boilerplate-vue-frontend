@@ -94,6 +94,8 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     correctAddress: false,
     invoice: false,
     withdraw: false,
+    delete: false,
+    hardDelete: false,
     ...overrides
 });
 

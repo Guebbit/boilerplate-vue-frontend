@@ -96,9 +96,9 @@ as inclusive instants (`src/infrastructure/utils/day-range.ts`), in the browser'
 
 ## Permanent delete: cancel first
 
-The list offers **Hard delete** on a row only when the order is `cancelled` and its
-`paymentStatus` is `unpaid` (`src/modules/orders/domain/hard-delete.ts`). That mirrors the API: an open order answers
-`409 ORDER_NOT_CANCELLED`, a paid one `409 ORDER_INVOICED`. Cancelling is what releases the stock
+The list offers **Delete** and **Hard delete** from `actions.delete` and `actions.hardDelete`; the
+server decides, from the caller's `delete:Order` key and the order's state. A refused one would answer
+`409 ORDER_NOT_CANCELLED` for an open order, `409 ORDER_INVOICED` for a paid one. Cancelling is what releases the stock
 and cancels the open payment intent, so the delete is pure cleanup. A refusal that slips through
 (the order changed under the viewer) shows the API's own sentence in the row-action alert; the
 copy is the API's, in the viewer's language, so this app holds none for it.

@@ -146,10 +146,12 @@ finds far fewer than about six, the procedure was too loose. Far more means pres
 - F1 DRIFT: `domain-layer.md` (the `domain/` list), `strategic-ddd.md` ("products/orders have none", and the
   barrel-size example), `glossary.md` (`admin`, `realtime`: both modules are gone), `account.md` (six stores,
   there are seven), `delivery.md` ("only module" with no routes).
-- F2 ROUTE: `orders/domain/hard-delete.ts` (no delete flag in `OrderActions`) and `FulfillmentOrderCard.vue`
-  (forced ship). F2 DRIFT: `ShipmentRow.vue` (forced deliver) and `WebhookDeliveriesFilters.vue` (replay),
-  since their flag or permission already exists. F2 OK, as the control: the status check in `Order.vue` that
-  only labels. F2 must NOT come out OK for `hard-delete.ts` because `DELETE /orders` states the rule in prose.
+- F2 ROUTE: none expected once `OrderActions.delete`/`hardDelete` and
+  `FulfillmentOrderActions.forceShip` are in the contract and used. Run against a checkout from
+  before that (FE `655c56bd`), it finds `orders/domain/hard-delete.ts` and `FulfillmentOrderCard.vue`
+  (forced ship) as ROUTE, `ShipmentRow.vue` (forced deliver) and `WebhookDeliveriesFilters.vue`
+  (replay) as DRIFT — and `hard-delete.ts` must NOT come out OK because `DELETE /orders` states the
+  rule in prose. F2 OK, as the control: the status check in `Order.vue` that only labels.
 - F3 DRIFT: the swapped label in `wishlist/module.ts`.
 
 Rows move as the code is fixed. The point is the count and the false-positive control, not these exact lines.

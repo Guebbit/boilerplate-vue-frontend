@@ -23,19 +23,19 @@ wireModulesIntoCore();
  * An open group with one line, 2 units remaining, and the ordinary ship door on.
  */
 const SHIPPABLE = aFulfillmentOrder({
-    actions: { ship: true, fulfill: false, hold: true, release: false }
+    actions: { ship: true, forceShip: false, fulfill: false, hold: true, release: false }
 });
 
 /**
  * Mounts the dialog closed, then opens it through `v-model` — the transition the form re-seeds on.
  *
  * @param fulfillmentOrder - The group being shipped from.
- * @param extra - `trackingRequired` / `canForce`.
+ * @param extra - `trackingRequired`.
  * @returns The wrapper and the spied `ship`.
  */
 const openDialog = (
     fulfillmentOrder: FulfillmentOrder,
-    extra: { trackingRequired?: boolean; canForce?: boolean } = {}
+    extra: { trackingRequired?: boolean } = {}
 ) => {
     const ship = vi.spyOn(useDeliveryStore(), 'ship').mockResolvedValue(aShipment());
     const wrapper = mount(ShipItemsDialog, {
@@ -129,17 +129,21 @@ describe('the forced door', () => {
      */
     const CLOSED = aFulfillmentOrder();
 
+    /**
+     * The same group when the server says a forced ship would open (`actions.forceShip`).
+     */
+    const FORCEABLE = aFulfillmentOrder({
+        actions: { ship: false, forceShip: true, fulfill: false, hold: true, release: false }
+    });
+
     it('is not offered while the ordinary door is open, or without the override', () =>
-        Promise.all([
-            openDialog(SHIPPABLE, { canForce: true }),
-            openDialog(CLOSED, { canForce: false })
-        ]).then(([ordinary, noOverride]) => {
+        Promise.all([openDialog(SHIPPABLE), openDialog(CLOSED)]).then(([ordinary, noOverride]) => {
             expect(ordinary.wrapper.find('[data-test=ship-force-toggle]').exists()).toBe(false);
             expect(noOverride.wrapper.find('[data-test=ship-force-toggle]').exists()).toBe(false);
         }));
 
     it('needs the toggle and a reason, then sends forced with it', () =>
-        openDialog(CLOSED, { canForce: true }).then(({ wrapper, ship }) => {
+        openDialog(FORCEABLE).then(({ wrapper, ship }) => {
             expect(wrapper.get('[data-test=ship-submit]').attributes('disabled')).toBeDefined();
             return wrapper
                 .get('[data-test=ship-force-toggle] input')

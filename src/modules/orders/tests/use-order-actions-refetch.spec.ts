@@ -25,7 +25,9 @@ const NO_MOVES: OrderActions = {
     override: [],
     correctAddress: false,
     invoice: false,
-    withdraw: false
+    withdraw: false,
+    delete: false,
+    hardDelete: false
 };
 
 /** A live order with a move available. */

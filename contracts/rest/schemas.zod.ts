@@ -5719,6 +5719,8 @@ export const CheckoutResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6304,6 +6306,8 @@ export const ListOrdersResponse = zod.strictObject({
                             .enum(['all_excluded', 'window_closed', 'nothing_left'])
                             .optional(),
                         withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                        delete: zod.boolean(),
+                        hardDelete: zod.boolean(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -6570,6 +6574,8 @@ export const CreateOrderResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -6966,6 +6972,8 @@ export const SearchOrdersResponse = zod.strictObject({
                             .enum(['all_excluded', 'window_closed', 'nothing_left'])
                             .optional(),
                         withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                        delete: zod.boolean(),
+                        hardDelete: zod.boolean(),
                         invoice: zod.boolean()
                     })
                     .optional(),
@@ -7201,6 +7209,8 @@ export const GetOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -7438,6 +7448,8 @@ export const ReplaceOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -7675,6 +7687,8 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -7929,6 +7943,8 @@ export const RestoreOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -8180,6 +8196,8 @@ export const CancelOrderByIdResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -8426,6 +8444,8 @@ export const OverrideOrderStatusResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -9021,6 +9041,8 @@ export const GetOrderByReferenceResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -9772,6 +9794,7 @@ export const GetFulfillmentByOrderResponse = zod.strictObject({
                 cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
                 actions: zod.strictObject({
                     ship: zod.boolean(),
+                    forceShip: zod.boolean(),
                     fulfill: zod.boolean(),
                     hold: zod.boolean(),
                     release: zod.boolean()
@@ -10052,6 +10075,8 @@ export const StartFulfilmentResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),
@@ -10568,6 +10593,7 @@ export const HoldFulfillmentOrderResponse = zod.strictObject({
         cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
         actions: zod.strictObject({
             ship: zod.boolean(),
+            forceShip: zod.boolean(),
             fulfill: zod.boolean(),
             hold: zod.boolean(),
             release: zod.boolean()
@@ -10652,6 +10678,7 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
         cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
         actions: zod.strictObject({
             ship: zod.boolean(),
+            forceShip: zod.boolean(),
             fulfill: zod.boolean(),
             hold: zod.boolean(),
             release: zod.boolean()
@@ -13197,6 +13224,8 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .enum(['all_excluded', 'window_closed', 'nothing_left'])
                         .optional(),
                     withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                    delete: zod.boolean(),
+                    hardDelete: zod.boolean(),
                     invoice: zod.boolean()
                 })
                 .optional(),
@@ -14398,6 +14427,8 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
                     .enum(['all_excluded', 'window_closed', 'nothing_left'])
                     .optional(),
                 withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
                 invoice: zod.boolean()
             })
             .optional(),

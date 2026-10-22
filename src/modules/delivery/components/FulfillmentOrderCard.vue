@@ -16,16 +16,14 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { OrderStatus } from '@/types/enums.ts';
 import { useDeliveryStore } from '../store.ts';
-import { shippableLines } from '../domain/ship-lines.ts';
 import HoldDialog from './HoldDialog.vue';
 import ShipItemsDialog from './ShipItemsDialog.vue';
 import ShipmentRow from './ShipmentRow.vue';
-import type { FulfillmentOrder, FulfillmentOrderStatus, Shipment } from '@types';
+import type { FulfillmentOrder, Shipment } from '@types';
 
 /**
- * The fulfillment order, the shipments cut from it, and what the caller may force.
+ * The fulfillment order and the shipments cut from it.
  */
 const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
@@ -33,8 +31,6 @@ const props = defineProps<{
     shipments: Shipment[];
     /** Whether the order's shipping method needs a tracking code on every shipment. */
     trackingRequired?: boolean;
-    /** The order's own `actions.override`: the statuses a forced move may land on. */
-    override?: OrderStatus[];
 }>();
 
 /**
@@ -83,30 +79,11 @@ const holdOpen = ref(false);
 const { message: cardError, report: reportCardError, clear: clearCardError } = useBlockingError();
 
 /**
- * Whether the caller may force a shipment right now (an `override:Order` holder).
- */
-const canForceShip = computed(() => (props.override ?? []).includes(OrderStatus.shipped));
-
-/**
- * The statuses a forced shipment may leave from. Typed against the generated union, so a status
- * the contract drops stops compiling here.
- */
-const FORCE_SHIPPABLE_STATUSES: ReadonlySet<FulfillmentOrderStatus> = new Set([
-    'open',
-    'in_progress'
-]);
-
-/**
  * Whether the ship button shows: the ordinary door, or the forced one while the ordinary is closed
- * and something physical still remains to leave.
+ * — both answered by the server (`actions.ship`, `actions.forceShip`).
  */
 const offerShip = computed(
-    () =>
-        props.fulfillmentOrder.actions.ship ||
-        (canForceShip.value &&
-            props.fulfillmentOrder.kind === 'physical' &&
-            FORCE_SHIPPABLE_STATUSES.has(props.fulfillmentOrder.status) &&
-            shippableLines(props.fulfillmentOrder.lines).length > 0)
+    () => props.fulfillmentOrder.actions.ship || props.fulfillmentOrder.actions.forceShip
 );
 
 /**
@@ -363,7 +340,6 @@ const release = () =>
             v-model="shipOpen"
             :fulfillment-order="fulfillmentOrder"
             :tracking-required="trackingRequired"
-            :can-force="canForceShip"
             @shipped="emit('moved')"
         />
         <HoldDialog

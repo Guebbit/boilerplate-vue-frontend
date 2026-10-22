@@ -26,13 +26,12 @@ import { useDeliveryStore } from '../store.ts';
 import { shipmentCount } from '../domain/ship-lines.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { OrderStatus } from '@/types/enums.ts';
 import FulfillmentOrderCard from './FulfillmentOrderCard.vue';
 
 /**
  * The order page's shipping corner: what is to leave, in how many goes, and what has.
  */
-const { orderId, shippingMethodId, canStart, override } = defineProps<{
+const { orderId, shippingMethodId, canStart } = defineProps<{
     /**
      * The order whose fulfilment this shows.
      */
@@ -48,11 +47,6 @@ const { orderId, shippingMethodId, canStart, override } = defineProps<{
      * than who may write a shipment, so it stays the order's flag.
      */
     canStart?: boolean;
-    /**
-     * The order's own `actions.override` — every status this caller's forced ship or arrival may
-     * land on. Empty for anyone without `override:Order`.
-     */
-    override?: OrderStatus[];
 }>();
 
 /**
@@ -192,7 +186,6 @@ watch(
                 :fulfillment-order="fulfillmentOrder"
                 :shipments="shipmentsOf(fulfillmentOrder.id)"
                 :tracking-required="trackingRequired"
-                :override="override"
                 @moved="emit('moved')"
             />
         </div>

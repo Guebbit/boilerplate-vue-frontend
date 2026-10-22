@@ -20,17 +20,12 @@ import { readShipLines, shippableLines } from '../domain/ship-lines.ts';
 import type { FulfillmentOrder } from '@types';
 
 /**
- * The fulfillment order being shipped from, and what the caller may do beyond the ordinary door.
+ * The fulfillment order being shipped from.
  */
 const props = defineProps<{
     fulfillmentOrder: FulfillmentOrder;
     /** Whether the order's shipping method needs a tracking code on every shipment. */
     trackingRequired?: boolean;
-    /**
-     * Whether the caller may force a shipment (`Order.actions.override` lists `shipped`). Offered
-     * only while the ordinary door (`fulfillmentOrder.actions.ship`) is closed.
-     */
-    canForce?: boolean;
 }>();
 
 /**
@@ -104,9 +99,12 @@ const lines = computed(() => shippableLines(props.fulfillmentOrder.lines));
 const verdict = computed(() => readShipLines(props.fulfillmentOrder.lines, quantities.value));
 
 /**
- * Whether the force controls show: only when the ordinary door is closed and the caller may force.
+ * Whether the force controls show: the server says a forced ship would open while the ordinary
+ * door is closed (`actions.forceShip`).
  */
-const offerForce = computed(() => !props.fulfillmentOrder.actions.ship && props.canForce);
+const offerForce = computed(
+    () => !props.fulfillmentOrder.actions.ship && props.fulfillmentOrder.actions.forceShip
+);
 
 /**
  * Whether the form can be sent right now.

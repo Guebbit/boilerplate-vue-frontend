@@ -163,6 +163,27 @@ const order = (id: string, deletedAt?: string) =>
  * A soft-deleted order is restored with its own action, never deleted a second time: DELETE is
  * one-way on the API.
  */
+/**
+ * The server's answer for the delete controls (`OrderActions.delete` / `hardDelete`): the list
+ * offers exactly what these say and decides nothing from the order's status.
+ *
+ * @param remove - whether `DELETE /orders/{id}` would be accepted
+ * @param permanent - whether `?hardDelete=true` would
+ */
+const deleteFlags = (remove: boolean, permanent: boolean) => ({
+    transitions: [],
+    cancel: false,
+    pay: false,
+    recordPayment: false,
+    start: false,
+    override: [],
+    correctAddress: false,
+    invoice: false,
+    withdraw: false,
+    delete: remove,
+    hardDelete: permanent
+});
+
 describe('OrdersList — a soft-deleted row', () => {
     it('offers Restore in place of Delete, and restores through the store', async () => {
         signInAsOrderDeleter();
@@ -170,7 +191,11 @@ describe('OrdersList — a soft-deleted row', () => {
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
                 contractResponse(schemas.SearchOrdersResponse, {
                     items: [
-                        { ...order('live'), status: 'cancelled' },
+                        {
+                            ...order('live'),
+                            status: 'cancelled',
+                            actions: deleteFlags(true, false)
+                        },
                         order('gone', '2026-02-01T00:00:00Z')
                     ],
                     meta: { page: 1, pageSize: 10, totalItems: 2, totalPages: 1 }
@@ -198,8 +223,9 @@ describe('OrdersList — a soft-deleted row', () => {
 });
 
 /**
- * The permanent delete is offered only where the API will accept it: a cancelled order that was
- * never paid. The soft Delete is offered on a cancelled order, paid or not, and on no open one.
+ * The delete controls follow the server's flags: the permanent delete where the API will accept it
+ * (a cancelled order never paid), the soft Delete on a cancelled order, paid or not, and neither on
+ * an open one.
  */
 describe('OrdersList — the permanent-delete action', () => {
     it('shows it on a cancelled unpaid row and on no other', async () => {
@@ -208,9 +234,24 @@ describe('OrdersList — the permanent-delete action', () => {
             asStub<Awaited<ReturnType<typeof searchOrders>>>(
                 contractResponse(schemas.SearchOrdersResponse, {
                     items: [
-                        { ...order('open'), status: 'pending', paymentStatus: 'unpaid' },
-                        { ...order('void'), status: 'cancelled', paymentStatus: 'unpaid' },
-                        { ...order('billed'), status: 'cancelled', paymentStatus: 'refunded' }
+                        {
+                            ...order('open'),
+                            status: 'pending',
+                            paymentStatus: 'unpaid',
+                            actions: deleteFlags(false, false)
+                        },
+                        {
+                            ...order('void'),
+                            status: 'cancelled',
+                            paymentStatus: 'unpaid',
+                            actions: deleteFlags(true, true)
+                        },
+                        {
+                            ...order('billed'),
+                            status: 'cancelled',
+                            paymentStatus: 'refunded',
+                            actions: deleteFlags(true, false)
+                        }
                     ],
                     meta: { page: 1, pageSize: 10, totalItems: 3, totalPages: 1 }
                 })

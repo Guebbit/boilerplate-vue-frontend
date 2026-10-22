@@ -3145,6 +3145,10 @@ export interface OrderActions {
     withdrawBlocked?: WithdrawBlockedReason;
     /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
     withdrawUntil?: string;
+    /** Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden. */
+    delete: boolean;
+    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it). */
+    hardDelete: boolean;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
     invoice: boolean;
 }
@@ -3799,6 +3803,8 @@ export const FulfillmentCancelReason = {
 export interface FulfillmentOrderActions {
     /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
     ship: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
+    forceShip: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
     fulfill: boolean;
     /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
@@ -4451,7 +4457,7 @@ export interface PreorderLevelsResponseEnvelope {
  * * `receive` — a supplier delivery. `onHand` up.
  * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
  * * `restock` — returned goods were received back on the shelf. `onHand` up.
- * * `preorder` — an order claimed units that do not exist yet. `backordered` up; the shelf is untouched.
+ * * `backorder` — an order claimed units that do not exist yet. `backordered` up; the shelf is untouched.
  * * `allocate` — stock arrived for a paid preorder. `backordered` down, `reserved` up: the claim is now a real hold. Written in the receipt's own transaction, oldest payment first.
  *
  * `release` and `expire` of a preorder claim give back the allowance (`backordered` down) instead of `reserved`.

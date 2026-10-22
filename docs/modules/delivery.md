@@ -91,11 +91,9 @@ flowchart TD
 **Every button comes from the record's own `actions`.** The order's `actions` no longer carry ship,
 deliver or fulfill; a card offers ship, fulfil (digital), hold and release from the fulfillment
 order's flags, and a shipment row offers mark-delivered and edit-tracking from the shipment's. The one
-order-level control left is "Start fulfilment" (`Order.actions.start`). The forced arrival is offered on a
-deliverable shipment (`actions.deliver`) to an `override:Order` holder, with a reason. The one
-exception left is the forced ship: while the ordinary door is closed, a caller whose
-`Order.actions.override` lists `shipped` is offered it with a reason, and the server refuses what does
-not apply.
+order-level control left is "Start fulfilment" (`Order.actions.start`). The forced ship follows
+`actions.forceShip`; the forced arrival is offered on a deliverable shipment (`actions.deliver`) to
+an `override:Order` holder.
 
 **What the pure helpers do** (`domain/ship-lines.ts`): turn the ship dialog's quantity fields into the
 lines to send (never more than `remaining`, at least one unit) and count "arrives in N shipments"
