@@ -113,7 +113,7 @@ const readReport = (file: string): Report => {
     if (!existsSync(file)) {
         console.error(
             `[test-report] no report at ${path.relative(REPO_ROOT, file)}.\n` +
-                `  Produce one with a *:report script, e.g. npm run test:unit:report.`
+                `  Produce one with npm run test:unit:ci.`
         );
         process.exit(2);
     }

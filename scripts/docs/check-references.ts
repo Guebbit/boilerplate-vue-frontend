@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * Every file path the docs CLAIM exists, checked against the files that do — `npm run
- * check:docs-references`.
+ * Every file path the docs CLAIM exists, checked against the files that do — one step of
+ * `npm run check`.
  *
  * `docs:build` already refuses a dead LINK between two pages. Nothing refuses a dead FACT, and a
  * page listing `models/serialize.ts` as this repo's property-tested surface reads as current to
@@ -96,7 +96,7 @@ const ALLOWED: { prefix: string; reason: string }[] = [
         reason: 'created by the first `test:lighthouse:baseline`, after a measured nightly'
     },
     { prefix: 'reports/audit/', reason: 'written by an audit prompt run' },
-    { prefix: 'reports/test-report.json', reason: 'written by `test:unit:report`' },
+    { prefix: 'reports/test-report.json', reason: 'written by `test:unit:ci`' },
     { prefix: 'reports/stryker-incremental.json', reason: "Stryker's local cache, gitignored" },
     {
         prefix: 'mutation.json',

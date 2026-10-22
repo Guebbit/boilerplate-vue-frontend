@@ -198,14 +198,14 @@ The whole set, nothing switched off. The rules that look at native `<label>`/`<i
 
 ## Commands
 
-| Command                                                                 | Effect                                               |
-| ----------------------------------------------------------------------- | ---------------------------------------------------- |
-| `npm run test:e2e`                                                      | Runs every module's sweep with the rest of the suite |
-| `E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec`   | Every sweep, and nothing else                        |
-| `E2E_SPEC=src/modules/users/tests/e2e/a11y.cy.ts npm run test:e2e:spec` | One module's                                         |
-| `E2E_SPEC=tests/e2e/specs/keyboard.cy.ts npm run test:e2e:spec`         | The keyboard suite alone                             |
-| `npx vitest run tests/cross-cutting/a11y-coverage.spec.ts`              | Just the "is every route covered" check              |
-| `npm run lint`                                                          | Includes the template a11y rules                     |
+| Command                                                                   | Effect                                               |
+| ------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `npm run test:e2e`                                                        | Runs every module's sweep with the rest of the suite |
+| `E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:serial`   | Every sweep, and nothing else                        |
+| `E2E_SPEC=src/modules/users/tests/e2e/a11y.cy.ts npm run test:e2e:serial` | One module's                                         |
+| `E2E_SPEC=tests/e2e/specs/keyboard.cy.ts npm run test:e2e:serial`         | The keyboard suite alone                             |
+| `npx vitest run tests/cross-cutting/a11y-coverage.spec.ts`                | Just the "is every route covered" check              |
+| `npm run lint`                                                            | Includes the template a11y rules                     |
 
 ## Adding a route
 

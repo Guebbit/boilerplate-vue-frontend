@@ -75,11 +75,11 @@ nothing below it does.
 Generated contract types only — a module's own view-model types live in that module's own
 `types.ts` instead ([Modules](./src-modules.md)).
 
-| File                              | What it is                                                                                                                                                                                                                | Read next                                        |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `src/types/index.ts`              | The single import path for the generated contract models: the REST client's types and, re-exported from `contracts/asyncapi.generated.ts`, the AsyncAPI feed's.                                                           | [Contracts](./contracts.md)                      |
-| `src/types/enums.ts`              | The one runtime API value a `.vue` file may still import: a handful of enum constants a template branches on at render time.                                                                                              | [Contracts](./contracts.md)                      |
-| `contracts/asyncapi.generated.ts` | **Generated** by `npm run gen:asyncapi` from `asyncapi.yaml`, next to the REST client's own generated output. Never hand-edited; `npm run check:asyncapi-types` fails when the committed copy disagrees with a fresh run. | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
+| File                              | What it is                                                                                                                                                                                                 | Read next                                        |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `src/types/index.ts`              | The single import path for the generated contract models: the REST client's types and, re-exported from `contracts/asyncapi.generated.ts`, the AsyncAPI feed's.                                            | [Contracts](./contracts.md)                      |
+| `src/types/enums.ts`              | The one runtime API value a `.vue` file may still import: a handful of enum constants a template branches on at render time.                                                                               | [Contracts](./contracts.md)                      |
+| `contracts/asyncapi.generated.ts` | **Generated** by `npm run gen:asyncapi` from `asyncapi.yaml`, next to the REST client's own generated output. Never hand-edited; `npm run check` fails when the committed copy disagrees with a fresh run. | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 
 ## Locales and styles
 

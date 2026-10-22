@@ -3,7 +3,7 @@
  * Photographs the app for the design review — `npm run audit:design:capture -- [scope]`.
  *
  * The scope is empty (everything), `shell`, a module, a path or `--diff`. The module accessibility
- * sweeps run in capture mode through `npm run test:e2e:spec` (build, demo backend on :3100, `vite
+ * sweeps run in capture mode through `npm run test:e2e:serial` (build, demo backend on :3100, `vite
  * preview` on :8085), and the rows each spec wrote are merged into `manifest.json`.
  *
  * A capture is a live e2e: it takes the e2e lock like any other (`flock /tmp/claude-e2e.lock`),
@@ -59,7 +59,7 @@ const changedFiles = (): string[] =>
  */
 const runCapture = (specs: string[]): Promise<void> =>
     new Promise((resolve, reject) => {
-        const child = spawn('npm', ['run', 'test:e2e:spec'], {
+        const child = spawn('npm', ['run', 'test:e2e:serial'], {
             stdio: 'inherit',
             env: {
                 ...process.env,

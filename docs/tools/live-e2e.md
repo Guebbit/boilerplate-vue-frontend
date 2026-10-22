@@ -14,6 +14,26 @@ Two tiers and a hand run, all through the same `e2e-live.yml`:
 
 Both tiers share one definition of the services, the sibling checkout and the seeding, so they cannot drift apart. **Scheduled workflows only ever run on the default branch**: a `cron` fires against `main` and nothing else.
 
+## The shard watchdog
+
+`npm run test:e2e` never trusts a shard's exit code alone.
+
+```mermaid
+flowchart LR
+  S[shard: npx cypress] -->|output| W{silent > N min?}
+  W -->|yes| K[kill process group] --> H[HUNG]
+  W -->|no| X[close: code, signal]
+  X --> J{judgeShard}
+  H --> F[shard FAILED, gate red]
+  J -->|signal, code != 0, fewer specs than assigned| F
+  J -->|clean, every spec in the summary| P[shard OK]
+```
+
+- **Silence:** no stdout or stderr for 10 minutes (`E2E_SHARD_QUIET_MINUTES` changes it) kills the shard's process group and fails it as HUNG. The longest healthy spec is ~90 s.
+- **Signal:** any signal fails the shard, even when the `npx` wrapper exited 0.
+- **Spec count:** the specs in Cypress' final summary table must equal the specs assigned. A shard that exits 0 with fewer finished fails.
+- Code: `scripts/e2e/shard-process.ts` (the watchdog), `scripts/e2e/shard-verdict.ts` (the pure verdict). `tests/unit/scripts/e2e/shard-process.spec.ts` proves the hang against a stand-in that sleeps forever.
+
 ## Tiers
 
 ```mermaid
@@ -38,7 +58,7 @@ Tags come from [`@cypress/grep`](https://github.com/cypress-io/cypress/tree/deve
 | Nightly  | every test         | empty    | 4 (`LIVE_SHARDS` in the `plan` job) per session mode, plus the antibot entry | 45 min         |
 
 - **The `grep` input** (`workflow_call` and `workflow_dispatch`) takes any `@cypress/grep` expression: space is OR, `+` is AND, `-` is NOT. Run `grep: '@smoke'` by hand from the Actions tab to reproduce the push tier. It reaches Cypress as `E2E_GREP_TAGS`, which `cypress.config.ts` puts in `expose.grepTags`. (v7 reads `expose`, not `env`: a `CYPRESS_grepTags` variable is silently ignored.)
-- **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards, and `npm run test:e2e:live:spec` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
+- **The matrix.** Live specs share one seeded Mongo and reset it between specs, so slices cannot share a database: each matrix job has its own services and runs its slice sequentially. `scripts/e2e/print-live-shard.ts <i> <n>` prints slice `i` of `n` as a `--spec` value, balanced by recorded duration like the demo shards, and `npm run test:e2e:live` runs it (`E2E_SPEC=<specs>`). Between them the slices cover the suite exactly once. Raise `LIVE_SHARDS` as journeys are added; the full run is ~85-115 min sequential.
 - **An empty tier warns, it does not fail.** If no spec carries the tag, the run ends with a warning annotation ("No spec carries @smoke") rather than Cypress's "no spec files were found". Until the first `@smoke` journey lands, the push tier therefore runs nothing: it is green and says so.
 - **By hand**, `E2E_GREP_TAGS=@smoke npm run test:e2e:live` runs the smoke tier locally.
 - **The `session-mode` input** (`jwt`, the default, or `cookie`) sets the backend's `NODE_SESSION_MODE` and the journeys' `E2E_SESSION_MODE` together, so both always agree. The schedule passes no input, so the nightly runs every slice once per mode (the antibot entry stays `jwt`: it is about the challenge, not the session); the push tier stays `jwt`, since the demo run already covers both modes on every push. By hand, export both before the recipe below, e.g. `NODE_SESSION_MODE=cookie` for the backend and `E2E_SESSION_MODE=cookie` for `npm run test:e2e:live`; `harness.cy.ts` fails if the two disagree. Journeys about one mode's own machinery skip themselves in the other (`skipUnlessSessionMode`).
@@ -49,7 +69,7 @@ A backend with a human-challenge provider asks every signup and login to solve i
 
 - **Demo:** `npm run test:e2e` adds one more shard, booted with `NODE_ANTIBOT_PROVIDER=altcha`, a fixed secret, a low cost and a small per-account login budget (`NODE_AUTH_RATE_LIMIT_MAX=6`, so the login check is three wrong passwords away) (`scripts/e2e/antibot-backend.ts`). `npm run test:e2e:antibot` runs the same specs by hand.
 - **Live, nightly:** the matrix gets an `antibot` entry. Its backend boots with the same four variables (the other entries keep the job's `NODE_AUTH_RATE_LIMIT_MAX`), and `print-live-shard.ts antibot` prints its specs. A unit test holds the workflow's values equal to the constant.
-- **By hand, live:** the recipe below with `NODE_ANTIBOT_PROVIDER=altcha NODE_ANTIBOT_ALTCHA_SECRET=e2e-not-a-secret-altcha-key NODE_ANTIBOT_ALTCHA_COST=1000 NODE_AUTH_RATE_LIMIT_MAX=6` exported in step 2, then `E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts antibot)" npm run test:e2e:live:spec`.
+- **By hand, live:** the recipe below with `NODE_ANTIBOT_PROVIDER=altcha NODE_ANTIBOT_ALTCHA_SECRET=e2e-not-a-secret-altcha-key NODE_ANTIBOT_ALTCHA_COST=1000 NODE_AUTH_RATE_LIMIT_MAX=6` exported in step 2, then `E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts antibot)" npm run test:e2e:live`.
 
 `tests/e2e/specs/harness.antibot.cy.ts` proves the provider really is on, so a mis-wired run cannot pass by testing the provider-off branch.
 
@@ -208,7 +228,7 @@ Between specs `cy.restore()` runs `LIVE_RESET_COMMAND` (see [`BACKEND_PATH`](#ba
 
 With no `MAILPIT_URL`, the mail-driven specs report as skipped (`cy.skipUnlessMailbox()`) rather than failing. `test:e2e:live` builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
 
-Run `npm run check:spec-identity` alongside it when the pair has moved — a forked contract makes a live run fail on _shape_ rather than on behaviour, and that is a confusing hour if you are not expecting it. It compares the two contract bundles only; the demo dataset is not among them (see below).
+Run `npm run check` alongside it when the pair has moved — a forked contract makes a live run fail on _shape_ rather than on behaviour, and that is a confusing hour if you are not expecting it. It compares the two contract bundles only; the demo dataset is not among them (see below).
 
 ### Raise the volume budgets, or the suite fails halfway through
 
@@ -281,7 +301,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Where seed drift is caught
 
-Not here, and not in a copy either. The demo dataset lives in the backend's `scenarios/` and stays there: nothing in it is in `SHARED_FILES`, so nothing copies it over and `check:spec-identity` never compares it. This repo reads the backend's seeded database through the API like any client, and it no longer keeps a copy of the credentials either: the backend publishes them, along with a row id per guarantee name, and `tests/support/e2e/scenario.ts` asks. Whether those rows still hold what the specs lean on is a property of the backend's scenarios, and the backend asserts it in its own test suite: each module declares the guarantees its scenario makes, and `boilerplate-node-backend/scenarios/check.ts` fails the suite when a built scenario stops offering one.
+Not here, and not in a copy either. The demo dataset lives in the backend's `scenarios/` and stays there: nothing in it is in `SHARED_FILES`, so nothing copies it over and the spec-identity check never compares it. This repo reads the backend's seeded database through the API like any client, and it no longer keeps a copy of the credentials either: the backend publishes them, along with a row id per guarantee name, and `tests/support/e2e/scenario.ts` asks. Whether those rows still hold what the specs lean on is a property of the backend's scenarios, and the backend asserts it in its own test suite: each module declares the guarantees its scenario makes, and `boilerplate-node-backend/scenarios/check.ts` fails the suite when a built scenario stops offering one.
 
 That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 

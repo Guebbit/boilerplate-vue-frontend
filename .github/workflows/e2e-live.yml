@@ -25,7 +25,7 @@ name: E2E (live backend)
 # workflow adds, and when the two disagree, this one is right.
 #
 # On failure, read it in this order:
-#   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
+#   1. the spec-identity check step — a failure there means the two checkouts' shared files have
 #      forked, so nothing below it is trustworthy;
 #   2. anything else — a real disagreement between this frontend and that backend. A spec whose
 #      expected rows no longer exist is seed drift, and the backend's
@@ -479,7 +479,7 @@ jobs:
             # forked `openapi.yaml` makes the run fail on shapes rather than on behaviour, which
             # reads as a broken app instead of a stale checkout.
             - name: Check the shared files are identical across the two checkouts
-              run: npm run check:spec-identity
+              run: npx tsx scripts/pairing/check-spec-identity.ts
 
             # The point of the whole workflow: the same specs as `test-e2e` in ci.yml, against
             # the composed stack rather than the demo profile's in-memory database.
@@ -512,7 +512,7 @@ jobs:
                       echo "::warning::No spec carries $E2E_GREP_TAGS, so this tier ran nothing."
                       exit 0
                   fi
-                  E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts "$SHARD" "$TOTAL")" npm run test:e2e:live:spec
+                  E2E_SPEC="$(npx tsx scripts/e2e/print-live-shard.ts "$SHARD" "$TOTAL")" npm run test:e2e:live
 
             # Tests that passed only on Cypress' one retry, as warning annotations — flaky rather
             # than green, and never failing the job. The sharded demo run prints its own.

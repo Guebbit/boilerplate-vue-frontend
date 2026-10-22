@@ -17,17 +17,17 @@ know _which domain_, the third line is the one.
 
 ## Every command, and when to reach for it
 
-| Command                            | Answers                                                   | Time    | Gate?             |
-| ---------------------------------- | --------------------------------------------------------- | ------- | ----------------- |
-| `test:unit -- <path>`              | Did I break the module I'm editing?                       | seconds | —                 |
-| `test:unit`                        | Did I break a unit anywhere?                              | ~9s     | ✅                |
-| `test:unit:report` + `test:report` | Which module owns the failure, and where did the time go? | +1s     | ✅ (prints in CI) |
-| `test:e2e`                         | Does the app work against the real API?                   | ~2m     | ✅                |
-| `test:e2e:spec`                    | …just this one spec?                                      | ~30s    | —                 |
-| `test:e2e:live`                    | Does the app agree with the **real backend**?             | ~6m     | ✅ (CI job)       |
-| `test:e2e:visual`                  | Does it still _look_ right?                               | ~4m     | ❌ by design      |
-| `test:mutation`                    | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
-| `complete`                         | All of the gate, in CI's order                            | ~7m     | —                 |
+| Command                        | Answers                                                   | Time    | Gate?             |
+| ------------------------------ | --------------------------------------------------------- | ------- | ----------------- |
+| `test:unit -- <path>`          | Did I break the module I'm editing?                       | seconds | —                 |
+| `test:unit`                    | Did I break a unit anywhere?                              | ~9s     | ✅                |
+| `test:unit:ci` + `test:report` | Which module owns the failure, and where did the time go? | +1s     | ✅ (prints in CI) |
+| `test:e2e`                     | Does the app work against the real API?                   | ~2m     | ✅                |
+| `test:e2e:serial`              | …just this one spec?                                      | ~30s    | —                 |
+| `test:e2e:live`                | Does the app agree with the **real backend**?             | ~6m     | ✅ (CI job)       |
+| `test:e2e:visual`              | Does it still _look_ right?                               | ~4m     | ❌ by design      |
+| `test:mutation`                | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
+| `complete`                     | All of the gate, in CI's order                            | ~7m     | —                 |
 
 `test:unit:ci` is what the `test-unit` CI job actually runs — the unit run with two reporters (the
 log and the JSON report) in one vitest invocation. Reach for the individual commands above locally.
@@ -45,8 +45,8 @@ npm run test:unit -- src/modules/cart/tests/store.spec.ts
 and an appended one lands in the wrong place:
 
 ```bash
-E2E_SPEC=src/modules/orders/tests/e2e/orders.cy.ts npm run test:e2e:spec
-E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec
+E2E_SPEC=src/modules/orders/tests/e2e/orders.cy.ts npm run test:e2e:serial
+E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:serial
 ```
 
 **Watch mode** — the runners' own flags, no script needed:
@@ -78,7 +78,7 @@ npx vitest src/modules/products     # watches one module
       Error: expected 2 to be 3
 ```
 
-It needs a JSON report to read, which `test:unit:report` produces.
+It needs a JSON report to read, which `test:unit:ci` produces.
 
 **A failing e2e shard** writes its full Cypress output to `reports/e2e/shard-<n>.log`. Read that
 before anything else; the terminal copy can be truncated, the file cannot.

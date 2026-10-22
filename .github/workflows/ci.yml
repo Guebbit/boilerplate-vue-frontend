@@ -164,7 +164,7 @@ jobs:
             # The generator itself compares, so the committed file is never overwritten here and
             # the job needs no git state to read a verdict out of.
             - name: Check generated AsyncAPI types are fresh
-              run: npm run check:asyncapi-types
+              run: npx tsx scripts/contracts/generate-asyncapi-types.ts --check --out contracts/asyncapi.generated.ts
 
     docs-references:
         # Every path the docs CLAIM exists, checked against the files that do. `docs:build` fails
@@ -187,11 +187,11 @@ jobs:
             # No sibling checkout here, so the cross-repo half is skipped rather than failed —
             # see the script's `peerTargets`.
             - name: Check every path the docs cite still exists
-              run: npm run check:docs-references
+              run: npx tsx scripts/docs/check-references.ts
 
             - name: Build the docs site
               # The other half of this job's own docblock: a dead LINK between pages, which
-              # `check:docs-references` above does not look for.
+              # the docs-reference check above does not look for.
               run: npm run docs:build
 
     docker-image:
@@ -494,7 +494,7 @@ jobs:
             - name: Compare the shared contract files
               env:
                   BACKEND_PATH: .spec-sibling
-              run: npm run check:spec-identity
+              run: npx tsx scripts/pairing/check-spec-identity.ts
 
     test-e2e:
         # Cypress against the paired backend's DEMO profile: the real API on an in-memory Mongo,

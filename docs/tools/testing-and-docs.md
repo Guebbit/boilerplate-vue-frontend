@@ -93,7 +93,7 @@ flowchart TB
 
 Every layer above answers "did it break". None of them answers **which module owns the break**, or **where the four minutes went** — the suites are organised by layer and the codebase is organised by module, so a raw log can never bridge the two.
 
-`npm run test:report` does. It reads the JSON a run writes (`npm run test:unit:report`) and rolls it up:
+`npm run test:report` does. It reads the JSON a run writes (`npm run test:unit:ci`) and rolls it up:
 
 ```
 [test-report] 1094 tests in 72 suites — 1094 passed, 0 failed (8.6s of suite time)
@@ -106,7 +106,7 @@ Every layer above answers "did it break". None of them answers **which module ow
   slowest suites / slowest tests / failures named by module
 ```
 
-JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/testing/report-results.ts` is the reader, sharing its core machinery with the backend's own copy because Vitest's `json` reporter emits the shape Jest's `--json` does — though the two have since picked up their own repo-specific differences, and it is not one of the files `check:spec-identity` compares; keeping it in step is a `diff`, by hand.
+JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/testing/report-results.ts` is the reader, sharing its core machinery with the backend's own copy because Vitest's `json` reporter emits the shape Jest's `--json` does — though the two have since picked up their own repo-specific differences, and it is not one of the files the spec-identity check compares; keeping it in step is a `diff`, by hand.
 
 If PR-line annotations are ever wanted, that is the moment to add a JUnit reporter _alongside_ this one, not to replace it.
 
@@ -352,7 +352,7 @@ baseline, where fixing history is not realistic.
 Assertions about types rather than values — that a prop signature did not widen to `any`, that a
 generic infers correctly. They earn their place when the types **are** the product, as in a published
 library. Here the public contract is `openapi.yaml`, and the types over it are _generated_ by orval
-rather than hand-written, then checked by `check:spec-identity` against the backend's copy. Writing
+rather than hand-written, then checked by the spec-identity check against the backend's copy. Writing
 type assertions over generated types mostly tests the generator.
 
 ### Incremental mutation mode

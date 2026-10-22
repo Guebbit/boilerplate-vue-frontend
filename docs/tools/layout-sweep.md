@@ -178,10 +178,10 @@ its 75 minutes, move `tablet`, `phone-landscape` and the text modes to the night
 
 ```bash
 # One or more specs, serial, on its own backend (port 3100), jwt mode
-E2E_SPEC='tests/e2e/specs/a11y.cy.ts,src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec
+E2E_SPEC='tests/e2e/specs/a11y.cy.ts,src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:serial
 
 # The checks proving themselves on planted fixtures
-E2E_SPEC=tests/e2e/specs/layout-checks.cy.ts npm run test:e2e:spec
+E2E_SPEC=tests/e2e/specs/layout-checks.cy.ts npm run test:e2e:serial
 
 # The rule that no size is typed outside the matrix
 npx vitest run tests/cross-cutting/viewport-matrix.spec.ts
