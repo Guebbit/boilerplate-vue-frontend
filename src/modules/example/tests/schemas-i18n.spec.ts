@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { exampleCreateSchema } from '../schemas';
+import { exampleFormSchema } from '../schemas';
 import enMessages from '../locales/en.json';
 import itMessages from '../locales/it.json';
 
@@ -28,9 +28,9 @@ const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
  * Every issue message the create schema produces for an empty title, in the active locale.
  */
 const messagesForEmptyTitle = () =>
-    exampleCreateSchema
+    exampleFormSchema
         .safeParse({ title: '', body: 'A body' })
-        .error?.issues.map(({ message }) => message) ?? [];
+        .error?.issues.map(({ message }: { message: string }) => message) ?? [];
 
 describe('example schema messages', () => {
     beforeAll(() => {

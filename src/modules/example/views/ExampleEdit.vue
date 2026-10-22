@@ -12,9 +12,11 @@ export default {
 /**
  * @module
  * The edit screen. Hydrates from the store's cache by route id (the route guard has already
- * loaded it) and holds every editable field: title, body, status and the cover image. Built on
+ * loaded it) and holds every editable field: title, body and the cover image. The status is not a
+ * field: it moves through `ExampleStatusActions`, from the server's own list. Built on
  * `useStructureFormValidation`; a save sends only what changed, and a cover goes up as its own
- * multipart request after the JSON save.
+ * multipart request after the JSON save. A 412 means the record moved under the form: the form says
+ * so and offers to reload. When the row says `actions.update` is false the form is read-only.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
@@ -26,9 +28,11 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useExampleStore } from '../store';
-import { exampleEditSchema } from '../schemas.ts';
-import { EXAMPLE_STATUSES } from '../domain';
-import type { ExampleStatus } from '@types';
+import { exampleFormSchema } from '../schemas.ts';
+import { provideExample } from '../provided.ts';
+import ExampleStatusActions from '../components/ExampleStatusActions.vue';
+import { useExampleTransition } from '../composables/use-example-transition.ts';
+import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
 import RecordAsideCard from '@/ui/organisms/RecordAsideCard.vue';
@@ -62,7 +66,7 @@ const { id } = defineProps<{
 /**
  * Store actions.
  */
-const { watchExample, updateExample, setCover } = useExampleStore();
+const { watchExample, updateExample, setCover, fetchExample } = useExampleStore();
 
 /**
  * The example being edited, and whether the store is busy with it.
@@ -75,7 +79,6 @@ const { currentExample, loading } = storeToRefs(useExampleStore());
 interface ExampleEditForm {
     title?: string;
     body?: string;
-    status?: ExampleStatus;
     imageUpload?: File;
 }
 
@@ -97,7 +100,7 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<ExampleEditForm>({}, exampleEditSchema, {
+} = useStructureFormValidation<ExampleEditForm>({}, exampleFormSchema, {
     formElement,
     revalidateOn: locale,
     onInvalid: () => addMessage(t('generic.fix-errors'))
@@ -121,20 +124,10 @@ activateAutoHydrate(
         currentExample.value
             ? {
                   title: currentExample.value.title,
-                  body: currentExample.value.body,
-                  status: currentExample.value.status
+                  body: currentExample.value.body
               }
             : undefined
     )
-);
-
-/**
- * The status select's options, localized.
- *
- * @returns One option per status, re-translated on locale change.
- */
-const statusOptions = computed(() =>
-    EXAMPLE_STATUSES.map((value) => ({ value, label: t(`example-status.${value}`) }))
 );
 
 /**
@@ -154,7 +147,41 @@ const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 /**
  * This form's own blocked state: a failed save blocks this form in place.
  */
-const { message: formError, report: reportFormError, clear: clearFormError } = useBlockingError();
+const {
+    message: formError,
+    report: reportFormError,
+    warn: warnFormError,
+    clear: clearFormError
+} = useBlockingError();
+
+/**
+ * The save came back 412: the example changed since it was loaded (a peer moved its status, say).
+ * "Reload latest" re-reads the record past the cache, which re-hydrates the form and refreshes the
+ * `ETag` the next save sends.
+ */
+const {
+    isStale,
+    handle: handleStaleSave,
+    reloadLatest
+} = useStaleRecord({ warn: warnFormError, clear: clearFormError }, () =>
+    id ? fetchExample(id, { forced: true }) : Promise.resolve()
+);
+
+/**
+ * The status door: the same composable the detail screen uses. The buttons render the moves the
+ * server lists for this caller, so an editor cannot offer what the row would refuse.
+ */
+const { changeStatus, error: statusError } = useExampleTransition(() => id);
+
+provideExample({ example: currentExample, changeStatus });
+
+/**
+ * Whether the server lets this caller edit this row. The route's coarse `meta.can` let them in; the
+ * row has the final say, and a read-only caller sees the form disabled and told why.
+ *
+ * @returns `false` only when the record says so; true while it loads.
+ */
+const mayEdit = computed(() => currentExample.value?.actions?.update !== false);
 
 /**
  * Validates the form and saves it: the changed fields as one JSON PATCH, then the cover, if one
@@ -169,8 +196,8 @@ const submitForm = () => {
     clearFormError();
     return handleSubmit(() => {
         if (!id) return;
-        const { title, body, status, imageUpload } = form.value;
-        return toRequestBody('UpdateExampleByIdBody', { title, body, status }, currentExample.value)
+        const { title, body, imageUpload } = form.value;
+        return toRequestBody('UpdateExampleByIdBody', { title, body }, currentExample.value)
             .then((changes) => updateExample(id, changes))
             .then(() =>
                 imageUpload
@@ -185,6 +212,7 @@ const submitForm = () => {
                 addMessage(t('example-edit-page.success-update'));
             });
     }).catch((error: unknown) => {
+        if (handleStaleSave(error)) return;
         applyServerErrors(error, { onUnmapped: () => reportFormError(error) });
     });
 };
@@ -237,8 +265,17 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     class="flex flex-col gap-2"
                     @submit.prevent="submitForm"
                 >
+                    <v-alert
+                        v-if="!mayEdit"
+                        type="info"
+                        variant="tonal"
+                        class="mb-2"
+                        data-test="example-read-only"
+                    >
+                        {{ t('example-edit-page.read-only') }}
+                    </v-alert>
                     <fieldset
-                        :disabled="loading"
+                        :disabled="loading || !mayEdit"
                         class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
                     >
                         <v-text-field
@@ -254,15 +291,6 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             :label="t('example-edit-page.label-body')"
                             v-bind="fieldErrorProps(showFormErrors ? formErrors.body : [])"
                             rows="6"
-                        />
-                        <v-select
-                            v-model="form.status"
-                            data-test="example-status"
-                            :label="t('example-edit-page.label-status')"
-                            :items="statusOptions"
-                            item-title="label"
-                            item-value="value"
-                            v-bind="fieldErrorProps(showFormErrors ? formErrors.status : [])"
                         />
                         <FormImageUpload
                             v-model="form.imageUpload"
@@ -289,8 +317,19 @@ const asideFields = computed<DetailFieldRow[]>(() => [
 
                         <InlineErrorAlert
                             :message="formError"
+                            :type="isStale ? 'warning' : 'error'"
                             data-test="example-edit-form-error"
                         />
+                        <v-btn
+                            v-if="isStale"
+                            variant="tonal"
+                            color="warning"
+                            data-test="example-reload-latest"
+                            :loading="loading"
+                            @click="reloadLatest"
+                        >
+                            {{ t('generic.action-reload-latest') }}
+                        </v-btn>
                     </fieldset>
                 </form>
             </CardDetail>
@@ -303,6 +342,17 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     :fields="asideFields"
                 >
                     <template #icon><NotebookPen :size="28" /></template>
+                    <div v-if="currentExample?.actions?.transitions.length">
+                        <h3 class="mb-3 text-lg font-semibold">
+                            {{ t('example-target-page.section-status') }}
+                        </h3>
+                        <ExampleStatusActions />
+                        <InlineErrorAlert
+                            :message="statusError"
+                            class="mt-3"
+                            data-test="example-edit-status-error"
+                        />
+                    </div>
                 </RecordAsideCard>
             </template>
         </ItemDetailLayout>

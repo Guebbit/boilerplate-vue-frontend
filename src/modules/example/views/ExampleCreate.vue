@@ -24,7 +24,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useExampleStore } from '../store';
-import { exampleCreateSchema } from '../schemas.ts';
+import { exampleFormSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -66,7 +66,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<{ title?: string; body?: string }>({}, exampleCreateSchema, {
+} = useStructureFormValidation<{ title?: string; body?: string }>({}, exampleFormSchema, {
     // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
     // failed submit actually needs it, not while the card is still mounting.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose

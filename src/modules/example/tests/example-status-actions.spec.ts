@@ -1,7 +1,8 @@
 /**
  * @module
- * The injecting half of the provide/inject pair: it offers exactly the moves each status allows,
- * and asks the provider, never the store, to make one.
+ * The injecting half of the provide/inject pair: it renders exactly the moves the server listed in
+ * `actions.transitions` (it decides none of its own), and asks the provider, never the store, to
+ * make one.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -18,17 +19,25 @@ wireModulesIntoCore();
 /**
  * Mounts the actions under a provider holding an example of `status`.
  *
- * @param status - The status the provided example has, or `undefined` while it loads.
+ * @param transitions - The moves the server listed, or `undefined` while the example loads.
  * @param changeStatus - What the provider does when asked.
  */
 const mountUnder = (
-    status: ExampleStatus | undefined,
+    transitions: ExampleStatus[] | undefined,
     changeStatus: (next: ExampleStatus) => Promise<unknown> = vi.fn().mockResolvedValue(undefined)
 ) => {
     const Provider = defineComponent({
         setup() {
             provideExample({
-                example: ref(status ? ({ id: 'a', status } as Example) : undefined),
+                example: ref(
+                    transitions
+                        ? ({
+                              id: 'a',
+                              status: 'draft',
+                              actions: { transitions, update: true, delete: true }
+                          } as Example)
+                        : undefined
+                ),
                 changeStatus
             });
         },
@@ -49,14 +58,34 @@ const offered = (wrapper: Awaited<ReturnType<typeof mountUnder>>) =>
 
 describe('ExampleStatusActions', () => {
     it.each([
-        ['draft', ['example-move-published', 'example-move-archived']],
-        ['published', ['example-move-archived']],
-        ['archived', ['example-move-draft']]
-    ] as const)('offers the right moves for a %s example', (status, expected) =>
-        mountUnder(status).then((wrapper) => {
+        [
+            ['published', 'archived'],
+            ['example-move-published', 'example-move-archived']
+        ],
+        [['archived'], ['example-move-archived']],
+        [['draft'], ['example-move-draft']],
+        [[], []]
+    ] as const)('renders the moves the server lists: %j', (transitions, expected) =>
+        mountUnder([...transitions]).then((wrapper) => {
             expect(offered(wrapper)).toEqual(expected);
         })
     );
+
+    it('renders nothing for an example that carries no actions', () =>
+        loadLocale('en').then(() => {
+            const Provider = defineComponent({
+                setup() {
+                    provideExample({
+                        example: ref({ id: 'a', status: 'draft' } as Example),
+                        changeStatus: vi.fn()
+                    });
+                },
+                render: () => h(ExampleStatusActions)
+            });
+            const wrapper = mount(Provider, { global: { plugins: [vuetify, i18n] } });
+
+            expect(offered(wrapper)).toEqual([]);
+        }));
 
     it('offers nothing while the example is still loading', () =>
         mountUnder(undefined).then((wrapper) => {
@@ -66,7 +95,7 @@ describe('ExampleStatusActions', () => {
     it('asks the provider for the move a button names', () => {
         const changeStatus = vi.fn().mockResolvedValue(undefined);
 
-        return mountUnder('draft', changeStatus).then((wrapper) =>
+        return mountUnder(['published'], changeStatus).then((wrapper) =>
             wrapper
                 .get('[data-test=example-move-published]')
                 .trigger('click')

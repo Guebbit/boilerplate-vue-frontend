@@ -51,3 +51,6 @@ export {
     RefundReason,
     RefundFailureReason
 } from '@api';
+
+// Example lifecycle: the list's status filter and its URL state.
+export { ExampleStatus } from '@api';

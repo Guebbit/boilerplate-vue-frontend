@@ -13,7 +13,8 @@ export default {
  * @module
  * The list screen: the store's paginated search wired to a filter form and a `DataTable`, with
  * view, edit and delete per row. The filters live in the URL, so a filtered view can be linked.
- * Which buttons show follows `session.can`, the server's own rules, never a role name.
+ * Edit and Delete follow each row's own `actions` (the server's answer for this caller and this
+ * row); only Create, which has no row yet, asks `session.can`.
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -26,9 +27,10 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
-import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
-import { EXAMPLE_STATUSES } from '../domain';
-import type { Example, ExampleStatus } from '@types';
+import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { ExampleStatus } from '@/types/enums.ts';
+import { publicationOf } from '../domain';
+import type { Example } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
@@ -53,8 +55,7 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * The session, for the rules that gate each button: a reader who cannot edit should not see an
- * Edit button that answers 403.
+ * The session, for the one rule with no row to ask: whether the caller may create at all.
  */
 const session = useSessionStore();
 
@@ -83,7 +84,7 @@ const rowActionSize = useTouchFriendlySize();
  */
 const statusOptions = computed(() => [
     { value: null, label: t('examples-list-page.filter-status-all') },
-    ...EXAMPLE_STATUSES.map((value) => ({ value, label: t(`example-status.${value}`) }))
+    ...Object.values(ExampleStatus).map((value) => ({ value, label: t(`example-status.${value}`) }))
 ]);
 
 /**
@@ -114,11 +115,22 @@ const tableHeaders = computed<CoreDataTableHeader<Example>[]>(() => [
     { title: t('examples-list-page.column-title'), key: 'title' },
     { title: t('examples-list-page.column-status'), key: 'status' },
     { title: t('examples-list-page.column-owner'), key: 'ownerName' },
-    { title: t('examples-list-page.column-published-at'), key: 'publishedAt' },
+    { title: t('examples-list-page.column-publication'), key: 'publishedAt' },
     { title: t('examples-list-page.column-created-at'), key: 'createdAt' },
     // Reads no field on the row: the cell is the `item.actions` slot below.
     { title: t('examples-list-page.column-actions'), key: 'actions', synthetic: true }
 ]);
+
+/**
+ * What one row's publication reads as, in words.
+ *
+ * @param example - The row.
+ * @returns "Live, first published …", "Withdrawn, first published …" or "Never published".
+ */
+const publicationText = (example: Example) => {
+    const { state, firstPublishedAt } = publicationOf(example);
+    return t(`example-publication.${state}`, { date: formatDate(firstPublishedAt) });
+};
 
 /**
  * Keeps the filters and page in the URL: a deep link renders filtered, and a reload keeps the view.
@@ -127,7 +139,7 @@ const { sync: syncUrl } = useListUrlState({
     filters,
     page: pageCurrent,
     pageSize,
-    params: { text: 'string', status: EXAMPLE_STATUSES }
+    params: { text: 'string', status: Object.values(ExampleStatus) }
 });
 
 /**
@@ -246,7 +258,7 @@ const handleDelete = (example: Example) =>
             </template>
 
             <template v-slot:[`item.publishedAt`]="{ item }">
-                {{ item.publishedAt ? formatDate(item.publishedAt) : EMPTY_VALUE }}
+                <span data-test="example-publication">{{ publicationText(item) }}</span>
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
@@ -267,7 +279,7 @@ const handleDelete = (example: Example) =>
                         {{ t('examples-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('update', 'Example')"
+                        v-if="item.actions?.update"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -280,7 +292,7 @@ const handleDelete = (example: Example) =>
                         {{ t('examples-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Example')"
+                        v-if="item.actions?.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

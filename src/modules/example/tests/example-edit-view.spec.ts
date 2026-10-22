@@ -49,9 +49,9 @@ const EXAMPLE: Example = {
  *
  * @returns The wrapper and the spies each case reads.
  */
-const mountPage = () => {
+const mountPage = (record: Example = EXAMPLE) => {
     const store = useExampleStore();
-    store.addExampleRecord({ ...EXAMPLE });
+    store.addExampleRecord({ ...record });
     vi.spyOn(store, 'watchExample').mockReturnValue(vi.fn() as never);
     const update = vi.spyOn(store, 'updateExample').mockResolvedValue(EXAMPLE);
     const cover = vi
@@ -60,6 +60,7 @@ const mountPage = () => {
     // The view selects the record by id; here the cache already holds it.
     store.selectedExampleId = EXAMPLE.id;
 
+    const fetch = vi.spyOn(store, 'fetchExample').mockResolvedValue(record);
     const wrapper = mount(ExampleEdit, {
         props: { id: EXAMPLE.id },
         attachTo: document.body,
@@ -68,7 +69,7 @@ const mountPage = () => {
             stubs: { LayoutDefault: { template: '<div><slot /></div>' } }
         }
     });
-    return { wrapper, update, cover };
+    return { wrapper, update, cover, fetch };
 };
 
 beforeEach(() => {
@@ -150,5 +151,58 @@ describe('ExampleEdit', () => {
             .then(() => {
                 expect(wrapper.find('[data-test=example-edit-form-error]').exists()).toBe(true);
             });
+    });
+
+    it('has no status field: the status moves through its own buttons', () => {
+        const { wrapper } = mountPage();
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=example-status]').exists()).toBe(false);
+        });
+    });
+
+    it('renders the moves the server listed, and none it did not', () => {
+        const { wrapper } = mountPage({
+            ...EXAMPLE,
+            actions: { transitions: ['published', 'archived'], update: true, delete: true }
+        });
+
+        return flushPromises().then(() => {
+            expect(wrapper.findAll('[data-test^=example-move-]')).toHaveLength(2);
+        });
+    });
+
+    it('says the record moved on a 412, offers to reload, and re-reads on request', () => {
+        const { wrapper, update, fetch } = mountPage();
+        update.mockRejectedValue({
+            success: false,
+            status: 412,
+            message: 'Precondition failed',
+            errors: [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]
+        });
+
+        return flushPromises()
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(flushPromises)
+            .then(() => {
+                expect(wrapper.find('[data-test=example-edit-form-error]').exists()).toBe(true);
+                return wrapper.get('[data-test=example-reload-latest]').trigger('click');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(fetch).toHaveBeenCalledWith(EXAMPLE.id, { forced: true });
+            });
+    });
+
+    it('disables the form and says why when the row says update is not allowed', () => {
+        const { wrapper } = mountPage({
+            ...EXAMPLE,
+            actions: { transitions: [], update: false, delete: false }
+        });
+
+        return flushPromises().then(() => {
+            expect(wrapper.find('[data-test=example-read-only]').exists()).toBe(true);
+            expect(wrapper.get('fieldset').attributes('disabled')).toBeDefined();
+        });
     });
 });

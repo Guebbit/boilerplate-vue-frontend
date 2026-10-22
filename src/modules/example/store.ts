@@ -2,13 +2,15 @@
  * @module
  * The Pinia store: this domain's state, and every call it makes to the generated client. One
  * `useStructureCrudApi` instance declares the resource (search, get, create, update, remove) and
- * hands back the record cache, the list and pagination state and the actions; two hand-written
- * actions cover what does not fit the generic shape.
+ * hands back the record cache, the list and pagination state and the actions; hand-written
+ * actions cover what does not fit the generic shape: the status door, the cover and the public read.
+ * The create is wrapped to be idempotent.
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { queryClient } from '@/infrastructure/query-client.ts';
+import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import {
     listExamples,
@@ -18,6 +20,7 @@ import {
     updateExampleById,
     deleteExampleById,
     replaceExampleCover,
+    transitionExample as apiTransitionExample,
     ExampleSortItem
 } from '@api';
 import type { CreateExampleRequest, Example, ExampleStatus, UpdateExampleRequest } from '@types';
@@ -63,7 +66,7 @@ export const useExampleStore = defineStore('example', () => {
         fetchOne: fetchExample,
         watchOne: watchExample,
         watchList: watchExamplesSearch,
-        createOne: createExample,
+        createOne,
         updateOne: updateExample,
         deleteOne: deleteExample,
         fetchAny
@@ -101,6 +104,47 @@ export const useExampleStore = defineStore('example', () => {
         },
         { resourceKey: 'example', queryClient }
     );
+
+    /**
+     * `Idempotency-Key` for `createExample`: a network error or a 5xx resends the SAME key, so a
+     * lost response never creates two drafts; any other outcome mints a fresh one.
+     */
+    const createIdempotencyKey = useIdempotencyKey();
+
+    /**
+     * Creates a draft, safe to retry. Wraps the generic `createOne` rather than replacing it, so
+     * the record still lands in the cache; the key rides in the request options.
+     *
+     * @param data - Title and body.
+     * @param options - Request options; the idempotency key is added to them.
+     * @returns The created example.
+     */
+    const createExample = (data: CreateExampleRequest, options?: AxiosRequestConfig) =>
+        createOne(data, { requestOptions: createIdempotencyKey.withKey(options) })
+            .then((created) => {
+                createIdempotencyKey.settle();
+                return created;
+            })
+            .catch((error: unknown) => {
+                createIdempotencyKey.settle(error);
+                throw error;
+            });
+
+    /**
+     * Moves an example to another status through its own door, and replaces the cached record
+     * with the answer (which carries the new `actions`).
+     *
+     * @param id - The example to move.
+     * @param to - The status to move it to.
+     * @returns The moved example.
+     */
+    const transitionExample = (id: string, to: ExampleStatus) =>
+        fetchAny(() =>
+            apiTransitionExample(id, { to }).then(({ data: moved }) => {
+                editExampleRecord(moved, id);
+                return moved;
+            })
+        );
 
     /**
      * Sets an example's cover image. Hand-written rather than the generic `updateOne`: the cover
@@ -151,6 +195,7 @@ export const useExampleStore = defineStore('example', () => {
         createExample,
         updateExample,
         deleteExample,
+        transitionExample,
         setCover,
         fetchPublished
     };
