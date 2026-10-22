@@ -50,3 +50,14 @@ export const useTouchTarget = (): ComputedRef<number | undefined> => {
     const isTouch = useIsTouch();
     return computed(() => (isTouch.value ? TOUCH_TARGET_PX : undefined));
 };
+
+/**
+ * A chip's `size`: Vuetify's `x-large` (44px) under a finger, `small` otherwise. A chip has no
+ * `min-height` prop, so the size prop is its only route to a tap target.
+ *
+ * @returns A computed size to bind to `:size` on a clickable `v-chip`.
+ */
+export const useTouchChipSize = (): ComputedRef<'small' | 'x-large'> => {
+    const isTouch = useIsTouch();
+    return computed(() => (isTouch.value ? 'x-large' : 'small'));
+};

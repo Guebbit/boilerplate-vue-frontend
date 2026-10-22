@@ -1,17 +1,16 @@
 /**
  * @module
  * The invasive-CSS scanner: every automated check behind `npm run audit:css` and
- * `tests/cross-cutting/css-invasiveness.spec.ts`, in one module so they share one ratchet.
+ * `tests/cross-cutting/css-invasiveness.spec.ts`, in one module so they share one gate.
  *
  * Three readers feed one list of findings:
  * - CSS (`main.css`, SFC `<style>`, the `index.html` splash), parsed with PostCSS and
  *   postcss-selector-parser, one finding per rule and check;
  * - SFC templates, parsed with `vue/compiler-sfc`, one finding per element and check;
- * - scripts under `src/`, read as text.
+ * - scripts under `src/`, read with the TypeScript compiler for their string literals.
  *
- * The template checks live here rather than in ESLint on purpose: an ESLint error cannot be
- * frozen in a baseline without a disable on every known line, and the ratchet needs exactly that
- * — today's hits listed, new ones refused, fixed ones struck off.
+ * The template checks live here rather than in ESLint so every check shares one `css-allow`
+ * grammar and one report.
  *
  * A `css-allow <check> -- <why>` comment right before a node covers that node for that one check.
  * An allowance that covers nothing, or has no reason, is a finding of its own.
@@ -91,6 +90,10 @@ export const CHECKS = {
     'block-size': {
         title: 'An SFC `<style>` block over `cssInvasiveness.maxScopedDeclarations` declarations.',
         fix: 'Move the styling to utilities and props; keep only what has no class.'
+    },
+    'touch-size-utility': {
+        title: 'A `min-h-11` / `min-w-11` utility on a Vuetify tag fakes a tap target the component should size itself.',
+        fix: 'Use `useTouchTarget()` (min-height/min-width) or `useTouchFriendlySize()` / `useTouchChipSize()` (size).'
     },
     'vuetify-root-override': {
         title: 'A scoped rule restyles a Vuetify component through a class set on its tag.',
@@ -1079,6 +1082,18 @@ const ELEMENT_CHECKS: readonly (readonly [CheckId, ElementCheck])[] = [
                     anchor: `${node.tag}.${token}`,
                     snippet: `class="… ${token} …"`
                 }))
+    ],
+    [
+        'touch-size-utility',
+        (node) =>
+            vuetifyComponent(node.tag) === undefined
+                ? []
+                : classTokens(node)
+                      .filter((token) => /^min-[hw]-11$/.test(bareClass(token)))
+                      .map((token) => ({
+                          anchor: `${node.tag}.${token}`,
+                          snippet: `<${node.tag} class="… ${token} …">`
+                      }))
     ],
     [
         'vuetify-variable',

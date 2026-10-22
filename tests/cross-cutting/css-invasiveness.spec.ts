@@ -1,20 +1,18 @@
 /**
- * Invasive CSS, held by a ratchet: CSS that reaches into Vuetify, over-specific selectors, raw
+ * Invasive CSS, held by a gate: CSS that reaches into Vuetify, over-specific selectors, raw
  * z-indexes, magic lengths, redefined utilities, utilities that duplicate a Vuetify prop, native
  * `title` tooltips and scripts that query Vuetify's DOM. Every check lives in
  * `scripts/audit/css-invasive/scan.ts`; `npm run audit:css` prints the same hits for a human.
  *
- * Today's hits are frozen in `css-invasiveness.baseline.json`, keyed by file + check + anchor,
- * never by line. The baseline only shrinks.
+ * The gate is pure: the app has no hit, and a new one fails here. `css-allow <check> -- <why>` is
+ * the only way out.
  *
  * ── What each case guards ──────────────────────────────────────────────────────────────────
  * 1. The scan reads the app at all: every CSS source, every template, the shipped scripts.
- * 2. Per check: no hit the baseline does not list (new invasive CSS is refused), and no baseline
- *    entry that no longer occurs (a fixed hit is struck off with `--shrink-baseline`).
- * 3. The baseline is tidy: sorted, unique keys, known checks, positive counts.
- * 4. Each check fires on a minimal sample, so a check that silently stopped matching fails here
+ * 2. Per check: the app has no hit (new invasive CSS is refused).
+ * 3. Each check fires on a minimal sample, so a check that silently stopped matching fails here
  *    rather than passing the ratchet by finding nothing.
- * 5. The `css-allow <check> -- <why>` grammar: it covers one node for one check; one with no
+ * 4. The `css-allow <check> -- <why>` grammar: it covers one node for one check; one with no
  *    reason, an unknown check, nothing to cover, or two Vuetify parts is a finding of its own.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -35,13 +33,6 @@ import {
     type CheckId,
     type CssFinding
 } from '../../scripts/audit/css-invasive/scan';
-import {
-    compareToBaseline,
-    keyOf,
-    readBaseline,
-    type BaselineEntry
-} from '../../scripts/audit/css-invasive/ratchet';
-
 /** Every check id. */
 const CHECK_IDS = Object.keys(CHECKS) as CheckId[];
 
@@ -74,16 +65,9 @@ const sfcChecks = (source: string): CheckId[] =>
         (finding) => finding.check
     );
 
-/** A ratchet list, one key per line, for a failure message. */
-const listed = (entries: BaselineEntry[]): string =>
-    entries.map((entry) => `×${String(entry.count)} ${keyOf(entry)}`).join('\n');
-
-describe('invasive CSS, against the baseline', () => {
+describe('invasive CSS, as a gate', () => {
     /** The scan of the app. */
     let findings: CssFinding[] = [];
-
-    /** The frozen known hits. */
-    const baseline = readBaseline();
 
     beforeAll(async () => {
         findings = await scanApp();
@@ -96,24 +80,14 @@ describe('invasive CSS, against the baseline', () => {
         expect(documentCssSources().length).toBeGreaterThanOrEqual(1);
     });
 
-    it.each(CHECK_IDS)('has no new `%s` hit, and no fixed one left in the baseline', (check) => {
-        const { added, gone } = compareToBaseline(
-            findings.filter((finding) => finding.check === check),
-            baseline.filter((entry) => entry.check === check)
-        );
+    it.each(CHECK_IDS)('has no `%s` hit', (check) => {
+        const hits = findings
+            .filter((finding) => finding.check === check)
+            .map((finding) => `${finding.file}:${String(finding.line)} ${finding.anchor}`);
         expect(
-            listed(added),
-            `new hits: fix them (\`npm run audit:css\` names the fix), or allow one with /* css-allow ${check} -- <why> */`
-        ).toBe('');
-        expect(listed(gone), 'fixed hits: run `npm run audit:css -- --shrink-baseline`').toBe('');
-    });
-
-    it('keeps a tidy baseline: sorted, unique, known checks, positive counts', () => {
-        const keys = baseline.map((entry) => keyOf(entry));
-        expect(keys).toEqual(keys.toSorted((a, b) => a.localeCompare(b)));
-        expect(new Set(keys).size).toBe(keys.length);
-        expect(baseline.filter((entry) => !CHECK_IDS.includes(entry.check))).toEqual([]);
-        expect(baseline.filter((entry) => entry.count < 1)).toEqual([]);
+            hits,
+            `fix them (\`npm run audit:css\` names the fix), or allow one with /* css-allow ${check} -- <why> */`
+        ).toEqual([]);
     });
 });
 
@@ -173,6 +147,7 @@ describe('each template and script check fires on a sample', () => {
         ['vuetify-prop-first', '<v-btn class="bg-primary" />'],
         ['tailwind-important', '<div class="!mt-2" />'],
         ['vuetify-arbitrary-variant', '<div class="[&_.v-field]:bg-surface" />'],
+        ['touch-size-utility', '<v-chip class="min-h-11 sm:min-h-0" />'],
         ['vuetify-variable', '<v-text-field class="[--v-disabled-opacity:0.8]" />'],
         ['vuetify-prop-first', '<v-card :class="{ \'rounded-none\': x }" />'],
         ['vuetify-prop-first', "<v-card :class=\"ok ? 'border-t-primary' : ''\" />"],

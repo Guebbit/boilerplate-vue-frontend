@@ -1,4 +1,0 @@
-{
-    "$comment": "Known invasive-CSS hits, frozen. New hits fail tests/cross-cutting/css-invasiveness.spec.ts; so does an entry that no longer occurs. Shrink with `npm run audit:css -- --shrink-baseline`; never add by hand.",
-    "entries": []
-}

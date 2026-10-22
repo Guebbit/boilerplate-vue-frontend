@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
 import {
     TOUCH_TARGET_PX,
+    useTouchChipSize,
     useTouchFriendlySize,
     useTouchTarget
 } from '@/ui/composables/use-touch-friendly-size.ts';
@@ -75,5 +76,22 @@ describe('useTouchTarget', () => {
         stubPointer(row.coarse);
 
         expect(effectScope().run(() => useTouchTarget().value)).toBe(row.px);
+    });
+});
+
+describe('useTouchChipSize', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it.each([
+        { mobile: false, coarse: false, size: 'small' },
+        { mobile: true, coarse: false, size: 'x-large' },
+        { mobile: false, coarse: true, size: 'x-large' }
+    ])('is $size with mobile=$mobile and coarse=$coarse', (row) => {
+        mobile.value = row.mobile;
+        stubPointer(row.coarse);
+
+        expect(effectScope().run(() => useTouchChipSize().value)).toBe(row.size);
     });
 });

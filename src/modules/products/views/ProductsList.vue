@@ -47,7 +47,10 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
+import {
+    useTouchChipSize,
+    useTouchFriendlySize
+} from '@/ui/composables/use-touch-friendly-size.ts';
 import { useRowActions } from '@/ui/composables/use-row-actions.ts';
 import { useDeletedFilterOptions } from '@/ui/composables/use-deleted-filter-options.ts';
 
@@ -108,6 +111,11 @@ const isStaff = computed(
  * replaces a click and `small` misses the WCAG touch-target recommendation.
  */
 const rowActionSize = useTouchFriendlySize();
+
+/**
+ * Facet chips are tap targets: `x-large` (44px) on touch, `small` with a mouse.
+ */
+const facetChipSize = useTouchChipSize();
 
 /**
  * Options of the admin-only "Deleted" filter.
@@ -384,8 +392,7 @@ const handleHardDelete = (productId: string, title: string) =>
                 <v-chip
                     v-for="facet in facets.categories"
                     :key="'category-' + facet.name"
-                    size="small"
-                    class="min-h-11 sm:min-h-0"
+                    :size="facetChipSize"
                     role="button"
                     data-test="category-chip"
                     :aria-pressed="filters.category === facet.name ? 'true' : 'false'"
@@ -400,8 +407,7 @@ const handleHardDelete = (productId: string, title: string) =>
                 <v-chip
                     v-for="facet in facets.tags"
                     :key="'tag-' + facet.name"
-                    size="small"
-                    class="min-h-11 sm:min-h-0"
+                    :size="facetChipSize"
                     role="button"
                     data-test="tag-chip"
                     :aria-pressed="filters.tag === facet.name ? 'true' : 'false'"
