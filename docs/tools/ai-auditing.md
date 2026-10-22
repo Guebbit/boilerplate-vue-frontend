@@ -87,6 +87,8 @@ repo, and `boilerplate-node-backend/scripts/audit/compliance-frontend/SKILL.md` 
 **this** checkout. So a rule spanning both repos, like the mandatory signup-consent checkbox, has
 exactly one home and no second copy to drift from. To audit this repo's compliance half, run
 `/audit-compliance-frontend` from the backend.
+It reads this repo at `../boilerplate-vue-frontend` — the main checkout. A worktree branch is not
+what it sees: check the branch out there, or merge it, before running it.
 
 This page is per-repo in the same way. It names this repo's own tools, its own `docs/` count and
 its own findings, so the backend's copy is _expected_ to differ and must not be reconciled.
