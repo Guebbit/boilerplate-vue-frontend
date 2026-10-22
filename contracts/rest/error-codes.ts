@@ -76,6 +76,8 @@ export const ERROR_CODES = {
     EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
     /** 429 — A verification email was already sent recently — carries `details.retryAfter`. */
     EMAIL_VERIFY_RESEND_TOO_SOON: 'EMAIL_VERIFY_RESEND_TOO_SOON',
+    /** 409 — The example cannot move from its current status to the one asked, or another request moved it first. `errors[].details` is `{ from, to }`; `Example.actions.transitions` lists the moves still open. */
+    EXAMPLE_TRANSITION_NOT_ALLOWED: 'EXAMPLE_TRANSITION_NOT_ALLOWED',
     /** 403 — The caller is authenticated but lacks the permission this route requires. A key's own `deniedCode` can replace this default with a more specific one. */
     FORBIDDEN: 'FORBIDDEN',
     /** 409 — Another request already carries this `Idempotency-Key` and has not finished yet. */

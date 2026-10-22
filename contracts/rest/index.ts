@@ -5066,6 +5066,18 @@ export const ExampleStatus = {
     archived: 'archived'
 } as const;
 
+/**
+ * What the requesting caller may do to this example, decided by the server. A client renders its controls from this instead of re-implementing the lifecycle or the ownership rule: both depend on who asks, and a second copy in a separately deployed client is how the two come to disagree.
+ */
+export interface ExampleActions {
+    /** The statuses this caller may move the example to through `POST /examples/{id}/transitions`. Never contains the current status; empty when the caller may not edit it. */
+    transitions: ExampleStatus[];
+    /** Whether `PATCH`/`PUT /examples/{id}` and `PUT /examples/{id}/cover` would be accepted for this caller. */
+    update: boolean;
+    /** Whether `DELETE /examples/{id}` would be accepted for this caller. */
+    delete: boolean;
+}
+
 export interface Example {
     id: Id;
     /** The fallback-language title. Other languages are written through `/locales/translations/example/{id}`. */
@@ -5081,6 +5093,7 @@ export interface Example {
     publishedAt?: string;
     createdAt: string;
     updatedAt?: string;
+    actions?: ExampleActions;
 }
 
 export interface ProductTitles {
@@ -5859,7 +5872,6 @@ export interface ReplaceExampleRequest {
      * @maxLength 20000
      */
     body: string;
-    status: ExampleStatus;
 }
 
 export interface UpdateExampleRequest {
@@ -5873,7 +5885,10 @@ export interface UpdateExampleRequest {
      * @maxLength 20000
      */
     body?: string;
-    status?: ExampleStatus;
+}
+
+export interface TransitionExampleRequest {
+    to: ExampleStatus;
 }
 
 export interface ReplaceExampleCoverRequestMultipart {
@@ -11187,7 +11202,7 @@ export const listExamples = (
 };
 
 /**
- * Creates a draft example owned by the caller.
+ * Creates a draft example owned by the caller. Sending `Idempotency-Key` makes a retry safe, since the same key replays the first answer.
  * @summary Create an example
  */
 export const createExample = (
@@ -11236,7 +11251,7 @@ export const getExampleById = (
 };
 
 /**
- * Replaces the example's writable fields (RFC 9110 §9.3.4). `title`, `body` and `status` are required, since a PUT names the whole representation.
+ * Replaces the example's writable fields (RFC 9110 §9.3.4). `title` and `body` are required, since a PUT names the whole representation. The status moves through `POST /examples/{id}/transitions`.
  * @summary Replace an example
  */
 export const replaceExampleById = (
@@ -11304,6 +11319,26 @@ export const deleteExampleById = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>({ url: `/examples/${id}`, method: 'DELETE' }, options);
+};
+
+/**
+ * Moves the example to `to`. Which moves are open is the caller's `Example.actions.transitions`. A move into `published` stamps `publishedAt` the first time, announces `example.published` and mails the owner. Another person's example answers `404`, as every write here does.
+ * @summary Move an example to another status
+ */
+export const transitionExample = (
+    id: string,
+    transitionExampleRequest: TransitionExampleRequest,
+    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+) => {
+    return orvalMutator<ExampleEnvelope>(
+        {
+            url: `/examples/${id}/transitions`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: transitionExampleRequest
+        },
+        options
+    );
 };
 
 /**
@@ -11893,6 +11928,7 @@ export type UpdateExampleByIdWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateExampleByIdWithMergePatchJson>>
 >;
 export type DeleteExampleByIdResult = NonNullable<Awaited<ReturnType<typeof deleteExampleById>>>;
+export type TransitionExampleResult = NonNullable<Awaited<ReturnType<typeof transitionExample>>>;
 export type ReplaceExampleCoverResult = NonNullable<
     Awaited<ReturnType<typeof replaceExampleCover>>
 >;
