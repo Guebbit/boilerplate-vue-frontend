@@ -20,6 +20,7 @@
 import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import postcss from 'postcss';
+import ts from 'typescript';
 import type { AtRule, Comment, Declaration, Root, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 import { babelParse, parse as parseSfc } from 'vue/compiler-sfc';
@@ -123,8 +124,12 @@ export const CHECKS = {
         title: 'A native `title` attribute: information a finger cannot reach.',
         fix: 'Show it visibly (a subline, a legend, a caption), or drop it when it only repeats the accessible name.'
     },
+    'vuetify-unknown-class': {
+        title: 'A selector names a `.v-*` class that the installed Vuetify does not ship.',
+        fix: 'The class was renamed or removed: use the component prop, or fix the name.'
+    },
     'vuetify-dom-query': {
-        title: 'A script queries the DOM by a Vuetify class.',
+        title: 'A script names a Vuetify class in a string.',
         fix: 'Query our own hook (`data-test`, a ref, a class we own) instead of Vuetify markup.'
     },
     'stale-allowance': {
@@ -465,6 +470,17 @@ const RULE_CHECKS: readonly (readonly [CheckId, RuleCheck])[] = [
                     (selector) =>
                         classesOf(selector).some((name) => name.startsWith('v-')) ||
                         deepReachesElement(selector)
+                )
+                .map(String)
+    ],
+    [
+        'vuetify-unknown-class',
+        (_rule, selectors) =>
+            selectors
+                .filter((selector) =>
+                    classesOf(selector).some(
+                        (name) => name.startsWith('v-') && !vuetifyClasses().has(name)
+                    )
                 )
                 .map(String)
     ],
@@ -1222,13 +1238,80 @@ export const templateContext = (): TemplateContext => ({
 
 // ── Scripts ───────────────────────────────────────────────────────────────────────────────────
 
-/** A DOM query whose selector names a Vuetify class. */
-const VUETIFY_DOM_QUERY =
-    /\.(?:closest|querySelector|querySelectorAll|matches)\(\s*(["'`])[^"'`]*(?:\.v-|class\*=["']?v-)[^"'`]*\1\s*\)/g;
+/** A string that names a Vuetify class: `.v-x` after a boundary, or an attribute match on `v-`. */
+const VUETIFY_CLASS_LITERAL = /(?:^|[\s(+,>~])\.v-[a-z]|class\*=["']?v-/;
+
+/** Every `.v-*` class the installed Vuetify ships CSS for, read once. */
+let shippedVuetifyClasses: Set<string> | undefined;
 
 /**
- * Every script hit and allowance of one file. An allowance is a `// css-allow …` comment on the
- * line above the call.
+ * The classes Vuetify's own stylesheets define.
+ *
+ * @returns The class names, without the dot.
+ */
+const vuetifyClasses = (): Set<string> => {
+    shippedVuetifyClasses ??= new Set(
+        globSync('node_modules/vuetify/lib/**/*.css', { cwd: ROOT })
+            .flatMap((file) => [
+                ...readFileSync(path.join(ROOT, file), 'utf8').matchAll(/\.(v-[\w-]+)/g)
+            ])
+            .map((match) => match[1])
+    );
+    return shippedVuetifyClasses;
+};
+
+/**
+ * The text of every string and template literal in a script, with its 1-based line.
+ *
+ * @param file - The file name, for the compiler's language choice.
+ * @param code - The script source.
+ * @param firstLine - The line the script starts on in its file (1 for a `.ts` file).
+ * @returns The literals.
+ */
+const literalsOf = (
+    file: string,
+    code: string,
+    firstLine: number
+): { text: string; line: number }[] => {
+    const source = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const found: { text: string; line: number }[] = [];
+    const visit = (node: ts.Node): void => {
+        if (
+            ts.isStringLiteral(node) ||
+            ts.isNoSubstitutionTemplateLiteral(node) ||
+            ts.isTemplateHead(node) ||
+            ts.isTemplateMiddle(node) ||
+            ts.isTemplateTail(node)
+        )
+            found.push({
+                text: node.text,
+                line: firstLine + source.getLineAndCharacterOfPosition(node.getStart(source)).line
+            });
+        ts.forEachChild(node, visit);
+    };
+    visit(source);
+    return found;
+};
+
+/**
+ * The scripts of a file: the whole text for a `.ts` file, each `<script>` block for an SFC.
+ *
+ * @param file - The file.
+ * @param text - Its source.
+ * @returns Each script's code and the line it starts on.
+ */
+const scriptsOf = (file: string, text: string): { code: string; firstLine: number }[] => {
+    if (!file.endsWith('.vue')) return [{ code: text, firstLine: 1 }];
+    const { descriptor } = parseSfc(text, { filename: file });
+    return [descriptor.script, descriptor.scriptSetup].flatMap((block) =>
+        block === null ? [] : [{ code: block.content, firstLine: block.loc.start.line }]
+    );
+};
+
+/**
+ * Every script hit and allowance of one file: any string literal that names a Vuetify class
+ * (`vuetify-dom-query`), or a `.v-*` class Vuetify does not ship (`vuetify-unknown-class`). An
+ * allowance is a `// css-allow …` comment on the line above.
  *
  * @param file - The file, relative to the repo root.
  * @param text - Its source.
@@ -1236,17 +1319,27 @@ const VUETIFY_DOM_QUERY =
  */
 export const scanScript = (file: string, text: string): Scan => {
     const lines = text.split('\n');
-    const hits = lines.flatMap((content, index) =>
-        [...content.matchAll(VUETIFY_DOM_QUERY)].map((match) =>
-            hitOf({
-                file,
-                line: index + 1,
-                check: 'vuetify-dom-query',
-                anchor: match[0].slice(1),
-                snippet: squash(content),
-                target: `${file}:${String(index + 1)}`
+    const hits = scriptsOf(file, text).flatMap(({ code, firstLine }) =>
+        literalsOf(file, code, firstLine)
+            .filter(({ text: literal }) => VUETIFY_CLASS_LITERAL.test(literal))
+            .flatMap(({ text: literal, line }) => {
+                const base = {
+                    file,
+                    line,
+                    anchor: squash(literal),
+                    snippet: squash(lines[line - 1] ?? literal),
+                    target: `${file}:${String(line)}`
+                };
+                const unknown = [...literal.matchAll(/\.(v-[\w-]+)/g)]
+                    .map((match) => match[1])
+                    .filter((name) => !vuetifyClasses().has(name));
+                return [
+                    hitOf({ ...base, check: 'vuetify-dom-query' }),
+                    ...(unknown.length > 0
+                        ? [hitOf({ ...base, check: 'vuetify-unknown-class' })]
+                        : [])
+                ];
             })
-        )
     );
     const allowances = lines.flatMap((content, index) => {
         const comment = /^\s*\/\/\s*(css-allow\b.*)$/.exec(content)?.[1];

@@ -4,6 +4,7 @@
  * An image picker field: `v-file-input` plus a live preview built from an object URL, and an
  * optional upload-progress bar driven by a `progress` prop the parent controls.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -159,7 +160,7 @@ const previewSource = computed(() => resolveImageUrl(objectUrl.value ?? currentI
             :label="label || t('image-upload-form.label')"
             :hint="hint || t('image-upload-form.hint', { size: MAX_UPLOAD_SIZE_LABEL })"
             :persistent-hint="true"
-            :error-messages="errorMessages"
+            v-bind="fieldErrorProps(errorMessages)"
             :disabled="disabled"
             prepend-icon=""
             prepend-inner-icon="$upload"

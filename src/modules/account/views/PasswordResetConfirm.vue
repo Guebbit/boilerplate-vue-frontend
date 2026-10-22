@@ -17,6 +17,7 @@ export default {
  * submit, and works unauthenticated same as this page itself. Not on `LinkTokenConfirmCard`: a
  * multi-field form with a cross-field rule and server field errors.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref, watch } from 'vue';
 import { z } from 'zod';
@@ -28,7 +29,6 @@ import PasswordStrengthMeter from '../components/PasswordStrengthMeter.vue';
 import { usersPasswordSchema } from '@/modules/users';
 import { resetPasswordConfirmSchema } from '../schemas.ts';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -106,7 +106,6 @@ const {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
         formElement: () => card.value?.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -177,7 +176,7 @@ const submitForm = () => {
             <v-text-field
                 v-model="form.token"
                 :label="t('password-reset-confirm-page.label-token')"
-                :error-messages="showErrors ? formErrors.token : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.token : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -185,7 +184,7 @@ const submitForm = () => {
                 type="password"
                 autocomplete="new-password"
                 :label="t('password-reset-confirm-page.label-password')"
-                :error-messages="showErrors ? formErrors.password : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.password : [])"
                 class="mb-2"
             />
             <PasswordStrengthMeter :password="form.password ?? ''" />
@@ -206,7 +205,7 @@ const submitForm = () => {
                 type="password"
                 autocomplete="new-password"
                 :label="t('password-reset-confirm-page.label-password-confirm')"
-                :error-messages="showErrors ? formErrors.passwordConfirm : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.passwordConfirm : [])"
             />
             <template #after-submit>
                 <InlineErrorAlert

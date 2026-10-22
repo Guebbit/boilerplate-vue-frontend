@@ -15,13 +15,13 @@ export default {
  * acknowledgement whether or not the account exists — see the e2e for the enumeration-safety
  * assertion.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '../stores/auth.ts';
 import { usersSchema } from '@/modules/users';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
@@ -70,7 +70,6 @@ const {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
     formElement: () => card.value?.formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -125,7 +124,7 @@ const submitForm = () => {
                 autocomplete="email"
                 data-test="password-reset-email"
                 :label="t('password-reset-request-page.label-email')"
-                :error-messages="showErrors ? formErrors.email : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.email : [])"
             />
             <HumanCheck ref="humanCheck" class="mt-2" />
             <template #after-submit>

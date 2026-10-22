@@ -16,6 +16,7 @@ export default {
  * on the `actions` the server attaches to the loaded record. `status` is not a form field: it
  * moves only through the cancel and override actions below.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -41,7 +42,6 @@ import type { DetailFieldRow } from '@/ui/types.ts';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatDateTime, formatCurrency } from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -336,7 +336,6 @@ const {
 } = useStructureFormValidation<OrderEditForm>({}, editSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -484,7 +483,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             data-test="order-edit-email"
                             type="email"
                             :label="t('order-edit-page.label-email')"
-                            :error-messages="showFormErrors ? formErrors.email : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.email : [])"
                         />
 
                         <div class="flex flex-wrap gap-2">
@@ -542,8 +541,12 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         step="0.01"
                         :label="t('order-edit-page.label-refund-amount')"
                         :hint="t('order-edit-page.hint-refund-amount')"
-                        :error-messages="
-                            refundAmountInvalid ? [t('order-edit-page.error-refund-amount')] : []
+                        v-bind="
+                            fieldErrorProps(
+                                refundAmountInvalid
+                                    ? [t('order-edit-page.error-refund-amount')]
+                                    : []
+                            )
                         "
                         persistent-hint
                         class="mb-3 max-w-72"

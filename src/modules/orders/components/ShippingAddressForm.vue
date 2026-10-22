@@ -16,11 +16,11 @@ export default {
  * order's own `actions.correctAddress` says the door is open, so this decides nothing about when;
  * a refusal that slipped through (the order shipped meanwhile) blocks the form in place.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
 import { countryLabel } from '@/i18n/country-label.ts';
@@ -89,7 +89,6 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
         {
             formElement,
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -144,7 +143,7 @@ const submit = () =>
         <v-text-field
             v-model="form.fullName"
             :label="t('shipping-address-form.label-full-name')"
-            :error-messages="showFormErrors ? (formErrors.fullName ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.fullName ?? []) : [])"
             class="min-w-56 grow"
             hide-details="auto"
             data-test="shipping-address-full-name"
@@ -152,7 +151,7 @@ const submit = () =>
         <v-text-field
             v-model="form.street"
             :label="t('shipping-address-form.label-street')"
-            :error-messages="showFormErrors ? (formErrors.street ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.street ?? []) : [])"
             class="min-w-56 grow"
             hide-details="auto"
             data-test="shipping-address-street"
@@ -160,7 +159,7 @@ const submit = () =>
         <v-text-field
             v-model="form.city"
             :label="t('shipping-address-form.label-city')"
-            :error-messages="showFormErrors ? (formErrors.city ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.city ?? []) : [])"
             class="min-w-40 grow"
             hide-details="auto"
             data-test="shipping-address-city"
@@ -168,7 +167,7 @@ const submit = () =>
         <v-text-field
             v-model="form.zip"
             :label="t('shipping-address-form.label-zip')"
-            :error-messages="showFormErrors ? (formErrors.zip ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.zip ?? []) : [])"
             class="max-w-40"
             hide-details="auto"
             data-test="shipping-address-zip"
@@ -177,7 +176,7 @@ const submit = () =>
             v-model="form.country"
             :items="countryOptions"
             :label="t('shipping-address-form.label-country')"
-            :error-messages="showFormErrors ? (formErrors.country ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.country ?? []) : [])"
             class="min-w-48"
             hide-details="auto"
             data-test="shipping-address-country"
@@ -185,7 +184,7 @@ const submit = () =>
         <v-text-field
             v-model="form.phone"
             :label="t('shipping-address-form.label-phone')"
-            :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.phone ?? []) : [])"
             class="min-w-40"
             hide-details="auto"
             data-test="shipping-address-phone"

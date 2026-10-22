@@ -275,6 +275,7 @@ watch(abilitiesSignal, () => {
         -->
         <a
             href="#main"
+            data-test="skip-link"
             class="fixed inset-s-2 -top-20 z-skip-link rounded-lg bg-surface px-4 py-2 font-semibold text-on-surface focus-visible:top-2"
             @click.prevent="skipToContent"
             >{{ t('navigation.skip-to-content') }}</a

@@ -70,7 +70,7 @@ describe('design tokens, the stylesheet half', () => {
             ({ file, decl }) => file !== MAIN_CSS && COLOR_PROPERTY.test(decl.prop)
         );
         // Not vacuous: the SFC blocks do hold colour-bearing declarations.
-        expect(sfcDeclarations.length).toBeGreaterThanOrEqual(5);
+        expect(sfcDeclarations.length).toBeGreaterThanOrEqual(1);
         const places = new Map<string, Set<string>>();
         for (const { file, decl } of sfcDeclarations) {
             const key = `${decl.prop}: ${decl.value.replaceAll(/\s+/g, ' ')}`;

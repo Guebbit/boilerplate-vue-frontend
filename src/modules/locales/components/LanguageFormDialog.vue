@@ -11,13 +11,13 @@
  * by two different parents (`LocalesList.vue`'s own row edit, `LocalesDictionary.vue`'s add), each
  * filling it with its own state.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '../schemas.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import type { LocaleCapability, LocaleDirection } from '@types';
 
 /**
@@ -94,7 +94,6 @@ const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErro
         computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
         {
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -150,20 +149,20 @@ defineExpose({ applyServerErrors });
                     :label="t('locale-form.label-tag')"
                     :hint="t('locale-form.hint-tag')"
                     :disabled="isEdit"
-                    :error-messages="showFormErrors ? (formErrors.tag ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.tag ?? []) : [])"
                     persistent-hint
                     data-test="language-tag"
                 />
                 <v-text-field
                     v-model="form.name"
                     :label="t('locale-form.label-name')"
-                    :error-messages="showFormErrors ? (formErrors.name ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.name ?? []) : [])"
                     data-test="language-name"
                 />
                 <v-text-field
                     v-model="form.nativeName"
                     :label="t('locale-form.label-native-name')"
-                    :error-messages="showFormErrors ? (formErrors.nativeName ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.nativeName ?? []) : [])"
                     data-test="language-native-name"
                 />
                 <v-select

@@ -15,6 +15,7 @@ export default {
  * (the checkout side) can offer the same "add an address" flow without a second copy of the
  * form, its schema, or its save logic.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -23,7 +24,6 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '../stores/addresses.ts';
 import { addressSchema } from '../schemas.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { ISO_COUNTRY_CODES } from '@/infrastructure/utils/country-codes.ts';
@@ -142,7 +142,6 @@ const countryOptions = computed(() =>
 const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
     useStructureFormValidation<AddressForm>(emptyForm(), addressSchema, {
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 
@@ -209,20 +208,20 @@ const handleSave = () =>
                 <v-text-field
                     v-model="form.label"
                     :label="t('profile-page.addresses-label-label')"
-                    :error-messages="showFormErrors ? (formErrors.label ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.label ?? []) : [])"
                     class="mb-2"
                 />
                 <v-text-field
                     v-model="form.fullName"
                     :label="t('profile-page.addresses-label-full-name')"
-                    :error-messages="showFormErrors ? (formErrors.fullName ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.fullName ?? []) : [])"
                     autocomplete="name"
                     class="mb-2"
                 />
                 <v-text-field
                     v-model="form.street"
                     :label="t('profile-page.addresses-label-street')"
-                    :error-messages="showFormErrors ? (formErrors.street ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.street ?? []) : [])"
                     autocomplete="street-address"
                     class="mb-2"
                 />
@@ -230,13 +229,13 @@ const handleSave = () =>
                     <v-text-field
                         v-model="form.zip"
                         :label="t('profile-page.addresses-label-zip')"
-                        :error-messages="showFormErrors ? (formErrors.zip ?? []) : []"
+                        v-bind="fieldErrorProps(showFormErrors ? (formErrors.zip ?? []) : [])"
                         autocomplete="postal-code"
                     />
                     <v-text-field
                         v-model="form.city"
                         :label="t('profile-page.addresses-label-city')"
-                        :error-messages="showFormErrors ? (formErrors.city ?? []) : []"
+                        v-bind="fieldErrorProps(showFormErrors ? (formErrors.city ?? []) : [])"
                         autocomplete="address-level2"
                     />
                 </div>
@@ -248,7 +247,7 @@ const handleSave = () =>
                     v-model="form.country"
                     :items="countryOptions"
                     :label="t('profile-page.addresses-label-country')"
-                    :error-messages="showFormErrors ? (formErrors.country ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.country ?? []) : [])"
                     autocomplete="country"
                     data-test="address-country"
                     class="mb-2"
@@ -256,7 +255,7 @@ const handleSave = () =>
                 <v-text-field
                     v-model="form.phone"
                     :label="t('profile-page.addresses-label-phone')"
-                    :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.phone ?? []) : [])"
                     autocomplete="tel"
                     type="tel"
                 />

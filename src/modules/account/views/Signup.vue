@@ -17,6 +17,7 @@ export default {
  * file), wrapped in `trackUpload` so `FormImageUpload` can show real upload progress. The breach check
  * (`usePasswordBreachCheck`) is advisory only — it never blocks this submit.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref, watch } from 'vue';
 import { z } from 'zod';
@@ -35,7 +36,6 @@ import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
 import { signupPasswordConfirmSchema } from '../schemas.ts';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { withAntibotToken } from '@/infrastructure/http/antibot.ts';
@@ -119,7 +119,6 @@ const {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
         formElement: () => card.value?.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -237,7 +236,7 @@ const submitForm = () => {
                 type="email"
                 autocomplete="email"
                 :label="t('signup-page.label-email')"
-                :error-messages="showErrors ? formErrors.email : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.email : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -245,7 +244,7 @@ const submitForm = () => {
                 type="password"
                 autocomplete="new-password"
                 :label="t('signup-page.label-password')"
-                :error-messages="showErrors ? formErrors.password : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.password : [])"
                 class="mb-2"
             />
             <PasswordStrengthMeter :password="form.password ?? ''" />
@@ -266,11 +265,11 @@ const submitForm = () => {
                 type="password"
                 autocomplete="new-password"
                 :label="t('users-form.label-passwordConfirm')"
-                :error-messages="showErrors ? formErrors.passwordConfirm : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.passwordConfirm : [])"
             />
             <FormImageUpload
                 v-model="form.imageUpload"
-                :error-messages="showErrors ? formErrors.imageUpload : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.imageUpload : [])"
                 :progress="uploadProgress"
                 :disabled="isSubmitting"
                 class="mt-2"
@@ -278,7 +277,7 @@ const submitForm = () => {
             <v-checkbox
                 v-model="form.termsAccepted"
                 data-test="signup-terms-accepted"
-                :error-messages="showErrors ? formErrors.termsAccepted : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.termsAccepted : [])"
             >
                 <!-- `i18n-t` interpolates the two links into the translated sentence; `@click.stop`
                          keeps a link click from also toggling the checkbox, since Vuetify makes the

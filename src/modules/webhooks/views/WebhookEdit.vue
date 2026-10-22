@@ -16,6 +16,7 @@ export default {
  * on `useStructureFormValidation`. No secret-ring actions here — those live on the detail page,
  * same split `users` keeps its irreversible/audited actions off the plain field-edit form.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, onMounted, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -35,7 +36,6 @@ import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 
 /**
@@ -97,7 +97,6 @@ const {
 } = useStructureFormValidation<WebhookEditForm>({}, webhookEditSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -228,14 +227,14 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             type="url"
                             data-test="webhook-url"
                             :label="t('webhook-edit-page.label-url')"
-                            :error-messages="showFormErrors ? formErrors.url : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.url : [])"
                         />
                         <v-text-field
                             v-model="form.description"
                             type="text"
                             data-test="webhook-description"
                             :label="t('webhook-edit-page.label-description')"
-                            :error-messages="showFormErrors ? formErrors.description : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.description : [])"
                         />
                         <v-select
                             v-model="form.eventTypes"
@@ -247,7 +246,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             item-value="name"
                             :loading="loadingEventCatalogue"
                             :label="t('webhook-edit-page.label-event-types')"
-                            :error-messages="showFormErrors ? formErrors.eventTypes : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.eventTypes : [])"
                         />
                         <v-switch
                             v-model="form.enabled"

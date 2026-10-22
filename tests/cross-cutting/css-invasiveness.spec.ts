@@ -64,6 +64,10 @@ const templateChecks = (template: string): CheckId[] =>
         scanTemplate('Sample.vue', `<template>${template}</template>`, templateContext())
     ).map((finding) => finding.check);
 
+/** The checks that fire on a script source. */
+const scripts = (text: string): CheckId[] =>
+    applyAllowances(scanScript('a.ts', text)).map((hit) => hit.check);
+
 /** The checks that fire on a whole SFC source (template and style blocks together). */
 const sfcChecks = (source: string): CheckId[] =>
     applyAllowances(scanTemplate('Sample.vue', source, templateContext())).map(
@@ -118,6 +122,7 @@ describe('each CSS check fires on a sample', () => {
         ['vuetify-internal', '.card .v-field { color: inherit; }'],
         ['deep', '.board :deep(.cell) { color: inherit; }'],
         ['vuetify-internal', '.board :deep(td:first-child) { color: inherit; }'],
+        ['vuetify-unknown-class', '.a .v-data-table-headers--loading { opacity: 1; }'],
         ['vuetify-variable', '.row { --v-medium-emphasis-opacity: 1; }'],
         ['important', '.row { color: inherit !important; }'],
         ['max-specificity', '.a .b .c { color: inherit; }'],
@@ -198,6 +203,24 @@ describe('each template and script check fires on a sample', () => {
 
         expect(sfcChecks(override)).toEqual(['vuetify-root-override']);
         expect(sfcChecks(feedsOurCss)).toEqual([]);
+    });
+
+    it('fires vuetify-dom-query on any string naming a Vuetify class, and not on a comment', () => {
+        expect(scripts("const S = '.v-table__wrapper';")).toEqual(['vuetify-dom-query']);
+        expect(scripts('/* the .v-field wrapper */ const a = 1;')).toEqual([]);
+    });
+
+    it('fires vuetify-unknown-class on a script literal for a class Vuetify does not ship', () => {
+        const text = "const S = '.v-data-table-headers--loading';";
+        expect(applyAllowances(scanScript('a.ts', text)).map((hit) => hit.check)).toContain(
+            'vuetify-unknown-class'
+        );
+    });
+
+    it('does not fire vuetify-unknown-class on a class Vuetify ships', async () => {
+        expect(await cssChecks('.a .v-field { color: inherit; }')).not.toContain(
+            'vuetify-unknown-class'
+        );
     });
 
     it('fires vuetify-dom-query on a Vuetify class in a DOM query', () => {

@@ -17,6 +17,7 @@ export default {
  * Removing a tab that existed on the fetched record sends `null` for that locale; removing one
  * opened this session and never saved just drops it — see `handleRemoveLocale`.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -552,10 +553,12 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                                     v-model="form.translations[tag]!.title"
                                     type="text"
                                     :label="t('product-edit-page.label-title')"
-                                    :error-messages="
-                                        showFormErrors && !form.translations[tag]?.title
-                                            ? [t('products-form.title-required')]
-                                            : []
+                                    v-bind="
+                                        fieldErrorProps(
+                                            showFormErrors && !form.translations[tag]?.title
+                                                ? [t('products-form.title-required')]
+                                                : []
+                                        )
                                     "
                                     data-test="translation-title-field"
                                 />
@@ -575,7 +578,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             :step="priceStep"
                             :precision="pricePrecision"
                             control-variant="stacked"
-                            :error-messages="showFormErrors ? formErrors.price : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.price : [])"
                             data-test="product-price-field"
                         />
                         <v-number-input
@@ -679,7 +682,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         <FormImageUpload
                             v-model="form.imageUpload"
                             :current-image-url="adminProduct?.imageUrl"
-                            :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.imageUpload : [])"
                             :progress="uploadProgress"
                             :disabled="isSubmitting"
                         />

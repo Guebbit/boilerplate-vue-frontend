@@ -11,13 +11,13 @@
  * A submit button rather than an auto-fire on mount, so a mail scanner prefetching the URL cannot
  * spend the token before the human arrives.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { readLinkToken, useLinkTokenCleanup } from '@/infrastructure/utils/use-link-token.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -118,7 +118,6 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, applyServe
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
             formElement: () => card.value?.formElement,
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -183,7 +182,7 @@ const submitForm = () => {
             type="text"
             :data-test="testIds.token"
             :label="t(copy.label)"
-            :error-messages="showFormErrors ? (formErrors.token ?? []) : []"
+            v-bind="fieldErrorProps(showFormErrors ? (formErrors.token ?? []) : [])"
             class="mb-4"
         />
         <template #after-submit>

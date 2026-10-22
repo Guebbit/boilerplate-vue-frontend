@@ -16,6 +16,7 @@ export default {
  * ever reaches the new subscription's detail page — the store itself never caches it, see
  * `store.ts`.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -29,7 +30,6 @@ import { webhookCreateSchema } from '../schemas.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 
@@ -83,7 +83,6 @@ const {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
         formElement: () => card.value?.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -185,7 +184,7 @@ const handleSecretDone = () => {
                 :label="t('webhook-create-page.label-url')"
                 :hint="t('webhook-create-page.hint-url')"
                 persistent-hint
-                :error-messages="showErrors ? formErrors.url : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.url : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -193,7 +192,7 @@ const handleSecretDone = () => {
                 type="text"
                 data-test="webhook-description"
                 :label="t('webhook-create-page.label-description')"
-                :error-messages="showErrors ? formErrors.description : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.description : [])"
                 class="mb-2"
             />
             <v-select
@@ -206,7 +205,7 @@ const handleSecretDone = () => {
                 item-value="name"
                 :loading="loadingEventCatalogue"
                 :label="t('webhook-create-page.label-event-types')"
-                :error-messages="showErrors ? formErrors.eventTypes : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.eventTypes : [])"
             />
 
             <InlineErrorAlert :message="submitError" data-test="webhook-create-error" />

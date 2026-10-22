@@ -24,6 +24,7 @@ export default {
  * opened on Save whenever either differs from the loaded record, before the `PATCH` is sent at
  * all — see `submitForm`'s own note on why an unchanged `role` must never ride along regardless.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -51,7 +52,6 @@ import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
@@ -138,7 +138,6 @@ const {
 } = useStructureFormValidation<UserEditForm>({}, editSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -414,7 +413,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             data-test="user-edit-username"
                             :label="t('user-edit-page.label-username')"
                             :disabled="!rowActions?.update"
-                            :error-messages="showFormErrors ? formErrors.username : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.username : [])"
                         />
                         <v-text-field
                             v-model="form.phone"
@@ -423,7 +422,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             data-test="user-edit-phone"
                             :label="t('user-edit-page.label-phone')"
                             :disabled="!rowActions?.update"
-                            :error-messages="showFormErrors ? formErrors.phone : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.phone : [])"
                         />
                         <v-text-field
                             v-model="form.website"
@@ -432,7 +431,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             data-test="user-edit-website"
                             :label="t('user-edit-page.label-website')"
                             :disabled="!rowActions?.update"
-                            :error-messages="showFormErrors ? formErrors.website : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.website : [])"
                         />
                         <v-select
                             v-model="form.locale"
@@ -462,7 +461,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             v-model="form.imageUpload"
                             data-test="user-edit-avatar"
                             :current-image-url="currentUser?.imageUrl"
-                            :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.imageUpload : [])"
                             :progress="uploadProgress"
                             :disabled="isSubmitting || !rowActions?.update"
                         />

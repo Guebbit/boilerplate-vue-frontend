@@ -10,6 +10,7 @@
  * to know when a fresh session exists, not how one gets there — and a wrong answer stays open for
  * another try rather than closing. See docs/modules/account.md.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -282,7 +283,7 @@ const sendCode = () => {
                         type="password"
                         autocomplete="current-password"
                         :label="t('reauth-dialog.label-password')"
-                        :error-messages="errorMessage ? [errorMessage] : []"
+                        v-bind="fieldErrorProps(errorMessage ? [errorMessage] : [])"
                         data-test="reauth-dialog-password"
                     />
                     <v-text-field
@@ -319,7 +320,7 @@ const sendCode = () => {
                         inputmode="numeric"
                         autocomplete="one-time-code"
                         :label="t('reauth-dialog.label-code')"
-                        :error-messages="errorMessage ? [errorMessage] : []"
+                        v-bind="fieldErrorProps(errorMessage ? [errorMessage] : [])"
                         data-test="reauth-dialog-code"
                     />
                     <v-text-field

@@ -8,6 +8,7 @@
 import type { Directive } from 'vue';
 
 /** Vuetify's own class for the scrolling div inside `v-table`. */
+// css-allow vuetify-dom-query -- VTable gives no prop, slot or ref for its inner scroller
 const WRAPPER_SELECTOR = '.v-table__wrapper';
 
 /**

@@ -16,6 +16,7 @@ export default {
  * `useStructureFormValidation`; a save sends only what changed, and a cover goes up as its own
  * multipart request after the JSON save.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -37,7 +38,6 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { formatDateTime, formatText } from '@/infrastructure/utils/formatters.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
@@ -100,7 +100,6 @@ const {
 } = useStructureFormValidation<ExampleEditForm>({}, exampleEditSchema, {
     formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -247,13 +246,13 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             type="text"
                             data-test="example-title"
                             :label="t('example-edit-page.label-title')"
-                            :error-messages="showFormErrors ? formErrors.title : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.title : [])"
                         />
                         <v-textarea
                             v-model="form.body"
                             data-test="example-body"
                             :label="t('example-edit-page.label-body')"
-                            :error-messages="showFormErrors ? formErrors.body : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.body : [])"
                             rows="6"
                         />
                         <v-select
@@ -263,7 +262,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             :items="statusOptions"
                             item-title="label"
                             item-value="value"
-                            :error-messages="showFormErrors ? formErrors.status : []"
+                            v-bind="fieldErrorProps(showFormErrors ? formErrors.status : [])"
                         />
                         <FormImageUpload
                             v-model="form.imageUpload"

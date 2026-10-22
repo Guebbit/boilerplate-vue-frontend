@@ -17,12 +17,12 @@ export default {
  * other reason, and for sending back only part of an order. The server re-checks every limit, so
  * the form only keeps the customer from asking for the impossible.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
@@ -165,7 +165,6 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors, reset
     useStructureFormValidation({ reason: '', note: '', lines: {} }, schema, {
         formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 
@@ -341,7 +340,7 @@ const submit = () =>
                 :items="reasonOptions"
                 item-title="title"
                 item-value="value"
-                :error-messages="showFormErrors ? (formErrors.reason ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.reason ?? []) : [])"
                 hide-details="auto"
                 data-test="return-reason"
             />
@@ -354,7 +353,7 @@ const submit = () =>
                 rows="3"
                 maxlength="1000"
                 counter
-                :error-messages="showFormErrors ? (formErrors.note ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.note ?? []) : [])"
                 hide-details="auto"
                 data-test="return-note"
             />

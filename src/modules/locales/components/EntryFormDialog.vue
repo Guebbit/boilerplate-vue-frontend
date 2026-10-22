@@ -8,13 +8,13 @@
  * duplicate key, a transport failure); the parent renders its `InlineErrorAlert` here, above the
  * buttons, since this dialog has no opinion of its own on what a blocked save looks like.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '../schemas.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import type { LocaleAppDescriptor } from '@types';
 
 /**
@@ -70,7 +70,6 @@ const defaultApp = computed(() => props.initialApp ?? props.apps.at(0)?.id ?? ''
 const { form, formErrors, showFormErrors, handleSubmit, setForm, applyServerErrors } =
     useStructureFormValidation({ app: '', key: '', value: '' }, localesEntrySchema, {
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     });
 
@@ -115,14 +114,14 @@ defineExpose({ applyServerErrors });
                     v-model="form.app"
                     :items="appOptions"
                     :label="t('entry-form.label-app')"
-                    :error-messages="showFormErrors ? (formErrors.app ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.app ?? []) : [])"
                     data-test="entry-app"
                 />
                 <v-text-field
                     v-model="form.key"
                     :label="t('entry-form.label-key')"
                     :hint="t('entry-form.hint-key')"
-                    :error-messages="showFormErrors ? (formErrors.key ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.key ?? []) : [])"
                     persistent-hint
                     class="font-mono"
                     data-test="entry-key"
@@ -130,7 +129,7 @@ defineExpose({ applyServerErrors });
                 <v-textarea
                     v-model="form.value"
                     :label="t('entry-form.label-value')"
-                    :error-messages="showFormErrors ? (formErrors.value ?? []) : []"
+                    v-bind="fieldErrorProps(showFormErrors ? (formErrors.value ?? []) : [])"
                     rows="2"
                     auto-grow
                     data-test="entry-value"

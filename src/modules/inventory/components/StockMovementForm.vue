@@ -16,6 +16,7 @@ export default {
  * `mode` (strictly positive for a receipt, signed non-zero for an adjustment) and is handed to
  * `useStructureFormValidation`, which owns the field state and submit gating.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -24,7 +25,6 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useInventoryStore } from '../store.ts';
 import { invalidateProductsCache } from '@/modules/products';
 import { useProductPicker, useProductPickerPin } from '../composables/use-product-picker.ts';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -106,7 +106,6 @@ const { form, formErrors, showFormErrors, handleSubmit, applyServerErrors } =
         {
             formElement,
             revalidateOn: locale,
-            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
             onInvalid: () => addMessage(t('generic.fix-errors'))
         }
     );
@@ -190,7 +189,7 @@ const submitForm = () =>
                 item-value="value"
                 no-filter
                 :label="t('inventory-page.label-product')"
-                :error-messages="showFormErrors ? (formErrors.productId ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.productId ?? []) : [])"
                 :data-test="isReceipt ? 'receipt-product' : 'adjust-product'"
                 class="min-w-56"
                 hide-details="auto"
@@ -204,7 +203,7 @@ const submitForm = () =>
                 "
                 :hint="isReceipt ? undefined : t('inventory-page.hint-delta')"
                 :persistent-hint="!isReceipt"
-                :error-messages="showFormErrors ? (formErrors.amount ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.amount ?? []) : [])"
                 :data-test="isReceipt ? 'receipt-quantity' : 'adjust-delta'"
                 class="max-w-28"
                 :hide-details="isReceipt ? 'auto' : undefined"

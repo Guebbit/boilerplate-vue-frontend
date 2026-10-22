@@ -120,7 +120,8 @@ error cannot be frozen without a disable on each known line.
 | `vuetify-arbitrary-variant`        | An arbitrary variant into a Vuetify class (`[&_.v-field]:`)                                               |
 | `native-title`                     | A native `title` (an HTML tag, or a Vuetify tag without a `title` prop)                                   |
 | `vuetify-root-override`            | A scoped rule on a class set on a `v-*` tag that declares a real property (custom properties are fine)    |
-| `vuetify-dom-query`                | `closest`/`querySelector`/`matches` on a Vuetify class in a script                                        |
+| `vuetify-unknown-class`            | A `.v-*` class in a selector or a script string that the installed Vuetify does not ship                  |
+| `vuetify-dom-query`                | Any string literal in a script that names a Vuetify class (`.v-x`)                                        |
 | `stale-allowance`, `bad-allowance` | A `css-allow` that covers nothing, or has no reason, an unknown check, or two Vuetify parts               |
 
 ### The ratchet

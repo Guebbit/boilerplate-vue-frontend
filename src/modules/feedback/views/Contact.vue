@@ -14,6 +14,7 @@ export default {
  * Public contact form, validated with `useStructureFormValidation` against a Zod schema and
  * submitted through the feedback store; success resets the form in place.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -23,7 +24,6 @@ import { useFeedbackStore } from '../store.ts';
 import { contactSchema } from '../schemas.ts';
 import { FeedbackCategory } from '@/types/enums.ts';
 import type { FeedbackCategory as TFeedbackCategory } from '@types';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import HumanCheck from '@/ui/organisms/HumanCheck.vue';
@@ -139,7 +139,6 @@ const {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
         formElement: () => card.value?.formElement,
         revalidateOn: locale,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
         onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
@@ -229,7 +228,7 @@ const submitForm = () =>
                 autocomplete="email"
                 data-test="contact-email"
                 :label="t('contact-page.label-email')"
-                :error-messages="showFormErrors ? (formErrors.email ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.email ?? []) : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -237,7 +236,7 @@ const submitForm = () =>
                 type="text"
                 data-test="contact-subject"
                 :label="t('contact-page.label-subject')"
-                :error-messages="showFormErrors ? (formErrors.subject ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.subject ?? []) : [])"
                 class="mb-2"
             />
             <v-select
@@ -261,7 +260,7 @@ const submitForm = () =>
                 v-model="form.message"
                 data-test="contact-message"
                 :label="t('contact-page.label-message')"
-                :error-messages="showFormErrors ? (formErrors.message ?? []) : []"
+                v-bind="fieldErrorProps(showFormErrors ? (formErrors.message ?? []) : [])"
                 rows="5"
             />
             <HumanCheck ref="humanCheck" class="mb-2" />

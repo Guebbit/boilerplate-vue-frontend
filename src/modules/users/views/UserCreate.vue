@@ -16,6 +16,7 @@ export default {
  * users store). There is no password field: a credential is its owner's alone, so the new owner
  * is emailed a link to choose theirs, and the form says so.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
@@ -30,7 +31,6 @@ import { supportedLanguages } from '@/i18n';
 import { z } from 'zod';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/ui/vuetify/selectors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -108,7 +108,6 @@ const {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access -- TypeScript-ESLint cannot fully resolve a template ref's Vue SFC instance type (InstanceType<typeof FormCard>), even with `formElement` explicitly exposed via FormCard.vue's own defineExpose
     formElement: () => card.value?.formElement,
     revalidateOn: locale,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
@@ -198,7 +197,7 @@ const submitForm = () => {
                 type="email"
                 data-test="user-email"
                 :label="t('user-create-page.label-email')"
-                :error-messages="showErrors ? formErrors.email : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.email : [])"
                 class="mb-2"
             />
             <v-text-field
@@ -206,7 +205,7 @@ const submitForm = () => {
                 type="text"
                 data-test="user-username"
                 :label="t('user-create-page.label-username')"
-                :error-messages="showErrors ? formErrors.username : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.username : [])"
                 class="mb-2"
             />
             <p class="mb-2 opacity-75" data-test="user-setup-email-note">
@@ -214,7 +213,7 @@ const submitForm = () => {
             </p>
             <FormImageUpload
                 v-model="form.imageUpload"
-                :error-messages="showErrors ? formErrors.imageUpload : []"
+                v-bind="fieldErrorProps(showErrors ? formErrors.imageUpload : [])"
                 :progress="uploadProgress"
                 :disabled="isSubmitting"
                 class="my-2"

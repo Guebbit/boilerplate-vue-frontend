@@ -16,6 +16,7 @@ export default {
  * writes to `useDictionaryCellEditor` — this file owns only filtering, paging and the "add key"
  * flow.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { debounce } from 'lodash-es';
@@ -605,8 +606,10 @@ onMounted(() => {
                         persistent-placeholder
                         :aria-label="cellLabel(language, item.key)"
                         :dir="language.direction"
-                        :error-messages="cellErrors[cellId(language.tag, item.key)]"
-                        v-bind="cellFieldProps(language.tag, item.key)"
+                        v-bind="{
+                            ...fieldErrorProps(cellErrors[cellId(language.tag, item.key)]),
+                            ...cellFieldProps(language.tag, item.key)
+                        }"
                         density="compact"
                         hide-details="auto"
                         class="min-w-48"

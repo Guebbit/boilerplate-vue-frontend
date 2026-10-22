@@ -5,6 +5,7 @@
  * The note is written to be read by the person it is about (the reason and a way to contest it,
  * GDPR Art. 22(3)), so the form says so. A plain `v-model` component; the page owns the write.
  */
+import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -110,7 +111,11 @@ const handleCancel = () => {
                     :min="tomorrow()"
                     :label="t('user-purchase-hold-dialog.label-until')"
                     :hint="t('user-purchase-hold-dialog.hint-until')"
-                    :error-messages="dateValid ? [] : [t('user-purchase-hold-dialog.error-until')]"
+                    v-bind="
+                        fieldErrorProps(
+                            dateValid ? [] : [t('user-purchase-hold-dialog.error-until')]
+                        )
+                    "
                     persistent-hint
                     data-test="user-purchase-hold-until"
                 />
