@@ -126,8 +126,10 @@ and everything else should use the simplest thing that works.
 | `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `inventory`, `notifications`, `payments`, `returns`, `stats`, `stock-alerts`, `wishlist` |
 | `generic`    | a solved problem, interchangeable with something bought         | `account`, `api-keys`, `feedback`, `locales`, `observability`, `users`, `webhooks`                   |
 
-`example` is not classified: it is the template a new domain is copied from, and it carries a
-`domain/` so the copy has one to keep or delete.
+`example` is not classified: it is the template a new domain is copied from. Its `domain/` holds
+one reading rule, `publicationOf`, the smallest case of a client rule that reads an answer and
+never makes one; keep the pattern, delete the file. Its controls are the minimal server-decided
+case: the moves, Edit and Delete all come from `Example.actions`.
 
 The same split is drawn as a map in [Modules](../modules/index.md#the-whole-map).
 
@@ -141,7 +143,7 @@ There is deliberately **no** rule, enforced or otherwise, that `core` must have 
 has one because quantity clamping is a genuine client-side rule. `products` and `orders` have one
 too, and what is in it is the point: reading answers, never making them. `shelfStateOf` ranks the
 flags the API already sent into one badge; `timeline.ts` words an event the server recorded;
-`reorder.ts` diffs the cart the server returned. Prices and status transitions stay the server's to
+`reorder.ts` diffs the cart the server returned; `publicationOf` (in `example`) reads a status and a first-publish date into one sentence. Prices and status transitions stay the server's to
 decide — a second implementation here would be drift, not thoroughness.
 
 ::: tip These values are this project's, not a rule for the next one

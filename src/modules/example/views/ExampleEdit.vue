@@ -11,12 +11,11 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The edit screen. Hydrates from the store's cache by route id (the route guard has already
- * loaded it) and holds every editable field: title, body and the cover image. The status is not a
- * field: it moves through `ExampleStatusActions`, from the server's own list. Built on
- * `useStructureFormValidation`; a save sends only what changed, and a cover goes up as its own
- * multipart request after the JSON save. A 412 means the record moved under the form: the form says
- * so and offers to reload. When the row says `actions.update` is false the form is read-only.
+ * In any module: an edit screen hydrates from the cache by route id, sends only what changed, and
+ * says so when the record moved under it (412, with "reload latest").
+ * Here: title, body and a cover; the status is not a field but the server's own moves, and the form
+ * is read-only when the row's `actions.update` is false.
+ * See: docs/theory/request-flow.md#conditional-writes
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, ref } from 'vue';

@@ -1,10 +1,9 @@
 /**
  * @module
- * The Pinia store: this domain's state, and every call it makes to the generated client. One
- * `useStructureCrudApi` instance declares the resource (search, get, create, update, remove) and
- * hands back the record cache, the list and pagination state and the actions; hand-written
- * actions cover what does not fit the generic shape: the status door, the cover and the public read.
- * The create is wrapped to be idempotent.
+ * In any module: the Pinia store holds the domain's state and every call it makes to the generated
+ * client. `useStructureCrudApi` declares the resource; hand-written actions cover what does not fit.
+ * Here: the status door, the cover, the public read, and a create that is safe to retry.
+ * See: docs/tools/state-and-routing.md
  */
 import { defineStore } from 'pinia';
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';

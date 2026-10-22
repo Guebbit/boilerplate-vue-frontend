@@ -96,8 +96,9 @@ Nothing needs rescoping to add one: `src/modules/<name>/tests/` is already outsi
 than the app's), `tsconfig.vitest.json` excludes it, and both `cypress.config.ts` and
 `scripts/e2e/run-shards.ts` discover the two homes by glob rather than by list.
 
-`cart` is the reference — it has one of everything, including the `domain/` folder that nothing may
-import a framework into.
+`example` is the template to copy ([The module template](./modules.md#the-module-template)); `cart`
+is the next read — it has one of everything, including the `domain/` folder that nothing may import a
+framework into.
 
 ### 2 · The manifest
 

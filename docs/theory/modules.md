@@ -204,13 +204,49 @@ may import, and a reach outside that list fails `npm run lint` at the offending 
   this build enables.
 - `responseSchemas` is eager: the http client needs the table before the first request.
 
+## The module template
+
+`src/modules/example` is this template in code: the module to copy when you start a new domain, and
+to delete once you have your own. Every non-test file opens with the same header —
+`In any module:` (the pattern the file is), `Here:` (what it does in `example`), an optional
+`Delete it if:`, an optional `Instead see:` and a closing `See:` — and a spec holds them to it.
+Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the same patterns.
+
+| Pattern                                 | Show / point | Where                                                         |
+| --------------------------------------- | ------------ | ------------------------------------------------------------- |
+| Manifest, routes, loading keys, locales | show         | `module.ts`, `routes.ts`, `locales/`                          |
+| Store over the generated client         | show         | `store.ts`                                                    |
+| Server-decided controls (`actions`)     | show         | list rows, detail, `components/ExampleStatusActions.vue`      |
+| An action door and its 409              | show         | `composables/use-example-transition.ts`                       |
+| A stale edit (412, "reload latest")     | show         | `views/ExampleEdit.vue`                                       |
+| An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                              |
+| A reading rule in `domain/`             | show         | `domain/publication.ts`                                       |
+| Upload with progress                    | show         | `views/ExampleEdit.vue`                                       |
+| Typed provide/inject, teaching guard    | show         | `provided.ts`, `guards.ts`                                    |
+| A barrel                                | point        | `cart/index.ts` (forbidden here: nothing imports `example`)   |
+| A slot contribution                     | point        | `wishlist/module.ts`                                          |
+| Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `feedback`, `observability` |
+
+```mermaid
+flowchart LR
+    List["list / detail / edit<br/>render example.actions"] -->|"press a move"| Door["POST /examples/{id}/transitions"]
+    Door -->|"200 + new actions"| Cache["store replaces the record"]
+    Door -->|"409: a peer moved it"| Reread["re-read past the cache<br/>buttons show the server's new answer"]
+    Cache --> List
+    Reread --> List
+```
+
+Copy the folder, rename it, delete the screens and the patterns you do not need (each header says
+when), and delete `example` once you have your own domain. The transition table lives on the
+backend; a client never holds one (`actions.transitions` is the server's list).
+
 ## Adding and deleting a domain
 
 One folder and one line, in both directions. The procedure — the manifest fields and the commands —
 is [Adding & removing a module](./module-lifecycle.md). What belongs here is
 what the exercise taught.
 
-The template to copy is `src/modules/example`: a small note domain with a list, a detail, a create
+The template to copy is `src/modules/example` ([The module template](#the-module-template)): a small note domain with a list, a detail, a create
 form, an edit form (with a cover upload) and one public screen, a store over the generated client,
 the Zod schemas, the response-schema rows, a teaching route guard, a provide/inject pair and both
 languages. It has no page of its own and no barrel (nothing imports it, and a barrel is published

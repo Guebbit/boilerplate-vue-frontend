@@ -45,9 +45,9 @@ export const useExampleTransition = (id: () => string | undefined) => {
             .then(() => {
                 addMessage(t('example-target-page.success-status'));
             })
-            .catch((failure: unknown) => {
-                report(failure);
-                if (absentIs(failure, 409)) return store.fetchExample(target, { forced: true });
+            .catch((error_: unknown) => {
+                report(error_);
+                if (absentIs(error_, 409)) return store.fetchExample(target, { forced: true });
             });
     };
 

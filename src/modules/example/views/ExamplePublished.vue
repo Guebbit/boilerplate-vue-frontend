@@ -11,10 +11,11 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The public screen: one published example, readable with no account. It reads through the
- * store's public call and holds the answer locally instead of in the signed-in cache, since a
- * stranger's read and an owner's list are different answers. A draft, an archived one and an id
- * that does not exist all answer 404 from the server, and all land on the shell's Error page.
+ * In any module: a public screen reads through a call that needs no session and holds the answer
+ * locally, apart from the signed-in cache.
+ * Here: one published example; a draft, an archived one and a missing id all answer 404.
+ * Delete it if: the module has nothing public.
+ * See: docs/theory/request-flow.md
  */
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

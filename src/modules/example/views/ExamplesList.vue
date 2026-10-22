@@ -11,10 +11,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The list screen: the store's paginated search wired to a filter form and a `DataTable`, with
- * view, edit and delete per row. The filters live in the URL, so a filtered view can be linked.
- * Edit and Delete follow each row's own `actions` (the server's answer for this caller and this
- * row); only Create, which has no row yet, asks `session.can`.
+ * In any module: a list screen wires the store's paginated search to a filter form and a `DataTable`;
+ * the filters live in the URL so a view can be linked.
+ * Here: Edit and Delete follow each row's `actions`; only Create, which has no row, asks `session.can`.
+ * See: docs/tools/state-and-routing.md
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/i18n/router-link.ts';

@@ -40,12 +40,12 @@ const scriptOf = (text: string, file: string): string => {
     const lines = text.split('\n').map(() => '');
     for (const block of [descriptor.script, descriptor.scriptSetup]) {
         if (block === null) continue;
-        block.content.split('\n').forEach((line, index) => {
+        for (const [index, line] of block.content.split('\n').entries()) {
             lines[block.loc.start.line - 1 + index] = line;
-        });
+        }
     }
     const template = descriptor.template?.content ?? '';
-    const names = [...new Set(template.match(/\b[A-Za-z_$][\w$]*\b/g) ?? [])];
+    const names = [...new Set(template.match(/\b[$A-Z_a-z][\w$]*\b/g))];
     return `${lines.join('\n')}\nvoid [${names.join(', ')}];\n`;
 };
 

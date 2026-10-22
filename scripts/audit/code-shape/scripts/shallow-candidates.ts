@@ -38,7 +38,7 @@ const NEVER_A_CANDIDATE =
  * component with one importer is how a page is built.
  * The layout: `docs/theory/modules.md#what-a-module-contains`.
  */
-const LAID_OUT_FILE = /^src\/modules\/[^/]+\/[^/]+\.ts$|\.vue$/;
+const LAID_OUT_FILE = /^src\/modules(?:\/[^/]+){2}\.ts$|\.vue$/;
 
 /**
  * One named function and how it is used.
@@ -208,6 +208,7 @@ const collectUsage = (
     for (const sourceFile of projectFiles(program)) {
         const file = relativeOf(sourceFile.fileName);
         // `forEachChild`: visits a node's direct children; the recursion reaches every identifier.
+        // eslint-disable-next-line unicorn/consistent-function-scoping -- recurses over this file's nodes, closing over `file` and the usage map
         const visit = (node: ts.Node): void => {
             if (ts.isIdentifier(node)) record(node, file);
             ts.forEachChild(node, visit);
@@ -350,6 +351,7 @@ const collectImports = (
     };
     for (const sourceFile of projectFiles(program)) {
         const file = relativeOf(sourceFile.fileName);
+        // eslint-disable-next-line unicorn/consistent-function-scoping -- recurses over this file's nodes, closing over `file` and the usage map
         const visit = (node: ts.Node): void => {
             const target = ts.isStringLiteralLike(node) ? moduleFileOf(checker, node) : undefined;
             if (target) {
@@ -467,6 +469,7 @@ export const findShallowCandidates = (
     for (const sourceFile of projectFiles(program)) {
         const file = relativeOf(sourceFile.fileName);
         if (!inScope(file)) continue;
+        // eslint-disable-next-line unicorn/consistent-function-scoping -- recurses over this file's nodes, closing over `file` and the usage map
         const visit = (node: ts.Node): void => {
             const declared = namedFunctionOf(node);
             const symbol = declared && checker.getSymbolAtLocation(declared.name);

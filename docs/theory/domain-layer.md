@@ -174,10 +174,11 @@ everything `canDecrement(item.quantity)` said, minus an import, a barrel line an
 
 Both halves are live:
 
-| Kept                         | Why it clears the floor                                                              |
-| ---------------------------- | ------------------------------------------------------------------------------------ |
-| `steppedQuantity`            | One caller, but a real trap: the clamp catches a double click outrunning `:disabled` |
-| `escapeCsvCell`, `safeLabel` | A security trap each: the CSV formula-injection prefix, the Mermaid label allow-list |
+| Kept                         | Why it clears the floor                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| `steppedQuantity`            | One caller, but a real trap: the clamp catches a double click outrunning `:disabled`             |
+| `escapeCsvCell`, `safeLabel` | A security trap each: the CSV formula-injection prefix, the Mermaid label allow-list             |
+| `publicationOf`              | Two callers, and a trap: `publishedAt` survives an archive, so the date alone would read as live |
 
 | Removed        | Why it did not                                |
 | -------------- | --------------------------------------------- |

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
  * @module
- * The injecting half of the provide/inject pair: reads the example and the status mutation the
- * screen provides, and renders the moves the server listed in `example.actions.transitions`. The
- * server lists the moves; this component decides nothing.
+ * In any module: the injecting half of a provide/inject pair reads what its screen provides, so the
+ * value crosses a boundary and the mechanism is visible.
+ * Here: renders the moves the server listed in `example.actions.transitions`; it decides nothing.
+ * Delete it if: no control hangs off a server-listed set.
+ * See: docs/theory/strategic-ddd.md#4-subdomain-distillation-where-to-spend-effort
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

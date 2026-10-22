@@ -11,9 +11,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The create screen: a form built on `useStructureFormValidation` inside the shared `FormCard`.
- * Validation is the Zod schema, a server refusal that names a field lands on that field, and any
- * other failure blocks the form in place; success toasts and opens the new example.
+ * In any module: a create screen is a form on `useStructureFormValidation` inside the shared
+ * `FormCard`; a refusal naming a field lands on it, any other blocks the form in place.
+ * Here: title and body; a retried submit reuses its `Idempotency-Key` (the store owns it).
+ * See: docs/theory/request-flow.md
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { ref } from 'vue';
