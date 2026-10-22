@@ -15,6 +15,7 @@ export default {
  * other list. A customer sees the returns on their own orders and staff see every one — the server
  * decides, so this page is the same for both.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -158,14 +159,12 @@ const { handleSearch, handleReset } = useListSearch({
             </form>
         </v-card>
 
-        <v-empty-state
+        <ListEmptyState
             v-if="pageItemList.length === 0"
             :title="isFiltered ? t('returns-list-page.empty-search') : t('returns-list-page.empty')"
+            :icon="Undo2"
         >
-            <template #media>
-                <Undo2 :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-        </v-empty-state>
+        </ListEmptyState>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
             <v-card

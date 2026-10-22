@@ -16,6 +16,7 @@ export default {
  * `availability` ("Sold out", "Not available right now", "No longer available"); only a removed
  * line cannot be moved, since an off-sale product moves like a sold-out one.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -134,16 +135,13 @@ onMounted(() =>
 
 <template>
     <div id="wishlist-page">
-        <v-empty-state v-if="items.length === 0" :title="t('wishlist-page.empty')">
-            <template #media>
-                <Heart :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
+        <ListEmptyState v-if="items.length === 0" :title="t('wishlist-page.empty')" :icon="Heart">
             <template v-if="productsListTo" #actions>
                 <v-btn color="primary" :to="routerLinkI18n(productsListTo)">
                     {{ t('wishlist-page.button-go-to-products') }}
                 </v-btn>
             </template>
-        </v-empty-state>
+        </ListEmptyState>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
             <InlineErrorAlert :message="lineActionError" data-test="wishlist-line-action-error" />

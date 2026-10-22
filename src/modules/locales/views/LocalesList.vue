@@ -15,6 +15,7 @@ export default {
  * `LocaleCapability` rows, writes through the store's explicit language wrappers, and opens the
  * shared create/edit dialog.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -249,14 +250,12 @@ onMounted(() => {
             data-test="locales-list-delete-error"
         />
 
-        <v-empty-state
+        <ListEmptyState
             v-if="!loading && capabilities.length === 0"
             :title="t('locales-list-page.empty')"
+            :icon="Languages"
         >
-            <template #media>
-                <Languages :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-        </v-empty-state>
+        </ListEmptyState>
 
         <DataTable
             v-else

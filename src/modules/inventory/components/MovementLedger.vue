@@ -15,6 +15,7 @@ export default {
  * plus the sweep action that expires stale reservation holds. Reads/writes go through
  * `useInventoryStore` directly — filters live as local refs, re-fetched on change via `watch`.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -374,11 +375,12 @@ onMounted(() => {
 
     <InlineErrorAlert :message="sweepError" class="mb-4" data-test="sweep-error" />
 
-    <v-empty-state v-if="movements.length === 0" :title="t('inventory-page.empty')">
-        <template #media>
-            <BookOpen :size="64" class="text-secondary" aria-hidden="true" />
-        </template>
-    </v-empty-state>
+    <ListEmptyState
+        v-if="movements.length === 0"
+        :title="t('inventory-page.empty')"
+        :icon="BookOpen"
+    >
+    </ListEmptyState>
 
     <DataTable
         v-else

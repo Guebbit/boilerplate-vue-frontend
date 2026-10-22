@@ -14,6 +14,7 @@ export default {
  * Admin inbox: the store's paginated search wired to a filter form and a pager, like every other
  * admin list, with a per-row status select and delete.
  */
+import ListEmptyState from '@/ui/molecules/ListEmptyState.vue';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -329,16 +330,14 @@ const handleDelete = (requestId: string, subject: string) =>
             </form>
         </v-card>
 
-        <v-empty-state
+        <ListEmptyState
             v-if="pageItemList.length === 0"
             :title="
                 isFiltered ? t('feedback-inbox-page.empty-search') : t('feedback-inbox-page.empty')
             "
+            :icon="Inbox"
         >
-            <template #media>
-                <Inbox :size="64" class="text-secondary" aria-hidden="true" />
-            </template>
-        </v-empty-state>
+        </ListEmptyState>
 
         <div v-else class="mx-auto flex w-full max-w-3xl flex-col gap-4">
             <InlineErrorAlert :message="rowActionError" data-test="feedback-row-action-error" />
