@@ -101,6 +101,26 @@ describe('a replace-mode import', () => {
             }));
 });
 
+describe('a dictionary that names one key twice once flattened', () => {
+    it('shows the error naming the key and emits nothing', () =>
+        mountDialog()
+            .then((wrapper) =>
+                wrapper
+                    .get('[data-test=import-json] textarea')
+                    .setValue(JSON.stringify({ 'a.b': 'x', a: { b: 'y' } }))
+                    .then(() => wrapper)
+            )
+            .then((wrapper) =>
+                wrapper
+                    .get('form')
+                    .trigger('submit')
+                    .then(() => {
+                        expect(wrapper.text()).toContain('a.b');
+                        expect(wrapper.emitted('import')).toBeUndefined();
+                    })
+            ));
+});
+
 describe('a merge-mode import', () => {
     it('emits immediately, asking no confirmation — merge deletes nothing', () =>
         mountDialog()

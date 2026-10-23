@@ -642,7 +642,7 @@ export const ListAppLocaleEntriesResponse = zod.strictObject({
 });
 /**
  * Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
- * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
+ * — see `entries` on `ReplaceLocaleEntriesRequest` for what a collision is and why it is refused here
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
@@ -724,15 +724,9 @@ export const ReplaceLocaleEntriesParams = zod.strictObject({
         .max(replaceLocaleEntriesPathAppMax)
         .regex(replaceLocaleEntriesPathAppRegExp)
 });
-export const replaceLocaleEntriesBodyEntriesItemKeyMax = 200;
-export const replaceLocaleEntriesBodyEntriesItemValueMax = 2000;
+export const replaceLocaleEntriesBodyEntriesMaxOne = 2000;
 export const ReplaceLocaleEntriesBody = zod.strictObject({
-    entries: zod.array(
-        zod.strictObject({
-            key: zod.string().min(1).max(replaceLocaleEntriesBodyEntriesItemKeyMax),
-            value: zod.string().max(replaceLocaleEntriesBodyEntriesItemValueMax)
-        })
-    )
+    entries: zod.record(zod.string(), zod.string().max(replaceLocaleEntriesBodyEntriesMaxOne))
 });
 export const replaceLocaleEntriesResponseDataCreatedMin = 0;
 export const replaceLocaleEntriesResponseDataUpdatedMin = 0;
@@ -750,53 +744,49 @@ export const ReplaceLocaleEntriesResponse = zod.strictObject({
     })
 });
 /**
- * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
- * alone. Nothing is ever deleted by this operation.
+ * Bulk import, MERGING semantics (RFC 7396): a string upserts its key, `null` deletes
+ * it, and everything the body does not name is left alone. Without a `null`, nothing
+ * is deleted.
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
  * @summary Merge entries
  */
-export const mergeLocaleEntriesPathLocaleMax = 35;
-export const mergeLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const mergeLocaleEntriesPathAppMax = 64;
-export const mergeLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const MergeLocaleEntriesParams = zod.strictObject({
+export const updateLocaleEntriesPathLocaleMax = 35;
+export const updateLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocaleEntriesPathAppMax = 64;
+export const updateLocaleEntriesPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const UpdateLocaleEntriesParams = zod.strictObject({
     locale: zod
         .string()
-        .max(mergeLocaleEntriesPathLocaleMax)
-        .regex(mergeLocaleEntriesPathLocaleRegExp),
+        .max(updateLocaleEntriesPathLocaleMax)
+        .regex(updateLocaleEntriesPathLocaleRegExp),
     app: zod
         .string()
         .min(1)
-        .max(mergeLocaleEntriesPathAppMax)
-        .regex(mergeLocaleEntriesPathAppRegExp)
+        .max(updateLocaleEntriesPathAppMax)
+        .regex(updateLocaleEntriesPathAppRegExp)
 });
-export const mergeLocaleEntriesBodyEntriesItemKeyMax = 200;
-export const mergeLocaleEntriesBodyEntriesItemValueMax = 2000;
-export const MergeLocaleEntriesBody = zod.strictObject({
-    entries: zod
-        .array(
-            zod.strictObject({
-                key: zod.string().min(1).max(mergeLocaleEntriesBodyEntriesItemKeyMax),
-                value: zod.string().max(mergeLocaleEntriesBodyEntriesItemValueMax)
-            })
-        )
-        .min(1)
+export const updateLocaleEntriesBodyEntriesMaxOne = 2000;
+export const UpdateLocaleEntriesBody = zod.strictObject({
+    entries: zod.record(
+        zod.string(),
+        zod.string().max(updateLocaleEntriesBodyEntriesMaxOne).nullable()
+    )
 });
-export const mergeLocaleEntriesResponseDataCreatedMin = 0;
-export const mergeLocaleEntriesResponseDataUpdatedMin = 0;
-export const mergeLocaleEntriesResponseDataRemovedMin = 0;
-export const mergeLocaleEntriesResponseDataRevisionMin = 0;
-export const MergeLocaleEntriesResponse = zod.strictObject({
+export const updateLocaleEntriesResponseDataCreatedMin = 0;
+export const updateLocaleEntriesResponseDataUpdatedMin = 0;
+export const updateLocaleEntriesResponseDataRemovedMin = 0;
+export const updateLocaleEntriesResponseDataRevisionMin = 0;
+export const UpdateLocaleEntriesResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        created: zod.number().min(mergeLocaleEntriesResponseDataCreatedMin),
-        updated: zod.number().min(mergeLocaleEntriesResponseDataUpdatedMin),
-        removed: zod.number().min(mergeLocaleEntriesResponseDataRemovedMin),
-        revision: zod.number().min(mergeLocaleEntriesResponseDataRevisionMin)
+        created: zod.number().min(updateLocaleEntriesResponseDataCreatedMin),
+        updated: zod.number().min(updateLocaleEntriesResponseDataUpdatedMin),
+        removed: zod.number().min(updateLocaleEntriesResponseDataRemovedMin),
+        revision: zod.number().min(updateLocaleEntriesResponseDataRevisionMin)
     })
 });
 /**
@@ -805,35 +795,39 @@ export const MergeLocaleEntriesResponse = zod.strictObject({
  * collision checks that go with them.
  * @summary Edit one translation entry
  */
-export const updateLocaleEntryPathLocaleMax = 35;
-export const updateLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const updateLocaleEntryPathAppMax = 64;
-export const updateLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const updateLocaleEntryPathEntryIdMax = 64;
-export const updateLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const UpdateLocaleEntryParams = zod.strictObject({
+export const replaceLocaleEntryPathLocaleMax = 35;
+export const replaceLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleEntryPathAppMax = 64;
+export const replaceLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const replaceLocaleEntryPathEntryIdMax = 64;
+export const replaceLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReplaceLocaleEntryParams = zod.strictObject({
     locale: zod
         .string()
-        .max(updateLocaleEntryPathLocaleMax)
-        .regex(updateLocaleEntryPathLocaleRegExp),
-    app: zod.string().min(1).max(updateLocaleEntryPathAppMax).regex(updateLocaleEntryPathAppRegExp),
+        .max(replaceLocaleEntryPathLocaleMax)
+        .regex(replaceLocaleEntryPathLocaleRegExp),
+    app: zod
+        .string()
+        .min(1)
+        .max(replaceLocaleEntryPathAppMax)
+        .regex(replaceLocaleEntryPathAppRegExp),
     entryId: zod
         .string()
         .min(1)
-        .max(updateLocaleEntryPathEntryIdMax)
-        .regex(updateLocaleEntryPathEntryIdRegExp)
+        .max(replaceLocaleEntryPathEntryIdMax)
+        .regex(replaceLocaleEntryPathEntryIdRegExp)
 });
-export const updateLocaleEntryBodyValueMax = 2000;
-export const UpdateLocaleEntryBody = zod.strictObject({
-    value: zod.string().max(updateLocaleEntryBodyValueMax)
+export const replaceLocaleEntryBodyValueMax = 2000;
+export const ReplaceLocaleEntryBody = zod.strictObject({
+    value: zod.string().max(replaceLocaleEntryBodyValueMax)
 });
-export const updateLocaleEntryResponseDataIdMax = 64;
-export const updateLocaleEntryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const updateLocaleEntryResponseDataLocaleMax = 35;
-export const updateLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
-export const updateLocaleEntryResponseDataAppMax = 64;
-export const updateLocaleEntryResponseDataAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
-export const UpdateLocaleEntryResponse = zod.strictObject({
+export const replaceLocaleEntryResponseDataIdMax = 64;
+export const replaceLocaleEntryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const replaceLocaleEntryResponseDataLocaleMax = 35;
+export const replaceLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const replaceLocaleEntryResponseDataAppMax = 64;
+export const replaceLocaleEntryResponseDataAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const ReplaceLocaleEntryResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -841,17 +835,17 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
         id: zod
             .string()
             .min(1)
-            .max(updateLocaleEntryResponseDataIdMax)
-            .regex(updateLocaleEntryResponseDataIdRegExp),
+            .max(replaceLocaleEntryResponseDataIdMax)
+            .regex(replaceLocaleEntryResponseDataIdRegExp),
         locale: zod
             .string()
-            .max(updateLocaleEntryResponseDataLocaleMax)
-            .regex(updateLocaleEntryResponseDataLocaleRegExp),
+            .max(replaceLocaleEntryResponseDataLocaleMax)
+            .regex(replaceLocaleEntryResponseDataLocaleRegExp),
         app: zod
             .string()
             .min(1)
-            .max(updateLocaleEntryResponseDataAppMax)
-            .regex(updateLocaleEntryResponseDataAppRegExp),
+            .max(replaceLocaleEntryResponseDataAppMax)
+            .regex(replaceLocaleEntryResponseDataAppRegExp),
         key: zod.string(),
         value: zod.string(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),

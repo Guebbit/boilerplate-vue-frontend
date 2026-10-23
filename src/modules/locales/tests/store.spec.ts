@@ -185,7 +185,7 @@ describe('entry writes', () => {
         const store = useLocalesStore();
         return store.editEntry('es', 'demo-fe', 'locale-entry-1', 'Cercar').then((entry) => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(contractRequest(schemas.UpdateLocaleEntryBody, call.data)).toEqual({
+            expect(contractRequest(schemas.ReplaceLocaleEntryBody, call.data)).toEqual({
                 value: 'Cercar'
             });
             expect(entry?.value).toBe('Cercar');
@@ -212,7 +212,7 @@ describe('entry writes', () => {
             });
     });
 
-    it('names the app in the path, once for the whole batch — the body is only the rows', () => {
+    it('names the app in the path, once for the whole batch — the body is only the key-to-text map', () => {
         const store = useLocalesStore();
         return store
             .importEntries('es', 'merge', 'demo-be', [{ key: 'a', value: 'b' }])
@@ -222,8 +222,8 @@ describe('entry writes', () => {
                     data?: unknown;
                 };
                 expect(call.url).toBe('/locales/es/apps/demo-be/entries');
-                expect(contractRequest(schemas.MergeLocaleEntriesBody, call.data)).toEqual({
-                    entries: [{ key: 'a', value: 'b' }]
+                expect(contractRequest(schemas.UpdateLocaleEntriesBody, call.data)).toEqual({
+                    entries: { a: 'b' }
                 });
             });
     });

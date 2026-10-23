@@ -6,7 +6,7 @@
  * the deeper-key-wins rule on data the API should never produce but a test can.
  */
 import { describe, expect, it } from 'vitest';
-import { flattenDictionary, expandEntries } from '../dictionaries.ts';
+import { flattenDictionary, expandEntries, findDuplicateKey } from '../dictionaries.ts';
 
 describe('flattenDictionary', () => {
     it('flattens nested objects into dotted rows', () => {
@@ -32,6 +32,18 @@ describe('flattenDictionary', () => {
     it('skips a null or non-string leaf instead of throwing', () => {
         const pasted = { a: null, b: 3, c: { d: 'kept', e: null } };
         expect(flattenDictionary(pasted)).toEqual([{ key: 'c.d', value: 'kept' }]);
+    });
+});
+
+describe('findDuplicateKey', () => {
+    it('finds the key a flattened dictionary names twice', () => {
+        const rows = flattenDictionary({ 'a.b': 'x', a: { b: 'y' } });
+
+        expect(findDuplicateKey(rows.map(({ key }) => key))).toBe('a.b');
+    });
+
+    it('answers nothing when every key is unique', () => {
+        expect(findDuplicateKey(['a', 'a.b', 'c'])).toBeUndefined();
     });
 });
 

@@ -18,10 +18,10 @@ import {
     listLocaleEntries,
     listAppLocaleEntries,
     createLocaleEntry,
-    updateLocaleEntry,
+    replaceLocaleEntry,
     deleteLocaleEntry,
     replaceLocaleEntries,
-    mergeLocaleEntries,
+    updateLocaleEntries,
     getEntityTranslations,
     upsertEntityTranslations as apiUpsertEntityTranslations,
     LocaleAppKind
@@ -33,12 +33,11 @@ import type {
     CreateLocaleRequest,
     UpdateLocaleRequest,
     CreateLocaleEntryRequest,
-    LocaleEntryInput,
     LocaleImportResult,
     EntityTranslations,
     MergeTranslationsRequest
 } from '@types';
-import { flattenDictionary } from './dictionaries.ts';
+import { flattenDictionary, type DictionaryRow } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/i18n';
 import { localeApp } from '@/infrastructure/locale-overrides.ts';
 import { queryClient as sharedQueryClient } from '@/infrastructure/query-client.ts';
@@ -321,7 +320,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const editEntry = (tag: string, app: string, entryId: string, value: string) =>
         fetchAny(() =>
-            updateLocaleEntry(tag, app, entryId, { value }).then((response) => {
+            replaceLocaleEntry(tag, app, entryId, { value }).then((response) => {
                 addRecord(response.data);
                 return response.data;
             })
@@ -348,25 +347,29 @@ export const useLocalesStore = defineStore('locales', () => {
      * @param tag - Which language.
      * @param mode - `merge` or `replace`.
      * @param app - Whose dictionary the batch belongs to.
-     * @param entries - The rows, flat and dotted.
+     * @param rows - The rows, flat and dotted; sent as a key-to-text map.
      * @returns A promise resolving with what the import actually did, counted.
      */
     const importEntries = (
         tag: string,
         mode: 'merge' | 'replace',
         app: string,
-        entries: LocaleEntryInput[]
-    ): Promise<LocaleImportResult | undefined> =>
-        fetchAny(() =>
+        rows: DictionaryRow[]
+    ): Promise<LocaleImportResult | undefined> => {
+        // The body is a key-to-text map. The dialog has already refused a key named twice, so
+        // `fromEntries` loses nothing.
+        const entries = Object.fromEntries(rows.map(({ key, value }) => [key, value]));
+        return fetchAny(() =>
             (mode === 'replace'
                 ? replaceLocaleEntries(tag, app, { entries })
-                : mergeLocaleEntries(tag, app, { entries })
+                : updateLocaleEntries(tag, app, { entries })
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
                 void invalidateEntrySearches();
                 return response.data;
             })
         );
+    };
 
     /**
      * Every entry of one language, paged to completion — what the export dialog folds back into

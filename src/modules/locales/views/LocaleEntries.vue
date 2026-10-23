@@ -36,7 +36,8 @@ import EntriesImportDialog from '../components/EntriesImportDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import type { LocaleEntry, LocaleEntryInput } from '@types';
+import type { LocaleEntry } from '@types';
+import type { DictionaryRow } from '../dictionaries.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
@@ -321,7 +322,7 @@ const handleDelete = singleFlight((entry: LocaleEntry) => {
 const handleImport = (payload: {
     mode: 'merge' | 'replace';
     app: string;
-    entries: LocaleEntryInput[];
+    entries: DictionaryRow[];
 }) => {
     clearImportError();
     return localesStore

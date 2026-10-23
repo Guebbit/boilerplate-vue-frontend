@@ -18,6 +18,14 @@ import type { TranslationDictionaries } from '@/i18n';
  */
 
 /**
+ * One flat dictionary row: a dotted key and its text.
+ */
+export interface DictionaryRow {
+    key: string;
+    value: string;
+}
+
+/**
  * Flattens a nested dictionary into the dotted rows the entries API stores.
  *
  * Arrays are legitimate vue-i18n messages — the static pages keep their paragraph lists in them —
@@ -31,7 +39,7 @@ import type { TranslationDictionaries } from '@/i18n';
 export const flattenDictionary = (
     dictionary: Record<string, unknown> | unknown[],
     prefix = ''
-): { key: string; value: string }[] =>
+): DictionaryRow[] =>
     // `unknown` values: pasted JSON may hold a null, a number or a boolean where a message goes.
     Object.entries<unknown>(dictionary).flatMap(([segment, value]) => {
         const key = prefix === '' ? segment : `${prefix}.${segment}`;
@@ -40,6 +48,18 @@ export const flattenDictionary = (
         if (typeof value !== 'object' || value === null) return [];
         return flattenDictionary(value as Record<string, unknown> | unknown[], key);
     });
+
+/**
+ * The first key a list names twice.
+ *
+ * Flattening can produce one: `{ "a.b": "x", "a": { "b": "y" } }` has two rows for `a.b`, and the
+ * entries API takes a key-to-text map, which can hold only one of them.
+ *
+ * @param keys - Dotted keys, already trimmed the way the API trims them.
+ * @returns The first repeated key, or `undefined` when every key is unique.
+ */
+export const findDuplicateKey = (keys: readonly string[]): string | undefined =>
+    keys.find((key, index) => keys.indexOf(key) !== index);
 
 /**
  * Expands dotted rows back into the nested dictionary shape a client bundles.

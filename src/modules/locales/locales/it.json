@@ -150,6 +150,7 @@
         "preview-count": "{count} chiavi pronte per l'import",
         "error-parse": "Non è JSON valido.",
         "error-empty": "Il dizionario non ha chiavi.",
+        "error-duplicate": "La chiave {key} compare due volte una volta appiattito il dizionario. Tienine una.",
         "confirm-replace": "Sostituire tutte le voci \"{app}\" di questa lingua con queste {count} chiavi? Ciò che non è nel file viene eliminato.",
         "button-import": "Importa",
         "button-cancel": "Annulla",

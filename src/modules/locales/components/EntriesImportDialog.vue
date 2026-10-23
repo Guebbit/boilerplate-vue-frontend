@@ -13,9 +13,9 @@ import { DIALOG_MAX_WIDTH } from '@/ui/organisms/dialog-width.ts';
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DialogShell from '@/ui/organisms/DialogShell.vue';
-import type { LocaleEntryInput, LocaleAppDescriptor } from '@types';
+import type { LocaleAppDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/i18n';
-import { flattenDictionary } from '../dictionaries';
+import { flattenDictionary, findDuplicateKey, type DictionaryRow } from '../dictionaries';
 import { parseJsonSafe } from '@/infrastructure/utils/safe-storage.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 
@@ -48,7 +48,7 @@ const props = defineProps<{
  * Emits the flattened rows upward on submit, alongside the confirmed mode and destination app.
  */
 const emit = defineEmits<{
-    import: [payload: { mode: 'merge' | 'replace'; app: string; entries: LocaleEntryInput[] }];
+    import: [payload: { mode: 'merge' | 'replace'; app: string; entries: DictionaryRow[] }];
 }>();
 
 /**
@@ -112,13 +112,18 @@ const handleFile = (file: File | File[] | null) => {
 /**
  * The parse outcome: rows when the JSON is a non-empty dictionary, the reason it is not otherwise.
  */
-const parsed = computed<{ entries?: LocaleEntryInput[]; error?: string }>(() => {
+const parsed = computed<{ entries?: DictionaryRow[]; error?: string }>(() => {
     if (rawJson.value.trim() === '') return {};
     const dictionary = parseJsonSafe(rawJson.value);
     if (typeof dictionary !== 'object' || dictionary === null || Array.isArray(dictionary))
         return { error: t('entries-import.error-parse') };
     const entries = flattenDictionary(dictionary as TranslationDictionaries);
     if (entries.length === 0) return { error: t('entries-import.error-empty') };
+    // The API takes a key-to-text map, so a key named twice (`"a.b"` beside `{ a: { b } }`) would
+    // silently keep one of the two texts.
+    const duplicate = findDuplicateKey(entries.map(({ key }) => key.trim()));
+    if (duplicate !== undefined)
+        return { error: t('entries-import.error-duplicate', { key: duplicate }) };
     return { entries };
 });
 

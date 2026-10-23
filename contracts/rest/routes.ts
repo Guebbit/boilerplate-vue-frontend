@@ -238,7 +238,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "DELETE", pattern: /^\/wishlist\/[^/]+$/, schemaName: "RemoveWishlistItemResponse", bodySchemaName: undefined, module: "wishlist" },
     { method: "PUT", pattern: /^\/wishlist\/[^/]+$/, schemaName: "AddWishlistItemResponse", bodySchemaName: undefined, module: "wishlist" },
     { method: "GET", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "ListAppLocaleEntriesResponse", bodySchemaName: undefined, module: "locales" },
-    { method: "PATCH", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "MergeLocaleEntriesResponse", bodySchemaName: "MergeLocaleEntriesBody", module: "locales" },
+    { method: "PATCH", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "UpdateLocaleEntriesResponse", bodySchemaName: "UpdateLocaleEntriesBody", module: "locales" },
     { method: "POST", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "CreateLocaleEntryResponse", bodySchemaName: "CreateLocaleEntryBody", module: "locales" },
     { method: "PUT", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries$/, schemaName: "ReplaceLocaleEntriesResponse", bodySchemaName: "ReplaceLocaleEntriesBody", module: "locales" },
     { method: "GET", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "GetEntityTranslationsResponse", bodySchemaName: undefined, module: "locales" },
@@ -247,5 +247,5 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/orders\/[^/]+\/credit-notes\/[^/]+$/, schemaName: "GetOrderCreditNoteResponse", bodySchemaName: undefined, module: "invoicing" },
     { method: "DELETE", pattern: /^\/webhooks\/subscriptions\/[^/]+\/secrets\/[^/]+$/, schemaName: "RemoveWebhookSubscriptionSecretResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "DELETE", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries\/[^/]+$/, schemaName: "DeleteLocaleEntryResponse", bodySchemaName: undefined, module: "locales" },
-    { method: "PUT", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries\/[^/]+$/, schemaName: "UpdateLocaleEntryResponse", bodySchemaName: "UpdateLocaleEntryBody", module: "locales" },
+    { method: "PUT", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries\/[^/]+$/, schemaName: "ReplaceLocaleEntryResponse", bodySchemaName: "ReplaceLocaleEntryBody", module: "locales" },
 ];

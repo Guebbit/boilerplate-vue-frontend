@@ -499,30 +499,27 @@ export interface LocaleEntriesResponseEnvelope {
 }
 
 /**
- * One key and its translation, as an import or a create sends it.
- * A key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
+ * Translation key to text. Strings only: a `null` has no meaning under `PUT`, which already deletes whatever it does not name, and is a 422.
+ * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key is refused when it is a strict prefix of another key in the same batch, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
  * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
  */
-export interface LocaleEntryInput {
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    key: string;
-    /** @maxLength 2000 */
-    value: string;
-}
+export type ReplaceLocaleEntriesRequestEntries = { [key: string]: string };
 
 /**
  * The COMPLETE set of entries for this language IN THE APP the URI names. Anything already stored under that app and not named here is deleted; the other apps are untouched.
  * The app is the path's, once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
-    entries: LocaleEntryInput[];
+    /**
+     * Translation key to text. Strings only: a `null` has no meaning under `PUT`, which already deletes whatever it does not name, and is a 422.
+     * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key is refused when it is a strict prefix of another key in the same batch, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
+     * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
+     */
+    entries: ReplaceLocaleEntriesRequestEntries;
 }
 
 /**
- * What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.
+ * What an import actually did, counted rather than implied. `removed` counts the stored keys the import deleted: those a `PUT` did not name, or a `PATCH` set to `null`.
  */
 export interface LocaleImportResult {
     /** @minimum 0 */
@@ -560,14 +557,23 @@ export interface LocaleEntryEnvelope {
 }
 
 /**
- * Entries to upsert into the app the URI names. Anything already stored is left exactly as it was.
+ * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map is a 422 — enforced at write time.
+ * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
  */
-export interface MergeLocaleEntriesRequest {
-    /** @minItems 1 */
-    entries: LocaleEntryInput[];
+export type UpdateLocaleEntriesRequestEntries = { [key: string]: string | null };
+
+/**
+ * Entries to change in the app the URI names, as a JSON merge patch (RFC 7396) over the app's key-to-text map. A string upserts that key, `null` deletes it, and a key the map does not name is left exactly as it was.
+ */
+export interface UpdateLocaleEntriesRequest {
+    /**
+     * Translation key to text, or to `null` to delete it. A `null` for a key that is not stored is a no-op, not an error. An empty map is a 422 — enforced at write time.
+     * A key is 1 to 200 characters once trimmed, and two keys that are the same once trimmed are a 409. A key being written (a string) is refused when it is a strict prefix of a key that will remain, or has one as a prefix — `products.list` alongside `products.list.title`; a key being deleted is not part of that check. The rationale and the "undefined keys are accepted" rule are on `ReplaceLocaleEntriesRequest`.
+     */
+    entries: UpdateLocaleEntriesRequestEntries;
 }
 
-export interface UpdateLocaleEntryRequest {
+export interface ReplaceLocaleEntryRequest {
     /** @maxLength 2000 */
     value: string;
 }
@@ -7248,7 +7254,7 @@ export const listAppLocaleEntries = (
 
 /**
  * Adds a key to this app's dictionary. 409 if the key already exists in this language, and equally if it COLLIDES with one
- * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
+ * — see `entries` on `ReplaceLocaleEntriesRequest` for what a collision is and why it is refused here
  * rather than discovered when the tree is built.
  * @summary Add one translation entry
  */
@@ -7302,17 +7308,18 @@ export const replaceLocaleEntries = (
 };
 
 /**
- * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
- * alone. Nothing is ever deleted by this operation.
+ * Bulk import, MERGING semantics (RFC 7396): a string upserts its key, `null` deletes
+ * it, and everything the body does not name is left alone. Without a `null`, nothing
+ * is deleted.
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
  * @summary Merge entries
  */
-export const mergeLocaleEntries = (
+export const updateLocaleEntries = (
     locale: string,
     app: string,
-    mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
+    updateLocaleEntriesRequest: UpdateLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
@@ -7320,24 +7327,25 @@ export const mergeLocaleEntries = (
             url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            data: mergeLocaleEntriesRequest
+            data: updateLocaleEntriesRequest
         },
         options
     );
 };
 
 /**
- * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
- * alone. Nothing is ever deleted by this operation.
+ * Bulk import, MERGING semantics (RFC 7396): a string upserts its key, `null` deletes
+ * it, and everything the body does not name is left alone. Without a `null`, nothing
+ * is deleted.
  *
  * See `PUT` on this collection for the replacing counterpart, and for why the choice
  * lives in the method.
  * @summary Merge entries
  */
-export const mergeLocaleEntriesWithMergePatchJson = (
+export const updateLocaleEntriesWithMergePatchJson = (
     locale: string,
     app: string,
-    mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
+    updateLocaleEntriesRequest: UpdateLocaleEntriesRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
 ) => {
     return orvalMutator<LocaleImportResultEnvelope>(
@@ -7345,7 +7353,7 @@ export const mergeLocaleEntriesWithMergePatchJson = (
             url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PATCH',
             headers: { 'Content-Type': 'application/merge-patch+json' },
-            data: mergeLocaleEntriesRequest
+            data: updateLocaleEntriesRequest
         },
         options
     );
@@ -7357,11 +7365,11 @@ export const mergeLocaleEntriesWithMergePatchJson = (
  * collision checks that go with them.
  * @summary Edit one translation entry
  */
-export const updateLocaleEntry = (
+export const replaceLocaleEntry = (
     locale: string,
     app: string,
     entryId: string,
-    updateLocaleEntryRequest: UpdateLocaleEntryRequest,
+    replaceLocaleEntryRequest: ReplaceLocaleEntryRequest,
     options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
 ) => {
     return orvalMutator<LocaleEntryEnvelope>(
@@ -7369,7 +7377,7 @@ export const updateLocaleEntry = (
             url: `/locales/${locale}/apps/${app}/entries/${entryId}`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            data: updateLocaleEntryRequest
+            data: replaceLocaleEntryRequest
         },
         options
     );
@@ -11533,11 +11541,13 @@ export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof crea
 export type ReplaceLocaleEntriesResult = NonNullable<
     Awaited<ReturnType<typeof replaceLocaleEntries>>
 >;
-export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mergeLocaleEntries>>>;
-export type MergeLocaleEntriesWithMergePatchJsonResult = NonNullable<
-    Awaited<ReturnType<typeof mergeLocaleEntriesWithMergePatchJson>>
+export type UpdateLocaleEntriesResult = NonNullable<
+    Awaited<ReturnType<typeof updateLocaleEntries>>
 >;
-export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>;
+export type UpdateLocaleEntriesWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateLocaleEntriesWithMergePatchJson>>
+>;
+export type ReplaceLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof replaceLocaleEntry>>>;
 export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
 export type GetEntityTranslationsResult = NonNullable<
     Awaited<ReturnType<typeof getEntityTranslations>>

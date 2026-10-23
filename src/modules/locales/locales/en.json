@@ -150,6 +150,7 @@
         "preview-count": "{count} keys ready to import",
         "error-parse": "That is not valid JSON.",
         "error-empty": "The dictionary has no keys.",
+        "error-duplicate": "The key {key} appears twice once the dictionary is flattened. Keep one of them.",
         "confirm-replace": "Replace every \"{app}\" entry of this language with these {count} keys? Anything not in the file is deleted.",
         "button-import": "Import",
         "button-cancel": "Cancel",
