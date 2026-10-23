@@ -429,7 +429,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         <PaymentPanel
                             :order-id="currentOrder.id"
                             :order-payable="currentOrder.actions?.pay"
-                            :order-status="currentOrder.status"
                             :pay-by="currentOrder.payBy"
                             @paid="fetchOrder(currentOrder.id, { forced: true })"
                         />

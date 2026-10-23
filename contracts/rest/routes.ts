@@ -245,6 +245,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "PATCH", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "UpsertEntityTranslationsResponse", bodySchemaName: "UpsertEntityTranslationsBody", module: "locales" },
     { method: "PUT", pattern: /^\/locales\/translations\/[^/]+\/[^/]+$/, schemaName: "ReplaceEntityTranslationsResponse", bodySchemaName: "ReplaceEntityTranslationsBody", module: "locales" },
     { method: "GET", pattern: /^\/orders\/[^/]+\/credit-notes\/[^/]+$/, schemaName: "GetOrderCreditNoteResponse", bodySchemaName: undefined, module: "invoicing" },
+    { method: "POST", pattern: /^\/payments\/[^/]+\/refunds\/[^/]+\/settle$/, schemaName: "SettleRefundByHandResponse", bodySchemaName: undefined, module: "payments" },
     { method: "DELETE", pattern: /^\/webhooks\/subscriptions\/[^/]+\/secrets\/[^/]+$/, schemaName: "RemoveWebhookSubscriptionSecretResponse", bodySchemaName: undefined, module: "webhooks" },
     { method: "DELETE", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries\/[^/]+$/, schemaName: "DeleteLocaleEntryResponse", bodySchemaName: undefined, module: "locales" },
     { method: "PUT", pattern: /^\/locales\/[^/]+\/apps\/[^/]+\/entries\/[^/]+$/, schemaName: "UpdateLocaleEntryResponse", bodySchemaName: "UpdateLocaleEntryBody", module: "locales" },

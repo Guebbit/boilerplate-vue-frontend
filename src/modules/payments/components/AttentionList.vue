@@ -13,10 +13,11 @@ export default {
  * @module
  * The "Needs attention" tab: only problems still recorded on a document, so a fixed one
  * disappears on the next read. It refuses nothing and repairs nothing — it shows, and links to the
- * order where the existing actions live. An amount mismatch is deliberately not here: it is an
+ * order where the existing actions live. A refund owed by hand also opens the payment's drawer,
+ * where "Mark returned" confirms the money went back. An amount mismatch is deliberately not here: it is an
  * audit row, not stored state, so the tab points at the audit log instead.
  */
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -29,7 +30,9 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
+import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
+import PaymentDrawer from './PaymentDrawer.vue';
 
 /**
  * Translation function and toast dispatcher.
@@ -67,6 +70,32 @@ const load = () =>
 onMounted(() => {
     void load();
 });
+
+/**
+ * The payment whose drawer is open, and whether it is. Read on demand: the item names an order,
+ * not the payment.
+ */
+const picked = ref<Payment>();
+
+/**
+ * Whether the drawer is open.
+ */
+const drawerOpen = ref(false);
+
+/**
+ * Opens the drawer on an order's payment.
+ *
+ * @param orderId - The order the item is about.
+ * @returns A promise settling once the drawer opened or the failure was toasted.
+ */
+const openPayment = (orderId: string) =>
+    store
+        .readPaymentForOrder(orderId)
+        .then((payment) => {
+            picked.value = payment;
+            drawerOpen.value = true;
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
 /**
  * The items with a key of their own: nothing on an item is unique by itself (one order can have
@@ -146,6 +175,16 @@ const auditLink = computed(() => {
                 >
                     {{ t(`payments-list-page.failure-reason-${item.failureReason}`) }}
                 </p>
+                <v-btn
+                    v-if="item.kind === 'manual_refund_owed'"
+                    class="mt-1"
+                    size="small"
+                    variant="tonal"
+                    data-test="attention-open-payment"
+                    @click="openPayment(item.orderId)"
+                >
+                    {{ t('payments-list-page.button-open-payment') }}
+                </v-btn>
             </template>
             <template v-slot:[`item.since`]="{ item }">
                 {{ formatDateTime(item.since) }}
@@ -165,6 +204,8 @@ const auditLink = computed(() => {
                 <span v-else>{{ item.orderId }}</span>
             </template>
         </DataTable>
+
+        <PaymentDrawer v-model="drawerOpen" :payment="picked" @changed="load" />
 
         <p class="mt-6 text-sm opacity-75" data-test="attention-audit-note">
             {{ t('payments-list-page.attention-audit-note') }}
