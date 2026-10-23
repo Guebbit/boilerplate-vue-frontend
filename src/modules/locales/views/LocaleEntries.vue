@@ -38,6 +38,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleEntry, LocaleEntryInput } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
@@ -291,7 +292,7 @@ const handleValueBlur = (entry: LocaleEntry) => {
  * @returns A promise settling once the viewer has answered and, if they accepted, the removal
  *  has finished; a failure blocks the list in place ({@link rowActionError}).
  */
-const handleDelete = (entry: LocaleEntry) => {
+const handleDelete = singleFlight((entry: LocaleEntry) => {
     return useDialogStore()
         .confirm({
             message: t('locale-entries-page.confirm-delete-entry', { key: entry.key }),
@@ -308,7 +309,7 @@ const handleDelete = (entry: LocaleEntry) => {
                 })
                 .catch((error: unknown) => reportRowActionError(error));
         });
-};
+});
 
 /**
  * Runs the import dialog's batch, then refreshes the page, the manifest and the running app.

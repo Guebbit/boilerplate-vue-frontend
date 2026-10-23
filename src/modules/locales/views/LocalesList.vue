@@ -31,6 +31,7 @@ import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleCapability } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
@@ -191,7 +192,7 @@ const {
  * @returns A promise settling once the viewer has answered and, if they accepted, the deletion
  *  has finished; a failure blocks the board in place ({@link deleteError}).
  */
-const handleDelete = (language: LocaleCapability) => {
+const handleDelete = singleFlight((language: LocaleCapability) => {
     return useDialogStore()
         .confirm({
             message: t('locales-list-page.confirm-delete', {
@@ -212,7 +213,7 @@ const handleDelete = (language: LocaleCapability) => {
                 .then(() => addMessage(t('locales-list-page.success-delete')))
                 .catch((error: unknown) => reportDeleteError(error));
         });
-};
+});
 
 /**
  * What kind of app an id is, for the chip's colour and hint; `frontend` until the registry answers.

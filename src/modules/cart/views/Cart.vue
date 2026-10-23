@@ -37,6 +37,7 @@ import { useCheckoutRefusals } from '../composables/use-checkout-refusals.ts';
 import { useCartStockPoll } from '../composables/use-cart-stock-poll.ts';
 import { useCartFocusRefresh } from '../composables/use-cart-focus-refresh.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import {
     clearCheckoutDrafts,
     readCheckoutDraft,
@@ -419,7 +420,7 @@ const removeLine = (productId: string) => {
  * @returns A promise resolving once the shopper declines or the clear settles; a failure blocks
  *  the line actions in place ({@link lineActionError}).
  */
-const handleClearCart = () => {
+const handleClearCart = singleFlight(() => {
     // The line count is what the question names: a bulk action has no single row to point at.
     const count = cartItems.value.length;
     return useDialogStore()
@@ -430,7 +431,7 @@ const handleClearCart = () => {
             clearLineActionError();
             return clearCart().catch((error: unknown) => reportLineActionError(error));
         });
-};
+});
 
 /**
  * A step still inside its debounce when the page goes away (a reload, a closed tab) is sent by a

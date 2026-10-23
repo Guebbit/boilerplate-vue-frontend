@@ -644,6 +644,19 @@ describe('the Clear cart button asks before it empties the basket', () => {
         );
     });
 
+    it('clears the cart once when the button is pressed twice before the first answer', async () => {
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const { wrapper, clearSpy } = await mountCart();
+        const button = wrapper.get('[data-test=cart-clear]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(clearSpy).toHaveBeenCalledOnce();
+    });
+
     it('leaves the cart alone when the shopper declines', () => {
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
 

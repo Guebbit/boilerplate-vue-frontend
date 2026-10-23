@@ -18,6 +18,7 @@ import { shopCurrency } from '@/infrastructure/shop.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useProductLines } from '@/modules/products';
 import { MAX_GUEST_LINE_QUANTITY } from '../domain';
@@ -159,14 +160,14 @@ const removeLine = (productId: string) => cartStore.removeGuestItems([productId]
  *
  * @returns A promise settling once the visitor decides.
  */
-const handleClearCart = () => {
+const handleClearCart = singleFlight(() => {
     const count = guestLines.value.length;
     return useDialogStore()
         .confirm({ message: t('cart-page.confirm-clear', { count }, count), color: 'error' })
         .then((accepted) => {
             if (accepted) cartStore.clearGuestCart();
         });
-};
+});
 
 onMounted(refreshLines);
 </script>

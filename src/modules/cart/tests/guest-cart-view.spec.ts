@@ -262,6 +262,18 @@ describe('clearing the cart', () => {
         expect(cart.guestLines).toEqual([]);
     });
 
+    it('asks once when the button is pressed twice before the first answer', async () => {
+        const { wrapper: page } = await mountPage([['p1', 1]]);
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const button = page.get('[data-test=guest-cart-clear]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+    });
+
     it('leaves it alone on no', async () => {
         const { wrapper: page, cart } = await mountPage([['p1', 1]]);
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
