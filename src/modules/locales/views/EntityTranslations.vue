@@ -35,8 +35,8 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useTranslationTabOrder } from '@/ui/composables/use-translation-tab-order.ts';
 import TranslationTabs from '@/ui/organisms/TranslationTabs.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import type { Translation, UpsertTranslationsRequest } from '@types';
-import { TranslationOrigin } from '@/types/enums.ts';
+import type { Translation } from '@types';
+import { toMergeTranslationsBody } from '../domain/translation-drafts.ts';
 
 /**
  * Localized dictionary helper.
@@ -95,8 +95,8 @@ const fieldNames = ref<string[]>([]);
 
 /**
  * The editable draft, one entry per open locale: an object to upsert, or `null` for a tab marked
- * for removal — the same three-way shape `UpsertTranslationsRequest` itself uses, so submission
- * is a direct pass-through.
+ * for removal — the same three-way shape `MergeTranslationsRequest` uses; blank fields become `null`
+ * on the way out ({@link toMergeTranslationsBody}).
  */
 const drafts = ref<Record<string, Record<string, string> | null>>({});
 
@@ -199,26 +199,15 @@ const handleRemoveLocale = (tag: string) => {
 const { message: saveError, report: reportSaveError, clear: clearSaveError } = useBlockingError();
 
 /**
- * Saves every open and removed locale in one merging write. A blank field is dropped from its
- * locale's body rather than blocking the save — an empty string is a 422 on the API's own door
- * (never a delete, that is `null`), and `barebones`-shaped rows mean some field is routinely
- * blank on a screen offering every registry field regardless of what a row already has.
+ * Saves every open and removed locale in one merging write. A blank field goes out as `null`
+ * (clear it) rather than blocking the save or being dropped — an empty string is a 422 on the
+ * API's own door, and a dropped key would keep the stored value.
  *
  * @returns A promise resolving once the write lands and the screen has reloaded from it; a
  *  failure blocks the button in place ({@link saveError}).
  */
 const handleSave = () => {
-    const body: UpsertTranslationsRequest = {};
-    for (const [tag, fields] of Object.entries(drafts.value)) {
-        if (fields === null) {
-            body[tag] = null;
-            continue;
-        }
-        const nonBlank = Object.fromEntries(
-            Object.entries(fields).filter(([, value]) => value !== '')
-        );
-        body[tag] = { fields: nonBlank, origin: TranslationOrigin.human };
-    }
+    const body = toMergeTranslationsBody(drafts.value);
 
     saving.value = true;
     clearSaveError();

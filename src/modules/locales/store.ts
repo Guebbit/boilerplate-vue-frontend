@@ -36,7 +36,7 @@ import type {
     LocaleEntryInput,
     LocaleImportResult,
     EntityTranslations,
-    UpsertTranslationsRequest
+    MergeTranslationsRequest
 } from '@types';
 import { flattenDictionary } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/i18n';
@@ -425,7 +425,7 @@ export const useLocalesStore = defineStore('locales', () => {
     const saveEntityTranslations = (
         entityType: string,
         entityId: string,
-        body: UpsertTranslationsRequest
+        body: MergeTranslationsRequest
     ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
         fetchAny(() =>
             apiUpsertEntityTranslations(entityType, entityId, body).then(
