@@ -4,16 +4,20 @@
  * with none carries no `imageUrl`, so there is nothing to clear and no button to press.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 
 import ProfileAvatar from '../components/ProfileAvatar.vue';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { i18n } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 wireModulesIntoCore();
+
+/** The store's write, shared so a case can count its calls. */
+const updateProfile = vi.fn();
 
 /** The record the panel reads; a test sets it before mounting. */
 const profile = ref<{ imageUrl?: string } | undefined>();
@@ -27,12 +31,13 @@ vi.mock('../stores/profile.ts', () => ({
         profile,
         uploadingAvatar: ref(false),
         removingAvatar: ref(false),
-        updateProfile: vi.fn()
+        updateProfile
     })
 }));
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    vi.clearAllMocks();
 });
 
 /**
@@ -57,5 +62,18 @@ describe('ProfileAvatar — the remove button', () => {
         const wrapper = mountPanel();
 
         expect(wrapper.find('[data-test=profile-avatar-remove]').exists()).toBe(false);
+    });
+
+    it('clears the picture once when the button is pressed twice before the first answer', async () => {
+        updateProfile.mockResolvedValue(undefined);
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const button = mountPanel('/images/ada.png').get('[data-test=profile-avatar-remove]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(updateProfile).toHaveBeenCalledTimes(1);
     });
 });

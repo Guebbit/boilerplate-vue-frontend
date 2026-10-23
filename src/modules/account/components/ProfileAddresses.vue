@@ -31,6 +31,7 @@ import { formatCountry } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import type { Address } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import AddressFormDialog from './AddressFormDialog.vue';
 
@@ -113,7 +114,7 @@ const handleMakeDefault = (address: Address) => {
  * @returns Nothing; success is toasted, a failure blocks the list in place
  *  ({@link rowActionError}).
  */
-const handleRemove = (address: Address) =>
+const handleRemove = singleFlight((address: Address) =>
     useDialogStore()
         .confirm({
             message: t('profile-page.addresses-confirm-remove', {
@@ -127,7 +128,8 @@ const handleRemove = (address: Address) =>
             return removeAddress(address.id)
                 .then(() => addMessage(t('profile-page.addresses-removed')))
                 .catch((error) => reportRowActionError(error));
-        });
+        })
+);
 
 onMounted(fetchAddresses);
 </script>

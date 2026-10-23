@@ -95,6 +95,20 @@ describe('ProfileConnectedAccounts', () => {
             .trigger('click')
             .then(() => vi.waitFor(() => expect(unlinkProvider).toHaveBeenCalledWith('github')));
     });
+
+    it('removes the provider once when the button is pressed twice before the first answer', async () => {
+        unlinkProvider.mockResolvedValue([]);
+        const wrapper = mountPanel();
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const button = wrapper.get('[data-test="connected-remove"]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(unlinkProvider).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe('ProfileConnectedAccounts — connecting a provider', () => {

@@ -32,6 +32,7 @@ import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -123,7 +124,7 @@ const handleRevoke = (sessionId: string, current: boolean) => {
  * @returns Nothing; a failure blocks the list in place ({@link sessionsActionError}) — success
  *  navigates away, so there is nothing left here to toast.
  */
-const handleLogoutEverywhere = () =>
+const handleLogoutEverywhere = singleFlight(() =>
     useDialogStore()
         .confirm({ message: t('profile-page.sessions-confirm-logout-everywhere'), color: 'error' })
         .then((accepted) => {
@@ -132,7 +133,8 @@ const handleLogoutEverywhere = () =>
             return logoutEverywhere()
                 .then(() => router.push(routerLinkI18n({ name: 'Home' })))
                 .catch((error) => reportSessionsActionError(error));
-        });
+        })
+);
 
 onMounted(fetchSessions);
 </script>

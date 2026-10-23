@@ -27,6 +27,7 @@ import { providerLabel, useOAuthProvidersStore } from '../stores/oauth.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -88,7 +89,7 @@ const {
  * @param provider - Registry key of the link to remove.
  * @returns Nothing; success is toasted, a failure blocks the list in place ({@link actionError}).
  */
-const handleRemove = (provider: string) =>
+const handleRemove = singleFlight((provider: string) =>
     useDialogStore()
         .confirm({
             message: t('profile-page.connected-confirm-remove', {
@@ -108,7 +109,8 @@ const handleRemove = (provider: string) =>
                 .finally(() => {
                     removing.value = undefined;
                 });
-        });
+        })
+);
 
 /**
  * Starts connecting one provider: asks the server for the consent URL, then leaves for it. The

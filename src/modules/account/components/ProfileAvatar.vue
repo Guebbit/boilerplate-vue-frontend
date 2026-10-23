@@ -26,6 +26,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '../stores/profile.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -125,7 +126,7 @@ watch(pickedFile, (file) => {
  *
  * @returns Nothing; success is toasted, a failure blocks the panel in place ({@link avatarError}).
  */
-const handleRemove = () =>
+const handleRemove = singleFlight(() =>
     useDialogStore()
         .confirm({ message: t('profile-page.avatar-confirm-remove'), color: 'error' })
         .then((accepted) => {
@@ -134,7 +135,8 @@ const handleRemove = () =>
             return updateProfile({ imageUrl: null })
                 .then(() => addMessage(t('profile-page.avatar-success-remove')))
                 .catch((error) => reportAvatarError(error));
-        });
+        })
+);
 </script>
 
 <template>

@@ -24,6 +24,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '../stores/profile.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -56,7 +57,7 @@ const {
  *
  * @returns Nothing; success is toasted, a failure blocks in place ({@link deleteError}).
  */
-const handleDeleteAccount = () =>
+const handleDeleteAccount = singleFlight(() =>
     useDialogStore()
         .confirm({ message: t('profile-page.confirm-delete-account'), color: 'error' })
         .then((accepted) => {
@@ -65,7 +66,8 @@ const handleDeleteAccount = () =>
             return requestAccountDelete()
                 .then(() => addMessage(t('profile-page.success-delete-request')))
                 .catch((error) => reportDeleteError(error));
-        });
+        })
+);
 </script>
 
 <template>
