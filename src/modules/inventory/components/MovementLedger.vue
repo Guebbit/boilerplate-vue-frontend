@@ -67,6 +67,12 @@ const { addMessage } = useNotificationsStore();
 const inventoryStore = useInventoryStore();
 
 /**
+ * Asked before the sweep. Held from setup, not looked up at click time, so the question goes to the
+ * store this component was mounted with whichever pinia is active by then.
+ */
+const dialogStore = useDialogStore();
+
+/**
  * The current page of movements, their total count across pages, and the shared loading flag.
  */
 const { movements, movementsTotal, loading } = storeToRefs(inventoryStore);
@@ -302,7 +308,7 @@ const {
  * the orders behind the released holds get cancelled, and that is worth a deliberate click.
  */
 const handleSweep = singleFlight(() =>
-    useDialogStore()
+    dialogStore
         .confirm({ message: t('inventory-page.confirm-sweep'), color: 'warning' })
         .then((accepted) => {
             if (!accepted) return;
