@@ -2803,6 +2803,25 @@ export interface CartResponseItem {
     /** @minimum 1 */
     quantity: number;
     availability: LineAvailability;
+    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart`. A client disables its "+" on `false` instead of copying the ceiling. */
+    canIncrease: boolean;
+}
+
+/**
+ * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
+ */
+export interface ExpectedTotal {
+    /**
+     * The total in minor units of `currency` (EUR 71.00 is 7100).
+     * @minimum 0
+     */
+    amount: number;
+    /**
+     * The ISO-4217 code the total is priced in.
+     * @minLength 3
+     * @maxLength 3
+     */
+    currency: string;
 }
 
 export interface CartSummaryResponse {
@@ -2833,6 +2852,8 @@ export interface CartSummaryResponse {
     totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
     currency: string;
+    /** `totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents. */
+    expectedTotal: ExpectedTotal;
 }
 
 /**
@@ -2871,6 +2892,8 @@ export interface CartResponse {
     items: CartResponseItem[];
     summary: CartSummaryResponse;
     shipping: CartShipping;
+    /** Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this. */
+    checkoutable: boolean;
 }
 
 export interface CartResponseEnvelope {
@@ -2915,23 +2938,6 @@ export interface CartSummaryResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: CartSummaryResponse;
-}
-
-/**
- * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
- */
-export interface ExpectedTotal {
-    /**
-     * The total in minor units of `currency` (EUR 71.00 is 7100).
-     * @minimum 0
-     */
-    amount: number;
-    /**
-     * The ISO-4217 code the total is priced in.
-     * @minLength 3
-     * @maxLength 3
-     */
-    currency: string;
 }
 
 /**
@@ -3227,6 +3233,50 @@ export interface CheckoutResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Order;
+}
+
+/**
+ * Why a merged guest line or a reordered order line did not land exactly as asked. Absent when it did.
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
+ *   nothing was added, `resulting` is what the cart already held (often 0). A product
+ *   that is merely sold out, or taken off sale, is NOT removed: it is added and
+ *   flagged through `availability`.
+ */
+export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
+
+export const MergeLineReason = {
+    summed: 'summed',
+    capped: 'capped',
+    removed: 'removed'
+} as const;
+
+export interface MergeLineResult {
+    productId: Id;
+    /**
+     * What the guest line (or the order line) asked for.
+     * @minimum 1
+     */
+    requested: number;
+    /**
+     * What the cart holds for this product after the merge or reorder.
+     * @minimum 0
+     */
+    resulting: number;
+    reason?: MergeLineReason;
+    availability: LineAvailability;
+}
+
+export interface ReorderResponse {
+    cart: CartResponse;
+    /** One result per order line, in the order's own order. */
+    lines: MergeLineResult[];
+}
+
+export interface ReorderResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReorderResponse;
 }
 
 export interface WishlistItem {
@@ -5407,37 +5457,6 @@ export interface MergeCartRequest {
      * @maxItems 100
      */
     lines: AddCartItemRequest[];
-}
-
-/**
- * Why a guest line did not land exactly as asked. Absent when it did.
- * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
- *   nothing was added, `resulting` is what the cart already held (often 0). A product
- *   that is merely sold out, or taken off sale, is NOT removed: it is added and
- *   flagged through `availability`.
- */
-export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
-
-export const MergeLineReason = {
-    summed: 'summed',
-    capped: 'capped',
-    removed: 'removed'
-} as const;
-
-export interface MergeLineResult {
-    productId: Id;
-    /**
-     * What the guest line asked for.
-     * @minimum 1
-     */
-    requested: number;
-    /**
-     * What the cart holds for this product after the merge.
-     * @minimum 0
-     */
-    resulting: number;
-    reason?: MergeLineReason;
-    availability: LineAvailability;
 }
 
 export interface MergeCartResponse {
@@ -9654,14 +9673,14 @@ export const checkout = (
 };
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReorderResponseEnvelope>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<ReorderResponseEnvelope>(
         { url: `/cart/reorder/${orderId}`, method: 'POST' },
         options
     );

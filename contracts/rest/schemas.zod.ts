@@ -4995,6 +4995,9 @@ export const getCartResponseDataSummaryTotalQuantityMin = 0;
 export const getCartResponseDataSummaryItemsTotalMin = 0;
 export const getCartResponseDataSummaryShippingCostMin = 0;
 export const getCartResponseDataSummaryTotalPriceMin = 0;
+export const getCartResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const getCartResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const getCartResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const getCartResponseDataShippingOptionsItemPriceMin = 0;
 export const GetCartResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5017,7 +5020,8 @@ export const GetCartResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5026,7 +5030,14 @@ export const GetCartResponse = zod.strictObject({
             itemsTotal: zod.number().min(getCartResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(getCartResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(getCartResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod.number().min(getCartResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(getCartResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(getCartResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5039,7 +5050,8 @@ export const GetCartResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5064,6 +5076,9 @@ export const addCartItemResponseDataSummaryTotalQuantityMin = 0;
 export const addCartItemResponseDataSummaryItemsTotalMin = 0;
 export const addCartItemResponseDataSummaryShippingCostMin = 0;
 export const addCartItemResponseDataSummaryTotalPriceMin = 0;
+export const addCartItemResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const addCartItemResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const addCartItemResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const addCartItemResponseDataShippingOptionsItemPriceMin = 0;
 export const AddCartItemResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5086,7 +5101,8 @@ export const AddCartItemResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5095,7 +5111,14 @@ export const AddCartItemResponse = zod.strictObject({
             itemsTotal: zod.number().min(addCartItemResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(addCartItemResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(addCartItemResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod.number().min(addCartItemResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(addCartItemResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(addCartItemResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5108,7 +5131,8 @@ export const AddCartItemResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5133,6 +5157,9 @@ export const removeCartItemByBodyResponseDataSummaryTotalQuantityMin = 0;
 export const removeCartItemByBodyResponseDataSummaryItemsTotalMin = 0;
 export const removeCartItemByBodyResponseDataSummaryShippingCostMin = 0;
 export const removeCartItemByBodyResponseDataSummaryTotalPriceMin = 0;
+export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const removeCartItemByBodyResponseDataShippingOptionsItemPriceMin = 0;
 export const RemoveCartItemByBodyResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5155,7 +5182,8 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5166,7 +5194,16 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
             itemsTotal: zod.number().min(removeCartItemByBodyResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(removeCartItemByBodyResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(removeCartItemByBodyResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod
+                    .number()
+                    .min(removeCartItemByBodyResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5181,7 +5218,8 @@ export const RemoveCartItemByBodyResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5195,6 +5233,9 @@ export const clearCartResponseDataSummaryTotalQuantityMin = 0;
 export const clearCartResponseDataSummaryItemsTotalMin = 0;
 export const clearCartResponseDataSummaryShippingCostMin = 0;
 export const clearCartResponseDataSummaryTotalPriceMin = 0;
+export const clearCartResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const clearCartResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const clearCartResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const clearCartResponseDataShippingOptionsItemPriceMin = 0;
 export const ClearCartResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5217,7 +5258,8 @@ export const ClearCartResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5226,7 +5268,14 @@ export const ClearCartResponse = zod.strictObject({
             itemsTotal: zod.number().min(clearCartResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(clearCartResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(clearCartResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod.number().min(clearCartResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(clearCartResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(clearCartResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5239,7 +5288,8 @@ export const ClearCartResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5268,6 +5318,9 @@ export const updateCartItemByIdResponseDataSummaryTotalQuantityMin = 0;
 export const updateCartItemByIdResponseDataSummaryItemsTotalMin = 0;
 export const updateCartItemByIdResponseDataSummaryShippingCostMin = 0;
 export const updateCartItemByIdResponseDataSummaryTotalPriceMin = 0;
+export const updateCartItemByIdResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const updateCartItemByIdResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const updateCartItemByIdResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const updateCartItemByIdResponseDataShippingOptionsItemPriceMin = 0;
 export const UpdateCartItemByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5290,7 +5343,8 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5299,7 +5353,16 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
             itemsTotal: zod.number().min(updateCartItemByIdResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(updateCartItemByIdResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(updateCartItemByIdResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod
+                    .number()
+                    .min(updateCartItemByIdResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(updateCartItemByIdResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(updateCartItemByIdResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5314,7 +5377,8 @@ export const UpdateCartItemByIdResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5337,6 +5401,9 @@ export const removeCartItemResponseDataSummaryTotalQuantityMin = 0;
 export const removeCartItemResponseDataSummaryItemsTotalMin = 0;
 export const removeCartItemResponseDataSummaryShippingCostMin = 0;
 export const removeCartItemResponseDataSummaryTotalPriceMin = 0;
+export const removeCartItemResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const removeCartItemResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const removeCartItemResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const removeCartItemResponseDataShippingOptionsItemPriceMin = 0;
 export const RemoveCartItemResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5359,7 +5426,8 @@ export const RemoveCartItemResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5368,7 +5436,16 @@ export const RemoveCartItemResponse = zod.strictObject({
             itemsTotal: zod.number().min(removeCartItemResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(removeCartItemResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(removeCartItemResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod
+                    .number()
+                    .min(removeCartItemResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(removeCartItemResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(removeCartItemResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5381,7 +5458,8 @@ export const RemoveCartItemResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5405,6 +5483,9 @@ export const setCartShippingMethodResponseDataSummaryTotalQuantityMin = 0;
 export const setCartShippingMethodResponseDataSummaryItemsTotalMin = 0;
 export const setCartShippingMethodResponseDataSummaryShippingCostMin = 0;
 export const setCartShippingMethodResponseDataSummaryTotalPriceMin = 0;
+export const setCartShippingMethodResponseDataSummaryExpectedTotalOneAmountMin = 0;
+export const setCartShippingMethodResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
+export const setCartShippingMethodResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
 export const setCartShippingMethodResponseDataShippingOptionsItemPriceMin = 0;
 export const SetCartShippingMethodResponse = zod.strictObject({
     success: zod.literal(true),
@@ -5427,7 +5508,8 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                     'out_of_stock',
                     'unavailable',
                     'removed'
-                ])
+                ]),
+                canIncrease: zod.boolean()
             })
         ),
         summary: zod.strictObject({
@@ -5438,7 +5520,16 @@ export const SetCartShippingMethodResponse = zod.strictObject({
             itemsTotal: zod.number().min(setCartShippingMethodResponseDataSummaryItemsTotalMin),
             shippingCost: zod.number().min(setCartShippingMethodResponseDataSummaryShippingCostMin),
             totalPrice: zod.number().min(setCartShippingMethodResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
+            currency: zod.string(),
+            expectedTotal: zod.strictObject({
+                amount: zod
+                    .number()
+                    .min(setCartShippingMethodResponseDataSummaryExpectedTotalOneAmountMin),
+                currency: zod
+                    .string()
+                    .min(setCartShippingMethodResponseDataSummaryExpectedTotalOneCurrencyMin)
+                    .max(setCartShippingMethodResponseDataSummaryExpectedTotalOneCurrencyMax)
+            })
         }),
         shipping: zod.strictObject({
             required: zod.boolean(),
@@ -5453,7 +5544,8 @@ export const SetCartShippingMethodResponse = zod.strictObject({
                     tracked: zod.boolean()
                 })
             )
-        })
+        }),
+        checkoutable: zod.boolean()
     })
 });
 /**
@@ -5465,6 +5557,9 @@ export const getCartSummaryResponseDataTotalQuantityMin = 0;
 export const getCartSummaryResponseDataItemsTotalMin = 0;
 export const getCartSummaryResponseDataShippingCostMin = 0;
 export const getCartSummaryResponseDataTotalPriceMin = 0;
+export const getCartSummaryResponseDataExpectedTotalOneAmountMin = 0;
+export const getCartSummaryResponseDataExpectedTotalOneCurrencyMin = 3;
+export const getCartSummaryResponseDataExpectedTotalOneCurrencyMax = 3;
 export const GetCartSummaryResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -5475,7 +5570,14 @@ export const GetCartSummaryResponse = zod.strictObject({
         itemsTotal: zod.number().min(getCartSummaryResponseDataItemsTotalMin),
         shippingCost: zod.number().min(getCartSummaryResponseDataShippingCostMin),
         totalPrice: zod.number().min(getCartSummaryResponseDataTotalPriceMin),
-        currency: zod.string()
+        currency: zod.string(),
+        expectedTotal: zod.strictObject({
+            amount: zod.number().min(getCartSummaryResponseDataExpectedTotalOneAmountMin),
+            currency: zod
+                .string()
+                .min(getCartSummaryResponseDataExpectedTotalOneCurrencyMin)
+                .max(getCartSummaryResponseDataExpectedTotalOneCurrencyMax)
+        })
     })
 });
 /**
@@ -5731,7 +5833,7 @@ export const CheckoutResponse = zod.strictObject({
     })
 });
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorderPathOrderIdMax = 64;
@@ -5739,27 +5841,87 @@ export const reorderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const ReorderParams = zod.strictObject({
     orderId: zod.string().min(1).max(reorderPathOrderIdMax).regex(reorderPathOrderIdRegExp)
 });
-export const reorderResponseDataItemsItemProductIdMax = 64;
-export const reorderResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const reorderResponseDataSummaryItemsCountMin = 0;
-export const reorderResponseDataSummaryTotalQuantityMin = 0;
-export const reorderResponseDataSummaryItemsTotalMin = 0;
-export const reorderResponseDataSummaryShippingCostMin = 0;
-export const reorderResponseDataSummaryTotalPriceMin = 0;
-export const reorderResponseDataShippingOptionsItemPriceMin = 0;
+export const reorderResponseDataCartItemsItemProductIdMax = 64;
+export const reorderResponseDataCartItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reorderResponseDataCartSummaryItemsCountMin = 0;
+export const reorderResponseDataCartSummaryTotalQuantityMin = 0;
+export const reorderResponseDataCartSummaryItemsTotalMin = 0;
+export const reorderResponseDataCartSummaryShippingCostMin = 0;
+export const reorderResponseDataCartSummaryTotalPriceMin = 0;
+export const reorderResponseDataCartSummaryExpectedTotalOneAmountMin = 0;
+export const reorderResponseDataCartSummaryExpectedTotalOneCurrencyMin = 3;
+export const reorderResponseDataCartSummaryExpectedTotalOneCurrencyMax = 3;
+export const reorderResponseDataCartShippingOptionsItemPriceMin = 0;
+export const reorderResponseDataLinesItemProductIdMax = 64;
+export const reorderResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const reorderResponseDataLinesItemResultingMin = 0;
 export const ReorderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        items: zod.array(
+        cart: zod.strictObject({
+            items: zod.array(
+                zod.strictObject({
+                    productId: zod
+                        .string()
+                        .min(1)
+                        .max(reorderResponseDataCartItemsItemProductIdMax)
+                        .regex(reorderResponseDataCartItemsItemProductIdRegExp),
+                    quantity: zod.number().min(1),
+                    availability: zod.enum([
+                        'in_stock',
+                        'preorder',
+                        'backorder',
+                        'insufficient_stock',
+                        'out_of_stock',
+                        'unavailable',
+                        'removed'
+                    ]),
+                    canIncrease: zod.boolean()
+                })
+            ),
+            summary: zod.strictObject({
+                itemsCount: zod.number().min(reorderResponseDataCartSummaryItemsCountMin),
+                totalQuantity: zod.number().min(reorderResponseDataCartSummaryTotalQuantityMin),
+                itemsTotal: zod.number().min(reorderResponseDataCartSummaryItemsTotalMin),
+                shippingCost: zod.number().min(reorderResponseDataCartSummaryShippingCostMin),
+                totalPrice: zod.number().min(reorderResponseDataCartSummaryTotalPriceMin),
+                currency: zod.string(),
+                expectedTotal: zod.strictObject({
+                    amount: zod
+                        .number()
+                        .min(reorderResponseDataCartSummaryExpectedTotalOneAmountMin),
+                    currency: zod
+                        .string()
+                        .min(reorderResponseDataCartSummaryExpectedTotalOneCurrencyMin)
+                        .max(reorderResponseDataCartSummaryExpectedTotalOneCurrencyMax)
+                })
+            }),
+            shipping: zod.strictObject({
+                required: zod.boolean(),
+                selected: zod.string().nullable(),
+                options: zod.array(
+                    zod.strictObject({
+                        id: zod.string(),
+                        price: zod.number().min(reorderResponseDataCartShippingOptionsItemPriceMin),
+                        requiresAddress: zod.boolean(),
+                        tracked: zod.boolean()
+                    })
+                )
+            }),
+            checkoutable: zod.boolean()
+        }),
+        lines: zod.array(
             zod.strictObject({
                 productId: zod
                     .string()
                     .min(1)
-                    .max(reorderResponseDataItemsItemProductIdMax)
-                    .regex(reorderResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1),
+                    .max(reorderResponseDataLinesItemProductIdMax)
+                    .regex(reorderResponseDataLinesItemProductIdRegExp),
+                requested: zod.number().min(1),
+                resulting: zod.number().min(reorderResponseDataLinesItemResultingMin),
+                reason: zod.enum(['summed', 'capped', 'removed']).optional(),
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
@@ -5770,27 +5932,7 @@ export const ReorderResponse = zod.strictObject({
                     'removed'
                 ])
             })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod.number().min(reorderResponseDataSummaryItemsCountMin),
-            totalQuantity: zod.number().min(reorderResponseDataSummaryTotalQuantityMin),
-            itemsTotal: zod.number().min(reorderResponseDataSummaryItemsTotalMin),
-            shippingCost: zod.number().min(reorderResponseDataSummaryShippingCostMin),
-            totalPrice: zod.number().min(reorderResponseDataSummaryTotalPriceMin),
-            currency: zod.string()
-        }),
-        shipping: zod.strictObject({
-            required: zod.boolean(),
-            selected: zod.string().nullable(),
-            options: zod.array(
-                zod.strictObject({
-                    id: zod.string(),
-                    price: zod.number().min(reorderResponseDataShippingOptionsItemPriceMin),
-                    requiresAddress: zod.boolean(),
-                    tracked: zod.boolean()
-                })
-            )
-        })
+        )
     })
 });
 /**
@@ -14144,6 +14286,9 @@ export const mergeCartResponseDataCartSummaryTotalQuantityMin = 0;
 export const mergeCartResponseDataCartSummaryItemsTotalMin = 0;
 export const mergeCartResponseDataCartSummaryShippingCostMin = 0;
 export const mergeCartResponseDataCartSummaryTotalPriceMin = 0;
+export const mergeCartResponseDataCartSummaryExpectedTotalOneAmountMin = 0;
+export const mergeCartResponseDataCartSummaryExpectedTotalOneCurrencyMin = 3;
+export const mergeCartResponseDataCartSummaryExpectedTotalOneCurrencyMax = 3;
 export const mergeCartResponseDataCartShippingOptionsItemPriceMin = 0;
 export const mergeCartResponseDataLinesItemProductIdMax = 64;
 export const mergeCartResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -14170,7 +14315,8 @@ export const MergeCartResponse = zod.strictObject({
                         'out_of_stock',
                         'unavailable',
                         'removed'
-                    ])
+                    ]),
+                    canIncrease: zod.boolean()
                 })
             ),
             summary: zod.strictObject({
@@ -14179,7 +14325,16 @@ export const MergeCartResponse = zod.strictObject({
                 itemsTotal: zod.number().min(mergeCartResponseDataCartSummaryItemsTotalMin),
                 shippingCost: zod.number().min(mergeCartResponseDataCartSummaryShippingCostMin),
                 totalPrice: zod.number().min(mergeCartResponseDataCartSummaryTotalPriceMin),
-                currency: zod.string()
+                currency: zod.string(),
+                expectedTotal: zod.strictObject({
+                    amount: zod
+                        .number()
+                        .min(mergeCartResponseDataCartSummaryExpectedTotalOneAmountMin),
+                    currency: zod
+                        .string()
+                        .min(mergeCartResponseDataCartSummaryExpectedTotalOneCurrencyMin)
+                        .max(mergeCartResponseDataCartSummaryExpectedTotalOneCurrencyMax)
+                })
             }),
             shipping: zod.strictObject({
                 required: zod.boolean(),
@@ -14194,7 +14349,8 @@ export const MergeCartResponse = zod.strictObject({
                         tracked: zod.boolean()
                     })
                 )
-            })
+            }),
+            checkoutable: zod.boolean()
         }),
         lines: zod.array(
             zod.strictObject({

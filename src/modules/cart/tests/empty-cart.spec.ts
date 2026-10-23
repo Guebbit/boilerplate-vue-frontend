@@ -16,9 +16,11 @@ describe('emptyCart', () => {
                 itemsTotal: 0,
                 shippingCost: 0,
                 totalPrice: 0,
-                currency: 'EUR'
+                currency: 'EUR',
+                expectedTotal: { amount: 0, currency: 'EUR' }
             },
-            shipping: { required: false, selected: null, options: [] }
+            shipping: { required: false, selected: null, options: [] },
+            checkoutable: false
         });
     });
 });

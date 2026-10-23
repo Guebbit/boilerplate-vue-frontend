@@ -15,13 +15,13 @@ import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { shopCurrency } from '@/infrastructure/shop.ts';
-import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useProductLines } from '@/modules/products';
-import { MAX_GUEST_LINE_QUANTITY } from '../domain';
+import { MAX_GUEST_LINE_QUANTITY, linesTotal } from '../domain';
 import type { GuestCartLine } from '../domain';
 import { useCartStore } from '../store';
 import CartEmptyState from './CartEmptyState.vue';
@@ -99,9 +99,12 @@ const currency = computed(
  * What the lines cost together, before shipping, which only a signed-in checkout can price.
  */
 const itemsTotal = computed(() =>
-    guestLines.value.reduce(
-        (sum, { productId, quantity }) => sum + (productOf(productId)?.price ?? 0) * quantity,
-        0
+    linesTotal(
+        guestLines.value.map(({ productId, quantity }) => ({
+            unitPrice: productOf(productId)?.price ?? 0,
+            quantity
+        })),
+        currencyDigits(currency.value)
     )
 );
 

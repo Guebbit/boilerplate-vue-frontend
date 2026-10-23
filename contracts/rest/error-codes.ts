@@ -29,7 +29,7 @@ export const ERROR_CODES = {
     /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
-    CART_OPEN_ORDER_LIMIT: 'CART_OPEN_ORDER_LIMIT',
+    CART_OPEN_ORDER_LIMIT_REACHED: 'CART_OPEN_ORDER_LIMIT_REACHED',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
     /** 409 — A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`. */

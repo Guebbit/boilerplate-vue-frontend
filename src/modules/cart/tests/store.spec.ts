@@ -45,15 +45,17 @@ import { answered, type Answer } from '../../../../tests/support/unit/cart-fixtu
  * The cart every read answers with: one line of two units.
  */
 const CART = {
-    items: [{ productId: 'p1', quantity: 2, availability: 'in_stock' }],
+    items: [{ productId: 'p1', quantity: 2, availability: 'in_stock', canIncrease: true }],
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
         itemsTotal: 19.98,
         shippingCost: 0,
         totalPrice: 19.98,
-        currency: 'EUR'
+        currency: 'EUR',
+        expectedTotal: { amount: 1998, currency: 'EUR' }
     },
+    checkoutable: true,
     shipping: {
         required: true,
         selected: null,
@@ -70,7 +72,11 @@ const CART = {
 const cartTotalling = (totalPrice: number) =>
     contractEnvelope<Answer<typeof getCart>>(schemas.GetCartResponse, {
         ...CART,
-        summary: { ...CART.summary, totalPrice }
+        summary: {
+            ...CART.summary,
+            totalPrice,
+            expectedTotal: { amount: Math.round(totalPrice * 100), currency: 'EUR' }
+        }
     });
 
 /**
@@ -84,9 +90,11 @@ const EMPTY_CART = {
         itemsTotal: 0,
         shippingCost: 0,
         totalPrice: 0,
-        currency: 'EUR'
+        currency: 'EUR',
+        expectedTotal: { amount: 0, currency: 'EUR' }
     },
-    shipping: { required: false, selected: null, options: [] }
+    shipping: { required: false, selected: null, options: [] },
+    checkoutable: false
 };
 
 /**
@@ -121,7 +129,10 @@ const RESPONSES = {
     removed: contractResponse(schemas.RemoveCartItemResponse, EMPTY_CART),
     cleared: contractResponse(schemas.ClearCartResponse, EMPTY_CART),
     checkedOut: contractResponse(schemas.CheckoutResponse, ORDER),
-    reordered: contractResponse(schemas.ReorderResponse, CART),
+    reordered: contractResponse(schemas.ReorderResponse, {
+        cart: CART,
+        lines: [{ productId: 'p1', requested: 2, resulting: 2, availability: 'in_stock' }]
+    }),
     shippingSet: contractResponse(schemas.SetCartShippingMethodResponse, {
         ...CART,
         shipping: { ...CART.shipping, selected: 'standard' }
@@ -380,7 +391,8 @@ describe('useCartStore', () => {
                         shippingCost: 0,
                         totalPrice: 0,
                         // Carried over from the basket just checked out, not hardcoded.
-                        currency: 'EUR'
+                        currency: 'EUR',
+                        expectedTotal: { amount: 0, currency: 'EUR' }
                     });
                     expect(store.badgeQuantity).toBe(0);
                 });
@@ -444,7 +456,8 @@ describe('useCartStore', () => {
                         itemsTotal: 0,
                         shippingCost: 0,
                         totalPrice: 0,
-                        currency: 'EUR'
+                        currency: 'EUR',
+                        expectedTotal: { amount: 0, currency: 'EUR' }
                     });
                 });
         });
@@ -625,9 +638,8 @@ describe('useCartStore', () => {
     });
 
     /**
-     * Reorder copies one of the caller's own orders back into the cart. The response is the
-     * updated cart rather than the order, because products that left the catalogue are skipped
-     * server-side — replacing the local copy with the answer is what makes that skip visible.
+     * Reorder copies one of the caller's own orders back into the cart. The answer holds the
+     * updated cart, which replaces the local copy, and what each order line became.
      */
     describe('reorder', () => {
         it('sends the order id and replaces the local cart with the response', () => {
@@ -637,7 +649,9 @@ describe('useCartStore', () => {
                 expect(apiReorder).toHaveBeenCalledWith('o1');
                 expect(store.cart).toEqual(CART);
                 expect(store.cartSummary?.itemsCount).toBe(1);
-                expect(result).toEqual(CART);
+                expect(result?.lines).toEqual([
+                    { productId: 'p1', requested: 2, resulting: 2, availability: 'in_stock' }
+                ]);
             });
         });
     });

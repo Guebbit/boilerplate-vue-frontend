@@ -7,6 +7,7 @@
 
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import { summarizePreorderFulfillmentOrdersQueryPageSizeMax } from '@api/schemas';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { loadShop, shipToCountries as shipToCountriesOfShop } from '@/infrastructure/shop.ts';
@@ -35,9 +36,9 @@ import type {
 } from '@types';
 
 /**
- * The largest page the contract allows, for the read that wants every row of a short list.
+ * The largest page the contract allows (generated, never retyped), for the read that wants every row of a short list.
  */
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = summarizePreorderFulfillmentOrdersQueryPageSizeMax;
 
 /**
  * Shipping — the methods a checkout can choose, and the fulfillment orders and shipments an order

@@ -204,12 +204,12 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({ kind: 'product-unavailable', lines: [] });
     });
 
-    it('names the unpaid orders CART_OPEN_ORDER_LIMIT lists, dropping anything that is not an id', () => {
+    it('names the unpaid orders CART_OPEN_ORDER_LIMIT_REACHED lists, dropping anything that is not an id', () => {
         const verdict = classifyCheckoutError({
             status: 409,
             errors: [
                 {
-                    code: 'CART_OPEN_ORDER_LIMIT',
+                    code: 'CART_OPEN_ORDER_LIMIT_REACHED',
                     message: 'x',
                     details: { orderIds: ['o1', 7, 'o2'] }
                 }
@@ -219,10 +219,10 @@ describe('classifyCheckoutError', () => {
         expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: ['o1', 'o2'] });
     });
 
-    it('reads CART_OPEN_ORDER_LIMIT with no details as a refusal naming no order', () => {
+    it('reads CART_OPEN_ORDER_LIMIT_REACHED with no details as a refusal naming no order', () => {
         const verdict = classifyCheckoutError({
             status: 409,
-            errors: [{ code: 'CART_OPEN_ORDER_LIMIT', message: 'x' }]
+            errors: [{ code: 'CART_OPEN_ORDER_LIMIT_REACHED', message: 'x' }]
         });
 
         expect(verdict).toEqual({ kind: 'open-order-limit', orderIds: [] });

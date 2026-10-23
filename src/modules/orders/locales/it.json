@@ -82,6 +82,7 @@
         "button-reorder": "Acquista di nuovo",
         "success-reorder": "Ordine aggiunto al carrello.",
         "warning-reorder-left-out": "Ordine aggiunto al carrello, tranne ciò che non è più in vendita: {titles}.",
+        "warning-reorder-capped": "Ordine aggiunto al carrello, ma queste righe sono al massimo consentito per riga: {titles}.",
         "label-shipping": "Spedizione",
         "label-shipping-address": "Indirizzo di spedizione",
         "label-billing-address": "Indirizzo di fatturazione",
