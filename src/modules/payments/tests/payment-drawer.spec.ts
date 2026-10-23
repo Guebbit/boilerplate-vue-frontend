@@ -160,6 +160,20 @@ describe('PaymentDrawer', () => {
         expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
     });
 
+    it('refunds once when the button is pressed twice before the first answer', async () => {
+        const refund = vi.spyOn(usePaymentsStore(), 'refundForOrder').mockResolvedValue(FULL);
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const wrapper = mountDrawer(FULL);
+        const button = wrapper.get('[data-test="drawer-refund"]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(refund).toHaveBeenCalledTimes(1);
+    });
+
     it('does nothing when the confirmation is declined', async () => {
         const refund = vi.spyOn(usePaymentsStore(), 'refundForOrder').mockResolvedValue(FULL);
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);

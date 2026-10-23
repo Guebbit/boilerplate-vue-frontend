@@ -29,6 +29,7 @@ import { formatCurrency, formatDateTime, EMPTY_VALUE } from '@/infrastructure/ut
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
 import { useReturnFocus } from '@/ui/composables/use-return-focus.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
@@ -153,12 +154,13 @@ const { width: screenWidth } = useDisplay();
 const drawerWidth = computed(() => Math.min(DRAWER_WIDTH, screenWidth.value));
 
 /**
- * Refunds everything still refundable, after an explicit confirmation.
+ * Refunds everything still refundable, after an explicit confirmation. A second press while the
+ * question or the refund is still open does nothing.
  *
  * @returns A promise settling once the viewer answered and, if they accepted, the refund finished;
  *  a failure is shown in the drawer.
  */
-const handleRefund = () => {
+const handleRefund = singleFlight(() => {
     const current = props.payment;
     if (!current) return Promise.resolve();
     return useDialogStore()
@@ -184,7 +186,7 @@ const handleRefund = () => {
                     refunding.value = false;
                 });
         });
-};
+});
 </script>
 
 <template>
