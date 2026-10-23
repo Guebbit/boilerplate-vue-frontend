@@ -273,6 +273,18 @@ describe('handleCellClear', () => {
         });
     });
 
+    it('ignores a second clear on the same cell while the first is still pending', () => {
+        const { editor } = editorWith({ greeting: entry('greeting', 'Hello') });
+
+        const first = editor.handleCellClear(ENGLISH, 'greeting', new Event('keydown'));
+        const second = editor.handleCellClear(ENGLISH, 'greeting', new Event('click'));
+
+        expect(second).toBeUndefined();
+        return first!.then(() => {
+            expect(removeEntry).toHaveBeenCalledOnce();
+        });
+    });
+
     it('asks nothing when the cell has no stored entry to remove', () => {
         const { editor } = editorWith();
         editor.handleCellInput(ENGLISH, 'greeting', '');

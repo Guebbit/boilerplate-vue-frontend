@@ -95,6 +95,12 @@ export function useDictionaryCellEditor(
     const boardElement = ref<HTMLElement>();
 
     /**
+     * Cells whose removal is already asked or running. A second Enter or click on the same cell
+     * must not queue a second confirmation, nor delete the entry twice.
+     */
+    const clearing = new Set<string>();
+
+    /**
      * Drops one cell's draft, so the cell reads the stored value again.
      */
     const forgetDraft = (id: string) => {
@@ -188,7 +194,8 @@ export function useDictionaryCellEditor(
      * @param language - The column.
      * @param key - The row.
      * @param event - The keystroke or click, so a cancel can focus the cell it came from.
-     * @returns Nothing; the outcome is reported as a toast naming the cell.
+     * @returns Nothing; the outcome is reported as a toast naming the cell. A repeat for a cell
+     *  whose removal is still pending does nothing.
      */
     const handleCellClear = (language: LocaleCapability, key: string, event: Event) => {
         const id = cellId(language.tag, key);
@@ -197,6 +204,8 @@ export function useDictionaryCellEditor(
             forgetDraft(id);
             return;
         }
+        if (clearing.has(id)) return;
+        clearing.add(id);
         const origin = inputOf(event);
         return dialogStore
             .confirm({
@@ -224,6 +233,9 @@ export function useDictionaryCellEditor(
                         )
                     )
                 );
+            })
+            .finally(() => {
+                clearing.delete(id);
             });
     };
 
