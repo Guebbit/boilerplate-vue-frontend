@@ -16,7 +16,7 @@ import {
     placeOrderAsCustomer,
     seededSubscription,
     sinkEndpoint,
-    setEnabledInTheForm
+    setEnabledOnTheDetailPage
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
@@ -94,17 +94,17 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
                 cy.get('body').should('not.contain.text', second);
             });
 
-            cy.step('removing the old one leaves one, and the last cannot be removed');
+            cy.step('the old one says when it stops signing, and the newest is the current one');
+            cy.get('[data-test=webhook-secret-retires]')
+                .first()
+                .should('not.contain.text', 'Current');
+            cy.get('[data-test=webhook-secret-retires]').last().should('contain.text', 'Current');
+
+            cy.step('removing the old one leaves one, and the last has no remove button');
             cy.get('[data-test=webhook-secret-remove]').first().click();
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test=webhook-secret-row]').should('have.length', 1);
-            cy.get('[data-test=webhook-secret-remove]').click();
-            cy.get('[data-test=app-dialog-confirm]').click();
-            cy.get('[data-test=webhook-target-remove-secret-error]').should(
-                'contain.text',
-                'at least one active secret'
-            );
-            cy.get('[data-test=webhook-secret-row]').should('have.length', 1);
+            cy.get('[data-test=webhook-secret-remove]').should('not.exist');
         });
 
         cy.step('the admin sees the manager’s subscription');
@@ -116,10 +116,10 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             const mine = page?.items.find((subscription) => subscription.url === endpoint);
             if (!mine) throw new Error('IN6: the admin cannot see the manager’s subscription');
 
-            cy.step('the manager switches it off, and the list filter finds it under Disabled');
-            setEnabledInTheForm(mine.id, endpoint, false);
+            cy.step('the manager pauses it, and the list filter finds it under Paused');
+            setEnabledOnTheDetailPage(mine.id, endpoint, false);
             cy.visit('/en/webhooks/subscriptions');
-            cy.pickOption('[data-test=filter-enabled]', 'Disabled');
+            cy.pickOption('[data-test=filter-enabled]', 'Paused');
             cy.contains('[data-test=list-row]', endpoint).should('exist');
             cy.pickOption('[data-test=filter-enabled]', 'Enabled');
             cy.contains('[data-test=list-row]', endpoint).should('not.exist');
@@ -139,7 +139,7 @@ describe('IN6 · Keep a webhook healthy from the UI', () => {
             });
 
             cy.step('switched back on, the next order gets a delivery row, filtered in the log');
-            setEnabledInTheForm(mine.id, endpoint, true);
+            setEnabledOnTheDetailPage(mine.id, endpoint, true);
             placeOrderAsCustomer();
             eventually(
                 () => deliveriesOf(mine.id),

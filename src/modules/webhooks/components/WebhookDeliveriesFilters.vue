@@ -290,6 +290,7 @@ const handlePageChange = (page: number) => {
 
             <template v-slot:[`item.actions`]="{ item }">
                 <v-btn
+                    v-if="item.actions.replay"
                     size="small"
                     variant="tonal"
                     color="secondary"

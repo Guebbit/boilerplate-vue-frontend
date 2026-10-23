@@ -51,13 +51,11 @@ describe('webhookCreateSchema', () => {
 });
 
 describe('webhookEditSchema', () => {
-    it('accepts the create fields plus enabled', () => {
-        expect(webhookEditSchema.safeParse({ ...validSubscription, enabled: true }).success).toBe(
-            true
-        );
+    it('accepts the create fields', () => {
+        expect(webhookEditSchema.safeParse(validSubscription).success).toBe(true);
     });
 
-    it('requires enabled — unlike create, edit always states the current status', () => {
-        expect(webhookEditSchema.safeParse(validSubscription).success).toBe(false);
+    it('has no `enabled` field: whether a subscription is on is not an edit', () => {
+        expect(Object.keys(webhookEditSchema.shape)).not.toContain('enabled');
     });
 });
