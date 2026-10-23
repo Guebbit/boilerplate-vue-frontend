@@ -1515,7 +1515,7 @@ export const ListObservabilityAuditEntriesResponse = zod.strictObject({
  * Newest first. `meta.totalItems` counts every entry matching the filters, not just
  * the page.
  *
- * Requires `read:AuditLog` — held by `manager`, `support` and `moderator` in the demo.
+ * Requires `read:AuditLog` — held by `admin` in the demo.
  * @summary The shop's own action history
  */
 export const listAuditEntriesQueryActorMax = 64;
