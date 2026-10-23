@@ -35,7 +35,16 @@ const SUBSCRIPTION: WebhookSubscription = {
     eventTypes: ['order.paid'],
     enabled: true,
     consecutiveFailures: 0,
-    secretIds: ['sec-1'],
+    secretIds: ['sec-1', 'sec-2'],
+    retiringSecrets: [{ id: 'sec-1', retiresAt: '2026-01-02T00:00:00.000Z' }],
+    actions: {
+        update: true,
+        delete: true,
+        enable: false,
+        disable: true,
+        rotateSecret: true,
+        removeSecret: true
+    },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -48,14 +57,18 @@ const SUBSCRIPTION: WebhookSubscription = {
 const mountPage = () => {
     const store = useWebhooksStore();
     store.addSubscriptionRecord({ ...SUBSCRIPTION });
+    // The record is already in the cache; the page's own load is not what these cases are about.
+    vi.spyOn(store, 'watchSubscription').mockReturnValue(vi.fn() as never);
+    store.selectedSubscriptionId = SUBSCRIPTION.id;
     const removeSecret = vi.spyOn(store, 'removeSecret').mockResolvedValue(undefined);
     const deleteSubscription = vi.spyOn(store, 'deleteSubscription').mockResolvedValue(undefined);
+    const disableSubscription = vi.spyOn(store, 'disableSubscription').mockResolvedValue(undefined);
     const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
     const wrapper = mount(WebhookTarget, {
         props: { id: SUBSCRIPTION.id },
         global: { plugins: [router, vuetify, i18n] }
     });
-    return { wrapper, removeSecret, deleteSubscription, confirm };
+    return { wrapper, removeSecret, deleteSubscription, disableSubscription, confirm, store };
 };
 
 beforeEach(() => {
@@ -69,7 +82,7 @@ describe('a double press on a webhook confirm-then-write control', () => {
     it('removes a secret once', async () => {
         const { wrapper, removeSecret, confirm } = mountPage();
         await flushPromises();
-        const button = wrapper.get('[data-test=webhook-secret-remove]');
+        const button = wrapper.findAll('[data-test=webhook-secret-remove]')[0];
 
         void button.trigger('click');
         void button.trigger('click');
@@ -90,5 +103,77 @@ describe('a double press on a webhook confirm-then-write control', () => {
 
         expect(confirm).toHaveBeenCalledTimes(1);
         expect(deleteSubscription).toHaveBeenCalledTimes(1);
+    });
+
+    it('pauses the subscription once', async () => {
+        const { wrapper, disableSubscription, confirm } = mountPage();
+        await flushPromises();
+        const button = wrapper.get('[data-test=webhook-disable]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(disableSubscription).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('what the page offers, by the record’s own actions', () => {
+    it('shows when each superseded secret stops signing, and calls the newest current', async () => {
+        const { wrapper } = mountPage();
+        await flushPromises();
+
+        const cells = wrapper
+            .findAll('[data-test=webhook-secret-retires]')
+            .map((cell) => cell.text());
+
+        expect(cells[0]).not.toBe('Current');
+        expect(cells[0]).toContain('2026');
+        expect(cells[1]).toBe('Current');
+    });
+
+    it('offers enable, not disable, on a switched-off subscription, and says who switched it off', async () => {
+        const { wrapper, store } = mountPage();
+        store.addSubscriptionRecord({
+            ...SUBSCRIPTION,
+            enabled: false,
+            disabledAt: '2026-02-01T00:00:00.000Z',
+            autoDisabledAt: '2026-02-01T00:00:00.000Z',
+            actions: { ...SUBSCRIPTION.actions, enable: true, disable: false }
+        });
+        await flushPromises();
+
+        expect(wrapper.find('[data-test=webhook-enable]').exists()).toBe(true);
+        expect(wrapper.find('[data-test=webhook-disable]').exists()).toBe(false);
+        expect(wrapper.get('[data-test=webhook-status]').attributes('data-status')).toBe(
+            'auto-disabled'
+        );
+        expect(wrapper.get('[data-test=webhook-status-intro]').text()).toContain('repeated');
+    });
+
+    it('hides every write the record says the server would refuse', async () => {
+        const { wrapper, store } = mountPage();
+        store.addSubscriptionRecord({
+            ...SUBSCRIPTION,
+            actions: {
+                update: false,
+                delete: false,
+                enable: false,
+                disable: false,
+                rotateSecret: false,
+                removeSecret: false
+            }
+        });
+        await flushPromises();
+
+        const present = [
+            'webhook-delete',
+            'webhook-enable',
+            'webhook-disable',
+            'webhook-rotate-secret',
+            'webhook-secret-remove'
+        ].filter((hook) => wrapper.find(`[data-test=${hook}]`).exists());
+        expect(present).toEqual([]);
     });
 });

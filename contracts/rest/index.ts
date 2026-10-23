@@ -4550,6 +4550,44 @@ export interface ReservationSweepEnvelope {
     data: ReservationSweepResponse;
 }
 
+export type WebhookSubscriptionSortItem =
+    (typeof WebhookSubscriptionSortItem)[keyof typeof WebhookSubscriptionSortItem];
+
+export const WebhookSubscriptionSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    url: 'url',
+    '-url': '-url'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type WebhookSubscriptionSort = WebhookSubscriptionSortItem[];
+
+export interface WebhookRetiringSecret {
+    /** A ring entry's id, one of `secretIds`. */
+    id: string;
+    /** When this secret stops signing deliveries — the end of its overlap window (`NODE_WEBHOOK_SECRET_OVERLAP_HOURS` after its successor was minted), unless it is dropped sooner. */
+    retiresAt: string;
+}
+
+export interface WebhookSubscriptionActions {
+    /** Whether `PUT` or `PATCH /webhooks/subscriptions/{id}` would be accepted. */
+    update: boolean;
+    /** Whether `DELETE /webhooks/subscriptions/{id}` would be accepted. */
+    delete: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/enable` would be accepted — false while it is already enabled. */
+    enable: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
+    disable: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/rotate-secret` would be accepted. */
+    rotateSecret: boolean;
+    /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
+    removeSecret: boolean;
+}
+
 export interface WebhookSubscription {
     id: Id;
     /** @pattern (?:^https://) */
@@ -4560,13 +4598,19 @@ export interface WebhookSubscription {
      * @minItems 1
      */
     eventTypes: string[];
+    /** Read-only, derived — true while `disabledAt` is absent. Change it with `POST .../enable` or `POST .../disable`. */
     enabled: boolean;
     /** @minimum 0 */
     consecutiveFailures: number;
-    /** Set once `consecutiveFailures` crosses the auto-disable threshold. */
+    /** When the subscription was switched off, by hand or by the auto-disable guard. Absent while it is enabled. */
     disabledAt?: string;
+    /** Set (together with `disabledAt`) only when the auto-disable guard switched it off after sustained failures; absent for a pause by hand. */
+    autoDisabledAt?: string;
     /** The ring's secret ids, oldest first — never the plaintext. */
     secretIds: string[];
+    /** The ring entries that are still signing but have been superseded, with when each stops. Empty when the ring holds one secret. */
+    retiringSecrets: WebhookRetiringSecret[];
+    actions: WebhookSubscriptionActions;
     createdAt: string;
     updatedAt: string;
 }
@@ -4615,7 +4659,10 @@ export interface WebhookSubscriptionCreated {
     /** @minimum 0 */
     consecutiveFailures: number;
     disabledAt?: string;
+    autoDisabledAt?: string;
     secretIds: string[];
+    retiringSecrets: WebhookRetiringSecret[];
+    actions: WebhookSubscriptionActions;
     createdAt: string;
     updatedAt: string;
     /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
@@ -4629,6 +4676,13 @@ export interface WebhookSubscriptionCreatedEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: WebhookSubscriptionCreated;
+}
+
+export interface WebhookSubscriptionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookSubscription;
 }
 
 export interface ReplaceWebhookSubscriptionRequest {
@@ -4651,15 +4705,6 @@ export interface ReplaceWebhookSubscriptionRequest {
      * @items.maxLength 100
      */
     eventTypes: string[];
-    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
-    enabled: boolean;
-}
-
-export interface WebhookSubscriptionEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookSubscription;
 }
 
 export interface UpdateWebhookSubscriptionRequest {
@@ -4682,8 +4727,6 @@ export interface UpdateWebhookSubscriptionRequest {
      * @items.maxLength 100
      */
     eventTypes?: string[];
-    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
-    enabled?: boolean;
 }
 
 export type WebhookDeliveryStatus =
@@ -4695,6 +4738,11 @@ export const WebhookDeliveryStatus = {
     succeeded: 'succeeded',
     exhausted: 'exhausted'
 } as const;
+
+export interface WebhookDeliveryActions {
+    /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone. */
+    replay: boolean;
+}
 
 export interface WebhookDelivery {
     id: Id;
@@ -4708,6 +4756,7 @@ export interface WebhookDelivery {
     durationMs?: number;
     error?: string;
     nextAttemptAt?: string;
+    actions: WebhookDeliveryActions;
     createdAt: string;
     updatedAt: string;
 }
@@ -6661,10 +6710,15 @@ export type ListWebhookSubscriptionsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: WebhookSubscriptionSort;
     /**
-     * Filter by whether the subscription is currently active.
+     * Filter by whether the subscription is currently enabled (`true`) or switched off for any reason (`false`).
      */
     enabled?: boolean;
+    /**
+     * Filter by who switched it off. `true` keeps only the subscriptions the failure guard disabled (`autoDisabledAt` set); `false` keeps the rest, enabled ones and pauses by hand. Combine with `enabled=false` to list the pauses by hand.
+     */
+    autoDisabled?: boolean;
 };
 
 export type ListWebhookDeliveriesParams = {
@@ -10533,8 +10587,9 @@ export const sweepReservations = (
 };
 
 /**
- * Never returns a secret — the ring's plaintext exists only in the response of the
- * call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
+ * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
+ * plaintext exists only in the response of the call that minted it (`POST` here, or
+ * `POST .../{id}/rotate-secret`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptions = (
@@ -10574,9 +10629,24 @@ export const createWebhookSubscription = (
 };
 
 /**
- * Full replace of url/description/eventTypes/enabled — an omitted `description` is
- * cleared. Never touches the secret ring; rotate or drop a secret through its own
- * action route below.
+ * The same shape the list rows carry (and never a secret). 404 for an id outside this
+ * shop's subscriptions, whether it never existed or belongs to another shop.
+ * @summary Get one webhook subscription
+ */
+export const getWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Full replace of url/description/eventTypes — an omitted `description` is cleared.
+ * Never touches the secret ring or whether the subscription is on; rotate or drop a
+ * secret, enable or disable it, through its own action route below.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscription = (
@@ -10596,8 +10666,9 @@ export const replaceWebhookSubscription = (
 };
 
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscription = (
@@ -10617,8 +10688,9 @@ export const updateWebhookSubscription = (
 };
 
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionWithMergePatchJson = (
@@ -10656,11 +10728,11 @@ export const deleteWebhookSubscription = (
  * ring then carries two active secrets, and deliveries sign with both (two
  * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
  * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`), after which it stops signing and
- * disappears from `secretIds`. A ring holds at most two: rotating again drops the
- * oldest. Its own route rather than a flag on
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: rotating again drops the oldest. Its own route rather than a flag on
  * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes/enabled.
+ * url/description/eventTypes.
  * @summary Rotate a webhook subscription's secret
  */
 export const rotateWebhookSubscriptionSecret = (
@@ -10691,7 +10763,7 @@ export const removeWebhookSubscriptionSecret = (
 };
 
 /**
- * Every attempt, newest first, optionally filtered by subscription and status.
+ * Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
  * @summary The delivery log
  */
 export const listWebhookDeliveries = (
@@ -10710,7 +10782,8 @@ export const listWebhookDeliveries = (
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
- * most-requested support action, per the design doc.
+ * most-requested support action, per the design doc. Refused while the subscription is
+ * disabled (`actions.replay` is false): enable it first.
  * @summary Re-send one delivery
  */
 export const replayWebhookDelivery = (
@@ -11192,6 +11265,41 @@ export const getPipelineStats = (
     options?: SecondParameter<typeof orvalMutator<PipelineStatsEnvelope>>
 ) => {
     return orvalMutator<PipelineStatsEnvelope>({ url: `/stats/pipeline`, method: 'GET' }, options);
+};
+
+/**
+ * Turns a subscription back on, whether it was switched off by hand or by the
+ * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
+ * streak, so the guard starts counting from zero. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED` when it is already on — the streak of a
+ * healthy subscription is never reset by a repeated call.
+ * @summary Enable a webhook subscription
+ */
+export const enableWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}/enable`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Pauses a subscription by hand: sets `disabledAt` (and leaves `autoDisabledAt`
+ * absent, which is how a pause is told from the guard's work). Nothing is sent to it
+ * while it is off, and an event that fires meanwhile is not queued for it. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED` when it is already off.
+ * @summary Disable a webhook subscription
+ */
+export const disableWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
+        options
+    );
 };
 
 /**
@@ -11868,6 +11976,9 @@ export type ListWebhookSubscriptionsResult = NonNullable<
 export type CreateWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof createWebhookSubscription>>
 >;
+export type GetWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof getWebhookSubscription>>
+>;
 export type ReplaceWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof replaceWebhookSubscription>>
 >;
@@ -11937,6 +12048,12 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
+export type EnableWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof enableWebhookSubscription>>
+>;
+export type DisableWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof disableWebhookSubscription>>
+>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>
 >;

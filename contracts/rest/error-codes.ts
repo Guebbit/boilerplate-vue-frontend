@@ -203,7 +203,15 @@ export const ERROR_CODES = {
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     /** 409 — A retry of this delivery is already in flight. */
-    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS'
+    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS',
+    /** 409 — The subscription is already disabled. */
+    WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED',
+    /** 409 — The subscription is already enabled. */
+    WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED',
+    /** 409 — The delivery belongs to a subscription that is disabled, so nothing can be sent until it is enabled. */
+    WEBHOOK_SUBSCRIPTION_DISABLED: 'WEBHOOK_SUBSCRIPTION_DISABLED',
+    /** 409 — This shop already holds the most webhook subscriptions it may; delete one first. */
+    WEBHOOK_SUBSCRIPTION_LIMIT_REACHED: 'WEBHOOK_SUBSCRIPTION_LIMIT_REACHED'
 } as const;
 
 /** Any code `errors[].code` may carry. NOT exhaustive at the type level — the contract's own `enum`-free `code: string` is the reason this exists. */

@@ -20,6 +20,7 @@ const delivery = (id: string, eventType: string): WebhookDelivery => ({
     eventType,
     attempt: 1,
     status: 'pending',
+    actions: { replay: true },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 });
@@ -63,5 +64,27 @@ describe('WebhookDeliveriesFilters rows', () => {
         expect(replay.attributes('disabled')).toBeUndefined();
         await replay.trigger('click');
         expect(wrapper.emitted('replay')).toEqual([['d1']]);
+    });
+
+    it('hides Replay on a row whose actions say the server would refuse it', async () => {
+        const wrapper = mount(WebhookDeliveriesFilters, {
+            props: {
+                deliveries: [
+                    delivery('d1', 'order.created'),
+                    { ...delivery('d2', 'order.paid'), actions: { replay: false } }
+                ],
+                total: 2,
+                pages: 1,
+                loading: false,
+                subscriptions: [],
+                replayingIds: new Set<string>()
+            },
+            global: { plugins: [vuetify, i18n] }
+        });
+        await nextRenderTick(wrapper);
+
+        const rows = wrapper.findAll('[data-test=webhook-delivery-row]');
+        expect(rows[0].find('[data-test=webhook-delivery-replay]').exists()).toBe(true);
+        expect(rows[1].find('[data-test=webhook-delivery-replay]').exists()).toBe(false);
     });
 });

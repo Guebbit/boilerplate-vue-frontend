@@ -15,6 +15,7 @@ import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import CopyButton from '@/ui/molecules/CopyButton.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
+import AuditMetadataDetail from './AuditMetadataDetail.vue';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
@@ -245,6 +246,8 @@ void fetchPage({ ...filters });
                         {{ t('admin-page.audit-own-order') }}
                     </v-chip>
                 </span>
+                <!-- What the entry recorded beyond the action: an update's changed fields, among others. -->
+                <AuditMetadataDetail :metadata="item.metadata" />
             </template>
 
             <template v-slot:[`item.actorRole`]="{ item }">
