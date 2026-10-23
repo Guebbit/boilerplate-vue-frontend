@@ -212,6 +212,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     setBackorderLimit: 'inventory',
     setCartShippingMethod: 'cart',
     setDefaultAddress: 'addresses',
+    settleRefundByHand: 'payments',
     setupTwoFactorMethod: 'account',
     setUserPurchaseHold: 'users',
     shipFulfillmentOrder: 'delivery',

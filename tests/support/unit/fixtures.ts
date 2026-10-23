@@ -69,6 +69,7 @@ export const aPayment = (overrides: Partial<Payment> = {}): Payment => ({
     orderNumber: '2026-000001',
     email: 'ada@example.com',
     createdAt: '2026-03-04T10:00:00Z',
+    actions: { pay: false, sync: false, refund: false, settleByHand: [] },
     ...overrides
 });
 

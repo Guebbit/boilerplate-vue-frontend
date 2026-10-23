@@ -8573,6 +8573,10 @@ export const createPaymentIntentResponseDataRefundsItemReturnIdRegExp = new RegE
     '^[0-9A-Za-z_-]+$'
 );
 export const createPaymentIntentResponseDataReferenceMax = 120;
+export const createPaymentIntentResponseDataActionsSettleByHandItemMax = 64;
+export const createPaymentIntentResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const CreatePaymentIntentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8607,7 +8611,7 @@ export const CreatePaymentIntentResponse = zod.strictObject({
                 amount: zod.number().min(createPaymentIntentResponseDataRefundsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -8667,12 +8671,18 @@ export const CreatePaymentIntentResponse = zod.strictObject({
         refundedByHand: zod.boolean().optional(),
         clientSecret: zod.string().optional(),
         cardLast4: zod.string().optional(),
-        actions: zod
-            .strictObject({
-                pay: zod.boolean(),
-                refund: zod.boolean()
-            })
-            .optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(createPaymentIntentResponseDataActionsSettleByHandItemMax)
+                    .regex(createPaymentIntentResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -8706,6 +8716,10 @@ export const getPaymentByOrderResponseDataRefundsItemReturnIdRegExp = new RegExp
     '^[0-9A-Za-z_-]+$'
 );
 export const getPaymentByOrderResponseDataReferenceMax = 120;
+export const getPaymentByOrderResponseDataActionsSettleByHandItemMax = 64;
+export const getPaymentByOrderResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const GetPaymentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -8740,7 +8754,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
                 amount: zod.number().min(getPaymentByOrderResponseDataRefundsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -8800,12 +8814,18 @@ export const GetPaymentByOrderResponse = zod.strictObject({
         refundedByHand: zod.boolean().optional(),
         clientSecret: zod.string().optional(),
         cardLast4: zod.string().optional(),
-        actions: zod
-            .strictObject({
-                pay: zod.boolean(),
-                refund: zod.boolean()
-            })
-            .optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(getPaymentByOrderResponseDataActionsSettleByHandItemMax)
+                    .regex(getPaymentByOrderResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -9053,7 +9073,8 @@ export const GetOrderByReferenceResponse = zod.strictObject({
     })
 });
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrderPathOrderIdMax = 64;
@@ -9096,6 +9117,10 @@ export const refundPaymentByOrderResponseDataRefundsItemReturnIdRegExp = new Reg
     '^[0-9A-Za-z_-]+$'
 );
 export const refundPaymentByOrderResponseDataReferenceMax = 120;
+export const refundPaymentByOrderResponseDataActionsSettleByHandItemMax = 64;
+export const refundPaymentByOrderResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const RefundPaymentByOrderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9130,7 +9155,7 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
                 amount: zod.number().min(refundPaymentByOrderResponseDataRefundsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -9190,12 +9215,18 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
         refundedByHand: zod.boolean().optional(),
         clientSecret: zod.string().optional(),
         cardLast4: zod.string().optional(),
-        actions: zod
-            .strictObject({
-                pay: zod.boolean(),
-                refund: zod.boolean()
-            })
-            .optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(refundPaymentByOrderResponseDataActionsSettleByHandItemMax)
+                    .regex(refundPaymentByOrderResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -9247,6 +9278,10 @@ export const recordOfflinePaymentResponseDataRefundsItemReturnIdRegExp = new Reg
     '^[0-9A-Za-z_-]+$'
 );
 export const recordOfflinePaymentResponseDataReferenceMax = 120;
+export const recordOfflinePaymentResponseDataActionsSettleByHandItemMax = 64;
+export const recordOfflinePaymentResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const RecordOfflinePaymentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9281,7 +9316,7 @@ export const RecordOfflinePaymentResponse = zod.strictObject({
                 amount: zod.number().min(recordOfflinePaymentResponseDataRefundsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -9341,12 +9376,18 @@ export const RecordOfflinePaymentResponse = zod.strictObject({
         refundedByHand: zod.boolean().optional(),
         clientSecret: zod.string().optional(),
         cardLast4: zod.string().optional(),
-        actions: zod
-            .strictObject({
-                pay: zod.boolean(),
-                refund: zod.boolean()
-            })
-            .optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(recordOfflinePaymentResponseDataActionsSettleByHandItemMax)
+                    .regex(recordOfflinePaymentResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -9394,6 +9435,10 @@ export const confirmPaymentResponseDataRefundsItemAmountMin = 0;
 export const confirmPaymentResponseDataRefundsItemReturnIdMax = 64;
 export const confirmPaymentResponseDataRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const confirmPaymentResponseDataReferenceMax = 120;
+export const confirmPaymentResponseDataActionsSettleByHandItemMax = 64;
+export const confirmPaymentResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const ConfirmPaymentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9428,7 +9473,7 @@ export const ConfirmPaymentResponse = zod.strictObject({
                 amount: zod.number().min(confirmPaymentResponseDataRefundsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -9488,12 +9533,18 @@ export const ConfirmPaymentResponse = zod.strictObject({
         refundedByHand: zod.boolean().optional(),
         clientSecret: zod.string().optional(),
         cardLast4: zod.string().optional(),
-        actions: zod
-            .strictObject({
-                pay: zod.boolean(),
-                refund: zod.boolean()
-            })
-            .optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(confirmPaymentResponseDataActionsSettleByHandItemMax)
+                    .regex(confirmPaymentResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -9521,6 +9572,8 @@ export const syncPaymentResponseDataRefundsItemAmountMin = 0;
 export const syncPaymentResponseDataRefundsItemReturnIdMax = 64;
 export const syncPaymentResponseDataRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const syncPaymentResponseDataReferenceMax = 120;
+export const syncPaymentResponseDataActionsSettleByHandItemMax = 64;
+export const syncPaymentResponseDataActionsSettleByHandItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const SyncPaymentResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -9555,7 +9608,7 @@ export const SyncPaymentResponse = zod.strictObject({
                 amount: zod.number().min(syncPaymentResponseDataRefundsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -9615,12 +9668,18 @@ export const SyncPaymentResponse = zod.strictObject({
         refundedByHand: zod.boolean().optional(),
         clientSecret: zod.string().optional(),
         cardLast4: zod.string().optional(),
-        actions: zod
-            .strictObject({
-                pay: zod.boolean(),
-                refund: zod.boolean()
-            })
-            .optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(syncPaymentResponseDataActionsSettleByHandItemMax)
+                    .regex(syncPaymentResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -13475,7 +13534,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                         .min(downloadAccountExportResponsePaymentsItemRefundsItemAmountMin),
                     currency: zod.string(),
                     status: zod.enum(['pending', 'succeeded', 'failed']),
-                    reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                     returnId: zod
                         .string()
                         .min(1)
@@ -14676,6 +14735,10 @@ export const listPaymentsResponseDataItemsItemRefundsItemReturnIdRegExp = new Re
     '^[0-9A-Za-z_-]+$'
 );
 export const listPaymentsResponseDataItemsItemReferenceMax = 120;
+export const listPaymentsResponseDataItemsItemActionsSettleByHandItemMax = 64;
+export const listPaymentsResponseDataItemsItemActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const listPaymentsResponseDataMetaPageDefault = 1;
 export const listPaymentsResponseDataMetaPageMax = 10000;
 export const listPaymentsResponseDataMetaPageSizeDefault = 10;
@@ -14722,7 +14785,7 @@ export const ListPaymentsResponse = zod.strictObject({
                             .min(listPaymentsResponseDataItemsItemRefundsItemAmountMin),
                         currency: zod.string(),
                         status: zod.enum(['pending', 'succeeded', 'failed']),
-                        reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                        reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                         returnId: zod
                             .string()
                             .min(1)
@@ -14785,12 +14848,18 @@ export const ListPaymentsResponse = zod.strictObject({
                 refundedByHand: zod.boolean().optional(),
                 clientSecret: zod.string().optional(),
                 cardLast4: zod.string().optional(),
-                actions: zod
-                    .strictObject({
-                        pay: zod.boolean(),
-                        refund: zod.boolean()
-                    })
-                    .optional(),
+                actions: zod.strictObject({
+                    pay: zod.boolean(),
+                    sync: zod.boolean(),
+                    refund: zod.boolean(),
+                    settleByHand: zod.array(
+                        zod
+                            .string()
+                            .min(1)
+                            .max(listPaymentsResponseDataItemsItemActionsSettleByHandItemMax)
+                            .regex(listPaymentsResponseDataItemsItemActionsSettleByHandItemRegExp)
+                    )
+                }),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
             })
@@ -14884,6 +14953,10 @@ export const searchPaymentsResponseDataItemsItemRefundsItemReturnIdRegExp = new 
     '^[0-9A-Za-z_-]+$'
 );
 export const searchPaymentsResponseDataItemsItemReferenceMax = 120;
+export const searchPaymentsResponseDataItemsItemActionsSettleByHandItemMax = 64;
+export const searchPaymentsResponseDataItemsItemActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
 export const searchPaymentsResponseDataMetaPageDefault = 1;
 export const searchPaymentsResponseDataMetaPageMax = 10000;
 export const searchPaymentsResponseDataMetaPageSizeDefault = 10;
@@ -14930,7 +15003,7 @@ export const SearchPaymentsResponse = zod.strictObject({
                             .min(searchPaymentsResponseDataItemsItemRefundsItemAmountMin),
                         currency: zod.string(),
                         status: zod.enum(['pending', 'succeeded', 'failed']),
-                        reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                        reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                         returnId: zod
                             .string()
                             .min(1)
@@ -14993,12 +15066,18 @@ export const SearchPaymentsResponse = zod.strictObject({
                 refundedByHand: zod.boolean().optional(),
                 clientSecret: zod.string().optional(),
                 cardLast4: zod.string().optional(),
-                actions: zod
-                    .strictObject({
-                        pay: zod.boolean(),
-                        refund: zod.boolean()
-                    })
-                    .optional(),
+                actions: zod.strictObject({
+                    pay: zod.boolean(),
+                    sync: zod.boolean(),
+                    refund: zod.boolean(),
+                    settleByHand: zod.array(
+                        zod
+                            .string()
+                            .min(1)
+                            .max(searchPaymentsResponseDataItemsItemActionsSettleByHandItemMax)
+                            .regex(searchPaymentsResponseDataItemsItemActionsSettleByHandItemRegExp)
+                    )
+                }),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
             })
@@ -15037,7 +15116,7 @@ export const ListRefundsQueryParams = zod.strictObject({
         .max(listRefundsQueryPageSizeMax)
         .default(listRefundsQueryPageSizeDefault),
     status: zod.enum(['pending', 'succeeded', 'failed']).optional(),
-    reason: zod.enum(['cancellation', 'goodwill', 'return']).optional(),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']).optional(),
     orderId: zod
         .string()
         .min(1)
@@ -15087,7 +15166,7 @@ export const ListRefundsResponse = zod.strictObject({
                 amount: zod.number().min(listRefundsResponseDataItemsItemAmountMin),
                 currency: zod.string(),
                 status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
                 returnId: zod
                     .string()
                     .min(1)
@@ -15126,7 +15205,7 @@ export const ListRefundsResponse = zod.strictObject({
     })
 });
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES`, refunds owed by hand on a `manual` payment (the sweep never finishes those, so they show at any age), payments whose stock commit is still owed, and orders whose refund is still owed after a cancel. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttentionResponseDataItemsItemOrderIdMax = 64;
@@ -15180,6 +15259,162 @@ export const ListPaymentAttentionResponse = zod.strictObject({
                 since: zod.iso.datetime({ offset: true })
             })
         )
+    })
+});
+/**
+ * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/order/{orderId}/refund`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * @summary Mark a hand-paid refund as returned
+ */
+export const settleRefundByHandPathIdMax = 64;
+export const settleRefundByHandPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const settleRefundByHandPathRefundIdMax = 64;
+export const settleRefundByHandPathRefundIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const SettleRefundByHandParams = zod.strictObject({
+    id: zod.string().min(1).max(settleRefundByHandPathIdMax).regex(settleRefundByHandPathIdRegExp),
+    refundId: zod
+        .string()
+        .min(1)
+        .max(settleRefundByHandPathRefundIdMax)
+        .regex(settleRefundByHandPathRefundIdRegExp)
+});
+export const settleRefundByHandHeaderIdempotencyKeyMax = 200;
+export const settleRefundByHandHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const SettleRefundByHandHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(settleRefundByHandHeaderIdempotencyKeyMax)
+        .regex(settleRefundByHandHeaderIdempotencyKeyRegExp)
+        .optional()
+});
+export const settleRefundByHandResponseDataIdMax = 64;
+export const settleRefundByHandResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const settleRefundByHandResponseDataOrderIdMax = 64;
+export const settleRefundByHandResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const settleRefundByHandResponseDataUserIdMax = 64;
+export const settleRefundByHandResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const settleRefundByHandResponseDataAmountMin = 0;
+export const settleRefundByHandResponseDataAmountRefundedMin = 0;
+export const settleRefundByHandResponseDataRefundsItemIdMax = 64;
+export const settleRefundByHandResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const settleRefundByHandResponseDataRefundsItemAmountMin = 0;
+export const settleRefundByHandResponseDataRefundsItemReturnIdMax = 64;
+export const settleRefundByHandResponseDataRefundsItemReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const settleRefundByHandResponseDataReferenceMax = 120;
+export const settleRefundByHandResponseDataActionsSettleByHandItemMax = 64;
+export const settleRefundByHandResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const SettleRefundByHandResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(settleRefundByHandResponseDataIdMax)
+            .regex(settleRefundByHandResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(settleRefundByHandResponseDataOrderIdMax)
+            .regex(settleRefundByHandResponseDataOrderIdRegExp),
+        userId: zod
+            .string()
+            .min(1)
+            .max(settleRefundByHandResponseDataUserIdMax)
+            .regex(settleRefundByHandResponseDataUserIdRegExp)
+            .optional(),
+        amount: zod.number().min(settleRefundByHandResponseDataAmountMin),
+        currency: zod.string(),
+        amountRefunded: zod.number().min(settleRefundByHandResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(settleRefundByHandResponseDataRefundsItemIdMax)
+                    .regex(settleRefundByHandResponseDataRefundsItemIdRegExp),
+                amount: zod.number().min(settleRefundByHandResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                returnId: zod
+                    .string()
+                    .min(1)
+                    .max(settleRefundByHandResponseDataRefundsItemReturnIdMax)
+                    .regex(settleRefundByHandResponseDataRefundsItemReturnIdRegExp)
+                    .optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                providerRefundRef: zod.string().optional(),
+                failureReason: zod
+                    .enum([
+                        'declined',
+                        'insufficient_funds',
+                        'expired_or_canceled_card',
+                        'lost_or_stolen_card',
+                        'provider_unavailable',
+                        'unknown'
+                    ])
+                    .optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        status: zod.enum([
+            'requires_confirmation',
+            'requires_action',
+            'processing',
+            'succeeded',
+            'declined',
+            'cancelled'
+        ]),
+        displayStatus: zod.enum([
+            'incomplete',
+            'pending',
+            'succeeded',
+            'refund_pending',
+            'partially_refunded',
+            'refunded',
+            'failed',
+            'cancelled'
+        ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
+        providerRef: zod.string().optional(),
+        orderNumber: zod.string().optional(),
+        email: zod.string().optional(),
+        provider: zod.string(),
+        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
+        reference: zod.string().max(settleRefundByHandResponseDataReferenceMax).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        refundedByHand: zod.boolean().optional(),
+        clientSecret: zod.string().optional(),
+        cardLast4: zod.string().optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(settleRefundByHandResponseDataActionsSettleByHandItemMax)
+                    .regex(settleRefundByHandResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**

@@ -44,6 +44,7 @@ import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatDateTime, formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
 /**
@@ -135,7 +136,9 @@ const overrideStatusOptions = computed(() =>
 /**
  * The money half of the operator's actions — `payments` answers for it, this page only asks.
  */
-const { canRefund, refund, refreshPayment, refundLoading } = useOrderRefund(computed(() => id));
+const { canRefund, settleable, refund, settle, refreshPayment, refundLoading } = useOrderRefund(
+    computed(() => id)
+);
 
 /**
  * The operator's money actions, and whether each is still open.
@@ -243,13 +246,9 @@ const cancelOnce = (withRefund: boolean) => {
     return cancelOrder(id, withRefund)
         .then(() =>
             refreshPayment().then(() =>
-                addMessage(
-                    t(
-                        withRefund
-                            ? 'order-edit-page.cancel-refund-done'
-                            : 'order-edit-page.cancel-done'
-                    )
-                )
+                withRefund
+                    ? announceRefund('order-edit-page.cancel-refund-done')
+                    : addMessage(t('order-edit-page.cancel-done'))
             )
         )
         .catch((error: unknown) => reportActionsError(error));
@@ -278,11 +277,47 @@ const refundAmount = computed(() => {
 const refundAmountInvalid = computed(() => Number.isNaN(refundAmount.value));
 
 /**
- * Returns the money without touching the order's status — all of it, or the typed part.
+ * Returns the money without touching the order's status — all of it, or the typed part. On a
+ * hand-paid payment this only opens the refund; {@link runSettle} confirms it.
  *
  * @returns A promise resolving once the payment is re-read, which is what greys the control out.
  */
 const runRefund = () => runExclusive(refundOnce);
+
+/**
+ * The toast after money was asked back: a hand-paid refund is not done until the operator has
+ * handed the money back and marked it returned, so it says so instead of "refunded".
+ *
+ * @param doneKey - The wording for a refund that went through.
+ * @returns The notification's result.
+ */
+const announceRefund = (doneKey: string) =>
+    addMessage(t(settleable.value.length > 0 ? 'order-edit-page.refund-recorded' : doneKey));
+
+/**
+ * Confirms that one hand-paid refund was returned outside the application, after an explicit
+ * question: nothing is sent, so the click is the operator's word.
+ *
+ * @param refundId - A record from `settleable`.
+ * @param amount - Its amount, for the question.
+ * @returns A promise resolving once the viewer answered and, if they accepted, the call finished.
+ */
+const runSettle = (refundId: string, amount: string) =>
+    runExclusive(() =>
+        useDialogStore()
+            .confirm({
+                message: t('order-edit-page.confirm-mark-returned', { amount }),
+                color: 'error'
+            })
+            .then((accepted) => {
+                if (!accepted) return undefined;
+                clearActionsError();
+                return settle(refundId).then(() =>
+                    addMessage(t('order-edit-page.mark-returned-done'))
+                );
+            })
+            .catch((error: unknown) => reportActionsError(error))
+    );
 
 /**
  * The refund itself, behind {@link runRefund}'s gate.
@@ -294,7 +329,7 @@ const refundOnce = () => {
     return refund(refundAmount.value)
         .then(() => {
             refundAmountText.value = '';
-            return addMessage(t('order-edit-page.refund-done'));
+            return announceRefund('order-edit-page.refund-done');
         })
         .catch((error: unknown) => reportActionsError(error));
 };
@@ -582,6 +617,30 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             @click="runCancel(true)"
                         >
                             {{ t('order-edit-page.button-cancel-and-refund') }}
+                        </v-btn>
+                    </div>
+
+                    <!--
+                        Hand-paid money opened but not yet confirmed back: one button per record the
+                        server names in `actions.settleByHand`. No amount field — the record has its own.
+                    -->
+                    <div v-if="settleable.length > 0" class="mt-3 flex flex-wrap gap-2">
+                        <v-btn
+                            v-for="record in settleable"
+                            :key="record.id"
+                            variant="tonal"
+                            color="success"
+                            :data-test="`button-mark-returned-${record.id}`"
+                            :disabled="loading || refundLoading"
+                            @click="
+                                runSettle(record.id, formatCurrency(record.amount, record.currency))
+                            "
+                        >
+                            {{
+                                t('order-edit-page.button-mark-returned', {
+                                    amount: formatCurrency(record.amount, record.currency)
+                                })
+                            }}
                         </v-btn>
                     </div>
 

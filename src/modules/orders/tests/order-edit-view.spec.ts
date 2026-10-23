@@ -29,7 +29,8 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import { OrderStatus } from '@api';
-import type { Order, OrderActions } from '@types';
+import type { Order, OrderActions, Refund } from '@types';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 wireModulesIntoCore();
 
@@ -45,10 +46,18 @@ const mockCanRefund = ref(false);
 /** Whether the mocked refund is in flight. */
 const mockRefundLoading = ref(false);
 
+/** Stub for the payments module's `settle`: confirms one hand-paid refund as returned. */
+const settle = vi.fn((_refundId: string) => Promise.resolve());
+
+/** The hand-paid refunds the mocked payment offers to mark as returned. */
+const mockSettleable = ref<Refund[]>([]);
+
 vi.mock('@/modules/payments', () => ({
     useOrderRefund: () => ({
         canRefund: mockCanRefund,
+        settleable: mockSettleable,
         refund,
+        settle,
         refreshPayment,
         refundLoading: mockRefundLoading
     }),
@@ -161,6 +170,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     refreshPayment.mockClear();
     refund.mockClear();
+    settle.mockClear();
+    mockSettleable.value = [];
     mockCanRefund.value = false;
     mockRefundLoading.value = false;
     return loadLocale('en').then(() =>
@@ -293,6 +304,60 @@ describe('a partial refund', () => {
                     ).not.toBe(undefined);
                 })
         ));
+});
+
+describe('marking a hand-paid refund as returned', () => {
+    /** An owed refund of 40 euro, as the payment names it. */
+    const owed: Refund = {
+        id: 'r-owed',
+        amount: 40,
+        currency: 'EUR',
+        status: 'pending',
+        reason: 'goodwill',
+        createdAt: '2026-03-05T10:00:00Z'
+    };
+
+    it('offers one button per record the server names, and none otherwise', () =>
+        mountRefundable()
+            .then((wrapper) => {
+                expect(wrapper.find('[data-test=button-mark-returned-r-owed]').exists()).toBe(
+                    false
+                );
+                mockSettleable.value = [owed];
+                return nextTick().then(() => wrapper);
+            })
+            .then((wrapper) => {
+                expect(wrapper.find('[data-test=button-mark-returned-r-owed]').exists()).toBe(true);
+            }));
+
+    it('settles that record once the operator confirms, with no amount field in play', () => {
+        mockSettleable.value = [owed];
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        return mountRefundable()
+            .then((wrapper) =>
+                wrapper.get('[data-test=button-mark-returned-r-owed]').trigger('click')
+            )
+            .then(() => nextTick())
+            .then(() => nextTick())
+            .then(() => {
+                expect(confirm.mock.calls[0][0].message).toContain('€40.00');
+                expect(settle).toHaveBeenCalledWith('r-owed');
+            });
+    });
+
+    it('settles nothing when the question is declined', () => {
+        mockSettleable.value = [owed];
+        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
+        return mountRefundable()
+            .then((wrapper) =>
+                wrapper.get('[data-test=button-mark-returned-r-owed]').trigger('click')
+            )
+            .then(() => nextTick())
+            .then(() => nextTick())
+            .then(() => {
+                expect(settle).not.toHaveBeenCalled();
+            });
+    });
 });
 
 describe('cancelling', () => {

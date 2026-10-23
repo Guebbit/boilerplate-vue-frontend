@@ -12,7 +12,8 @@
  *   itself settles the payment and refunds it, so the payment ends `refunded`, the order stays
  *   cancelled, and there is nothing left to Finish.
  *
- * Each spends one card confirm, as `user`.
+ * Each spends one card confirm, as `user`. The Finish button is the server's `actions.sync`, which
+ * the confirm's own answer already carries: the page never has to re-read to find it.
  */
 import { addToCartFromStorefront, eventually, idFromLocation } from '../../../support/e2e/steps';
 
@@ -27,6 +28,7 @@ interface PaymentLike {
     status: string;
     amount: number;
     amountRefunded: number;
+    actions: { pay: boolean; sync: boolean };
 }
 
 /**
@@ -64,6 +66,13 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.get('[data-test=order-download-invoice]').should('not.exist');
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status, 'nothing is paid yet').to.equal('pending');
+            });
+            cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).should((payment) => {
+                expect(
+                    payment?.actions.sync,
+                    'the server offers Finish, not a second method'
+                ).to.equal(true);
+                expect(payment?.actions.pay).to.equal(false);
             });
             cy.reload();
             cy.get('[data-test=payment-finish]').should('exist');
