@@ -23,6 +23,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useWebhooksStore } from '../store';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import SecretRevealModal from '@/ui/organisms/SecretRevealModal.vue';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -166,7 +167,7 @@ const {
  *
  * @param secretId - Identifier of the secret to remove.
  */
-const handleRemoveSecret = (secretId: string) => {
+const handleRemoveSecret = singleFlight((secretId: string) => {
     if (!id) return;
     return useDialogStore()
         .confirm({
@@ -184,7 +185,7 @@ const handleRemoveSecret = (secretId: string) => {
                     busy.value = false;
                 });
         });
-};
+});
 
 /**
  * The page-level delete button's own blocked state — its own dedicated control, distinct from
@@ -200,7 +201,7 @@ const {
  * Deletes this subscription after an explicit confirmation, then returns to the list — there is
  * nothing left on this page to show.
  */
-const handleDelete = () => {
+const handleDelete = singleFlight(() => {
     if (!id) return;
     return useDialogStore()
         .confirm({
@@ -219,7 +220,7 @@ const handleDelete = () => {
                 })
                 .catch((error: unknown) => reportDeleteError(error));
         });
-};
+});
 
 /**
  * The rows of the aside summary card: identity and timestamps, formatted for display.

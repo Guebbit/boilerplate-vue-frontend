@@ -203,6 +203,20 @@ describe('the purchase hold', () => {
             });
     });
 
+    it('lifts the hold once when the button is pressed twice before the first answer', async () => {
+        signIn(false);
+        const lift = vi.spyOn(useUsersStore(), 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const button = mountUser(HELD).get('[data-test=user-lift-hold]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(lift).toHaveBeenCalledTimes(1);
+    });
+
     describe('with the account flagged for review', () => {
         /** Flagged by the shop's rule, no hold in force (it ended, or only paid cancels flagged it). */
         const FLAGGED: UserType = {

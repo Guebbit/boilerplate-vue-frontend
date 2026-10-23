@@ -42,6 +42,7 @@ import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
 import UserPurchaseHoldDialog from '../components/UserPurchaseHoldDialog.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import type { SetPurchaseHoldRequest } from '@types';
 import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
@@ -238,7 +239,7 @@ const handleSetHold = (hold: SetPurchaseHoldRequest) => {
  *
  * @returns A promise settling once the dialog closed and, if accepted, the write finished.
  */
-const handleLiftHold = () => {
+const handleLiftHold = singleFlight(() => {
     const target = currentUser.value;
     if (!target) return;
     const inForce = target.purchaseHold !== undefined;
@@ -263,7 +264,7 @@ const handleLiftHold = () => {
                 .then(() => addMessage(t('user-target-page.success-hold-lifted')))
                 .catch((error: unknown) => reportHoldError(error));
         });
-};
+});
 
 /**
  * The rows of the aside summary card: identity and timestamps, formatted for display.

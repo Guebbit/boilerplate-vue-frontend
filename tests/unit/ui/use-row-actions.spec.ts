@@ -117,4 +117,19 @@ describe('useRowActions — runConfirmed', () => {
 
         expect(calls).toEqual(['clear', 'write', 'toast:Deleted']);
     });
+
+    it('asks and writes once when called twice before the first answer', async () => {
+        const confirm = vi.fn(() => Promise.resolve(true));
+        useDialogStore().confirm = confirm;
+        const action = vi.fn(() => Promise.resolve());
+        const { runConfirmed } = useRowActions(makeSink([]));
+
+        await Promise.all([
+            runConfirmed({ confirm: 'Sure?', action, success: 'Deleted' }),
+            runConfirmed({ confirm: 'Sure?', action, success: 'Deleted' })
+        ]);
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(action).toHaveBeenCalledTimes(1);
+    });
 });

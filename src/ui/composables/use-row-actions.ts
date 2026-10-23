@@ -10,6 +10,7 @@
  */
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 
 /**
  * Where a row action's failure lands: the list's own blocking alert.
@@ -62,9 +63,10 @@ export interface UseRowActionsReturn {
      */
     run: (request: RowActionRequest) => Promise<void>;
     /**
-     * Asks first, with an `error`-coloured confirm, and runs the write only on a yes.
+     * Asks first, with an `error`-coloured confirm, and runs the write only on a yes. A call made
+     * while an earlier one is still asking or writing does nothing (`undefined`).
      */
-    runConfirmed: (request: ConfirmedRowActionRequest) => Promise<void>;
+    runConfirmed: (request: ConfirmedRowActionRequest) => Promise<void> | undefined;
 }
 
 /**
@@ -100,10 +102,12 @@ export const useRowActions = (sink: RowActionErrorSink): UseRowActionsReturn => 
      * @param request - The question, the write and its success message.
      * @returns A promise settling once the viewer answered and, on a yes, the write finished.
      */
-    const runConfirmed = ({ confirm, ...request }: ConfirmedRowActionRequest): Promise<void> =>
-        useDialogStore()
-            .confirm({ message: confirm, color: 'error' })
-            .then((accepted) => (accepted ? run(request) : undefined));
+    const runConfirmed = singleFlight(
+        ({ confirm, ...request }: ConfirmedRowActionRequest): Promise<void> =>
+            useDialogStore()
+                .confirm({ message: confirm, color: 'error' })
+                .then((accepted) => (accepted ? run(request) : undefined))
+    );
 
     return { run, runConfirmed };
 };

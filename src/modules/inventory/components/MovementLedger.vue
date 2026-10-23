@@ -35,6 +35,7 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { StockMovementReason } from '@/types/enums.ts';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 
@@ -300,7 +301,7 @@ const {
  * Expires every stale hold. Idempotent server-side, so the confirm is about intent, not danger —
  * the orders behind the released holds get cancelled, and that is worth a deliberate click.
  */
-const handleSweep = () =>
+const handleSweep = singleFlight(() =>
     useDialogStore()
         .confirm({ message: t('inventory-page.confirm-sweep'), color: 'warning' })
         .then((accepted) => {
@@ -312,7 +313,8 @@ const handleSweep = () =>
                     addMessage(t('inventory-page.success-sweep', { expired: expired ?? 0 }))
                 )
                 .catch((error: unknown) => reportSweepError(error));
-        });
+        })
+);
 
 onMounted(() => {
     void loadMovements();

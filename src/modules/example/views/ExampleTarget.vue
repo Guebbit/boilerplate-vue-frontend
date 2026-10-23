@@ -27,6 +27,7 @@ import { useExampleStore } from '../store';
 import { provideExample } from '../provided.ts';
 import ExampleStatusActions from '../components/ExampleStatusActions.vue';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -121,7 +122,7 @@ const {
  * Deletes this example after an explicit confirmation, then returns to the list: there is nothing
  * left on this page to show.
  */
-const handleDelete = () => {
+const handleDelete = singleFlight(() => {
     if (!id) return;
     return useDialogStore()
         .confirm({
@@ -138,7 +139,7 @@ const handleDelete = () => {
                 })
                 .catch((error: unknown) => reportDeleteError(error));
         });
-};
+});
 
 /**
  * What the example's publication reads as: live, withdrawn (with the first publish) or never.

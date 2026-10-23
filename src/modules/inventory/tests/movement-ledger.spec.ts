@@ -11,6 +11,8 @@ import { createMemoryHistory, createRouter } from 'vue-router';
 import { searchProducts } from '@api';
 import MovementLedger from '../components/MovementLedger.vue';
 import { useInventoryStore } from '../store.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { seedProducts } from '../../../../tests/support/unit/products-store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -204,5 +206,26 @@ describe('MovementLedger URL state', () => {
                     expect.objectContaining({ page: 2, productId: 'p9' })
                 );
             });
+    });
+});
+
+describe('MovementLedger sweep', () => {
+    it('sweeps once when the button is pressed twice before the first answer', async () => {
+        const session = useSessionStore();
+        session.accessToken = 'test-token';
+        session.viewer = { id: 'u1', email: 'staff@example.com', role: 'admin' };
+        session.setAbilities({ tenant: [['sweep', 'StockLevel']], platform: [] });
+        const sweep = vi.spyOn(useInventoryStore(), 'sweep').mockResolvedValue(0);
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+        const wrapper = mountLedger([]);
+        await flushPromises();
+        const button = wrapper.get('[data-test=sweep-submit]');
+
+        void button.trigger('click');
+        void button.trigger('click');
+        await flushPromises();
+
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(sweep).toHaveBeenCalledTimes(1);
     });
 });
