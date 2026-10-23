@@ -20,6 +20,7 @@ import {
     placeOrderAsCustomer,
     receivedAtLeast,
     seededSubscription,
+    setEnabledOnTheDetailPage,
     sinkEndpoint
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
@@ -180,7 +181,7 @@ describe('IN8 · An endpoint that never answers', () => {
         });
         cy.loginAs('manager');
         cy.then(() => cy.visit(`/en/webhooks/subscriptions/${subscriptionId}`));
-        cy.contains('Disabled').should('exist');
+        cy.contains('Auto-disabled').should('exist');
         cy.contains('Auto-disabled at').should('exist');
 
         cy.step('the audit trail names the switch-off as the system’s doing');
@@ -219,7 +220,7 @@ describe('IN8 · An endpoint that never answers', () => {
             })
         );
 
-        cy.step('the manager points it at a working address and switches it on: the count clears');
+        cy.step('the manager points it at a working address and enables it: the count clears');
         let aliveUrl = '';
         sinkEndpoint('/in8-alive').then((url) => {
             aliveUrl = url;
@@ -229,9 +230,10 @@ describe('IN8 · An endpoint that never answers', () => {
             cy.get('[data-test=webhook-url] input').should('have.value', deadUrl);
             cy.get('[data-test=webhook-url] input').clear();
             cy.get('[data-test=webhook-url] input').type(aliveUrl);
-            cy.get('[data-test=webhook-enabled] input').check({ force: true });
             cy.get('form').submit();
             cy.contains('Subscription updated').should('exist');
+            // Turning it back on is its own action, on the detail page.
+            setEnabledOnTheDetailPage(subscriptionId, aliveUrl, true);
         });
         cy.then(() =>
             stateOf(subscriptionId).then((state) => {

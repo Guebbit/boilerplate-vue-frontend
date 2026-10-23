@@ -54,6 +54,15 @@ const CREATED: WebhookSubscriptionCreated = {
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec-1'],
+    retiringSecrets: [],
+    actions: {
+        update: true,
+        delete: true,
+        enable: false,
+        disable: true,
+        rotateSecret: true,
+        removeSecret: false
+    },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     secret: 'whsec_shown_once'

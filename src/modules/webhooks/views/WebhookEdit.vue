@@ -11,10 +11,11 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Webhook subscription edit page. Hydrates from the store's cache by route id (see
- * `store.ts`'s `watchSubscription`) and exposes a url/description/eventTypes/enabled form built
- * on `useStructureFormValidation`. No secret-ring actions here — those live on the detail page,
- * same split `users` keeps its irreversible/audited actions off the plain field-edit form.
+ * Webhook subscription edit page. Loads its own record by route id (see `store.ts`'s
+ * `watchSubscription`; a 404 or 403 leaves for the Error page) and exposes a
+ * url/description/eventTypes form built on `useStructureFormValidation`. No secret-ring actions
+ * and no on/off switch here — those live on the detail page, same split `users` keeps its
+ * irreversible/audited actions off the plain field-edit form.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { computed, onMounted, ref } from 'vue';
@@ -26,6 +27,7 @@ import { useSessionStore } from '@/infrastructure/session.ts';
 import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useWebhooksStore } from '../store';
+import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
 import { webhookEditSchema } from '../schemas.ts';
 import { Calendar, Clock, Hash, Pencil, Webhook } from 'lucide-vue-next';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
@@ -73,7 +75,6 @@ interface WebhookEditForm {
     url?: string;
     description?: string;
     eventTypes?: string[];
-    enabled?: boolean;
 }
 
 /**
@@ -119,8 +120,7 @@ activateAutoHydrate(
             ? {
                   url: currentSubscription.value.url,
                   description: currentSubscription.value.description,
-                  eventTypes: currentSubscription.value.eventTypes,
-                  enabled: currentSubscription.value.enabled
+                  eventTypes: currentSubscription.value.eventTypes
               }
             : undefined
     )
@@ -163,10 +163,10 @@ const submitForm = () => {
     clearFormError();
     return handleSubmit(() => {
         if (!id) return;
-        const { url, description, eventTypes, enabled } = form.value;
+        const { url, description, eventTypes } = form.value;
         return toRequestBody(
             'UpdateWebhookSubscriptionBody',
-            { url, description, eventTypes, enabled },
+            { url, description, eventTypes },
             currentSubscription.value
         )
             .then((body) => updateSubscription(id, body))
@@ -180,9 +180,10 @@ const submitForm = () => {
 };
 
 /**
- * Selects and hydrates the subscription whenever the route id changes.
+ * Selects and loads the subscription whenever the route id changes; a missing or forbidden one
+ * leaves for the Error page.
  */
-watchSubscription(() => id);
+watchSubscription(() => id, { onError: useMissingRecord() });
 
 /**
  * The rows of the aside summary card: identity and timestamps, formatted for display.
@@ -247,11 +248,6 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             :loading="loadingEventCatalogue"
                             :label="t('webhook-edit-page.label-event-types')"
                             v-bind="fieldErrorProps(showFormErrors ? formErrors.eventTypes : [])"
-                        />
-                        <v-switch
-                            v-model="form.enabled"
-                            data-test="webhook-enabled"
-                            :label="t('webhook-edit-page.label-enabled')"
                         />
 
                         <div class="flex flex-wrap gap-2">

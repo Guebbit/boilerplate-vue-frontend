@@ -11931,14 +11931,16 @@ export const SweepReservationsResponse = zod.strictObject({
     })
 });
 /**
- * Never returns a secret — the ring's plaintext exists only in the response of the
- * call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
+ * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
+ * plaintext exists only in the response of the call that minted it (`POST` here, or
+ * `POST .../{id}/rotate-secret`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptionsQueryPageDefault = 1;
 export const listWebhookSubscriptionsQueryPageMax = 10000;
 export const listWebhookSubscriptionsQueryPageSizeDefault = 10;
 export const listWebhookSubscriptionsQueryPageSizeMax = 100;
+export const listWebhookSubscriptionsQuerySortMax = 2;
 export const ListWebhookSubscriptionsQueryParams = zod.strictObject({
     page: zod
         .number()
@@ -11950,7 +11952,13 @@ export const ListWebhookSubscriptionsQueryParams = zod.strictObject({
         .min(1)
         .max(listWebhookSubscriptionsQueryPageSizeMax)
         .default(listWebhookSubscriptionsQueryPageSizeDefault),
-    enabled: zod.boolean().optional()
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'url', '-url']))
+        .min(1)
+        .max(listWebhookSubscriptionsQuerySortMax)
+        .optional(),
+    enabled: zod.boolean().optional(),
+    autoDisabled: zod.boolean().optional()
 });
 export const listWebhookSubscriptionsResponseDataItemsItemIdMax = 64;
 export const listWebhookSubscriptionsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -11982,7 +11990,22 @@ export const ListWebhookSubscriptionsResponse = zod.strictObject({
                     .number()
                     .min(listWebhookSubscriptionsResponseDataItemsItemConsecutiveFailuresMin),
                 disabledAt: zod.iso.datetime({ offset: true }).optional(),
+                autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
                 secretIds: zod.array(zod.string()),
+                retiringSecrets: zod.array(
+                    zod.strictObject({
+                        id: zod.string(),
+                        retiresAt: zod.iso.datetime({ offset: true })
+                    })
+                ),
+                actions: zod.strictObject({
+                    update: zod.boolean(),
+                    delete: zod.boolean(),
+                    enable: zod.boolean(),
+                    disable: zod.boolean(),
+                    rotateSecret: zod.boolean(),
+                    removeSecret: zod.boolean()
+                }),
                 createdAt: zod.iso.datetime({ offset: true }),
                 updatedAt: zod.iso.datetime({ offset: true })
             })
@@ -12050,7 +12073,22 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
             .number()
             .min(createWebhookSubscriptionResponseDataConsecutiveFailuresMin),
         disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
         secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }),
         secret: zod.string().optional(),
@@ -12058,9 +12096,65 @@ export const CreateWebhookSubscriptionResponse = zod.strictObject({
     })
 });
 /**
- * Full replace of url/description/eventTypes/enabled — an omitted `description` is
- * cleared. Never touches the secret ring; rotate or drop a secret through its own
- * action route below.
+ * The same shape the list rows carry (and never a secret). 404 for an id outside this
+ * shop's subscriptions, whether it never existed or belongs to another shop.
+ * @summary Get one webhook subscription
+ */
+export const getWebhookSubscriptionPathIdMax = 64;
+export const getWebhookSubscriptionPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetWebhookSubscriptionParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(getWebhookSubscriptionPathIdMax)
+        .regex(getWebhookSubscriptionPathIdRegExp)
+});
+export const getWebhookSubscriptionResponseDataIdMax = 64;
+export const getWebhookSubscriptionResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
+export const getWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
+export const GetWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getWebhookSubscriptionResponseDataIdMax)
+            .regex(getWebhookSubscriptionResponseDataIdRegExp),
+        url: zod.url().regex(getWebhookSubscriptionResponseDataUrlRegExp),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(getWebhookSubscriptionResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true })
+    })
+});
+/**
+ * Full replace of url/description/eventTypes — an omitted `description` is cleared.
+ * Never touches the secret ring or whether the subscription is on; rotate or drop a
+ * secret, enable or disable it, through its own action route below.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscriptionPathIdMax = 64;
@@ -12084,8 +12178,7 @@ export const ReplaceWebhookSubscriptionBody = zod.strictObject({
     description: zod.string().min(1).max(replaceWebhookSubscriptionBodyDescriptionMax).nullish(),
     eventTypes: zod
         .array(zod.string().min(1).max(replaceWebhookSubscriptionBodyEventTypesItemMax))
-        .min(1),
-    enabled: zod.boolean()
+        .min(1)
 });
 export const replaceWebhookSubscriptionResponseDataIdMax = 64;
 export const replaceWebhookSubscriptionResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12109,14 +12202,30 @@ export const ReplaceWebhookSubscriptionResponse = zod.strictObject({
             .number()
             .min(replaceWebhookSubscriptionResponseDataConsecutiveFailuresMin),
         disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
         secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true })
     })
 });
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionPathIdMax = 64;
@@ -12142,8 +12251,7 @@ export const UpdateWebhookSubscriptionBody = zod.strictObject({
     eventTypes: zod
         .array(zod.string().min(1).max(updateWebhookSubscriptionBodyEventTypesItemMax))
         .min(1)
-        .optional(),
-    enabled: zod.boolean().optional()
+        .optional()
 });
 export const updateWebhookSubscriptionResponseDataIdMax = 64;
 export const updateWebhookSubscriptionResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12167,7 +12275,22 @@ export const UpdateWebhookSubscriptionResponse = zod.strictObject({
             .number()
             .min(updateWebhookSubscriptionResponseDataConsecutiveFailuresMin),
         disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
         secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true })
     })
@@ -12195,11 +12318,11 @@ export const DeleteWebhookSubscriptionResponse = zod.strictObject({
  * ring then carries two active secrets, and deliveries sign with both (two
  * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
  * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`), after which it stops signing and
- * disappears from `secretIds`. A ring holds at most two: rotating again drops the
- * oldest. Its own route rather than a flag on
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: rotating again drops the oldest. Its own route rather than a flag on
  * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes/enabled.
+ * url/description/eventTypes.
  * @summary Rotate a webhook subscription's secret
  */
 export const rotateWebhookSubscriptionSecretPathIdMax = 64;
@@ -12233,7 +12356,22 @@ export const RotateWebhookSubscriptionSecretResponse = zod.strictObject({
             .number()
             .min(rotateWebhookSubscriptionSecretResponseDataConsecutiveFailuresMin),
         disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
         secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }),
         secret: zod.string().optional(),
@@ -12279,13 +12417,28 @@ export const RemoveWebhookSubscriptionSecretResponse = zod.strictObject({
             .number()
             .min(removeWebhookSubscriptionSecretResponseDataConsecutiveFailuresMin),
         disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
         secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true })
     })
 });
 /**
- * Every attempt, newest first, optionally filtered by subscription and status.
+ * Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
  * @summary The delivery log
  */
 export const listWebhookDeliveriesQueryPageDefault = 1;
@@ -12350,6 +12503,9 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
                 durationMs: zod.number().optional(),
                 error: zod.string().optional(),
                 nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod.strictObject({
+                    replay: zod.boolean()
+                }),
                 createdAt: zod.iso.datetime({ offset: true }),
                 updatedAt: zod.iso.datetime({ offset: true })
             })
@@ -12376,7 +12532,8 @@ export const ListWebhookDeliveriesResponse = zod.strictObject({
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
- * most-requested support action, per the design doc.
+ * most-requested support action, per the design doc. Refused while the subscription is
+ * disabled (`actions.replay` is false): enable it first.
  * @summary Re-send one delivery
  */
 export const replayWebhookDeliveryPathIdMax = 64;
@@ -12415,6 +12572,9 @@ export const ReplayWebhookDeliveryResponse = zod.strictObject({
         durationMs: zod.number().optional(),
         error: zod.string().optional(),
         nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            replay: zod.boolean()
+        }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true })
     })
@@ -15430,6 +15590,123 @@ export const GetPipelineStatsResponse = zod.strictObject({
             })
         ),
         paidNotShipped: zod.number()
+    })
+});
+/**
+ * Turns a subscription back on, whether it was switched off by hand or by the
+ * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
+ * streak, so the guard starts counting from zero. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED` when it is already on — the streak of a
+ * healthy subscription is never reset by a repeated call.
+ * @summary Enable a webhook subscription
+ */
+export const enableWebhookSubscriptionPathIdMax = 64;
+export const enableWebhookSubscriptionPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const EnableWebhookSubscriptionParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(enableWebhookSubscriptionPathIdMax)
+        .regex(enableWebhookSubscriptionPathIdRegExp)
+});
+export const enableWebhookSubscriptionResponseDataIdMax = 64;
+export const enableWebhookSubscriptionResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const enableWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
+export const enableWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
+export const EnableWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(enableWebhookSubscriptionResponseDataIdMax)
+            .regex(enableWebhookSubscriptionResponseDataIdRegExp),
+        url: zod.url().regex(enableWebhookSubscriptionResponseDataUrlRegExp),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(enableWebhookSubscriptionResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true })
+    })
+});
+/**
+ * Pauses a subscription by hand: sets `disabledAt` (and leaves `autoDisabledAt`
+ * absent, which is how a pause is told from the guard's work). Nothing is sent to it
+ * while it is off, and an event that fires meanwhile is not queued for it. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED` when it is already off.
+ * @summary Disable a webhook subscription
+ */
+export const disableWebhookSubscriptionPathIdMax = 64;
+export const disableWebhookSubscriptionPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DisableWebhookSubscriptionParams = zod.strictObject({
+    id: zod
+        .string()
+        .min(1)
+        .max(disableWebhookSubscriptionPathIdMax)
+        .regex(disableWebhookSubscriptionPathIdRegExp)
+});
+export const disableWebhookSubscriptionResponseDataIdMax = 64;
+export const disableWebhookSubscriptionResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const disableWebhookSubscriptionResponseDataUrlRegExp = new RegExp('(?:^https://)');
+export const disableWebhookSubscriptionResponseDataConsecutiveFailuresMin = 0;
+export const DisableWebhookSubscriptionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(disableWebhookSubscriptionResponseDataIdMax)
+            .regex(disableWebhookSubscriptionResponseDataIdRegExp),
+        url: zod.url().regex(disableWebhookSubscriptionResponseDataUrlRegExp),
+        description: zod.string().optional(),
+        eventTypes: zod.array(zod.string()).min(1),
+        enabled: zod.boolean(),
+        consecutiveFailures: zod
+            .number()
+            .min(disableWebhookSubscriptionResponseDataConsecutiveFailuresMin),
+        disabledAt: zod.iso.datetime({ offset: true }).optional(),
+        autoDisabledAt: zod.iso.datetime({ offset: true }).optional(),
+        secretIds: zod.array(zod.string()),
+        retiringSecrets: zod.array(
+            zod.strictObject({
+                id: zod.string(),
+                retiresAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            delete: zod.boolean(),
+            enable: zod.boolean(),
+            disable: zod.boolean(),
+            rotateSecret: zod.boolean(),
+            removeSecret: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true })
     })
 });
 /**
