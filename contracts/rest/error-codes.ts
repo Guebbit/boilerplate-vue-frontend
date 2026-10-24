@@ -72,7 +72,7 @@ export const ERROR_CODES = {
     DELIVERY_TRACKING_CODE_REQUIRED: 'DELIVERY_TRACKING_CODE_REQUIRED',
     /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
     EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
-    /** 403 — Checkout requires a verified email address — see `POST /account/verify-email`. */
+    /** 403 — Checkout requires a verified email address — see `POST /account/email-verification/resend`. */
     EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
     /** 429 — A verification email was already sent recently — carries `details.retryAfter`. */
     EMAIL_VERIFY_RESEND_TOO_SOON: 'EMAIL_VERIFY_RESEND_TOO_SOON',

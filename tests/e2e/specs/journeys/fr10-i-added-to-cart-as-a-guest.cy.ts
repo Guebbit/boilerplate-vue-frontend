@@ -20,7 +20,7 @@ describe('FR10 · I wanted to add it to my cart as a guest', () => {
         cy.restore();
         // The customer's own cart may hold lines already; start from empty so a line can only
         // be there because this story added it.
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
     });
 
     it('a guest may add to a cart but not check out, and logging in or signing up brings them back to the product', () => {

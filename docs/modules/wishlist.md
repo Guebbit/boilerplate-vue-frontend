@@ -91,12 +91,12 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                               | Response envelope                |
-| ---------------------------------- | -------------------------------- |
-| `GET /wishlist`                    | `GetWishlistResponse`            |
-| `PUT /wishlist/{id}`               | `AddWishlistItemResponse`        |
-| `DELETE /wishlist/{id}`            | `RemoveWishlistItemResponse`     |
-| `POST /wishlist/{id}/move-to-cart` | `MoveWishlistItemToCartResponse` |
+| Call                                     | Response envelope                |
+| ---------------------------------------- | -------------------------------- |
+| `GET /wishlist`                          | `GetWishlistResponse`            |
+| `POST /wishlist/items`                   | `CreateWishlistItemResponse`     |
+| `DELETE /wishlist/items/{id}`            | `DeleteWishlistItemResponse`     |
+| `POST /wishlist/items/{id}/move-to-cart` | `MoveWishlistItemToCartResponse` |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

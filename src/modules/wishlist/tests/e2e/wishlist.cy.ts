@@ -52,7 +52,7 @@ describe('Wishlist', () => {
     it('the heart saves an unsaved product, then unsaves it', () => {
         cy.loginAs('user');
         // The starting state is read from the API, so the product chosen is one the heart has
-        // never been pressed on: saving it is what `PUT /wishlist/{productId}` has to do.
+        // never been pressed on: saving it is what `POST /wishlist/items` has to do.
         cy.apiAs<{ items: { productId: string }[] }>('user', 'GET', '/wishlist').then(
             (wishlist) => {
                 const saved = new Set((wishlist?.items ?? []).map((item) => item.productId));
@@ -63,8 +63,8 @@ describe('Wishlist', () => {
                         'the catalogue has a product the user has not saved'
                     ).to.be.a('string');
                     cy.env(['apiUrl']).then(({ apiUrl }) => {
-                        cy.intercept('PUT', `${String(apiUrl)}/wishlist/*`).as('save');
-                        cy.intercept('DELETE', `${String(apiUrl)}/wishlist/*`).as('unsave');
+                        cy.intercept('POST', `${String(apiUrl)}/wishlist/items`).as('save');
+                        cy.intercept('DELETE', `${String(apiUrl)}/wishlist/items/*`).as('unsave');
                     });
                     cy.visit(`/en/products/${unsaved?.id ?? ''}`);
                 });

@@ -119,10 +119,10 @@ Per-user. Items are scoped to the authenticated user.
 | ------ | ------------------------ | ---- | --------------------------------------------- |
 | GET    | `/cart`                  | user | Get current cart, with its shipping options   |
 | GET    | `/cart/summary`          | user | Cart totals only                              |
-| POST   | `/cart`                  | user | Add item to cart (grows a line already there) |
-| PUT    | `/cart/:productId`       | user | Set an item's exact quantity                  |
-| DELETE | `/cart/:productId`       | user | Remove item from cart                         |
-| DELETE | `/cart/all`              | user | Clear the entire cart                         |
+| POST   | `/cart/items`            | user | Add item to cart (grows a line already there) |
+| PATCH  | `/cart/items/:productId` | user | Set an item's exact quantity                  |
+| DELETE | `/cart/items/:productId` | user | Remove item from cart                         |
+| DELETE | `/cart/items`            | user | Clear the entire cart                         |
 | PUT    | `/cart/shipping-method`  | user | Choose (or clear) the shipping method         |
 | POST   | `/cart/checkout`         | user | Checkout → create order                       |
 | POST   | `/cart/reorder/:orderId` | user | Copy a past order back into the cart          |

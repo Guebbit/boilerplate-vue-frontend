@@ -30,8 +30,8 @@ interface OrderLike {
  * @returns a chain yielding the new order's id
  */
 const buyAndPay = (productId: string): Cypress.Chainable<string> => {
-    cy.apiAs('user', 'DELETE', '/cart/all');
-    cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+    cy.apiAs('user', 'DELETE', '/cart/items');
+    cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
     cy.goToCart();
     cy.get('[data-test=cart-checkout]').should('not.be.disabled').click();

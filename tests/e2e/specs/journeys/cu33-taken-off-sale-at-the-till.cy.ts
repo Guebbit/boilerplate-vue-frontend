@@ -55,14 +55,14 @@ describe('CU33 · Taken off sale at the till', () => {
 
                 cy.step('saved to the wishlist it carries the same marker');
                 cy.loginAs('user');
-                cy.apiAs('user', 'PUT', `/wishlist/${offSaleId}`);
+                cy.apiAs('user', 'POST', '/wishlist/items', { productId: offSaleId });
                 cy.visit('/en/wishlist');
                 cy.contains('[data-test=wishlist-item]', title)
                     .find('[data-test=wishlist-line-availability]')
                     .should('have.attr', 'data-availability', 'unavailable');
 
                 cy.step('moved into the cart it holds "Place order" back, until it is removed');
-                cy.apiAs('user', 'DELETE', '/cart/all');
+                cy.apiAs('user', 'DELETE', '/cart/items');
                 cy.contains('[data-test=wishlist-item]', title)
                     .find('[data-test=wishlist-move-to-cart]')
                     .click();
@@ -86,9 +86,9 @@ describe('CU33 · Taken off sale at the till', () => {
                 cy.subjectProduct('product.rich').then(({ title: richTitle }) => {
                     cy.step('the cart holds two lines, pickup chosen, and the page is open');
                     cy.loginAs('user');
-                    cy.apiAs('user', 'DELETE', '/cart/all');
-                    cy.apiAs('user', 'POST', '/cart', { productId: stockedId, quantity: 1 });
-                    cy.apiAs('user', 'POST', '/cart', { productId: richId, quantity: 1 });
+                    cy.apiAs('user', 'DELETE', '/cart/items');
+                    cy.apiAs('user', 'POST', '/cart/items', { productId: stockedId, quantity: 1 });
+                    cy.apiAs('user', 'POST', '/cart/items', { productId: richId, quantity: 1 });
                     cy.apiAs('user', 'PUT', '/cart/shipping-method', {
                         shippingMethodId: 'pickup'
                     });
@@ -133,7 +133,7 @@ describe('CU33 · Taken off sale at the till', () => {
 
                     cy.step('the editor puts it back on sale: the marker is gone');
                     cy.apiAs('editor', 'PATCH', `/products/${richId}`, { purchasable: true });
-                    cy.apiAs('user', 'POST', '/cart', { productId: richId, quantity: 1 });
+                    cy.apiAs('user', 'POST', '/cart/items', { productId: richId, quantity: 1 });
                     cy.goToCart();
                     cy.contains('[data-test=cart-item]', richTitle).should('exist');
                     cy.get(
@@ -149,9 +149,9 @@ describe('CU33 · Taken off sale at the till', () => {
             cy.subjectProduct('product.barebones').then(() => {
                 cy.step('the customer has it in the cart and the wishlist, and its page is open');
                 cy.loginAs('user');
-                cy.apiAs('user', 'DELETE', '/cart/all');
-                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
-                cy.apiAs('user', 'PUT', `/wishlist/${productId}`);
+                cy.apiAs('user', 'DELETE', '/cart/items');
+                cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
+                cy.apiAs('user', 'POST', '/wishlist/items', { productId });
                 cy.visit(`/en/products/${productId}`);
                 cy.get('[data-test=add-to-cart]').should('not.be.disabled');
 

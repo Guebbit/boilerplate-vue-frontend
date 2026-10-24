@@ -48,7 +48,7 @@ describe('CU9 · Shipping rules at the till', () => {
         cy.subjectId('product.heavy').then((heavyId) => {
             // Added behind the open page's back, so its express radio is now stale — the refusal
             // below is what the server says to a choice the page still offers.
-            cy.apiAs('user', 'POST', '/cart', { productId: heavyId, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: heavyId, quantity: 1 });
         });
         cy.get('[data-test=shipping-method-express]').click();
         cy.contains('Your basket is too heavy for the chosen shipping method').should('be.visible');

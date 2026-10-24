@@ -65,10 +65,10 @@ describe('Cart', () => {
             // The seed leaves the customer's basket empty: two lines, one of them plural, are put
             // in through the API so every case below starts from the same cart.
             cy.subjectId('product.inStock').then((productId) => {
-                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 2 });
+                cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 2 });
             });
             cy.subjectId('product.rich').then((productId) => {
-                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+                cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
             });
             cy.loginAs('user');
             cy.visit('/en/cart');

@@ -107,7 +107,7 @@ const addToGuestCart = () => {
 };
 
 /**
- * Adds one unit to the cart. `POST /cart` is "add": the server grows a line the shopper already
+ * Adds one unit to the cart. `POST /cart/items` is "add": the server grows a line the shopper already
  * has, so no read-then-increment happens here: the quantity added is never computed from a local
  * copy of the cart. A guest's list grows the same way, locally.
  *

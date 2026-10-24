@@ -3144,7 +3144,7 @@ export const StartOAuthLinkResponse = zod.strictObject({
     })
 });
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProviderPathProviderMax = 32;
@@ -3154,7 +3154,15 @@ export const UnlinkOAuthProviderParams = zod.strictObject({
 export const UnlinkOAuthProviderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
-    message: zod.string()
+    message: zod.string(),
+    data: zod.strictObject({
+        links: zod.array(
+            zod.strictObject({
+                provider: zod.string(),
+                connectedAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    })
 });
 /**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
@@ -5261,7 +5269,7 @@ export const GetCartResponse = zod.strictObject({
     })
 });
 /**
- * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`.
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). To SET a quantity, `PATCH /cart/items/{productId}`.
  * @summary Add to cart
  */
 export const addCartItemBodyProductIdMax = 64;
@@ -5342,94 +5350,7 @@ export const AddCartItemResponse = zod.strictObject({
     })
 });
 /**
- * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
- * @summary Remove item from cart
- */
-export const removeCartItemByBodyBodyProductIdMax = 64;
-export const removeCartItemByBodyBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RemoveCartItemByBodyBody = zod.strictObject({
-    productId: zod
-        .string()
-        .min(1)
-        .max(removeCartItemByBodyBodyProductIdMax)
-        .regex(removeCartItemByBodyBodyProductIdRegExp)
-});
-export const removeCartItemByBodyResponseDataItemsItemProductIdMax = 64;
-export const removeCartItemByBodyResponseDataItemsItemProductIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const removeCartItemByBodyResponseDataSummaryItemsCountMin = 0;
-export const removeCartItemByBodyResponseDataSummaryTotalQuantityMin = 0;
-export const removeCartItemByBodyResponseDataSummaryItemsTotalMin = 0;
-export const removeCartItemByBodyResponseDataSummaryShippingCostMin = 0;
-export const removeCartItemByBodyResponseDataSummaryTotalPriceMin = 0;
-export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneAmountMin = 0;
-export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
-export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
-export const removeCartItemByBodyResponseDataShippingOptionsItemPriceMin = 0;
-export const RemoveCartItemByBodyResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod
-                    .string()
-                    .min(1)
-                    .max(removeCartItemByBodyResponseDataItemsItemProductIdMax)
-                    .regex(removeCartItemByBodyResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1),
-                availability: zod.enum([
-                    'in_stock',
-                    'preorder',
-                    'backorder',
-                    'insufficient_stock',
-                    'out_of_stock',
-                    'unavailable',
-                    'removed'
-                ]),
-                canIncrease: zod.boolean()
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod.number().min(removeCartItemByBodyResponseDataSummaryItemsCountMin),
-            totalQuantity: zod
-                .number()
-                .min(removeCartItemByBodyResponseDataSummaryTotalQuantityMin),
-            itemsTotal: zod.number().min(removeCartItemByBodyResponseDataSummaryItemsTotalMin),
-            shippingCost: zod.number().min(removeCartItemByBodyResponseDataSummaryShippingCostMin),
-            totalPrice: zod.number().min(removeCartItemByBodyResponseDataSummaryTotalPriceMin),
-            currency: zod.string(),
-            expectedTotal: zod.strictObject({
-                amount: zod
-                    .number()
-                    .min(removeCartItemByBodyResponseDataSummaryExpectedTotalOneAmountMin),
-                currency: zod
-                    .string()
-                    .min(removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMin)
-                    .max(removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMax)
-            })
-        }),
-        shipping: zod.strictObject({
-            required: zod.boolean(),
-            selected: zod.string().nullable(),
-            options: zod.array(
-                zod.strictObject({
-                    id: zod.string(),
-                    price: zod
-                        .number()
-                        .min(removeCartItemByBodyResponseDataShippingOptionsItemPriceMin),
-                    requiresAddress: zod.boolean(),
-                    tracked: zod.boolean()
-                })
-            )
-        }),
-        checkoutable: zod.boolean()
-    })
-});
-/**
- * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
+ * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL, and any body on it is refused (415), so a body can never turn a one-line delete into this. Returns the (empty) cart; clearing an already-empty cart is the state the caller asked for, so also 200.
  * @summary Clear cart
  */
 export const clearCartResponseDataItemsItemProductIdMax = 64;
@@ -5499,7 +5420,7 @@ export const ClearCartResponse = zod.strictObject({
     })
 });
 /**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const updateCartItemByIdPathProductIdMax = 64;
@@ -6175,17 +6096,17 @@ export const GetWishlistResponse = zod.strictObject({
     })
 });
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
+ * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
-export const createWishlistItemPathProductIdMax = 64;
-export const createWishlistItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateWishlistItemParams = zod.strictObject({
+export const createWishlistItemBodyProductIdMax = 64;
+export const createWishlistItemBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateWishlistItemBody = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(createWishlistItemPathProductIdMax)
-        .regex(createWishlistItemPathProductIdRegExp)
+        .max(createWishlistItemBodyProductIdMax)
+        .regex(createWishlistItemBodyProductIdRegExp)
 });
 export const createWishlistItemResponseDataItemsItemProductIdMax = 64;
 export const createWishlistItemResponseDataItemsItemProductIdRegExp = new RegExp(
@@ -14486,7 +14407,7 @@ export const DeactivateUserByIdResponse = zod.strictObject({
     })
 });
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCartHeaderIdempotencyKeyMax = 200;
@@ -17396,17 +17317,17 @@ export const ListStockAlertsResponse = zod.strictObject({
     })
 });
 /**
- * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
  * @summary Ask to be told when a product is back
  */
-export const createStockAlertPathProductIdMax = 64;
-export const createStockAlertPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateStockAlertParams = zod.strictObject({
+export const createStockAlertBodyProductIdMax = 64;
+export const createStockAlertBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateStockAlertBody = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(createStockAlertPathProductIdMax)
-        .regex(createStockAlertPathProductIdRegExp)
+        .max(createStockAlertBodyProductIdMax)
+        .regex(createStockAlertBodyProductIdRegExp)
 });
 export const createStockAlertResponseDataItemsItemProductIdMax = 64;
 export const createStockAlertResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
