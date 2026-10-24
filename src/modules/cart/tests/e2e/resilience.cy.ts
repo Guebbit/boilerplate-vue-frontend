@@ -14,14 +14,14 @@ describe('the cart renders whatever it holds', () => {
     });
 
     it('serves an empty cart quietly and inside the viewport', () => {
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
         assertRouteIsHealthy('/en/cart', '#cart-page');
     });
 
     it('serves a cart holding a line quietly and inside the viewport', () => {
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
         cy.subjectId('product.inStock').then((productId) => {
-            cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
         });
         assertRouteIsHealthy('/en/cart', '#cart-page');
         cy.get('[data-test=cart-item]').should('have.length', 1);

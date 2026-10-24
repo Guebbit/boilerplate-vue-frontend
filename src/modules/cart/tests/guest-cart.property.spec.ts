@@ -11,7 +11,7 @@
  *   - the cart is always valid: whole units from 1 to the cap, one line per product, at most 100;
  *   - it survives a save and a reload exactly;
  *   - reading storage is total and settles in one pass, whatever the storage holds;
- *   - merging adds up to adding one by one, which is what `POST /cart` would have done;
+ *   - merging adds up to adding one by one, which is what `POST /cart/items` would have done;
  *   - taking away what a merge sent leaves exactly what was added during the call.
  *
  * Seeded, like every property file here (`docs/tools/property-testing.md`): a failure is

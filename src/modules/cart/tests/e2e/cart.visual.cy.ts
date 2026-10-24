@@ -21,9 +21,9 @@ import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
  */
 const cartWithOneLine = () =>
     cy
-        .apiAs('user', 'DELETE', '/cart/all')
+        .apiAs('user', 'DELETE', '/cart/items')
         .then(() => cy.subjectId('product.inStock'))
-        .then((productId) => cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 }))
+        .then((productId) => cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 }))
         .then(() => '/en/cart');
 
 sweepVisual(

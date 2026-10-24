@@ -5,8 +5,8 @@
  * Unlike products/users, this store owns real state: every action replaces the local cart with
  * the payload the API returned. Two rules are worth guarding:
  *
- *   - `clearCart()` is bodyless and hits `DELETE /cart/all`, a separate URL from
- *     `removeCartItem(productId)`'s `DELETE /cart/:productId`. Two URLs rather than one
+ *   - `clearCart()` is bodyless and hits `DELETE /cart/items`, a separate URL from
+ *     `removeCartItem(productId)`'s `DELETE /cart/items/:productId`. Two URLs rather than one
  *     overloaded endpoint with an optional body, because a proxy that strips the body from such
  *     a call silently clears everything instead of one line.
  *   - the summary getters must survive an unfetched cart, since the header renders the item
@@ -311,7 +311,7 @@ describe('useCartStore', () => {
     });
 
     describe('clearCart', () => {
-        it('takes no arguments — clearing is DELETE /cart/all, not an optional body', () =>
+        it('takes no arguments — clearing is DELETE /cart/items, not an optional body', () =>
             useCartStore()
                 .clearCart()
                 .then(() => {

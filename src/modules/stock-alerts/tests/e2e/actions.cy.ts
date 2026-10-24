@@ -28,11 +28,7 @@ actionTable('stock-alerts', [
         trigger: () => {
             cy.get('[data-test=notify-me]').click();
         },
-        intercept: {
-            method: 'POST',
-            url: '**/stock-alerts/*',
-            operation: '/stock-alerts/{productId}'
-        },
+        intercept: { method: 'POST', url: '**/stock-alerts', operation: '/stock-alerts' },
         kind: 'row',
         alert: 'notify-me-error',
         listed: '[data-test=notify-me]'
@@ -42,7 +38,9 @@ actionTable('stock-alerts', [
         persona: 'user',
         route: () =>
             soldOutProduct().then((id) =>
-                cy.apiAs('user', 'POST', `/stock-alerts/${id}`).then(() => '/en/stock-alerts')
+                cy
+                    .apiAs('user', 'POST', '/stock-alerts', { productId: id })
+                    .then(() => '/en/stock-alerts')
             ),
         trigger: () => {
             cy.get('[data-test=stock-alert-cancel]').first().click();

@@ -964,7 +964,9 @@ describe('a reload in the middle of checkout', () => {
                 .then(() => {
                     globalThis.dispatchEvent(new Event('pagehide'));
 
-                    expect(sendKeepalive).toHaveBeenCalledWith('PUT', '/cart/p1', { quantity: 3 });
+                    expect(sendKeepalive).toHaveBeenCalledWith('PATCH', '/cart/items/p1', {
+                        quantity: 3
+                    });
                 });
         });
     });

@@ -53,7 +53,7 @@ describe('CU27 · I filled a cart before I had signed in', () => {
         cy.restore();
         // The customer's own cart may hold lines already; start from empty so a line can only be
         // there because this story put it there.
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
     });
 
     it('keeps the guest cart through a reload, offers no checkout, and merges it at sign-in', () => {
@@ -96,7 +96,7 @@ describe('CU27 · I filled a cart before I had signed in', () => {
         cy.subjectId('product.inStock').then((productId) => {
             cy.subjectProduct('product.inStock').then(({ title }) => {
                 cy.step('the account already holds one unit, and the guest adds two');
-                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+                cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
                 guestAdds('product.inStock');
                 cy.get('[data-test=add-to-cart]').click();
                 cy.get('[data-test=nav-badge]').should('contain.text', '2');
@@ -140,7 +140,7 @@ describe('CU27 · I filled a cart before I had signed in', () => {
                 cy.get('[data-test=nav-badge]').should('contain.text', '1');
                 // The seeded customer also saves this product, and deleting it tells them about
                 // the wishlist line too; take it off the list so the bell holds the merge's message only.
-                cy.apiAs('user', 'DELETE', `/wishlist/${productId}`);
+                cy.apiAs('user', 'DELETE', `/wishlist/items/${productId}`);
                 cy.apiAs('editor', 'DELETE', `/products/${productId}`);
 
                 cy.step('signing in does not fail: the line is skipped and the cart is empty');

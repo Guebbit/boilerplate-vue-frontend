@@ -425,7 +425,7 @@ const handleClearCart = singleFlight(() => {
  */
 const onPageHide = () =>
     sendPendingKeepalive((productId, quantity) => {
-        sendKeepalive('PUT', `/cart/${productId}`, { quantity });
+        sendKeepalive('PATCH', `/cart/items/${productId}`, { quantity });
     });
 
 onMounted(() => window.addEventListener('pagehide', onPageHide));

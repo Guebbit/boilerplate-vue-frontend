@@ -21,7 +21,7 @@ describe('FR2 · The Back button after paying', () => {
         cy.visit('/en');
         cy.restore();
         // The customer's own cart may hold lines already; start from empty so the one line is ours.
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
         cy.visit('/en');
     });
 
@@ -29,7 +29,7 @@ describe('FR2 · The Back button after paying', () => {
         cy.step('the customer puts one product in the cart and checks out by pickup');
         cy.loginAs('user');
         cy.subjectId('product.inStock').then((productId) => {
-            cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
         });
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 1);

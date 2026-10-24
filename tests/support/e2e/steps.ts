@@ -94,7 +94,7 @@ let addToCartCalls = 0;
 export const addOpenProductToCart = (): Cypress.Chainable<unknown> => {
     addToCartCalls += 1;
     const alias = `addToCart${String(addToCartCalls)}`;
-    cy.intercept('POST', '**/cart').as(alias);
+    cy.intercept('POST', '**/cart/items').as(alias);
     cy.get('[data-test=add-to-cart]').click();
     return cy.wait(`@${alias}`).its('response.statusCode').should('be.within', 200, 299);
 };
@@ -572,7 +572,7 @@ export const withdrawUntilLine = (withdrawUntil: string): string =>
  * @returns a chain yielding the paid order's id
  */
 export const paidPreorderBy = (productId: string): Cypress.Chainable<string> => {
-    cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+    cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
     return checkoutAs<{ id: string }>('user').then((order) => {
         const id = String(order?.id);

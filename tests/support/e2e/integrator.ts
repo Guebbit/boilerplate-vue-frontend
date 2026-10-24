@@ -129,7 +129,7 @@ const freeTheOpenOrderSlots = (): Cypress.Chainable =>
 export const placeOrderAsCustomer = (): Cypress.Chainable<string> =>
     freeTheOpenOrderSlots().then(() =>
         cy.subjectId('product.inStock').then((productId) => {
-            cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             return checkoutAs('user').then((order) => {
                 if (!order) throw new Error('placeOrderAsCustomer: the checkout answered no order');

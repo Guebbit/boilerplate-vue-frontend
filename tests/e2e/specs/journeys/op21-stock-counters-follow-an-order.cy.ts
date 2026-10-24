@@ -87,7 +87,7 @@ const adjustBy = (title: string, delta: number, note: string): void => {
  * @returns a chain yielding the order's id
  */
 const placeOrder = (productId: string, quantity: number): Cypress.Chainable<string> => {
-    cy.apiAs('user', 'POST', '/cart', { productId, quantity });
+    cy.apiAs('user', 'POST', '/cart/items', { productId, quantity });
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
     return checkoutAs<OrderLike>('user').then((order) => {
         if (!order) throw new Error('OP21: the checkout answered no order');
