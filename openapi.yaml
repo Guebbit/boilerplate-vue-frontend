@@ -9001,6 +9001,34 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: stats
+  /stats/limits:
+    get:
+      tags:
+        - Stats
+      summary: How big a period may be (staff)
+      description: "The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`."
+      operationId: getStatsLimits
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: The ceilings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsLimitsEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: stats
   /webhooks/subscriptions/{id}/enable:
     post:
       tags:
@@ -9646,7 +9674,7 @@ paths:
       tags:
         - Shop
       summary: The shop's identity, currency, ship-to countries and return address
-      description: "Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order."
+      description: "Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order."
       operationId: getShop
       security: []
       responses:
@@ -13705,6 +13733,7 @@ components:
         - currency
         - inStock
         - lowStock
+        - buyable
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -13761,6 +13790,10 @@ components:
           type: boolean
         restockDate:
           $ref: "#/components/schemas/RestockDate"
+        buyable:
+          type: boolean
+          readOnly: true
+          description: "A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and \"notify me\", so a client never re-derives it from the other flags."
         preorder:
           type: boolean
           readOnly: true
@@ -14361,6 +14394,7 @@ components:
         - currency
         - inStock
         - lowStock
+        - buyable
         - translations
       description: A product with every language it has a row for, not just the caller's resolved one — what the editor's form needs to populate its tabs. `title`/`description` stay the resolved (fallback-locale-derived) values; `translations` is the per-locale source.
       properties:
@@ -14415,6 +14449,10 @@ components:
           type: boolean
         restockDate:
           $ref: "#/components/schemas/RestockDate"
+        buyable:
+          type: boolean
+          readOnly: true
+          description: "A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and \"notify me\", so a client never re-derives it from the other flags."
         preorder:
           type: boolean
           readOnly: true
@@ -17956,6 +17994,7 @@ components:
       additionalProperties: false
       required:
         - mode
+        - lifetimeSeconds
       properties:
         mode:
           type: string
@@ -17963,6 +18002,28 @@ components:
             - jwt
             - cookie
           description: The deployment's `NODE_SESSION_MODE`.
+        lifetimeSeconds:
+          type: object
+          additionalProperties: false
+          required:
+            - short
+            - medium
+            - long
+          description: How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+          properties:
+            short:
+              type: integer
+              minimum: 1
+            medium:
+              type: integer
+              minimum: 1
+            long:
+              type: integer
+              minimum: 1
+        staffLifetimeSeconds:
+          type: integer
+          minimum: 1
+          description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
     SessionConfigEnvelope:
       type: object
       additionalProperties: false
@@ -19753,6 +19814,36 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/PipelineStats"
+    StatsLimits:
+      type: object
+      additionalProperties: false
+      required:
+        - maxRangeDays
+        - maxBuckets
+      properties:
+        maxRangeDays:
+          type: integer
+          description: The most calendar days one period may cover, both ends counted.
+        maxBuckets:
+          type: integer
+          description: The most buckets one series may hold, the first possibly starting before `from`.
+    StatsLimitsEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/StatsLimits"
     ExampleEnvelope:
       type: object
       additionalProperties: false
@@ -19950,6 +20041,8 @@ components:
         - shipToCountries
         - returnAddress
         - returnPostagePayer
+        - termsVersion
+        - backorderPromiseDays
       properties:
         legalName:
           type: string
@@ -19987,6 +20080,13 @@ components:
           $ref: "#/components/schemas/ShopAddress"
         returnPostagePayer:
           $ref: "#/components/schemas/ReturnPostagePayer"
+        termsVersion:
+          type: string
+          description: Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`).
+        backorderPromiseDays:
+          type: integer
+          minimum: 1
+          description: 'Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.'
     ShopEnvelope:
       type: object
       additionalProperties: false

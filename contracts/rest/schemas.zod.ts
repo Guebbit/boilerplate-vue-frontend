@@ -4126,6 +4126,7 @@ export const ListProductsResponse = zod.strictObject({
                 releaseDate: zod.iso.datetime({ offset: true }).optional(),
                 allowBackorder: zod.boolean().optional(),
                 restockDate: zod.iso.datetime({ offset: true }).optional(),
+                buyable: zod.boolean(),
                 preorder: zod.boolean().optional(),
                 backorder: zod.boolean().optional(),
                 requiresShipping: zod
@@ -4249,6 +4250,7 @@ export const CreateProductResponse = zod.strictObject({
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
         allowBackorder: zod.boolean().optional(),
         restockDate: zod.iso.datetime({ offset: true }).optional(),
+        buyable: zod.boolean(),
         preorder: zod.boolean().optional(),
         backorder: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
@@ -4352,6 +4354,7 @@ export const GetProductByIdResponse = zod.strictObject({
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
         allowBackorder: zod.boolean().optional(),
         restockDate: zod.iso.datetime({ offset: true }).optional(),
+        buyable: zod.boolean(),
         preorder: zod.boolean().optional(),
         backorder: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
@@ -4468,6 +4471,7 @@ export const ReplaceProductByIdResponse = zod.strictObject({
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
         allowBackorder: zod.boolean().optional(),
         restockDate: zod.iso.datetime({ offset: true }).optional(),
+        buyable: zod.boolean(),
         preorder: zod.boolean().optional(),
         backorder: zod.boolean().optional(),
         requiresShipping: zod
@@ -4600,6 +4604,7 @@ export const UpdateProductByIdResponse = zod.strictObject({
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
         allowBackorder: zod.boolean().optional(),
         restockDate: zod.iso.datetime({ offset: true }).optional(),
+        buyable: zod.boolean(),
         preorder: zod.boolean().optional(),
         backorder: zod.boolean().optional(),
         requiresShipping: zod
@@ -4687,6 +4692,7 @@ export const GetProductAdminResponse = zod.strictObject({
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
         allowBackorder: zod.boolean().optional(),
         restockDate: zod.iso.datetime({ offset: true }).optional(),
+        buyable: zod.boolean(),
         preorder: zod.boolean().optional(),
         backorder: zod.boolean().optional(),
         requiresShipping: zod.boolean().default(getProductAdminResponseDataRequiresShippingDefault),
@@ -4755,6 +4761,7 @@ export const RestoreProductByIdResponse = zod.strictObject({
         releaseDate: zod.iso.datetime({ offset: true }).optional(),
         allowBackorder: zod.boolean().optional(),
         restockDate: zod.iso.datetime({ offset: true }).optional(),
+        buyable: zod.boolean(),
         preorder: zod.boolean().optional(),
         backorder: zod.boolean().optional(),
         requiresShipping: zod
@@ -4898,6 +4905,7 @@ export const SearchProductsResponse = zod.strictObject({
                 releaseDate: zod.iso.datetime({ offset: true }).optional(),
                 allowBackorder: zod.boolean().optional(),
                 restockDate: zod.iso.datetime({ offset: true }).optional(),
+                buyable: zod.boolean(),
                 preorder: zod.boolean().optional(),
                 backorder: zod.boolean().optional(),
                 requiresShipping: zod
@@ -12905,7 +12913,13 @@ export const GetSessionConfigResponse = zod.strictObject({
     status: zod.number(),
     message: zod.string(),
     data: zod.strictObject({
-        mode: zod.enum(['jwt', 'cookie'])
+        mode: zod.enum(['jwt', 'cookie']),
+        lifetimeSeconds: zod.strictObject({
+            short: zod.number().min(1),
+            medium: zod.number().min(1),
+            long: zod.number().min(1)
+        }),
+        staffLifetimeSeconds: zod.number().min(1).optional()
     })
 });
 /**
@@ -16059,6 +16073,19 @@ export const GetPipelineStatsResponse = zod.strictObject({
     })
 });
 /**
+ * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
+ * @summary How big a period may be (staff)
+ */
+export const GetStatsLimitsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        maxRangeDays: zod.number(),
+        maxBuckets: zod.number()
+    })
+});
+/**
  * Turns a subscription back on, whether it was switched off by hand or by the
  * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
  * streak, so the guard starts counting from zero. Refused with 409
@@ -16973,7 +17000,7 @@ export const DeleteNotificationByIdResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
 export const getShopResponseDataCountryMax = 2;
@@ -17018,7 +17045,9 @@ export const GetShopResponse = zod.strictObject({
                 .max(getShopResponseDataReturnAddressCountryMax)
                 .regex(getShopResponseDataReturnAddressCountryRegExp)
         }),
-        returnPostagePayer: zod.enum(['consumer', 'shop'])
+        returnPostagePayer: zod.enum(['consumer', 'shop']),
+        termsVersion: zod.string(),
+        backorderPromiseDays: zod.number().min(1)
     })
 });
 /**

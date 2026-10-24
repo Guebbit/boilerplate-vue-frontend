@@ -347,6 +347,7 @@
         },
         "terms": {
             "title": "Termini di servizio",
+            "version": "Versione {version}",
             "placeholder": {
                 "notice": "Segnaposto: questo negozio non ha fornito le proprie condizioni di vendita. Il gestore deve sostituire questo testo prima della messa online.",
                 "checklist-title": "Il testo vero deve coprire:",
@@ -424,7 +425,8 @@
         "rows": {
             "session": {
                 "purpose": "Ti mantiene connesso. Il negozio lo legge a ogni richiesta; lo script della pagina no.",
-                "lifetime": "Finché resti connesso: la sessione del browser, o 30 giorni se hai spuntato «Ricorda il mio accesso»"
+                "lifetime": "Finché resti connesso: la sessione del browser, o {days} giorni se hai spuntato «Ricorda il mio accesso»",
+                "lifetimeStaff": "Finché resti connesso: la sessione del browser, o {days} giorni se hai spuntato «Ricorda il mio accesso». Un account dello staff viene disconnesso dopo al massimo {hours} ore."
             },
             "isAuth": {
                 "purpose": "Un indizio che eri connesso, così la pagina mostra il menu giusto prima che arrivi la prima risposta. Non contiene credenziali.",
@@ -432,7 +434,7 @@
             },
             "rememberMe": {
                 "purpose": "Registra che hai spuntato «Ricorda il mio accesso» all'accesso.",
-                "lifetime": "30 giorni"
+                "lifetime": "{days} giorni"
             },
             "device": {
                 "purpose": "Permette a un browser da cui hai già effettuato l'accesso di continuare ad accedere mentre qualcun altro prova a indovinare la tua password. Contiene un token firmato per account.",

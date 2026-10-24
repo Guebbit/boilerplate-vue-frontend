@@ -168,16 +168,23 @@ export const aReturn = (overrides: Partial<Return> = {}): Return => ({
  * @param overrides - the fields a case actually cares about
  * @returns a `Product` that parses against the generated schema
  */
-export const aProduct = (overrides: Partial<Product> = {}): Product => ({
-    id: 'p1',
-    title: 'Walnut desk',
-    price: 120,
-    currency: 'EUR',
-    inStock: true,
-    lowStock: false,
-    active: true,
-    ...overrides
-});
+export const aProduct = (overrides: Partial<Product> = {}): Product => {
+    const product = {
+        id: 'p1',
+        title: 'Walnut desk',
+        price: 120,
+        currency: 'EUR',
+        inStock: true,
+        lowStock: false,
+        active: true,
+        ...overrides
+    };
+    // The server's rule, kept coarse: on sale and something to order (shelf or open backorder).
+    return {
+        buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
+        ...product
+    };
+};
 
 /**
  * A valid stock-board row — some on the shelf, nothing backordered, preordering closed.
@@ -337,5 +344,7 @@ export const aShop = (overrides: Partial<Shop> = {}): Shop => ({
     shipToCountries: ['IT'],
     returnAddress: { street: 'Via Roma 1', city: 'Milano', zip: '20100', country: 'IT' },
     returnPostagePayer: 'consumer',
+    termsVersion: '1',
+    backorderPromiseDays: 30,
     ...overrides
 });

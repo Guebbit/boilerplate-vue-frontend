@@ -1,10 +1,10 @@
 /**
  * @module
  * The period a stats page asks about: two calendar days and a bucket size, plus the rules the API
- * enforces on them (a range of at most two years, at most 400 buckets) so the form can say no
- * before a round trip does. Pure functions; "today" is always passed in.
+ * enforces on them so the form can say no before a round trip does. The ceilings are the API's
+ * (`GET /stats/limits`), passed in; none is kept here. Pure functions; "today" is always passed in.
  */
-import type { StatsInterval } from '@types';
+import type { StatsInterval, StatsLimits } from '@types';
 import { addCalendarDays, daysInRange, isCalendarDay, toCalendarDay } from './calendar.ts';
 
 /**
@@ -18,16 +18,6 @@ export interface StatsPeriodChoice {
     /** The bucket size of every series. */
     interval: StatsInterval;
 }
-
-/**
- * Longest range the API answers: two years. A day short of 731 so a leap day never tips it over.
- */
-export const MAX_RANGE_DAYS = 730;
-
-/**
- * Most buckets one series may hold, the API's own ceiling.
- */
-export const MAX_BUCKETS = 400;
 
 /**
  * Why a period cannot be sent, as a key the form translates.
@@ -84,14 +74,20 @@ export const autoInterval = (from: string, to: string): StatsInterval => {
  * Whether a period can be sent as it stands.
  *
  * @param period - The choice to check.
+ * @param limits - The API's ceilings; without them (not read yet) only the shape is checked and the
+ *  API's own refusal covers the rest.
  * @returns The first problem found, or `undefined` when the API will take it.
  */
-export const periodProblem = (period: StatsPeriodChoice): PeriodProblem | undefined => {
+export const periodProblem = (
+    period: StatsPeriodChoice,
+    limits?: StatsLimits
+): PeriodProblem | undefined => {
     if (!isCalendarDay(period.from) || !isCalendarDay(period.to)) return 'invalid';
     const days = daysInRange(period.from, period.to);
     if (days < 1) return 'reversed';
-    if (days > MAX_RANGE_DAYS) return 'too-long';
-    return bucketCount(period.from, period.to, period.interval) > MAX_BUCKETS
+    if (!limits) return undefined;
+    if (days > limits.maxRangeDays) return 'too-long';
+    return bucketCount(period.from, period.to, period.interval) > limits.maxBuckets
         ? 'too-many-buckets'
         : undefined;
 };

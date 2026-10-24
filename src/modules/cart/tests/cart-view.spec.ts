@@ -1256,6 +1256,7 @@ const product = (id: string, noWithdrawal: boolean) => ({
     currency: 'EUR',
     inStock: true,
     lowStock: false,
+    buyable: true,
     noWithdrawal
 });
 

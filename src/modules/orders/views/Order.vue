@@ -552,14 +552,10 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             data-test="order-item-owed"
                                         >
                                             {{
-                                                item.promiseDated
-                                                    ? t('order-target-page.owed-line', {
-                                                          count: item.backorderedQuantity,
-                                                          date: formatDate(item.promisedAt)
-                                                      })
-                                                    : t('order-target-page.owed-line-undated', {
-                                                          count: item.backorderedQuantity
-                                                      })
+                                                t('order-target-page.owed-line', {
+                                                    count: item.backorderedQuantity,
+                                                    date: formatDate(item.promisedAt)
+                                                })
                                             }}
                                         </p>
                                         <p

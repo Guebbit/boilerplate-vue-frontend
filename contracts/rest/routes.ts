@@ -129,6 +129,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/sitemap\/pages\.xml$/, schemaName: "GetSitemapPagesResponse", bodySchemaName: undefined, module: "sitemap" },
     { method: "GET", pattern: /^\/stats\/categories$/, schemaName: "GetCategoryStatsResponse", bodySchemaName: undefined, module: "stats" },
     { method: "GET", pattern: /^\/stats\/customers$/, schemaName: "GetCustomerStatsResponse", bodySchemaName: undefined, module: "stats" },
+    { method: "GET", pattern: /^\/stats\/limits$/, schemaName: "GetStatsLimitsResponse", bodySchemaName: undefined, module: "stats" },
     { method: "GET", pattern: /^\/stats\/operations$/, schemaName: "GetOperationsStatsResponse", bodySchemaName: undefined, module: "stats" },
     { method: "GET", pattern: /^\/stats\/payments$/, schemaName: "GetPaymentMixStatsResponse", bodySchemaName: undefined, module: "stats" },
     { method: "GET", pattern: /^\/stats\/pipeline$/, schemaName: "GetPipelineStatsResponse", bodySchemaName: undefined, module: "stats" },

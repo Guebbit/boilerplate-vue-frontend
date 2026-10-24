@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { LineAvailability, Product } from '@types';
 import { useProductsStore } from '../store';
+import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 
 /**
  * What {@link useProductLines} hands a view.
@@ -101,7 +102,7 @@ export const useProductLines = (): ProductLines => {
                 return t('product-lines.preorder-undated');
             // A backorder always carries its promise: a date, or 30 days when the shop named none.
             if (availability === 'backorder' && !dates?.restockDate)
-                return t('product-lines.backorder-undated');
+                return t('product-lines.backorder-undated', { days: backorderPromiseDays.value });
             return t(LABEL_KEYS[availability], {
                 date: formatDate(
                     availability === 'backorder' ? dates?.restockDate : dates?.releaseDate

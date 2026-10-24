@@ -6,4 +6,4 @@
 
 export { shelfStateOf } from './shelf-state';
 export type { ShelfState } from './shelf-state';
-export { toDateTimeLocal, fromDateTimeLocal, isReleaseDateSlip } from './release-date';
+export { toDateTimeLocal, fromDateTimeLocal, isReleaseDateChanged } from './release-date';

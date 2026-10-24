@@ -1,6 +1,6 @@
 /**
  * @module
- * The product form's check before a later or cleared release date (or restock date) is saved: it asks
+ * The product form's check before a changed release date (or restock date) is saved: it asks
  * the backend how many orders the move would email
  * (`GET /delivery/fulfillment-orders/release-date-impact`, or `restock-date-impact` for the owed
  * units of a backorder) and puts the answer in a confirm dialog. It informs and never refuses.
@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n';
 import { previewReleaseDateImpact, previewRestockDateImpact } from '@api';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useDialogStore } from '@/ui/dialog.ts';
-import { fromDateTimeLocal, isReleaseDateSlip } from '../domain';
+import { fromDateTimeLocal, isReleaseDateChanged } from '../domain';
 
 /**
  * What the preview counts, as the dialog reads it.
@@ -48,7 +48,7 @@ export const useReleaseDateConfirm = (
         t('product-edit-page.impact-notify', { count: notify }, notify);
 
     /**
-     * Skipped, so the save goes ahead, when: the date is not a slip, the visitor may not read
+     * Skipped, so the save goes ahead, when: the date did not change, the visitor may not read
      * orders (the call would be refused and logged as a forbidden call on every save), nobody is
      * reached, or the preview fails.
      *
@@ -60,7 +60,7 @@ export const useReleaseDateConfirm = (
         productId: string,
         current?: string | null
     ): Promise<boolean> => {
-        if (!isReleaseDateSlip(heldDate(), current) || !session.can('display', 'Order'))
+        if (!isReleaseDateChanged(heldDate(), current) || !session.can('display', 'Order'))
             return Promise.resolve(true);
         // A cleared date sends no date: the contract reads absent as cleared.
         const date = fromDateTimeLocal(current) || undefined;

@@ -32,7 +32,8 @@ vi.mock('@api', async (importOriginal) => ({
                         price: 9.99,
                         currency: 'GBP',
                         inStock: true,
-                        lowStock: false
+                        lowStock: false,
+                        buyable: true
                     }
                 ],
                 meta: { totalItems: 1, page: 1, pageSize: 1, totalPages: 1 }

@@ -19,7 +19,7 @@ const CURRENT: StatsPeriodChoice = { from: '2026-09-01', to: '2026-09-30', inter
 /** Mounts the form with the real i18n and Vuetify. */
 const mountForm = (period: StatsPeriodChoice = CURRENT) =>
     mount(StatsPeriodForm, {
-        props: { modelValue: period },
+        props: { modelValue: period, limits: { maxRangeDays: 731, maxBuckets: 400 } },
         global: { plugins: [vuetify, i18n] }
     });
 
@@ -62,14 +62,14 @@ describe('StatsPeriodForm', () => {
             });
     });
 
-    it('refuses a range over two years', () => {
+    it("refuses a range over the API's day ceiling", () => {
         const wrapper = mountForm();
         return wrapper
             .get('[data-test=stats-from] input')
             .setValue('2020-01-01')
             .then(() => {
                 expect(wrapper.get('[data-test=stats-period-problem]').text()).toContain(
-                    'two years'
+                    'at most 731 days'
                 );
             });
     });

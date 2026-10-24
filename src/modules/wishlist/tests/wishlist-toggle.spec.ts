@@ -25,7 +25,8 @@ const PRODUCT: Product = {
     price: 1,
     currency: 'EUR',
     inStock: true,
-    lowStock: false
+    lowStock: false,
+    buyable: true
 };
 
 /**

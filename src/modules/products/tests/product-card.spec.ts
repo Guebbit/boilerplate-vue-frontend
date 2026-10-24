@@ -5,7 +5,7 @@
  * contributed `product-actions` render on it without the products module knowing who they are, a
  * guest is told to sign in, and nothing on it is a staff control.
  */
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { defineComponent, h } from 'vue';
@@ -21,6 +21,15 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aProduct } from '../../../../tests/support/unit/fixtures.ts';
 import type { Product } from '@types';
+
+// The shop states the backorder promise; these cases are about the wording around it.
+vi.mock('@/infrastructure/shop.ts', async (importOriginal) => {
+    const { ref } = await import('vue');
+    return {
+        ...(await importOriginal<typeof import('@/infrastructure/shop.ts')>()),
+        backorderPromiseDays: ref(30)
+    };
+});
 
 wireModulesIntoCore();
 

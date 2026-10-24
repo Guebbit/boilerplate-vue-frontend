@@ -19,7 +19,7 @@
         "button-apply": "Applica",
         "problem-invalid": "Inserisci entrambi i giorni come date valide.",
         "problem-reversed": "Il primo giorno non può essere dopo l'ultimo.",
-        "problem-too-long": "Il periodo può durare al massimo due anni.",
+        "problem-too-long": "Il periodo può durare al massimo {days} giorni.",
         "problem-too-many-buckets": "Questo periodo ha troppi gruppi: scegline uno più ampio.",
         "card-total-sales": "Vendite totali",
         "card-net-sales": "Vendite nette",

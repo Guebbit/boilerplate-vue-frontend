@@ -5,7 +5,7 @@
  * value is wall-clock time and the wire value is the same instant.
  */
 import { describe, expect, it } from 'vitest';
-import { fromDateTimeLocal, isReleaseDateSlip, toDateTimeLocal } from '../domain';
+import { fromDateTimeLocal, isReleaseDateChanged, toDateTimeLocal } from '../domain';
 
 describe('release date spellings', () => {
     it('reads an instant back to the minute it was typed at', () => {
@@ -29,24 +29,21 @@ describe('release date spellings', () => {
     });
 });
 
-describe('isReleaseDateSlip', () => {
+describe('isReleaseDateChanged', () => {
     const original = new Date(2027, 2, 15, 9, 30).toISOString();
 
     it.each([
         ['a later date', '2027-04-01T10:00', true],
         ['a cleared date', '', true],
         ['a cleared date spelled null', null, true],
-        ['the same date', '2027-03-15T09:30', false],
-        ['an earlier date', '2027-03-01T10:00', false]
+        ['an earlier date', '2027-03-01T10:00', true],
+        ['the same date', '2027-03-15T09:30', false]
     ])('is %s: %s', (_name, next, expected) => {
-        expect(isReleaseDateSlip(original, next)).toBe(expected);
+        expect(isReleaseDateChanged(original, next)).toBe(expected);
     });
 
-    it.each([undefined, null, '', 'not a date'])(
-        'has nobody to tell when the product held %j',
-        (held) => {
-            expect(isReleaseDateSlip(held, '2027-04-01T10:00')).toBe(false);
-            expect(isReleaseDateSlip(held, '')).toBe(false);
-        }
-    );
+    it.each([undefined, null, '', 'not a date'])('sees a date set where %j was held', (held) => {
+        expect(isReleaseDateChanged(held, '2027-04-01T10:00')).toBe(true);
+        expect(isReleaseDateChanged(held, '')).toBe(false);
+    });
 });

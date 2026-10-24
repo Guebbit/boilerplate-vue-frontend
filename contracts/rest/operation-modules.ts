@@ -107,6 +107,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     getSitemapIndex: 'sitemap',
     getSitemapPages: 'sitemap',
     getSitemapProducts: 'sitemap',
+    getStatsLimits: 'stats',
     getTwoFactorStatus: 'account',
     getUserById: 'users',
     getWebhookSubscription: 'webhooks',

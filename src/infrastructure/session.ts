@@ -18,7 +18,7 @@
 import { ref, shallowRef, computed, onScopeDispose } from 'vue';
 import { defineStore } from 'pinia';
 import { deleteCookie, setCookie } from '@guebbit/js-toolkit';
-import { BROWSER_STORAGE_NAME, THIRTY_DAYS } from '@/infrastructure/browser-storage.ts';
+import { BROWSER_STORAGE_NAME } from '@/infrastructure/browser-storage.ts';
 import {
     getAccount as apiGetAccount,
     getMyAbilities as apiGetMyAbilities,
@@ -35,7 +35,7 @@ import { asPassive } from '@/infrastructure/http/passive.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
 import { createMongoAbility, type MongoAbility, type RawRuleOf } from '@casl/ability';
 import { unpackRules, type PackRule } from '@casl/ability/extra';
-import type { Abilities, SessionConfigMode, PackedRules } from '@types';
+import type { Abilities, SessionConfig, SessionConfigMode, PackedRules } from '@types';
 import type { AxiosError } from 'axios';
 import type { AxiosRequestConfigWithRetry } from '@/infrastructure/http/types.ts';
 
@@ -142,20 +142,22 @@ export interface SessionViewer {
 
 /**
  * Applies a login's "remember me" choice to the `rememberMe` marker, this app's one JS-written
- * session cookie: `true` (re)starts it for thirty days, `false` removes it, `undefined` (a silent
+ * session cookie: `true` (re)starts it for as long as the "remember me" tier lasts, `false` removes it, `undefined` (a silent
  * refresh, a re-proof) keeps whatever marker login left.
  *
  * `Secure` follows the page's scheme rather than a build flag: a `Secure` cookie is silently
  * dropped on plain HTTP, which would break the local dev server.
  *
  * @param remember - The visitor's choice, when the caller knows it.
+ * @param days - How long the tier lasts, from the session config; unknown until that read lands,
+ *  and the marker is then a browser-session cookie.
  */
-const applyRememberChoice = (remember?: boolean) => {
+const applyRememberChoice = (remember?: boolean, days?: number) => {
     // js-toolkit `setCookie(name, value, options)`: `days` = lifetime, `path: '/'` = site-wide,
     // `sameSite: 'Lax'` = sent on top-level navigations only.
     if (remember === true)
         setCookie(BROWSER_STORAGE_NAME.rememberMe, 'true', {
-            days: THIRTY_DAYS,
+            days,
             path: '/',
             secure: location.protocol === 'https:',
             sameSite: 'Lax'
@@ -183,6 +185,19 @@ export const useSessionStore = defineStore('session', () => {
      * `undefined` until then, read as `jwt` (the default) by everything that branches on it.
      */
     const mode = ref<SessionConfigMode>();
+
+    /**
+     * What the deployment's session config states about lifetimes, once {@link loadSessionMode}
+     * has answered: seconds per "remember me" tier, and the staff cap when there is one.
+     */
+    const lifetimes = ref<Pick<SessionConfig, 'lifetimeSeconds' | 'staffLifetimeSeconds'>>();
+
+    /**
+     * How many days the longest "remember me" tier lasts, rounded up; `undefined` until the
+     * session config has been read.
+     */
+    const rememberDays = (): number | undefined =>
+        lifetimes.value && Math.ceil(lifetimes.value.lifetimeSeconds.long / 86_400);
 
     /**
      * Whether a `cookie`-mode session is believed to be open. The credential is an HttpOnly cookie
@@ -358,13 +373,13 @@ export const useSessionStore = defineStore('session', () => {
      * whether a restore is worth attempting) and clears it on sign-out.
      *
      * @param token - Access token from a login or refresh response.
-     * @param remember - Whether to (re)start the 30-day `rememberMe` marker. `true`/`false` at
+     * @param remember - Whether to (re)start the `rememberMe` marker. `true`/`false` at
      *  login, when the caller knows the visitor's choice; omitted on a silent refresh, which
      *  keeps whatever marker login left.
      */
     const setAccessToken = (token?: string, remember?: boolean) => {
         accessToken.value = token;
-        applyRememberChoice(remember);
+        applyRememberChoice(remember, rememberDays());
     };
 
     /**
@@ -379,7 +394,7 @@ export const useSessionStore = defineStore('session', () => {
      */
     const startCookieSession = (remember?: boolean) => {
         cookieSession.value = true;
-        applyRememberChoice(remember);
+        applyRememberChoice(remember, rememberDays());
     };
 
     /**
@@ -414,7 +429,12 @@ export const useSessionStore = defineStore('session', () => {
     const loadSessionMode = (): Promise<void> => {
         modeRequest ??= apiGetSessionConfig()
             .then((answer) => {
-                mode.value = getPayloadFromResponse<{ mode: SessionConfigMode }>(answer)?.mode;
+                const config = getPayloadFromResponse<SessionConfig>(answer);
+                mode.value = config?.mode;
+                lifetimes.value = config && {
+                    lifetimeSeconds: config.lifetimeSeconds,
+                    staffLifetimeSeconds: config.staffLifetimeSeconds
+                };
             })
             .catch(() => {
                 modeRequest = undefined;
@@ -778,6 +798,7 @@ export const useSessionStore = defineStore('session', () => {
         can,
         accessToken,
         mode,
+        lifetimes,
         hasSession,
         viewer,
         isAuth,

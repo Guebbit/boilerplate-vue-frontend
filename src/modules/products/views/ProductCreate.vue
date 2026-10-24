@@ -40,7 +40,7 @@ import { fromDateTimeLocal } from '../domain';
 import { toCreateTranslations } from '../composables/translations-body.ts';
 import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import { currencyDigits } from '@/infrastructure/utils/formatters.ts';
-import { loadShop, shopCurrency } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays, loadShop, shopCurrency } from '@/infrastructure/shop.ts';
 import type { ProductTranslationsWrite } from '@types';
 import type { TaxClass } from '@api';
 
@@ -359,7 +359,9 @@ const submitForm = () => {
             <v-checkbox
                 v-model="form.allowBackorder"
                 :label="t('product-create-page.label-allow-backorder')"
-                :hint="t('product-create-page.hint-allow-backorder')"
+                :hint="
+                    t('product-create-page.hint-allow-backorder', { days: backorderPromiseDays })
+                "
                 persistent-hint
                 data-test="product-allow-backorder-field"
                 class="mb-2"
@@ -369,7 +371,7 @@ const submitForm = () => {
                 v-model="form.restockDate"
                 type="datetime-local"
                 :label="t('product-create-page.label-restock-date')"
-                :hint="t('product-create-page.hint-restock-date')"
+                :hint="t('product-create-page.hint-restock-date', { days: backorderPromiseDays })"
                 persistent-hint
                 clearable
                 data-test="product-restock-date-field"

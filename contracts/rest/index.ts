@@ -2377,6 +2377,8 @@ export interface Product {
     releaseDate?: ReleaseDate;
     allowBackorder?: boolean;
     restockDate?: RestockDate;
+    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+    readonly buyable: boolean;
     /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
     readonly preorder?: boolean;
     /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
@@ -2745,6 +2747,8 @@ export interface ProductAdmin {
     releaseDate?: ReleaseDate;
     allowBackorder?: boolean;
     restockDate?: RestockDate;
+    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+    readonly buyable: boolean;
     /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
     readonly preorder?: boolean;
     /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
@@ -5016,9 +5020,28 @@ export const SessionConfigMode = {
     cookie: 'cookie'
 } as const;
 
+/**
+ * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+ */
+export type SessionConfigLifetimeSeconds = {
+    /** @minimum 1 */
+    short: number;
+    /** @minimum 1 */
+    medium: number;
+    /** @minimum 1 */
+    long: number;
+};
+
 export interface SessionConfig {
     /** The deployment's `NODE_SESSION_MODE`. */
     mode: SessionConfigMode;
+    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
+    lifetimeSeconds: SessionConfigLifetimeSeconds;
+    /**
+     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+     * @minimum 1
+     */
+    staffLifetimeSeconds?: number;
 }
 
 export interface SessionConfigEnvelope {
@@ -5969,6 +5992,20 @@ export interface PipelineStatsEnvelope {
     data: PipelineStats;
 }
 
+export interface StatsLimits {
+    /** The most calendar days one period may cover, both ends counted. */
+    maxRangeDays: number;
+    /** The most buckets one series may hold, the first possibly starting before `from`. */
+    maxBuckets: number;
+}
+
+export interface StatsLimitsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: StatsLimits;
+}
+
 export interface ExampleEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -6105,6 +6142,13 @@ export interface Shop {
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;
     returnPostagePayer: ReturnPostagePayer;
+    /** Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
+    termsVersion: string;
+    /**
+     * Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.
+     * @minimum 1
+     */
+    backorderPromiseDays: number;
 }
 
 export interface ShopEnvelope {
@@ -11379,6 +11423,16 @@ export const getPipelineStats = (
 };
 
 /**
+ * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
+ * @summary How big a period may be (staff)
+ */
+export const getStatsLimits = (
+    options?: SecondParameter<typeof orvalMutator<StatsLimitsEnvelope>>
+) => {
+    return orvalMutator<StatsLimitsEnvelope>({ url: `/stats/limits`, method: 'GET' }, options);
+};
+
+/**
  * Turns a subscription back on, whether it was switched off by hand or by the
  * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
  * streak, so the guard starts counting from zero. Refused with 409
@@ -11666,7 +11720,7 @@ export const deleteNotificationById = (
 };
 
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
 export const getShop = (options?: SecondParameter<typeof orvalMutator<ShopEnvelope>>) => {
@@ -12158,6 +12212,7 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
+export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
 export type EnableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof enableWebhookSubscription>>
 >;
