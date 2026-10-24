@@ -19,7 +19,7 @@
         "button-apply": "Apply",
         "problem-invalid": "Enter both days as real dates.",
         "problem-reversed": "The first day must not be after the last.",
-        "problem-too-long": "The period can be at most two years.",
+        "problem-too-long": "The period can be at most {days} days.",
         "problem-too-many-buckets": "That period has too many groups; choose a larger one.",
         "card-total-sales": "Total sales",
         "card-net-sales": "Net sales",

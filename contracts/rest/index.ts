@@ -72,6 +72,38 @@ export type Locale = string;
 export type CountryCode = string;
 
 /**
+ * The name the parcel is addressed to.
+ * @minLength 1
+ * @maxLength 100
+ */
+export type AddressFullName = string;
+
+/**
+ * @minLength 1
+ * @maxLength 200
+ */
+export type AddressStreet = string;
+
+/**
+ * @minLength 1
+ * @maxLength 100
+ */
+export type AddressCity = string;
+
+/**
+ * Postal code, free-form (formats differ per country).
+ * @minLength 1
+ * @maxLength 20
+ */
+export type AddressZip = string;
+
+/**
+ * @minLength 1
+ * @maxLength 32
+ */
+export type AddressPhone = string;
+
+/**
  * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for "no image" — only `null` is, on a field that allows it.
  * @minLength 1
  */
@@ -952,6 +984,19 @@ export const AuditEntryItemOutcome = {
     failure: 'failure'
 } as const;
 
+/**
+ * What the action carried. Open on purpose: each action adds its own keys, and a
+ * declared-properties object would be validated closed by the generated schema.
+ * Keys with a fixed meaning across actions:
+ *
+ * - `ownOrder` (boolean): `true` when staff acted on an order they placed
+ *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
+ * - `changes` (object): an `*.updated` action's non-personal fields that moved,
+ *   `{ <field>: { from, to } }`, `null` meaning unset.
+ * - `changedFields` (string[]): an `*.updated` action's free-text and personal
+ *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
+ *   their values never enter it.
+ */
 export type AuditEntryItemMetadata = { [key: string]: unknown };
 
 export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
@@ -980,6 +1025,19 @@ export interface AuditEntryItem {
     traceId?: string;
     targetType?: string;
     targetId?: string;
+    /**
+     * What the action carried. Open on purpose: each action adds its own keys, and a
+     * declared-properties object would be validated closed by the generated schema.
+     * Keys with a fixed meaning across actions:
+     *
+     * - `ownOrder` (boolean): `true` when staff acted on an order they placed
+     *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
+     * - `changes` (object): an `*.updated` action's non-personal fields that moved,
+     *   `{ <field>: { from, to } }`, `null` meaning unset.
+     * - `changedFields` (string[]): an `*.updated` action's free-text and personal
+     *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
+     *   their values never enter it.
+     */
     metadata?: AuditEntryItemMetadata;
     timestamp: string;
     level: AuditEntryItemLevel;
@@ -1485,12 +1543,12 @@ export interface Address {
     id: Id;
     /** The caller's own name for the entry — "home", "office". */
     label?: string;
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    phone?: string;
+    phone?: AddressPhone;
     default: boolean;
 }
 
@@ -1511,32 +1569,12 @@ export interface AddressInput {
      * @maxLength 50
      */
     label?: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     */
-    phone?: string;
+    phone?: AddressPhone;
     default?: boolean;
 }
 
@@ -1554,33 +1592,12 @@ export interface ReplaceAddressRequest {
      * @nullable
      */
     label?: string | null;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     * @nullable
-     */
-    phone?: string | null;
+    phone?: AddressPhone | null;
 }
 
 export interface UpdateAddressRequest {
@@ -1590,33 +1607,12 @@ export interface UpdateAddressRequest {
      * @nullable
      */
     label?: string | null;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName?: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street?: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city?: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip?: string;
+    fullName?: AddressFullName;
+    street?: AddressStreet;
+    city?: AddressCity;
+    zip?: AddressZip;
     country?: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     * @nullable
-     */
-    phone?: string | null;
+    phone?: AddressPhone | null;
 }
 
 export interface VerifyEmailConfirmRequest {
@@ -2380,6 +2376,8 @@ export interface Product {
     releaseDate?: ReleaseDate;
     allowBackorder?: boolean;
     restockDate?: RestockDate;
+    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+    readonly buyable: boolean;
     /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
     readonly preorder?: boolean;
     /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
@@ -2748,6 +2746,8 @@ export interface ProductAdmin {
     releaseDate?: ReleaseDate;
     allowBackorder?: boolean;
     restockDate?: RestockDate;
+    /** A shopper can order it right now: visible, on sale, and something to order (shelf units, room in a preorder's allowance, or an open backorder). The one answer behind the add-to-cart button and "notify me", so a client never re-derives it from the other flags. */
+    readonly buyable: boolean;
     /** The product is on sale before its release date: buyers can order it now and it ships from `releaseDate`. */
     readonly preorder?: boolean;
     /** The product may be ordered while its shelf is empty: the units arrive by `restockDate`, or within 30 days when there is none. Always shown with that promise. */
@@ -3081,17 +3081,12 @@ export interface OrderTaxSummaryRow {
 }
 
 export interface OrderAddress {
-    /** @maxLength 100 */
-    fullName: string;
-    /** @maxLength 200 */
-    street: string;
-    /** @maxLength 100 */
-    city: string;
-    /** @maxLength 20 */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /** @maxLength 32 */
-    phone?: string;
+    phone?: AddressPhone;
 }
 
 /**
@@ -3252,7 +3247,7 @@ export interface Order {
     paymentStatus: OrderPaymentStatus;
     fulfillmentStatus: OrderFulfillmentStatus;
     returnStatus: OrderReturnStatus;
-    actions?: OrderActions;
+    actions: OrderActions;
     /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
     readonly withdrawUntil?: string;
     paidAt?: string;
@@ -5020,9 +5015,28 @@ export const SessionConfigMode = {
     cookie: 'cookie'
 } as const;
 
+/**
+ * How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own.
+ */
+export type SessionConfigLifetimeSeconds = {
+    /** @minimum 1 */
+    short: number;
+    /** @minimum 1 */
+    medium: number;
+    /** @minimum 1 */
+    long: number;
+};
+
 export interface SessionConfig {
     /** The deployment's `NODE_SESSION_MODE`. */
     mode: SessionConfigMode;
+    /** How long a session lasts per "remember me" tier, in seconds (`NODE_SESSION_TIME_*`). `short` is what an unticked box gets; `long` is what the box offers today. A client prints these instead of a number of its own. */
+    lifetimeSeconds: SessionConfigLifetimeSeconds;
+    /**
+     * The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
+     * @minimum 1
+     */
+    staffLifetimeSeconds?: number;
 }
 
 export interface SessionConfigEnvelope {
@@ -5086,6 +5100,76 @@ export interface WishlistExportItem {
     productId: Id;
 }
 
+export interface ExportOrder {
+    id: Id;
+    userId?: Id;
+    email: Email;
+    items: OrderItem[];
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+     * @minimum 0
+     */
+    totalPrice: number;
+    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+    readonly currency: string;
+    /**
+     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+     * @minimum 0
+     */
+    readonly netTotal: number;
+    /**
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
+     * @minimum 0
+     */
+    readonly taxTotal: number;
+    /**
+     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingNetAmount: number;
+    /**
+     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingTaxAmount: number;
+    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+    readonly taxSummary: readonly OrderTaxSummaryRow[];
+    /** Optional order notes */
+    notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
+    billingAddress?: OrderAddress;
+    paymentMethod?: PaymentMethodId;
+    payBy?: string;
+    readonly orderNumber: string;
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+    readonly withdrawUntil?: string;
+    paidAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+}
+
 /**
  * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
  */
@@ -5123,10 +5207,10 @@ export const OrderTimelineType = {
 /**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
-export type OrderTimelineEntryAudience =
-    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+export type OrderTimelineExportEntryAudience =
+    (typeof OrderTimelineExportEntryAudience)[keyof typeof OrderTimelineExportEntryAudience];
 
-export const OrderTimelineEntryAudience = {
+export const OrderTimelineExportEntryAudience = {
     buyer: 'buyer',
     staff: 'staff'
 } as const;
@@ -5134,25 +5218,22 @@ export const OrderTimelineEntryAudience = {
 /**
  * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
-export type OrderTimelineEntryData = { [key: string]: unknown };
+export type OrderTimelineExportEntryData = { [key: string]: unknown };
 
-export interface OrderTimelineEntry {
+export interface OrderTimelineExportEntry {
+    orderId: Id;
     id: Id;
     at: string;
     type: OrderTimelineType;
     /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineEntryAudience;
+    audience: OrderTimelineExportEntryAudience;
     /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
     /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
-    data: OrderTimelineEntryData;
+    data: OrderTimelineExportEntryData;
 }
-
-export type OrderTimelineExportEntry = OrderTimelineEntry & {
-    orderId: Id;
-};
 
 export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
 
@@ -5522,7 +5603,7 @@ export interface AccountExportResponse {
     feedback?: ExportFeedbackTicket[];
     cart: CartItem[];
     wishlist: WishlistExportItem[];
-    orders: Order[];
+    orders: ExportOrder[];
     orderTimeline: OrderTimelineExportEntry[];
     payments: ExportPayment[];
     invoicing: AccountExportResponseInvoicing;
@@ -5566,6 +5647,36 @@ export interface MergeCartResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: MergeCartResponse;
+}
+
+/**
+ * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
+ */
+export type OrderTimelineEntryAudience =
+    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+
+export const OrderTimelineEntryAudience = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ */
+export type OrderTimelineEntryData = { [key: string]: unknown };
+
+export interface OrderTimelineEntry {
+    id: Id;
+    at: string;
+    type: OrderTimelineType;
+    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+    audience: OrderTimelineEntryAudience;
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
+    actor?: Id;
+    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    data: OrderTimelineEntryData;
 }
 
 export interface OrderTimelineEnvelope {
@@ -5982,6 +6093,20 @@ export interface PipelineStatsEnvelope {
     data: PipelineStats;
 }
 
+export interface StatsLimits {
+    /** The most calendar days one period may cover, both ends counted. */
+    maxRangeDays: number;
+    /** The most buckets one series may hold, the first possibly starting before `from`. */
+    maxBuckets: number;
+}
+
+export interface StatsLimitsEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: StatsLimits;
+}
+
 export interface ExampleEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -6118,6 +6243,13 @@ export interface Shop {
     shipToCountries: CountryCode[];
     returnAddress: ShopAddress;
     returnPostagePayer: ReturnPostagePayer;
+    /** Which text of the Terms is in force (`NODE_TERMS_VERSION`, `1` by default). An account stores the version it accepted beside the date (`User.termsVersion`). */
+    termsVersion: string;
+    /**
+     * Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.
+     * @minimum 1
+     */
+    backorderPromiseDays: number;
 }
 
 export interface ShopEnvelope {
@@ -6381,6 +6513,10 @@ export type ListAuditEntriesParams = {
      * Return events strictly after this ISO-8601 timestamp — an exclusive bound
      */
     since?: string;
+    /**
+     * Filter by whether the action was taken on the caller's own order. `true` keeps only the entries flagged `metadata.ownOrder`; `false` keeps the rest. Absent keeps both.
+     */
+    ownOrder?: boolean;
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
@@ -11467,6 +11603,16 @@ export const getPipelineStats = (
 };
 
 /**
+ * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
+ * @summary How big a period may be (staff)
+ */
+export const getStatsLimits = (
+    options?: SecondParameter<typeof orvalMutator<StatsLimitsEnvelope>>
+) => {
+    return orvalMutator<StatsLimitsEnvelope>({ url: `/stats/limits`, method: 'GET' }, options);
+};
+
+/**
  * Turns a subscription back on, whether it was switched off by hand or by the
  * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
  * streak, so the guard starts counting from zero. Refused with 409
@@ -11754,7 +11900,7 @@ export const deleteNotificationById = (
 };
 
 /**
- * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, and where returned goods go. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
+ * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
 export const getShop = (options?: SecondParameter<typeof orvalMutator<ShopEnvelope>>) => {
@@ -12249,6 +12395,7 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
+export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
 export type EnableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof enableWebhookSubscription>>
 >;

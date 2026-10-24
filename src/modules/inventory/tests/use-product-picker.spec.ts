@@ -47,7 +47,8 @@ const WIDGET: Product = {
     price: 9.99,
     currency: 'EUR',
     inStock: true,
-    lowStock: false
+    lowStock: false,
+    buyable: true
 };
 
 /** A second product, used as the pinned one. */
@@ -57,7 +58,8 @@ const GADGET: Product = {
     price: 4.5,
     currency: 'EUR',
     inStock: true,
-    lowStock: false
+    lowStock: false,
+    buyable: true
 };
 
 beforeEach(() => {

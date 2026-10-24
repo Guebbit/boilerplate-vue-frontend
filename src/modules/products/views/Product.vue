@@ -39,6 +39,7 @@ import {
     formatCurrency,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
+import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 
 /**
  * Localized dictionary helper.
@@ -155,7 +156,7 @@ const stockLabel = computed(() => {
     if (shelf === 'backorder')
         return shown.restockDate
             ? t('product-target-page.backorder', { date: formatDate(shown.restockDate) })
-            : t('product-target-page.backorder-undated');
+            : t('product-target-page.backorder-undated', { days: backorderPromiseDays.value });
     if (!shown.inStock) return t('product-target-page.out-of-stock');
     if (shown.lowStock) return t('product-target-page.low-stock');
     return shown.available === undefined

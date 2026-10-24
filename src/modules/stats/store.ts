@@ -17,7 +17,8 @@ import {
     getPipelineStats,
     getProductSalesSeries,
     getProductStats,
-    getSalesStats
+    getSalesStats,
+    getStatsLimits
 } from '@api';
 import type {
     CategoryStats,
@@ -27,7 +28,8 @@ import type {
     PipelineStats,
     ProductSeries,
     ProductStats,
-    SalesStats
+    SalesStats,
+    StatsLimits
 } from '@types';
 import type { StatsPeriodChoice } from './domain';
 
@@ -94,6 +96,21 @@ export const useStatsStore = defineStore('stats', () => {
     const productSeries = ref<ProductSeries>();
 
     /**
+     * The ceilings a period may not pass, as the API states them; `undefined` until read.
+     */
+    const limits = ref<StatsLimits>();
+
+    /**
+     * Reads the period ceilings the form checks against.
+     *
+     * @returns A promise resolving once they are held.
+     */
+    const loadLimits = () =>
+        getStatsLimits().then((response) => {
+            limits.value = response.data;
+        });
+
+    /**
      * Loads every dashboard block for one period, together.
      *
      * @param period - The days and bucket size to ask about.
@@ -155,6 +172,8 @@ export const useStatsStore = defineStore('stats', () => {
         customers,
         pipeline,
         productSeries,
+        limits,
+        loadLimits,
         loadDashboard,
         loadProductSales
     };

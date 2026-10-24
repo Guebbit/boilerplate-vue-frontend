@@ -18,6 +18,15 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
 import type { CartResponse, Product } from '@types';
 
+// The shop states the backorder promise; these cases are about the wording around it.
+vi.mock('@/infrastructure/shop.ts', async (importOriginal) => {
+    const { ref } = await import('vue');
+    return {
+        ...(await importOriginal<typeof import('@/infrastructure/shop.ts')>()),
+        backorderPromiseDays: ref(30)
+    };
+});
+
 /**
  * `addCartItem` alone is wrapped, real implementation and all (`vi.fn(actual.addCartItem)`
  * calls through unless a test overrides it): most cases spy on the STORE's own `addCartItem`
@@ -60,6 +69,7 @@ const IN_STOCK: Product = {
     currency: 'EUR',
     inStock: true,
     lowStock: false,
+    buyable: true,
     onHand: 5,
     reserved: 1,
     available: 4
@@ -96,6 +106,7 @@ describe('the shelf', () => {
         const wrapper = mountButton({
             ...IN_STOCK,
             inStock: false,
+            buyable: false,
             onHand: 3,
             reserved: 3,
             available: 0
@@ -107,7 +118,7 @@ describe('the shelf', () => {
 
     it('blocks buying what is off sale, and says so instead of "Out of stock"', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, purchasable: false });
+        const wrapper = mountButton({ ...IN_STOCK, purchasable: false, buyable: false });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
@@ -115,7 +126,12 @@ describe('the shelf', () => {
 
     it('ranks off sale above a sold-out shelf', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, purchasable: false, inStock: false });
+        const wrapper = mountButton({
+            ...IN_STOCK,
+            purchasable: false,
+            inStock: false,
+            buyable: false
+        });
 
         expect(wrapper.get('[data-test=add-to-cart]').text()).toContain('Not available right now');
     });
@@ -134,9 +150,15 @@ describe('the shelf', () => {
             ...IN_STOCK,
             inStock: false,
             backorder: true,
+            buyable: true,
             restockDate: '2027-03-15T12:00:00.000Z'
         });
-        const undated = mountButton({ ...IN_STOCK, inStock: false, backorder: true });
+        const undated = mountButton({
+            ...IN_STOCK,
+            inStock: false,
+            backorder: true,
+            buyable: true
+        });
 
         expect(dated.get('[data-test=add-to-cart]').attributes('disabled')).toBeUndefined();
         expect(dated.get('[data-test=add-to-cart]').text()).toContain('Backorder');
@@ -146,7 +168,12 @@ describe('the shelf', () => {
 
     it('shuts a preorder whose allowance is full, as out of stock', () => {
         signIn();
-        const wrapper = mountButton({ ...IN_STOCK, inStock: false, preorder: true });
+        const wrapper = mountButton({
+            ...IN_STOCK,
+            inStock: false,
+            preorder: true,
+            buyable: false
+        });
 
         expect(wrapper.get('[data-test=add-to-cart]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('[data-test=add-to-cart]').text()).not.toContain('Preorder');

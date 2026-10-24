@@ -112,8 +112,7 @@
         "no-withdrawal": "No right of withdrawal for this item.",
         "button-history": "History",
         "preorder-line": "Preorder: ships from {date}.",
-        "owed-line": "{count} of these are on backorder and will ship by {date}.",
-        "owed-line-undated": "{count} of these are on backorder and will ship within 30 days of your order."
+        "owed-line": "{count} of these are on backorder and will ship by {date}."
     },
     "order-edit-page": {
         "page-title": "Edit order",

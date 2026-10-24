@@ -112,8 +112,7 @@
         "no-withdrawal": "Nessun diritto di recesso per questo articolo.",
         "button-history": "Cronologia",
         "preorder-line": "Preordine: spedizione dal {date}.",
-        "owed-line": "{count} di questi sono su ordinazione e partiranno entro il {date}.",
-        "owed-line-undated": "{count} di questi sono su ordinazione e partiranno entro 30 giorni dal tuo ordine."
+        "owed-line": "{count} di questi sono su ordinazione e partiranno entro il {date}."
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",

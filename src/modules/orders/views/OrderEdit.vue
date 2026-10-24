@@ -28,7 +28,6 @@ import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { holdWhileSubmitting } from '@/ui/composables/use-hold-while-submitting.ts';
 import { useOrdersStore } from '../store.ts';
 import { ordersSchema } from '../schemas.ts';
-import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useOrderRefund, RecordOfflinePaymentForm } from '@/modules/payments';
 import ShippingAddressForm from '../components/ShippingAddressForm.vue';
@@ -118,7 +117,7 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
  * currently accept for this caller. Empty for anyone without `override:Order`, or once the
  * order has left every overridable status — the server's answer, not a locally filtered copy.
  */
-const overrideTargets = computed(() => currentOrder.value?.actions?.override ?? []);
+const overrideTargets = computed(() => currentOrder.value?.actions.override ?? []);
 
 /**
  * Whether the correction door renders at all.
@@ -147,13 +146,13 @@ const { canRefund, settleable, refund, settle, refreshPayment, refundLoading } =
  * whether money can come back. "Cancel and refund" is the two calls, which is why it needs both —
  * and why all three grey out on their own terms rather than on a rule spelled out here.
  */
-const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
+const canCancel = computed(() => currentOrder.value?.actions.cancel === true);
 
 /**
  * The order's own `actions.correctAddress`: staff may still redirect it (it has an address and
  * nothing has shipped), so the form is never offered for a call the API would refuse.
  */
-const canCorrectAddress = computed(() => currentOrder.value?.actions?.correctAddress === true);
+const canCorrectAddress = computed(() => currentOrder.value?.actions.correctAddress === true);
 
 /**
  * Whether both halves of "cancel and refund" are available, which is what the combined
@@ -174,7 +173,7 @@ const session = useSessionStore();
  * own 409 for it surfaces as that form's toast.
  */
 const canRecordOffline = computed(
-    () => currentOrder.value?.actions?.recordPayment === true && session.can('create', 'Payment')
+    () => currentOrder.value?.actions.recordPayment === true && session.can('create', 'Payment')
 );
 
 /**
@@ -442,13 +441,6 @@ const onMissingRecord = useMissingRecord();
  * not carry.
  */
 watchOrder(() => id, { onError: onMissingRecord });
-
-/**
- * Forces the one re-fetch a list-cache arrival needs to gain `actions` — without it, an order
- * opened from the list renders with cancel, refund and override all greyed out, since every
- * control on this page gates on that field.
- */
-useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 
 /**
  * The rows of the aside summary card: identity and timestamps, formatted for display.

@@ -88,6 +88,7 @@ describe('the shelf', () => {
             currency: 'EUR',
             inStock: false,
             lowStock: false,
+            buyable: false,
             onHand: 3,
             reserved: 3,
             available: 0
@@ -104,6 +105,7 @@ describe('the shelf', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
+            buyable: true,
             noWithdrawal: true
         });
 
@@ -119,7 +121,8 @@ describe('the shelf', () => {
             price: 9.99,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
 
         expect(wrapper.find('[data-test=product-no-withdrawal]').exists()).toBe(false);
@@ -133,6 +136,7 @@ describe('the shelf', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
+            buyable: true,
             onHand: 5,
             reserved: 1,
             available: 4
@@ -150,7 +154,8 @@ describe('the shelf', () => {
             price: 9.99,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('In stock');
@@ -163,7 +168,8 @@ describe('the shelf', () => {
             price: 9.99,
             currency: 'EUR',
             inStock: true,
-            lowStock: true
+            lowStock: true,
+            buyable: true
         });
 
         expect(wrapper.get('[data-test=product-stock]').text()).toContain('Low stock');
@@ -179,7 +185,8 @@ describe('the product-actions slot', () => {
                 price: 1,
                 currency: 'EUR',
                 inStock: true,
-                lowStock: false
+                lowStock: false,
+                buyable: true
             },
             [SlotProbe]
         );
@@ -194,7 +201,8 @@ describe('the product-actions slot', () => {
             price: 1,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
 
         expect(wrapper.find('[data-test=slot-probe]').exists()).toBe(false);
@@ -215,7 +223,8 @@ describe('a barebones product', () => {
             price: 1,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
 
         expect(wrapper.text()).toContain('—');
@@ -229,6 +238,7 @@ describe('a barebones product', () => {
             currency: 'EUR',
             inStock: true,
             lowStock: false,
+            buyable: true,
             description: 'Everything a widget could want',
             categories: ['tools']
         });
@@ -252,7 +262,8 @@ describe('the edit button', () => {
         price: 1,
         currency: 'EUR',
         inStock: true,
-        lowStock: false
+        lowStock: false,
+        buyable: true
     };
 
     it('is hidden from a shopper, who would only meet a guard refusal', () => {
@@ -282,7 +293,8 @@ describe('the page view', () => {
             price: 9.99,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
 
         expect(trackBrowsing).toHaveBeenCalledExactlyOnceWith({

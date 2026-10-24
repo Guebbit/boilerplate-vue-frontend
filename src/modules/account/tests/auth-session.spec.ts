@@ -124,7 +124,10 @@ describe('login', () => {
     // The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
     // anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
     it('signs in on a fresh tab whose deployment answered cookie mode at boot', () => {
-        responses['GET /account/session-config'] = orvalEnvelope({ mode: 'cookie' });
+        responses['GET /account/session-config'] = orvalEnvelope({
+            mode: 'cookie',
+            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+        });
         responses['POST /account/login'] = orvalEnvelope({});
 
         return useSessionStore()
@@ -356,7 +359,10 @@ describe('logoutEverywhere', () => {
 
 describe('restoreFromCookies after a failed mode read', () => {
     it('asks for the mode again and opens a cookie session, instead of refreshing as jwt', () => {
-        responses['GET /account/session-config'] = orvalEnvelope({ mode: 'cookie' });
+        responses['GET /account/session-config'] = orvalEnvelope({
+            mode: 'cookie',
+            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+        });
         vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
 
         return useSessionStore()

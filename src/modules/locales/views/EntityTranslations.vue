@@ -29,6 +29,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { ArrowLeft } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '../store.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -127,6 +128,39 @@ const loading = ref(false);
 const saving = ref(false);
 
 /**
+ * Order-independent text form of the drafts: a removed tab is `null`, a tab opened this session is
+ * an extra key, and re-adding a closed tab must not read as a change just because the key order moved.
+ *
+ * @param value - The drafts to describe.
+ * @returns A string that is equal for equal drafts.
+ */
+const snapshotOf = (value: Record<string, Record<string, string> | null>) =>
+    JSON.stringify(
+        Object.entries(value)
+            .toSorted(([a], [b]) => a.localeCompare(b))
+            .map(([tag, fields]) => [
+                tag,
+                fields && Object.entries(fields).toSorted(([a], [b]) => a.localeCompare(b))
+            ])
+    );
+
+/**
+ * The drafts as `load()` last set them: what the server holds.
+ */
+const baseline = ref(snapshotOf({}));
+
+/**
+ * Whether the drafts differ from the last load: edited text, a tab opened or a tab marked for removal.
+ */
+const isDirty = computed(() => snapshotOf(drafts.value) !== baseline.value);
+
+/**
+ * Warns before unsaved translations are lost to a navigation. No `markSaved`: a save reloads in
+ * place, which re-baselines the drafts.
+ */
+useLeaveGuard(isDirty, () => session.isAuth);
+
+/**
  * (Re)loads the manifest and this entity's translation rows, then rebuilds the drafts.
  *
  * @returns A promise resolving once the screen's state reflects the server's.
@@ -145,6 +179,7 @@ const load = () => {
             const byLocale: Record<string, Record<string, string> | null> = {};
             for (const row of rows.value) byLocale[row.locale] = { ...row.fields };
             drafts.value = byLocale;
+            baseline.value = snapshotOf(byLocale);
             originalTags.value = Object.keys(byLocale);
             activeTab.value = openTags.value[0];
         })

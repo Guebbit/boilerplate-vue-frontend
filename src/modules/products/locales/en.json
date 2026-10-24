@@ -7,7 +7,7 @@
         "preorder": "Preorder · ships {date}",
         "preorder-undated": "Preorder",
         "backorder": "Backorder · ships by {date}",
-        "backorder-undated": "Backorder · ships within 30 days"
+        "backorder-undated": "Backorder · ships within {days} days"
     },
     "product-card": {
         "in-stock": "In stock",
@@ -16,7 +16,7 @@
         "login-to-buy": "Sign in to check out or save this product.",
         "preorder": "Preorder · ships {date}",
         "backorder": "Backorder · ships by {date}",
-        "backorder-undated": "Backorder · ships within 30 days"
+        "backorder-undated": "Backorder · ships within {days} days"
     },
     "products-list-page": {
         "sort-label": "Sort by",
@@ -96,7 +96,7 @@
         "label-no-withdrawal": "Right of withdrawal",
         "no-withdrawal-notice": "Made to order or perishable: there is no right of withdrawal for this item once you order it. Defects are still covered by the legal guarantee.",
         "backorder": "Backorder: ships by {date}",
-        "backorder-undated": "Backorder: ships within 30 days"
+        "backorder-undated": "Backorder: ships within {days} days"
     },
     "product-create-page": {
         "page-title": "Create product",
@@ -123,9 +123,9 @@
         "label-release-date": "Release date",
         "hint-release-date": "Ships from this date. While it is ahead, the product is sold as a preorder, up to one year out. Leave empty for a product on sale now.",
         "label-allow-backorder": "Keep selling when out of stock",
-        "hint-allow-backorder": "Buyers can order while the shelf is empty, up to the backorder limit you set in Inventory. Without a restock date you promise delivery within 30 days.",
+        "hint-allow-backorder": "Buyers can order while the shelf is empty, up to the backorder limit you set in Inventory. Without a restock date you promise delivery within {days} days.",
         "label-restock-date": "Back in stock",
-        "hint-restock-date": "When stock is expected. Leave empty to promise delivery within 30 days. A date that passes makes the product read sold out until you set a new one."
+        "hint-restock-date": "When stock is expected. Leave empty to promise delivery within {days} days. A date that passes makes the product read sold out until you set a new one."
     },
     "product-edit-page": {
         "page-title": "Edit product",
@@ -159,9 +159,9 @@
         "impact-notify": "{count} order gets an email about the new date | {count} orders get an email about the new date",
         "impact-back": "Back",
         "label-allow-backorder": "Keep selling when out of stock",
-        "hint-allow-backorder": "Buyers can order while the shelf is empty, up to the backorder limit you set in Inventory. Without a restock date you promise delivery within 30 days.",
+        "hint-allow-backorder": "Buyers can order while the shelf is empty, up to the backorder limit you set in Inventory. Without a restock date you promise delivery within {days} days.",
         "label-restock-date": "Back in stock",
-        "hint-restock-date": "When stock is expected. Moving it later notifies the buyers who were promised it. Leave empty to promise delivery within 30 days. A date that passes makes the product read sold out until you set a new one."
+        "hint-restock-date": "When stock is expected. Moving it later notifies the buyers who were promised it. Leave empty to promise delivery within {days} days. A date that passes makes the product read sold out until you set a new one."
     },
     "navigation": {
         "label-products-list": "product | products"

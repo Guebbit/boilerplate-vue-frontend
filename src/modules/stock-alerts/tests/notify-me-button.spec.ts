@@ -21,15 +21,22 @@ wireModulesIntoCore();
  *
  * @param overrides - The flags a case bends.
  */
-const aProduct = (overrides: Partial<Product> = {}): Product => ({
-    id: 'p1',
-    title: 'Widget',
-    price: 1,
-    currency: 'EUR',
-    inStock: false,
-    lowStock: false,
-    ...overrides
-});
+const aProduct = (overrides: Partial<Product> = {}): Product => {
+    const product = {
+        id: 'p1',
+        title: 'Widget',
+        price: 1,
+        currency: 'EUR',
+        inStock: false,
+        lowStock: false,
+        ...overrides
+    };
+    // The server's answer, coarsely: on sale and something to order.
+    return {
+        buyable: product.purchasable !== false && (product.inStock || product.backorder === true),
+        ...product
+    };
+};
 
 /**
  * Signs a visitor in, since the button only exists for one.

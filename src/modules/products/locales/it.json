@@ -7,7 +7,7 @@
         "preorder": "Preordine · spedizione dal {date}",
         "preorder-undated": "Preordine",
         "backorder": "Su ordinazione · spedizione entro il {date}",
-        "backorder-undated": "Su ordinazione · spedizione entro 30 giorni"
+        "backorder-undated": "Su ordinazione · spedizione entro {days} giorni"
     },
     "product-card": {
         "in-stock": "Disponibile",
@@ -16,7 +16,7 @@
         "login-to-buy": "Accedi per completare l'acquisto o salvare questo prodotto.",
         "preorder": "Preordine · spedizione dal {date}",
         "backorder": "Su ordinazione · spedizione entro il {date}",
-        "backorder-undated": "Su ordinazione · spedizione entro 30 giorni"
+        "backorder-undated": "Su ordinazione · spedizione entro {days} giorni"
     },
     "products-list-page": {
         "sort-label": "Ordina per",
@@ -96,7 +96,7 @@
         "label-no-withdrawal": "Diritto di recesso",
         "no-withdrawal-notice": "Realizzato su ordinazione o deperibile: una volta ordinato non c'è diritto di recesso per questo articolo. I difetti restano coperti dalla garanzia legale.",
         "backorder": "Su ordinazione: spedizione entro il {date}",
-        "backorder-undated": "Su ordinazione: spedizione entro 30 giorni"
+        "backorder-undated": "Su ordinazione: spedizione entro {days} giorni"
     },
     "product-create-page": {
         "page-title": "Crea prodotto",
@@ -123,9 +123,9 @@
         "label-release-date": "Data di uscita",
         "hint-release-date": "Spedizione da questa data. Finché è nel futuro il prodotto si vende in preordine, fino a un anno avanti. Lascia vuoto per un prodotto in vendita ora.",
         "label-allow-backorder": "Continua a vendere se esaurito",
-        "hint-allow-backorder": "Si può ordinare anche con lo scaffale vuoto, fino al limite impostato in Magazzino. Senza data di rifornimento prometti la consegna entro 30 giorni.",
+        "hint-allow-backorder": "Si può ordinare anche con lo scaffale vuoto, fino al limite impostato in Magazzino. Senza data di rifornimento prometti la consegna entro {days} giorni.",
         "label-restock-date": "Di nuovo disponibile",
-        "hint-restock-date": "Quando è attesa la merce. Lascia vuoto per promettere la consegna entro 30 giorni. Una data passata fa risultare il prodotto esaurito finché non ne imposti una nuova."
+        "hint-restock-date": "Quando è attesa la merce. Lascia vuoto per promettere la consegna entro {days} giorni. Una data passata fa risultare il prodotto esaurito finché non ne imposti una nuova."
     },
     "product-edit-page": {
         "page-title": "Modifica prodotto",
@@ -159,9 +159,9 @@
         "impact-notify": "{count} ordine riceve un'email sulla nuova data | {count} ordini ricevono un'email sulla nuova data",
         "impact-back": "Indietro",
         "label-allow-backorder": "Continua a vendere se esaurito",
-        "hint-allow-backorder": "Si può ordinare anche con lo scaffale vuoto, fino al limite impostato in Magazzino. Senza data di rifornimento prometti la consegna entro 30 giorni.",
+        "hint-allow-backorder": "Si può ordinare anche con lo scaffale vuoto, fino al limite impostato in Magazzino. Senza data di rifornimento prometti la consegna entro {days} giorni.",
         "label-restock-date": "Di nuovo disponibile",
-        "hint-restock-date": "Quando è attesa la merce. Spostarla più avanti avvisa chi aveva ricevuto quella promessa. Lascia vuoto per promettere la consegna entro 30 giorni. Una data passata fa risultare il prodotto esaurito finché non ne imposti una nuova."
+        "hint-restock-date": "Quando è attesa la merce. Spostarla più avanti avvisa chi aveva ricevuto quella promessa. Lascia vuoto per promettere la consegna entro {days} giorni. Una data passata fa risultare il prodotto esaurito finché non ne imposti una nuova."
     },
     "navigation": {
         "label-products-list": "prodotto | prodotti"

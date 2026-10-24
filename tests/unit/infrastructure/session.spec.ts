@@ -116,6 +116,22 @@ describe('setAccessToken — the rememberMe marker, with the isAuth hint left to
         expect(cookieJar().rememberMe).toBe('true');
     });
 
+    it("lasts as long as the server's longest tier", () => {
+        const store = useSessionStore();
+        store.lifetimes = { lifetimeSeconds: { short: 86_400, medium: 604_800, long: 1_209_600 } };
+        const cookieWrites: string[] = [];
+        const setter = vi.spyOn(document, 'cookie', 'set').mockImplementation((value) => {
+            cookieWrites.push(value);
+        });
+
+        store.setAccessToken('token', true);
+        setter.mockRestore();
+
+        const expires = /expires=([^;]+)/.exec(cookieWrites.join(';'))?.[1] ?? '';
+        const days = (new Date(expires).getTime() - Date.now()) / 86_400_000;
+        expect(Math.round(days)).toBe(14);
+    });
+
     it('keeps the marker across a refresh that does not pass `remember`', () => {
         const store = useSessionStore();
         store.setAccessToken('token', true);
@@ -710,7 +726,9 @@ describe('refreshToken', () => {
  */
 /** Answers `GET /account/session-config` with the given mode. */
 const answerMode = (mode: 'jwt' | 'cookie') =>
-    getSessionConfigMock.mockResolvedValue({ data: { mode } });
+    getSessionConfigMock.mockResolvedValue({
+        data: { mode, lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 } }
+    });
 
 describe('session modes', () => {
     beforeEach(() => {
@@ -867,7 +885,12 @@ describe('a sign-in in another tab', () => {
     });
 
     it('replaces the person this tab was acting as', () => {
-        getSessionConfigMock.mockResolvedValue({ data: { mode: 'jwt' } });
+        getSessionConfigMock.mockResolvedValue({
+            data: {
+                mode: 'jwt',
+                lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
+            }
+        });
         refreshTokenMock.mockResolvedValue({ data: { token: 'second-persons' } });
         getAccountMock.mockResolvedValue(
             contractResponse(

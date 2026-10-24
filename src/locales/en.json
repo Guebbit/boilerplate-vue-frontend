@@ -347,6 +347,7 @@
         },
         "terms": {
             "title": "Terms of service",
+            "version": "Version {version}",
             "placeholder": {
                 "notice": "Placeholder: this shop has not supplied its terms of sale. The operator must replace this text before going live.",
                 "checklist-title": "The real text must cover:",
@@ -424,7 +425,8 @@
         "rows": {
             "session": {
                 "purpose": "Keeps you signed in. The shop reads it on every request; script on the page cannot.",
-                "lifetime": "While you stay signed in: the browser session, or 30 days if you ticked “Remember me”"
+                "lifetime": "While you stay signed in: the browser session, or {days} days if you ticked “Remember me”",
+                "lifetimeStaff": "While you stay signed in: the browser session, or {days} days if you ticked “Remember me”. A staff account is signed out after at most {hours} hours."
             },
             "isAuth": {
                 "purpose": "A hint that you were signed in, so the page can show the right menu before the first answer arrives. It holds no credential.",
@@ -432,7 +434,7 @@
             },
             "rememberMe": {
                 "purpose": "Records that you ticked “Remember me” at sign-in.",
-                "lifetime": "30 days"
+                "lifetime": "{days} days"
             },
             "device": {
                 "purpose": "Lets a browser you already signed in from keep signing in while someone else is guessing your password. Holds one signed token per account.",

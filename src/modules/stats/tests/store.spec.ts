@@ -114,6 +114,7 @@ beforeEach(() => {
             awaitingTransfers: [{ currency: 'EUR', count: 2, amount: 50 }],
             paidNotShipped: 3
         }),
+        'GET /stats/limits': orvalEnvelope({ maxRangeDays: 731, maxBuckets: 400 }),
         'GET /stats/products/p1': orvalEnvelope({
             period: PERIOD,
             productId: 'p1',
@@ -121,6 +122,15 @@ beforeEach(() => {
             buckets: [{ start: '2026-09-30T22:00:00.000Z', unitsOrdered: 3, unitsReversed: 1 }]
         })
     };
+});
+
+describe('loadLimits', () => {
+    it('holds the ceilings as the API states them', () => {
+        const store = useStatsStore();
+        return store.loadLimits().then(() => {
+            expect(store.limits).toEqual({ maxRangeDays: 731, maxBuckets: 400 });
+        });
+    });
 });
 
 describe('loadDashboard', () => {

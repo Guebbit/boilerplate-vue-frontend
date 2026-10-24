@@ -40,18 +40,20 @@ export const fromDateTimeLocal = (local?: string | null): string => {
 };
 
 /**
- * Whether saving this date would push a date that exists later, or take it away: the only moves
- * that tell the buyers who already paid. A product that had no date has no one to tell.
+ * Whether saving would change the date at all. Whether a change reaches any buyer is the server's
+ * call (`release-date-impact` counts them), so this only spares a preview for a save that left the
+ * date alone.
  *
  * @param originalIso - The date as the product holds it now, when it has one.
  * @param nextLocal - The input's value; empty or `null` means cleared.
  */
-export const isReleaseDateSlip = (
+export const isReleaseDateChanged = (
     originalIso: string | null | undefined,
     nextLocal: string | null | undefined
 ): boolean => {
-    const original = originalIso ? new Date(originalIso) : undefined;
-    if (!original || Number.isNaN(original.getTime())) return false;
+    const original = originalIso ? new Date(originalIso).getTime() : Number.NaN;
     const next = fromDateTimeLocal(nextLocal);
-    return next === '' || new Date(next).getTime() > original.getTime();
+    const nextTime = next === '' ? Number.NaN : new Date(next).getTime();
+    // NaN stands for "no date": two of them are the same.
+    return Number.isNaN(original) ? !Number.isNaN(nextTime) : original !== nextTime;
 };

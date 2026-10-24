@@ -40,6 +40,12 @@ export const shopCurrency = computed(() => shop.value?.currency ?? '');
 export const shipToCountries = computed(() => shop.value?.shipToCountries ?? []);
 
 /**
+ * Days a buyer is promised when a backorder names no restock date, as the shop states them
+ * (`backorderPromiseDays`); `undefined` while unknown.
+ */
+export const backorderPromiseDays = computed(() => shop.value?.backorderPromiseDays);
+
+/**
  * Loads the shop once. A failure is logged and leaves it empty, and the next call tries again —
  * the endpoint is public, so a failure here is the network's, not a refusal.
  *

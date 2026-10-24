@@ -28,7 +28,6 @@ import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
 import { reorderOutcome } from '../domain';
 import OrderTimeline from '../components/OrderTimeline.vue';
-import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useOrderDocuments } from '../composables/use-order-documents.ts';
 import { useOrderHero } from '../composables/use-order-hero.ts';
 import { useCartStore } from '@/modules/cart';
@@ -161,7 +160,7 @@ const timelineRefreshKey = computed(() =>
  *
  * @returns `true` while this order can still be cancelled by whoever is looking at it.
  */
-const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
+const cancellable = computed(() => currentOrder.value?.actions.cancel === true);
 
 /**
  * The order's own frozen currency — every price on this page is `currentOrder`'s own money,
@@ -298,12 +297,6 @@ const onMissingRecord = useMissingRecord();
  * at all for anyone who arrived from the list, which looks like an order nothing may be done to.
  */
 watchOrder(() => id, { onError: onMissingRecord });
-
-/**
- * Forces the one re-fetch a list-cache arrival needs to gain `actions` — see the composable's
- * own docs for why a second forced fetch must not race it.
- */
-useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
@@ -552,14 +545,10 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             data-test="order-item-owed"
                                         >
                                             {{
-                                                item.promiseDated
-                                                    ? t('order-target-page.owed-line', {
-                                                          count: item.backorderedQuantity,
-                                                          date: formatDate(item.promisedAt)
-                                                      })
-                                                    : t('order-target-page.owed-line-undated', {
-                                                          count: item.backorderedQuantity
-                                                      })
+                                                t('order-target-page.owed-line', {
+                                                    count: item.backorderedQuantity,
+                                                    date: formatDate(item.promisedAt)
+                                                })
                                             }}
                                         </p>
                                         <p

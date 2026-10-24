@@ -31,7 +31,7 @@ export const useOrderDocuments = (
      * than re-derived, so a lifecycle rule that changes there cannot leave the buttons offering a
      * download the API refuses with 404.
      */
-    const invoiceAvailable = computed(() => currentOrder.value?.actions?.invoice === true);
+    const invoiceAvailable = computed(() => currentOrder.value?.actions.invoice === true);
 
     /**
      * Whether an invoice request — either action below — is in flight. Its own flag, not the

@@ -53,7 +53,7 @@ import { toRequestBody } from '@/infrastructure/utils/forms.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useAxiosUploadProgress } from '@/ui/composables/use-axios-upload-progress.ts';
-import { shopCurrency } from '@/infrastructure/shop.ts';
+import { backorderPromiseDays, shopCurrency } from '@/infrastructure/shop.ts';
 import { toPatchTranslations } from '../composables/translations-body.ts';
 import { fromDateTimeLocal, toDateTimeLocal } from '../domain';
 import { useReleaseDateConfirm } from '../composables/use-release-date-confirm.ts';
@@ -612,7 +612,11 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         <v-checkbox
                             v-model="form.allowBackorder"
                             :label="t('product-edit-page.label-allow-backorder')"
-                            :hint="t('product-edit-page.hint-allow-backorder')"
+                            :hint="
+                                t('product-edit-page.hint-allow-backorder', {
+                                    days: backorderPromiseDays
+                                })
+                            "
                             persistent-hint
                             data-test="product-allow-backorder-field"
                         />
@@ -621,7 +625,11 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                             v-model="form.restockDate"
                             type="datetime-local"
                             :label="t('product-edit-page.label-restock-date')"
-                            :hint="t('product-edit-page.hint-restock-date')"
+                            :hint="
+                                t('product-edit-page.hint-restock-date', {
+                                    days: backorderPromiseDays
+                                })
+                            "
                             persistent-hint
                             clearable
                             data-test="product-restock-date-field"

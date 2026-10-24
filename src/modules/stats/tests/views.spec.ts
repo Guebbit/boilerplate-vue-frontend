@@ -48,6 +48,8 @@ const SERIES: ProductSeries = {
 
 beforeEach(() => {
     setActivePinia(createPinia());
+    // The ceilings are a read of their own; these specs are about the page, not that call.
+    vi.spyOn(useStatsStore(), 'loadLimits').mockResolvedValue(undefined);
     return loadLocale('en');
 });
 

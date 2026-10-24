@@ -17,6 +17,7 @@ import type { ThemeColor } from '@/ui/types.ts';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { Product } from '@types';
 import { shelfStateOf, type ShelfState } from '../domain';
+import { backorderPromiseDays } from '@/infrastructure/shop.ts';
 
 /**
  * The product to show.
@@ -74,7 +75,7 @@ const shelf = computed(() => shelfStateOf(product));
  */
 const shelfText = computed(() =>
     shelf.value === 'backorder' && !product.restockDate
-        ? t('product-card.backorder-undated')
+        ? t('product-card.backorder-undated', { days: backorderPromiseDays.value })
         : t(SHELF_LABELS[shelf.value], {
               date: formatDate(
                   shelf.value === 'backorder' ? product.restockDate : product.releaseDate

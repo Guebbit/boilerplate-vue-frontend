@@ -72,7 +72,8 @@ const mountWishlist = (
         price: 1,
         currency: 'EUR',
         inStock: true,
-        lowStock: false
+        lowStock: false,
+        buyable: true
     });
     // `onMounted` fetches the lines and then the products; both are seeded above, so both are
     // answered from state rather than from a transport this spec does not exercise.

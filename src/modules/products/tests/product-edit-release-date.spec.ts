@@ -220,7 +220,7 @@ const patched = () =>
         .mocked(orvalMutator)
         .mock.calls.some(([config]) => (config as { method?: string }).method === 'PATCH');
 
-describe('ProductEdit — the preview before a later or cleared date', () => {
+describe('ProductEdit — the preview before a changed date', () => {
     /** The preview route the form asks. */
     const IMPACT_URL = '/delivery/fulfillment-orders/release-date-impact';
 
@@ -337,9 +337,10 @@ describe('ProductEdit — the preview before a later or cleared date', () => {
     it.each([
         ['an earlier date', '2027-03-01T10:00', RELEASE_ISO],
         ['a product that never had a date', '2027-04-01T10:00', null]
-    ])('does not ask for %s', (_name, next, original) =>
-        submitWith({ notify: 5 }, next, original).then(() => {
-            expect(previewCalls()).toHaveLength(0);
+    ])('asks the server for %s, which counts nobody, and saves', (_name, next, original) =>
+        submitWith({ notify: 0 }, next, original).then(() => {
+            expect(previewCalls()).toHaveLength(1);
+            expect(confirmSpy).not.toHaveBeenCalled();
             expect(patched()).toBe(true);
         })
     );

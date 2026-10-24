@@ -78,6 +78,7 @@ const PRODUCT: Product = {
     currency: 'EUR',
     inStock: true,
     lowStock: false,
+    buyable: true,
     description: 'A gadget',
     imageUrl: 'https://example.com/g.jpg',
     categories: ['tools'],

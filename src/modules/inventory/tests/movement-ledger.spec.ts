@@ -146,7 +146,8 @@ describe('MovementLedger product titles', () => {
             price: 1,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
         const wrapper = mountLedger([movement('m1', 'p1'), movement('m2', 'p2')]);
 
@@ -163,7 +164,8 @@ describe('MovementLedger product titles', () => {
             price: 1,
             currency: 'EUR',
             inStock: true,
-            lowStock: false
+            lowStock: false,
+            buyable: true
         });
         mountLedger([movement('m1', 'p1')]);
 
