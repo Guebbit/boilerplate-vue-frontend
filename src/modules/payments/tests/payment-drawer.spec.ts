@@ -119,20 +119,20 @@ describe('PaymentDrawer', () => {
 
     it('refunds the whole remainder after a confirmation, then tells the list and closes', async () => {
         const store = usePaymentsStore();
-        const refund = vi.spyOn(store, 'refundForOrder').mockResolvedValue(FULL);
+        const refund = vi.spyOn(store, 'refundPayment').mockResolvedValue(FULL);
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const wrapper = mountDrawer(FULL);
 
         await wrapper.get('[data-test="drawer-refund"]').trigger('click');
         await flushPromises();
 
-        expect(refund).toHaveBeenCalledWith('o1');
+        expect(refund).toHaveBeenCalledWith(expect.objectContaining({ orderId: 'o1' }));
         expect(wrapper.emitted('changed')).toHaveLength(1);
         expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
     });
 
     it('refunds once when the button is pressed twice before the first answer', async () => {
-        const refund = vi.spyOn(usePaymentsStore(), 'refundForOrder').mockResolvedValue(FULL);
+        const refund = vi.spyOn(usePaymentsStore(), 'refundPayment').mockResolvedValue(FULL);
         const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const wrapper = mountDrawer(FULL);
         const button = wrapper.get('[data-test="drawer-refund"]');
@@ -146,7 +146,7 @@ describe('PaymentDrawer', () => {
     });
 
     it('does nothing when the confirmation is declined', async () => {
-        const refund = vi.spyOn(usePaymentsStore(), 'refundForOrder').mockResolvedValue(FULL);
+        const refund = vi.spyOn(usePaymentsStore(), 'refundPayment').mockResolvedValue(FULL);
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
         const wrapper = mountDrawer(FULL);
 
@@ -158,7 +158,7 @@ describe('PaymentDrawer', () => {
     });
 
     it('shows a refused refund in the drawer, which stays open', async () => {
-        vi.spyOn(usePaymentsStore(), 'refundForOrder').mockRejectedValue({
+        vi.spyOn(usePaymentsStore(), 'refundPayment').mockRejectedValue({
             success: false,
             status: 403,
             message: 'Forbidden',

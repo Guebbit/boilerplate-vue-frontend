@@ -116,7 +116,7 @@ only to a caller holding `display:Payment`; the page renders them when present a
 is looking. `failureReason` is a closed set (declined, insufficient funds, expired or cancelled
 card, lost or stolen card, provider unavailable, unknown), each worded in the locale files — the
 raw provider text stays in the server's logs. The drawer's refund button is the existing
-`POST /payments/orders/{orderId}/refund`, shown only while `actions.refund` is true; a partial refund
+`POST /payments/{id}/refunds`, shown only while `actions.refund` is true; a partial refund
 and recording an offline payment stay on the order's page.
 
 **Hand-paid refunds are confirmed, not guessed.** Cash and transfers have no provider to ask, so a
@@ -160,7 +160,9 @@ The rest of the module is components, schemas and a store contributed to the mod
 | `POST /payments/{id}/sync`                      | `SyncPaymentResponse`          |
 | `POST /payments`                                | `CreatePaymentResponse`        |
 | `GET /payments/orders/{id}`                     | `GetPaymentByOrderResponse`    |
-| `POST /payments/orders/{id}/refund`             | `RefundPaymentByOrderResponse` |
+| `GET /payments/{id}`                            | `GetPaymentResponse`           |
+| `GET /payments/{id}/refunds/{refundId}`         | `GetRefundResponse`            |
+| `POST /payments/{id}/refunds`                   | `RefundPaymentByOrderResponse` |
 | `POST /payments/{id}/refunds/{refundId}/settle` | `SettleRefundByHandResponse`   |
 | `POST /payments/search`                         | `SearchPaymentsResponse`       |
 | `GET /payments/refunds`                         | `ListRefundsResponse`          |

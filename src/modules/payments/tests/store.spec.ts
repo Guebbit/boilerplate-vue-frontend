@@ -387,37 +387,46 @@ const refundCall = () =>
     vi
         .mocked(orvalMutator)
         .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
-        .find(({ url }) => url.endsWith('/refund'));
+        .find(({ url }) => url.endsWith('/refunds'));
 
-describe('refundForOrder', () => {
+/** The refund record `POST /payments/{id}/refunds` answers with. */
+const REFUND = {
+    id: 'refund-1',
+    amount: 50,
+    currency: 'EUR',
+    status: 'succeeded',
+    reason: 'goodwill',
+    createdAt: '2026-10-24T10:00:00.000Z'
+};
+
+/** The payment and order the refund specs act on. */
+const TARGET_1 = { id: 'payment-1', orderId: 'order-1' };
+
+/** A second payment, for the specs that must not mix two. */
+const TARGET_2 = { id: 'payment-2', orderId: 'order-2' };
+
+describe('refundPayment', () => {
     it('sends no body for a full refund, so everything still refundable goes back', () => {
-        responses['POST /payments/orders/order-1/refund'] = orvalEnvelope({
-            ...PAYMENT,
-            status: 'refunded',
-            amountRefunded: 50
-        });
+        responses['POST /payments/payment-1/refunds'] = orvalEnvelope(REFUND);
+        responses['GET /payments/payment-1'] = orvalEnvelope({ ...PAYMENT, amountRefunded: 50 });
 
         return usePaymentsStore()
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .then(() => {
                 expect(refundCall()?.data).toBeUndefined();
             });
     });
 
     it('sends the amount for a partial refund, and keeps the running total', () => {
-        responses['POST /payments/orders/order-1/refund'] = orvalEnvelope({
-            ...PAYMENT,
-            status: 'succeeded',
-            amountRefunded: 12.5
-        });
-        responses['GET /payments/orders/order-1'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = orvalEnvelope({ ...REFUND, amount: 12.5 });
+        responses['GET /payments/payment-1'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 12.5
         });
         const store = usePaymentsStore();
 
-        return store.refundForOrder('order-1', 12.5).then(() => {
+        return store.refundPayment(TARGET_1, 12.5).then(() => {
             expect(contractRequest(schemas.RefundPaymentByOrderBody, refundCall()?.data)).toEqual({
                 amount: 12.5
             });
@@ -425,8 +434,9 @@ describe('refundForOrder', () => {
         });
     });
 
-    it('keeps the actions the refund answered with, without another read', () => {
-        responses['POST /payments/orders/order-1/refund'] = orvalEnvelope({
+    it('reads the payment again after the 201, and keeps the actions that read carries', () => {
+        responses['POST /payments/payment-1/refunds'] = orvalEnvelope({ ...REFUND, amount: 5 });
+        responses['GET /payments/payment-1'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 5,
@@ -434,15 +444,15 @@ describe('refundForOrder', () => {
         });
         const store = usePaymentsStore();
 
-        return store.refundForOrder('order-1', 5).then(() => {
+        return store.refundPayment(TARGET_1, 5).then(() => {
             expect(store.payment?.actions.refund, 'money is still left to refund').toBe(true);
-            expect(requestedUrls()).toEqual(['/payments/orders/order-1/refund']);
+            expect(requestedUrls()).toEqual(['/payments/payment-1/refunds', '/payments/payment-1']);
         });
     });
 
     // Two operators on the same payment: the loser's answer is a 409, and the page still shows the button.
     it('re-reads the payment when nothing was left to refund, before rejecting', () => {
-        responses['POST /payments/orders/order-1/refund'] = {
+        responses['POST /payments/payment-1/refunds'] = {
             status: 409,
             code: 'PAYMENT_NOT_REFUNDABLE',
             message: 'Nothing left'
@@ -450,11 +460,11 @@ describe('refundForOrder', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
             .then(() => {
                 expect(requestedUrls()).toEqual([
-                    '/payments/orders/order-1/refund',
+                    '/payments/payment-1/refunds',
                     '/payments/orders/order-1'
                 ]);
             });
@@ -542,22 +552,18 @@ describe('readPaymentForOrder', () => {
 const refundKeyAt = (index: number): string | undefined => {
     const calls = vi
         .mocked(orvalMutator)
-        .mock.calls.filter((entry) => (entry[0] as { url: string }).url.endsWith('/refund'));
+        .mock.calls.filter((entry) => (entry[0] as { url: string }).url.endsWith('/refunds'));
     const options = calls[index]?.[1] as { headers?: Record<string, string> } | undefined;
     return options?.headers?.['Idempotency-Key'];
 };
 
 describe('the refund key after a failure', () => {
     beforeEach(() => {
-        responses['POST /payments/orders/order-1/refund'] = new Error('the database went away');
-        responses['POST /payments/orders/order-2/refund'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = new Error('the database went away');
+        responses['POST /payments/payment-2/refunds'] = orvalEnvelope(REFUND);
+        responses['GET /payments/payment-2'] = orvalEnvelope({
             ...PAYMENT,
-            orderId: 'order-2',
-            status: 'succeeded',
-            amountRefunded: 50
-        });
-        responses['GET /payments/orders/order-2'] = orvalEnvelope({
-            ...PAYMENT,
+            id: 'payment-2',
             orderId: 'order-2'
         });
     });
@@ -566,9 +572,9 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
-            .then(() => store.refundForOrder('order-1').catch(() => undefined))
+            .then(() => store.refundPayment(TARGET_1).catch(() => undefined))
             .then(() => {
                 expect(refundKeyAt(1)).toEqual(expect.any(String));
                 expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
@@ -579,7 +585,7 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
             .then(() => {
                 expect(requestedUrls()).toContain('/payments/orders/order-1');
@@ -587,7 +593,7 @@ describe('the refund key after a failure', () => {
     });
 
     it('keeps the key after a lost connection, so the retry replays the first attempt', () => {
-        responses['POST /payments/orders/order-1/refund'] = {
+        responses['POST /payments/payment-1/refunds'] = {
             status: 0,
             code: 'NETWORK',
             message: 'offline'
@@ -595,16 +601,16 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
-            .then(() => store.refundForOrder('order-1').catch(() => undefined))
+            .then(() => store.refundPayment(TARGET_1).catch(() => undefined))
             .then(() => {
                 expect(refundKeyAt(1)).toBe(refundKeyAt(0));
             });
     });
 
-    it('never carries a key kept for one order onto a refund of another', () => {
-        responses['POST /payments/orders/order-1/refund'] = {
+    it('never carries a key kept for one payment onto a refund of another', () => {
+        responses['POST /payments/payment-1/refunds'] = {
             status: 0,
             code: 'NETWORK',
             message: 'offline'
@@ -612,9 +618,9 @@ describe('the refund key after a failure', () => {
         const store = usePaymentsStore();
 
         return store
-            .refundForOrder('order-1')
+            .refundPayment(TARGET_1)
             .catch(() => undefined)
-            .then(() => store.refundForOrder('order-2'))
+            .then(() => store.refundPayment(TARGET_2))
             .then(() => {
                 expect(refundKeyAt(1)).not.toBe(refundKeyAt(0));
             });

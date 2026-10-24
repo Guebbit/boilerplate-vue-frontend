@@ -99,7 +99,7 @@ const ROWS: readonly PressRow[] = [
         subject: 'order.paid',
         page: (orderId) => `/en/orders/${orderId}/edit`,
         trigger: '[data-test=button-refund-only]',
-        operation: '**/payments/orders/*/refund',
+        operation: '**/payments/*/refunds',
         confirms: false,
         effect: refundState,
         done: 'refunded'

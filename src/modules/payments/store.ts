@@ -13,6 +13,7 @@ import {
     createPayment,
     confirmPayment,
     syncPayment,
+    getPayment,
     getPaymentByOrder,
     getOrderByReference,
     refundPaymentByOrder,
@@ -75,8 +76,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     const confirmIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key`s for `refundForOrder`'s `POST /payments/orders/{orderId}/refund`, one per
-     * order: a key kept for order A must never ride on a refund of order B.
+     * `Idempotency-Key`s for `refundPayment`'s `POST /payments/{id}/refunds`, one per payment: a
+     * key kept for payment A must never ride on a refund of payment B.
      */
     const refundIdempotencyKeys = useIdempotencyKeys();
 
@@ -245,28 +246,34 @@ export const usePaymentsStore = defineStore('payments', () => {
         );
 
     /**
-     * Returns an order's money without touching its status — the operator's standalone refund.
-     * Admin-only at the API; a caller without the role gets the 403 this rethrows.
+     * Returns a payment's money without touching its order's status — the operator's standalone
+     * refund. Admin-only at the API; a caller without the role gets the 403 this rethrows.
      *
-     * The answer carries the payment's `actions`, and replaces the cached one: that is what
-     * withdraws `actions.refund` and greys the control out afterwards. On a hand-paid payment the
-     * refund is only opened, and `actions.settleByHand` names the record to confirm.
+     * The API answers 201 with the new refund record only, so the payment is read again
+     * (`GET /payments/{id}`) and replaces the cached one: that carries the running totals and
+     * withdraws `actions.refund`, which greys the control out afterwards. On a hand-paid payment
+     * the refund is only opened, and `actions.settleByHand` names the record to confirm.
      *
-     * @param orderId - The order whose payment is being returned.
+     * @param target - The payment being returned and the order it belongs to.
+     * @param target.id - The payment.
+     * @param target.orderId - Its order, for the re-read after a fault.
      * @param amount - A partial refund, a decimal in the payment's own currency. Absent returns
      *  everything still refundable.
      * @returns A promise resolving with the refunded payment.
      */
-    const refundForOrder = (orderId: string, amount?: number) => {
-        const keeper = refundIdempotencyKeys.forSubject(orderId);
+    const refundPayment = (target: { id: string; orderId: string }, amount?: number) => {
+        const keeper = refundIdempotencyKeys.forSubject(target.id);
         return fetchAny(() =>
             refundPaymentByOrder(
-                orderId,
+                target.id,
                 amount === undefined ? undefined : { amount },
                 keeper.withKey()
             )
-                .then((response) => {
+                .then(() => {
                     keeper.settle();
+                    return getPayment(target.id);
+                })
+                .then((response) => {
                     payment.value = response.data;
                     return payment.value;
                 })
@@ -274,7 +281,11 @@ export const usePaymentsStore = defineStore('payments', () => {
                     keeper.settle(error);
                     // Two operators refunding the same payment: the loser's answer says nothing
                     // is left, and the page still shows the control.
-                    return rereadAfterFault(orderId, error, ERROR_CODES.PAYMENT_NOT_REFUNDABLE);
+                    return rereadAfterFault(
+                        target.orderId,
+                        error,
+                        ERROR_CODES.PAYMENT_NOT_REFUNDABLE
+                    );
                 })
         );
     };
@@ -337,7 +348,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     /**
      * Finds the order behind an RF creditor reference — the admin's own step before recording an
      * offline payment, when a bank statement line is all they have. Admin-only at the API, and
-     * step-up gated the same way {@link refundForOrder} is.
+     * step-up gated the same way {@link refundPayment} is.
      *
      * A 404 is an answer, not a failure: the API cannot tell a malformed reference from one that
      * matches no order, so both mean "no such order" and resolve `undefined`. Every other status
@@ -484,7 +495,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         fetchPaymentForOrder,
         payForOrder,
         finishAtProvider,
-        refundForOrder,
+        refundPayment,
         settleRefundByHand,
         recordOfflinePayment,
         findOrderByReference

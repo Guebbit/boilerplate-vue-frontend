@@ -15,7 +15,7 @@ export default {
  * references and the card's last digits — and the actions the server allows. The provider ids and
  * a refund's failure reason arrive only for a caller holding `display:Payment`, so this renders
  * them whenever they are present and never asks who is looking. Refunding is the existing
- * `POST /payments/orders/{orderId}/refund`, offered only when `actions.refund` says it would work;
+ * `POST /payments/{id}/refunds`, offered only when `actions.refund` says it would work;
  * a hand-paid refund waiting for the operator gets a "Mark returned" button, offered for the ids
  * `actions.settleByHand` names.
  */
@@ -84,7 +84,7 @@ const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
 /**
- * The store whose `refundForOrder` this drawer calls.
+ * The store whose `refundPayment` this drawer calls.
  */
 const store = usePaymentsStore();
 
@@ -160,7 +160,7 @@ const handleRefund = singleFlight(() => {
             clearRefundError();
             refunding.value = true;
             return store
-                .refundForOrder(current.orderId)
+                .refundPayment(current)
                 .then(() => {
                     addMessage(t('payments-list-page.refund-done'));
                     emit('changed');

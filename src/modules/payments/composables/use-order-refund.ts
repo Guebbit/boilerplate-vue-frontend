@@ -75,8 +75,8 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          *  which is what withdraws `canRefund`.
          */
         refund: (amount?: number) =>
-            orderId.value
-                ? paymentsStore.refundForOrder(orderId.value, amount).then(() => undefined)
+            payment.value
+                ? paymentsStore.refundPayment(payment.value, amount).then(() => undefined)
                 : Promise.resolve(),
         /**
          * Confirms that one hand-paid refund's money was returned outside the application.
