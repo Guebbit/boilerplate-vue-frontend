@@ -1,7 +1,7 @@
 /**
  * @module
  * Mounts the real Signup page and proves the one new behaviour rung 3 adds: a solved `HumanCheck`
- * token reaches the wire as `x-antibot-challenge-token` on `POST /account/signup`. `HumanCheck`
+ * token reaches the wire as `antibot-challenge-token` on `POST /account/signup`. `HumanCheck`
  * itself is stubbed with a fixed token — its own branching (`none`/`altcha`/`turnstile`) is
  * `tests/unit/ui/human-check.spec.ts`'s job — and `auth-signup.spec.ts` already proves the store
  * forwards `options` unchanged, so this is only about the VIEW wiring the two together.
@@ -124,11 +124,11 @@ beforeEach(() => {
 });
 
 describe('Signup — the antibot header', () => {
-    it('attaches the solved HumanCheck token as x-antibot-challenge-token', () => {
+    it('attaches the solved HumanCheck token as antibot-challenge-token', () => {
         const wrapper = mountSignup();
 
         return fillAndSubmit(wrapper).then(() => {
-            expect(signupRequest()?.headers?.['x-antibot-challenge-token']).toBe(SOLVED_TOKEN);
+            expect(signupRequest()?.headers?.['antibot-challenge-token']).toBe(SOLVED_TOKEN);
             // Typing the password above queued a breach check this spec doesn't otherwise care
             // about; without unmounting, its real 500ms debounce fires later — after this test's
             // own assertions, sometimes mid-way through a LATER spec — and needs a fixture this

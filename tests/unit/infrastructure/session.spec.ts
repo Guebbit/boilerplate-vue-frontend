@@ -593,7 +593,7 @@ describe('clearSession', () => {
 describe('refreshToken', () => {
     it('is marked passive, with its abilities re-read: neither is the person acting', () => {
         refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
-        const marked = { headers: { 'X-Session-Passive': 'true' } };
+        const marked = { headers: { 'Session-Passive': 'true' } };
         const store = signedIn();
 
         return store

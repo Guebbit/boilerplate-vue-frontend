@@ -10946,7 +10946,7 @@ export const sendReauthCode = (
 };
 
 /**
- * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `X-Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
+ * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
  * @summary Count the caller's own session as active, and read its idle clock
  */
 export const touchSession = (

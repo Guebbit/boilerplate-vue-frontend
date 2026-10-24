@@ -165,7 +165,7 @@ slow network greys things out rather than opening them.
 
 The backend's antibot rung is off by default (`NODE_ANTIBOT_PROVIDER=none`) but an operator can
 turn it on. Once on, `POST /account/signup`, `POST /account/reset` and `POST /feedback/contact`
-always require an `x-antibot-challenge-token` header; `POST /account/login` and
+always require an `antibot-challenge-token` header; `POST /account/login` and
 `POST /payments/:id/confirm` only require it after a prior failure — see
 `boilerplate-node-backend/docs/modules/antibot.md`.
 
@@ -180,7 +180,7 @@ flowchart TD
     D --> F[Solved token exposed as .token]
     E --> F
     F --> G["Hosting form: withAntibotToken(token, options)"]
-    G --> H[x-antibot-challenge-token header on submit]
+    G --> H[antibot-challenge-token header on submit]
 ```
 
 | Concern                                       | File                                                                                                      |

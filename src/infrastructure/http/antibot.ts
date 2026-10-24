@@ -14,7 +14,7 @@ import { getFirstApiError } from './envelope.ts';
 import { ERROR_CODES } from '@api/error-codes';
 
 /** The header `humanChallengeGate` reads off every gated request. */
-const ANTIBOT_TOKEN_HEADER = 'x-antibot-challenge-token';
+const ANTIBOT_TOKEN_HEADER = 'antibot-challenge-token';
 
 /**
  * Merges a solved `HumanCheck` token into a request's headers, alongside whatever the caller

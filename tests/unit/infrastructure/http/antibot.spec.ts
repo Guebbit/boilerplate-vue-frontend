@@ -35,7 +35,7 @@ describe('withAntibotToken', () => {
 
     it('attaches the header when a token is given', () => {
         expect(withAntibotToken('solved-token')).toEqual({
-            headers: { 'x-antibot-challenge-token': 'solved-token' }
+            headers: { 'antibot-challenge-token': 'solved-token' }
         });
     });
 
@@ -43,14 +43,14 @@ describe('withAntibotToken', () => {
         const result = withAntibotToken('solved-token', { headers: { 'X-Custom': '1' } });
         expect(result?.headers).toEqual({
             'X-Custom': '1',
-            'x-antibot-challenge-token': 'solved-token'
+            'antibot-challenge-token': 'solved-token'
         });
     });
 
     it('keeps the caller’s non-header options (e.g. onUploadProgress) alongside the header', () => {
         const result = withAntibotToken('solved-token', { onUploadProgress });
         expect(result?.onUploadProgress).toBe(onUploadProgress);
-        expect(result?.headers).toEqual({ 'x-antibot-challenge-token': 'solved-token' });
+        expect(result?.headers).toEqual({ 'antibot-challenge-token': 'solved-token' });
     });
 });
 

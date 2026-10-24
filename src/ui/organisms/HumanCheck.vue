@@ -14,7 +14,7 @@ export default {
  * Provider-neutral human-challenge widget. Reads `GET /antibot/config` on mount and renders
  * whichever vendor is currently active: nothing for `none`, ALTCHA's web component for `altcha`,
  * Cloudflare Turnstile's vendor script for `turnstile`. A hosting form reads {@link token} through
- * a template ref once the visitor passes, and attaches it as `x-antibot-challenge-token` on its
+ * a template ref once the visitor passes, and attaches it as `antibot-challenge-token` on its
  * own submit via `withAntibotToken` — this component never calls the route it protects.
  *
  * See the paired backend's `docs/modules/antibot.md` for the provider registry and the ladder

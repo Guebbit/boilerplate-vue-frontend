@@ -2509,11 +2509,11 @@ export const LoginResponse = zod.strictObject({
  * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
-export const signupHeaderXAntibotChallengeTokenMax = 4096;
+export const signupHeaderAntibotChallengeTokenMax = 4096;
 export const signupHeaderIdempotencyKeyMax = 200;
 export const signupHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
 export const SignupHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod.string().max(signupHeaderXAntibotChallengeTokenMax).optional(),
+    'Antibot-Challenge-Token': zod.string().max(signupHeaderAntibotChallengeTokenMax).optional(),
     'Idempotency-Key': zod
         .string()
         .min(1)
@@ -2588,11 +2588,11 @@ export const SignupResponse = zod.strictObject({
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
  * @summary Request password reset
  */
-export const requestPasswordResetHeaderXAntibotChallengeTokenMax = 4096;
+export const requestPasswordResetHeaderAntibotChallengeTokenMax = 4096;
 export const RequestPasswordResetHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
+    'Antibot-Challenge-Token': zod
         .string()
-        .max(requestPasswordResetHeaderXAntibotChallengeTokenMax)
+        .max(requestPasswordResetHeaderAntibotChallengeTokenMax)
         .optional()
 });
 export const requestPasswordResetBodyEmailMax = 254;
@@ -3712,13 +3712,13 @@ export const SearchUsersResponse = zod.strictObject({
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
-export const createFeedbackRequestHeaderXAntibotChallengeTokenMax = 4096;
+export const createFeedbackRequestHeaderAntibotChallengeTokenMax = 4096;
 export const createFeedbackRequestHeaderIdempotencyKeyMax = 200;
 export const createFeedbackRequestHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
 export const CreateFeedbackRequestHeader = zod.strictObject({
-    'x-antibot-challenge-token': zod
+    'Antibot-Challenge-Token': zod
         .string()
-        .max(createFeedbackRequestHeaderXAntibotChallengeTokenMax)
+        .max(createFeedbackRequestHeaderAntibotChallengeTokenMax)
         .optional(),
     'Idempotency-Key': zod
         .string()
@@ -9447,9 +9447,9 @@ export const SyncPaymentResponse = zod.strictObject({
  * Answers 200 to anything it has authenticated, including events it does not act on: a provider reads a non-2xx as a failure and retries harder. Answers 404 when no card payment provider is configured: nobody can sign a delivery, so the route does not exist for that deployment.
  * @summary Provider webhook
  */
-export const receivePaymentWebhookHeaderXPaymentSignatureMax = 200;
+export const receivePaymentWebhookHeaderPaymentSignatureMax = 200;
 export const ReceivePaymentWebhookHeader = zod.strictObject({
-    'x-payment-signature': zod.string().max(receivePaymentWebhookHeaderXPaymentSignatureMax)
+    'Payment-Signature': zod.string().max(receivePaymentWebhookHeaderPaymentSignatureMax)
 });
 export const receivePaymentWebhookBodyIdMax = 200;
 export const receivePaymentWebhookBodyProviderRefMax = 200;
@@ -12590,7 +12590,7 @@ export const SendReauthCodeResponse = zod.strictObject({
     })
 });
 /**
- * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `X-Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
+ * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
  * @summary Count the caller's own session as active, and read its idle clock
  */
 export const TouchSessionResponse = zod.strictObject({

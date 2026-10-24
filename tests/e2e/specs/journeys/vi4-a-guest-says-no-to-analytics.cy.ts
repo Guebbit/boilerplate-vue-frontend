@@ -38,7 +38,7 @@ interface Seen {
 }
 
 /** The header the page sends on an anonymous request once its guest has said yes. */
-const CONSENT_HEADER = 'x-analytics-consent';
+const CONSENT_HEADER = 'analytics-consent';
 
 /** The marker every search text of this run carries, so no earlier run's cache can answer it. */
 const RUN = String(Date.now());

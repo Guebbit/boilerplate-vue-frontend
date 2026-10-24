@@ -2,7 +2,7 @@
  * The request interceptor of `src/infrastructure/http/index.ts`.
  *
  * `onRequest` attaches the bearer token and the active language to every outgoing request, plus
- * the guest `X-Analytics-Consent` header when it applies. Failing to attach the token logs the
+ * the guest `Analytics-Consent` header when it applies. Failing to attach the token logs the
  * user out from the API's point of view while the UI still believes they are signed in; failing to
  * attach the language silently serves every response in the fallback locale.
  *
@@ -80,7 +80,7 @@ describe('onRequest', () => {
         noteActivity.mockClear();
 
         onRequest(makeConfig());
-        onRequest(makeConfig({ 'X-Session-Passive': 'true' }));
+        onRequest(makeConfig({ 'Session-Passive': 'true' }));
 
         expect(noteActivity).toHaveBeenCalledTimes(1);
     });
@@ -129,42 +129,42 @@ describe('onRequest', () => {
         expect(onRequest(config)).toBe(config);
     });
 
-    it('adds X-Analytics-Consent when anonymous, the flag is on, and consent was granted', () => {
+    it('adds Analytics-Consent when anonymous, the flag is on, and consent was granted', () => {
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'granted';
 
-        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBe('true');
+        expect(onRequest(makeConfig()).headers['Analytics-Consent']).toBe('true');
     });
 
-    it('omits X-Analytics-Consent when the flag is off, granted or not', () => {
+    it('omits Analytics-Consent when the flag is off, granted or not', () => {
         analyticsGuestConsentEnabled = false;
         analyticsConsentChoice.value = 'granted';
 
-        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+        expect(onRequest(makeConfig()).headers['Analytics-Consent']).toBeUndefined();
     });
 
-    it('omits X-Analytics-Consent while consent is still unknown', () => {
+    it('omits Analytics-Consent while consent is still unknown', () => {
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'unknown';
 
-        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+        expect(onRequest(makeConfig()).headers['Analytics-Consent']).toBeUndefined();
     });
 
-    it('omits X-Analytics-Consent once denied', () => {
+    it('omits Analytics-Consent once denied', () => {
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'denied';
 
-        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+        expect(onRequest(makeConfig()).headers['Analytics-Consent']).toBeUndefined();
     });
 
-    it('never adds X-Analytics-Consent for a signed-in caller, even with a stale granted cookie', () => {
+    it('never adds Analytics-Consent for a signed-in caller, even with a stale granted cookie', () => {
         // The account's own stored preference is authoritative once signed in — see `onRequest`'s
         // own docblock for why a leftover guest-cookie choice must not override it.
         accessToken.value = 'abc.def.ghi';
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'granted';
 
-        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+        expect(onRequest(makeConfig()).headers['Analytics-Consent']).toBeUndefined();
     });
 });
 
@@ -175,12 +175,12 @@ describe('onRequest in cookie mode', () => {
         expect(onRequest(makeConfig()).headers.Authorization).toBeUndefined();
     });
 
-    it('never adds X-Analytics-Consent for a signed-in caller, though it holds no token', () => {
+    it('never adds Analytics-Consent for a signed-in caller, though it holds no token', () => {
         cookieSession.value = true;
         analyticsGuestConsentEnabled = true;
         analyticsConsentChoice.value = 'granted';
 
-        expect(onRequest(makeConfig()).headers['X-Analytics-Consent']).toBeUndefined();
+        expect(onRequest(makeConfig()).headers['Analytics-Consent']).toBeUndefined();
     });
 });
 
