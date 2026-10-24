@@ -35,7 +35,7 @@ const FULL: Payment = aPayment({
     cardLast4: '4242',
     amountRefunded: 10,
     displayStatus: 'refund_pending',
-    actions: { pay: false, refund: true },
+    actions: { pay: false, sync: false, refund: true, settleByHand: [] },
     refunds: [
         {
             id: 'r1',
@@ -108,42 +108,13 @@ describe('PaymentDrawer', () => {
     it('offers the refund only when the server says it would work', () => {
         expect(mountDrawer(FULL).find('[data-test="drawer-refund"]').exists()).toBe(true);
         expect(
-            mountDrawer({ ...FULL, actions: { pay: false, refund: false } })
+            mountDrawer({
+                ...FULL,
+                actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+            })
                 .find('[data-test="drawer-refund"]')
                 .exists()
         ).toBe(false);
-    });
-
-    it('asks the order’s own payment what is allowed when the row carries no actions', async () => {
-        const read = vi
-            .spyOn(usePaymentsStore(), 'fetchActionsForOrder')
-            .mockResolvedValue({ pay: false, refund: true });
-        const wrapper = mountDrawer({ ...FULL, actions: undefined });
-        await flushPromises();
-
-        expect(read).toHaveBeenCalledWith('o1');
-        expect(wrapper.find('[data-test="drawer-refund"]').exists()).toBe(true);
-    });
-
-    it('offers no refund when that read says it would not work, or fails', async () => {
-        const read = vi.spyOn(usePaymentsStore(), 'fetchActionsForOrder');
-        read.mockResolvedValueOnce({ pay: false, refund: false });
-        const refused = mountDrawer({ ...FULL, actions: undefined });
-        await flushPromises();
-        expect(refused.find('[data-test="drawer-refund"]').exists()).toBe(false);
-
-        read.mockRejectedValueOnce({
-            success: false,
-            status: 500,
-            message: 'Boom',
-            errors: [{ code: 'INTERNAL_ERROR', message: 'Could not read the payment.' }]
-        });
-        const failed = mountDrawer({ ...FULL, actions: undefined });
-        await flushPromises();
-        expect(failed.find('[data-test="drawer-refund"]').exists()).toBe(false);
-        expect(failed.get('[data-test="drawer-refund-error"]').text()).toContain(
-            'Could not read the payment.'
-        );
     });
 
     it('refunds the whole remainder after a confirmation, then tells the list and closes', async () => {
@@ -216,5 +187,87 @@ describe('PaymentDrawer', () => {
 
     it('renders nothing inside before a payment is picked', () => {
         expect(mountDrawer(undefined).find('[data-test="drawer-open-order"]').exists()).toBe(false);
+    });
+
+    describe('a hand-paid refund waiting for the operator', () => {
+        const OWED: Payment = aPayment({
+            provider: 'manual',
+            method: 'cash',
+            displayStatus: 'refund_pending',
+            amountRefunded: 50,
+            actions: { pay: false, sync: false, refund: false, settleByHand: ['r-owed'] },
+            refunds: [
+                {
+                    id: 'r-owed',
+                    amount: 50,
+                    currency: 'EUR',
+                    status: 'pending',
+                    reason: 'return',
+                    createdAt: '2026-03-05T10:00:00Z'
+                },
+                {
+                    id: 'r-other',
+                    amount: 5,
+                    currency: 'EUR',
+                    status: 'pending',
+                    reason: 'goodwill',
+                    createdAt: '2026-03-05T11:00:00Z'
+                }
+            ]
+        });
+
+        it('offers "Mark returned" for the records the server names, and only those', () => {
+            const wrapper = mountDrawer(OWED);
+
+            expect(wrapper.find('[data-test="drawer-mark-returned-r-owed"]').exists()).toBe(true);
+            expect(wrapper.find('[data-test="drawer-mark-returned-r-other"]').exists()).toBe(false);
+        });
+
+        it('settles that record after a confirmation naming the amount, then tells the list', async () => {
+            const settle = vi
+                .spyOn(usePaymentsStore(), 'settleRefundByHand')
+                .mockResolvedValue(OWED);
+            const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+            const wrapper = mountDrawer(OWED);
+
+            await wrapper.get('[data-test="drawer-mark-returned-r-owed"]').trigger('click');
+            await flushPromises();
+
+            expect(confirm.mock.calls[0][0].message).toContain('€50.00');
+            expect(settle).toHaveBeenCalledWith(OWED, 'r-owed');
+            expect(wrapper.emitted('changed')).toHaveLength(1);
+        });
+
+        it('does nothing when the confirmation is declined', async () => {
+            const settle = vi
+                .spyOn(usePaymentsStore(), 'settleRefundByHand')
+                .mockResolvedValue(OWED);
+            vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
+            const wrapper = mountDrawer(OWED);
+
+            await wrapper.get('[data-test="drawer-mark-returned-r-owed"]').trigger('click');
+            await flushPromises();
+
+            expect(settle).not.toHaveBeenCalled();
+        });
+
+        it('shows a refused settlement in the drawer, which stays open', async () => {
+            vi.spyOn(usePaymentsStore(), 'settleRefundByHand').mockRejectedValue({
+                success: false,
+                status: 409,
+                message: 'Conflict',
+                errors: [{ code: 'PAYMENT_REFUND_NOT_OPEN', message: 'Already settled.' }]
+            });
+            vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+            const wrapper = mountDrawer(OWED);
+
+            await wrapper.get('[data-test="drawer-mark-returned-r-owed"]').trigger('click');
+            await flushPromises();
+
+            expect(wrapper.get('[data-test="drawer-refund-error"]').text()).toContain(
+                'Already settled.'
+            );
+            expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+        });
     });
 });

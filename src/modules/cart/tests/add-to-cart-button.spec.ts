@@ -43,9 +43,11 @@ const EMPTY_CART: CartResponse = {
         itemsTotal: 0,
         shippingCost: 0,
         totalPrice: 0,
-        currency: 'EUR'
+        currency: 'EUR',
+        expectedTotal: { amount: 0, currency: 'EUR' }
     },
-    shipping: { required: false, selected: null, options: [] }
+    shipping: { required: false, selected: null, options: [] },
+    checkoutable: false
 };
 
 /**
@@ -235,7 +237,9 @@ describe('adding', () => {
         // store. A client that computed `existing + 1` from it would send 6.
         cart.cart = {
             ...EMPTY_CART,
-            items: [{ productId: IN_STOCK.id, quantity: 5, availability: 'in_stock' }]
+            items: [
+                { productId: IN_STOCK.id, quantity: 5, availability: 'in_stock', canIncrease: true }
+            ]
         };
         const addSpy = vi.spyOn(cart, 'addCartItem').mockResolvedValue(EMPTY_CART);
 

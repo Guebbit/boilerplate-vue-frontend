@@ -14,6 +14,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { usePaymentsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
@@ -34,7 +35,8 @@ const PAYMENT = {
     provider: 'fake',
     method: 'card',
     amountRefunded: 0,
-    refunds: []
+    refunds: [],
+    actions: { pay: false, sync: false, refund: false, settleByHand: [] }
 };
 
 /** Canned response per `METHOD /url` key; an `Error` or `Declined` entry makes the call reject. */
@@ -216,7 +218,7 @@ describe('payForOrder', () => {
 describe('finishAtProvider', () => {
     it('re-reads the payment and settles it', () => {
         const store = usePaymentsStore();
-        return store.finishAtProvider('payment-1').then(() => {
+        return store.finishAtProvider('payment-1', 'order-1').then(() => {
             expect(requestedUrls()).toEqual(['/payments/payment-1/sync']);
             expect(store.payment?.status).toBe('succeeded');
         });
@@ -229,10 +231,46 @@ describe('finishAtProvider', () => {
             message: 'The card was declined'
         };
         const store = usePaymentsStore();
-        return expect(store.finishAtProvider('payment-1')).rejects.toMatchObject({
+        return expect(store.finishAtProvider('payment-1', 'order-1')).rejects.toMatchObject({
             status: 409,
             errors: [{ code: 'PAYMENT_DECLINED' }]
         });
+    });
+
+    // A declined 3-D Secure would otherwise leave "finish" on a payment that is back to `pay`.
+    it('re-reads the payment when the provider declined it, before rejecting', () => {
+        responses['POST /payments/payment-1/sync'] = {
+            status: 409,
+            code: 'PAYMENT_DECLINED',
+            message: 'The card was declined'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .finishAtProvider('payment-1', 'order-1')
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/sync',
+                    '/payments/order/order-1'
+                ]);
+            });
+    });
+
+    it('does not re-read on a refusal that says nothing about the payment', () => {
+        responses['POST /payments/payment-1/sync'] = {
+            status: 429,
+            code: 'RATE_LIMITED',
+            message: 'Slow down'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .finishAtProvider('payment-1', 'order-1')
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/payments/payment-1/sync']);
+            });
     });
 });
 
@@ -387,22 +425,115 @@ describe('refundForOrder', () => {
         });
     });
 
-    it('re-reads the payment after a refund, since the refund answer carries no actions', () => {
+    it('keeps the actions the refund answered with, without another read', () => {
         responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
-            amountRefunded: 5
-        });
-        responses['GET /payments/order/order-1'] = orvalEnvelope({
-            ...PAYMENT,
-            status: 'succeeded',
             amountRefunded: 5,
-            actions: { pay: false, refund: true }
+            actions: { pay: false, sync: false, refund: true, settleByHand: [] }
         });
         const store = usePaymentsStore();
 
         return store.refundForOrder('order-1', 5).then(() => {
-            expect(store.payment?.actions?.refund, 'money is still left to refund').toBe(true);
+            expect(store.payment?.actions.refund, 'money is still left to refund').toBe(true);
+            expect(requestedUrls()).toEqual(['/payments/order/order-1/refund']);
+        });
+    });
+
+    // Two operators on the same payment: the loser's answer is a 409, and the page still shows the button.
+    it('re-reads the payment when nothing was left to refund, before rejecting', () => {
+        responses['POST /payments/order/order-1/refund'] = {
+            status: 409,
+            code: 'PAYMENT_NOT_REFUNDABLE',
+            message: 'Nothing left'
+        };
+        const store = usePaymentsStore();
+
+        return store
+            .refundForOrder('order-1')
+            .catch(() => undefined)
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/order/order-1/refund',
+                    '/payments/order/order-1'
+                ]);
+            });
+    });
+});
+
+describe('settleRefundByHand', () => {
+    const SETTLED = {
+        ...PAYMENT,
+        provider: 'manual',
+        method: 'cash',
+        status: 'succeeded',
+        refundedByHand: true,
+        actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+    };
+
+    it('posts to the refund and mirrors the payment the answer carries', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = orvalEnvelope(SETTLED);
+        const store = usePaymentsStore();
+        store.payment = aPayment({
+            id: 'payment-1',
+            actions: { pay: false, sync: false, refund: false, settleByHand: ['refund-1'] }
+        });
+
+        return store
+            .settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1')
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/payments/payment-1/refunds/refund-1/settle']);
+                expect(store.payment?.actions.settleByHand).toEqual([]);
+            });
+    });
+
+    it('leaves another order’s cached payment alone', () => {
+        responses['POST /payments/payment-9/refunds/refund-1/settle'] = orvalEnvelope({
+            ...SETTLED,
+            id: 'payment-9',
+            orderId: 'order-9'
+        });
+        const store = usePaymentsStore();
+        store.payment = aPayment({ id: 'payment-1' });
+
+        return store
+            .settleRefundByHand({ id: 'payment-9', orderId: 'order-9' }, 'refund-1')
+            .then(() => {
+                expect(store.payment?.id).toBe('payment-1');
+            });
+    });
+
+    it('re-reads the payment when another operator settled it first, before rejecting', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = {
+            status: 409,
+            code: 'PAYMENT_REFUND_NOT_OPEN',
+            message: 'Already settled'
+        };
+        const store = usePaymentsStore();
+
+        return expect(store.settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1'))
+            .rejects.toMatchObject({ errors: [{ code: 'PAYMENT_REFUND_NOT_OPEN' }] })
+            .then(() => {
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/settle',
+                    '/payments/order/order-1'
+                ]);
+            });
+    });
+});
+
+describe('readPaymentForOrder', () => {
+    it('reads the payment without replacing the order page’s cached one', () => {
+        responses['GET /payments/order/order-2'] = orvalEnvelope({
+            ...PAYMENT,
+            id: 'payment-2',
+            orderId: 'order-2'
+        });
+        const store = usePaymentsStore();
+
+        return store.readPaymentForOrder('order-2').then((read) => {
+            expect(read?.id).toBe('payment-2');
+            expect(store.payment).toBeUndefined();
         });
     });
 });

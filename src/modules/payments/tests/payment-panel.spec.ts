@@ -14,6 +14,7 @@ import vuetify from '@/ui/vuetify';
 import type { Payment, PaymentMethodOption } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { nextRenderTick } from '../../../../tests/support/unit/mounted-vm.ts';
+import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -39,19 +40,32 @@ const mountPanel = (
     };
 };
 
-/** A hand-paid, settled payment — the fixture B1b's "refund pending" label needs. */
-const handPaidSucceededPayment: Payment = {
+/** A hand-paid, settled payment: the fixture the refund lines need. */
+const handPaidSucceededPayment: Payment = aPayment({
     id: 'payment-1',
     orderId: 'order-1',
     amount: 100,
-    currency: 'EUR',
-    status: 'succeeded',
-    displayStatus: 'succeeded',
     provider: 'manual',
-    method: 'bank_transfer',
-    amountRefunded: 0,
-    refunds: []
+    method: 'bank_transfer'
+});
+
+/** A pending refund record on `handPaidSucceededPayment`, owed by hand. */
+const pendingRefund: Payment['refunds'][number] = {
+    id: 'refund-1',
+    amount: 100,
+    currency: 'EUR',
+    status: 'pending',
+    reason: 'cancellation',
+    createdAt: '2026-03-05T10:00:00Z'
 };
+
+/** A hand-paid payment with one refund waiting for an operator to confirm it. */
+const waitingRefund = () => ({
+    ...handPaidSucceededPayment,
+    displayStatus: 'refund_pending' as const,
+    amountRefunded: 100,
+    refunds: [pendingRefund]
+});
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -135,14 +149,14 @@ describe('PaymentPanel', () => {
     });
 
     /*
-     * B1b: cancelling a hand-paid order does not mark it refunded — it stays `succeeded`
-     * until an operator confirms the money actually came back. The panel must say why a "paid"
-     * payment sits on a cancelled order, rather than showing a plain, misleading "Paid".
+     * Cancelling, a withdrawal or a received return leaves hand-paid money `succeeded` with a
+     * pending refund until an operator confirms it came back. The line is the SERVER's
+     * `displayStatus`, never a guess from the order's status.
      */
-    describe('a hand-paid payment on a cancelled order', () => {
-        it('shows the refund-pending label', () => {
-            const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
-            store.payment = { ...handPaidSucceededPayment };
+    describe('a hand-paid payment with a refund waiting', () => {
+        it('says an operator has to confirm the money went back', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = waitingRefund();
 
             return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(true);
@@ -150,12 +164,22 @@ describe('PaymentPanel', () => {
             });
         });
 
-        it('does not show the label once an operator has confirmed the refund', () => {
-            const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
+        it('shows the waiting refund before a refund an operator already confirmed', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = { ...waitingRefund(), refundedByHand: true };
+
+            return nextRenderTick(wrapper).then(() => {
+                expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(true);
+                expect(wrapper.find('[data-test=payment-refunded-by-hand]').exists()).toBe(false);
+            });
+        });
+
+        it('says the money was returned by hand once nothing is waiting, partial or whole', () => {
+            const { store, wrapper } = mountPanel();
             store.payment = {
                 ...handPaidSucceededPayment,
-                displayStatus: 'refunded',
-                amountRefunded: 100,
+                displayStatus: 'partially_refunded',
+                amountRefunded: 30,
                 refundedByHand: true
             };
 
@@ -165,22 +189,50 @@ describe('PaymentPanel', () => {
             });
         });
 
-        it('does not show the label for a card payment — B1b is the hand-paid case only', () => {
-            const { store, wrapper } = mountPanel({ orderStatus: 'cancelled' });
-            store.payment = { ...handPaidSucceededPayment, provider: 'fake', method: 'card' };
+        it('says nothing about a refund when the order was cancelled but no refund is open', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = { ...handPaidSucceededPayment };
 
             return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
             });
         });
 
-        it('does not show the label while the order is still active', () => {
-            const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
-            store.payment = { ...handPaidSucceededPayment };
+        it('explains a card refund the provider has not confirmed, without asking an operator', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = {
+                ...waitingRefund(),
+                provider: 'fake',
+                method: 'card',
+                refunds: [{ ...pendingRefund, status: 'failed' }]
+            };
 
             return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(false);
+                expect(wrapper.find('[data-test=payment-card-refund-pending]').exists()).toBe(true);
             });
+        });
+    });
+
+    describe('the paid-by line', () => {
+        it('shows only for money that arrived', () => {
+            const { store, wrapper } = mountPanel();
+            store.payment = { ...handPaidSucceededPayment, method: 'cash' };
+
+            return nextRenderTick(wrapper)
+                .then(() => {
+                    expect(wrapper.find('[data-test=payment-offline-detail]').exists()).toBe(true);
+                    store.payment = {
+                        ...handPaidSucceededPayment,
+                        method: 'cash',
+                        status: 'cancelled',
+                        displayStatus: 'cancelled'
+                    };
+                    return nextRenderTick(wrapper);
+                })
+                .then(() => {
+                    expect(wrapper.find('[data-test=payment-offline-detail]').exists()).toBe(false);
+                });
         });
     });
 
@@ -222,16 +274,35 @@ describe('PaymentPanel', () => {
 
 describe('a partially refunded payment', () => {
     it('says how much of the payment went back', () => {
-        const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
-        store.payment = { ...handPaidSucceededPayment, amountRefunded: 25 };
+        const { store, wrapper } = mountPanel();
+        store.payment = {
+            ...handPaidSucceededPayment,
+            displayStatus: 'partially_refunded',
+            amountRefunded: 25
+        };
 
         return nextRenderTick(wrapper).then(() => {
             expect(wrapper.get('[data-test=payment-partially-refunded]').text()).toMatch(/25.*100/);
         });
     });
 
+    // The amount counts open refunds too, so only the server's label says money actually went back.
+    it('does not claim a refund that is only waiting', () => {
+        const { store, wrapper } = mountPanel();
+        store.payment = {
+            ...handPaidSucceededPayment,
+            displayStatus: 'refund_pending',
+            amountRefunded: 100,
+            refunds: [pendingRefund]
+        };
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.find('[data-test=payment-partially-refunded]').exists()).toBe(false);
+        });
+    });
+
     it('says nothing when nothing went back, or when all of it did', () => {
-        const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
+        const { store, wrapper } = mountPanel();
         store.payment = { ...handPaidSucceededPayment };
 
         return nextRenderTick(wrapper)
@@ -256,7 +327,7 @@ describe('the status chip', () => {
         ['refunded', 'Refunded'],
         ['cancelled', 'Cancelled']
     ] as const)('reads displayStatus %s as %s, never the stored status', (displayStatus, text) => {
-        const { store, wrapper } = mountPanel({ orderStatus: 'paid' });
+        const { store, wrapper } = mountPanel();
         store.payment = { ...handPaidSucceededPayment, displayStatus };
 
         return nextRenderTick(wrapper).then(() => {
@@ -277,7 +348,7 @@ describe('PaymentPanel — a waiting bank transfer', () => {
             reference: 'RF132EY8H44VJAVZKX80JRL',
             payBy: '2026-01-01T00:00:00.000Z'
         },
-        actions: { pay: true, refund: false }
+        actions: { pay: true, sync: false, refund: false, settleByHand: [] }
     };
 
     it('shows the instructions, offers no "finish at your bank" step, and keeps the card form when payable', () => {
@@ -293,12 +364,59 @@ describe('PaymentPanel — a waiting bank transfer', () => {
 
     it('shows staff the instructions and no card form or finish button', () => {
         const { wrapper, store } = mountPanel({ orderPayable: false });
-        store.payment = { ...waiting, actions: { pay: false, refund: false } };
+        store.payment = {
+            ...waiting,
+            actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+        };
 
         return nextRenderTick(wrapper).then(() => {
             expect(wrapper.find('[data-test=transfer-instructions-panel]').exists()).toBe(true);
             expect(wrapper.find('[data-test=payment-finish]').exists()).toBe(false);
             expect(wrapper.find('[data-test=payment-submit]').exists()).toBe(false);
         });
+    });
+});
+
+describe('PaymentPanel — finishing at the provider', () => {
+    const inFlight: Payment = aPayment({
+        id: 'payment-2',
+        orderId: 'order-1',
+        status: 'requires_action',
+        displayStatus: 'incomplete',
+        actions: { pay: false, sync: true, refund: false, settleByHand: [] }
+    });
+
+    it('offers the finish button when the server says sync would work', () => {
+        const { store, wrapper } = mountPanel({ orderPayable: false });
+        store.payment = inFlight;
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.find('[data-test=payment-finish]').exists()).toBe(true);
+        });
+    });
+
+    it('hides it from a reader the server does not offer it to (staff, a transfer)', () => {
+        const { store, wrapper } = mountPanel({ orderPayable: false });
+        store.payment = {
+            ...inFlight,
+            actions: { pay: false, sync: false, refund: false, settleByHand: [] }
+        };
+
+        return nextRenderTick(wrapper).then(() => {
+            expect(wrapper.find('[data-test=payment-status]').exists()).toBe(true);
+            expect(wrapper.find('[data-test=payment-finish]').exists()).toBe(false);
+        });
+    });
+
+    it('hands the order to the store, so a decline can re-read the payment', () => {
+        const { store, wrapper } = mountPanel({ orderPayable: false });
+        const finish = vi.spyOn(store, 'finishAtProvider').mockResolvedValue(inFlight);
+        store.payment = inFlight;
+
+        return nextRenderTick(wrapper)
+            .then(() => wrapper.get('[data-test=payment-finish]').trigger('click'))
+            .then(() => {
+                expect(finish).toHaveBeenCalledWith('payment-2', 'order-1');
+            });
     });
 });

@@ -25,10 +25,16 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate, EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 import type { WebhookSubscription } from '@types';
+import {
+    filterOfStatus,
+    statusOfFilter,
+    type SubscriptionStatus
+} from '../domain/subscription-status.ts';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import SubscriptionStatusChip from '../components/SubscriptionStatusChip.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -72,26 +78,33 @@ const {
 const rowActionSize = useTouchFriendlySize();
 
 /**
- * Options of the "enabled" filter select. The "any" row's value is `null`, not `undefined`
- * — Vuetify reads an `undefined` item value as "use the title", which would post the
- * translated label instead of no filter at all.
+ * Options of the status filter select, one per state the chip shows. The "any" row's value is
+ * `null`, not `undefined` — Vuetify reads an `undefined` item value as "use the title", which
+ * would post the translated label instead of no filter at all.
  *
  * @returns The localized options, re-translated on locale change.
  */
-const enabledOptions = computed(() => [
+const statusOptions = computed<{ value: SubscriptionStatus | null; label: string }[]>(() => [
     { value: null, label: t('webhooks-list-page.filter-enabled-all') },
-    { value: true, label: t('webhooks-list-page.filter-enabled-yes') },
-    { value: false, label: t('webhooks-list-page.filter-enabled-no') }
+    { value: 'enabled', label: t('webhooks-list-page.filter-enabled-yes') },
+    { value: 'paused', label: t('webhooks-list-page.filter-enabled-paused') },
+    { value: 'auto-disabled', label: t('webhooks-list-page.filter-enabled-auto') }
 ]);
 
 /**
- * The "enabled" select's model: `null` (the "any" row) on screen, no `enabled` filter in the
- * store.
+ * The status select's model, over the two server filters the three states are made of: `enabled`
+ * (switched on or off) and `autoDisabled` (switched off by the failure guard or not). Paused is
+ * "off, and not by the guard"; the chip in each row reads the same two fields back.
  */
-const enabledChoice = useAnyFilterChoice(
-    () => filters.value.enabled,
+const statusChoice = useAnyFilterChoice<SubscriptionStatus>(
+    () => statusOfFilter(filters.value),
     (value) => {
-        filters.value.enabled = value;
+        filters.value = {
+            ...filters.value,
+            enabled: undefined,
+            autoDisabled: undefined,
+            ...filterOfStatus(value)
+        };
     }
 );
 
@@ -118,7 +131,7 @@ const { sync: syncUrl } = useListUrlState({
     filters,
     page: pageCurrent,
     pageSize: pageSize,
-    params: { enabled: 'boolean' }
+    params: { enabled: 'boolean', autoDisabled: 'boolean' }
 });
 
 /**
@@ -181,10 +194,10 @@ const handleDelete = (subscription: WebhookSubscription) =>
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                     <v-select
-                        v-model="enabledChoice"
+                        v-model="statusChoice"
                         data-test="filter-enabled"
                         :label="t('webhooks-list-page.filter-enabled')"
-                        :items="enabledOptions"
+                        :items="statusOptions"
                         item-title="label"
                         item-value="value"
                         hide-details
@@ -235,13 +248,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
             </template>
 
             <template v-slot:[`item.enabled`]="{ item }">
-                <v-chip size="small" variant="tonal" :color="item.enabled ? 'success' : 'error'">
-                    {{
-                        item.enabled
-                            ? t('webhooks-list-page.status-enabled')
-                            : t('webhooks-list-page.status-disabled')
-                    }}
-                </v-chip>
+                <SubscriptionStatusChip :subscription="item" />
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
@@ -260,6 +267,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
                         {{ t('webhooks-list-page.button-view') }}
                     </v-btn>
                     <v-btn
+                        v-if="item.actions.update"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -270,6 +278,7 @@ const handleDelete = (subscription: WebhookSubscription) =>
                         {{ t('webhooks-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
+                        v-if="item.actions.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

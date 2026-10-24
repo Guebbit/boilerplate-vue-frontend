@@ -33,8 +33,14 @@ const router = createRouter({
     ]
 });
 
-/** Mount options shared by every table. */
-const GLOBAL = { plugins: [router, vuetify, i18n] };
+/**
+ * Mount options shared by every table. The navigation drawer needs a `v-layout` this suite does
+ * not render, so it is stubbed to its slot (the attention list embeds the payment drawer).
+ */
+const GLOBAL = {
+    plugins: [router, vuetify, i18n],
+    stubs: { VNavigationDrawer: { template: '<aside><slot /></aside>' } }
+};
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -436,5 +442,22 @@ describe('AttentionList', () => {
         await wrapper.get('[data-test="attention-reload"]').trigger('click');
 
         expect(read).toHaveBeenCalledTimes(2);
+    });
+
+    it('opens the payment’s drawer from a refund owed by hand, and from no other kind', async () => {
+        answerAttentionWith(ITEMS);
+        const read = vi
+            .spyOn(usePaymentsStore(), 'readPaymentForOrder')
+            .mockResolvedValue(aPayment({ orderId: 'o1', provider: 'manual', method: 'cash' }));
+        const wrapper = mount(AttentionList, { global: GLOBAL });
+        await flushPromises();
+
+        const rows = wrapper.findAll('[data-test="attention-row"]');
+        expect(rows[0]?.find('[data-test="attention-open-payment"]').exists()).toBe(false);
+        await rows[1]?.get('[data-test="attention-open-payment"]').trigger('click');
+        await flushPromises();
+
+        expect(read).toHaveBeenCalledWith('o1');
+        expect(wrapper.find('[data-test="payment-drawer"]').exists()).toBe(true);
     });
 });

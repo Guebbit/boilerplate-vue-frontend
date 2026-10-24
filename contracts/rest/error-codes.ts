@@ -29,7 +29,7 @@ export const ERROR_CODES = {
     /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
-    CART_OPEN_ORDER_LIMIT: 'CART_OPEN_ORDER_LIMIT',
+    CART_OPEN_ORDER_LIMIT_REACHED: 'CART_OPEN_ORDER_LIMIT_REACHED',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
     /** 409 — A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`. */
@@ -158,6 +158,10 @@ export const ERROR_CODES = {
     PAYMENT_ORDER_NOT_PAYABLE: 'PAYMENT_ORDER_NOT_PAYABLE',
     /** 422 — The refund asks for more than the payment still has left to give back. */
     PAYMENT_REFUND_EXCEEDS_REMAINING: 'PAYMENT_REFUND_EXCEEDS_REMAINING',
+    /** 409 — The refund goes back through the card provider and its sweep; an operator cannot mark it returned by hand. */
+    PAYMENT_REFUND_NOT_BY_HAND: 'PAYMENT_REFUND_NOT_BY_HAND',
+    /** 409 — The refund was already settled (another operator confirmed it first). */
+    PAYMENT_REFUND_NOT_OPEN: 'PAYMENT_REFUND_NOT_OPEN',
     /** 412 — The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend. */
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
     /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
@@ -203,7 +207,15 @@ export const ERROR_CODES = {
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     /** 409 — A retry of this delivery is already in flight. */
-    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS'
+    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS',
+    /** 409 — The subscription is already disabled. */
+    WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED',
+    /** 409 — The subscription is already enabled. */
+    WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED',
+    /** 409 — The delivery belongs to a subscription that is disabled, so nothing can be sent until it is enabled. */
+    WEBHOOK_SUBSCRIPTION_DISABLED: 'WEBHOOK_SUBSCRIPTION_DISABLED',
+    /** 409 — This shop already holds the most webhook subscriptions it may; delete one first. */
+    WEBHOOK_SUBSCRIPTION_LIMIT_REACHED: 'WEBHOOK_SUBSCRIPTION_LIMIT_REACHED'
 } as const;
 
 /** Any code `errors[].code` may carry. NOT exhaustive at the type level — the contract's own `enum`-free `code: string` is the reason this exists. */

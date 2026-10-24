@@ -378,11 +378,12 @@ describe('the "History" link', () => {
 });
 
 describe('an order line’s price', () => {
-    it("shows the frozen unit price and price × quantity, in the order's own currency", () => {
+    it("shows the frozen unit price and the line's net plus tax, in the order's own currency", () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
             currency: 'GBP',
-            items: [{ ...lineWith(null), quantity: 3 }]
+            // The server froze the line's total: net plus tax, which the page shows as it is.
+            items: [{ ...lineWith(null), quantity: 3, netAmount: 24.57, taxAmount: 5.4 }]
         });
 
         expect(wrapper.get('[data-test=order-item-unit-price]').text()).toContain('£9.99');
@@ -445,10 +446,21 @@ describe('the reorder button', () => {
     });
 });
 
-/** The cart the API answers, holding exactly these products. */
-const cartWith = (...productIds: string[]) =>
+/** The reorder answer: one per-line result, as the server reports it. */
+const reorderAnswer = (reason?: 'summed' | 'capped' | 'removed') =>
     asStub<Awaited<ReturnType<typeof apiReorder>>>({
-        data: { items: productIds.map((productId) => ({ productId, quantity: 1 })) }
+        data: {
+            cart: { items: [] },
+            lines: [
+                {
+                    productId: 'p1',
+                    requested: 1,
+                    resulting: reason === 'removed' ? 0 : 1,
+                    availability: 'in_stock',
+                    ...(reason ? { reason } : {})
+                }
+            ]
+        }
     });
 
 /** The toasts the page has raised, newest last. */
@@ -457,7 +469,7 @@ const toasts = () => useNotificationsStore().messages.map(({ message }) => messa
 describe('the reorder outcome', () => {
     it('says it plainly when every line came back', async () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
-        vi.mocked(apiReorder).mockResolvedValueOnce(cartWith('p1'));
+        vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer());
 
         await wrapper.get('[data-test=order-reorder]').trigger('click');
         await flushPromises();
@@ -467,12 +479,34 @@ describe('the reorder outcome', () => {
 
     it('names what the cart did not get when a product has left the catalogue', async () => {
         const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
-        vi.mocked(apiReorder).mockResolvedValueOnce(cartWith());
+        vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer('removed'));
 
         await wrapper.get('[data-test=order-reorder]').trigger('click');
         await flushPromises();
 
         expect(toasts()).toEqual(['Order added to cart, without what is no longer sold: Gadget.']);
+    });
+
+    it('names a line held back at the cap, which is not the same as one that left', async () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer('capped'));
+
+        await wrapper.get('[data-test=order-reorder]').trigger('click');
+        await flushPromises();
+
+        expect(toasts()).toEqual([
+            'Order added to cart, but these lines are at the most one line may hold: Gadget.'
+        ]);
+    });
+
+    it('does not call a sum a problem', async () => {
+        const wrapper = mountOrder({ ...BASE_ORDER, items: [lineWith(null)] });
+        vi.mocked(apiReorder).mockResolvedValueOnce(reorderAnswer('summed'));
+
+        await wrapper.get('[data-test=order-reorder]').trigger('click');
+        await flushPromises();
+
+        expect(toasts()).toEqual(['Order added to cart.']);
     });
 });
 

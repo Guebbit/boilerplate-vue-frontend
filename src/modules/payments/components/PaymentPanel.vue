@@ -26,7 +26,6 @@ import { withAntibotToken, isAntibotVerificationFailed } from '@/infrastructure/
 import { usePaymentsStore } from '../store.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 import TransferInstructionsPanel from './TransferInstructionsPanel.vue';
-import { OrderStatus } from '@/types/enums.ts';
 
 /**
  * The order page's payment corner: the card form while the order is payable and the deployment
@@ -40,7 +39,7 @@ import { OrderStatus } from '@/types/enums.ts';
  * bundle that picker is not there at all, because its test cards belong to the fake provider that
  * production does not have.
  */
-const { orderId, orderPayable, orderStatus, payBy } = defineProps<{
+const { orderId, orderPayable, payBy } = defineProps<{
     /**
      * The order this panel pays.
      */
@@ -49,12 +48,6 @@ const { orderId, orderPayable, orderStatus, payBy } = defineProps<{
      * The order's own `actions.pay` — whether it is still awaiting payment.
      */
     orderPayable?: boolean;
-    /**
-     * The order's current status — decides whether a hand-paid `succeeded` payment shows as
-     * "refund pending" (B1b): cancelling never settles the refund on its own, only an operator's
-     * own confirmation does.
-     */
-    orderStatus?: string;
     /**
      * When the hold behind this order ends — every order that holds stock gets one,
      * card included, not only bank transfer's own `transferInstructions`. Shown here, generically,
@@ -147,9 +140,7 @@ const paymentMethodRef = ref<string>('');
  * parent's re-read of the order comes back. Before any intent exists there is no payment to ask,
  * so the order's `actions.pay` stands in.
  */
-const payable = computed(() =>
-    payment.value ? payment.value.actions?.pay === true : orderPayable
-);
+const payable = computed(() => (payment.value ? payment.value.actions.pay : orderPayable));
 
 /**
  * Whether the payment is somewhere between submitted and settled — the bank is asking for a
@@ -163,15 +154,21 @@ const inFlight = computed(
 );
 
 /**
- * A hand-paid order was cancelled, but nobody has confirmed the money actually went back:
- * cancelling a payment not made by card leaves it `succeeded` until an operator records the
- * refund, so the panel must say why a "paid" order is also a cancelled one.
+ * A refund is open on hand-paid money: nobody has confirmed it actually went back. The server's
+ * `displayStatus` says a refund is open; the `manual` provider says nobody but an operator can
+ * close it. Cancelling, a withdrawal or a received return all leave the payment `succeeded`
+ * until then, so the panel must say why.
  */
 const refundPending = computed(
-    () =>
-        payment.value?.status === 'succeeded' &&
-        payment.value.method !== 'card' &&
-        orderStatus === OrderStatus.cancelled
+    () => payment.value?.displayStatus === 'refund_pending' && payment.value.provider === 'manual'
+);
+
+/**
+ * A card refund is open: the provider refused it or has not answered, and the sweep retries it.
+ * Not the operator's to confirm, so it reads differently from {@link refundPending}.
+ */
+const cardRefundPending = computed(
+    () => payment.value?.displayStatus === 'refund_pending' && payment.value.provider !== 'manual'
 );
 
 /**
@@ -244,7 +241,7 @@ const finishAtProvider = () => {
     if (!payment.value) return Promise.resolve();
     clearPaymentError();
     return paymentsStore
-        .finishAtProvider(payment.value.id)
+        .finishAtProvider(payment.value.id, payment.value.orderId)
         .then(announceIfSettled)
         .catch((error: unknown) => reportPaymentError(error));
 };
@@ -321,7 +318,9 @@ watch(
             <p class="mb-3 text-sm opacity-75">
                 {{ t(`payments-panel.explain-${payment.status}`) }}
             </p>
+            <!-- The server's `sync`: only the payer, only while the provider has something to say. -->
             <v-btn
+                v-if="payment.actions.sync"
                 color="primary"
                 data-test="payment-finish"
                 :disabled="loading"
@@ -346,7 +345,11 @@ watch(
                 only says something new when an admin recorded the money by hand.
             -->
             <p
-                v-if="payment.method !== 'card' && !payment.nextAction"
+                v-if="
+                    payment.status === 'succeeded' &&
+                    payment.method !== 'card' &&
+                    !payment.nextAction
+                "
                 class="mt-2 mb-0 text-sm opacity-75"
                 data-test="payment-offline-detail"
             >
@@ -356,7 +359,7 @@ watch(
                 </template>
             </p>
             <p
-                v-if="payment.amountRefunded > 0 && payment.displayStatus !== 'refunded'"
+                v-if="payment.displayStatus === 'partially_refunded'"
                 class="mt-2 mb-0 text-sm"
                 data-test="payment-partially-refunded"
             >
@@ -367,19 +370,23 @@ watch(
                     })
                 }}
             </p>
+            <!-- An open refund wins: a partly returned hand payment is still waiting on the rest. -->
+            <p v-if="refundPending" class="mt-2 mb-0 text-sm" data-test="payment-refund-pending">
+                {{ t('payments-panel.refund-pending') }}
+            </p>
             <p
-                v-if="payment.refundedByHand"
+                v-else-if="cardRefundPending"
+                class="mt-2 mb-0 text-sm"
+                data-test="payment-card-refund-pending"
+            >
+                {{ t('payments-panel.refund-card-pending') }}
+            </p>
+            <p
+                v-else-if="payment.refundedByHand"
                 class="mt-2 mb-0 text-sm"
                 data-test="payment-refunded-by-hand"
             >
                 {{ t('payments-panel.refunded-by-hand') }}
-            </p>
-            <p
-                v-else-if="refundPending"
-                class="mt-2 mb-0 text-sm"
-                data-test="payment-refund-pending"
-            >
-                {{ t('payments-panel.refund-pending') }}
             </p>
         </template>
 

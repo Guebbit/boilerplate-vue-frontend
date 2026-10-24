@@ -12,7 +12,7 @@
 | **Screens**             | 5 — `WebhooksList` · `WebhookCreate` · `WebhookTarget` · `WebhookEdit` · `WebhookDeliveries`                                   |
 | **Store**               | `webhooks`                                                                                                                     |
 | **Menu entries**        | `WebhooksList` · `WebhookDeliveries`                                                                                           |
-| **API calls**           | 9                                                                                                                              |
+| **API calls**           | 12                                                                                                                             |
 | **Depends on**          | _nothing_                                                                                                                      |
 | **Depended on by**      | _nothing_                                                                                                                      |
 | **Languages**           | `en` · `it`                                                                                                                    |
@@ -26,20 +26,45 @@
 ## The story
 
 Five screens over one backend module, split by what they need rather than by CRUD verb alone:
-subscriptions get the usual four (list, create, a read-only detail page, a plain field-edit form),
-and the delivery log gets a fifth of its own.
+subscriptions get the usual four (list, create, a detail page that also carries the status and
+secret actions, a plain field-edit form), and the delivery log gets a fifth of its own.
 
 **The delivery log is a route, not a tab, on purpose.** It is read-only and unrelated to the
 subscription CRUD form's own state, and — the actual reason — its `subscriptionId`/`status`
-filters are mirrored into the URL query string, so "failed deliveries for subscription X" is a
+filters are mirrored into the URL query string (`useListUrlState`, like every other list), so "failed deliveries for subscription X" is a
 link a support conversation can share or bookmark. A tab's state in this codebase is a local
 `ref`, gone on reload; that would not survive being handed to someone else.
 
-**There is no `GET /webhooks/subscriptions/{id}` on the backend**, and no equivalent for a single
-delivery — both the subscription detail/edit pages and the delivery log hydrate from whatever the
-store's own cache already holds (`fetchAllSubscriptions`/the paginated search), never a per-id
-fetch. `store.ts`'s `watchSubscription` exists specifically because the toolkit's own `watchOne`
-needs a `get` operation this API does not have.
+**The detail and edit pages read their own record.** `store.ts`'s `watchSubscription` is the
+toolkit's `watchOne` over `GET /webhooks/subscriptions/{id}`, so an id past the list's first
+page resolves, and a 404 or 403 leaves for the shell's Error page (`useMissingRecord`) instead
+of sitting on placeholders. The list call that remains (`fetchAllSubscriptions`, 100 rows) only
+feeds the delivery log's subscription filter.
+
+**A subscription has three states, and the screens show all three.** The server stores
+`disabledAt` and, only when its failure guard did it, `autoDisabledAt`; `enabled` on the wire is
+derived. `domain/subscription-status.ts` reads them as one of three states, and
+`SubscriptionStatusChip` is the only thing that words and colours them.
+
+```mermaid
+stateDiagram-v2
+    [*] --> enabled
+    enabled --> paused: Disable (confirm)
+    enabled --> autoDisabled: server's failure guard
+    paused --> enabled: Enable
+    autoDisabled --> enabled: Enable
+```
+
+- The edit form has no on/off switch: whether a subscription is on is not an edit. Enable and
+  disable are buttons on the detail page, each behind the record's own `actions` flag.
+- The list's status filter has four choices (any, enabled, paused, auto-disabled). They are two
+  server filters, `enabled` and `autoDisabled` (`filterOfStatus`/`statusOfFilter`), because a
+  client-side narrowing of a server-paged list would lie about its totals.
+- Every write button shows only when the record's `actions` says the server would accept it
+  (`update`, `delete`, `enable`, `disable`, `rotateSecret`, `removeSecret`); a delivery's
+  Replay follows `actions.replay`, which is false while its subscription is off.
+- A superseded secret shows when it stops signing (`retiringSecrets`); the page never restates
+  the server's overlap window.
 
 **The secret ring gets its own hand-written store actions, not the generic `createOne`/
 `updateOne`.** Creating a subscription and rotating its secret both receive a plaintext secret in
@@ -67,11 +92,11 @@ Store `webhooks`, from `store.ts` — two `useStructureCrudApi` instances (subsc
 deliveries) plus the event catalogue, behind one `defineStore`. Only what the setup function
 returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                                                                                                                              | What it is                                                       |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `subscriptions` · `selectedSubscriptionId` · `subscriptionFilters` · `subscriptionPageCurrent` · `subscriptionPageSize` · `deliveries` · `deliveryFilters` · `deliveryPageCurrent` · `deliveryPageSize`                                                                                                              | The refs the setup function returns — the only writable surface. |
-| **Getters** | `subscriptionsList` · `currentSubscription` · `loadingSubscriptions` · `subscriptionsPageTotal` · `subscriptionPageItemList` · `deliveriesList` · `loadingDeliveries` · `deliveriesPageTotal` · `deliveryPageItemList` · `deliveriesTotalItems` · `eventCatalogue` · `loadingEventCatalogue` · `errorEventCatalogue` | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `getSubscription` · `fetchAllSubscriptions` · `watchSubscriptionsSearch` · `watchSubscription` · `createSubscription` · `updateSubscription` · `deleteSubscription` · `rotateSecret` · `removeSecret` · `watchDeliveriesSearch` · `replayDelivery` · `fetchEventCatalogue`                                           | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                                                                                                                   | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `subscriptions` · `selectedSubscriptionId` · `subscriptionFilters` · `subscriptionPageCurrent` · `subscriptionPageSize` · `deliveries` · `deliveryFilters` · `deliveryPageCurrent` · `deliveryPageSize`                                                                                                                   | The refs the setup function returns — the only writable surface. |
+| **Getters** | `subscriptionsList` · `currentSubscription` · `loadingSubscriptions` · `subscriptionsPageTotal` · `subscriptionPageItemList` · `deliveriesList` · `loadingDeliveries` · `deliveriesPageTotal` · `deliveryPageItemList` · `deliveriesTotalItems` · `eventCatalogue` · `loadingEventCatalogue` · `errorEventCatalogue`      | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `getSubscription` · `fetchAllSubscriptions` · `watchSubscriptionsSearch` · `watchSubscription` · `createSubscription` · `updateSubscription` · `deleteSubscription` · `enableSubscription` · `disableSubscription` · `rotateSecret` · `removeSecret` · `watchDeliveriesSearch` · `replayDelivery` · `fetchEventCatalogue` | Everything that changes state or calls the API.                  |
 
 ## Screens
 
@@ -93,8 +118,11 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | -------------------------------------------------- | ----------------------------------------- |
 | `GET /webhooks/subscriptions`                      | `ListWebhookSubscriptionsResponse`        |
 | `POST /webhooks/subscriptions`                     | `CreateWebhookSubscriptionResponse`       |
+| `GET /webhooks/subscriptions/{id}`                 | `GetWebhookSubscriptionResponse`          |
 | `PATCH /webhooks/subscriptions/{id}`               | `UpdateWebhookSubscriptionResponse`       |
 | `DELETE /webhooks/subscriptions/{id}`              | `DeleteWebhookSubscriptionResponse`       |
+| `POST /webhooks/subscriptions/{id}/enable`         | `EnableWebhookSubscriptionResponse`       |
+| `POST /webhooks/subscriptions/{id}/disable`        | `DisableWebhookSubscriptionResponse`      |
 | `POST /webhooks/subscriptions/{id}/rotate-secret`  | `RotateWebhookSubscriptionSecretResponse` |
 | `DELETE /webhooks/subscriptions/{id}/secrets/{id}` | `RemoveWebhookSubscriptionSecretResponse` |
 | `GET /webhooks/deliveries`                         | `ListWebhookDeliveriesResponse`           |
@@ -116,7 +144,9 @@ Two entries from one manifest — the same split the `feedback` module uses for 
 
 | File                                      | What it is                                                                                                                                                                          | Explained in                          |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `components/SubscriptionStatusChip.vue`   | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
 | `components/WebhookDeliveriesFilters.vue` | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
+| `domain/subscription-status.ts`           | Pure client-side rules over plain data — no store, no component, no axios.                                                                                                          | [read](../theory/layers.md)           |
 | `locales/en.json`                         | This domain's translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `locales/it.json`                         | This domain's translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `module.ts`                               | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
@@ -129,6 +159,7 @@ Two entries from one manifest — the same split the `feedback` module uses for 
 | `tests/routes.spec.ts`                    | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/schemas-i18n.spec.ts`              | Vitest suite — the `schemas-i18n` validation rules.                                                                                                                                 | [read](../tools/unit-testing.md)      |
 | `tests/schemas.spec.ts`                   | Vitest suite — the `schemas` validation rules.                                                                                                                                      | [read](../tools/unit-testing.md)      |
+| `tests/subscription-status.spec.ts`       | Vitest suite — the three states and the status filter's two server filters.                                                                                                         | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                     | Vitest suite — this domain's store, with the transport mocked, including that a rotated/minted secret never lands in cached state.                                                  | [read](../tools/unit-testing.md)      |
 | `views/WebhookCreate.vue`                 | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 | `views/WebhookDeliveries.vue`             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
@@ -140,7 +171,7 @@ Two entries from one manifest — the same split the `feedback` module uses for 
 
 | Suite   | Files | Where                             |
 | ------- | ----- | --------------------------------- |
-| Vitest  | 4     | `src/modules/webhooks/tests/`     |
+| Vitest  | 9     | `src/modules/webhooks/tests/`     |
 | Cypress | 1     | `src/modules/webhooks/tests/e2e/` |
 
 ```bash

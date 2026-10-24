@@ -4,6 +4,7 @@
  * reading back a storage value nobody can be trusted to have written well.
  */
 import { describe, expect, it } from 'vitest';
+import { mergeCartBodyLinesItemQuantityMax, mergeCartBodyLinesMax } from '@api/schemas';
 import {
     MAX_GUEST_LINES,
     MAX_GUEST_LINE_QUANTITY,
@@ -23,6 +24,13 @@ const FULL: GuestCartLine[] = Array.from({ length: MAX_GUEST_LINES }, (_unused, 
     productId: `p${index}`,
     quantity: 1
 }));
+
+describe('the caps', () => {
+    it('are the ones the merge call accepts, read off the generated contract', () => {
+        expect(MAX_GUEST_LINES).toBe(mergeCartBodyLinesMax);
+        expect(MAX_GUEST_LINE_QUANTITY).toBe(mergeCartBodyLinesItemQuantityMax);
+    });
+});
 
 describe('addGuestLine', () => {
     it('starts a line for a product that has none', () => {

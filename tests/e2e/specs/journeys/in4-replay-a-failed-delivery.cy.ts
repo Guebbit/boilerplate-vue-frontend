@@ -22,7 +22,7 @@ import {
     placeOrderAsCustomer,
     seededSubscription,
     sinkEndpoint,
-    setEnabledInTheForm
+    setEnabledOnTheDetailPage
 } from '../../../support/e2e/integrator';
 import { eventually } from '../../../support/e2e/steps';
 
@@ -147,7 +147,7 @@ describe('IN4 · Replay a failed delivery', () => {
                             (row) => row.status === 'succeeded'
                         );
                     });
-                    setEnabledInTheForm(seeded.id, seeded.url, false);
+                    setEnabledOnTheDetailPage(seeded.id, seeded.url, false);
 
                     cy.step('a Replay is refused on the row, while it is off');
                     openTheLogOf(seeded.id);
@@ -170,7 +170,7 @@ describe('IN4 · Replay a failed delivery', () => {
                     replayButtonOf(delivery.id).should('not.exist');
 
                     cy.step('back on, the same Replay delivers it to the receiver');
-                    setEnabledInTheForm(seeded.id, seeded.url, true);
+                    setEnabledOnTheDetailPage(seeded.id, seeded.url, true);
                     openTheLogOf(seeded.id);
                     const arrivals = () =>
                         webhooksReceived(seeded.url).then((received) =>

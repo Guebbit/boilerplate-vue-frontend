@@ -15,10 +15,11 @@ export default {
  * references and the card's last digits — and the actions the server allows. The provider ids and
  * a refund's failure reason arrive only for a caller holding `display:Payment`, so this renders
  * them whenever they are present and never asks who is looking. Refunding is the existing
- * `POST /payments/order/{orderId}/refund`, offered only when `actions.refund` says it would work
- * (read from the order's own payment when the list row carries none).
+ * `POST /payments/order/{orderId}/refund`, offered only when `actions.refund` says it would work;
+ * a hand-paid refund waiting for the operator gets a "Mark returned" button, offered for the ids
+ * `actions.settleByHand` names.
  */
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
@@ -103,33 +104,17 @@ const {
 const refunding = ref(false);
 
 /**
- * What the server lets this caller do, read from the order's own payment when the picked row
- * carries no `actions` (the staff list's rows do not). Reset on every pick.
- */
-const readActions = ref<Payment['actions']>();
-
-/**
  * Whether the server would take a refund of this payment from this caller.
  */
-const canRefund = computed(() => (props.payment?.actions ?? readActions.value)?.refund === true);
+const canRefund = computed(() => props.payment?.actions.refund === true);
 
-// A pick without actions asks the payment's own read; a failure shows in the drawer, where the
-// refund button's absence would otherwise be unexplained.
-watch(
-    () => (open.value ? props.payment : undefined),
-    (picked) => {
-        readActions.value = undefined;
-        if (!picked || picked.actions) return;
-        return store
-            .fetchActionsForOrder(picked.orderId)
-            .then((actions) => {
-                // The visitor may have picked another row while the read was out.
-                if (props.payment?.id === picked.id) readActions.value = actions;
-            })
-            .catch(reportRefundError);
-    },
-    { immediate: true }
-);
+/**
+ * Whether the server would take this refund as "returned by hand" from this caller.
+ *
+ * @param refundId - A record of the shown payment.
+ * @returns `true` when `actions.settleByHand` names it.
+ */
+const canSettle = (refundId: string) => props.payment?.actions.settleByHand.includes(refundId);
 
 /**
  * The order's own page — where partial refunds and the offline form live — or nothing when this
@@ -178,6 +163,43 @@ const handleRefund = singleFlight(() => {
                 .refundForOrder(current.orderId)
                 .then(() => {
                     addMessage(t('payments-list-page.refund-done'));
+                    emit('changed');
+                    open.value = false;
+                })
+                .catch((error: unknown) => reportRefundError(error))
+                .finally(() => {
+                    refunding.value = false;
+                });
+        });
+});
+
+/**
+ * Confirms that one hand-paid refund was returned outside the application, after an explicit
+ * question: nothing is sent, so the click is the operator's word. A second press while the
+ * question or the call is open does nothing.
+ *
+ * @param refund - The pending record, from the payment shown.
+ * @returns A promise settling once the viewer answered and, if they accepted, the call finished;
+ *  a failure is shown in the drawer.
+ */
+const handleMarkReturned = singleFlight((refund: Payment['refunds'][number]) => {
+    const current = props.payment;
+    if (!current) return Promise.resolve();
+    return useDialogStore()
+        .confirm({
+            message: t('payments-list-page.confirm-mark-returned', {
+                amount: formatCurrency(refund.amount, refund.currency)
+            }),
+            color: 'error'
+        })
+        .then((accepted) => {
+            if (!accepted) return;
+            clearRefundError();
+            refunding.value = true;
+            return store
+                .settleRefundByHand(current, refund.id)
+                .then(() => {
+                    addMessage(t('payments-list-page.mark-returned-done'));
                     emit('changed');
                     open.value = false;
                 })
@@ -283,6 +305,18 @@ const handleRefund = singleFlight(() => {
                     <p class="mt-1 text-xs opacity-muted">
                         {{ formatDateTime(refund.settledAt ?? refund.createdAt) }}
                     </p>
+                    <v-btn
+                        v-if="canSettle(refund.id)"
+                        class="mt-2"
+                        size="small"
+                        color="success"
+                        variant="tonal"
+                        :disabled="refunding"
+                        :data-test="`drawer-mark-returned-${refund.id}`"
+                        @click="handleMarkReturned(refund)"
+                    >
+                        {{ t('payments-list-page.button-mark-returned') }}
+                    </v-btn>
                 </li>
             </ul>
 

@@ -2,8 +2,10 @@
 /**
  * @module
  * OP23 · Cash goes back by hand. An order paid in cash has no provider to ask for the money back,
- * so cancelling it leaves a debt the shop has to settle itself, and the page says so. The moderator
- * records that they did (`payment-refunded-by-hand`), and nothing is sent to any provider.
+ * so cancelling it with a refund only OPENS the refund: it stays pending, the page says it is owed,
+ * and nobody but an operator can say the cash went back. The moderator hands it back, presses
+ * "Mark returned", and only then does the payment read refunded by hand. Nothing is sent to any
+ * provider.
  *
  * The invoice outlives all of it: it is the record of the sale, and stays downloadable after the
  * cancel and after the refund, while a credit note joins it. One download is enough: the invoicing
@@ -18,6 +20,7 @@ interface PaymentLike {
     status: string;
     amountRefunded: number;
     refundedByHand?: boolean;
+    actions: { refund: boolean; settleByHand: string[] };
 }
 
 /** A credit note, as far as this story cares: that it is listed. */
@@ -32,7 +35,7 @@ describe('OP23 · Cash goes back by hand', () => {
         cy.visit('/en');
     });
 
-    it('cancels the cash order, owes the money, records the hand refund and keeps the invoice', () => {
+    it('cancels the cash order, owes the money, marks it returned by hand and keeps the invoice', () => {
         cy.subjectId('order.paidOffline').then((orderId) => {
             cy.step('the moderator opens the cash order and downloads its invoice');
             cy.loginAs('moderator');
@@ -45,26 +48,36 @@ describe('OP23 · Cash goes back by hand', () => {
                 expect(response?.headers['content-type']).to.contain('application/pdf');
             });
 
-            cy.step(
-                'cancel only: the cash is still counted as taken, and the page says it is owed'
-            );
+            cy.step('cancel and refund: the order is cancelled and the cash is owed back');
             cy.visit(`/en/orders/${orderId}/edit`);
-            cy.get('[data-test=button-cancel-only]').should('not.be.disabled').click();
-            cy.get('[data-test=button-cancel-only]').should('be.disabled');
+            cy.get('[data-test=button-cancel-and-refund]').should('not.be.disabled').click();
+            cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
+            eventually(
+                () => cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`),
+                (payment) => payment?.displayStatus === 'refund_pending'
+            ).should((payment) => {
+                expect(payment?.method).to.not.equal('card');
+                expect(payment?.refundedByHand, 'nobody has confirmed it yet').to.equal(undefined);
+                expect(payment?.actions.settleByHand).to.have.length(1);
+            });
             cy.visit(`/en/orders/${orderId}`);
             cy.get('[data-test=payment-refund-pending]').should('exist');
             cy.get('[data-test=payment-refunded-by-hand]').should('not.exist');
 
-            cy.step('refund only: recorded by hand, with no provider to call');
+            cy.step('refund only has nothing left to refund: the record already holds it');
             cy.visit(`/en/orders/${orderId}/edit`);
-            cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
             cy.get('[data-test=button-refund-only]').should('be.disabled');
+
+            cy.step('mark returned: the moderator confirms the cash went back, no provider called');
+            cy.get('[data-test^=button-mark-returned-]').should('have.length', 1).click();
+            cy.get('[data-test=app-dialog-confirm]').click();
+            cy.get('[data-test^=button-mark-returned-]').should('not.exist');
             cy.get('[data-test=order-edit-actions-error]').should('not.exist');
             cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`).should(
                 (payment) => {
-                    expect(payment?.method).to.not.equal('card');
                     expect(payment?.displayStatus).to.equal('refunded');
                     expect(payment?.refundedByHand).to.equal(true);
+                    expect(payment?.actions.settleByHand).to.have.length(0);
                 }
             );
             cy.visit(`/en/orders/${orderId}`);

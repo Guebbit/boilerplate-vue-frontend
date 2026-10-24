@@ -43,8 +43,7 @@ export const webhookCreateSchema = z.object({
 });
 
 /**
- * Validation schema for editing a subscription: the same fields as create, plus `enabled`.
+ * Validation schema for editing a subscription: the same fields as create. Whether it is on is
+ * not a field — enable and disable are their own actions.
  */
-export const webhookEditSchema = webhookCreateSchema.extend({
-    enabled: z.boolean()
-});
+export const webhookEditSchema = webhookCreateSchema;

@@ -2803,6 +2803,25 @@ export interface CartResponseItem {
     /** @minimum 1 */
     quantity: number;
     availability: LineAvailability;
+    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart`. A client disables its "+" on `false` instead of copying the ceiling. */
+    canIncrease: boolean;
+}
+
+/**
+ * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
+ */
+export interface ExpectedTotal {
+    /**
+     * The total in minor units of `currency` (EUR 71.00 is 7100).
+     * @minimum 0
+     */
+    amount: number;
+    /**
+     * The ISO-4217 code the total is priced in.
+     * @minLength 3
+     * @maxLength 3
+     */
+    currency: string;
 }
 
 export interface CartSummaryResponse {
@@ -2833,6 +2852,8 @@ export interface CartSummaryResponse {
     totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
     currency: string;
+    /** `totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents. */
+    expectedTotal: ExpectedTotal;
 }
 
 /**
@@ -2871,6 +2892,8 @@ export interface CartResponse {
     items: CartResponseItem[];
     summary: CartSummaryResponse;
     shipping: CartShipping;
+    /** Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this. */
+    checkoutable: boolean;
 }
 
 export interface CartResponseEnvelope {
@@ -2915,23 +2938,6 @@ export interface CartSummaryResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: CartSummaryResponse;
-}
-
-/**
- * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
- */
-export interface ExpectedTotal {
-    /**
-     * The total in minor units of `currency` (EUR 71.00 is 7100).
-     * @minimum 0
-     */
-    amount: number;
-    /**
-     * The ISO-4217 code the total is priced in.
-     * @minLength 3
-     * @maxLength 3
-     */
-    currency: string;
 }
 
 /**
@@ -3229,6 +3235,50 @@ export interface CheckoutResponseEnvelope {
     data: Order;
 }
 
+/**
+ * Why a merged guest line or a reordered order line did not land exactly as asked. Absent when it did.
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
+ *   nothing was added, `resulting` is what the cart already held (often 0). A product
+ *   that is merely sold out, or taken off sale, is NOT removed: it is added and
+ *   flagged through `availability`.
+ */
+export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
+
+export const MergeLineReason = {
+    summed: 'summed',
+    capped: 'capped',
+    removed: 'removed'
+} as const;
+
+export interface MergeLineResult {
+    productId: Id;
+    /**
+     * What the guest line (or the order line) asked for.
+     * @minimum 1
+     */
+    requested: number;
+    /**
+     * What the cart holds for this product after the merge or reorder.
+     * @minimum 0
+     */
+    resulting: number;
+    reason?: MergeLineReason;
+    availability: LineAvailability;
+}
+
+export interface ReorderResponse {
+    cart: CartResponse;
+    /** One result per order line, in the order's own order. */
+    lines: MergeLineResult[];
+}
+
+export interface ReorderResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReorderResponse;
+}
+
 export interface WishlistItem {
     productId: Id;
     availability: LineAvailability;
@@ -3418,14 +3468,15 @@ export const RefundStatus = {
 } as const;
 
 /**
- * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to.
+ * Why the money went back. `cancellation` — the order was cancelled after payment, or the unshipped remainder of one fulfillment order was (then `returnId` names that cancellation); `return` — goods came back and were received; `goodwill` — an operator chose to; `late_payment` — the money arrived after the order could no longer be paid (its stock reservation had expired or it was cancelled), so the sale was lost and the money went back. The buyer is mailed it like a cancellation's refund.
  */
 export type RefundReason = (typeof RefundReason)[keyof typeof RefundReason];
 
 export const RefundReason = {
     cancellation: 'cancellation',
     goodwill: 'goodwill',
-    return: 'return'
+    return: 'return',
+    late_payment: 'late_payment'
 } as const;
 
 /**
@@ -3505,13 +3556,17 @@ export interface PaymentBankTransferAction {
 export type PaymentNextAction = PaymentBankTransferAction;
 
 /**
- * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
+ * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
  */
 export interface PaymentActions {
-    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). */
+    /** Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments/intent` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`. */
     pay: boolean;
-    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once nothing is left to refund (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking. */
+    /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
+    sync: boolean;
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, a refund still open included), which is what greys the control out rather than letting the operator discover it by clicking. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
     refund: boolean;
+    /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded` and hand-paid, and the refund is `pending`. An array because the route takes a target; empty when there is none. */
+    settleByHand: Id[];
 }
 
 /**
@@ -3579,13 +3634,13 @@ export interface Payment {
     reference?: string;
     /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/order/{orderId}/offline`; absent from a card payment. */
     receivedAt?: string;
-    /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the admin's own record that it was done. Absent otherwise. */
+    /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the operator's own record that it was done (`POST /payments/{id}/refunds/{refundId}/settle`). Set by that route alone. Absent otherwise. */
     refundedByHand?: boolean;
     /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
     /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
     cardLast4?: string;
-    actions?: PaymentActions;
+    actions: PaymentActions;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -4547,6 +4602,44 @@ export interface ReservationSweepEnvelope {
     data: ReservationSweepResponse;
 }
 
+export type WebhookSubscriptionSortItem =
+    (typeof WebhookSubscriptionSortItem)[keyof typeof WebhookSubscriptionSortItem];
+
+export const WebhookSubscriptionSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    url: 'url',
+    '-url': '-url'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type WebhookSubscriptionSort = WebhookSubscriptionSortItem[];
+
+export interface WebhookRetiringSecret {
+    /** A ring entry's id, one of `secretIds`. */
+    id: string;
+    /** When this secret stops signing deliveries — the end of its overlap window (`NODE_WEBHOOK_SECRET_OVERLAP_HOURS` after its successor was minted), unless it is dropped sooner. */
+    retiresAt: string;
+}
+
+export interface WebhookSubscriptionActions {
+    /** Whether `PUT` or `PATCH /webhooks/subscriptions/{id}` would be accepted. */
+    update: boolean;
+    /** Whether `DELETE /webhooks/subscriptions/{id}` would be accepted. */
+    delete: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/enable` would be accepted — false while it is already enabled. */
+    enable: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/disable` would be accepted — false while it is already disabled. */
+    disable: boolean;
+    /** Whether `POST /webhooks/subscriptions/{id}/rotate-secret` would be accepted. */
+    rotateSecret: boolean;
+    /** Whether `DELETE /webhooks/subscriptions/{id}/secrets/{secretId}` would be accepted — false while the ring holds a single secret. */
+    removeSecret: boolean;
+}
+
 export interface WebhookSubscription {
     id: Id;
     /** @pattern (?:^https://) */
@@ -4557,13 +4650,19 @@ export interface WebhookSubscription {
      * @minItems 1
      */
     eventTypes: string[];
+    /** Read-only, derived — true while `disabledAt` is absent. Change it with `POST .../enable` or `POST .../disable`. */
     enabled: boolean;
     /** @minimum 0 */
     consecutiveFailures: number;
-    /** Set once `consecutiveFailures` crosses the auto-disable threshold. */
+    /** When the subscription was switched off, by hand or by the auto-disable guard. Absent while it is enabled. */
     disabledAt?: string;
+    /** Set (together with `disabledAt`) only when the auto-disable guard switched it off after sustained failures; absent for a pause by hand. */
+    autoDisabledAt?: string;
     /** The ring's secret ids, oldest first — never the plaintext. */
     secretIds: string[];
+    /** The ring entries that are still signing but have been superseded, with when each stops. Empty when the ring holds one secret. */
+    retiringSecrets: WebhookRetiringSecret[];
+    actions: WebhookSubscriptionActions;
     createdAt: string;
     updatedAt: string;
 }
@@ -4612,7 +4711,10 @@ export interface WebhookSubscriptionCreated {
     /** @minimum 0 */
     consecutiveFailures: number;
     disabledAt?: string;
+    autoDisabledAt?: string;
     secretIds: string[];
+    retiringSecrets: WebhookRetiringSecret[];
+    actions: WebhookSubscriptionActions;
     createdAt: string;
     updatedAt: string;
     /** The newly minted secret, in plaintext. Shown here once, on creation, and never again. */
@@ -4626,6 +4728,13 @@ export interface WebhookSubscriptionCreatedEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: WebhookSubscriptionCreated;
+}
+
+export interface WebhookSubscriptionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: WebhookSubscription;
 }
 
 export interface ReplaceWebhookSubscriptionRequest {
@@ -4648,15 +4757,6 @@ export interface ReplaceWebhookSubscriptionRequest {
      * @items.maxLength 100
      */
     eventTypes: string[];
-    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
-    enabled: boolean;
-}
-
-export interface WebhookSubscriptionEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookSubscription;
 }
 
 export interface UpdateWebhookSubscriptionRequest {
@@ -4679,8 +4779,6 @@ export interface UpdateWebhookSubscriptionRequest {
      * @items.maxLength 100
      */
     eventTypes?: string[];
-    /** Setting this true re-arms a subscription the auto-disable guard turned off, and clears `disabledAt`. */
-    enabled?: boolean;
 }
 
 export type WebhookDeliveryStatus =
@@ -4692,6 +4790,11 @@ export const WebhookDeliveryStatus = {
     succeeded: 'succeeded',
     exhausted: 'exhausted'
 } as const;
+
+export interface WebhookDeliveryActions {
+    /** Whether `POST /webhooks/deliveries/{id}/replay` would be accepted — false while the delivery's subscription is disabled or gone. */
+    replay: boolean;
+}
 
 export interface WebhookDelivery {
     id: Id;
@@ -4705,6 +4808,7 @@ export interface WebhookDelivery {
     durationMs?: number;
     error?: string;
     nextAttemptAt?: string;
+    actions: WebhookDeliveryActions;
     createdAt: string;
     updatedAt: string;
 }
@@ -5368,37 +5472,6 @@ export interface MergeCartRequest {
      * @maxItems 100
      */
     lines: AddCartItemRequest[];
-}
-
-/**
- * Why a guest line did not land exactly as asked. Absent when it did.
- * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
- *   nothing was added, `resulting` is what the cart already held (often 0). A product
- *   that is merely sold out, or taken off sale, is NOT removed: it is added and
- *   flagged through `availability`.
- */
-export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
-
-export const MergeLineReason = {
-    summed: 'summed',
-    capped: 'capped',
-    removed: 'removed'
-} as const;
-
-export interface MergeLineResult {
-    productId: Id;
-    /**
-     * What the guest line asked for.
-     * @minimum 1
-     */
-    requested: number;
-    /**
-     * What the cart holds for this product after the merge.
-     * @minimum 0
-     */
-    resulting: number;
-    reason?: MergeLineReason;
-    availability: LineAvailability;
 }
 
 export interface MergeCartResponse {
@@ -6671,10 +6744,15 @@ export type ListWebhookSubscriptionsParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: WebhookSubscriptionSort;
     /**
-     * Filter by whether the subscription is currently active.
+     * Filter by whether the subscription is currently enabled (`true`) or switched off for any reason (`false`).
      */
     enabled?: boolean;
+    /**
+     * Filter by who switched it off. `true` keeps only the subscriptions the failure guard disabled (`autoDisabledAt` set); `false` keeps the rest, enabled ones and pauses by hand. Combine with `enabled=false` to list the pauses by hand.
+     */
+    autoDisabled?: boolean;
 };
 
 export type ListWebhookDeliveriesParams = {
@@ -7634,7 +7712,7 @@ export const listObservabilityAuditEntries = (
  * Newest first. `meta.totalItems` counts every entry matching the filters, not just
  * the page.
  *
- * Requires `read:AuditLog` — held by `manager`, `support` and `moderator` in the demo.
+ * Requires `read:AuditLog` — held by `admin` in the demo.
  * @summary The shop's own action history
  */
 export const listAuditEntries = (
@@ -9610,14 +9688,14 @@ export const checkout = (
 };
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReorderResponseEnvelope>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<ReorderResponseEnvelope>(
         { url: `/cart/reorder/${orderId}`, method: 'POST' },
         options
     );
@@ -10008,7 +10086,8 @@ export const getOrderByReference = (
 };
 
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left) or 422 (asks for more than is left). Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund an order's payment
  */
 export const refundPaymentByOrder = (
@@ -10542,8 +10621,9 @@ export const sweepReservations = (
 };
 
 /**
- * Never returns a secret — the ring's plaintext exists only in the response of the
- * call that minted it (`POST` here, or `POST .../{id}/rotate-secret`).
+ * Newest first unless `sort` says otherwise. Never returns a secret — the ring's
+ * plaintext exists only in the response of the call that minted it (`POST` here, or
+ * `POST .../{id}/rotate-secret`).
  * @summary List this shop's webhook subscriptions
  */
 export const listWebhookSubscriptions = (
@@ -10583,9 +10663,24 @@ export const createWebhookSubscription = (
 };
 
 /**
- * Full replace of url/description/eventTypes/enabled — an omitted `description` is
- * cleared. Never touches the secret ring; rotate or drop a secret through its own
- * action route below.
+ * The same shape the list rows carry (and never a secret). 404 for an id outside this
+ * shop's subscriptions, whether it never existed or belongs to another shop.
+ * @summary Get one webhook subscription
+ */
+export const getWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Full replace of url/description/eventTypes — an omitted `description` is cleared.
+ * Never touches the secret ring or whether the subscription is on; rotate or drop a
+ * secret, enable or disable it, through its own action route below.
  * @summary Replace a webhook subscription
  */
 export const replaceWebhookSubscription = (
@@ -10605,8 +10700,9 @@ export const replaceWebhookSubscription = (
 };
 
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscription = (
@@ -10626,8 +10722,9 @@ export const updateWebhookSubscription = (
 };
 
 /**
- * Partial update of url/description/eventTypes/enabled. Never touches the secret
- * ring; rotate or drop a secret through its own action route below.
+ * Partial update of url/description/eventTypes. Never touches the secret ring or
+ * whether the subscription is on; rotate or drop a secret, enable or disable it,
+ * through its own action route below.
  * @summary Update a webhook subscription
  */
 export const updateWebhookSubscriptionWithMergePatchJson = (
@@ -10665,11 +10762,11 @@ export const deleteWebhookSubscription = (
  * ring then carries two active secrets, and deliveries sign with both (two
  * space-separated `v1,` values in `webhook-signature`) until the old one is dropped
  * through `DELETE .../secrets/{secretId}` or its overlap window ends (24 hours by
- * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`), after which it stops signing and
- * disappears from `secretIds`. A ring holds at most two: rotating again drops the
- * oldest. Its own route rather than a flag on
+ * default, `NODE_WEBHOOK_SECRET_OVERLAP_HOURS`; `retiringSecrets` names the exact
+ * instant), after which it stops signing and disappears from `secretIds`. A ring holds at
+ * most two: rotating again drops the oldest. Its own route rather than a flag on
  * `PATCH`'s body: a command, not state, so it does not share a route with
- * url/description/eventTypes/enabled.
+ * url/description/eventTypes.
  * @summary Rotate a webhook subscription's secret
  */
 export const rotateWebhookSubscriptionSecret = (
@@ -10700,7 +10797,7 @@ export const removeWebhookSubscriptionSecret = (
 };
 
 /**
- * Every attempt, newest first, optionally filtered by subscription and status.
+ * Every attempt, newest first, optionally filtered by subscription and status. The order is fixed - this is a log.
  * @summary The delivery log
  */
 export const listWebhookDeliveries = (
@@ -10719,7 +10816,8 @@ export const listWebhookDeliveries = (
  * row: `attempt` advances exactly like a real queued attempt would (one step forward
  * on a failure with backoff tiers left, unchanged on success or exhaustion), and
  * `status`/`responseCode`/`durationMs`/`error` reflect this replay. The single
- * most-requested support action, per the design doc.
+ * most-requested support action, per the design doc. Refused while the subscription is
+ * disabled (`actions.replay` is false): enable it first.
  * @summary Re-send one delivery
  */
 export const replayWebhookDelivery = (
@@ -11023,7 +11121,7 @@ export const listRefunds = (
 };
 
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES`, refunds owed by hand on a `manual` payment (the sweep never finishes those, so they show at any age), payments whose stock commit is still owed, and orders whose refund is still owed after a cancel. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttention = (
@@ -11031,6 +11129,21 @@ export const listPaymentAttention = (
 ) => {
     return orvalMutator<PaymentAttentionResponseEnvelope>(
         { url: `/payments/attention`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/order/{orderId}/refund`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * @summary Mark a hand-paid refund as returned
+ */
+export const settleRefundByHand = (
+    id: string,
+    refundId: Id,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST' },
         options
     );
 };
@@ -11186,6 +11299,41 @@ export const getPipelineStats = (
     options?: SecondParameter<typeof orvalMutator<PipelineStatsEnvelope>>
 ) => {
     return orvalMutator<PipelineStatsEnvelope>({ url: `/stats/pipeline`, method: 'GET' }, options);
+};
+
+/**
+ * Turns a subscription back on, whether it was switched off by hand or by the
+ * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
+ * streak, so the guard starts counting from zero. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED` when it is already on — the streak of a
+ * healthy subscription is never reset by a repeated call.
+ * @summary Enable a webhook subscription
+ */
+export const enableWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}/enable`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Pauses a subscription by hand: sets `disabledAt` (and leaves `autoDisabledAt`
+ * absent, which is how a pause is told from the guard's work). Nothing is sent to it
+ * while it is off, and an event that fires meanwhile is not queued for it. Refused with 409
+ * `WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED` when it is already off.
+ * @summary Disable a webhook subscription
+ */
+export const disableWebhookSubscription = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+) => {
+    return orvalMutator<WebhookSubscriptionEnvelope>(
+        { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
+        options
+    );
 };
 
 /**
@@ -11862,6 +12010,9 @@ export type ListWebhookSubscriptionsResult = NonNullable<
 export type CreateWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof createWebhookSubscription>>
 >;
+export type GetWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof getWebhookSubscription>>
+>;
 export type ReplaceWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof replaceWebhookSubscription>>
 >;
@@ -11914,6 +12065,7 @@ export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefund
 export type ListPaymentAttentionResult = NonNullable<
     Awaited<ReturnType<typeof listPaymentAttention>>
 >;
+export type SettleRefundByHandResult = NonNullable<Awaited<ReturnType<typeof settleRefundByHand>>>;
 export type PreviewReleaseDateImpactResult = NonNullable<
     Awaited<ReturnType<typeof previewReleaseDateImpact>>
 >;
@@ -11930,6 +12082,12 @@ export type GetPaymentMixStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof getOperationsStats>>>;
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
+export type EnableWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof enableWebhookSubscription>>
+>;
+export type DisableWebhookSubscriptionResult = NonNullable<
+    Awaited<ReturnType<typeof disableWebhookSubscription>>
+>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>
 >;

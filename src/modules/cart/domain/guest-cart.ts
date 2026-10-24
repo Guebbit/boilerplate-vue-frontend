@@ -22,12 +22,16 @@ export interface GuestCartLine {
 }
 
 /**
- * The most units one line may hold: the contract's own cap on a merged line.
+ * The most units one line may hold: the contract's own cap on a merged line. A literal, not an
+ * import of the generated constant: `@api/schemas` loads lazily, and this file rides in the entry
+ * chunk (`tests/cross-cutting/entry-chunk-budget.spec.ts`). `guest-cart.spec.ts` pins it to the
+ * generated value.
  */
 export const MAX_GUEST_LINE_QUANTITY = 999;
 
 /**
  * The most distinct products a guest cart may hold: the contract's cap on lines per merge call.
+ * A literal for the same reason as {@link MAX_GUEST_LINE_QUANTITY}.
  */
 export const MAX_GUEST_LINES = 100;
 
