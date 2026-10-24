@@ -4157,7 +4157,7 @@ export const ListProductsResponse = zod.strictObject({
     })
 });
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
 export const createProductBodyTranslationsOneTitleMin = 5;
@@ -11643,6 +11643,15 @@ export const ListStockMovementsResponse = zod.strictObject({
  * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again. Send an `Idempotency-Key` — a retried receipt with the same key replays the first answer instead of counting the delivery twice.
  * @summary Receive stock
  */
+export const receiveStockPathProductIdMax = 64;
+export const receiveStockPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const ReceiveStockParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(receiveStockPathProductIdMax)
+        .regex(receiveStockPathProductIdRegExp)
+});
 export const receiveStockHeaderIdempotencyKeyMax = 200;
 export const receiveStockHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
 export const ReceiveStockHeader = zod.strictObject({
@@ -11653,15 +11662,8 @@ export const ReceiveStockHeader = zod.strictObject({
         .regex(receiveStockHeaderIdempotencyKeyRegExp)
         .optional()
 });
-export const receiveStockBodyProductIdMax = 64;
-export const receiveStockBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const receiveStockBodyNoteMax = 1000;
 export const ReceiveStockBody = zod.strictObject({
-    productId: zod
-        .string()
-        .min(1)
-        .max(receiveStockBodyProductIdMax)
-        .regex(receiveStockBodyProductIdRegExp),
     quantity: zod.number().min(1),
     note: zod.string().min(1).max(receiveStockBodyNoteMax).optional()
 });
@@ -11694,6 +11696,15 @@ export const ReceiveStockResponse = zod.strictObject({
  * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative. Send an `Idempotency-Key` — a retried correction with the same key replays the first answer instead of applying the delta twice.
  * @summary Adjust stock
  */
+export const adjustStockPathProductIdMax = 64;
+export const adjustStockPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const AdjustStockParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(adjustStockPathProductIdMax)
+        .regex(adjustStockPathProductIdRegExp)
+});
 export const adjustStockHeaderIdempotencyKeyMax = 200;
 export const adjustStockHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
 export const AdjustStockHeader = zod.strictObject({
@@ -11704,15 +11715,8 @@ export const AdjustStockHeader = zod.strictObject({
         .regex(adjustStockHeaderIdempotencyKeyRegExp)
         .optional()
 });
-export const adjustStockBodyProductIdMax = 64;
-export const adjustStockBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const adjustStockBodyNoteMax = 1000;
 export const AdjustStockBody = zod.strictObject({
-    productId: zod
-        .string()
-        .min(1)
-        .max(adjustStockBodyProductIdMax)
-        .regex(adjustStockBodyProductIdRegExp),
     delta: zod.number(),
     note: zod.string().min(1).max(adjustStockBodyNoteMax).optional()
 });

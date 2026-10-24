@@ -4598,7 +4598,6 @@ export interface StockMovementsResponseEnvelope {
 }
 
 export interface ReceiptRequest {
-    productId: Id;
     /**
      * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
      * @minimum 1
@@ -4613,7 +4612,6 @@ export interface ReceiptRequest {
 }
 
 export interface AdjustmentRequest {
-    productId: Id;
     /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
     delta: number;
     /**
@@ -9122,7 +9120,7 @@ export const listProducts = (
 };
 
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
 export const createProduct = (
@@ -9141,7 +9139,7 @@ export const createProduct = (
 };
 
 /**
- * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
+ * Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it.
  * @summary Create product
  */
 export const createProductWithMultipart = (
@@ -10596,12 +10594,13 @@ export const listStockMovements = (
  * @summary Receive stock
  */
 export const receiveStock = (
+    productId: Id,
     receiptRequest: ReceiptRequest,
     options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
 ) => {
     return orvalMutator<InventoryLevelEnvelope>(
         {
-            url: `/inventory/receipts`,
+            url: `/inventory/levels/${productId}/receive`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: receiptRequest
@@ -10615,12 +10614,13 @@ export const receiveStock = (
  * @summary Adjust stock
  */
 export const adjustStock = (
+    productId: Id,
     adjustmentRequest: AdjustmentRequest,
     options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
 ) => {
     return orvalMutator<InventoryLevelEnvelope>(
         {
-            url: `/inventory/adjustments`,
+            url: `/inventory/levels/${productId}/adjust`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: adjustmentRequest

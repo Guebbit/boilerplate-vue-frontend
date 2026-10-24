@@ -47,7 +47,7 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
             cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
                 backorderLimit: 1
             });
-            cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
+            cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
 
             cy.step('the customer holds the last unit and does not pay');
             cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 1 });

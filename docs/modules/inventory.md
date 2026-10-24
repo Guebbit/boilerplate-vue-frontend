@@ -143,12 +143,12 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 | Call                                         | Response envelope             |
 | -------------------------------------------- | ----------------------------- |
-| `POST /inventory/adjustments`                | `AdjustStockResponse`         |
+| `POST /inventory/levels/{productId}/adjust`  | `AdjustStockResponse`         |
 | `GET /inventory/levels(\?.*)?`               | `ListInventoryLevelsResponse` |
 | `GET /inventory/movements(\?.*)?`            | `ListStockMovementsResponse`  |
 | `GET /inventory/preorders(\?.*)?`            | `ListPreorderLevelsResponse`  |
 | `PUT /inventory/levels/{id}/backorder-limit` | `SetBackorderLimitResponse`   |
-| `POST /inventory/receipts`                   | `ReceiveStockResponse`        |
+| `POST /inventory/levels/{productId}/receive` | `ReceiveStockResponse`        |
 | `POST /inventory/reservations/sweep`         | `SweepReservationsResponse`   |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.

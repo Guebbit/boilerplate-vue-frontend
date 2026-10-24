@@ -52,7 +52,7 @@ describe('BO1 · The buyer backorders', () => {
             cy.apiAs('admin', 'PUT', `/inventory/levels/${id}/backorder-limit`, {
                 backorderLimit: 5
             });
-            cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
+            cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
 
             cy.step('the customer wants two: one is on the shelf, one is owed');
             cy.switchUser('user');
@@ -84,7 +84,7 @@ describe('BO1 · The buyer backorders', () => {
                 });
 
                 cy.step('stock arrives: the wait is released, and everything ships');
-                cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
+                cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
                 eventually(
                     () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
                     (view) =>

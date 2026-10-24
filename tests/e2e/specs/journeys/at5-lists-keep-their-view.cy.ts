@@ -160,8 +160,7 @@ describe('AT5 · The stock board and ledger keep their view', () => {
 
     it('ledger: the reason filter survives a reload and a copied link', () => {
         cy.subjectId('product.inStock').then((productId) => {
-            cy.apiAs('admin', 'POST', '/inventory/adjustments', {
-                productId,
+            cy.apiAs('admin', 'POST', `/inventory/levels/${productId}/adjust`, {
                 delta: -1,
                 note: 'AT5 view'
             });

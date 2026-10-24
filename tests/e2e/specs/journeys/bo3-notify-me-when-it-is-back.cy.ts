@@ -40,7 +40,7 @@ describe('BO3 · Notify me when it is back', () => {
             cy.get('[data-test=notify-me]').should('contain.text', "You'll be told");
 
             cy.step('the shelf is restocked');
-            cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 3 });
+            cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 3 });
 
             cy.step('one mail arrives, linking to the product');
             cy.accountOf('user').then(({ email }) => {

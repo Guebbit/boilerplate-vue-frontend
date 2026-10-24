@@ -3985,7 +3985,7 @@ paths:
       tags:
         - Products
       summary: Create product
-      description: "Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/receipts`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it."
+      description: "Creates a new product with optional image upload. Words live in `translations`, one entry per locale — the fallback locale (`NODE_FALLBACK_LOCALE`) MUST be present and non-null, since a product with nothing to fall back to cannot exist. See `PATCH /products/{id}` for the three-way table a locale entry follows. A new product starts with no stock: units enter only through `POST /inventory/levels/{productId}/receive`, the one transition that creates them, which needs `create:StockMovement` and leaves a ledger row. A client that wants an opening count creates the product, then receives it."
       operationId: createProduct
       security:
         - bearerAuth: []
@@ -7051,7 +7051,7 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
-  /inventory/receipts:
+  /inventory/levels/{productId}/receive:
     post:
       tags:
         - Inventory
@@ -7063,6 +7063,12 @@ paths:
         - apiKeyAuth: []
         - cookieAuth: []
       parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The product whose counter moves.
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
@@ -7100,7 +7106,7 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: inventory
-  /inventory/adjustments:
+  /inventory/levels/{productId}/adjust:
     post:
       tags:
         - Inventory
@@ -7112,6 +7118,12 @@ paths:
         - apiKeyAuth: []
         - cookieAuth: []
       parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: The product whose counter moves.
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       requestBody:
         required: true
@@ -17252,11 +17264,8 @@ components:
       type: object
       additionalProperties: false
       required:
-        - productId
         - quantity
       properties:
-        productId:
-          $ref: "#/components/schemas/Id"
         quantity:
           type: integer
           minimum: 1
@@ -17270,11 +17279,8 @@ components:
       type: object
       additionalProperties: false
       required:
-        - productId
         - delta
       properties:
-        productId:
-          $ref: "#/components/schemas/Id"
         delta:
           type: integer
           description: Signed. Negative is shrinkage or damage; positive is a miscount found in your favour.

@@ -91,8 +91,8 @@ actionTable('inventory', [
         },
         intercept: {
             method: 'POST',
-            url: '**/inventory/receipts',
-            operation: '/inventory/receipts'
+            url: '**/inventory/levels/*/receive',
+            operation: '/inventory/levels/{productId}/receive'
         },
         kind: 'form',
         alert: 'receipt-error',
@@ -117,8 +117,8 @@ actionTable('inventory', [
         },
         intercept: {
             method: 'POST',
-            url: '**/inventory/adjustments',
-            operation: '/inventory/adjustments'
+            url: '**/inventory/levels/*/adjust',
+            operation: '/inventory/levels/{productId}/adjust'
         },
         kind: 'form',
         alert: 'adjust-error',

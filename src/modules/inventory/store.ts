@@ -196,7 +196,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     const receive = (productId: string, quantity: number, note?: string) => {
         const keeper = receiptIdempotencyKeys.forSubject(productId);
         return fetchAny(() =>
-            receiveStock({ productId, quantity, note }, keeper.withKey())
+            receiveStock(productId, { quantity, note }, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
                     return reloadAfterWrite(response.data);
@@ -219,7 +219,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     const adjust = (productId: string, delta: number, note?: string) => {
         const keeper = adjustmentIdempotencyKeys.forSubject(productId);
         return fetchAny(() =>
-            adjustStock({ productId, delta, note }, keeper.withKey())
+            adjustStock(productId, { delta, note }, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
                     return reloadAfterWrite(response.data);

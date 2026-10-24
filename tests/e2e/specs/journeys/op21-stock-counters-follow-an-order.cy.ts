@@ -140,7 +140,7 @@ describe('OP21 · The stock counters follow an order', () => {
             cy.step(
                 'a write-off that would leave less than is reserved is refused, and nothing moves'
             );
-            cy.intercept('POST', '**/inventory/adjustments').as('adjust');
+            cy.intercept('POST', '**/inventory/levels/*/adjust').as('adjust');
             adjustBy(title, -(SHELF - FIRST_ORDER + 1), 'OP21 too many');
             cy.wait('@adjust').its('response.statusCode').should('equal', 409);
             cy.get('[data-test=adjust-error]').should('not.be.empty');
