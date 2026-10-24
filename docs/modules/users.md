@@ -68,7 +68,10 @@ would rank it correctly either way, and a reader should not have to know that.
 `deactivate`), already counting the caller's keys, the protection of staff accounts and the row's own
 state. `UsersList` reads `restore` and `hardDelete` instead of deriving them from `deletedAt`;
 `UserAccessDialog` offers the role on `assignRole` (own account included: no rule refuses it) and the
-status on whichever of `activate` / `deactivate` fits. Status is not a field of the edit `PATCH`:
+status on whichever of `activate` / `deactivate` fits. A row with a `purgeAt` is an account its owner
+asked to delete: it carries an "Erases on {date}" chip, and its Restore asks for a confirmation first
+(erasure is the owner's right under the GDPR; restore only when they asked staff to), while a plain
+soft delete keeps the one-click restore. `restore` is false once `purgeAt` has passed. Status is not a field of the edit `PATCH`:
 `UserEdit` has an Activate and a Deactivate button, and the store's `applyAccessChange` turns a
 confirmed role/status choice into a `PATCH` and an `activate` / `deactivate` call. `/account` is a
 different schema, `Account`, with no `actions`.

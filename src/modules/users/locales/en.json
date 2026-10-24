@@ -48,6 +48,10 @@
         "filter-needs-review": "Review",
         "filter-needs-review-all": "Any",
         "filter-needs-review-yes": "Needs review",
+        "chip-erases-on": "Erases on {date}",
+        "confirm-restore-scheduled-title": "Restore an account its owner deleted?",
+        "confirm-restore-scheduled": "{name} asked for this account to be erased. Erasure is their right under the GDPR and their own choice. Restore it only if they asked you to, for example through support. They will get an email saying it was restored.",
+        "button-confirm-restore-scheduled": "Restore anyway",
         "chip-needs-review": "Needs review"
     },
     "users-form": {
