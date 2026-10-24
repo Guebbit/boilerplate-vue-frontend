@@ -6210,6 +6210,13 @@ export interface NotificationsResponseEnvelope {
     data: NotificationsResponse;
 }
 
+export interface NotificationEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Notification;
+}
+
 /**
  * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
  */
@@ -10562,7 +10569,7 @@ export const releaseFulfillmentOrder = (
 };
 
 /**
- * One shipment by its own id, at the address `PATCH` corrects it. Staff's read, behind the key that corrects a shipment (`update:Shipment`); a buyer reads their shipments through `GET /delivery/orders/{orderId}`. An unknown or malformed id is a 404.
+ * One shipment by its own id, at the address `PATCH` corrects it. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's shipment, an unknown id and a malformed one are the same 404.
  * @summary Get a shipment
  */
 export const getShipment = (
@@ -11494,6 +11501,20 @@ export const previewRestockDateImpact = (
 };
 
 /**
+ * One fulfillment order by its own id, the record `ship`, `fulfill`, `hold` and `release` act on, with the same `actions` they answer. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's, an unknown id and a malformed one are the same 404.
+ * @summary Get a fulfillment order
+ */
+export const getFulfillmentOrder = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+) => {
+    return orvalMutator<FulfillmentOrderEnvelope>(
+        { url: `/delivery/fulfillment-orders/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
  * @summary Sales over time (staff)
  */
@@ -11613,6 +11634,20 @@ export const getStatsLimits = (
 };
 
 /**
+ * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and `backorder-limit` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
+ * @summary Get one product's stock level
+ */
+export const getInventoryLevel = (
+    productId: Id,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelEnvelope>(
+        { url: `/inventory/levels/${productId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Turns a subscription back on, whether it was switched off by hand or by the
  * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
  * streak, so the guard starts counting from zero. Refused with 409
@@ -11643,6 +11678,20 @@ export const disableWebhookSubscription = (
 ) => {
     return orvalMutator<WebhookSubscriptionEnvelope>(
         { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.
+ * @summary Get one delivery
+ */
+export const getWebhookDelivery = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<WebhookDeliveryEnvelope>>
+) => {
+    return orvalMutator<WebhookDeliveryEnvelope>(
+        { url: `/webhooks/deliveries/${id}`, method: 'GET' },
         options
     );
 };
@@ -11881,6 +11930,20 @@ export const dismissAllNotifications = (
 ) => {
     return orvalMutator<SuccessResponse>(
         { url: `/notifications/dismiss-all`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * One of the caller's own notifications, the same shape the list carries. Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
+ * @summary Get a notification
+ */
+export const getNotificationById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<NotificationEnvelope>>
+) => {
+    return orvalMutator<NotificationEnvelope>(
+        { url: `/notifications/${id}`, method: 'GET' },
         options
     );
 };
@@ -12385,6 +12448,9 @@ export type PreviewReleaseDateImpactResult = NonNullable<
 export type PreviewRestockDateImpactResult = NonNullable<
     Awaited<ReturnType<typeof previewRestockDateImpact>>
 >;
+export type GetFulfillmentOrderResult = NonNullable<
+    Awaited<ReturnType<typeof getFulfillmentOrder>>
+>;
 export type GetSalesStatsResult = NonNullable<Awaited<ReturnType<typeof getSalesStats>>>;
 export type GetProductStatsResult = NonNullable<Awaited<ReturnType<typeof getProductStats>>>;
 export type GetProductSalesSeriesResult = NonNullable<
@@ -12396,12 +12462,14 @@ export type GetOperationsStatsResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetCustomerStatsResult = NonNullable<Awaited<ReturnType<typeof getCustomerStats>>>;
 export type GetPipelineStatsResult = NonNullable<Awaited<ReturnType<typeof getPipelineStats>>>;
 export type GetStatsLimitsResult = NonNullable<Awaited<ReturnType<typeof getStatsLimits>>>;
+export type GetInventoryLevelResult = NonNullable<Awaited<ReturnType<typeof getInventoryLevel>>>;
 export type EnableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof enableWebhookSubscription>>
 >;
 export type DisableWebhookSubscriptionResult = NonNullable<
     Awaited<ReturnType<typeof disableWebhookSubscription>>
 >;
+export type GetWebhookDeliveryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDelivery>>>;
 export type GetPublishedExampleResult = NonNullable<
     Awaited<ReturnType<typeof getPublishedExample>>
 >;
@@ -12428,6 +12496,9 @@ export type ReadAllNotificationsResult = NonNullable<
 >;
 export type DismissAllNotificationsResult = NonNullable<
     Awaited<ReturnType<typeof dismissAllNotifications>>
+>;
+export type GetNotificationByIdResult = NonNullable<
+    Awaited<ReturnType<typeof getNotificationById>>
 >;
 export type DeleteNotificationByIdResult = NonNullable<
     Awaited<ReturnType<typeof deleteNotificationById>>

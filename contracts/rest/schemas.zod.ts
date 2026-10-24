@@ -10819,7 +10819,7 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
     })
 });
 /**
- * One shipment by its own id, at the address `PATCH` corrects it. Staff's read, behind the key that corrects a shipment (`update:Shipment`); a buyer reads their shipments through `GET /delivery/orders/{orderId}`. An unknown or malformed id is a 404.
+ * One shipment by its own id, at the address `PATCH` corrects it. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's shipment, an unknown id and a malformed one are the same 404.
  * @summary Get a shipment
  */
 export const getShipmentPathIdMax = 64;
@@ -15981,6 +15981,85 @@ export const PreviewRestockDateImpactResponse = zod.strictObject({
     })
 });
 /**
+ * One fulfillment order by its own id, the record `ship`, `fulfill`, `hold` and `release` act on, with the same `actions` they answer. Scoped like the order it belongs to (`read:Order`): a buyer reads their own, staff holding `display:Order` read any. Someone else's, an unknown id and a malformed one are the same 404.
+ * @summary Get a fulfillment order
+ */
+export const getFulfillmentOrderPathIdMax = 64;
+export const getFulfillmentOrderPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetFulfillmentOrderParams = zod.strictObject({
+    id: zod.string().min(1).max(getFulfillmentOrderPathIdMax).regex(getFulfillmentOrderPathIdRegExp)
+});
+export const getFulfillmentOrderResponseDataIdMax = 64;
+export const getFulfillmentOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getFulfillmentOrderResponseDataOrderIdMax = 64;
+export const getFulfillmentOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getFulfillmentOrderResponseDataLinesItemProductIdMax = 64;
+export const getFulfillmentOrderResponseDataLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentOrderResponseDataLinesItemShippedQuantityMin = 0;
+export const getFulfillmentOrderResponseDataLinesItemCancelledQuantityMin = 0;
+export const getFulfillmentOrderResponseDataLinesItemRemainingMin = 0;
+export const getFulfillmentOrderResponseDataHoldMessageMax = 500;
+export const getFulfillmentOrderResponseDataHoldNoteMax = 1000;
+export const GetFulfillmentOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getFulfillmentOrderResponseDataIdMax)
+            .regex(getFulfillmentOrderResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(getFulfillmentOrderResponseDataOrderIdMax)
+            .regex(getFulfillmentOrderResponseDataOrderIdRegExp),
+        number: zod.number().min(1),
+        kind: zod.enum(['physical', 'digital']),
+        status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentOrderResponseDataLinesItemProductIdMax)
+                    .regex(getFulfillmentOrderResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1),
+                shippedQuantity: zod
+                    .number()
+                    .min(getFulfillmentOrderResponseDataLinesItemShippedQuantityMin),
+                cancelledQuantity: zod
+                    .number()
+                    .min(getFulfillmentOrderResponseDataLinesItemCancelledQuantityMin),
+                remaining: zod.number().min(getFulfillmentOrderResponseDataLinesItemRemainingMin)
+            })
+        ),
+        holdNotice: zod.enum(['awaiting_stock', 'check_address', 'delayed']).optional(),
+        holdMessage: zod.string().max(getFulfillmentOrderResponseDataHoldMessageMax).optional(),
+        holdReason: zod
+            .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+            .optional(),
+        holdNote: zod.string().max(getFulfillmentOrderResponseDataHoldNoteMax).optional(),
+        agreedAt: zod.iso.datetime({ offset: true }).optional(),
+        expectedAt: zod.iso.datetime({ offset: true }).optional(),
+        lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
+        cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+        actions: zod.strictObject({
+            ship: zod.boolean(),
+            forceShip: zod.boolean(),
+            fulfill: zod.boolean(),
+            hold: zod.boolean(),
+            release: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
  * Headline totals, the same totals for the equal-length period before, and one bucket per day, week (Monday) or month, per currency. Every figure is net of VAT unless it says otherwise; money is grouped by currency and never converted. A sale is dated by `paidAt`, a reversal by the credit note's `issuedAt`, and days are the shop's (`NODE_SHOP_TIMEZONE`), so a bucket edge is shop-local midnight. `from` and `to` are shop-local calendar days, both inclusive; the range may not pass two years or 400 buckets. Needs `read:Stats`. Never cached: it is the shop's money.
  * @summary Sales over time (staff)
  */
@@ -16342,6 +16421,44 @@ export const GetStatsLimitsResponse = zod.strictObject({
     })
 });
 /**
+ * One row of the stock board by product, with its counters and availability — the record `receive`, `adjust` and `backorder-limit` act on. Same audience as the board (`read:StockLevel`). An unknown product, one with no level row and a malformed id are the same 404.
+ * @summary Get one product's stock level
+ */
+export const getInventoryLevelPathProductIdMax = 64;
+export const getInventoryLevelPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetInventoryLevelParams = zod.strictObject({
+    productId: zod
+        .string()
+        .min(1)
+        .max(getInventoryLevelPathProductIdMax)
+        .regex(getInventoryLevelPathProductIdRegExp)
+});
+export const getInventoryLevelResponseDataProductIdMax = 64;
+export const getInventoryLevelResponseDataProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getInventoryLevelResponseDataOnHandMin = 0;
+export const getInventoryLevelResponseDataReservedMin = 0;
+export const getInventoryLevelResponseDataAvailableMin = 0;
+export const getInventoryLevelResponseDataBackorderLimitMin = 0;
+export const getInventoryLevelResponseDataBackorderedMin = 0;
+export const GetInventoryLevelResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        productId: zod
+            .string()
+            .min(1)
+            .max(getInventoryLevelResponseDataProductIdMax)
+            .regex(getInventoryLevelResponseDataProductIdRegExp),
+        title: zod.string(),
+        onHand: zod.number().min(getInventoryLevelResponseDataOnHandMin),
+        reserved: zod.number().min(getInventoryLevelResponseDataReservedMin),
+        available: zod.number().min(getInventoryLevelResponseDataAvailableMin),
+        backorderLimit: zod.number().min(getInventoryLevelResponseDataBackorderLimitMin).nullable(),
+        backordered: zod.number().min(getInventoryLevelResponseDataBackorderedMin)
+    })
+});
+/**
  * Turns a subscription back on, whether it was switched off by hand or by the
  * auto-disable guard: clears `disabledAt` and `autoDisabledAt` and resets the failure
  * streak, so the guard starts counting from zero. Refused with 409
@@ -16453,6 +16570,49 @@ export const DisableWebhookSubscriptionResponse = zod.strictObject({
             disable: zod.boolean(),
             rotateSecret: zod.boolean(),
             removeSecret: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true })
+    })
+});
+/**
+ * One row of this shop's delivery log, the same shape the list gives it, with `actions.replay`. Another shop's delivery, an unknown id and a malformed one are the same 404.
+ * @summary Get one delivery
+ */
+export const getWebhookDeliveryPathIdMax = 64;
+export const getWebhookDeliveryPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetWebhookDeliveryParams = zod.strictObject({
+    id: zod.string().min(1).max(getWebhookDeliveryPathIdMax).regex(getWebhookDeliveryPathIdRegExp)
+});
+export const getWebhookDeliveryResponseDataIdMax = 64;
+export const getWebhookDeliveryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getWebhookDeliveryResponseDataSubscriptionIdMax = 64;
+export const getWebhookDeliveryResponseDataSubscriptionIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetWebhookDeliveryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getWebhookDeliveryResponseDataIdMax)
+            .regex(getWebhookDeliveryResponseDataIdRegExp),
+        subscriptionId: zod
+            .string()
+            .min(1)
+            .max(getWebhookDeliveryResponseDataSubscriptionIdMax)
+            .regex(getWebhookDeliveryResponseDataSubscriptionIdRegExp),
+        eventId: zod.string(),
+        eventType: zod.string(),
+        attempt: zod.number().min(1),
+        status: zod.enum(['pending', 'in-flight', 'succeeded', 'exhausted']),
+        responseCode: zod.number().optional(),
+        durationMs: zod.number().optional(),
+        error: zod.string().optional(),
+        nextAttemptAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            replay: zod.boolean()
         }),
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true })
@@ -17236,6 +17396,204 @@ export const DismissAllNotificationsResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+/**
+ * One of the caller's own notifications, the same shape the list carries. Someone else's, an unknown id and a malformed one are the same 404, so a probe cannot tell them apart.
+ * @summary Get a notification
+ */
+export const getNotificationByIdPathIdMax = 64;
+export const getNotificationByIdPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetNotificationByIdParams = zod.strictObject({
+    id: zod.string().min(1).max(getNotificationByIdPathIdMax).regex(getNotificationByIdPathIdRegExp)
+});
+export const getNotificationByIdResponseDataOneIdMax = 64;
+export const getNotificationByIdResponseDataOneIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseDataOneParamsProductIdMax = 64;
+export const getNotificationByIdResponseDataOneParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataTwoIdMax = 64;
+export const getNotificationByIdResponseDataTwoIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseDataTwoParamsProductIdMax = 64;
+export const getNotificationByIdResponseDataTwoParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataThreeIdMax = 64;
+export const getNotificationByIdResponseDataThreeIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseDataThreeParamsLinesItemProductIdMax = 64;
+export const getNotificationByIdResponseDataThreeParamsLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataFourIdMax = 64;
+export const getNotificationByIdResponseDataFourIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseDataFourParamsOrderIdMax = 64;
+export const getNotificationByIdResponseDataFourParamsOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataFourParamsFulfillmentOrderIdMax = 64;
+export const getNotificationByIdResponseDataFourParamsFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataFiveIdMax = 64;
+export const getNotificationByIdResponseDataFiveIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseDataFiveParamsOrderIdMax = 64;
+export const getNotificationByIdResponseDataFiveParamsOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataFiveParamsFulfillmentOrderIdMax = 64;
+export const getNotificationByIdResponseDataFiveParamsFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getNotificationByIdResponseDataFiveParamsMessageMax = 500;
+export const getNotificationByIdResponseDataSixIdMax = 64;
+export const getNotificationByIdResponseDataSixIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getNotificationByIdResponseDataSixParamsProductIdMax = 64;
+export const getNotificationByIdResponseDataSixParamsProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const GetNotificationByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.union([
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseDataOneIdMax)
+                .regex(getNotificationByIdResponseDataOneIdRegExp),
+            code: zod.enum(['notifications.cart-line-removed']),
+            params: zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataOneParamsProductIdMax)
+                    .regex(getNotificationByIdResponseDataOneParamsProductIdRegExp),
+                titles: zod.record(zod.string(), zod.string())
+            }),
+            severity: zod.enum(['info', 'success', 'warning', 'error']),
+            readAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true })
+        }),
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseDataTwoIdMax)
+                .regex(getNotificationByIdResponseDataTwoIdRegExp),
+            code: zod.enum(['notifications.wishlist-item-removed']),
+            params: zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataTwoParamsProductIdMax)
+                    .regex(getNotificationByIdResponseDataTwoParamsProductIdRegExp),
+                titles: zod.record(zod.string(), zod.string())
+            }),
+            severity: zod.enum(['info', 'success', 'warning', 'error']),
+            readAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true })
+        }),
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseDataThreeIdMax)
+                .regex(getNotificationByIdResponseDataThreeIdRegExp),
+            code: zod.enum(['notifications.cart-merge-refused']),
+            params: zod.strictObject({
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(getNotificationByIdResponseDataThreeParamsLinesItemProductIdMax)
+                            .regex(
+                                getNotificationByIdResponseDataThreeParamsLinesItemProductIdRegExp
+                            ),
+                        requested: zod.number().min(1),
+                        titles: zod.record(zod.string(), zod.string())
+                    })
+                )
+            }),
+            severity: zod.enum(['info', 'success', 'warning', 'error']),
+            readAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true })
+        }),
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseDataFourIdMax)
+                .regex(getNotificationByIdResponseDataFourIdRegExp),
+            code: zod.enum(['notifications.fulfillment-delayed']),
+            params: zod.strictObject({
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataFourParamsOrderIdMax)
+                    .regex(getNotificationByIdResponseDataFourParamsOrderIdRegExp),
+                fulfillmentOrderId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataFourParamsFulfillmentOrderIdMax)
+                    .regex(getNotificationByIdResponseDataFourParamsFulfillmentOrderIdRegExp),
+                titles: zod.array(zod.string()),
+                agreedAt: zod.iso.datetime({ offset: true }),
+                expectedAt: zod.iso.datetime({ offset: true }).optional()
+            }),
+            severity: zod.enum(['info', 'success', 'warning', 'error']),
+            readAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true })
+        }),
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseDataFiveIdMax)
+                .regex(getNotificationByIdResponseDataFiveIdRegExp),
+            code: zod.enum(['notifications.fulfillment-held']),
+            params: zod.strictObject({
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataFiveParamsOrderIdMax)
+                    .regex(getNotificationByIdResponseDataFiveParamsOrderIdRegExp),
+                fulfillmentOrderId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataFiveParamsFulfillmentOrderIdMax)
+                    .regex(getNotificationByIdResponseDataFiveParamsFulfillmentOrderIdRegExp),
+                notice: zod.enum(['check_address', 'delayed']),
+                message: zod
+                    .string()
+                    .max(getNotificationByIdResponseDataFiveParamsMessageMax)
+                    .optional()
+            }),
+            severity: zod.enum(['info', 'success', 'warning', 'error']),
+            readAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true })
+        }),
+        zod.strictObject({
+            id: zod
+                .string()
+                .min(1)
+                .max(getNotificationByIdResponseDataSixIdMax)
+                .regex(getNotificationByIdResponseDataSixIdRegExp),
+            code: zod.enum(['notifications.stock-alert']),
+            params: zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(getNotificationByIdResponseDataSixParamsProductIdMax)
+                    .regex(getNotificationByIdResponseDataSixParamsProductIdRegExp),
+                titles: zod.record(zod.string(), zod.string())
+            }),
+            severity: zod.enum(['info', 'success', 'warning', 'error']),
+            readAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true })
+        })
+    ])
 });
 /**
  * Permanently deletes the notification identified by `{id}`. Only the caller's own: an id that belongs to someone else answers the same 404 as one that does not exist, so a probe cannot tell the two apart.
