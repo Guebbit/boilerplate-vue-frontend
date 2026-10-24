@@ -2,7 +2,7 @@
 /**
  * @module
  * The "still there?" prompt of the staff idle timeout: mounted once by `LayoutDefault.vue`. It
- * counts down from the server's own numbers (`idle`, read from `POST /account/session/touch`) and
+ * counts down from the server's own numbers (`idle`, read from `POST /account/sessions/current/touch`) and
  * opens two minutes before the session would end, so a person who is reading, not acting, is asked
  * rather than dropped (WCAG 2.2.1 Timing Adjustable). "Stay signed in" is a touch; ignoring it
  * ends the session here a moment before the server would. The server enforces the limit either

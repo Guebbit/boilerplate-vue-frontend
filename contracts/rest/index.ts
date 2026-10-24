@@ -10953,7 +10953,7 @@ export const touchSession = (
     options?: SecondParameter<typeof orvalMutator<SessionActivityEnvelope>>
 ) => {
     return orvalMutator<SessionActivityEnvelope>(
-        { url: `/account/session/touch`, method: 'POST' },
+        { url: `/account/sessions/current/touch`, method: 'POST' },
         options
     );
 };

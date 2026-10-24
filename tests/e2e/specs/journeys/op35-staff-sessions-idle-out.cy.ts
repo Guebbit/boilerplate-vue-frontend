@@ -27,7 +27,7 @@ interface TouchAnswer {
  */
 const idleLimitMs = (): Cypress.Chainable<number> =>
     loginDevice('warehouse').then((device) =>
-        requestAsDevice(device, 'POST', '/account/session/touch').then((response) => {
+        requestAsDevice(device, 'POST', '/account/sessions/current/touch').then((response) => {
             const seconds = (response.body as TouchAnswer | null)?.data?.idleTimeoutSeconds;
             expect(seconds, 'a staff session publishes its idle limit').to.be.a('number');
             return Number(seconds) * 1000;

@@ -93,7 +93,7 @@ describe('login', () => {
                     '/account/login',
                     '/account',
                     '/account/abilities',
-                    '/account/session/touch'
+                    '/account/sessions/current/touch'
                 ]);
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
@@ -116,7 +116,7 @@ describe('login', () => {
                     '/account/login',
                     '/account',
                     '/account/abilities',
-                    '/account/session/touch'
+                    '/account/sessions/current/touch'
                 ]);
             });
     });

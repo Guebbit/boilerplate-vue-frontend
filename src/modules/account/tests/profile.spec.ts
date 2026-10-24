@@ -241,7 +241,7 @@ describe('the account deletion flow', () => {
                 expect(requestedUrls().slice(-3).toSorted()).toEqual([
                     '/account',
                     '/account/abilities',
-                    '/account/session/touch'
+                    '/account/sessions/current/touch'
                 ]);
                 expect(useSessionStore().isAuth).toBe(true);
             });

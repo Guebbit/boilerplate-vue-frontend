@@ -11,7 +11,7 @@ import {
     parseOrvalFixture
 } from '../../unit/infrastructure/http/orval-fixture-schema.ts';
 
-/** What `POST /account/session/touch` answers in the case at hand. */
+/** What `POST /account/sessions/current/touch` answers in the case at hand. */
 let touchAnswer: unknown;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -20,7 +20,7 @@ vi.mock('@/infrastructure/http', () => ({
             parseOrvalFixture(
                 config.method,
                 config.url,
-                config.url === '/account/session/touch' ? touchAnswer : undefined
+                config.url === '/account/sessions/current/touch' ? touchAnswer : undefined
             )
         )
     )
@@ -33,8 +33,9 @@ beforeEach(() => {
 
 /** How many times the touch was asked. */
 const touchesAsked = () =>
-    vi.mocked(orvalMutator).mock.calls.filter(([config]) => config.url === '/account/session/touch')
-        .length;
+    vi
+        .mocked(orvalMutator)
+        .mock.calls.filter(([config]) => config.url === '/account/sessions/current/touch').length;
 
 describe('the idle clock, asked when the viewer is set', () => {
     it('is read once per signed-in stretch, not at every viewer load', async () => {

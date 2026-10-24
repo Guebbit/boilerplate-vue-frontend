@@ -7847,7 +7847,7 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/session/touch:
+  /account/sessions/current/touch:
     post:
       tags:
         - Account

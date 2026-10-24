@@ -39,7 +39,7 @@ describe('AT11 · A staff member walks away', () => {
 
     it('a shopper is never asked: the session does not idle out', () => {
         cy.step('the touch tells a shopper no idle limit');
-        cy.intercept('POST', '**/account/session/touch').as('touch');
+        cy.intercept('POST', '**/account/sessions/current/touch').as('touch');
         cy.loginAs('user');
         cy.wait('@touch')
             .its('response.body')
@@ -57,7 +57,7 @@ describe('AT11 · A staff member walks away', () => {
 
     it('a staff member is asked, can stay, and is signed out when they ignore it', () => {
         cy.step('the touch gives a staff member the 30-minute limit');
-        cy.intercept('POST', '**/account/session/touch').as('touch');
+        cy.intercept('POST', '**/account/sessions/current/touch').as('touch');
         cy.loginAs('warehouse');
         cy.wait('@touch')
             .its('response.body')
