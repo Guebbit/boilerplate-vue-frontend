@@ -106,6 +106,8 @@ export const ERROR_CODES = {
     LIMIT_PART_COUNT: 'LIMIT_PART_COUNT',
     /** 400 — A multipart upload carries a file under a field name this operation does not accept (multer). */
     LIMIT_UNEXPECTED_FILE: 'LIMIT_UNEXPECTED_FILE',
+    /** 405 — The path exists, but not with this method. The `Allow` header lists the methods it does answer. */
+    METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
     /** 400 — A multipart file part carries no field name (multer). */
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */

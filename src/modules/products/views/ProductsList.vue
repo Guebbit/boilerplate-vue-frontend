@@ -212,8 +212,8 @@ const { sync: syncUrl } = useListUrlState({
     params: {
         text: 'string',
         id: 'string',
-        minPrice: 'number',
-        maxPrice: 'number',
+        priceMin: 'number',
+        priceMax: 'number',
         category: 'string',
         tag: 'string',
         active: 'boolean',
@@ -437,7 +437,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         hide-details
                     />
                     <v-number-input
-                        v-model="filters.minPrice"
+                        v-model="filters.priceMin"
                         data-test="filter-min-price"
                         :label="t('products-list-page.filter-min-price')"
                         :min="0"
@@ -445,7 +445,7 @@ const handleHardDelete = (productId: string, title: string) =>
                         hide-details
                     />
                     <v-number-input
-                        v-model="filters.maxPrice"
+                        v-model="filters.priceMax"
                         data-test="filter-max-price"
                         :label="t('products-list-page.filter-max-price')"
                         :min="0"

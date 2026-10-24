@@ -85,7 +85,7 @@ export const useStockAlertsStore = defineStore('stock-alerts', () => {
     };
 
     /**
-     * Asks to be told when a product can be ordered again: `POST /stock-alerts/{productId}`.
+     * Asks to be told when a product can be ordered again: `PUT /stock-alerts/{productId}`.
      * Idempotent server-side, so a double click answers the same list.
      *
      * @param productId - The product to wait for.

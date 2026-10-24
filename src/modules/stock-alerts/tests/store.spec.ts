@@ -37,7 +37,7 @@ beforeEach(() => {
     const asked = { items: [{ productId: 'p1', createdAt: '2026-10-18T09:00:00Z' }] };
     responses = {
         'GET /stock-alerts': orvalEnvelope(asked),
-        'POST /stock-alerts/p1': orvalEnvelope(asked),
+        'PUT /stock-alerts/p1': orvalEnvelope(asked),
         'DELETE /stock-alerts/p1': orvalEnvelope({ items: [] })
     };
 });
@@ -53,7 +53,7 @@ describe('the stock-alerts store', () => {
         expect(store.isAsked('p2')).toBe(false);
     });
 
-    it('asks with a POST and cancels with a DELETE, each replacing the list', async () => {
+    it('asks with a PUT and cancels with a DELETE, each replacing the list', async () => {
         const store = useStockAlertsStore();
 
         await store.ask('p1');
