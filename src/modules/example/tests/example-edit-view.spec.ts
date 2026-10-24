@@ -44,7 +44,7 @@ const EXAMPLE: Example = {
 };
 
 /**
- * Mounts the page for `ex-1`, seeding the store's cache by hand the way the route guard's load
+ * Mounts the page for `ex-1`, seeding the store's cache by hand the way an earlier load
  * would have left it, and spying every call the page makes.
  *
  * @returns The wrapper and the spies each case reads.

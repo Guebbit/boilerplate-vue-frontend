@@ -55,7 +55,7 @@ describe('every file of the example module carries the template header', () => {
     const files = sourceFiles(EXAMPLE_ROOT);
 
     it('finds the module’s files', () => {
-        expect(files.length).toBeGreaterThan(15);
+        expect(files.length).toBeGreaterThan(10);
     });
 
     it.each(files)('%s opens with `In any module:`, says `Here:`, ends on `See: docs/`', (file) => {

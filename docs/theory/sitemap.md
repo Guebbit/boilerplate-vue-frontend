@@ -156,15 +156,25 @@ flowchart TD
 
 ## Where guards live
 
-| Guard                | File                                | Registered on                  | Effect                                                                                                                                                                          |
-| -------------------- | ----------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tryRestoreAuth`     | `src/app/guards/authentications.ts` | `beforeEach` (first)           | Silently restores the access token from the refresh endpoint, then the viewer, then the rules that go with them, so `isAuth` and `can()` are settled before anything reads them |
-| `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second)          | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses                                                                                        |
-| `localeChoice`       | `src/app/guards/locale-choice.ts`   | `beforeResolve`                | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported                                               |
-| `exampleEditGuard`   | `src/modules/example/guards.ts`     | `beforeEnter` on `ExampleEdit` | Teaching-only: loads the record before the edit form mounts, and shows what a guard can and cannot reach. Scoped to one route, never app-wide                                   |
+| Guard                | File                                | Registered on         | Effect                                                                                                                                                                          |
+| -------------------- | ----------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tryRestoreAuth`     | `src/app/guards/authentications.ts` | `beforeEach` (first)  | Silently restores the access token from the refresh endpoint, then the viewer, then the rules that go with them, so `isAuth` and `can()` are settled before anything reads them |
+| `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second) | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses                                                                                        |
+| `localeChoice`       | `src/app/guards/locale-choice.ts`   | `beforeResolve`       | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported                                               |
 
 `canAccess` in the same file is not a guard — it is the shared predicate both `enforceRouteAccess`
 and `AppNavigation` call.
+
+### What a guard can reach
+
+A module does not register a data-loading guard: a detail or edit view loads its own record with the
+store's `watch*` call and renders its placeholder until the record arrives (`example/views/ExampleEdit.vue`).
+Why: a `beforeEnter` runs before the router's `beforeResolve`, so what a guard can use is narrow.
+
+- A Pinia store: yes, anywhere.
+- Translations: not yet. The locale dictionary loads in `beforeResolve`, after every `beforeEnter`, so `t()` in a guard returns the raw key.
+- Injected variables: never. A guard has no component scope.
+- A returned value: Vue Router reads ANY return as a navigation instruction, so a guard that only observes returns nothing.
 
 ## Auth persistence
 
