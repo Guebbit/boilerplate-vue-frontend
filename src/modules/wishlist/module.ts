@@ -18,6 +18,8 @@ import routes from './routes';
  * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
  *
  * Context map: `docs/modules/wishlist.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'wishlist',

@@ -19,6 +19,8 @@ import routes from './routes';
  * Reporting, not selling: it explains what the shop did, and owns none of the data.
  *
  * Context map: `docs/modules/stats.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'stats',

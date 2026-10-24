@@ -17,6 +17,8 @@ import routes from './routes';
  * role name.
  *
  * Context map: `docs/modules/api-keys.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'api-keys',

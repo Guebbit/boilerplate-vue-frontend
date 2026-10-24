@@ -16,6 +16,8 @@ import routes from './routes';
  * status live behind the API, not here.
  *
  * Context map: `docs/modules/orders.md` § "The map".
+ *
+ * Subdomain: `core`.
  */
 export default {
     name: 'orders',

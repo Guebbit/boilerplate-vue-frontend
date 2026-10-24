@@ -22,6 +22,8 @@ import routes from './routes';
  * anyone shops here.
  *
  * Context map: `docs/modules/inventory.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'inventory',

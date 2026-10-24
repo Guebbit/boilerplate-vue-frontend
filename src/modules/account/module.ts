@@ -28,6 +28,8 @@ import routes from './routes';
  * and the client half is thinner still — it renders forms over rules the server owns.
  *
  * Context map: `docs/modules/account.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'account',
