@@ -2,7 +2,7 @@
 
 ::: tip At a glance
 **Owns** — the visitor's own account: login (password, social, second factor), signup, profile,
-password reset, deletion.
+password reset, scheduled deletion and its restore.
 **Depends on** — [`users`](./users.md), and only for its field rules.
 **Breaks if you change** — nothing outside this folder. The step-up prompt lives with the session:
 `infrastructure/http/step-up.ts` parks a `REAUTH_REQUIRED` 401 and waits for
@@ -11,18 +11,18 @@ backend's freshness gate — email change, account delete, session revoke, check
 management — is answered through that one prompt.
 :::
 
-| Fact                    | This module                                                                                                                                                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                                  |
-| **Screens**             | 12 — `Login` · `Signup` · `TwoFactorChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountDeleteConfirm` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `EmailChangeUndo` · `OAuthCallback` · `Profile` · `Logout` |
-| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountOAuthLinks` · `accountTwoFactor`                                                                                       |
-| **Menu entries**        | `Profile`                                                                                                                                                                                                                            |
-| **API calls**           | 31                                                                                                                                                                                                                                   |
-| **Depends on**          | [`users`](./users.md)                                                                                                                                                                                                                |
-| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`                                                                                                                                 |
-| **Languages**           | `en` · `it`                                                                                                                                                                                                                          |
-| **Publishes**           | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                                                               |
-| **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                                              |
+| Fact                    | This module                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                            |
+| **Screens**             | 12 — `Login` · `Signup` · `TwoFactorChallenge` · `PasswordResetRequest` · `PasswordResetConfirm` · `AccountRestore` · `VerifyEmailConfirm` · `EmailChangeConfirm` · `EmailChangeUndo` · `OAuthCallback` · `Profile` · `Logout` |
+| **Stores**              | `accountAuth` · `accountProfile` · `accountSessions` · `accountAddresses` · `accountOAuthProviders` · `accountOAuthLinks` · `accountTwoFactor`                                                                                 |
+| **Menu entries**        | `Profile`                                                                                                                                                                                                                      |
+| **API calls**           | 31                                                                                                                                                                                                                             |
+| **Depends on**          | [`users`](./users.md)                                                                                                                                                                                                          |
+| **Depended on by**      | [`cart`](./cart.md) — mounts `AddressPicker`, twice (shipping and billing), and `PurchaseHoldNotice`                                                                                                                           |
+| **Languages**           | `en` · `it`                                                                                                                                                                                                                    |
+| **Publishes**           | `AddressPicker` · `PurchaseHoldNotice`                                                                                                                                                                                         |
+| **Backend counterpart** | `account` in `boilerplate-node-backend`                                                                                                                                                                                        |
 
 ## The map
 
@@ -99,7 +99,7 @@ Seven stores, listed by what each one's setup function returns — an internal r
 | Store                   | File                    | Surface                                                                                                                                                                                                                                                                                                    |
 | ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `accountAuth`           | `stores/auth.ts`        | `login` · `signup` · `requestPasswordReset` · `confirmPasswordReset` · `logout` · `logoutEverywhere`                                                                                                                                                                                                       |
-| `accountProfile`        | `stores/profile.ts`     | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `confirmAccountDelete` · `requestAccountExport` · `downloadAccountExport`                                                                                 |
+| `accountProfile`        | `stores/profile.ts`     | `profile` · `loading` · `resetAll` · `fetchProfile` · `updateProfile` · `changePassword` · `confirmEmailVerification` · `requestAccountDelete` · `restoreAccount` · `requestAccountExport` · `downloadAccountExport`                                                                                       |
 | `accountSessions`       | `stores/sessions.ts`    | `sessions` · `loading` · `fetchSessions` · `revokeSession`                                                                                                                                                                                                                                                 |
 | `accountAddresses`      | `stores/addresses.ts`   | `addresses` · `loading` · `fetchAddresses` · `addAddress` · `updateAddress` · `setDefaultAddress` · `removeAddress`                                                                                                                                                                                        |
 | `accountOAuthProviders` | `stores/oauth.ts`       | `providers` · `loading` · `fetchProviders`                                                                                                                                                                                                                                                                 |
@@ -108,7 +108,7 @@ Seven stores, listed by what each one's setup function returns — an internal r
 
 ## Screens
 
-`VerifyEmailConfirm`, `EmailChangeConfirm`, `EmailChangeUndo` and `AccountDeleteConfirm` render `components/LinkTokenConfirmCard.vue`; `PasswordResetConfirm` is its own form (three fields, a cross-field rule, field-level server errors).
+`VerifyEmailConfirm`, `EmailChangeConfirm`, `EmailChangeUndo` and `AccountRestore` render `components/LinkTokenConfirmCard.vue`; `PasswordResetConfirm` is its own form (three fields, a cross-field rule, field-level server errors).
 
 | Path                     | Route name              | Access   | Permission | View                              |
 | ------------------------ | ----------------------- | -------- | ---------- | --------------------------------- |
@@ -117,7 +117,7 @@ Seven stores, listed by what each one's setup function returns — an internal r
 | `login/2fa`              | `TwoFactorChallenge`    | `guest`  | —          | `views/TwoFactorChallenge.vue`    |
 | `password-reset`         | `PasswordResetRequest`  | `guest`  | —          | `views/PasswordResetRequest.vue`  |
 | `password-reset/confirm` | `PasswordResetConfirm`  | `guest`  | —          | `views/PasswordResetConfirm.vue`  |
-| `account-delete/confirm` | `AccountDeleteConfirm`  | `public` | —          | `views/AccountDeleteConfirm.vue`  |
+| `account-restore`        | `AccountRestore`        | `public` | —          | `views/AccountRestore.vue`        |
 | `verify-email/confirm`   | `VerifyEmailConfirm`    | `public` | —          | `views/VerifyEmailConfirm.vue`    |
 | `oauth/callback`         | `OAuthCallback`         | `public` | —          | `views/OAuthCallback.vue`         |
 | `account-export/:id`     | `AccountExportDownload` | `auth`   | —          | `views/AccountExportDownload.vue` |
@@ -132,7 +132,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 | Call                                         | Response envelope                  |
 | -------------------------------------------- | ---------------------------------- |
-| `DELETE /account`                            | `RequestAccountDeleteResponse`     |
+| `DELETE /account`                            | `AccountDeletionEnvelope`          |
 | `PATCH /account`                             | `UpdateAccountResponse`            |
 | `GET /account/2fa`                           | `GetTwoFactorStatusResponse`       |
 | `POST /account/2fa/disable`                  | `DisableTwoFactorResponse`         |
@@ -145,7 +145,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `DELETE /account/addresses/{id}`             | `RemoveAddressResponse`            |
 | `PATCH /account/addresses/{id}`              | `UpdateAddressResponse`            |
 | `PUT /account/addresses/{id}/default`        | `SetDefaultAddressResponse`        |
-| `DELETE /account/delete-confirm`             | `ConfirmAccountDeleteResponse`     |
+| `POST /account/restore`                      | `RestoreAccountResponse`           |
 | `POST /account/export`                       | `RequestAccountExportResponse`     |
 | `GET /account/export/{id}`                   | `DownloadAccountExportResponse`    |
 | `POST /account/login`                        | `LoginResponse`                    |
@@ -235,7 +235,7 @@ counting the logout that succeeded rather than the one that was attempted. See
 | `tests/routes.spec.ts`                      | Vitest suite — the route records and the `meta.access` each one declares.                                                                                                                                                         | [read](../tools/unit-testing.md)      |
 | `tests/sessions.spec.ts`                    | Vitest suite — `sessions`, in isolation.                                                                                                                                                                                          | [read](../tools/unit-testing.md)      |
 | `tests/two-factor-store.spec.ts`            | Vitest suite — `two-factor-store`, in isolation.                                                                                                                                                                                  | [read](../tools/unit-testing.md)      |
-| `views/AccountDeleteConfirm.vue`            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
+| `views/AccountRestore.vue`                  | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
 | `views/Login.vue`                           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
 | `views/OAuthCallback.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |
 | `views/PasswordResetConfirm.vue`            | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                                                                | [read](../theory/layers.md)           |

@@ -280,27 +280,27 @@ describe('Profile self-service', () => {
     });
 
     describe('account deletion', () => {
-        it('the emailed link permanently deletes the account', () => {
+        it('locks the account at once, and the emailed link restores it', () => {
             cy.skipUnlessMailbox();
             cy.get('[data-test=profile-delete-account] button').click();
             cy.get('[data-test=app-dialog-confirm]').click();
-            cy.contains('We sent a confirmation email').should('exist');
+            // The session is gone with the lock: the visitor lands Home and is told when.
+            cy.get('#home-page').should('exist');
+            cy.contains('Your account is locked and will be erased on').should('exist');
 
             cy.emailTo(seedAccount('user').email).then((email) => {
-                expectMailTemplate(email, 'account.delete-request');
+                expectMailTemplate(email, 'account.deletion-scheduled');
                 cy.visit(mailedLinkUrl(email));
             });
-            cy.get('#account-delete-confirm-page button[type=submit]').click();
-            cy.contains('Your account has been deleted').should('exist');
-            cy.get('#home-page').should('exist');
+            cy.get('#account-restore-page button[type=submit]').click();
+            cy.contains('Your account is restored').should('exist');
 
-            // The account is really gone: the very credentials just used no longer sign in.
-            cy.visit('/en/login');
+            // Restoring signs nobody in; the same credentials do.
+            cy.get('#login-page').should('exist');
             cy.get('[type=email]').should('not.be.disabled').type(seedAccount('user').email);
             cy.get('[type=password]').should('not.be.disabled').type(seedAccount('user').password);
             cy.get('form').submit();
-            cy.get('#login-page').should('exist');
-            cy.url().should('include', '/login');
+            cy.url().should('not.include', '/login');
         });
     });
 });

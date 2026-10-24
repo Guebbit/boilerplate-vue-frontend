@@ -1,6 +1,6 @@
 /**
  * @module
- * Mounts the real verify-email, email-change-undo and account-delete pages, which share `LinkTokenConfirmCard`:
+ * Mounts the real verify-email, email-change-undo and account-restore pages, which share `LinkTokenConfirmCard`:
  * the token is read from the `#token=` fragment and scrubbed off the URL, nothing is spent on
  * mount, a submit spends exactly that token and lands on the page's own route, and a refusal
  * blocks the form in place. The store calls are spied at the profile store.
@@ -11,7 +11,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import VerifyEmailConfirm from '../views/VerifyEmailConfirm.vue';
 import EmailChangeUndo from '../views/EmailChangeUndo.vue';
-import AccountDeleteConfirm from '../views/AccountDeleteConfirm.vue';
+import AccountRestore from '../views/AccountRestore.vue';
 import { useProfileStore } from '../stores/profile.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
@@ -40,7 +40,7 @@ const router = createRouter({
  */
 const mountPage = (
     page: typeof VerifyEmailConfirm,
-    action: 'confirmEmailVerification' | 'undoEmailChange' | 'confirmAccountDelete'
+    action: 'confirmEmailVerification' | 'undoEmailChange' | 'restoreAccount'
 ) => {
     const spend = vi.spyOn(useProfileStore(), action).mockResolvedValue(undefined);
     const wrapper = mount(page, { global: { plugins: [router, vuetify, i18n] } });
@@ -138,32 +138,28 @@ describe('LinkTokenConfirmCard', () => {
             });
         }));
 
-    describe('the account-delete page', () => {
-        it('warns, uses the destructive tone and offers the way back', () =>
-            router.push('/en/account-delete/confirm#token=del1').then(() => {
-                const { wrapper } = mountPage(AccountDeleteConfirm, 'confirmAccountDelete');
-                expect(wrapper.find('.v-alert').exists()).toBe(true);
-                expect(wrapper.get('button[type=submit]').classes()).toContain('bg-error');
-                expect(wrapper.find('#account-delete-confirm-page a').exists()).toBe(true);
+    describe('the account-restore page', () => {
+        it('uses the ordinary tone, with no warning and no way back to a profile that is gone', () =>
+            router.push('/en/account-restore#token=res1').then(() => {
+                const { wrapper } = mountPage(AccountRestore, 'restoreAccount');
+                expect(wrapper.find('.v-alert').exists()).toBe(false);
+                expect(wrapper.get('button[type=submit]').classes()).not.toContain('bg-error');
             }));
 
-        it('spends the token and lands on Home', () =>
-            router.push('/en/account-delete/confirm#token=del1').then(() => {
-                const { wrapper, spend, navigate } = mountPage(
-                    AccountDeleteConfirm,
-                    'confirmAccountDelete'
-                );
+        it('spends the token and lands on Login: restoring signs nobody in', () =>
+            router.push('/en/account-restore#token=res1').then(() => {
+                const { wrapper, spend, navigate } = mountPage(AccountRestore, 'restoreAccount');
                 return submit(wrapper).then(() => {
-                    expect(spend).toHaveBeenCalledExactlyOnceWith('del1');
+                    expect(spend).toHaveBeenCalledExactlyOnceWith('res1');
                     expect(navigate).toHaveBeenCalledExactlyOnceWith(
-                        expect.objectContaining({ name: 'Home' })
+                        expect.objectContaining({ name: 'Login' })
                     );
                 });
             }));
 
         it('puts a server error naming the token under the field, not in the alert', () =>
-            router.push('/en/account-delete/confirm#token=del1').then(() => {
-                const { wrapper, spend } = mountPage(AccountDeleteConfirm, 'confirmAccountDelete');
+            router.push('/en/account-restore#token=res1').then(() => {
+                const { wrapper, spend } = mountPage(AccountRestore, 'restoreAccount');
                 spend.mockRejectedValue({
                     success: false,
                     status: 422,
@@ -171,26 +167,22 @@ describe('LinkTokenConfirmCard', () => {
                     errors: [{ code: 'VALIDATION', field: 'token', message: 'Malformed token' }]
                 });
                 return submit(wrapper).then(() => {
-                    expect(wrapper.find('[data-test=account-delete-confirm-error]').exists()).toBe(
-                        false
-                    );
+                    expect(wrapper.find('[data-test=account-restore-error]').exists()).toBe(false);
                     expect(wrapper.find('.v-messages__message').text()).toContain('Malformed');
                 });
             }));
 
         it('blocks the form in place for a refusal that names no field', () =>
-            router.push('/en/account-delete/confirm#token=del1').then(() => {
-                const { wrapper, spend } = mountPage(AccountDeleteConfirm, 'confirmAccountDelete');
+            router.push('/en/account-restore#token=res1').then(() => {
+                const { wrapper, spend } = mountPage(AccountRestore, 'restoreAccount');
                 spend.mockRejectedValue({
                     success: false,
-                    status: 400,
-                    message: 'Bad Request',
-                    errors: [{ code: 'TOKEN_INVALID', message: 'This link is no longer valid' }]
+                    status: 422,
+                    message: 'Unprocessable',
+                    errors: [{ code: 'VALIDATION', message: 'This link is no longer valid' }]
                 });
                 return submit(wrapper).then(() => {
-                    expect(wrapper.find('[data-test=account-delete-confirm-error]').exists()).toBe(
-                        true
-                    );
+                    expect(wrapper.find('[data-test=account-restore-error]').exists()).toBe(true);
                 });
             }));
     });

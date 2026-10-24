@@ -212,6 +212,8 @@ export const ERROR_CODES = {
     USER_ALREADY_ACTIVE: 'USER_ALREADY_ACTIVE',
     /** 409 — The account is deactivated already: `POST /users/{id}/deactivate` has nothing to do. */
     USER_ALREADY_INACTIVE: 'USER_ALREADY_INACTIVE',
+    /** 409 — The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored. */
+    USER_ERASURE_DUE: 'USER_ERASURE_DUE',
     /** 409 — The account is not soft-deleted, so there is nothing to restore. */
     USER_NOT_DELETED: 'USER_NOT_DELETED',
     /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */

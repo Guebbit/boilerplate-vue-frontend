@@ -47,12 +47,13 @@ export default [
         component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
-        // Public deliberately: the confirmation link arrives by email, and the visitor following
-        // it is by definition not logged in — the token in the URL is the credential.
-        path: 'account-delete/confirm',
-        name: 'AccountDeleteConfirm',
-        meta: { title: 'account-delete-confirm-page.page-title' },
-        component: () => import('./views/AccountDeleteConfirm.vue')
+        // Public deliberately: the restore link arrives by email, and the visitor following it is
+        // by definition not logged in (the deletion ended every session) — the token is the
+        // credential.
+        path: 'account-restore',
+        name: 'AccountRestore',
+        meta: { title: 'account-restore-page.page-title' },
+        component: () => import('./views/AccountRestore.vue')
     },
     {
         // Public for the same reason as the two confirms above: the token is the credential.

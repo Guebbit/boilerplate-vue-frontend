@@ -13,11 +13,16 @@ import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { Account, AccountExportRequest, EmailVerificationRequested } from '@types';
+import type {
+    Account,
+    AccountDeletion,
+    AccountExportRequest,
+    EmailVerificationRequested
+} from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
-    confirmAccountDelete as apiConfirmAccountDelete,
+    restoreAccount as apiRestoreAccount,
     updateAccount as apiUpdateAccount,
     updateAccountWithMultipart as apiUpdateAccountWithMultipart,
     cancelPendingEmailChange as apiCancelPendingEmailChange,
@@ -451,12 +456,21 @@ export const useProfileStore = defineStore('accountProfile', () => {
     };
 
     /**
-     * Initiates the account deletion flow, sending a confirmation token to the
-     * user's email.
+     * Locks the account and schedules its erasure (`DELETE /account`). The server ended every
+     * session in the same write, so the local one is dropped here too; the answer carries the date
+     * the account is erased on unless it is restored first.
      *
-     * @returns A promise resolving once the request has been accepted.
+     * @returns A promise resolving with the two dates, once the local session is gone.
      */
-    const requestAccountDelete = () => fetchAny(() => apiRequestAccountDelete());
+    const requestAccountDelete = () =>
+        fetchAny(() =>
+            apiRequestAccountDelete().then((data) => getPayloadFromResponse<AccountDeletion>(data))
+        ).then((schedule) => {
+            // After the call settles, not inside it: tearing the session down clears the query
+            // cache the call is still running under, which drops its answer.
+            endLocalSession();
+            return schedule;
+        });
 
     /**
      * Asks for a copy of everything the API holds for the visitor's own account (profile,
@@ -490,14 +504,13 @@ export const useProfileStore = defineStore('accountProfile', () => {
     const downloadAccountExport = (id: string) => fetchAny(() => apiDownloadAccountExport(id));
 
     /**
-     * Completes account deletion using the one-time token.
+     * Cancels a scheduled account deletion with the mailed link's one-time token. It signs nobody
+     * in — holding the mailbox is not a login — so the visitor lands on the login page after it.
      *
-     * @param token - Confirmation token received by email.
-     * @returns A promise resolving once the account is deleted and the local
-     *  session and cached record have been cleared.
+     * @param token - Restore token received by email.
+     * @returns A promise resolving once the deletion is cancelled.
      */
-    const confirmAccountDelete = (token: string) =>
-        fetchAny(() => apiConfirmAccountDelete({ token }).then(endLocalSession));
+    const restoreAccount = (token: string) => fetchAny(() => apiRestoreAccount({ token }));
 
     /**
      * Whether a picked avatar is being uploaded.
@@ -524,7 +537,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         confirmEmailChange,
         undoEmailChange,
         requestAccountDelete,
-        confirmAccountDelete,
+        restoreAccount,
         endLocalSession,
         requestAccountExport,
         downloadAccountExport

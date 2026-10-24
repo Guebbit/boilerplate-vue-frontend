@@ -1627,15 +1627,19 @@ paths:
     delete:
       tags:
         - Account
-      summary: Request account deletion
-      description: Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+      summary: Delete the account (locked at once, erased after a grace)
+      description: "Locks the authenticated user's account at once and schedules its erasure. Every session dies with the call (the session cookie is cleared) and the account can no longer sign in, so the answer is the last thing the caller sees. The account is erased `NODE_ACCOUNT_DELETION_GRACE_DAYS` days later (30 by default, never more than one calendar month: GDPR Art. 12(3)), at `purgeAt`. Until then it can be brought back by the link in the mail this call sends (`POST /account/restore`), by signing in (`POST /account/login` offers the restore), or by staff (`POST /users/{id}/restore`). Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`)."
       operationId: requestAccountDelete
       security:
         - bearerAuth: []
         - cookieAuth: []
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "202":
+          description: The account is locked and its erasure is scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeletionEnvelope"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2464,27 +2468,25 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-  /account/delete-confirm:
-    delete:
+  /account/restore:
+    post:
       tags:
         - Account
-      summary: Confirm account deletion
-      description: Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account. Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
-      operationId: confirmAccountDelete
+      summary: Cancel a scheduled account deletion with the mailed link
+      description: "Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms."
+      operationId: restoreAccount
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AccountDeleteConfirmRequest"
+              $ref: "#/components/schemas/AccountRestoreRequest"
       responses:
         "200":
           $ref: "#/components/responses/Success"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -2503,7 +2505,7 @@ paths:
       tags:
         - Auth
       summary: Login
-      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead."
+      description: "Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call."
       operationId: login
       security: []
       requestBody:
@@ -2514,11 +2516,49 @@ paths:
               $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
-          description: Auth tokens, or a two-factor challenge
+          description: Auth tokens, a two-factor challenge, or the offer to restore an account in its deletion grace
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
+  /account/login/restore:
+    post:
+      tags:
+        - Auth
+      summary: Restore an account in its deletion grace and sign in
+      description: "The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401."
+      operationId: loginRestore
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRestoreRequest"
+      responses:
+        "200":
+          description: The account is restored, and this is its new session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokensEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2718,7 +2758,7 @@ paths:
       tags:
         - Auth
       summary: Complete a two-factor login
-      description: The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
+      description: The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
       operationId: loginTwoFactor
       security: []
       requestBody:
@@ -2729,11 +2769,11 @@ paths:
               $ref: "#/components/schemas/LoginTwoFactorRequest"
       responses:
         "200":
-          description: Auth tokens
+          description: Auth tokens, or the offer to restore an account in its deletion grace
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTokensEnvelope"
+                $ref: "#/components/schemas/LoginTwoFactorResponseEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3259,7 +3299,7 @@ paths:
       tags:
         - Auth
       summary: Complete an OAuth login
-      description: "Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out)."
+      description: "Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. When the account is inside the grace of its own deletion and has no second factor, no session is minted either: the redirect carries `?deletionPending=1&purgeAt=...&expiresAt=...` and the claim check travels in a short-lived httpOnly cookie that `POST /account/login/restore` reads when its body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out)."
       operationId: completeOAuthLogin
       security: []
       parameters:
@@ -3671,7 +3711,7 @@ paths:
       tags:
         - Users
       summary: Restore user
-      description: Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+      description: Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
       operationId: restoreUserById
       security:
         - bearerAuth: []
@@ -10786,6 +10826,10 @@ components:
           $ref: "#/components/schemas/PurchaseHold"
         actions:
           $ref: "#/components/schemas/UserActions"
+        purgeAt:
+          type: string
+          format: date-time
+          description: When the account is erased, after its owner asked to delete it. Present only on such a row, and `deletedAt` is then the request time. Staff may restore it until then (`POST /users/{id}/restore`).
         purchaseHoldFlaggedAt:
           type: string
           format: date-time
@@ -12288,6 +12332,38 @@ components:
           minLength: 1
         analyticsConsent:
           type: boolean
+    AccountDeletion:
+      type: object
+      additionalProperties: false
+      required:
+        - requestedAt
+        - purgeAt
+      properties:
+        requestedAt:
+          type: string
+          format: date-time
+          description: When the deletion was asked for, and the account locked.
+        purgeAt:
+          type: string
+          format: date-time
+          description: When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest.
+    AccountDeletionEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/AccountDeletion"
     UpdateAccountRequest:
       type: object
       additionalProperties: false
@@ -12927,7 +13003,7 @@ components:
           maxLength: 128
           minLength: 1
           description: One-time email verification token (NOT a JWT).
-    AccountDeleteConfirmRequest:
+    AccountRestoreRequest:
       type: object
       additionalProperties: false
       required:
@@ -12937,7 +13013,7 @@ components:
           type: string
           maxLength: 128
           minLength: 1
-          description: One-time account deletion token (NOT a JWT).
+          description: One-time account restore token (NOT a JWT).
     RememberTier:
       type: string
       enum:
@@ -13024,11 +13100,37 @@ components:
         defaultMethod:
           type: string
           description: Which of `methods` to offer first — the cheapest one for the user, which is a device method when there is one.
+    DeletionPending:
+      type: object
+      additionalProperties: false
+      required:
+        - deletionPending
+        - challenge
+        - expiresAt
+        - purgeAt
+      properties:
+        deletionPending:
+          type: boolean
+          enum:
+            - true
+          description: Always true. The credentials checked out, but the account is inside the grace of its own deletion, so no session is issued until the owner chooses to restore it.
+        challenge:
+          type: string
+          description: A claim check recording how the sign-in was proven (password, and the second factor when armed). Submit it to `POST /account/login/restore`.
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the challenge stops being accepted. Signing in again earns a new one.
+        purgeAt:
+          type: string
+          format: date-time
+          description: When the account is erased unless restored before.
     LoginOutcome:
       oneOf:
         - $ref: "#/components/schemas/AuthTokens"
         - $ref: "#/components/schemas/MfaChallenge"
-      description: Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
+        - $ref: "#/components/schemas/DeletionPending"
+      description: A full session (AuthTokens), a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled, or the offer to restore an account inside the grace of its own deletion (DeletionPending).
     LoginResponseEnvelope:
       type: object
       additionalProperties: false
@@ -13046,6 +13148,19 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/LoginOutcome"
+    LoginRestoreRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        challenge:
+          type: string
+          maxLength: 128
+          minLength: 1
+          description: The `DeletionPending` challenge. Omit it for an OAuth-originated sign-in — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
+        remember:
+          $ref: "#/components/schemas/RememberTier"
+        transport:
+          $ref: "#/components/schemas/SessionTransport"
     SignupRequest:
       type: object
       additionalProperties: false
@@ -13174,6 +13289,28 @@ components:
           $ref: "#/components/schemas/RememberTier"
         transport:
           $ref: "#/components/schemas/SessionTransport"
+    LoginTwoFactorOutcome:
+      oneOf:
+        - $ref: "#/components/schemas/AuthTokens"
+        - $ref: "#/components/schemas/DeletionPending"
+      description: A full session (AuthTokens), or the offer to restore an account inside the grace of its own deletion (DeletionPending) once its second factor passed.
+    LoginTwoFactorResponseEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/LoginTwoFactorOutcome"
     TwoFactorSendRequest:
       type: object
       additionalProperties: false
@@ -20889,6 +21026,9 @@ x-error-codes:
   USER_ALREADY_INACTIVE:
     status: 409
     description: "The account is deactivated already: `POST /users/{id}/deactivate` has nothing to do."
+  USER_ERASURE_DUE:
+    status: 409
+    description: The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored.
   USER_NOT_DELETED:
     status: 409
     description: The account is not soft-deleted, so there is nothing to restore.

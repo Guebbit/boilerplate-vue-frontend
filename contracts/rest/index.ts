@@ -246,6 +246,8 @@ export interface User {
     deletedAt?: string;
     purchaseHold?: PurchaseHold;
     actions: UserActions;
+    /** When the account is erased, after its owner asked to delete it. Present only on such a row, and `deletedAt` is then the request time. Staff may restore it until then (`POST /users/{id}/restore`). */
+    purgeAt?: string;
     /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
     purchaseHoldFlaggedAt?: string;
 }
@@ -1226,6 +1228,20 @@ export interface ReplaceAccountRequestMultipart {
     analyticsConsent: boolean;
 }
 
+export interface AccountDeletion {
+    /** When the deletion was asked for, and the account locked. */
+    requestedAt: string;
+    /** When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest. */
+    purgeAt: string;
+}
+
+export interface AccountDeletionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AccountDeletion;
+}
+
 export interface UpdateAccountRequest {
     email?: Email;
     /**
@@ -1624,9 +1640,9 @@ export interface VerifyEmailConfirmRequest {
     token: string;
 }
 
-export interface AccountDeleteConfirmRequest {
+export interface AccountRestoreRequest {
     /**
-     * One-time account deletion token (NOT a JWT).
+     * One-time account restore token (NOT a JWT).
      * @minLength 1
      * @maxLength 128
      */
@@ -1691,16 +1707,38 @@ export interface MfaChallenge {
     defaultMethod?: string;
 }
 
+export interface DeletionPending {
+    /** Always true. The credentials checked out, but the account is inside the grace of its own deletion, so no session is issued until the owner chooses to restore it. */
+    deletionPending: true;
+    /** A claim check recording how the sign-in was proven (password, and the second factor when armed). Submit it to `POST /account/login/restore`. */
+    challenge: string;
+    /** When the challenge stops being accepted. Signing in again earns a new one. */
+    expiresAt: string;
+    /** When the account is erased unless restored before. */
+    purgeAt: string;
+}
+
 /**
- * Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
+ * A full session (AuthTokens), a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled, or the offer to restore an account inside the grace of its own deletion (DeletionPending).
  */
-export type LoginOutcome = AuthTokens | MfaChallenge;
+export type LoginOutcome = AuthTokens | MfaChallenge | DeletionPending;
 
 export interface LoginResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: LoginOutcome;
+}
+
+export interface LoginRestoreRequest {
+    /**
+     * The `DeletionPending` challenge. Omit it for an OAuth-originated sign-in — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
+     * @minLength 1
+     * @maxLength 128
+     */
+    challenge?: string;
+    remember?: RememberTier;
+    transport?: SessionTransport;
 }
 
 export interface SignupRequest {
@@ -1781,6 +1819,18 @@ export interface LoginTwoFactorRequest {
     code: string;
     remember?: RememberTier;
     transport?: SessionTransport;
+}
+
+/**
+ * A full session (AuthTokens), or the offer to restore an account inside the grace of its own deletion (DeletionPending) once its second factor passed.
+ */
+export type LoginTwoFactorOutcome = AuthTokens | DeletionPending;
+
+export interface LoginTwoFactorResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LoginTwoFactorOutcome;
 }
 
 export interface TwoFactorSendRequest {
@@ -8157,13 +8207,13 @@ export const updateAccountWithMultipart = (
 };
 
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
- * @summary Request account deletion
+ * Locks the authenticated user's account at once and schedules its erasure. Every session dies with the call (the session cookie is cleared) and the account can no longer sign in, so the answer is the last thing the caller sees. The account is erased `NODE_ACCOUNT_DELETION_GRACE_DAYS` days later (30 by default, never more than one calendar month: GDPR Art. 12(3)), at `purgeAt`. Until then it can be brought back by the link in the mail this call sends (`POST /account/restore`), by signing in (`POST /account/login` offers the restore), or by staff (`POST /users/{id}/restore`). Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+ * @summary Delete the account (locked at once, erased after a grace)
  */
 export const requestAccountDelete = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<AccountDeletionEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
+    return orvalMutator<AccountDeletionEnvelope>({ url: `/account`, method: 'DELETE' }, options);
 };
 
 /**
@@ -8544,26 +8594,26 @@ export const undoEmailChange = (
 };
 
 /**
- * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account. Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
- * @summary Confirm account deletion
+ * Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
+ * @summary Cancel a scheduled account deletion with the mailed link
  */
-export const confirmAccountDelete = (
-    accountDeleteConfirmRequest: AccountDeleteConfirmRequest,
+export const restoreAccount = (
+    accountRestoreRequest: AccountRestoreRequest,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/delete-confirm`,
-            method: 'DELETE',
+            url: `/account/restore`,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: accountDeleteConfirmRequest
+            data: accountRestoreRequest
         },
         options
     );
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const login = (
@@ -8576,6 +8626,25 @@ export const login = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: loginRequest
+        },
+        options
+    );
+};
+
+/**
+ * The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401.
+ * @summary Restore an account in its deletion grace and sign in
+ */
+export const loginRestore = (
+    loginRestoreRequest: LoginRestoreRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login/restore`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginRestoreRequest
         },
         options
     );
@@ -8666,14 +8735,14 @@ export const requestAccountExport = (
 };
 
 /**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
  * @summary Complete a two-factor login
  */
 export const loginTwoFactor = (
     loginTwoFactorRequest: LoginTwoFactorRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LoginTwoFactorResponseEnvelope>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<LoginTwoFactorResponseEnvelope>(
         {
             url: `/account/login/2fa`,
             method: 'POST',
@@ -8896,7 +8965,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. When the account is inside the grace of its own deletion and has no second factor, no session is minted either: the redirect carries `?deletionPending=1&purgeAt=...&expiresAt=...` and the claim check travels in a short-lived httpOnly cookie that `POST /account/login/restore` reads when its body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
@@ -9159,7 +9228,7 @@ export const deleteUserById = (
 };
 
 /**
- * Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
  * @summary Restore user
  */
 export const restoreUserById = (
@@ -12098,10 +12167,9 @@ export type ConfirmEmailVerificationResult = NonNullable<
 >;
 export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
 export type UndoEmailChangeResult = NonNullable<Awaited<ReturnType<typeof undoEmailChange>>>;
-export type ConfirmAccountDeleteResult = NonNullable<
-    Awaited<ReturnType<typeof confirmAccountDelete>>
->;
+export type RestoreAccountResult = NonNullable<Awaited<ReturnType<typeof restoreAccount>>>;
 export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type LoginRestoreResult = NonNullable<Awaited<ReturnType<typeof loginRestore>>>;
 export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
 export type RequestPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof requestPasswordReset>>
