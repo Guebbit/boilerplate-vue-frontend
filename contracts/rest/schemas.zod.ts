@@ -5779,7 +5779,7 @@ export const GetWishlistResponse = zod.strictObject({
     })
 });
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body. Answers 201 when this call saved the product and 200 when it was already saved, which fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
+ * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
 export const createWishlistItemPathProductIdMax = 64;
@@ -16788,7 +16788,7 @@ export const ListStockAlertsResponse = zod.strictObject({
     })
 });
 /**
- * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. "This request exists" is a yes/no state on a URI, which is what PUT states: 201 when this call recorded it, 200 when it was already there (RFC 9110 §9.3.4). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
  * @summary Ask to be told when a product is back
  */
 export const createStockAlertPathProductIdMax = 64;

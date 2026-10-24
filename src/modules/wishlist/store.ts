@@ -100,8 +100,8 @@ export const useWishlistStore = defineStore('wishlist', () => {
     };
 
     /**
-     * Saves a product: `PUT /wishlist/{productId}`, no body. Idempotent server-side (201 the
-     * first time, 200 after), so a double-clicked heart answers the same list.
+     * Saves a product: `PUT /wishlist/{productId}`, no body. Idempotent server-side, so a
+     * double-clicked heart answers the same list.
      *
      * @param productId - The product to save.
      * @returns A promise resolving with the updated lines.
