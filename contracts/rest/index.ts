@@ -1474,6 +1474,13 @@ export interface SessionsEnvelope {
     data: SessionsResponse;
 }
 
+export interface SessionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Session;
+}
+
 export interface Address {
     id: Id;
     /** The caller's own name for the entry — "home", "office". */
@@ -4979,6 +4986,13 @@ export interface ApiKeyCreatedEnvelope {
     data: ApiKeyCreated;
 }
 
+export interface ApiKeyEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ApiKey;
+}
+
 export interface SessionActivity {
     /** When the session last saw a real request — now, for a touch. */
     lastActiveAt: string;
@@ -7519,6 +7533,25 @@ export const mergeLocaleEntriesWithMergePatchJson = (
 };
 
 /**
+ * One entry of one app's slice of a language, at the address the single-entry writes
+ * target. Guarded like the list it comes from (`update:Locale`, the editing screen's
+ * key). An entry of another app or language, an unknown id and a malformed one are
+ * the same 404.
+ * @summary Get one translation entry
+ */
+export const getLocaleEntry = (
+    locale: string,
+    app: string,
+    entryId: string,
+    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+) => {
+    return orvalMutator<LocaleEntryEnvelope>(
+        { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Updates the value of one entry. The key is not editable — a key is the identity a
  * client looks the string up by, so changing it is a delete plus an add, and the two
  * collision checks that go with them.
@@ -8146,6 +8179,20 @@ export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessR
 };
 
 /**
+ * One of the caller's own live sessions, by the id `GET /account/sessions` gave out. Scoped like the list: another account's session, a session that has ended, an invented id and a malformed one are the same 404. The `current` marker is judged against the credential this request carries.
+ * @summary Get one session
+ */
+export const getSession = (
+    sessionId: Id,
+    options?: SecondParameter<typeof orvalMutator<SessionEnvelope>>
+) => {
+    return orvalMutator<SessionEnvelope>(
+        { url: `/account/sessions/${sessionId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
  * @summary Revoke one session
  */
@@ -8184,6 +8231,20 @@ export const addAddress = (
             headers: { 'Content-Type': 'application/json' },
             data: addressInput
         },
+        options
+    );
+};
+
+/**
+ * One entry of the caller's own book. Someone else's entry, an unknown id and a malformed one are the same 404.
+ * @summary Get an address
+ */
+export const getAddress = (
+    addressId: Id,
+    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+) => {
+    return orvalMutator<AddressEnvelope>(
+        { url: `/account/addresses/${addressId}`, method: 'GET' },
         options
     );
 };
@@ -9050,6 +9111,20 @@ export const searchFeedbackRequests = (
             headers: { 'Content-Type': 'application/json' },
             data: searchFeedbackRequestsRequest
         },
+        options
+    );
+};
+
+/**
+ * One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+ * @summary Get a feedback request
+ */
+export const getFeedbackRequest = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestEnvelope>(
+        { url: `/feedback/${id}`, method: 'GET' },
         options
     );
 };
@@ -10351,6 +10426,20 @@ export const releaseFulfillmentOrder = (
 };
 
 /**
+ * One shipment by its own id, at the address `PATCH` corrects it. Staff's read, behind the key that corrects a shipment (`update:Shipment`); a buyer reads their shipments through `GET /delivery/orders/{orderId}`. An unknown or malformed id is a 404.
+ * @summary Get a shipment
+ */
+export const getShipment = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/shipments/${id}`, method: 'GET' },
+        options
+    );
+};
+
+/**
  * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
  * @summary Correct a shipment's tracking code
  */
@@ -10916,6 +11005,17 @@ export const mintApiKey = (
         },
         options
     );
+};
+
+/**
+ * One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
+ * @summary Get a machine-to-machine credential
+ */
+export const getApiKey = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ApiKeyEnvelope>>
+) => {
+    return orvalMutator<ApiKeyEnvelope>({ url: `/api-keys/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -11765,6 +11865,7 @@ export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mer
 export type MergeLocaleEntriesWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof mergeLocaleEntriesWithMergePatchJson>>
 >;
+export type GetLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof getLocaleEntry>>>;
 export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>;
 export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
 export type GetEntityTranslationsResult = NonNullable<
@@ -11831,9 +11932,11 @@ export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
 export type ListSessionsResult = NonNullable<Awaited<ReturnType<typeof listSessions>>>;
 export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
+export type GetSessionResult = NonNullable<Awaited<ReturnType<typeof getSession>>>;
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
 export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>;
 export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
+export type GetAddressResult = NonNullable<Awaited<ReturnType<typeof getAddress>>>;
 export type ReplaceAddressResult = NonNullable<Awaited<ReturnType<typeof replaceAddress>>>;
 export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
 export type UpdateAddressWithMergePatchJsonResult = NonNullable<
@@ -11922,6 +12025,7 @@ export type ListFeedbackRequestsResult = NonNullable<
 export type SearchFeedbackRequestsResult = NonNullable<
     Awaited<ReturnType<typeof searchFeedbackRequests>>
 >;
+export type GetFeedbackRequestResult = NonNullable<Awaited<ReturnType<typeof getFeedbackRequest>>>;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
 >;
@@ -12041,6 +12145,7 @@ export type HoldFulfillmentOrderResult = NonNullable<
 export type ReleaseFulfillmentOrderResult = NonNullable<
     Awaited<ReturnType<typeof releaseFulfillmentOrder>>
 >;
+export type GetShipmentResult = NonNullable<Awaited<ReturnType<typeof getShipment>>>;
 export type UpdateShipmentResult = NonNullable<Awaited<ReturnType<typeof updateShipment>>>;
 export type UpdateShipmentWithMergePatchJsonResult = NonNullable<
     Awaited<ReturnType<typeof updateShipmentWithMergePatchJson>>
@@ -12098,6 +12203,7 @@ export type ReplayWebhookDeliveryResult = NonNullable<
 export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof listWebhookEvents>>>;
 export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
+export type GetApiKeyResult = NonNullable<Awaited<ReturnType<typeof getApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;

@@ -800,6 +800,59 @@ export const MergeLocaleEntriesResponse = zod.strictObject({
     })
 });
 /**
+ * One entry of one app's slice of a language, at the address the single-entry writes
+ * target. Guarded like the list it comes from (`update:Locale`, the editing screen's
+ * key). An entry of another app or language, an unknown id and a malformed one are
+ * the same 404.
+ * @summary Get one translation entry
+ */
+export const getLocaleEntryPathLocaleMax = 35;
+export const getLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleEntryPathAppMax = 64;
+export const getLocaleEntryPathAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const getLocaleEntryPathEntryIdMax = 64;
+export const getLocaleEntryPathEntryIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetLocaleEntryParams = zod.strictObject({
+    locale: zod.string().max(getLocaleEntryPathLocaleMax).regex(getLocaleEntryPathLocaleRegExp),
+    app: zod.string().min(1).max(getLocaleEntryPathAppMax).regex(getLocaleEntryPathAppRegExp),
+    entryId: zod
+        .string()
+        .min(1)
+        .max(getLocaleEntryPathEntryIdMax)
+        .regex(getLocaleEntryPathEntryIdRegExp)
+});
+export const getLocaleEntryResponseDataIdMax = 64;
+export const getLocaleEntryResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getLocaleEntryResponseDataLocaleMax = 35;
+export const getLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleEntryResponseDataAppMax = 64;
+export const getLocaleEntryResponseDataAppRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+export const GetLocaleEntryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getLocaleEntryResponseDataIdMax)
+            .regex(getLocaleEntryResponseDataIdRegExp),
+        locale: zod
+            .string()
+            .max(getLocaleEntryResponseDataLocaleMax)
+            .regex(getLocaleEntryResponseDataLocaleRegExp),
+        app: zod
+            .string()
+            .min(1)
+            .max(getLocaleEntryResponseDataAppMax)
+            .regex(getLocaleEntryResponseDataAppRegExp),
+        key: zod.string(),
+        value: zod.string(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
  * Updates the value of one entry. The key is not editable — a key is the identity a
  * client looks the string up by, so changing it is a delete plus an add, and the two
  * collision checks that go with them.
@@ -2106,6 +2159,38 @@ export const LogoutAllResponse = zod.strictObject({
     message: zod.string()
 });
 /**
+ * One of the caller's own live sessions, by the id `GET /account/sessions` gave out. Scoped like the list: another account's session, a session that has ended, an invented id and a malformed one are the same 404. The `current` marker is judged against the credential this request carries.
+ * @summary Get one session
+ */
+export const getSessionPathSessionIdMax = 64;
+export const getSessionPathSessionIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetSessionParams = zod.strictObject({
+    sessionId: zod
+        .string()
+        .min(1)
+        .max(getSessionPathSessionIdMax)
+        .regex(getSessionPathSessionIdRegExp)
+});
+export const getSessionResponseDataIdMax = 64;
+export const getSessionResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetSessionResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getSessionResponseDataIdMax)
+            .regex(getSessionResponseDataIdRegExp),
+        createdAt: zod.iso.datetime({ offset: true }),
+        expiration: zod.iso.datetime({ offset: true }),
+        lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+        device: zod.string().optional(),
+        current: zod.boolean()
+    })
+});
+/**
  * Ends one sign-in by its session id — "log out that device". In `jwt` mode that is the whole family of refresh tokens the sign-in rotated through, so a revoke after a refresh still ends the device; in `cookie` mode it is the one session. Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next request simply fails. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
  * @summary Revoke one session
  */
@@ -2203,6 +2288,46 @@ export const AddAddressResponse = zod.strictObject({
             .string()
             .max(addAddressResponseDataCountryMax)
             .regex(addAddressResponseDataCountryRegExp),
+        phone: zod.string().optional(),
+        default: zod.boolean()
+    })
+});
+/**
+ * One entry of the caller's own book. Someone else's entry, an unknown id and a malformed one are the same 404.
+ * @summary Get an address
+ */
+export const getAddressPathAddressIdMax = 64;
+export const getAddressPathAddressIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetAddressParams = zod.strictObject({
+    addressId: zod
+        .string()
+        .min(1)
+        .max(getAddressPathAddressIdMax)
+        .regex(getAddressPathAddressIdRegExp)
+});
+export const getAddressResponseDataIdMax = 64;
+export const getAddressResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getAddressResponseDataCountryMax = 2;
+export const getAddressResponseDataCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const GetAddressResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getAddressResponseDataIdMax)
+            .regex(getAddressResponseDataIdRegExp),
+        label: zod.string().optional(),
+        fullName: zod.string(),
+        street: zod.string(),
+        city: zod.string(),
+        zip: zod.string(),
+        country: zod
+            .string()
+            .max(getAddressResponseDataCountryMax)
+            .regex(getAddressResponseDataCountryRegExp),
         phone: zod.string().optional(),
         default: zod.boolean()
     })
@@ -3958,6 +4083,43 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
             totalItems: zod.number().min(searchFeedbackRequestsResponseDataMetaTotalItemsMin),
             totalPages: zod.number().min(searchFeedbackRequestsResponseDataMetaTotalPagesMin)
         })
+    })
+});
+/**
+ * One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+ * @summary Get a feedback request
+ */
+export const getFeedbackRequestPathIdMax = 64;
+export const getFeedbackRequestPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetFeedbackRequestParams = zod.strictObject({
+    id: zod.string().min(1).max(getFeedbackRequestPathIdMax).regex(getFeedbackRequestPathIdRegExp)
+});
+export const getFeedbackRequestResponseDataIdMax = 64;
+export const getFeedbackRequestResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getFeedbackRequestResponseDataEmailMax = 254;
+export const GetFeedbackRequestResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getFeedbackRequestResponseDataIdMax)
+            .regex(getFeedbackRequestResponseDataIdRegExp),
+        name: zod.string().optional(),
+        email: zod.email().max(getFeedbackRequestResponseDataEmailMax),
+        subject: zod.string(),
+        message: zod.string(),
+        category: zod
+            .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
+            .optional(),
+        orderNumber: zod.string().optional(),
+        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+        adminNotes: zod.string().optional(),
+        respondedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -10506,6 +10668,69 @@ export const ReleaseFulfillmentOrderResponse = zod.strictObject({
     })
 });
 /**
+ * One shipment by its own id, at the address `PATCH` corrects it. Staff's read, behind the key that corrects a shipment (`update:Shipment`); a buyer reads their shipments through `GET /delivery/orders/{orderId}`. An unknown or malformed id is a 404.
+ * @summary Get a shipment
+ */
+export const getShipmentPathIdMax = 64;
+export const getShipmentPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetShipmentParams = zod.strictObject({
+    id: zod.string().min(1).max(getShipmentPathIdMax).regex(getShipmentPathIdRegExp)
+});
+export const getShipmentResponseDataIdMax = 64;
+export const getShipmentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getShipmentResponseDataOrderIdMax = 64;
+export const getShipmentResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getShipmentResponseDataFulfillmentOrderIdMax = 64;
+export const getShipmentResponseDataFulfillmentOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getShipmentResponseDataLinesItemProductIdMax = 64;
+export const getShipmentResponseDataLinesItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetShipmentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getShipmentResponseDataIdMax)
+            .regex(getShipmentResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(getShipmentResponseDataOrderIdMax)
+            .regex(getShipmentResponseDataOrderIdRegExp),
+        fulfillmentOrderId: zod
+            .string()
+            .min(1)
+            .max(getShipmentResponseDataFulfillmentOrderIdMax)
+            .regex(getShipmentResponseDataFulfillmentOrderIdRegExp),
+        number: zod.number().min(1),
+        trackingCode: zod.string().optional(),
+        status: zod.enum(['shipped', 'delivered']),
+        lines: zod.array(
+            zod.strictObject({
+                productId: zod
+                    .string()
+                    .min(1)
+                    .max(getShipmentResponseDataLinesItemProductIdMax)
+                    .regex(getShipmentResponseDataLinesItemProductIdRegExp),
+                title: zod.string(),
+                quantity: zod.number().min(1)
+            })
+        ),
+        forced: zod.boolean(),
+        shippedAt: zod.iso.datetime({ offset: true }),
+        deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+        actions: zod.strictObject({
+            deliver: zod.boolean(),
+            forceDeliver: zod.boolean(),
+            update: zod.boolean()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
  * Merges the given fields into the shipment — RFC 7396. Only the tracking code can change (a typo), and only while the shipment is still `shipped`. The tracking code of a tracked method cannot be cleared.
  * @summary Correct a shipment's tracking code
  */
@@ -12553,6 +12778,38 @@ export const MintApiKeyResponse = zod.strictObject({
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }),
         secret: zod.string()
+    })
+});
+/**
+ * One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
+ * @summary Get a machine-to-machine credential
+ */
+export const getApiKeyPathIdMax = 64;
+export const getApiKeyPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetApiKeyParams = zod.strictObject({
+    id: zod.string().min(1).max(getApiKeyPathIdMax).regex(getApiKeyPathIdRegExp)
+});
+export const getApiKeyResponseDataIdMax = 64;
+export const getApiKeyResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetApiKeyResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getApiKeyResponseDataIdMax)
+            .regex(getApiKeyResponseDataIdRegExp),
+        name: zod.string(),
+        publicPrefix: zod.string(),
+        status: zod.enum(['active', 'expired', 'revoked', 'suspended']),
+        permissions: zod.array(zod.string()).min(1),
+        lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
+        expiresAt: zod.iso.datetime({ offset: true }),
+        revokedAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }),
+        updatedAt: zod.iso.datetime({ offset: true })
     })
 });
 /**

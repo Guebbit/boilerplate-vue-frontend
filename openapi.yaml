@@ -825,6 +825,46 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: locales
   /locales/{locale}/apps/{app}/entries/{entryId}:
+    get:
+      tags:
+        - Locales
+      summary: Get one translation entry
+      description: |
+        One entry of one app's slice of a language, at the address the single-entry writes
+        target. Guarded like the list it comes from (`update:Locale`, the editing screen's
+        key). An entry of another app or language, an unknown id and a malformed one are
+        the same 404.
+      operationId: getLocaleEntry
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LocalePathParam"
+        - $ref: "#/components/parameters/AppPathParam"
+        - $ref: "#/components/parameters/EntryIdPathParam"
+      responses:
+        "200":
+          description: The entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocaleEntryEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: locales
     put:
       tags:
         - Locales
@@ -1929,6 +1969,40 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
   /account/sessions/{sessionId}:
+    get:
+      tags:
+        - Account
+      summary: Get one session
+      description: "One of the caller's own live sessions, by the id `GET /account/sessions` gave out. Scoped like the list: another account's session, a session that has ended, an invented id and a malformed one are the same 404. The `current` marker is judged against the credential this request carries."
+      operationId: getSession
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: Session identifier from `GET /account/sessions`
+      responses:
+        "200":
+          description: The session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
     delete:
       tags:
         - Account
@@ -2036,6 +2110,40 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: addresses
   /account/addresses/{addressId}:
+    get:
+      tags:
+        - Account
+      summary: Get an address
+      description: One entry of the caller's own book. Someone else's entry, an unknown id and a malformed one are the same 404.
+      operationId: getAddress
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+          description: Address identifier from `GET /account/addresses`
+      responses:
+        "200":
+          description: The address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddressEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: addresses
     put:
       tags:
         - Account
@@ -3816,6 +3924,38 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: feedback
   /feedback/{id}:
+    get:
+      tags:
+        - Feedback
+      summary: Get a feedback request
+      description: One feedback request of the admin queue, by id. The same rows `GET /feedback` lists, so anyone who may read the list reads any of them. An unknown or malformed id is a 404.
+      operationId: getFeedbackRequest
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The feedback request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackRequestEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: feedback
     patch:
       tags:
         - Feedback
@@ -6471,6 +6611,38 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: delivery
   /delivery/shipments/{id}:
+    get:
+      tags:
+        - Delivery
+      summary: Get a shipment
+      description: One shipment by its own id, at the address `PATCH` corrects it. Staff's read, behind the key that corrects a shipment (`update:Shipment`); a buyer reads their shipments through `GET /delivery/orders/{orderId}`. An unknown or malformed id is a 404.
+      operationId: getShipment
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+          description: The shipment
+      responses:
+        "200":
+          description: The shipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShipmentEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
     patch:
       tags:
         - Delivery
@@ -7784,6 +7956,37 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: api-keys
   /api-keys/{id}:
+    get:
+      tags:
+        - ApiKeys
+      summary: Get a machine-to-machine credential
+      description: One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
+      operationId: getApiKey
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The credential
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: api-keys
     delete:
       tags:
         - ApiKeys
@@ -12471,6 +12674,23 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/SessionsResponse"
+    SessionEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Session"
     Address:
       type: object
       additionalProperties: false
@@ -17951,6 +18171,23 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ApiKeyCreated"
+    ApiKeyEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/ApiKey"
     SessionActivity:
       type: object
       additionalProperties: false
