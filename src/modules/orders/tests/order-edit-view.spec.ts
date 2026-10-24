@@ -1,11 +1,10 @@
 /**
  * @module
  * Mounts the real edit page against a real, memory-history router, proving `OrderEdit.vue` gains
- * `actions` the same way `Order.vue` does: a list-cache arrival — the orders list seeds the store
- * with a summary row carrying no `actions` — must not leave the page offering no moves. Same
- * template as `product-view.spec.ts`/`wishlist-view.spec.ts`: a real router over
- * `collectModuleRoutes(enabledModules)`, the store's own watch stubbed, and the forced re-fetch
- * `useOrderActionsRefetch` performs is exercised for real rather than pre-seeded away.
+ * its controls from the order's `actions`, as `Order.vue` does: a list-cache arrival carries them
+ * already, so the page offers the moves without a second fetch. Same template as
+ * `product-view.spec.ts`/`wishlist-view.spec.ts`: a real router over
+ * `collectModuleRoutes(enabledModules)`, and the store's own watch stubbed.
  *
  * `@/modules/payments` is mocked rather than imported past its barrel — `useOrderRefund` would
  * otherwise fire a real, unmocked HTTP call this suite has nothing to answer, and reaching its
@@ -130,27 +129,25 @@ const anOrder = (overrides: Partial<Order> = {}): Order => ({
     paymentStatus: 'unpaid',
     fulfillmentStatus: 'unfulfilled',
     returnStatus: 'none',
+    actions: anAction(),
     ...overrides
 });
 
 /**
- * Mounts the edit page exactly as a list-cache arrival would: the store already holds a SUMMARY
- * row for the id (no `actions`), and the stubbed `fetchOrder` answers what a real forced re-fetch
- * would — the DETAIL row `detailOrder` names. This exercises `useOrderActionsRefetch` for real
- * rather than seeding the answer directly, which is what would let the latch's own removal pass.
+ * Mounts the edit page exactly as a list-cache arrival would: the store already holds the row for
+ * the id, `actions` included, and the stubbed `fetchOrder` answers any later forced re-fetch.
  *
  * The `fetchOrder` spy is returned alongside the wrapper — spied BEFORE mounting, since the page
  * destructures its actions off the store at setup time (see the override test's own note) — so a
- * later action's own forced re-fetch (`runOverride`) can be asserted on too, not just the one
- * `useOrderActionsRefetch` fires on mount.
+ * later action's own forced re-fetch can be asserted on too.
  *
- * @param detailOrder - The shape the forced re-fetch resolves to (carrying `actions`).
+ * @param detailOrder - The order the store holds and a forced re-fetch resolves to.
  * @returns The mounted wrapper, and the `fetchOrder` spy driving it.
  */
 const mountFromListCache = (detailOrder: Order) => {
     const orders = useOrdersStore();
     vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
-    orders.addOrder({ ...detailOrder, actions: undefined });
+    orders.addOrder(detailOrder);
     orders.selectedOrderId = detailOrder.id;
     const fetchOrder = vi.spyOn(orders, 'fetchOrder').mockImplementation(() => {
         orders.addOrder(detailOrder);
@@ -456,10 +453,9 @@ describe('the correct-status door', () => {
                     OrderStatus.delivered,
                     'carrier scan never arrived'
                 );
-                // Only the one forced re-fetch `useOrderActionsRefetch` already made on mount:
-                // `overrideStatus` writes through the store's own `updateTarget` now, so a second,
-                // per-view forced re-fetch would just repeat what the store already guarantees.
-                expect(fetchOrder).toHaveBeenCalledTimes(1);
+                // `overrideStatus` writes through the store's own `updateTarget`, so a per-view
+                // forced re-fetch would just repeat what the store already guarantees.
+                expect(fetchOrder).not.toHaveBeenCalled();
             });
     });
 });
@@ -605,8 +601,7 @@ describe('recording a payment by hand', () => {
             )
             .then(() => nextTick())
             .then(() => {
-                // The mount-time forced re-fetch from `useOrderActionsRefetch` is the first call;
-                // this is the second, from the explicit refresh once the payment is recorded.
+                // The explicit refresh once the payment is recorded.
                 expect(fetchOrder).toHaveBeenLastCalledWith(detail.id, { forced: true });
             });
     });
@@ -622,7 +617,7 @@ describe('recording a payment by hand', () => {
         });
         const orders = useOrdersStore();
         vi.spyOn(orders, 'watchOrder').mockImplementation(() => noopWatchHandle());
-        orders.addOrder({ ...detail, actions: detail.actions });
+        orders.addOrder(detail);
         orders.selectedOrderId = detail.id;
         vi.spyOn(orders, 'fetchOrder').mockRejectedValue(new Error('network down'));
 

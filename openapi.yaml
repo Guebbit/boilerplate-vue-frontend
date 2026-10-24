@@ -10200,6 +10200,28 @@ components:
       description: ISO 3166-1 alpha-2 country code, e.g. `IT`. Shape-checked here; which codes a deployment actually ships to is a runtime fact, not a contract one — see `GET /delivery/methods`' `shipToCountries`, the same split `Locale` makes for which language tags a deployment supports.
       pattern: ^[A-Z]{2}$
       example: IT
+    AddressFullName:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: The name the parcel is addressed to.
+    AddressStreet:
+      type: string
+      minLength: 1
+      maxLength: 200
+    AddressCity:
+      type: string
+      minLength: 1
+      maxLength: 100
+    AddressZip:
+      type: string
+      minLength: 1
+      maxLength: 20
+      description: Postal code, free-form (formats differ per country).
+    AddressPhone:
+      type: string
+      minLength: 1
+      maxLength: 32
     ImageUrl:
       type: string
       format: uri-reference
@@ -12462,17 +12484,17 @@ components:
           type: string
           description: The caller's own name for the entry — "home", "office".
         fullName:
-          type: string
+          $ref: "#/components/schemas/AddressFullName"
         street:
-          type: string
+          $ref: "#/components/schemas/AddressStreet"
         city:
-          type: string
+          $ref: "#/components/schemas/AddressCity"
         zip:
-          type: string
+          $ref: "#/components/schemas/AddressZip"
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
-          type: string
+          $ref: "#/components/schemas/AddressPhone"
         default:
           type: boolean
     AddressesResponse:
@@ -12517,27 +12539,17 @@ components:
           maxLength: 50
           minLength: 1
         fullName:
-          type: string
-          maxLength: 100
-          minLength: 1
+          $ref: "#/components/schemas/AddressFullName"
         street:
-          type: string
-          maxLength: 200
-          minLength: 1
+          $ref: "#/components/schemas/AddressStreet"
         city:
-          type: string
-          maxLength: 100
-          minLength: 1
+          $ref: "#/components/schemas/AddressCity"
         zip:
-          type: string
-          maxLength: 20
-          minLength: 1
+          $ref: "#/components/schemas/AddressZip"
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
-          type: string
-          maxLength: 32
-          minLength: 1
+          $ref: "#/components/schemas/AddressPhone"
         default:
           type: boolean
     AddressEnvelope:
@@ -12574,29 +12586,19 @@ components:
           maxLength: 50
           minLength: 1
         fullName:
-          type: string
-          maxLength: 100
-          minLength: 1
+          $ref: "#/components/schemas/AddressFullName"
         street:
-          type: string
-          maxLength: 200
-          minLength: 1
+          $ref: "#/components/schemas/AddressStreet"
         city:
-          type: string
-          maxLength: 100
-          minLength: 1
+          $ref: "#/components/schemas/AddressCity"
         zip:
-          type: string
-          maxLength: 20
-          minLength: 1
+          $ref: "#/components/schemas/AddressZip"
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
-          type:
-            - string
-            - "null"
-          maxLength: 32
-          minLength: 1
+          oneOf:
+            - $ref: "#/components/schemas/AddressPhone"
+            - type: "null"
     UpdateAddressRequest:
       type: object
       additionalProperties: false
@@ -12608,29 +12610,19 @@ components:
           maxLength: 50
           minLength: 1
         fullName:
-          type: string
-          maxLength: 100
-          minLength: 1
+          $ref: "#/components/schemas/AddressFullName"
         street:
-          type: string
-          maxLength: 200
-          minLength: 1
+          $ref: "#/components/schemas/AddressStreet"
         city:
-          type: string
-          maxLength: 100
-          minLength: 1
+          $ref: "#/components/schemas/AddressCity"
         zip:
-          type: string
-          maxLength: 20
-          minLength: 1
+          $ref: "#/components/schemas/AddressZip"
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
-          type:
-            - string
-            - "null"
-          maxLength: 32
-          minLength: 1
+          oneOf:
+            - $ref: "#/components/schemas/AddressPhone"
+            - type: "null"
     VerifyEmailConfirmRequest:
       type: object
       additionalProperties: false
@@ -14966,22 +14958,17 @@ components:
         - country
       properties:
         fullName:
-          type: string
-          maxLength: 100
+          $ref: "#/components/schemas/AddressFullName"
         street:
-          type: string
-          maxLength: 200
+          $ref: "#/components/schemas/AddressStreet"
         city:
-          type: string
-          maxLength: 100
+          $ref: "#/components/schemas/AddressCity"
         zip:
-          type: string
-          maxLength: 20
+          $ref: "#/components/schemas/AddressZip"
         country:
           $ref: "#/components/schemas/CountryCode"
         phone:
-          type: string
-          maxLength: 32
+          $ref: "#/components/schemas/AddressPhone"
     OrderStatus:
       type: string
       enum:
@@ -15106,6 +15093,7 @@ components:
         - shippingNetAmount
         - shippingTaxAmount
         - taxSummary
+        - actions
       properties:
         id:
           $ref: "#/components/schemas/Id"
@@ -18120,6 +18108,137 @@ components:
       properties:
         productId:
           $ref: "#/components/schemas/Id"
+    ExportOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - items
+        - totalItems
+        - totalQuantity
+        - totalPrice
+        - status
+        - paymentStatus
+        - fulfillmentStatus
+        - returnStatus
+        - currency
+        - orderNumber
+        - netTotal
+        - taxTotal
+        - shippingNetAmount
+        - shippingTaxAmount
+        - taxSummary
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        userId:
+          $ref: "#/components/schemas/Id"
+        email:
+          $ref: "#/components/schemas/Email"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        totalItems:
+          type: integer
+          minimum: 0
+          description: Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+          example: 2
+        totalQuantity:
+          type: integer
+          minimum: 0
+          description: Sum of `quantity` across every line item.
+          example: 5
+        totalPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+          example: 149.97
+        currency:
+          type: string
+          readOnly: true
+          description: ISO-4217 currency code this order was priced in (e.g. EUR).
+        netTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+        taxTotal:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: "Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers."
+        shippingNetAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+        shippingTaxAmount:
+          type: number
+          format: double
+          minimum: 0
+          readOnly: true
+          description: Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+        taxSummary:
+          type: array
+          readOnly: true
+          items:
+            $ref: "#/components/schemas/OrderTaxSummaryRow"
+          description: "One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines."
+        notes:
+          type: string
+          description: Optional order notes
+        shippingMethod:
+          type: string
+          description: The shipping method's id as the checkout froze it (e.g. standard, express, pickup).
+        shippingCost:
+          type: number
+          format: double
+          minimum: 0
+          description: What that method cost at checkout time — a later rate change cannot re-price history.
+        shippingAddress:
+          $ref: "#/components/schemas/OrderAddress"
+        billingAddress:
+          $ref: "#/components/schemas/OrderAddress"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethodId"
+        payBy:
+          type: string
+          format: date-time
+        orderNumber:
+          type: string
+          readOnly: true
+          example: 2026-000041
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentStatus:
+          $ref: "#/components/schemas/OrderPaymentStatus"
+        fulfillmentStatus:
+          $ref: "#/components/schemas/OrderFulfillmentStatus"
+        returnStatus:
+          $ref: "#/components/schemas/OrderReturnStatus"
+        withdrawUntil:
+          type: string
+          format: date-time
+          readOnly: true
+          description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
+        paidAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
     OrderTimelineType:
       type: string
       enum:
@@ -18150,7 +18269,7 @@ components:
         - delay_notice_sent
         - address_corrected
       description: "What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`."
-    OrderTimelineEntry:
+    OrderTimelineExportEntry:
       type: object
       additionalProperties: false
       required:
@@ -18159,7 +18278,10 @@ components:
         - type
         - audience
         - data
+        - orderId
       properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
         id:
           $ref: "#/components/schemas/Id"
         at:
@@ -18184,15 +18306,6 @@ components:
           type: object
           additionalProperties: true
           description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
-    OrderTimelineExportEntry:
-      allOf:
-        - $ref: "#/components/schemas/OrderTimelineEntry"
-        - type: object
-          required:
-            - orderId
-          properties:
-            orderId:
-              $ref: "#/components/schemas/Id"
     ExportPayment:
       type: object
       additionalProperties: false
@@ -18818,7 +18931,7 @@ components:
         orders:
           type: array
           items:
-            $ref: "#/components/schemas/Order"
+            $ref: "#/components/schemas/ExportOrder"
         orderTimeline:
           type: array
           items:
@@ -18944,6 +19057,40 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/MergeCartResponse"
+    OrderTimelineEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - at
+        - type
+        - audience
+        - data
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        at:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/OrderTimelineType"
+        audience:
+          type: string
+          enum:
+            - buyer
+            - staff
+          description: "Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both."
+        actor:
+          allOf:
+            - $ref: "#/components/schemas/Id"
+          description: The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id.
+        text:
+          type: string
+          description: Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays.
+        data:
+          type: object
+          additionalProperties: true
+          description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
     OrderTimelineEnvelope:
       type: object
       additionalProperties: false

@@ -61,8 +61,7 @@ const router = createRouter({
 });
 
 /**
- * Mounts the detail page with `order` already the store's `currentOrder`, `actions` included so
- * `useOrderActionsRefetch` finds nothing missing and never forces a second, unmocked fetch.
+ * Mounts the detail page with `order` already the store's `currentOrder`, `actions` included.
  *
  * @param order - The shape under test.
  * @returns The mounted wrapper.
@@ -195,7 +194,7 @@ describe('the invoice buttons', () => {
 const invoicedOrder = (): OrderType => ({
     ...BASE_ORDER,
     items: [lineWith(null)],
-    actions: { ...BASE_ORDER.actions!, invoice: true }
+    actions: { ...BASE_ORDER.actions, invoice: true }
 });
 
 describe('the credit notes', () => {
@@ -545,7 +544,7 @@ describe('the withdrawal panel', () => {
             items: [lineWith(null)],
             withdrawUntil: '2026-10-01T10:00:00Z',
             actions: {
-                ...BASE_ORDER.actions!,
+                ...BASE_ORDER.actions,
                 withdraw: true
             }
         });

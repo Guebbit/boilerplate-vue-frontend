@@ -12,29 +12,7 @@ import OrderReferenceSearch from '../components/OrderReferenceSearch.vue';
 import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { Order } from '@types';
-
-/** Builds a minimal order with the given id. */
-const anOrder = (id: string): Order => ({
-    id,
-    userId: 'user-1',
-    email: 'shopper@example.com',
-    items: [],
-    totalItems: 0,
-    totalQuantity: 0,
-    totalPrice: 0,
-    netTotal: 0,
-    taxTotal: 0,
-    shippingNetAmount: 0,
-    shippingTaxAmount: 0,
-    taxSummary: [],
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    fulfillmentStatus: 'unfulfilled',
-    returnStatus: 'none',
-    currency: 'EUR',
-    orderNumber: '2026-000001'
-});
+import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 /** Mounts the reference search with the real i18n and Vuetify. */
 const mountSearch = () =>
@@ -59,7 +37,7 @@ beforeEach(() => {
 describe('OrderReferenceSearch', () => {
     it('emits the found order and clears the field, navigating nowhere itself', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(anOrder('order-1'));
+        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(anOrder({ id: 'order-1' }));
         const wrapper = mountSearch();
 
         return wrapper
@@ -71,7 +49,7 @@ describe('OrderReferenceSearch', () => {
                 expect(payments.findOrderByReference).toHaveBeenCalledWith(
                     'RF13 2EY8 H44V JAVZ KX80 JRL'
                 );
-                expect(wrapper.emitted('found')).toEqual([[anOrder('order-1')]]);
+                expect(wrapper.emitted('found')).toEqual([[anOrder({ id: 'order-1' })]]);
                 expect(
                     wrapper.get<HTMLInputElement>('[data-test=order-reference-search-input] input')
                         .element.value
