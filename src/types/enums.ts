@@ -53,7 +53,7 @@ export {
 } from '@api';
 
 // Example lifecycle: the list's status filter and its URL state.
-export { ExampleStatus } from '@api';
+export { ExampleSortItem, ExampleStatus } from '@api';
 
 // Webhook delivery states: the delivery log's status filter, closed to this set in the URL.
 export { WebhookDeliveryStatus } from '@api';
