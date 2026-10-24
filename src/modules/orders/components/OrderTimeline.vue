@@ -31,7 +31,7 @@ import {
     formatUtcDate
 } from '@/infrastructure/utils/formatters.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
-import { describeTimelineEntry, isStaffOnly } from '../domain';
+import { describeTimelineEntry } from '../domain';
 import type { TimelineTools } from '../domain';
 import { useOrdersStore } from '../store.ts';
 import type { OrderTimelineEntry } from '@types';
@@ -170,7 +170,7 @@ watch(() => [props.orderId, props.refreshKey], load, { immediate: true });
                 <div class="flex flex-wrap items-center gap-2">
                     <strong data-test="order-timeline-title">{{ line.title }}</strong>
                     <v-chip
-                        v-if="session.can('display', 'Order') && isStaffOnly(entry.type)"
+                        v-if="session.can('display', 'Order') && entry.audience === 'staff'"
                         size="x-small"
                         variant="tonal"
                         color="warning"

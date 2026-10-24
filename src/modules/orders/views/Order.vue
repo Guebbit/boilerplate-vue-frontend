@@ -450,7 +450,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :can-withdraw="currentOrder.actions?.withdraw ?? false"
                         :withdraw-blocked="currentOrder.actions?.withdrawBlocked"
-                        :withdraw-until="currentOrder.actions?.withdrawUntil"
+                        :withdraw-until="currentOrder.withdrawUntil"
                         :order-number="currentOrder.orderNumber"
                         @opened="fetchOrder(currentOrder.id, { forced: true })"
                     />

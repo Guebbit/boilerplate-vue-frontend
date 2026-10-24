@@ -20,6 +20,8 @@ import routes from './routes';
  * the `feedback` module uses for its public form vs. its admin inbox.
  *
  * Context map: `docs/modules/webhooks.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'webhooks',

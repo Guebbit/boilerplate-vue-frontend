@@ -20,6 +20,8 @@ import routes from './routes';
  * What stays here is a panel that belongs to an order.
  *
  * Context map: `docs/modules/payments.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'payments',

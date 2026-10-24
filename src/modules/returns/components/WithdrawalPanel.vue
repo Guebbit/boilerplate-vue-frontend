@@ -54,7 +54,7 @@ const props = defineProps<{
      * disabled with this reason instead of vanishing.
      */
     withdrawBlocked?: WithdrawBlockedReason;
-    /** `Order.actions.withdrawUntil` — the end of the last day a withdrawal is announced valid (UTC), once the clock runs. Shown as a date only. */
+    /** `Order.withdrawUntil` — the end of the last day a withdrawal is announced valid (UTC), once the clock runs. Shown as a date only. */
     withdrawUntil?: string;
     /** The order's number, for the "contact us" link that names it. */
     orderNumber?: string;

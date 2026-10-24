@@ -1578,7 +1578,7 @@ paths:
       tags:
         - Account
       summary: Request account deletion
-      description: Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+      description: Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
       operationId: requestAccountDelete
       security:
         - bearerAuth: []
@@ -3808,57 +3808,11 @@ paths:
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: feedback
   /feedback/{id}:
-    put:
-      tags:
-        - Feedback
-      summary: Replace feedback request status
-      description: Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
-      operationId: replaceFeedbackRequestStatus
-      security:
-        - bearerAuth: []
-        - apiKeyAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/IdPathParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ReplaceFeedbackRequestStatusRequest"
-      responses:
-        "200":
-          description: Updated feedback request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FeedbackRequestEnvelope"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: feedback
     patch:
       tags:
         - Feedback
       summary: Update feedback request status
-      description: Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+      description: Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
       operationId: updateFeedbackRequestStatus
       security:
         - bearerAuth: []
@@ -3967,14 +3921,14 @@ paths:
           schema:
             type: string
             maxLength: 200
-        - name: minPrice
+        - name: priceMin
           in: query
           required: false
           schema:
             type: number
             format: double
             minimum: 0
-        - name: maxPrice
+        - name: priceMax
           in: query
           required: false
           schema:
@@ -4959,7 +4913,7 @@ paths:
         - Wishlist
       summary: Save a product
       description: "Saves the product identified by `{productId}` to the authenticated user's wishlist. \"This product is saved\" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other."
-      operationId: addWishlistItem
+      operationId: createWishlistItem
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -4990,7 +4944,7 @@ paths:
         - Wishlist
       summary: Remove a saved product
       description: Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
-      operationId: removeWishlistItem
+      operationId: deleteWishlistItem
       security:
         - bearerAuth: []
         - cookieAuth: []
@@ -5213,7 +5167,7 @@ paths:
       tags:
         - Orders
       summary: Delete order
-      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
+      description: Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
       operationId: deleteOrder
       x-alias-of: deleteOrderById
       security:
@@ -5447,7 +5401,7 @@ paths:
       tags:
         - Orders
       summary: Delete order
-      description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
+      description: Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
       operationId: deleteOrderById
       security:
         - bearerAuth: []
@@ -5495,7 +5449,7 @@ paths:
       tags:
         - Orders
       summary: Restore order
-      description: Undoes the soft delete of the order identified by `{id}`. Answers 409 when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+      description: Undoes the soft delete of the order identified by `{id}`. Answers 409 `ORDER_NOT_DELETED` when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
       operationId: restoreOrderById
       security:
         - bearerAuth: []
@@ -10105,7 +10059,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     UnsupportedMediaType:
-      description: "The request body declares a character set or a content encoding the body parser cannot read. Refused before any route runs, like `413` above — a body whose content-type simply matches no parser is NOT this: it reaches the route, which answers whatever it says about a request missing every field."
+      description: The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged.
       content:
         application/json:
           schema:
@@ -13525,20 +13479,6 @@ components:
           $ref: "#/components/schemas/FeedbackCategory"
         email:
           $ref: "#/components/schemas/Email"
-    ReplaceFeedbackRequestStatusRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - status
-      properties:
-        status:
-          $ref: "#/components/schemas/FeedbackRequestStatus"
-        adminNotes:
-          type:
-            - string
-            - "null"
-          minLength: 1
-          maxLength: 5000
     UpdateFeedbackRequestStatusRequest:
       type: object
       additionalProperties: false
@@ -14388,11 +14328,11 @@ components:
           maxItems: 100
           items:
             $ref: "#/components/schemas/Id"
-        minPrice:
+        priceMin:
           type: number
           format: double
           minimum: 0
-        maxPrice:
+        priceMax:
           type: number
           format: double
           minimum: 0
@@ -14907,7 +14847,6 @@ components:
       type: object
       additionalProperties: false
       required:
-        - transitions
         - cancel
         - pay
         - recordPayment
@@ -14918,28 +14857,21 @@ components:
         - withdraw
         - delete
         - hardDelete
+        - restore
       description: "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included."
       properties:
-        transitions:
-          type: array
-          items:
-            $ref: "#/components/schemas/OrderStatus"
-          description: The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status.
-          example:
-            - processing
-            - cancelled
         cancel:
           type: boolean
           description: "Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`)."
         pay:
           type: boolean
-          description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest."
+          description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest."
         recordPayment:
           type: boolean
           description: "Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record."
         start:
           type: boolean
-          description: "Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door."
+          description: Whether `POST /delivery/order/{id}/start` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door.
         override:
           type: array
           items:
@@ -14958,16 +14890,15 @@ components:
         withdrawBlocked:
           $ref: "#/components/schemas/WithdrawBlockedReason"
           description: Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it.
-        withdrawUntil:
-          type: string
-          format: date-time
-          description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
         delete:
           type: boolean
           description: "Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden."
         hardDelete:
           type: boolean
-          description: "Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it)."
+          description: "Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it)."
+        restore:
+          type: boolean
+          description: "Whether `POST /orders/{id}/restore` would be accepted for this caller: the caller holds `delete:Order` and the order is soft-deleted (`deletedAt` is set)."
         invoice:
           type: boolean
           description: Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`.
@@ -15087,6 +15018,11 @@ components:
           $ref: "#/components/schemas/OrderReturnStatus"
         actions:
           $ref: "#/components/schemas/OrderActions"
+        withdrawUntil:
+          type: string
+          format: date-time
+          readOnly: true
+          description: "The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet."
         paidAt:
           type: string
           format: date-time
@@ -16055,7 +15991,7 @@ components:
         lastNoticeAt:
           type: string
           format: date-time
-          description: When the buyer was last told the date had moved or passed.
+          description: When the buyer was last told the date had moved or would be missed.
         cancelReason:
           $ref: "#/components/schemas/FulfillmentCancelReason"
         actions:
@@ -16087,15 +16023,19 @@ components:
       additionalProperties: false
       required:
         - deliver
-        - editTracking
+        - forceDeliver
+        - update
       description: What the requesting caller may do to this shipment, decided by the server.
       properties:
         deliver:
           type: boolean
           description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`.
-        editTracking:
+        forceDeliver:
           type: boolean
-          description: Whether `PATCH /delivery/shipments/{id}` would be accepted — still `shipped`.
+          description: "Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`."
+        update:
+          type: boolean
+          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`.
     Shipment:
       type: object
       additionalProperties: false
@@ -18034,6 +17974,7 @@ components:
         - id
         - at
         - type
+        - audience
         - data
       properties:
         id:
@@ -18043,6 +17984,12 @@ components:
           format: date-time
         type:
           $ref: "#/components/schemas/OrderTimelineType"
+        audience:
+          type: string
+          enum:
+            - buyer
+            - staff
+          description: "Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both."
         actor:
           allOf:
             - $ref: "#/components/schemas/Id"
@@ -18222,7 +18169,7 @@ components:
         lastNoticeAt:
           type: string
           format: date-time
-          description: When the buyer was last told the date had moved or passed.
+          description: When the buyer was last told the date had moved or would be missed.
         cancelReason:
           $ref: "#/components/schemas/FulfillmentCancelReason"
     ExportReturn:
@@ -20073,6 +20020,9 @@ x-error-codes:
   LIMIT_UNEXPECTED_FILE:
     status: 400
     description: A multipart upload carries a file under a field name this operation does not accept (multer).
+  METHOD_NOT_ALLOWED:
+    status: 405
+    description: The path exists, but not with this method. The `Allow` header lists the methods it does answer.
   MISSING_FIELD_NAME:
     status: 400
     description: A multipart file part carries no field name (multer).
@@ -20088,6 +20038,9 @@ x-error-codes:
   ORDER_EXPORT_TOO_LARGE:
     status: 422
     description: The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again.
+  ORDER_HAS_MONEY_HISTORY:
+    status: 409
+    description: "A hard delete is refused: money was recorded on the order after it was cancelled (a late payment and its refund still point at it). Soft delete it instead."
   ORDER_INSUFFICIENT_STOCK:
     status: 409
     description: An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`).
@@ -20106,6 +20059,9 @@ x-error-codes:
   ORDER_NOT_CANCELLED:
     status: 409
     description: "A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one."
+  ORDER_NOT_DELETED:
+    status: 409
+    description: "A restore is refused: the order is not soft-deleted."
   ORDER_NOT_PAID:
     status: 409
     description: The order must be paid before this delivery action.

@@ -222,7 +222,7 @@ Its backend twin, `../boilerplate-node-backend/src/modules/example`, shows the s
 | An idempotent create                    | show         | `store.ts` (`useIdempotencyKey`)                              |
 | A reading rule in `domain/`             | show         | `domain/publication.ts`                                       |
 | Upload with progress                    | show         | `views/ExampleEdit.vue`                                       |
-| Typed provide/inject, teaching guard    | show         | `provided.ts`, `guards.ts`                                    |
+| Typed provide/inject                    | show         | `provided.ts`                                                 |
 | A barrel                                | point        | `cart/index.ts` (forbidden here: nothing imports `example`)   |
 | A slot contribution                     | point        | `wishlist/module.ts`                                          |
 | Step-up, antibot, realtime              | point        | `infrastructure/http/step-up.ts`, `feedback`, `observability` |
@@ -248,7 +248,7 @@ what the exercise taught.
 
 The template to copy is `src/modules/example` ([The module template](#the-module-template)): a small note domain with a list, a detail, a create
 form, an edit form (with a cover upload) and one public screen, a store over the generated client,
-the Zod schemas, the response-schema rows, a teaching route guard, a provide/inject pair and both
+the Zod schemas, the response-schema rows, a provide/inject pair and both
 languages. It has no page of its own and no barrel (nothing imports it, and a barrel is published
 only for what a sibling imports); `demo:remove` deletes it with the shop, so copy it first. Copy
 the folder, rename it, and delete the screens you do not need; delete the folder, and its line in

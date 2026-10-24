@@ -19,6 +19,8 @@ import routes from './routes';
  * application that has ever had one.
  *
  * Context map: `docs/modules/users.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'users',

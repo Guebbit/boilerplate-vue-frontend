@@ -744,7 +744,7 @@ const handleExport = () => {
                         {{ t('orders-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="session.can('delete', 'Order') && item.deletedAt"
+                        v-if="item.actions?.restore"
                         :size="rowActionSize"
                         variant="tonal"
                         color="success"

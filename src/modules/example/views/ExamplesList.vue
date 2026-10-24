@@ -14,6 +14,7 @@ export default {
  * In any module: a list screen wires the store's paginated search to a filter form and a `DataTable`;
  * the filters live in the URL so a view can be linked.
  * Here: Edit and Delete follow each row's `actions`; only Create, which has no row, asks `session.can`.
+ * The server sorts: a header click writes `sort` into the URL state and re-searches from page 1.
  * See: docs/tools/state-and-routing.md
  */
 import { computed } from 'vue';
@@ -28,11 +29,13 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { ThemeColor } from '@/ui/types.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
-import { ExampleStatus } from '@/types/enums.ts';
+import { ExampleSortItem, ExampleStatus } from '@/types/enums.ts';
 import { publicationOf } from '../domain';
 import type { Example } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useServerSort } from '@/ui/composables/use-server-sort.ts';
+import { sortFieldsOf } from '@/infrastructure/utils/sort.ts';
 import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
@@ -139,7 +142,7 @@ const { sync: syncUrl } = useListUrlState({
     filters,
     page: pageCurrent,
     pageSize,
-    params: { text: 'string', status: Object.values(ExampleStatus) }
+    params: { text: 'string', status: Object.values(ExampleStatus), sort: 'string' }
 });
 
 /**
@@ -159,6 +162,17 @@ const { handleSearch, handleReset } = useListSearch({
     search,
     onApplied: syncUrl
 });
+
+/**
+ * The columns the API can order by (the contract's `ExampleSort` enum); the other headers stay
+ * inert rather than reorder one page.
+ */
+const sortableKeys = sortFieldsOf(ExampleSortItem);
+
+/**
+ * The header's sort state, kept in `filters.sort` so it travels in the URL and the request.
+ */
+const { sortBy } = useServerSort({ filters, apply: handleSearch });
 
 /**
  * The row action's own blocked state: delete is the table's only write, behind a confirm dialog
@@ -238,6 +252,8 @@ const handleDelete = (example: Example) =>
         />
 
         <DataTable
+            v-model:sort-by="sortBy"
+            :server-sort-keys="sortableKeys"
             :headers="tableHeaders"
             :items="pageItemList"
             :caption="t('examples-list-page.table-caption')"

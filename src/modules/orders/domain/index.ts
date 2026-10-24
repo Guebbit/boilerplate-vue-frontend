@@ -6,7 +6,7 @@
 
 export { reorderOutcome } from './reorder';
 export type { ReorderedOrderLine, ReorderOutcome } from './reorder';
-export { describeTimelineEntry, isStaffOnly, TIMELINE_AUDIENCE } from './timeline';
-export type { TimelineAudience, TimelineLine, TimelineTools } from './timeline';
+export { describeTimelineEntry } from './timeline';
+export type { TimelineLine, TimelineTools } from './timeline';
 export { exportRefusalOf } from './export-refusal';
 export type { ExportRefusal } from './export-refusal';

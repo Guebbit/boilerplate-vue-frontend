@@ -23,6 +23,8 @@ import routes from './routes';
  * on. The client half owns the browsing experience; the server owns the prices.
  *
  * Context map: `docs/modules/products.md` § "The map".
+ *
+ * Subdomain: `core`.
  */
 export default {
     name: 'products',

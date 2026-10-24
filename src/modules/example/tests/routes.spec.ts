@@ -8,7 +8,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import routes from '../routes';
-import { exampleEditGuard } from '../guards';
 
 /**
  * Looks up a route record by its name.
@@ -40,11 +39,10 @@ describe('example route access', () => {
         expect(route?.meta).not.toHaveProperty('can');
     });
 
-    it('runs the teaching guard on the edit route only', () => {
-        expect(byName('ExampleEdit')?.beforeEnter).toEqual([exampleEditGuard]);
-        expect(
-            routes.filter((route) => route.beforeEnter !== undefined).map(({ name }) => name)
-        ).toEqual(['ExampleEdit']);
+    it('fetches nothing in a route guard: each view loads its own record', () => {
+        // `in` rather than reading `.beforeEnter`: the table `satisfies` `RouteRecordRaw[]`, so a key it
+        // does not declare is not readable. Absence is the assertion.
+        expect(routes.filter((route) => 'beforeEnter' in route)).toEqual([]);
     });
 
     it('declares create before :id, so the word is never read as an id', () => {

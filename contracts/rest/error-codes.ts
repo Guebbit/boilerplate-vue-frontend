@@ -106,6 +106,8 @@ export const ERROR_CODES = {
     LIMIT_PART_COUNT: 'LIMIT_PART_COUNT',
     /** 400 — A multipart upload carries a file under a field name this operation does not accept (multer). */
     LIMIT_UNEXPECTED_FILE: 'LIMIT_UNEXPECTED_FILE',
+    /** 405 — The path exists, but not with this method. The `Allow` header lists the methods it does answer. */
+    METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
     /** 400 — A multipart file part carries no field name (multer). */
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
@@ -116,6 +118,8 @@ export const ERROR_CODES = {
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
     ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
+    /** 409 — A hard delete is refused: money was recorded on the order after it was cancelled (a late payment and its refund still point at it). Soft delete it instead. */
+    ORDER_HAS_MONEY_HISTORY: 'ORDER_HAS_MONEY_HISTORY',
     /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`). */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
     /** 409 — This action is not allowed once an order has been invoiced. */
@@ -128,6 +132,8 @@ export const ERROR_CODES = {
     ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
     /** 409 — A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
     ORDER_NOT_CANCELLED: 'ORDER_NOT_CANCELLED',
+    /** 409 — A restore is refused: the order is not soft-deleted. */
+    ORDER_NOT_DELETED: 'ORDER_NOT_DELETED',
     /** 409 — The order must be paid before this delivery action. */
     ORDER_NOT_PAID: 'ORDER_NOT_PAID',
     /** 409 — The order is not in a state this delivery action can run from. */

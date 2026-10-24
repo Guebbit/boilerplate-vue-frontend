@@ -17,7 +17,6 @@ const order = (id: string, actions?: OrderActions): Order => ({ id, actions }) a
 
 /** A terminal order: the detail representation arrived and offers nothing. */
 const NO_MOVES: OrderActions = {
-    transitions: [],
     cancel: false,
     pay: false,
     recordPayment: false,
@@ -27,11 +26,12 @@ const NO_MOVES: OrderActions = {
     invoice: false,
     withdraw: false,
     delete: false,
-    hardDelete: false
+    hardDelete: false,
+    restore: false
 };
 
 /** A live order with a move available. */
-const CAN_CANCEL: OrderActions = { ...NO_MOVES, transitions: ['cancelled'], cancel: true };
+const CAN_CANCEL: OrderActions = { ...NO_MOVES, cancel: true };
 
 /**
  * Mounts the composable over a settable record, handing back the ref and the fetch spy.
