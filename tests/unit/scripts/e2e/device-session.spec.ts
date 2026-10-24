@@ -179,11 +179,11 @@ describe('deviceRequest', () => {
         const result = await deviceRequest({
             device,
             method: 'POST',
-            path: '/account/logout-all',
+            path: '/account/sessions',
             body: { why: 'test' }
         });
 
-        expect(calls[0].url).toBe('http://api.test/account/logout-all');
+        expect(calls[0].url).toBe('http://api.test/account/sessions');
         expect(calls[0].init?.headers).toMatchObject({
             Authorization: 'Bearer access-1',
             Cookie: '__Host-session=refresh-1'

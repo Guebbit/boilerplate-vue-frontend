@@ -31,8 +31,8 @@ import type {
 const REFRESH_EXCLUDED_PATHS = new Set([
     '/account/login',
     '/account/signup',
-    '/account/reset',
-    '/account/reset-confirm',
+    '/account/password/reset',
+    '/account/password/reset/confirm',
     // A wrong or expired 2FA code answers 401 like any other business outcome. Without this, a
     // visitor who still holds a valid refresh cookie from an earlier session gets a silent
     // refresh-and-replay instead of "wrong code".

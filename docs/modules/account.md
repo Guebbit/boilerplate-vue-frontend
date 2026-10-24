@@ -157,18 +157,18 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `GET /account/oauth/{provider}/callback`     | `CompleteOAuthLoginResponse`       |
 | `POST /account/oauth/links/{provider}`       | `StartOAuthLinkResponse`           |
 | `POST /account/password`                     | `ChangePasswordResponse`           |
-| `DELETE /account/pending-email`              | `CancelPendingEmailChangeResponse` |
-| `POST /account/pending-email/resend`         | `ResendPendingEmailResponse`       |
+| `DELETE /account/email-change`               | `CancelPendingEmailChangeResponse` |
+| `POST /account/email-change/resend`          | `ResendPendingEmailResponse`       |
 | `GET /account/reauth`                        | `GetReauthMethodsResponse`         |
 | `POST /account/reauth`                       | `ReauthResponse`                   |
 | `POST /account/reauth/methods/{method}/send` | `SendReauthCodeResponse`           |
-| `POST /account/reset`                        | `RequestPasswordResetResponse`     |
-| `POST /account/reset-confirm`                | `ConfirmPasswordResetResponse`     |
+| `POST /account/password/reset`               | `RequestPasswordResetResponse`     |
+| `POST /account/password/reset/confirm`       | `ConfirmPasswordResetResponse`     |
 | `GET /account/sessions`                      | `GetSessionsResponse`              |
 | `DELETE /account/sessions/{id}`              | `RevokeSessionResponse`            |
 | `POST /account/signup`                       | `SignupResponse`                   |
-| `POST /account/verify-confirm`               | `ConfirmEmailVerificationResponse` |
-| `POST /account/verify-request`               | `RequestEmailVerificationResponse` |
+| `POST /account/email-verification/confirm`   | `ConfirmEmailVerificationResponse` |
+| `POST /account/email-verification/resend`    | `RequestEmailVerificationResponse` |
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 

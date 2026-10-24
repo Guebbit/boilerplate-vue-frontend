@@ -154,7 +154,7 @@ describe('The journey harness', () => {
                     expect(refreshed.status).to.equal(200);
 
                     cy.step('signs out everywhere, and its next refresh is refused');
-                    requestAsDevice(refreshed.device, 'POST', '/account/logout-all')
+                    requestAsDevice(refreshed.device, 'DELETE', '/account/sessions')
                         .its('status')
                         .should('equal', 200);
                     refreshDevice(refreshed.device).its('status').should('equal', 401);

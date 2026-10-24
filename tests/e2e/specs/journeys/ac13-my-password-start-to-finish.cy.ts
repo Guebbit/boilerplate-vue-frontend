@@ -163,7 +163,7 @@ describe('AC13 · My password, start to finish', () => {
 
             cy.step('a reset link opened in a tab that is still signed in works, and signs it out');
             cy.env(['apiUrl']).then(({ apiUrl }) => {
-                cy.request('POST', `${String(apiUrl)}/account/reset`, { email });
+                cy.request('POST', `${String(apiUrl)}/account/password/reset`, { email });
             });
             cy.emailTo(
                 email,

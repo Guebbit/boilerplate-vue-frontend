@@ -43,8 +43,8 @@ const FRESH_TOKEN = 'fresh-token';
 const EXCLUDED_PATHS = [
     '/account/login',
     '/account/signup',
-    '/account/reset',
-    '/account/reset-confirm',
+    '/account/password/reset',
+    '/account/password/reset/confirm',
     '/account/login/2fa',
     '/account/login/2fa/send'
 ];
@@ -200,13 +200,13 @@ const server = setupServer(
     ),
 
     /**
-     * `POST /account/logout-all` — unlike the excluded paths above, a 401 here means an
+     * `DELETE /account/sessions` — unlike the excluded paths above, a 401 here means an
      * EXPIRED access token, not bad credentials (the backend mounts it behind `isAuth`), so it
      * must go through the same refresh-and-replay as any other protected route.
      */
-    http.post(`${API}/account/logout-all`, ({ request }) => {
+    http.delete(`${API}/account/sessions`, ({ request }) => {
         const authorization = request.headers.get('authorization') ?? undefined;
-        requestLog.push({ route: 'POST /account/logout-all', authorization });
+        requestLog.push({ route: 'DELETE /account/sessions', authorization });
 
         return scenario.protectedAccepts && authorization === `Bearer ${FRESH_TOKEN}`
             ? HttpResponse.json({ success: true, status: 200 })
@@ -382,20 +382,20 @@ describe('401 refresh flow', () => {
             ));
 
         /**
-         * `POST /account/logout-all` sits behind `isAuth` on the backend, so an expired
+         * `DELETE /account/sessions` sits behind `isAuth` on the backend, so an expired
          * access token answers it a plain 401 — the same shape any other protected route gets,
          * and one this flow must not treat as a bad-credentials dead end.
          */
-        it('refreshes and replays a 401 from /account/logout-all', () =>
+        it('refreshes and replays a 401 from /account/sessions', () =>
             loadHttp()
                 .then(({ orvalMutator }) =>
-                    orvalMutator({ url: '/account/logout-all', method: 'POST', data: {} })
+                    orvalMutator({ url: '/account/sessions', method: 'DELETE' })
                 )
                 .then(() => {
                     expect(routes()).toEqual([
-                        'POST /account/logout-all',
+                        'DELETE /account/sessions',
                         'POST /account/refresh',
-                        'POST /account/logout-all'
+                        'DELETE /account/sessions'
                     ]);
                 }));
     });

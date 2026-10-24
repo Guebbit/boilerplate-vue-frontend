@@ -312,7 +312,7 @@ const startResendCooldown = (seconds: number) => {
 };
 
 /**
- * Asks for the pending-email confirmation link again — `POST /account/pending-email/resend`.
+ * Asks for the pending-email confirmation link again — `POST /account/email-change/resend`.
  *
  * The backend mails the NEW address only and revokes the link already delivered, so exactly one
  * stays live. The old address is not told again: it heard of the request once.
@@ -341,7 +341,7 @@ const resendPendingEmailLink = () => {
 };
 
 /**
- * Cancels the pending email change through its own endpoint — `DELETE /account/pending-email`.
+ * Cancels the pending email change through its own endpoint — `DELETE /account/email-change`.
  * Resending the current address is a no-op, not a cancel, so a routine save can never drop a
  * change in flight by accident.
  *

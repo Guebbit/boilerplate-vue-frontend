@@ -74,10 +74,10 @@ beforeEach(() => {
             version: 36,
             subjects: ['Order', 'Product']
         }),
-        'POST /account/reset': orvalEnvelope(),
-        'POST /account/reset-confirm': orvalEnvelope(),
+        'POST /account/password/reset': orvalEnvelope(),
+        'POST /account/password/reset/confirm': orvalEnvelope(),
         'POST /account/logout': orvalEnvelope(),
-        'POST /account/logout-all': orvalEnvelope()
+        'DELETE /account/sessions': orvalEnvelope()
     };
 });
 
@@ -302,7 +302,7 @@ describe('the password reset flow', () => {
         useAuthStore()
             .requestPasswordReset('ada@example.com')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/account/reset']);
+                expect(requestedUrls()).toEqual(['/account/password/reset']);
             }));
 
     it('confirms with the token and the new password', () =>
@@ -314,7 +314,7 @@ describe('the password reset flow', () => {
                     data: Record<string, unknown>;
                 };
 
-                expect(last.url).toBe('/account/reset-confirm');
+                expect(last.url).toBe('/account/password/reset/confirm');
                 expect(contractRequest(schemas.ConfirmPasswordResetBody, last.data)).toMatchObject({
                     token: 'reset-token'
                 });
@@ -348,7 +348,7 @@ describe('logoutEverywhere', () => {
             .login('ada@example.com', 'hunter2hunter2')
             .then(() => auth.logoutEverywhere())
             .then(() => {
-                expect(requestedUrls().at(-1)).toBe('/account/logout-all');
+                expect(requestedUrls().at(-1)).toBe('/account/sessions');
                 expect(useSessionStore().isAuth).toBe(false);
             });
     });

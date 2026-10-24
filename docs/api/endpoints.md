@@ -82,16 +82,16 @@ Used by the Admin Dashboard. See [Observability Endpoints](./observability.md) f
 
 JWT-based authentication. Login returns an `accessToken` in the body and sets a `refreshToken` in an HttpOnly cookie. See [Security](../tools/security.md) for how the FE handles these.
 
-| Method | Endpoint                 | Auth | Description                                 |
-| ------ | ------------------------ | ---- | ------------------------------------------- |
-| POST   | `/account/login`         | none | Authenticate and get JWT                    |
-| POST   | `/account/signup`        | none | Register a new user                         |
-| GET    | `/account`               | user | Get current user profile                    |
-| POST   | `/account/refresh`       | none | Refresh access token (uses HttpOnly cookie) |
-| POST   | `/account/reset`         | none | Request password reset email                |
-| POST   | `/account/reset-confirm` | none | Confirm password reset                      |
-| POST   | `/account/logout-all`    | user | Revoke all refresh tokens                   |
-| DELETE | `/account`               | user | Delete own account                          |
+| Method | Endpoint                          | Auth | Description                                 |
+| ------ | --------------------------------- | ---- | ------------------------------------------- |
+| POST   | `/account/login`                  | none | Authenticate and get JWT                    |
+| POST   | `/account/signup`                 | none | Register a new user                         |
+| GET    | `/account`                        | user | Get current user profile                    |
+| POST   | `/account/refresh`                | none | Refresh access token (uses HttpOnly cookie) |
+| POST   | `/account/password/reset`         | none | Request password reset email                |
+| POST   | `/account/password/reset/confirm` | none | Confirm password reset                      |
+| DELETE | `/account/sessions`               | user | Revoke all refresh tokens                   |
+| DELETE | `/account`                        | user | Delete own account                          |
 
 ## Products
 

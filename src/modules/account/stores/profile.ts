@@ -214,7 +214,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * shipped until the API grew the self-service route. The payload is deliberately what a user
      * owns: no `password` (that is {@link changePassword}, which proves the current one) and no
      * role or account state. A new email is parked in `pendingEmail` rather than applied — `email`
-     * and the verification state stay untouched until `POST /account/email-change-confirm` proves
+     * and the verification state stay untouched until `POST /account/email-change/confirm` proves
      * it — so the fresh record in the response is what shows the caller their change is pending.
      *
      * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone`,
@@ -318,7 +318,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Cancels a pending email change, through the endpoint dedicated to it — `DELETE
-     * /account/pending-email`. Resending the current address is a no-op, not a cancel, so a
+     * /account/email-change`. Resending the current address is a no-op, not a cancel, so a
      * routine save never drops a change in flight by accident; this is the only thing that does.
      *
      * @returns A promise resolving once the change is discarded and the profile refetched.
@@ -330,7 +330,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * Asks for the pending email change's confirmation link to be mailed again, through `POST
-     * /account/pending-email/resend`. The backend mails the NEW address only and revokes the link
+     * /account/email-change/resend`. The backend mails the NEW address only and revokes the link
      * already delivered, so exactly one stays live. Nothing about the profile changes, so there is
      * nothing to refetch.
      *

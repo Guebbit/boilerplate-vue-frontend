@@ -7850,7 +7850,7 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<Account
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Replace own profile
  */
 export const replaceAccount = (
@@ -7869,7 +7869,7 @@ export const replaceAccount = (
 };
 
 /**
- * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Replaces every writable field of the authenticated user's own profile — email, username, locale (RFC 9110 §9.3.4, an omitted optional field is cleared). The image is outside the representation — set by an upload, cleared by an explicit `imageUrl` null, kept when a PUT never mentions it. `analyticsConsent` is required — it has no cleared state, so a PUT always states it and consent is never reset or withdrawn by a forgotten field. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, the address already PENDING, or any other value that resolves to no change is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Replace own profile
  */
 export const replaceAccountWithMultipart = (
@@ -7905,7 +7905,7 @@ export const replaceAccountWithMultipart = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Update own profile
  */
 export const updateAccount = (
@@ -7924,7 +7924,7 @@ export const updateAccount = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMergePatchJson = (
@@ -7943,7 +7943,7 @@ export const updateAccountWithMergePatchJson = (
 };
 
 /**
- * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change-confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change-undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/pending-email`, or have its link mailed again with `POST /account/pending-email/resend`.
+ * Merges the given fields into the authenticated user's own profile — email, username, locale, image (RFC 7396, an omitted field is left unchanged, `null` clears an optional one). Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email does NOT take effect immediately — it is held as `pendingEmail` until `POST /account/email-change/confirm` proves the new address, and a notice carrying a 7-day one-time undo link (`POST /account/email-change/undo`) is sent to the OLD address the moment the change is requested. Changing the email needs a fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`). Sending the CURRENT address, or the address already PENDING, is a no-op — it neither starts, restarts nor cancels anything; cancel an already-pending change with `DELETE /account/email-change`, or have its link mailed again with `POST /account/email-change/resend`.
  * @summary Update own profile
  */
 export const updateAccountWithMultipart = (
@@ -8005,20 +8005,20 @@ export const cancelPendingEmailChange = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        { url: `/account/pending-email`, method: 'DELETE' },
+        { url: `/account/email-change`, method: 'DELETE' },
         options
     );
 };
 
 /**
- * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/verify-request`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/verify-request`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
+ * Mails the NEW (pending) address a fresh confirmation link — and only that address; the old one is not told again. The previous link stops working, since only the newest one counts. Answers 200 with `resendAfter`, the seconds a client counts down before offering the button again — the same shape as `POST /account/email-verification/resend`. A no-op, answering 200 with `resendAfter` 0 and mailing nothing, when nothing is pending, so a client does not need to check `GET /account` first. Sending the pending address again through `PUT`/`PATCH /account` does nothing, which is why this route exists. Answers 429 inside the previous send's cooldown (the same 60 seconds as `POST /account/email-verification/resend`, with `details.retryAfter` naming the wait) and spends the same per-account budget on a failure, so a client that waits never sees one. No fresh-auth guard — it mails an address the caller already asked for and changes nothing about the account.
  * @summary Resend the pending email confirmation
  */
 export const resendPendingEmail = (
     options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
 ) => {
     return orvalMutator<EmailVerificationRequestedEnvelope>(
-        { url: `/account/pending-email/resend`, method: 'POST' },
+        { url: `/account/email-change/resend`, method: 'POST' },
         options
     );
 };
@@ -8122,7 +8122,7 @@ export const reauth = (
 };
 
 /**
- * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
 export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
@@ -8135,6 +8135,14 @@ export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResp
  */
 export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
     return orvalMutator<SessionsEnvelope>({ url: `/account/sessions`, method: 'GET' }, options);
+};
+
+/**
+ * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
+ * @summary Logout from all devices
+ */
+export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
+    return orvalMutator<SuccessResponse>({ url: `/account/sessions`, method: 'DELETE' }, options);
 };
 
 /**
@@ -8269,20 +8277,20 @@ export const setDefaultAddress = (
 };
 
 /**
- * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
+ * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/email-verification/confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived. Answers 429 inside the previous send's cooldown, so a client that respects `resendAfter` never sees one — unlike a login guess, a SUCCESSFUL call here is the expensive one, since each publishes mail.
  * @summary Request email verification
  */
 export const requestEmailVerification = (
     options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
 ) => {
     return orvalMutator<EmailVerificationRequestedEnvelope>(
-        { url: `/account/verify-request`, method: 'POST' },
+        { url: `/account/email-verification/resend`, method: 'POST' },
         options
     );
 };
 
 /**
- * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/verify-request` and, if valid, marks the account's email address as verified.
+ * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/email-verification/resend` and, if valid, marks the account's email address as verified.
  * @summary Confirm email verification
  */
 export const confirmEmailVerification = (
@@ -8291,7 +8299,7 @@ export const confirmEmailVerification = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/verify-confirm`,
+            url: `/account/email-verification/confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -8301,7 +8309,7 @@ export const confirmEmailVerification = (
 };
 
 /**
- * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/verify-confirm` — the two prove different things.
+ * Completes the email-change flow started by `PUT /account`. Validates the one-time `email-change` token sent to the NEW address and, if valid, swaps `pendingEmail` into `email`, marks the account verified, and revokes every refresh token — the same treatment `POST /account/password` gives a password change, since an email change is the stronger takeover primitive of the two. A `verify` token from the signup flow is refused here, and this token is refused by `/account/email-verification/confirm` — the two prove different things.
  * @summary Confirm a pending email change
  */
 export const confirmEmailChange = (
@@ -8310,7 +8318,7 @@ export const confirmEmailChange = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/email-change-confirm`,
+            url: `/account/email-change/confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -8320,7 +8328,7 @@ export const confirmEmailChange = (
 };
 
 /**
- * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change-confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
+ * Reverts an email change from the one-time link in the notice mailed to the OLD address when the change was requested. Valid for 7 days from that request, and untouched by a password change, so a person who reads mail weekly can still use it. While the change is only pending it is cancelled; once the new address was confirmed the previous one is restored, and every session is ended (a refresh token cannot outlive the address it was issued under). Public, like `POST /account/email-change/confirm`, the token in the body is the credential. Answers 409 when the previous address was meanwhile claimed by another account.
  * @summary Undo an email change
  */
 export const undoEmailChange = (
@@ -8329,7 +8337,7 @@ export const undoEmailChange = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/email-change-undo`,
+            url: `/account/email-change/undo`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: verifyEmailConfirmRequest
@@ -8377,7 +8385,7 @@ export const login = (
 };
 
 /**
- * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/verify-confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
+ * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
  * @summary Signup
  */
 export const signup = (
@@ -8396,7 +8404,7 @@ export const signup = (
 };
 
 /**
- * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+ * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/password/reset/confirm`.
  * @summary Request password reset
  */
 export const requestPasswordReset = (
@@ -8405,7 +8413,7 @@ export const requestPasswordReset = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/reset`,
+            url: `/account/password/reset`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: passwordResetRequest
@@ -8415,7 +8423,7 @@ export const requestPasswordReset = (
 };
 
 /**
- * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+ * Completes the password-reset flow. Validates the one-time reset token issued by `/account/password/reset` and, if valid, updates the user's password to the supplied value.
  * @summary Confirm password reset
  */
 export const confirmPasswordReset = (
@@ -8424,7 +8432,7 @@ export const confirmPasswordReset = (
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/reset-confirm`,
+            url: `/account/password/reset/confirm`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: passwordResetConfirmRequest
@@ -8441,14 +8449,6 @@ export const refreshToken = (
     options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>
 ) => {
     return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'POST' }, options);
-};
-
-/**
- * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
- * @summary Logout from all devices
- */
-export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
-    return orvalMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' }, options);
 };
 
 /**
@@ -11830,6 +11830,7 @@ export type GetReauthMethodsResult = NonNullable<Awaited<ReturnType<typeof getRe
 export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
 export type ListSessionsResult = NonNullable<Awaited<ReturnType<typeof listSessions>>>;
+export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
 export type ListAddressesResult = NonNullable<Awaited<ReturnType<typeof listAddresses>>>;
 export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
@@ -11860,7 +11861,6 @@ export type ConfirmPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof confirmPasswordReset>>
 >;
 export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
-export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
 export type RequestAccountExportResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountExport>>
 >;

@@ -262,7 +262,7 @@ and whether their address is verified_. It does not know what a `User` is, and d
 module does not break it.
 
 Which `/account` calls belong to the session: the ones it needs to restore, remember or end
-**itself** — `GET /account` (who am I), `/account/refresh`, `/account/logout`, `/account/logout-all`,
+**itself** — `GET /account` (who am I), `/account/refresh`, `/account/logout`, `/account/sessions`,
 and the language preference write. Everything else under `/account` — signup, the password resets,
 the deletion flow, editing your own record — is an operation _on_ an account rather than _on_ the
 session, and belongs to the module.

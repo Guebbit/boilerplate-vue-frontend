@@ -79,9 +79,9 @@ beforeEach(() => {
         'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
         // The envelope the real endpoint answers: a fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
-        'POST /account/verify-confirm': orvalEnvelope(),
-        'POST /account/email-change-confirm': orvalEnvelope(),
-        'POST /account/email-change-undo': orvalEnvelope(),
+        'POST /account/email-verification/confirm': orvalEnvelope(),
+        'POST /account/email-change/confirm': orvalEnvelope(),
+        'POST /account/email-change/undo': orvalEnvelope(),
         // The request answers `202` with the export's id and status; the data comes later, by link.
         'POST /account/export': orvalEnvelope({ id: 'e1', status: 'building' }),
         // The download body IS the export document, not an envelope. Every collection is an array
@@ -311,7 +311,7 @@ describe('the self-service actions', () => {
         return profile
             .confirmEmailVerification('a-token')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/account/verify-confirm']);
+                expect(requestedUrls()).toEqual(['/account/email-verification/confirm']);
             })
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailVerification('a-token'))
@@ -338,7 +338,7 @@ describe('the self-service actions', () => {
                 return profile.undoEmailChange('a-token').then(() => before);
             })
             .then((before) => {
-                expect(requestedUrls().slice(before)).toEqual(['/account/email-change-undo']);
+                expect(requestedUrls().slice(before)).toEqual(['/account/email-change/undo']);
                 expect(useSessionStore().isAuth).toBe(false);
                 expect(useSessionStore().accessToken).toBeUndefined();
                 expect(profile.profile).toBeUndefined();
@@ -352,7 +352,7 @@ describe('the self-service actions', () => {
         return profile
             .confirmEmailChange('a-token')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/account/email-change-confirm']);
+                expect(requestedUrls()).toEqual(['/account/email-change/confirm']);
             })
             .then(() => useAuthStore().login('ada@example.com', 'hunter2hunter2'))
             .then(() => profile.confirmEmailChange('a-token'))
