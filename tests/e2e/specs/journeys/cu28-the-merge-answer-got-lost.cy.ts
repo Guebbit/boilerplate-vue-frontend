@@ -85,7 +85,7 @@ describe('CU28 · The answer to my cart merge got lost', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.restore();
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
     });
 
     it('keeps the guest cart, and the retry after a reload adds it once', () => {

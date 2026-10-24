@@ -45,7 +45,7 @@ describe('CU7 · Two shoppers, one last unit', () => {
                 cy.loginAs('user');
                 addToCartFromStorefront('product.lowStock');
                 // Adding never looks at stock, so the second shopper's cart can hold it too.
-                cy.apiAs('secondShopper', 'POST', '/cart', { productId, quantity: 1 });
+                cy.apiAs('secondShopper', 'POST', '/cart/items', { productId, quantity: 1 });
 
                 cy.step('the customer checks out the last unit: it is held');
                 cy.goToCart();

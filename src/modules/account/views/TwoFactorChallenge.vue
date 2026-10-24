@@ -173,7 +173,13 @@ const handleSubmit = () => {
     clearSubmitError();
     return twoFactor
         .submitLoginCode(code.value)
-        .then(() => redirectAfterLogin())
+        .then((outcome) =>
+            // The second factor passed for an account in its deletion grace: no session yet, the
+            // restore offer is open and the visitor answers it on its own page.
+            outcome === 'deletion-pending'
+                ? router.push(routerLinkI18n({ name: 'AccountRestoreChallenge' }))
+                : redirectAfterLogin()
+        )
         .then(() => undefined)
         .catch((error: unknown) => {
             reportSubmitError(error);

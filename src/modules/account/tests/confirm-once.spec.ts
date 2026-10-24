@@ -76,7 +76,9 @@ describe('a double press on a confirm-then-write control in the account panels',
         const request = vi
             .spyOn(useProfileStore(), 'requestAccountDelete')
             .mockResolvedValue(undefined);
-        const wrapper = mount(ProfileDeleteAccount, { global: { plugins: [vuetify, i18n] } });
+        const wrapper = mount(ProfileDeleteAccount, {
+            global: { plugins: [router, vuetify, i18n] }
+        });
 
         const confirm = await pressTwice(wrapper.get('button'));
 

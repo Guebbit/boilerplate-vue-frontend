@@ -72,7 +72,7 @@ export const ERROR_CODES = {
     DELIVERY_TRACKING_CODE_REQUIRED: 'DELIVERY_TRACKING_CODE_REQUIRED',
     /** 429 — An email change was already requested for this account in the last minute — carries `details.retryAfter`. */
     EMAIL_CHANGE_TOO_SOON: 'EMAIL_CHANGE_TOO_SOON',
-    /** 403 — Checkout requires a verified email address — see `POST /account/verify-email`. */
+    /** 403 — Checkout requires a verified email address — see `POST /account/email-verification/resend`. */
     EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
     /** 429 — A verification email was already sent recently — carries `details.retryAfter`. */
     EMAIL_VERIFY_RESEND_TOO_SOON: 'EMAIL_VERIFY_RESEND_TOO_SOON',
@@ -212,6 +212,8 @@ export const ERROR_CODES = {
     USER_ALREADY_ACTIVE: 'USER_ALREADY_ACTIVE',
     /** 409 — The account is deactivated already: `POST /users/{id}/deactivate` has nothing to do. */
     USER_ALREADY_INACTIVE: 'USER_ALREADY_INACTIVE',
+    /** 409 — The account owner asked for its deletion and the grace has run out, so it is erased by the next purge run and can no longer be restored. */
+    USER_ERASURE_DUE: 'USER_ERASURE_DUE',
     /** 409 — The account is not soft-deleted, so there is nothing to restore. */
     USER_NOT_DELETED: 'USER_NOT_DELETED',
     /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */

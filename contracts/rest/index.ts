@@ -246,6 +246,8 @@ export interface User {
     deletedAt?: string;
     purchaseHold?: PurchaseHold;
     actions: UserActions;
+    /** When the account is erased, after its owner asked to delete it. Present only on such a row, and `deletedAt` is then the request time. Staff may restore it until then (`POST /users/{id}/restore`). */
+    purgeAt?: string;
     /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
     purchaseHoldFlaggedAt?: string;
 }
@@ -1226,6 +1228,20 @@ export interface ReplaceAccountRequestMultipart {
     analyticsConsent: boolean;
 }
 
+export interface AccountDeletion {
+    /** When the deletion was asked for, and the account locked. */
+    requestedAt: string;
+    /** When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest. */
+    purgeAt: string;
+}
+
+export interface AccountDeletionEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AccountDeletion;
+}
+
 export interface UpdateAccountRequest {
     email?: Email;
     /**
@@ -1624,9 +1640,9 @@ export interface VerifyEmailConfirmRequest {
     token: string;
 }
 
-export interface AccountDeleteConfirmRequest {
+export interface AccountRestoreRequest {
     /**
-     * One-time account deletion token (NOT a JWT).
+     * One-time account restore token (NOT a JWT).
      * @minLength 1
      * @maxLength 128
      */
@@ -1691,16 +1707,38 @@ export interface MfaChallenge {
     defaultMethod?: string;
 }
 
+export interface DeletionPending {
+    /** Always true. The credentials checked out, but the account is inside the grace of its own deletion, so no session is issued until the owner chooses to restore it. */
+    deletionPending: true;
+    /** A claim check recording how the sign-in was proven (password, and the second factor when armed). Submit it to `POST /account/login/restore`. */
+    challenge: string;
+    /** When the challenge stops being accepted. Signing in again earns a new one. */
+    expiresAt: string;
+    /** When the account is erased unless restored before. */
+    purgeAt: string;
+}
+
 /**
- * Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
+ * A full session (AuthTokens), a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled, or the offer to restore an account inside the grace of its own deletion (DeletionPending).
  */
-export type LoginOutcome = AuthTokens | MfaChallenge;
+export type LoginOutcome = AuthTokens | MfaChallenge | DeletionPending;
 
 export interface LoginResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: LoginOutcome;
+}
+
+export interface LoginRestoreRequest {
+    /**
+     * The `DeletionPending` challenge. Omit it for an OAuth-originated sign-in — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
+     * @minLength 1
+     * @maxLength 128
+     */
+    challenge?: string;
+    remember?: RememberTier;
+    transport?: SessionTransport;
 }
 
 export interface SignupRequest {
@@ -1781,6 +1819,18 @@ export interface LoginTwoFactorRequest {
     code: string;
     remember?: RememberTier;
     transport?: SessionTransport;
+}
+
+/**
+ * A full session (AuthTokens), or the offer to restore an account inside the grace of its own deletion (DeletionPending) once its second factor passed.
+ */
+export type LoginTwoFactorOutcome = AuthTokens | DeletionPending;
+
+export interface LoginTwoFactorResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LoginTwoFactorOutcome;
 }
 
 export interface TwoFactorSendRequest {
@@ -2836,7 +2886,7 @@ export interface CartResponseItem {
     /** @minimum 1 */
     quantity: number;
     availability: LineAvailability;
-    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart`. A client disables its "+" on `false` instead of copying the ceiling. */
+    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart/items`. A client disables its "+" on `false` instead of copying the ceiling. */
     canIncrease: boolean;
 }
 
@@ -2937,7 +2987,7 @@ export interface CartResponseEnvelope {
 }
 
 /**
- * Bounded at both ends, and this bound is on the STORED line, not only the request: `PUT /cart/{productId}` sets a line to exactly this value, which already fits; a caller that instead adds to an existing line (`POST /cart`, the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
+ * Bounded at both ends, and this bound is on the STORED line, not only the request: `PATCH /cart/items/{productId}` sets a line to exactly this value, which already fits; a caller that instead adds to an existing line (`POST /cart/items`, the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
  * @minimum 1
  * @maximum 999
  */
@@ -2946,10 +2996,6 @@ export type CartQuantity = number;
 export interface AddCartItemRequest {
     productId: Id;
     quantity: CartQuantity;
-}
-
-export interface RemoveCartItemRequest {
-    productId: Id;
 }
 
 export interface UpdateCartItemByIdRequest {
@@ -3321,6 +3367,10 @@ export interface WishlistResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: WishlistResponse;
+}
+
+export interface CreateWishlistItemRequest {
+    productId: Id;
 }
 
 export type OrderSortItem = (typeof OrderSortItem)[keyof typeof OrderSortItem];
@@ -5629,7 +5679,7 @@ export interface SetPurchaseHoldRequest {
 
 export interface MergeCartRequest {
     /**
-     * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart`s.
+     * The guest cart's lines. A product listed twice is two lines, summed like two `POST /cart/items`s.
      * @minItems 1
      * @maxItems 100
      */
@@ -6280,6 +6330,10 @@ export interface StockAlertsResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: StockAlertsResponse;
+}
+
+export interface CreateStockAlertRequest {
+    productId: Id;
 }
 
 /**
@@ -8164,13 +8218,13 @@ export const updateAccountWithMultipart = (
 };
 
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
- * @summary Request account deletion
+ * Locks the authenticated user's account at once and schedules its erasure. Every session dies with the call (the session cookie is cleared) and the account can no longer sign in, so the answer is the last thing the caller sees. The account is erased `NODE_ACCOUNT_DELETION_GRACE_DAYS` days later (30 by default, never more than one calendar month: GDPR Art. 12(3)), at `purgeAt`. Until then it can be brought back by the link in the mail this call sends (`POST /account/restore`), by signing in (`POST /account/login` offers the restore), or by staff (`POST /users/{id}/restore`). Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+ * @summary Delete the account (locked at once, erased after a grace)
  */
 export const requestAccountDelete = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<AccountDeletionEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
+    return orvalMutator<AccountDeletionEnvelope>({ url: `/account`, method: 'DELETE' }, options);
 };
 
 /**
@@ -8551,26 +8605,26 @@ export const undoEmailChange = (
 };
 
 /**
- * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account. Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
- * @summary Confirm account deletion
+ * Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
+ * @summary Cancel a scheduled account deletion with the mailed link
  */
-export const confirmAccountDelete = (
-    accountDeleteConfirmRequest: AccountDeleteConfirmRequest,
+export const restoreAccount = (
+    accountRestoreRequest: AccountRestoreRequest,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
         {
-            url: `/account/delete-confirm`,
-            method: 'DELETE',
+            url: `/account/restore`,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: accountDeleteConfirmRequest
+            data: accountRestoreRequest
         },
         options
     );
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const login = (
@@ -8583,6 +8637,25 @@ export const login = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: loginRequest
+        },
+        options
+    );
+};
+
+/**
+ * The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401.
+ * @summary Restore an account in its deletion grace and sign in
+ */
+export const loginRestore = (
+    loginRestoreRequest: LoginRestoreRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login/restore`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginRestoreRequest
         },
         options
     );
@@ -8673,14 +8746,14 @@ export const requestAccountExport = (
 };
 
 /**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
  * @summary Complete a two-factor login
  */
 export const loginTwoFactor = (
     loginTwoFactorRequest: LoginTwoFactorRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LoginTwoFactorResponseEnvelope>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<LoginTwoFactorResponseEnvelope>(
         {
             url: `/account/login/2fa`,
             method: 'POST',
@@ -8874,14 +8947,14 @@ export const startOAuthLink = (
 };
 
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProvider = (
     provider: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<OAuthLinksEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<OAuthLinksEnvelope>(
         { url: `/account/oauth/links/${provider}`, method: 'DELETE' },
         options
     );
@@ -8903,7 +8976,7 @@ export const startOAuthLogin = (
 };
 
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. When the account is inside the grace of its own deletion and has no second factor, no session is minted either: the redirect carries `?deletionPending=1&purgeAt=...&expiresAt=...` and the claim check travels in a short-lived httpOnly cookie that `POST /account/login/restore` reads when its body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLogin = (
@@ -9166,7 +9239,7 @@ export const deleteUserById = (
 };
 
 /**
- * Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
  * @summary Restore user
  */
 export const restoreUserById = (
@@ -9811,7 +9884,7 @@ export const getCart = (options?: SecondParameter<typeof orvalMutator<CartRespon
 };
 
 /**
- * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`.
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). To SET a quantity, `PATCH /cart/items/{productId}`.
  * @summary Add to cart
  */
 export const addCartItem = (
@@ -9820,7 +9893,7 @@ export const addCartItem = (
 ) => {
     return orvalMutator<CartResponseEnvelope>(
         {
-            url: `/cart`,
+            url: `/cart/items`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: addCartItemRequest
@@ -9830,34 +9903,15 @@ export const addCartItem = (
 };
 
 /**
- * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
- * @summary Remove item from cart
- */
-export const removeCartItemByBody = (
-    removeCartItemRequest: RemoveCartItemRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
-) => {
-    return orvalMutator<CartResponseEnvelope>(
-        {
-            url: `/cart`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: removeCartItemRequest
-        },
-        options
-    );
-};
-
-/**
- * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
+ * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL, and any body on it is refused (415), so a body can never turn a one-line delete into this. Returns the (empty) cart; clearing an already-empty cart is the state the caller asked for, so also 200.
  * @summary Clear cart
  */
 export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
-    return orvalMutator<CartResponseEnvelope>({ url: `/cart/all`, method: 'DELETE' }, options);
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart/items`, method: 'DELETE' }, options);
 };
 
 /**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const updateCartItemById = (
@@ -9867,9 +9921,29 @@ export const updateCartItemById = (
 ) => {
     return orvalMutator<CartResponseEnvelope>(
         {
-            url: `/cart/${productId}`,
-            method: 'PUT',
+            url: `/cart/items/${productId}`,
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
+            data: updateCartItemByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
+ * @summary Set cart item quantity
+ */
+export const updateCartItemByIdWithMergePatchJson = (
+    productId: string,
+    updateCartItemByIdRequest: UpdateCartItemByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart/items/${productId}`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/merge-patch+json' },
             data: updateCartItemByIdRequest
         },
         options
@@ -9885,7 +9959,7 @@ export const removeCartItem = (
     options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
 ) => {
     return orvalMutator<CartResponseEnvelope>(
-        { url: `/cart/${productId}`, method: 'DELETE' },
+        { url: `/cart/items/${productId}`, method: 'DELETE' },
         options
     );
 };
@@ -9966,15 +10040,20 @@ export const getWishlist = (
 };
 
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
+ * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
 export const createWishlistItem = (
-    productId: string,
+    createWishlistItemRequest: CreateWishlistItemRequest,
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        { url: `/wishlist/${productId}`, method: 'PUT' },
+        {
+            url: `/wishlist/items`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createWishlistItemRequest
+        },
         options
     );
 };
@@ -9988,7 +10067,7 @@ export const deleteWishlistItem = (
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        { url: `/wishlist/${productId}`, method: 'DELETE' },
+        { url: `/wishlist/items/${productId}`, method: 'DELETE' },
         options
     );
 };
@@ -10002,7 +10081,7 @@ export const moveWishlistItemToCart = (
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
     return orvalMutator<WishlistResponseEnvelope>(
-        { url: `/wishlist/${productId}/move-to-cart`, method: 'POST' },
+        { url: `/wishlist/items/${productId}/move-to-cart`, method: 'POST' },
         options
     );
 };
@@ -11285,7 +11364,7 @@ export const deactivateUserById = (
 };
 
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCart = (
@@ -12018,15 +12097,20 @@ export const listStockAlerts = (
 };
 
 /**
- * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
  * @summary Ask to be told when a product is back
  */
 export const createStockAlert = (
-    productId: string,
+    createStockAlertRequest: CreateStockAlertRequest,
     options?: SecondParameter<typeof orvalMutator<StockAlertsResponseEnvelope>>
 ) => {
     return orvalMutator<StockAlertsResponseEnvelope>(
-        { url: `/stock-alerts/${productId}`, method: 'POST' },
+        {
+            url: `/stock-alerts`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createStockAlertRequest
+        },
         options
     );
 };
@@ -12161,10 +12245,9 @@ export type ConfirmEmailVerificationResult = NonNullable<
 >;
 export type ConfirmEmailChangeResult = NonNullable<Awaited<ReturnType<typeof confirmEmailChange>>>;
 export type UndoEmailChangeResult = NonNullable<Awaited<ReturnType<typeof undoEmailChange>>>;
-export type ConfirmAccountDeleteResult = NonNullable<
-    Awaited<ReturnType<typeof confirmAccountDelete>>
->;
+export type RestoreAccountResult = NonNullable<Awaited<ReturnType<typeof restoreAccount>>>;
 export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type LoginRestoreResult = NonNullable<Awaited<ReturnType<typeof loginRestore>>>;
 export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
 export type RequestPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof requestPasswordReset>>
@@ -12272,11 +12355,11 @@ export type HardDeleteProductByIdResult = NonNullable<
 export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
 export type AddCartItemResult = NonNullable<Awaited<ReturnType<typeof addCartItem>>>;
-export type RemoveCartItemByBodyResult = NonNullable<
-    Awaited<ReturnType<typeof removeCartItemByBody>>
->;
 export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
 export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
+export type UpdateCartItemByIdWithMergePatchJsonResult = NonNullable<
+    Awaited<ReturnType<typeof updateCartItemByIdWithMergePatchJson>>
+>;
 export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
 export type SetCartShippingMethodResult = NonNullable<
     Awaited<ReturnType<typeof setCartShippingMethod>>

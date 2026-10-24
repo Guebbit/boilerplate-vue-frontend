@@ -69,7 +69,7 @@ describe('PS2 · The buyer preorders', () => {
     it('tells the next shopper "Out of stock" once the allowance is taken', () => {
         cy.step('a preorder with room for one, and one shopper takes the place and pays');
         preorderOnSale({ releaseInDays: 60, limit: 1 }).then((id) => {
-            cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: id, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('user').then((order) => {
                 cy.apiAs('admin', 'POST', `/payments/orders/${String(order?.id)}/offline`, {

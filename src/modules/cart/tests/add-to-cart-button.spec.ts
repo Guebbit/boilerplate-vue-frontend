@@ -239,7 +239,7 @@ describe('a guest adding', () => {
     });
 });
 
-// `POST /cart` is "add": the server grows a line the shopper already has, so the click sends
+// `POST /cart/items` is "add": the server grows a line the shopper already has, so the click sends
 // the ONE unit it means and never reads the cart to compute a total.
 describe('adding', () => {
     it('adds one unit and leaves the arithmetic to the server', async () => {

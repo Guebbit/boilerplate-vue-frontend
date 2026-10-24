@@ -1936,13 +1936,17 @@ export const UpdateAccountResponse = zod.strictObject({
     })
 });
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
- * @summary Request account deletion
+ * Locks the authenticated user's account at once and schedules its erasure. Every session dies with the call (the session cookie is cleared) and the account can no longer sign in, so the answer is the last thing the caller sees. The account is erased `NODE_ACCOUNT_DELETION_GRACE_DAYS` days later (30 by default, never more than one calendar month: GDPR Art. 12(3)), at `purgeAt`. Until then it can be brought back by the link in the mail this call sends (`POST /account/restore`), by signing in (`POST /account/login` offers the restore), or by staff (`POST /users/{id}/restore`). Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+ * @summary Delete the account (locked at once, erased after a grace)
  */
 export const RequestAccountDeleteResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
-    message: zod.string()
+    message: zod.string(),
+    data: zod.strictObject({
+        requestedAt: zod.iso.datetime({ offset: true }),
+        purgeAt: zod.iso.datetime({ offset: true })
+    })
 });
 /**
  * Discards a pending `pendingEmail` change started by `PUT`/`PATCH /account`, without proving it. A no-op when nothing is pending — a client does not need to check `GET /account` first.
@@ -2638,20 +2642,20 @@ export const UndoEmailChangeResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account. Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
- * @summary Confirm account deletion
+ * Spends the one-time restore token mailed by `DELETE /account` and brings the account back, provided its `purgeAt` has not passed. Public: the token is the credential. Restoring does NOT sign the person in: holding the mailbox is not a login, the same rule as a password reset. Unknown, expired and already-spent tokens answer alike (`422`). Answers 429 once an address (or its network block) has sent too many wrong tokens, like the other one-time-token confirms.
+ * @summary Cancel a scheduled account deletion with the mailed link
  */
-export const confirmAccountDeleteBodyTokenMax = 128;
-export const ConfirmAccountDeleteBody = zod.strictObject({
-    token: zod.string().min(1).max(confirmAccountDeleteBodyTokenMax)
+export const restoreAccountBodyTokenMax = 128;
+export const RestoreAccountBody = zod.strictObject({
+    token: zod.string().min(1).max(restoreAccountBodyTokenMax)
 });
-export const ConfirmAccountDeleteResponse = zod.strictObject({
+export const RestoreAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
 });
 /**
- * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead.
+ * Authenticates a user with email and password credentials. On success, the session is started in whichever mode the deployment runs (`GET /account/session-config`): in `jwt` mode the body carries a short-lived access token (`token`) to pass as a Bearer token, and a refresh cookie is set; in `cookie` mode the session is an HttpOnly `__Host-session` cookie and the body carries no credential — unless the request asked for `transport: bearer`, which sets no cookie and returns the `ses_…` id as `sessionToken` instead. When the account has two-factor authentication enabled the response is a short-lived challenge to submit to `POST /account/login/2fa` instead. When the account is inside the grace of its own deletion (`DELETE /account`) and has no second factor, the response is a `DeletionPending` claim check to submit to `POST /account/login/restore`: the account is not restored, and no session exists, until that call.
  * @summary Login
  */
 export const loginBodyEmailMax = 254;
@@ -2688,8 +2692,33 @@ export const LoginResponse = zod.strictObject({
                 })
             ),
             defaultMethod: zod.string().optional()
+        }),
+        zod.strictObject({
+            deletionPending: zod.literal(true),
+            challenge: zod.string(),
+            expiresAt: zod.iso.datetime({ offset: true }),
+            purgeAt: zod.iso.datetime({ offset: true })
         })
     ])
+});
+/**
+ * The last step of a sign-in by an account whose owner asked to delete it (`DELETE /account`) and whose `purgeAt` has not passed. Submits the `DeletionPending` claim check that `POST /account/login` (or `POST /account/login/2fa`) answered: it cancels the deletion, then starts the session exactly as `POST /account/login` does, `remember` and `transport` included. A client that does not want the account back simply never calls it, and the account is erased at `purgeAt`. Omit `challenge` for an OAuth-originated sign-in: that claim check never reached the client and is read from the httpOnly cookie the callback set. An unknown, expired or spent challenge answers 401.
+ * @summary Restore an account in its deletion grace and sign in
+ */
+export const loginRestoreBodyChallengeMax = 128;
+export const LoginRestoreBody = zod.strictObject({
+    challenge: zod.string().min(1).max(loginRestoreBodyChallengeMax).optional(),
+    remember: zod.enum(['short', 'medium', 'long']).optional(),
+    transport: zod.enum(['cookie', 'bearer']).optional()
+});
+export const LoginRestoreResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        token: zod.string().optional(),
+        sessionToken: zod.string().optional()
+    })
 });
 /**
  * Registers a new user account. Takes no image — a stranger writes nothing to the store before registering; the signed-in caller sets an avatar with `PATCH /account`. Returns the newly created user profile on success, and signs the caller in — the refresh cookie is set here, so a client reaches a usable access token through `POST /account/refresh` rather than by calling `POST /account/login` again. The new account is an `unverified` audience until `POST /account/email-verification/confirm` proves the address — it browses freely and is stopped only at `checkout:Cart`. Signup takes no `transport`: a bearer client signs in with `POST /account/login` afterwards.
@@ -2851,7 +2880,7 @@ export const RequestAccountExportResponse = zod.strictObject({
     })
 });
 /**
- * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included.
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, starts the session exactly as `POST /account/login` does for an account with no second factor, `transport` included. For an account inside the grace of its own deletion the second factor passing answers a `DeletionPending` claim check instead of a session, so two-factor is asked once and `POST /account/login/restore` finishes.
  * @summary Complete a two-factor login
  */
 export const loginTwoFactorBodyChallengeMax = 128;
@@ -2866,10 +2895,18 @@ export const LoginTwoFactorResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().optional(),
-        sessionToken: zod.string().optional()
-    })
+    data: zod.union([
+        zod.strictObject({
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
+        }),
+        zod.strictObject({
+            deletionPending: zod.literal(true),
+            challenge: zod.string(),
+            expiresAt: zod.iso.datetime({ offset: true }),
+            purgeAt: zod.iso.datetime({ offset: true })
+        })
+    ])
 });
 /**
  * Delivers a fresh code for one armed delivered method, against a live challenge. Public like the rest of the login flow — the challenge token is the credential. Answers 429 while the previous code is still inside its cooldown, so a client that respects `resendAfter` never sees one; the cooldown exists because this endpoint sends mail on an unauthenticated caller's say-so.
@@ -3107,7 +3144,7 @@ export const StartOAuthLinkResponse = zod.strictObject({
     })
 });
 /**
- * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked.
+ * Removes the link between the account and `provider`, so that provider can no longer sign in to it, and mails the owner that a sign-in method was removed. Nothing re-links it by email match, so reconnecting is `POST /account/oauth/links/{provider}` from a signed-in session. Needs a fresh session (`401 REAUTH_REQUIRED`). There is no guard on removing the last sign-in method, by decision (forgot-password recovers an account that was left with none). Answers 404 when `provider` is not linked. A link is a line of the caller's links list, so the answer is that list as it now stands (200 + the links left).
  * @summary Disconnect a linked sign-in provider
  */
 export const unlinkOAuthProviderPathProviderMax = 32;
@@ -3117,7 +3154,15 @@ export const UnlinkOAuthProviderParams = zod.strictObject({
 export const UnlinkOAuthProviderResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
-    message: zod.string()
+    message: zod.string(),
+    data: zod.strictObject({
+        links: zod.array(
+            zod.strictObject({
+                provider: zod.string(),
+                connectedAt: zod.iso.datetime({ offset: true })
+            })
+        )
+    })
 });
 /**
  * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
@@ -3135,7 +3180,7 @@ export const StartOAuthLoginQueryParams = zod.strictObject({
 });
 export const StartOAuthLoginResponse = zod.void();
 /**
- * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure. When the account has two-factor authentication armed, no session is minted: the redirect instead carries `?mfaRequired=1&expiresAt=...&methods=...&defaultMethod=...` (the same fields MfaChallenge carries, minus the token itself), and the challenge token travels in a short-lived httpOnly cookie that POST /account/login/2fa and .../2fa/send read when their body omits `challenge`. When the account is inside the grace of its own deletion and has no second factor, no session is minted either: the redirect carries `?deletionPending=1&purgeAt=...&expiresAt=...` and the claim check travels in a short-lived httpOnly cookie that `POST /account/login/restore` reads when its body omits `challenge`. Either success redirect also carries `?continue=<path>` when `GET /account/oauth/{provider}` saved one and it is still a valid same-origin path; every redirect, a failure's included, carries `?locale=<tag>` likewise. A provider whose verified email matches an existing account links nothing and signs nobody in: the redirect carries `?error=account_exists`, and the owner connects the provider from a signed-in session (`POST /account/oauth/links/{provider}`). When that existing account never proved its own address, the redirect carries `?error=account_unverified` instead: the owner resets the password, which proves the mailbox, and signs in the way the account allows. That signed-in connect round trip comes back to this same callback, mints no session and redirects with `?linked=<provider>`, or `?error=already_linked` (the provider account belongs to another account) or `?error=link_expired` (the minutes the attempt lives ran out).
  * @summary Complete an OAuth login
  */
 export const completeOAuthLoginPathProviderMax = 32;
@@ -3260,6 +3305,7 @@ export const ListUsersResponse = zod.strictObject({
                     activate: zod.boolean(),
                     deactivate: zod.boolean()
                 }),
+                purgeAt: zod.iso.datetime({ offset: true }).optional(),
                 purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
@@ -3356,6 +3402,7 @@ export const CreateUserResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -3445,6 +3492,7 @@ export const GetUserByIdResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -3542,6 +3590,7 @@ export const ReplaceUserByIdResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -3643,6 +3692,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -3668,7 +3718,7 @@ export const DeleteUserByIdResponse = zod.strictObject({
     message: zod.string()
 });
 /**
- * Undoes the soft delete of the user identified by `{id}`. Answers 409 when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * Undoes the soft delete of the user identified by `{id}`, which includes an account whose owner asked to delete it and whose `purgeAt` has not passed (the owner is told by mail; the account is then no longer scheduled for erasure). Answers 409 `USER_NOT_DELETED` when the user is not soft-deleted, so a restore can never be mistaken for an ordinary read, and 409 `USER_ERASURE_DUE` past `purgeAt`.
  * @summary Restore user
  */
 export const restoreUserByIdPathIdMax = 64;
@@ -3734,6 +3784,7 @@ export const RestoreUserByIdResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -3866,6 +3917,7 @@ export const SearchUsersResponse = zod.strictObject({
                     activate: zod.boolean(),
                     deactivate: zod.boolean()
                 }),
+                purgeAt: zod.iso.datetime({ offset: true }).optional(),
                 purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
@@ -5217,7 +5269,7 @@ export const GetCartResponse = zod.strictObject({
     })
 });
 /**
- * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). Answers 201 with the cart and the line's `Location` when a line was created, 200 when an existing one grew; the line may not pass the per-line cap (422). To SET a quantity, `PUT /cart/{productId}`.
+ * "Add to cart": a product with no line in the caller's cart gets one, and a line already there GROWS by `quantity` — pressing the button twice makes two (Shopify's `/cart/add`, commercetools' `addLineItem`). A line is written through its parent, so the answer is always 200 with the whole cart: no `Location`, no read of a line. The line may not pass the per-line cap (422). To SET a quantity, `PATCH /cart/items/{productId}`.
  * @summary Add to cart
  */
 export const addCartItemBodyProductIdMax = 64;
@@ -5298,94 +5350,7 @@ export const AddCartItemResponse = zod.strictObject({
     })
 });
 /**
- * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
- * @summary Remove item from cart
- */
-export const removeCartItemByBodyBodyProductIdMax = 64;
-export const removeCartItemByBodyBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RemoveCartItemByBodyBody = zod.strictObject({
-    productId: zod
-        .string()
-        .min(1)
-        .max(removeCartItemByBodyBodyProductIdMax)
-        .regex(removeCartItemByBodyBodyProductIdRegExp)
-});
-export const removeCartItemByBodyResponseDataItemsItemProductIdMax = 64;
-export const removeCartItemByBodyResponseDataItemsItemProductIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const removeCartItemByBodyResponseDataSummaryItemsCountMin = 0;
-export const removeCartItemByBodyResponseDataSummaryTotalQuantityMin = 0;
-export const removeCartItemByBodyResponseDataSummaryItemsTotalMin = 0;
-export const removeCartItemByBodyResponseDataSummaryShippingCostMin = 0;
-export const removeCartItemByBodyResponseDataSummaryTotalPriceMin = 0;
-export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneAmountMin = 0;
-export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMin = 3;
-export const removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMax = 3;
-export const removeCartItemByBodyResponseDataShippingOptionsItemPriceMin = 0;
-export const RemoveCartItemByBodyResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        items: zod.array(
-            zod.strictObject({
-                productId: zod
-                    .string()
-                    .min(1)
-                    .max(removeCartItemByBodyResponseDataItemsItemProductIdMax)
-                    .regex(removeCartItemByBodyResponseDataItemsItemProductIdRegExp),
-                quantity: zod.number().min(1),
-                availability: zod.enum([
-                    'in_stock',
-                    'preorder',
-                    'backorder',
-                    'insufficient_stock',
-                    'out_of_stock',
-                    'unavailable',
-                    'removed'
-                ]),
-                canIncrease: zod.boolean()
-            })
-        ),
-        summary: zod.strictObject({
-            itemsCount: zod.number().min(removeCartItemByBodyResponseDataSummaryItemsCountMin),
-            totalQuantity: zod
-                .number()
-                .min(removeCartItemByBodyResponseDataSummaryTotalQuantityMin),
-            itemsTotal: zod.number().min(removeCartItemByBodyResponseDataSummaryItemsTotalMin),
-            shippingCost: zod.number().min(removeCartItemByBodyResponseDataSummaryShippingCostMin),
-            totalPrice: zod.number().min(removeCartItemByBodyResponseDataSummaryTotalPriceMin),
-            currency: zod.string(),
-            expectedTotal: zod.strictObject({
-                amount: zod
-                    .number()
-                    .min(removeCartItemByBodyResponseDataSummaryExpectedTotalOneAmountMin),
-                currency: zod
-                    .string()
-                    .min(removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMin)
-                    .max(removeCartItemByBodyResponseDataSummaryExpectedTotalOneCurrencyMax)
-            })
-        }),
-        shipping: zod.strictObject({
-            required: zod.boolean(),
-            selected: zod.string().nullable(),
-            options: zod.array(
-                zod.strictObject({
-                    id: zod.string(),
-                    price: zod
-                        .number()
-                        .min(removeCartItemByBodyResponseDataShippingOptionsItemPriceMin),
-                    requiresAddress: zod.boolean(),
-                    tracked: zod.boolean()
-                })
-            )
-        }),
-        checkoutable: zod.boolean()
-    })
-});
-/**
- * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
+ * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL, and any body on it is refused (415), so a body can never turn a one-line delete into this. Returns the (empty) cart; clearing an already-empty cart is the state the caller asked for, so also 200.
  * @summary Clear cart
  */
 export const clearCartResponseDataItemsItemProductIdMax = 64;
@@ -5455,7 +5420,7 @@ export const ClearCartResponse = zod.strictObject({
     })
 });
 /**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart` is the door that adds. Answers 201 when it created the line (RFC 9110 §9.3.4) and 200 when it wrote one already there; repeating it changes nothing. Returns the updated cart.
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path — the quantity, not an increment; `POST /cart/items` is the door that adds. A change never creates, so a product the cart holds no line for is 404 `cart.item-not-found`, and a held line whose product the storefront no longer shows is 404 `products.not-found`. Repeating it changes nothing. Returns the updated cart.
  * @summary Set cart item quantity
  */
 export const updateCartItemByIdPathProductIdMax = 64;
@@ -6131,17 +6096,17 @@ export const GetWishlistResponse = zod.strictObject({
     })
 });
 /**
- * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
+ * Saves the product named in the body to the authenticated user's wishlist. A saved product is a line of the wishlist, written through its parent: the answer is 200 with the whole wishlist, no `Location`, and no read of a line. Saving what is already saved answers the same 200 and fires nothing a second time, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
-export const createWishlistItemPathProductIdMax = 64;
-export const createWishlistItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateWishlistItemParams = zod.strictObject({
+export const createWishlistItemBodyProductIdMax = 64;
+export const createWishlistItemBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateWishlistItemBody = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(createWishlistItemPathProductIdMax)
-        .regex(createWishlistItemPathProductIdRegExp)
+        .max(createWishlistItemBodyProductIdMax)
+        .regex(createWishlistItemBodyProductIdRegExp)
 });
 export const createWishlistItemResponseDataItemsItemProductIdMax = 64;
 export const createWishlistItemResponseDataItemsItemProductIdRegExp = new RegExp(
@@ -14212,6 +14177,7 @@ export const SetUserPurchaseHoldResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -14291,6 +14257,7 @@ export const LiftUserPurchaseHoldResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -14361,6 +14328,7 @@ export const ActivateUserByIdResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
@@ -14434,11 +14402,12 @@ export const DeactivateUserByIdResponse = zod.strictObject({
             activate: zod.boolean(),
             deactivate: zod.boolean()
         }),
+        purgeAt: zod.iso.datetime({ offset: true }).optional(),
         purchaseHoldFlaggedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
- * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
+ * Adds every line of a cart built while signed out, in one call, by the same rule as `POST /cart/items`: a product already in the cart GROWS by the line's quantity, a new one gets a line. The answer holds the cart as it now stands and ONE RESULT PER SUBMITTED LINE, in request order, saying what the line asked for (`requested`), what the cart holds for that product now (`resulting`) and, when the two differ or the line did not land cleanly, why (`reason`). A line the cart cannot take is not a failure: the call still answers 200, because one bad line must not strand the rest. Stock is CHECKED, not enforced: a line that is short is still added (a stock-out is temporary) and flagged through its `availability` (`insufficient_stock`, `out_of_stock`, or `unavailable` for a product taken off sale), with the quantity left as the sum, so the answer never says how many are for sale. The same rule runs at checkout, which refuses, and in `GET /cart`, which flags, all three reading the stock ledger. Lines that could not be added at all (`removed`: the product is deleted or hidden) are also written as ONE notification (`notifications.cart-merge-refused`); nothing is written when there are none. Safe to retry with an `Idempotency-Key`: a lost answer replays instead of adding the same quantities twice. The caller empties its local guest cart once this answers.
  * @summary Merge a guest cart into the cart
  */
 export const mergeCartHeaderIdempotencyKeyMax = 200;
@@ -17706,17 +17675,17 @@ export const ListStockAlertsResponse = zod.strictObject({
     })
 });
 /**
- * Records that the authenticated user wants one mail, and one inbox message, when the product can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200. Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
+ * Records that the authenticated user wants one mail, and one inbox message, when the product named in the body can be ordered again (shelf units, an open backorder, a preorder with allowance left, or back on sale). The click is the consent for that single mail, so nothing else is ever sent on it and the request is deleted when it is answered. Asking twice is the same request and answers the same 200; the answer is always the whole list (the list is the parent, a request has no URL of its own). Refused with `409 STOCK_ALERT_PRODUCT_BUYABLE` while the product can be ordered now; a hidden or deleted product answers 404.
  * @summary Ask to be told when a product is back
  */
-export const createStockAlertPathProductIdMax = 64;
-export const createStockAlertPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const CreateStockAlertParams = zod.strictObject({
+export const createStockAlertBodyProductIdMax = 64;
+export const createStockAlertBodyProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateStockAlertBody = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(createStockAlertPathProductIdMax)
-        .regex(createStockAlertPathProductIdRegExp)
+        .max(createStockAlertBodyProductIdMax)
+        .regex(createStockAlertBodyProductIdRegExp)
 });
 export const createStockAlertResponseDataItemsItemProductIdMax = 64;
 export const createStockAlertResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');

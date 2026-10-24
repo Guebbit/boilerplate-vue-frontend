@@ -46,7 +46,7 @@ beforeEach(() => {
         'GET /account/oauth/links': orvalEnvelope({
             links: [{ provider: 'google', connectedAt: '2026-01-01T00:00:00.000Z' }]
         }),
-        'DELETE /account/oauth/links/google': orvalEnvelope(),
+        'DELETE /account/oauth/links/google': orvalEnvelope({ links: [] }),
         'POST /account/oauth/links/google': orvalEnvelope({
             authorizeUrl: 'https://accounts.example/consent?state=x'
         })
@@ -64,18 +64,18 @@ describe('useOAuthLinksStore', () => {
         });
     });
 
-    it('unlinkProvider deletes the one link and reloads the list it changed', () => {
+    it('unlinkProvider deletes the one link and keeps the links the answer carries, with no reload', () => {
         const store = useOAuthLinksStore();
 
         return store
             .fetchLinks()
             .then(() => store.unlinkProvider('google'))
             .then(() => {
-                expect(requests().slice(-3)).toEqual([
+                expect(requests()).toEqual([
                     'GET /account/oauth/links',
-                    'DELETE /account/oauth/links/google',
-                    'GET /account/oauth/links'
+                    'DELETE /account/oauth/links/google'
                 ]);
+                expect(store.links).toEqual([]);
             });
     });
 

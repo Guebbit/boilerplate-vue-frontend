@@ -58,7 +58,7 @@ describe('Storefront', () => {
             // else's order offers them. The shopper's seeded cart already carries lines of its
             // own, so it is emptied through the API first: the reordered line can then only be
             // there because reorder put it there.
-            cy.apiAs('user', 'DELETE', '/cart/all');
+            cy.apiAs('user', 'DELETE', '/cart/items');
             let productTitle = '';
             cy.subjectOrder('order.awaitingTransfer').then((order) => {
                 productTitle = order.items[0].product.title;

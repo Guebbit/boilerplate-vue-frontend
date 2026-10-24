@@ -41,7 +41,7 @@ describe('FR4 · Reload in the middle of checkout', () => {
         cy.visit('/en');
         cy.restore();
         // The customer's own cart may hold lines already; start from empty so the one line is ours.
-        cy.apiAs('user', 'DELETE', '/cart/all');
+        cy.apiAs('user', 'DELETE', '/cart/items');
         cy.visit('/en');
     });
 
@@ -54,7 +54,7 @@ describe('FR4 · Reload in the middle of checkout', () => {
         cy.step('the customer fills the cart and picks standard delivery to their address');
         cy.loginAs('user');
         cy.subjectId('product.inStock').then((productId) => {
-            cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
         });
         cy.goToCart();
         cy.get('[data-test=cart-item]').should('have.length', 1);
@@ -102,7 +102,7 @@ describe('FR4 · Reload in the middle of checkout', () => {
             country: 'IT'
         }).then((work) => {
             cy.subjectId('product.inStock').then((productId) => {
-                cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+                cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
             });
             cy.loginAs('user');
             cy.goToCart();

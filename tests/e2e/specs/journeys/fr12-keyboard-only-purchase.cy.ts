@@ -139,7 +139,7 @@ describe('FR12 · A keyboard-only purchase', () => {
         cy.get('[data-test=add-to-cart]').should('exist');
 
         cy.step('add to cart, then the bar cart button');
-        cy.intercept('POST', '**/cart').as('addToCart');
+        cy.intercept('POST', '**/cart/items').as('addToCart');
         enterOn('[data-test=add-to-cart]');
         cy.wait('@addToCart');
         enterOn('[data-test=pinned-Cart]');

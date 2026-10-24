@@ -56,7 +56,7 @@ describe('BO1 · The buyer backorders', () => {
 
             cy.step('the customer wants two: one is on the shelf, one is owed');
             cy.switchUser('user');
-            cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 2 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: id, quantity: 2 });
             cy.visit('/en/cart');
             cy.get('[data-test=cart-line-availability]').should('contain.text', 'Backorder');
 

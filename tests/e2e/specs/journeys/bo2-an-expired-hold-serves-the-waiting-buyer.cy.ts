@@ -50,12 +50,12 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
             cy.apiAs('admin', 'POST', `/inventory/levels/${id}/receive`, { quantity: 1 });
 
             cy.step('the customer holds the last unit and does not pay');
-            cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 1 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: id, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('user');
 
             cy.step('the admin backorders the same product and pays, so the claim waits');
-            cy.apiAs('admin', 'POST', '/cart', { productId: id, quantity: 1 });
+            cy.apiAs('admin', 'POST', '/cart/items', { productId: id, quantity: 1 });
             cy.apiAs('admin', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('admin').then((waiting) => {
                 const waitingId = String(waiting?.id);

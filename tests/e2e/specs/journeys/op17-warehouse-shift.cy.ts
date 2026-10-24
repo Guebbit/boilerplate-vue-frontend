@@ -44,7 +44,7 @@ interface PaymentLike {
  */
 const aPaidDigitalOrder = (): Cypress.Chainable<string> =>
     cy.subjectId('product.digital').then((productId) => {
-        cy.apiAs('user', 'POST', '/cart', { productId, quantity: 1 });
+        cy.apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 });
         return checkoutAs('user').then((order) => {
             const orderId = String(order?.id);
             cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, { method: 'cash' });

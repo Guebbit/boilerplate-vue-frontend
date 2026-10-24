@@ -24,7 +24,7 @@ import { useProfileStore } from './profile.ts';
 
 /**
  * What `login()` resolves with: a discriminated narrowing of the contract's own
- * `AuthTokens | MfaChallenge` union. A call site branches on `kind` instead of inferring "did
+ * `AuthTokens | MfaChallenge | DeletionPending` union. A call site branches on `kind` instead of inferring "did
  * this establish a session" from which fields happen to be present.
  */
 export type LoginOutcome =
@@ -39,6 +39,15 @@ export type LoginOutcome =
           methods: MfaChallenge['methods'];
           /** Which of `methods` to offer first. */
           defaultMethod?: string;
+      }
+    | {
+          kind: 'deletion-pending';
+          /** Claim check for the restore: submit it to `POST /account/login/restore`. */
+          challenge: string;
+          /** When the claim check stops being accepted. */
+          expiresAt: string;
+          /** When the account is erased unless restored. */
+          purgeAt: string;
       };
 
 /**
@@ -66,8 +75,8 @@ export const useAuthStore = defineStore('accountAuth', () => {
     });
 
     /**
-     * Turns a login response into a {@link LoginOutcome}: an MFA challenge as-is, or an adopted
-     * session plus the freshly fetched profile.
+     * Turns a login response into a {@link LoginOutcome}: an MFA challenge or a restore offer as-is,
+     * or an adopted session plus the freshly fetched profile.
      *
      * @param data - The raw login response.
      * @param remember - The "remember me" choice, forwarded to the session.
@@ -87,6 +96,14 @@ export const useAuthStore = defineStore('accountAuth', () => {
                 expiresAt: payload.expiresAt,
                 methods: payload.methods,
                 defaultMethod: payload.defaultMethod
+            } as const;
+
+        if (payload && 'deletionPending' in payload)
+            return {
+                kind: 'deletion-pending',
+                challenge: payload.challenge,
+                expiresAt: payload.expiresAt,
+                purgeAt: payload.purgeAt
             } as const;
 
         session.adoptSession(data, remember);

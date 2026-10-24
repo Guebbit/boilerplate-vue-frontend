@@ -26,6 +26,7 @@ import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/env
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
 import { useProfileStore } from './profile.ts';
+import { useDeletionRestoreStore } from './deletion-restore.ts';
 import { ERROR_CODES } from '@api/error-codes';
 import type {
     TwoFactorStatus,
@@ -35,6 +36,7 @@ import type {
     TwoFactorDelivery,
     TwoFactorMethodSummary
 } from '@api';
+import type { LoginTwoFactorOutcome } from '@api';
 import type { LoginOutcome } from './auth.ts';
 
 /**
@@ -388,10 +390,12 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     /**
      * Submits a code (or an unused backup code) against the live login challenge. On success,
      * adopts the session exactly as a plain login does — token, `isAuth` cookie, and the freshly
-     * fetched profile — then clears the challenge.
+     * fetched profile — then clears the challenge. An account in the grace of its own deletion gets
+     * no session: the restore offer is opened on the deletion store instead.
      *
      * @param code - The 6-digit code, or a backup code.
-     * @returns A promise resolving once the session is established.
+     * @returns A promise resolving with `session` once it is established, or `deletion-pending`
+     *  once the restore offer is open.
      */
     const submitLoginCode = (code: string) => {
         if (!challenge.value) return Promise.reject(new Error('NO_ACTIVE_CHALLENGE'));
@@ -404,11 +408,27 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                 // backend sizes the session cookie from THIS request. Absent for OAuth logins.
                 remember: remember ? RememberTier.long : undefined
             }).then((data) => {
+                const payload = getPayloadFromResponse<LoginTwoFactorOutcome>(data);
+                // `in`, not a property read: `AuthTokens` carries no `deletionPending` at all.
+                if (payload && 'deletionPending' in payload) {
+                    useDeletionRestoreStore().begin(
+                        {
+                            kind: 'deletion-pending',
+                            challenge: payload.challenge,
+                            expiresAt: payload.expiresAt,
+                            purgeAt: payload.purgeAt
+                        },
+                        remember ?? false
+                    );
+                    clearChallenge();
+                    return 'deletion-pending' as const;
+                }
                 useSessionStore().adoptSession(data, remember);
                 return useProfileStore()
                     .fetchProfile(true)
                     .then(() => {
                         clearChallenge();
+                        return 'session' as const;
                     });
             })
         );

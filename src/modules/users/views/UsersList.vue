@@ -26,6 +26,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import type { User } from '@types';
 
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
@@ -295,19 +296,40 @@ const handleDelete = (userId: string, username: string) =>
     });
 
 /**
- * Undoes a soft delete. No confirmation: nothing is lost by it, and a mistaken restore is one
- * delete away. The list is reloaded afterwards, since the active filter may no longer match.
+ * Asks the admin to confirm restoring an account its OWNER asked to delete: erasure is the owner's
+ * right and their own choice, so undoing it needs a deliberate yes and a warning about why.
  *
- * @param userId - Identifier of the user to restore.
+ * @param item - The row, named in the question.
+ * @returns A promise resolving with the admin's answer.
+ */
+const confirmScheduledRestore = (item: User) =>
+    useDialogStore().confirm({
+        title: t('users-list-page.confirm-restore-scheduled-title'),
+        message: t('users-list-page.confirm-restore-scheduled', { name: item.username }),
+        confirmLabel: t('users-list-page.button-confirm-restore-scheduled'),
+        color: 'warning'
+    });
+
+/**
+ * Undoes a soft delete. An admin's own soft delete needs no confirmation: nothing is lost by it,
+ * and a mistaken restore is one delete away. An account its owner asked to delete (`purgeAt` set)
+ * does: see {@link confirmScheduledRestore}. The list is reloaded afterwards, since the active
+ * filter may no longer match.
+ *
+ * @param item - The row to restore.
  * @returns A promise settling once the restore and the reload have finished; a failure blocks the
  *  list in place ({@link rowActionError}).
  */
-const handleRestore = (userId: string) =>
-    run({
-        action: () => restoreUser(userId),
-        success: t('users-list-page.success-restore'),
-        afterwards: () => search(true)
-    });
+const handleRestore = (item: User) =>
+    (item.purgeAt ? confirmScheduledRestore(item) : Promise.resolve(true)).then((accepted) =>
+        accepted
+            ? run({
+                  action: () => restoreUser(item.id),
+                  success: t('users-list-page.success-restore'),
+                  afterwards: () => search(true)
+              })
+            : undefined
+    );
 
 /**
  * Opens `UserAccessDialog` for one row and, once the admin confirms a role or active-status
@@ -492,6 +514,16 @@ const handleHardDelete = (userId: string, username: string) =>
                     {{ t('users-list-page.chip-needs-review') }}
                 </v-chip>
                 <RowDeletedChip v-if="item.deletedAt" />
+                <v-chip
+                    v-if="item.purgeAt"
+                    size="small"
+                    variant="tonal"
+                    color="warning"
+                    class="ml-1"
+                    data-test="row-erases-on"
+                >
+                    {{ t('users-list-page.chip-erases-on', { date: formatDate(item.purgeAt) }) }}
+                </v-chip>
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
@@ -552,7 +584,7 @@ const handleHardDelete = (userId: string, username: string) =>
                             t('users-list-page.button-restore-named', { name: item.username })
                         "
                         :disabled="loading"
-                        @click.stop="handleRestore(item.id!)"
+                        @click.stop="handleRestore(item)"
                     >
                         {{ t('users-list-page.button-restore') }}
                     </v-btn>

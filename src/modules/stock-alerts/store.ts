@@ -85,13 +85,13 @@ export const useStockAlertsStore = defineStore('stock-alerts', () => {
     };
 
     /**
-     * Asks to be told when a product can be ordered again: `POST /stock-alerts/{productId}`.
+     * Asks to be told when a product can be ordered again: `POST /stock-alerts {productId}`.
      * Idempotent server-side, so a double click answers the same list.
      *
      * @param productId - The product to wait for.
      * @returns A promise resolving with the updated list.
      */
-    const ask = (productId: string) => replaceItems(() => createStockAlert(productId));
+    const ask = (productId: string) => replaceItems(() => createStockAlert({ productId }));
 
     /**
      * Cancels a request before it is answered.

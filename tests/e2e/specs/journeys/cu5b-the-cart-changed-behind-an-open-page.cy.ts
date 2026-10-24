@@ -50,13 +50,13 @@ describe('CU5b · The cart changed behind an open page', () => {
             addToCartFromStorefront('product.rich');
             cy.goToCart();
             // The step is debounced: wait for its request, so the other tab's write comes after it.
-            cy.intercept('PUT', '**/cart/*').as('step');
+            cy.intercept('PATCH', '**/cart/items/*').as('step');
             cy.get('[data-test=cart-increase]').click();
             cy.wait('@step');
             cy.get('[data-test=cart-item]').should('contain.text', `Quantity: ${SHOWN_UNITS}`);
 
             cy.step('the other tab sets the line to five, through the API');
-            cy.apiAs('user', 'PUT', `/cart/${productId}`, { quantity: OTHER_TAB_UNITS });
+            cy.apiAs('user', 'PATCH', `/cart/items/${productId}`, { quantity: OTHER_TAB_UNITS });
 
             cy.step('the customer comes back to this page: it reads the cart again');
             cy.window().then((win) => {

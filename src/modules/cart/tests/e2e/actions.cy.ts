@@ -11,11 +11,11 @@ actionTable('cart', [
         persona: 'user',
         route: () =>
             cy
-                .apiAs('user', 'DELETE', '/cart/all')
+                .apiAs('user', 'DELETE', '/cart/items')
                 .then(() => cy.subjectId('product.inStock'))
                 .then((productId) =>
                     cy
-                        .apiAs('user', 'POST', '/cart', { productId, quantity: 1 })
+                        .apiAs('user', 'POST', '/cart/items', { productId, quantity: 1 })
                         .then(() => '/en/cart')
                 ),
         // The shipping methods load after the lines; the typed values are read once both are in.
@@ -25,7 +25,11 @@ actionTable('cart', [
         trigger: () => {
             cy.get('[data-test=cart-remove]').first().click();
         },
-        intercept: { method: 'DELETE', url: '**/cart/*', operation: '/cart/{productId}' },
+        intercept: {
+            method: 'DELETE',
+            url: '**/cart/items/*',
+            operation: '/cart/items/{productId}'
+        },
         kind: 'row',
         alert: 'cart-line-action-error',
         message: 'The removal failed',
@@ -36,13 +40,13 @@ actionTable('cart', [
         persona: 'user',
         route: () =>
             cy
-                .apiAs('user', 'DELETE', '/cart/all')
+                .apiAs('user', 'DELETE', '/cart/items')
                 .then(() => cy.subjectId('product.inStock'))
                 .then((id) => `/en/products/${id}`),
         trigger: () => {
             cy.get('[data-test=add-to-cart]').click();
         },
-        intercept: { method: 'POST', url: '**/cart', operation: '/cart' },
+        intercept: { method: 'POST', url: '**/cart/items', operation: '/cart/items' },
         kind: 'row',
         alert: 'add-to-cart-error',
         message: 'The add failed',

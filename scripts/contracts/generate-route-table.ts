@@ -17,7 +17,7 @@
  * `find()` returns whichever row comes first. So every row with FEWER `{param}` segments sorts
  * before a same-method sibling with more — the literal, more specific shape wins — exactly the
  * order five hand-written files already enforced one pair at a time before this generator existed
- * (`/products/categories`, `/cart/all`, `/cart/shipping-method`, `/account/oauth/providers`,
+ * (`/products/categories`, `/cart/shipping-method`, `/account/oauth/providers`,
  * `/locales/tenants`).
  *
  * `--check` compares against the committed file and exits 1 on a mismatch — the same contract

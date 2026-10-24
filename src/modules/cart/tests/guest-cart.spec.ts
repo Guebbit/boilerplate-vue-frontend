@@ -37,7 +37,7 @@ describe('addGuestLine', () => {
         expect(addGuestLine([], 'p1', 2)).toEqual([{ productId: 'p1', quantity: 2 }]);
     });
 
-    it('grows the line a product already has, as POST /cart would', () => {
+    it('grows the line a product already has, as POST /cart/items would', () => {
         const lines = [
             { productId: 'p1', quantity: 2 },
             { productId: 'p2', quantity: 1 }

@@ -66,7 +66,7 @@ describe('OP27 · The shop in numbers', () => {
             cy.get('[data-test=sold-nothing]').should('exist');
 
             cy.step('a shopper buys two units and the cash is recorded');
-            cy.apiAs('user', 'POST', '/cart', { productId: product.id, quantity: 2 });
+            cy.apiAs('user', 'POST', '/cart/items', { productId: product.id, quantity: 2 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<{ id: string }>('user').then((order) => {
                 const orderId = String(order?.id);
@@ -122,7 +122,7 @@ describe('OP27 · The shop in numbers', () => {
                 cy.step('a shopper buys, the cash is recorded and the admin refunds all of it');
                 const title = `OP27 refund ${String(Date.now())}`;
                 cy.createProduct({ title, onHand: 10, price: 5000 }).then((product) => {
-                    cy.apiAs('user', 'POST', '/cart', { productId: product.id, quantity: 2 });
+                    cy.apiAs('user', 'POST', '/cart/items', { productId: product.id, quantity: 2 });
                     cy.apiAs('user', 'PUT', '/cart/shipping-method', {
                         shippingMethodId: 'pickup'
                     });

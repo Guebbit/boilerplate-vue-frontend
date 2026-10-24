@@ -46,7 +46,9 @@ const EXCLUDED_PATHS = [
     '/account/password/reset',
     '/account/password/reset/confirm',
     '/account/login/2fa',
-    '/account/login/2fa/send'
+    '/account/login/2fa/send',
+    '/account/login/restore',
+    '/account/restore'
 ];
 
 /**

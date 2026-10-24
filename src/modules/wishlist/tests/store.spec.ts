@@ -45,16 +45,16 @@ beforeEach(() => {
                 { productId: 'p2', availability: 'in_stock' }
             ]
         }),
-        'PUT /wishlist/p1': orvalEnvelope({
+        'POST /wishlist/items': orvalEnvelope({
             items: [
                 { productId: 'p1', availability: 'in_stock' },
                 { productId: 'p2', availability: 'in_stock' }
             ]
         }),
-        'DELETE /wishlist/p1': orvalEnvelope({
+        'DELETE /wishlist/items/p1': orvalEnvelope({
             items: [{ productId: 'p2', availability: 'in_stock' }]
         }),
-        'POST /wishlist/p1/move-to-cart': orvalEnvelope({
+        'POST /wishlist/items/p1/move-to-cart': orvalEnvelope({
             items: [{ productId: 'p2', availability: 'in_stock' }]
         }),
         'GET /cart': orvalEnvelope({
@@ -93,7 +93,12 @@ describe('addToWishlist', () => {
             // a store appending locally would hold one line here and be wrong the moment two
             // tabs save different products.
             expect(store.isSaved('p2')).toBe(true);
-            expect(requestedUrls()).toEqual(['/wishlist/p1']);
+            // The product rides in the body: a saved product is a line written through the list.
+            expect(requestedUrls()).toEqual(['/wishlist/items']);
+            expect(vi.mocked(orvalMutator).mock.calls[0]?.[0]).toMatchObject({
+                method: 'POST',
+                data: { productId: 'p1' }
+            });
         });
     });
 });

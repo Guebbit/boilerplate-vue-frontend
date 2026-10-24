@@ -29,12 +29,12 @@ describe('sendKeepalive', () => {
     it('sends a keepalive fetch to the API base, with the bearer token and the JSON body', () => {
         useSessionStore().accessToken = 'tok-123';
 
-        sendKeepalive('PUT', '/cart/p1', { quantity: 3 });
+        sendKeepalive('PATCH', '/cart/items/p1', { quantity: 3 });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
         const [url, init] = fetchMock.mock.calls[0];
-        expect(url).toBe('http://api.test/cart/p1');
-        expect(init.method).toBe('PUT');
+        expect(url).toBe('http://api.test/cart/items/p1');
+        expect(init.method).toBe('PATCH');
         expect(init.keepalive).toBe(true);
         expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok-123');
         expect(init.body).toBe(JSON.stringify({ quantity: 3 }));
@@ -45,7 +45,7 @@ describe('sendKeepalive', () => {
         session.mode = 'cookie';
         session.startCookieSession();
 
-        sendKeepalive('PUT', '/cart/p1', { quantity: 3 });
+        sendKeepalive('PATCH', '/cart/items/p1', { quantity: 3 });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
         const [, init] = fetchMock.mock.calls[0];
@@ -55,7 +55,7 @@ describe('sendKeepalive', () => {
     });
 
     it('sends nothing when nobody is signed in', () => {
-        sendKeepalive('PUT', '/cart/p1', { quantity: 3 });
+        sendKeepalive('PATCH', '/cart/items/p1', { quantity: 3 });
 
         expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -64,6 +64,6 @@ describe('sendKeepalive', () => {
         useSessionStore().accessToken = 'tok-123';
         fetchMock.mockReturnValueOnce(Promise.reject(new Error('gone')));
 
-        expect(() => sendKeepalive('PUT', '/cart/p1', { quantity: 3 })).not.toThrow();
+        expect(() => sendKeepalive('PATCH', '/cart/items/p1', { quantity: 3 })).not.toThrow();
     });
 });

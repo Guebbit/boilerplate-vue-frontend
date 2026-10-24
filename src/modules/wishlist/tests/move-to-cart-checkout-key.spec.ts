@@ -53,7 +53,7 @@ vi.mock('@/infrastructure/http', () => ({
                 message: 'OK',
                 data: aCart([['p1', cartReads++ === 0 ? 1 : 2]])
             });
-        if (route === 'POST /wishlist/p1/move-to-cart')
+        if (route === 'POST /wishlist/items/p1/move-to-cart')
             return Promise.resolve({
                 success: true,
                 status: 200,

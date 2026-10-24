@@ -398,8 +398,8 @@ export const useCartStore = defineStore('cart', () => {
         replaceCart(() => removeCartItem(productId));
 
     /**
-     * Empties the cart entirely. `DELETE /cart/all` — its own URL, not what `removeCartItem`
-     * falls back to when a product id goes missing.
+     * Empties the cart entirely. `DELETE /cart/items` — the line collection's own URL, apart from
+     * `DELETE /cart/items/{productId}`, so a missing id can never mean "clear everything".
      *
      * @returns A promise resolving with the updated (empty) cart response.
      */
@@ -554,7 +554,7 @@ export const useCartStore = defineStore('cart', () => {
     };
 
     /**
-     * Sends the guest cart to the server, which adds every line by the rule of `POST /cart` and
+     * Sends the guest cart to the server, which adds every line by the rule of `POST /cart/items` and
      * answers with the merged cart and one result per line.
      *
      * A merge whose answer was lost, followed by an edit of the guest cart, is replayed first
