@@ -18,7 +18,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { ordersSchema } from '../schemas';
+import { ordersSchema, shippingAddressCorrectionSchema } from '../schemas';
 import itMessages from '../locales/it.json';
 
 /**
@@ -49,5 +49,25 @@ describe('orders schema messages', () => {
             expect(messagesOf(ordersSchema, { email: 'nope' })).toEqual(
                 expect.arrayContaining([itMessages['orders-form']['email-invalid']])
             );
+        }));
+
+    it('resolves the shipping-address messages in Italian: required and too long', () =>
+        setLocale('it').then(() => {
+            const copy = itMessages['shipping-address-form'];
+            const address = {
+                fullName: 'Ada',
+                street: 'Via',
+                city: 'Roma',
+                zip: '00100',
+                country: 'IT',
+                phone: ''
+            };
+
+            expect(messagesOf(shippingAddressCorrectionSchema, { ...address, street: '' })).toEqual(
+                [copy['error-required']]
+            );
+            expect(
+                messagesOf(shippingAddressCorrectionSchema, { ...address, zip: '0'.repeat(21) })
+            ).toEqual([copy['error-too-long'].replace('{max}', '20')]);
         }));
 });

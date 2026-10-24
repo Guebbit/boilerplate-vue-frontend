@@ -72,6 +72,38 @@ export type Locale = string;
 export type CountryCode = string;
 
 /**
+ * The name the parcel is addressed to.
+ * @minLength 1
+ * @maxLength 100
+ */
+export type AddressFullName = string;
+
+/**
+ * @minLength 1
+ * @maxLength 200
+ */
+export type AddressStreet = string;
+
+/**
+ * @minLength 1
+ * @maxLength 100
+ */
+export type AddressCity = string;
+
+/**
+ * Postal code, free-form (formats differ per country).
+ * @minLength 1
+ * @maxLength 20
+ */
+export type AddressZip = string;
+
+/**
+ * @minLength 1
+ * @maxLength 32
+ */
+export type AddressPhone = string;
+
+/**
  * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI. `minLength: 1`: `''` is never a synonym for "no image" — only `null` is, on a field that allows it.
  * @minLength 1
  */
@@ -1482,12 +1514,12 @@ export interface Address {
     id: Id;
     /** The caller's own name for the entry — "home", "office". */
     label?: string;
-    fullName: string;
-    street: string;
-    city: string;
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    phone?: string;
+    phone?: AddressPhone;
     default: boolean;
 }
 
@@ -1508,32 +1540,12 @@ export interface AddressInput {
      * @maxLength 50
      */
     label?: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     */
-    phone?: string;
+    phone?: AddressPhone;
     default?: boolean;
 }
 
@@ -1551,33 +1563,12 @@ export interface ReplaceAddressRequest {
      * @nullable
      */
     label?: string | null;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     * @nullable
-     */
-    phone?: string | null;
+    phone?: AddressPhone | null;
 }
 
 export interface UpdateAddressRequest {
@@ -1587,33 +1578,12 @@ export interface UpdateAddressRequest {
      * @nullable
      */
     label?: string | null;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    fullName?: string;
-    /**
-     * @minLength 1
-     * @maxLength 200
-     */
-    street?: string;
-    /**
-     * @minLength 1
-     * @maxLength 100
-     */
-    city?: string;
-    /**
-     * @minLength 1
-     * @maxLength 20
-     */
-    zip?: string;
+    fullName?: AddressFullName;
+    street?: AddressStreet;
+    city?: AddressCity;
+    zip?: AddressZip;
     country?: CountryCode;
-    /**
-     * @minLength 1
-     * @maxLength 32
-     * @nullable
-     */
-    phone?: string | null;
+    phone?: AddressPhone | null;
 }
 
 export interface VerifyEmailConfirmRequest {
@@ -3078,17 +3048,12 @@ export interface OrderTaxSummaryRow {
 }
 
 export interface OrderAddress {
-    /** @maxLength 100 */
-    fullName: string;
-    /** @maxLength 200 */
-    street: string;
-    /** @maxLength 100 */
-    city: string;
-    /** @maxLength 20 */
-    zip: string;
+    fullName: AddressFullName;
+    street: AddressStreet;
+    city: AddressCity;
+    zip: AddressZip;
     country: CountryCode;
-    /** @maxLength 32 */
-    phone?: string;
+    phone?: AddressPhone;
 }
 
 /**
@@ -3249,7 +3214,7 @@ export interface Order {
     paymentStatus: OrderPaymentStatus;
     fulfillmentStatus: OrderFulfillmentStatus;
     returnStatus: OrderReturnStatus;
-    actions?: OrderActions;
+    actions: OrderActions;
     /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
     readonly withdrawUntil?: string;
     paidAt?: string;
@@ -5082,6 +5047,76 @@ export interface WishlistExportItem {
     productId: Id;
 }
 
+export interface ExportOrder {
+    id: Id;
+    userId?: Id;
+    email: Email;
+    items: OrderItem[];
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
+     * @minimum 0
+     */
+    totalPrice: number;
+    /** ISO-4217 currency code this order was priced in (e.g. EUR). */
+    readonly currency: string;
+    /**
+     * Sum of every line's `netAmount` — the goods total excluding VAT, GOODS ONLY. Shipping's own net amount is `shippingNetAmount`, not folded in here.
+     * @minimum 0
+     */
+    readonly netTotal: number;
+    /**
+     * Every VAT collected on this order: the lines' own `taxAmount`, plus the VAT on `shippingCost` — apportioned pro-rata across the lines by value and taxed at each line's own rate, since delivery is taxed as ancillary to what it delivers.
+     * @minimum 0
+     */
+    readonly taxTotal: number;
+    /**
+     * Shipping's own net amount, summed across every line it was apportioned onto — `netTotal` stays goods-only, this is the rest of the split. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingNetAmount: number;
+    /**
+     * Shipping's own tax amount, summed across every line it was apportioned onto — already folded into `taxTotal`, published separately so an invoice can print it as its own line. Zero on an order with no delivery method or free shipping.
+     * @minimum 0
+     */
+    readonly shippingTaxAmount: number;
+    /** One row per distinct VAT rate charged on this order, sorted ascending. Reconciles exactly: summed `netAmount` is `netTotal` + `shippingNetAmount`, summed `taxAmount` is `taxTotal`, and summed `grossAmount` is `totalPrice`. Empty on an order with no lines. */
+    readonly taxSummary: readonly OrderTaxSummaryRow[];
+    /** Optional order notes */
+    notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
+    billingAddress?: OrderAddress;
+    paymentMethod?: PaymentMethodId;
+    payBy?: string;
+    readonly orderNumber: string;
+    status: OrderStatus;
+    paymentStatus: OrderPaymentStatus;
+    fulfillmentStatus: OrderFulfillmentStatus;
+    returnStatus: OrderReturnStatus;
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+    readonly withdrawUntil?: string;
+    paidAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+}
+
 /**
  * What happened. Order: `created`, `paid`, `processing`, `shipped`, `delivered`, `cancelled`, `status_overridden`. Payment: `payment_declined`, `refund_issued`, `refund_settled`, `refund_failed`. Shipments: `shipment_shipped`, `shipment_delivered`, `fulfillment_held`, `fulfillment_released`, `remainder_cancelled`. Returns: `return_requested`, `return_approved`, `return_declined`, `return_received`, `return_closed`. Documents: `invoice_issued`, `credit_note_issued`. Preorders: `release_date_moved`, `delay_notice_sent`. Staff-only: `address_corrected`.
  */
@@ -5119,10 +5154,10 @@ export const OrderTimelineType = {
 /**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
-export type OrderTimelineEntryAudience =
-    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+export type OrderTimelineExportEntryAudience =
+    (typeof OrderTimelineExportEntryAudience)[keyof typeof OrderTimelineExportEntryAudience];
 
-export const OrderTimelineEntryAudience = {
+export const OrderTimelineExportEntryAudience = {
     buyer: 'buyer',
     staff: 'staff'
 } as const;
@@ -5130,25 +5165,22 @@ export const OrderTimelineEntryAudience = {
 /**
  * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
-export type OrderTimelineEntryData = { [key: string]: unknown };
+export type OrderTimelineExportEntryData = { [key: string]: unknown };
 
-export interface OrderTimelineEntry {
+export interface OrderTimelineExportEntry {
+    orderId: Id;
     id: Id;
     at: string;
     type: OrderTimelineType;
     /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
-    audience: OrderTimelineEntryAudience;
+    audience: OrderTimelineExportEntryAudience;
     /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
     text?: string;
     /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
-    data: OrderTimelineEntryData;
+    data: OrderTimelineExportEntryData;
 }
-
-export type OrderTimelineExportEntry = OrderTimelineEntry & {
-    orderId: Id;
-};
 
 export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
 
@@ -5518,7 +5550,7 @@ export interface AccountExportResponse {
     feedback?: ExportFeedbackTicket[];
     cart: CartItem[];
     wishlist: WishlistExportItem[];
-    orders: Order[];
+    orders: ExportOrder[];
     orderTimeline: OrderTimelineExportEntry[];
     payments: ExportPayment[];
     invoicing: AccountExportResponseInvoicing;
@@ -5562,6 +5594,36 @@ export interface MergeCartResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: MergeCartResponse;
+}
+
+/**
+ * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
+ */
+export type OrderTimelineEntryAudience =
+    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+
+export const OrderTimelineEntryAudience = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
+ * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
+ */
+export type OrderTimelineEntryData = { [key: string]: unknown };
+
+export interface OrderTimelineEntry {
+    id: Id;
+    at: string;
+    type: OrderTimelineType;
+    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+    audience: OrderTimelineEntryAudience;
+    /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
+    actor?: Id;
+    /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
+    text?: string;
+    /** What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`. */
+    data: OrderTimelineEntryData;
 }
 
 export interface OrderTimelineEnvelope {

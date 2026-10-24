@@ -10,6 +10,7 @@ import type {
     FulfillmentOrder,
     InventoryLevel,
     Order,
+    OrderActions,
     Payment,
     PreorderFulfillmentOrder,
     PreorderLevel,
@@ -21,6 +22,21 @@ import type {
     User,
     UserActions
 } from '@types';
+
+/** Every `OrderActions` flag off: an order the caller may do nothing to. */
+export const NO_ORDER_ACTIONS: OrderActions = {
+    cancel: false,
+    pay: false,
+    recordPayment: false,
+    start: false,
+    override: [],
+    correctAddress: false,
+    withdraw: false,
+    delete: false,
+    hardDelete: false,
+    restore: false,
+    invoice: false
+};
 
 /**
  * A valid, empty order — every required field the contract declares, all totals zero.
@@ -47,6 +63,7 @@ export const anOrder = (overrides: Partial<Order> = {}): Order => ({
     returnStatus: 'none',
     currency: 'EUR',
     orderNumber: '2026-000001',
+    actions: NO_ORDER_ACTIONS,
     ...overrides
 });
 
