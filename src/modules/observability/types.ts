@@ -41,6 +41,10 @@ export interface AdminAuditFilters {
     outcome?: 'success' | 'failure';
     /** ISO timestamp lower bound — only events at or after this time. */
     since?: string;
+    /** Shop trail only: the id of the record the action was taken on. */
+    target?: string;
+    /** Shop trail only: `true` keeps the actions staff took on their own order. */
+    ownOrder?: boolean;
     /** Requested page number, 1-based. */
     page?: number;
     /** Rows per page. */

@@ -14,8 +14,8 @@ export default {
  * The shop's own audit trail — reachable by any tenant role `read:AuditLog` holds
  * (`manager`/`support`/`moderator`/`admin`), unlike `Admin.vue`'s installation-wide tab, which is
  * platform-`operator`-only. Doubles as a single record's history: `?target=<id>` (set by the
- * "History" link on `User.vue`/`Order.vue`) narrows it to one row's actions without this page
- * needing a second view — {@link AdminAuditTab} does the actual fetching and rendering either way.
+ * "History" link on `User.vue`/`Order.vue`) pre-fills the target filter in {@link AdminAuditTab},
+ * which does the actual fetching and rendering either way. The filter stays editable.
  */
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
@@ -30,13 +30,12 @@ const { t } = useI18n();
 
 /**
  * The route's own query, read once for `target` — this page never rewrites the URL as the filter
- * form inside `AdminAuditTab` is used, unlike `WebhookDeliveries.vue`'s bookmarkable filters, since
- * a fixed `target` scope is meant to stay fixed for the page's lifetime.
+ * form inside `AdminAuditTab` is used, unlike `WebhookDeliveries.vue`'s bookmarkable filters.
  */
 const route = useRoute();
 
 /**
- * The record this page is scoped to, or `undefined` for the shop's whole trail.
+ * The record the target filter starts on, or `undefined` for the shop's whole trail.
  *
  * @returns The `target` query param, or `undefined` when absent or repeated (a malformed link).
  */

@@ -45,12 +45,9 @@ export interface UseAuditTrailReturn {
  *
  * @param endpoint - Which trail to read — fixed for the composable's lifetime, since every call
  *  site (the dashboard tab, one record's history, the shop audit page) reads exactly one.
- * @param target - A fixed `target` filter merged into every request (e.g. one user's or order's
- *  id) — invisible to and never overridden by the filter form, for a single record's history.
- *  Ignored on the `platform` endpoint, whose contract declares no such filter.
  * @returns Rows, pagination totals, load/error state and the fetcher.
  */
-export const useAuditTrail = (endpoint: AuditEndpoint, target?: string): UseAuditTrailReturn => {
+export const useAuditTrail = (endpoint: AuditEndpoint): UseAuditTrailReturn => {
     const { data, error, loading, run } = useAsyncAction(
         (filters: AdminAuditFilters = {}) =>
             (endpoint === 'platform'
@@ -70,7 +67,10 @@ export const useAuditTrail = (endpoint: AuditEndpoint, target?: string): UseAudi
                       action: filters.action,
                       outcome: filters.outcome,
                       since: filters.since ? new Date(filters.since).toISOString() : undefined,
-                      target,
+                      // `target` and `ownOrder` exist on the shop trail only. An unticked box
+                      // sends nothing, not `false`: that would hide the flagged rows.
+                      target: filters.target || undefined,
+                      ownOrder: filters.ownOrder ? true : undefined,
                       page: filters.page,
                       pageSize: filters.pageSize
                   })
@@ -97,7 +97,7 @@ export const useAuditTrail = (endpoint: AuditEndpoint, target?: string): UseAudi
      * Resolves with nothing: every consumer reads the state refs, and the rejection is already
      * swallowed into `error` by {@link useAsyncAction}.
      *
-     * @param filters - Actor/action/outcome/since criteria and the page to read.
+     * @param filters - Actor/action/outcome/since/target/ownOrder criteria and the page to read.
      * @returns A promise resolving once `entries`/`total`/`pages`, or `error`, are set.
      */
     const fetchPage = (filters: AdminAuditFilters = {}) => run(filters).then(() => undefined);

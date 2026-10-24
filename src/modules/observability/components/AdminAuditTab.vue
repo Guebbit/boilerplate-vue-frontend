@@ -2,13 +2,14 @@
 /**
  * @module
  * Audit-log tab: filter form, table and pager over one audit trail. Self-fetching — `endpoint`
- * (plus an optional fixed `target`) picks which of the two contract-backed reads
- * {@link useAuditTrail} drives, so this one component covers the platform dashboard's audit tab,
+ * picks which of the two contract-backed reads {@link useAuditTrail} drives, so this one component covers the platform dashboard's audit tab,
  * a record's own history and the shop-wide audit page without duplicating the fetch/pagination
  * wiring three times.
  */
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { RouterLink, useRouter } from 'vue-router';
+import { routerLinkI18n } from '@/i18n/router-link.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import PageSizeSelect from '@/ui/molecules/PageSizeSelect.vue';
@@ -16,6 +17,7 @@ import CopyButton from '@/ui/molecules/CopyButton.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import ListSearchActions from '@/ui/molecules/ListSearchActions.vue';
 import AuditMetadataDetail from './AuditMetadataDetail.vue';
+import { auditTargetLocation, shortTargetId } from '../composables/audit-target.ts';
 import { useAuditTrail, type AuditEndpoint } from '../composables/use-audit-trail.ts';
 import type { AuditEntryItem } from '@types';
 import type { AdminAuditFilters } from '../types.ts';
@@ -28,23 +30,30 @@ import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 const { t } = useI18n();
 
 /**
- * Which trail to read, and an optional fixed scope.
+ * Which trail to read, and where the target filter starts.
  */
 const props = defineProps<{
     endpoint: AuditEndpoint;
-    /** Fixed `target` filter (e.g. one record's id), merged into every request. See
-     * {@link useAuditTrail}. */
+    /** The target filter's starting value (e.g. one record's id, from a "History" link). The
+     * visitor can edit or clear it; it is not a fixed scope. Shop trail only. */
     target?: string;
 }>();
+
+/**
+ * The router, for linking a row's target to its page.
+ */
+const router = useRouter();
+
+/**
+ * Whether the filters the platform trail's contract does not declare (`target`, `ownOrder`) show.
+ */
+const isShop = computed(() => props.endpoint === 'shop');
 
 /**
  * Rows, pagination totals and load/error state for {@link props.endpoint} — fetched by this
  * component itself rather than handed down, which is what lets every caller reuse it as-is.
  */
-const { entries, total, pages, loading, error, fetchPage } = useAuditTrail(
-    props.endpoint,
-    props.target
-);
+const { entries, total, pages, loading, error, fetchPage } = useAuditTrail(props.endpoint);
 
 /**
  * What the table asks for when nobody has chosen.
@@ -59,6 +68,8 @@ const filters = reactive<AdminAuditFilters>({
     action: undefined,
     outcome: undefined,
     since: undefined,
+    target: props.endpoint === 'shop' ? props.target : undefined,
+    ownOrder: undefined,
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE
 });
@@ -103,6 +114,7 @@ const tableHeaders = computed<CoreDataTableHeader<AuditEntryItem>[]>(() => [
     { title: t('admin-page.audit-col-actor'), key: 'actorUserId' },
     { title: t('admin-page.audit-col-role'), key: 'actorRole' },
     { title: t('admin-page.audit-col-action'), key: 'action' },
+    { title: t('admin-page.audit-col-target'), key: 'targetId' },
     { title: t('admin-page.audit-col-outcome'), key: 'outcome' },
     { title: t('admin-page.audit-col-ip'), key: 'ip' },
     { title: t('admin-page.audit-col-request-id'), key: 'requestId' },
@@ -145,9 +157,22 @@ const handleReset = () => {
     filters.action = undefined;
     filters.outcome = undefined;
     filters.since = undefined;
+    filters.target = undefined;
+    filters.ownOrder = undefined;
     filters.page = 1;
     filters.pageSize = DEFAULT_PAGE_SIZE;
     return fetchPage({ ...filters });
+};
+
+/**
+ * Where a row's target link goes, localized.
+ *
+ * @param item - The audit row.
+ * @returns The record's page, or `undefined` when the target has none (it is then plain text).
+ */
+const targetLink = (item: AuditEntryItem) => {
+    const location = auditTargetLocation(router, item.targetType, item.targetId);
+    return location ? routerLinkI18n(location) : undefined;
 };
 
 /**
@@ -168,7 +193,7 @@ void fetchPage({ ...filters });
     <div class="grid grid-cols-1 gap-4">
         <v-card class="p-5" variant="flat" border>
             <form novalidate @submit.prevent="handleSearch">
-                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
                     <v-text-field
                         v-model="filters.actor"
                         type="text"
@@ -197,6 +222,21 @@ void fetchPage({ ...filters });
                         type="datetime-local"
                         data-test="filter-since"
                         :label="t('admin-page.audit-filter-since')"
+                        hide-details
+                    />
+                    <v-text-field
+                        v-if="isShop"
+                        v-model="filters.target"
+                        type="text"
+                        data-test="filter-target"
+                        :label="t('admin-page.audit-filter-target')"
+                        hide-details
+                    />
+                    <v-checkbox
+                        v-if="isShop"
+                        v-model="filters.ownOrder"
+                        data-test="filter-own-order"
+                        :label="t('admin-page.audit-filter-own-order')"
                         hide-details
                     />
                     <PageSizeSelect
@@ -248,6 +288,19 @@ void fetchPage({ ...filters });
                 </span>
                 <!-- What the entry recorded beyond the action: an update's changed fields, among others. -->
                 <AuditMetadataDetail :metadata="item.metadata" />
+            </template>
+
+            <template v-slot:[`item.targetId`]="{ item }">
+                <component
+                    :is="targetLink(item) ? RouterLink : 'span'"
+                    v-if="item.targetId"
+                    class="whitespace-nowrap"
+                    data-test="audit-target"
+                    :to="targetLink(item)"
+                >
+                    {{ item.targetType }} {{ shortTargetId(item.targetId) }}
+                </component>
+                <template v-else>{{ EMPTY_VALUE }}</template>
             </template>
 
             <template v-slot:[`item.actorRole`]="{ item }">
