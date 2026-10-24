@@ -2234,16 +2234,6 @@ export interface SearchFeedbackRequestsRequest {
     email?: Email;
 }
 
-export interface ReplaceFeedbackRequestStatusRequest {
-    status: FeedbackRequestStatus;
-    /**
-     * @minLength 1
-     * @maxLength 5000
-     * @nullable
-     */
-    adminNotes?: string | null;
-}
-
 export interface UpdateFeedbackRequestStatusRequest {
     status?: FeedbackRequestStatus;
     /**
@@ -2754,9 +2744,9 @@ export interface SearchProductsRequest {
      */
     id?: Id[];
     /** @minimum 0 */
-    minPrice?: number;
+    priceMin?: number;
     /** @minimum 0 */
-    maxPrice?: number;
+    priceMax?: number;
     /** @maxLength 200 */
     category?: string;
     /** @maxLength 200 */
@@ -3898,7 +3888,7 @@ export interface FulfillmentOrder {
     agreedAt?: string;
     /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
     expectedAt?: string;
-    /** When the buyer was last told the date had moved or passed. */
+    /** When the buyer was last told the date had moved or would be missed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
     actions: FulfillmentOrderActions;
@@ -5154,7 +5144,7 @@ export interface ExportFulfillmentOrder {
     holdNote?: string;
     agreedAt?: string;
     expectedAt?: string;
-    /** When the buyer was last told the date had moved or passed. */
+    /** When the buyer was last told the date had moved or would be missed. */
     lastNoticeAt?: string;
     cancelReason?: FulfillmentCancelReason;
 }
@@ -6094,7 +6084,7 @@ export type PreconditionFailedResponse = ErrorResponse;
 export type PayloadTooLargeResponse = ErrorResponse;
 
 /**
- * The request body declares a character set or a content encoding the body parser cannot read. Refused before any route runs, like `413` above — a body whose content-type simply matches no parser is NOT this: it reaches the route, which answers whatever it says about a request missing every field.
+ * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged.
  */
 export type UnsupportedMediaTypeResponse = ErrorResponse;
 
@@ -6475,11 +6465,11 @@ export type ListProductsParams = {
     /**
      * @minimum 0
      */
-    minPrice?: number;
+    priceMin?: number;
     /**
      * @minimum 0
      */
-    maxPrice?: number;
+    priceMax?: number;
     /**
      * @maxLength 200
      */
@@ -7914,7 +7904,7 @@ export const updateAccountWithMultipart = (
 };
 
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+ * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
  * @summary Request account deletion
  */
 export const requestAccountDelete = (
@@ -8992,27 +8982,7 @@ export const searchFeedbackRequests = (
 };
 
 /**
- * Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
- * @summary Replace feedback request status
- */
-export const replaceFeedbackRequestStatus = (
-    id: string,
-    replaceFeedbackRequestStatusRequest: ReplaceFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
-) => {
-    return orvalMutator<FeedbackRequestEnvelope>(
-        {
-            url: `/feedback/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: replaceFeedbackRequestStatusRequest
-        },
-        options
-    );
-};
-
-/**
- * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const updateFeedbackRequestStatus = (
@@ -9032,7 +9002,7 @@ export const updateFeedbackRequestStatus = (
 };
 
 /**
- * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const updateFeedbackRequestStatusWithMergePatchJson = (
@@ -9715,7 +9685,7 @@ export const getWishlist = (
  * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
-export const addWishlistItem = (
+export const createWishlistItem = (
     productId: string,
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
@@ -9729,7 +9699,7 @@ export const addWishlistItem = (
  * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
  * @summary Remove a saved product
  */
-export const removeWishlistItem = (
+export const deleteWishlistItem = (
     productId: string,
     options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
 ) => {
@@ -11857,9 +11827,6 @@ export type ListFeedbackRequestsResult = NonNullable<
 export type SearchFeedbackRequestsResult = NonNullable<
     Awaited<ReturnType<typeof searchFeedbackRequests>>
 >;
-export type ReplaceFeedbackRequestStatusResult = NonNullable<
-    Awaited<ReturnType<typeof replaceFeedbackRequestStatus>>
->;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
 >;
@@ -11910,8 +11877,8 @@ export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCart
 export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
 export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>;
 export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>;
-export type AddWishlistItemResult = NonNullable<Awaited<ReturnType<typeof addWishlistItem>>>;
-export type RemoveWishlistItemResult = NonNullable<Awaited<ReturnType<typeof removeWishlistItem>>>;
+export type CreateWishlistItemResult = NonNullable<Awaited<ReturnType<typeof createWishlistItem>>>;
+export type DeleteWishlistItemResult = NonNullable<Awaited<ReturnType<typeof deleteWishlistItem>>>;
 export type MoveWishlistItemToCartResult = NonNullable<
     Awaited<ReturnType<typeof moveWishlistItemToCart>>
 >;

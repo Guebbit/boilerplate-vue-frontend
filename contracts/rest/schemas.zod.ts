@@ -1906,7 +1906,7 @@ export const UpdateAccountResponse = zod.strictObject({
     })
 });
 /**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
+ * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion. Each request mails the account's address, so it spends that mailbox's daily budget, and once that is spent it answers `429` with `Retry-After`, and no token is minted and no mail is sent. Needs a critically fresh session; an account with a second factor armed also needs an `otp` proof in it (`401 REAUTH_REQUIRED` with `details.methods`).
  * @summary Request account deletion
  */
 export const RequestAccountDeleteResponse = zod.strictObject({
@@ -3971,53 +3971,7 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
     })
 });
 /**
- * Replaces the triage state of a feedback request (RFC 9110 §9.3.4, an omitted optional field is cleared). `status` is required — a PUT names the whole triage state, not one field of it.
- * @summary Replace feedback request status
- */
-export const replaceFeedbackRequestStatusPathIdMax = 64;
-export const replaceFeedbackRequestStatusPathIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const ReplaceFeedbackRequestStatusParams = zod.strictObject({
-    id: zod
-        .string()
-        .min(1)
-        .max(replaceFeedbackRequestStatusPathIdMax)
-        .regex(replaceFeedbackRequestStatusPathIdRegExp)
-});
-export const replaceFeedbackRequestStatusBodyAdminNotesMax = 5000;
-export const ReplaceFeedbackRequestStatusBody = zod.strictObject({
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-    adminNotes: zod.string().min(1).max(replaceFeedbackRequestStatusBodyAdminNotesMax).nullish()
-});
-export const replaceFeedbackRequestStatusResponseDataIdMax = 64;
-export const replaceFeedbackRequestStatusResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const replaceFeedbackRequestStatusResponseDataEmailMax = 254;
-export const ReplaceFeedbackRequestStatusResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(replaceFeedbackRequestStatusResponseDataIdMax)
-            .regex(replaceFeedbackRequestStatusResponseDataIdRegExp),
-        name: zod.string().optional(),
-        email: zod.email().max(replaceFeedbackRequestStatusResponseDataEmailMax),
-        subject: zod.string(),
-        message: zod.string(),
-        category: zod
-            .enum(['order', 'cancellation', 'return', 'payment', 'account', 'privacy', 'other'])
-            .optional(),
-        orderNumber: zod.string().optional(),
-        status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
-        adminNotes: zod.string().optional(),
-        respondedAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * Merges a status and/or notes change into a feedback request (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
+ * Merges a status and/or notes change into a feedback request. There is no PUT, since a triage state is two fields of a bigger record and never the whole resource (RFC 7396, an omitted field is left unchanged, `null` clears `adminNotes`).
  * @summary Update feedback request status
  */
 export const updateFeedbackRequestStatusPathIdMax = 64;
@@ -4095,8 +4049,8 @@ export const listProductsQueryIdItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const listProductsQueryIdMax = 100;
 export const listProductsQueryCategoryMax = 200;
 export const listProductsQueryTagMax = 200;
-export const listProductsQueryMinPriceMin = 0;
-export const listProductsQueryMaxPriceMin = 0;
+export const listProductsQueryPriceMinMin = 0;
+export const listProductsQueryPriceMaxMin = 0;
 export const listProductsQueryTitleMax = 200;
 export const ListProductsQueryParams = zod.strictObject({
     page: zod.number().min(1).max(listProductsQueryPageMax).default(listProductsQueryPageDefault),
@@ -4120,8 +4074,8 @@ export const ListProductsQueryParams = zod.strictObject({
         .optional(),
     category: zod.string().max(listProductsQueryCategoryMax).optional(),
     tag: zod.string().max(listProductsQueryTagMax).optional(),
-    minPrice: zod.number().min(listProductsQueryMinPriceMin).optional(),
-    maxPrice: zod.number().min(listProductsQueryMaxPriceMin).optional(),
+    priceMin: zod.number().min(listProductsQueryPriceMinMin).optional(),
+    priceMax: zod.number().min(listProductsQueryPriceMaxMin).optional(),
     title: zod.string().max(listProductsQueryTitleMax).optional(),
     active: zod.boolean().optional(),
     purchasable: zod.boolean().optional(),
@@ -4858,8 +4812,8 @@ export const searchProductsBodyTextMax = 200;
 export const searchProductsBodyIdItemMax = 64;
 export const searchProductsBodyIdItemRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const searchProductsBodyIdMax = 100;
-export const searchProductsBodyMinPriceMin = 0;
-export const searchProductsBodyMaxPriceMin = 0;
+export const searchProductsBodyPriceMinMin = 0;
+export const searchProductsBodyPriceMaxMin = 0;
 export const searchProductsBodyCategoryMax = 200;
 export const searchProductsBodyTagMax = 200;
 export const searchProductsBodyTitleMax = 200;
@@ -4887,8 +4841,8 @@ export const SearchProductsBody = zod.strictObject({
         .min(1)
         .max(searchProductsBodyIdMax)
         .optional(),
-    minPrice: zod.number().min(searchProductsBodyMinPriceMin).optional(),
-    maxPrice: zod.number().min(searchProductsBodyMaxPriceMin).optional(),
+    priceMin: zod.number().min(searchProductsBodyPriceMinMin).optional(),
+    priceMax: zod.number().min(searchProductsBodyPriceMaxMin).optional(),
     category: zod.string().max(searchProductsBodyCategoryMax).optional(),
     tag: zod.string().max(searchProductsBodyTagMax).optional(),
     title: zod.string().max(searchProductsBodyTitleMax).optional(),
@@ -5968,18 +5922,20 @@ export const GetWishlistResponse = zod.strictObject({
  * Saves the product identified by `{productId}` to the authenticated user's wishlist. "This product is saved" is a yes/no state on a URI, which is what PUT states — no body, and saving what is already saved answers the same 200 and fires nothing a second time (RFC 9110 §9.3.4), because a double-clicked heart icon is not an error. Pairs with the `DELETE` on the same URI (GitHub's `PUT`/`DELETE /user/starred/{owner}/{repo}` is the same pattern). The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue. A product taken off sale (`purchasable: false`) is saved like any other.
  * @summary Save a product
  */
-export const addWishlistItemPathProductIdMax = 64;
-export const addWishlistItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const AddWishlistItemParams = zod.strictObject({
+export const createWishlistItemPathProductIdMax = 64;
+export const createWishlistItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const CreateWishlistItemParams = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(addWishlistItemPathProductIdMax)
-        .regex(addWishlistItemPathProductIdRegExp)
+        .max(createWishlistItemPathProductIdMax)
+        .regex(createWishlistItemPathProductIdRegExp)
 });
-export const addWishlistItemResponseDataItemsItemProductIdMax = 64;
-export const addWishlistItemResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const AddWishlistItemResponse = zod.strictObject({
+export const createWishlistItemResponseDataItemsItemProductIdMax = 64;
+export const createWishlistItemResponseDataItemsItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const CreateWishlistItemResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -5989,8 +5945,8 @@ export const AddWishlistItemResponse = zod.strictObject({
                 productId: zod
                     .string()
                     .min(1)
-                    .max(addWishlistItemResponseDataItemsItemProductIdMax)
-                    .regex(addWishlistItemResponseDataItemsItemProductIdRegExp),
+                    .max(createWishlistItemResponseDataItemsItemProductIdMax)
+                    .regex(createWishlistItemResponseDataItemsItemProductIdRegExp),
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
@@ -6008,20 +5964,20 @@ export const AddWishlistItemResponse = zod.strictObject({
  * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
  * @summary Remove a saved product
  */
-export const removeWishlistItemPathProductIdMax = 64;
-export const removeWishlistItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RemoveWishlistItemParams = zod.strictObject({
+export const deleteWishlistItemPathProductIdMax = 64;
+export const deleteWishlistItemPathProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const DeleteWishlistItemParams = zod.strictObject({
     productId: zod
         .string()
         .min(1)
-        .max(removeWishlistItemPathProductIdMax)
-        .regex(removeWishlistItemPathProductIdRegExp)
+        .max(deleteWishlistItemPathProductIdMax)
+        .regex(deleteWishlistItemPathProductIdRegExp)
 });
-export const removeWishlistItemResponseDataItemsItemProductIdMax = 64;
-export const removeWishlistItemResponseDataItemsItemProductIdRegExp = new RegExp(
+export const deleteWishlistItemResponseDataItemsItemProductIdMax = 64;
+export const deleteWishlistItemResponseDataItemsItemProductIdRegExp = new RegExp(
     '^[0-9A-Za-z_-]+$'
 );
-export const RemoveWishlistItemResponse = zod.strictObject({
+export const DeleteWishlistItemResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
@@ -6031,8 +5987,8 @@ export const RemoveWishlistItemResponse = zod.strictObject({
                 productId: zod
                     .string()
                     .min(1)
-                    .max(removeWishlistItemResponseDataItemsItemProductIdMax)
-                    .regex(removeWishlistItemResponseDataItemsItemProductIdRegExp),
+                    .max(deleteWishlistItemResponseDataItemsItemProductIdMax)
+                    .regex(deleteWishlistItemResponseDataItemsItemProductIdRegExp),
                 availability: zod.enum([
                     'in_stock',
                     'preorder',
