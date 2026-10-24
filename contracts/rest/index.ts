@@ -3569,7 +3569,7 @@ export interface PaymentBankTransferAction {
     iban: string;
     /** Absent when the deployment has not configured one. */
     bic?: string;
-    /** The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments/order-by-reference`. A malformed or unmatched reference answers 404; a raw order id is not a reference. */
+    /** The ISO 11649 "RF" creditor reference of this payment — what the buyer writes into the transfer's description, so an operator can match the incoming money back via `GET /payments?transferReference=`. A malformed or unmatched reference finds nothing; a raw order id is not a reference. */
     reference: string;
     /** When the order's stock hold ends. Past it, with no money received, the order is cancelled. */
     payBy: string;
@@ -3672,13 +3672,6 @@ export interface PaymentEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Payment;
-}
-
-export interface OrderByReferenceResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Order;
 }
 
 export interface RefundPaymentRequest {
@@ -5637,6 +5630,11 @@ export interface SearchPaymentsRequest {
     orderId?: Id;
     /** @maxLength 120 */
     reference?: string;
+    /**
+     * The RF creditor reference of a bank transfer, in any spacing and case; a code that is not a valid reference finds nothing.
+     * @maxLength 64
+     */
+    transferReference?: string;
 }
 
 export interface RefundListItem {
@@ -6661,15 +6659,6 @@ export type DeleteOrderByIdParams = {
     hardDelete?: HardDeleteParamParameter;
 };
 
-export type GetOrderByReferenceParams = {
-    /**
-     * The RF reference, spaces and case tolerated exactly as a customer might type it — e.g. `RF13 2EY8 H44V JAVZ KX80 JRL`.
-     * @minLength 1
-     * @maxLength 64
-     */
-    ref: string;
-};
-
 export type ListPreorderFulfillmentOrdersParams = {
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
@@ -6943,6 +6932,11 @@ export type ListPaymentsParams = {
      * @maxLength 120
      */
     reference?: string;
+    /**
+     * The RF creditor reference of a bank transfer, spaces and case tolerated exactly as a customer might type it (`RF13 2EY8 H44V JAVZ KX80 JRL`). Matched in its canonical form; a code that is not a valid RF reference finds nothing, so the page is empty rather than an error and nothing says an almost-right code was close. Answers with the payment, whose `orderId` is the order it pays.
+     * @maxLength 64
+     */
+    transferReference?: string;
 };
 
 export type ListRefundsParams = {
@@ -10090,20 +10084,6 @@ export const getPaymentByOrder = (
 };
 
 /**
- * The admin's own step before `POST /payments/orders/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. The reference lives on the bank-transfer payment, which is kept for a year after its order is cancelled, so a transfer that arrives late still finds its order. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Find the order behind an RF reference
- */
-export const getOrderByReference = (
-    params: GetOrderByReferenceParams,
-    options?: SecondParameter<typeof orvalMutator<OrderByReferenceResponseEnvelope>>
-) => {
-    return orvalMutator<OrderByReferenceResponseEnvelope>(
-        { url: `/payments/order-by-reference`, method: 'GET', params },
-        options
-    );
-};
-
-/**
  * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
  * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
@@ -12023,9 +12003,6 @@ export type ListOrderCreditNotesResult = NonNullable<
 export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
 export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
-export type GetOrderByReferenceResult = NonNullable<
-    Awaited<ReturnType<typeof getOrderByReference>>
->;
 export type RefundPaymentByOrderResult = NonNullable<
     Awaited<ReturnType<typeof refundPaymentByOrder>>
 >;

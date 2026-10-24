@@ -88,10 +88,10 @@ const router = useRouter();
  * `OrderReferenceSearch`'s own `@found` handler — that component names no route at all,
  * so this page, which owns `OrderEdit` directly, is what turns a found order into a navigation.
  *
- * @param order - The order the reference search landed on.
+ * @param orderId - The id of the order the reference search landed on.
  */
-const handleReferenceFound = (order: Order) =>
-    router.push(routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } }));
+const handleReferenceFound = (orderId: string) =>
+    router.push(routerLinkI18n({ name: 'OrderEdit', params: { id: orderId } }));
 
 /**
  * Toast dispatcher, used to report every outcome to the visitor.

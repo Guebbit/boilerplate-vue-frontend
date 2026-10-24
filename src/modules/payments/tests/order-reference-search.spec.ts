@@ -2,7 +2,7 @@
  * @module
  * Mounts the real search component and spies on the store's own read, the same pattern
  * `record-offline-payment-form.spec.ts` uses: the field state and this component's job stop at
- * EMITTING the found order — `payments` declares no `MODULE_EDGES` reach into `orders`, so
+ * EMITTING the found order's id — `payments` declares no `MODULE_EDGES` reach into `orders`, so
  * navigating to `OrderEdit` is the host's job, proven separately in `orders-list-view.spec.ts`.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
@@ -12,29 +12,6 @@ import OrderReferenceSearch from '../components/OrderReferenceSearch.vue';
 import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
-import type { Order } from '@types';
-
-/** Builds a minimal order with the given id. */
-const anOrder = (id: string): Order => ({
-    id,
-    userId: 'user-1',
-    email: 'shopper@example.com',
-    items: [],
-    totalItems: 0,
-    totalQuantity: 0,
-    totalPrice: 0,
-    netTotal: 0,
-    taxTotal: 0,
-    shippingNetAmount: 0,
-    shippingTaxAmount: 0,
-    taxSummary: [],
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    fulfillmentStatus: 'unfulfilled',
-    returnStatus: 'none',
-    currency: 'EUR',
-    orderNumber: '2026-000001'
-});
 
 /** Mounts the reference search with the real i18n and Vuetify. */
 const mountSearch = () =>
@@ -59,7 +36,7 @@ beforeEach(() => {
 describe('OrderReferenceSearch', () => {
     it('emits the found order and clears the field, navigating nowhere itself', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(anOrder('order-1'));
+        vi.spyOn(payments, 'findOrderIdByReference').mockResolvedValue('order-1');
         const wrapper = mountSearch();
 
         return wrapper
@@ -68,10 +45,10 @@ describe('OrderReferenceSearch', () => {
             .then(() => wrapper.get('[data-test=order-reference-search-submit]').trigger('click'))
             .then(() => vi.waitFor(() => expect(wrapper.emitted('found')).toBeDefined()))
             .then(() => {
-                expect(payments.findOrderByReference).toHaveBeenCalledWith(
+                expect(payments.findOrderIdByReference).toHaveBeenCalledWith(
                     'RF13 2EY8 H44V JAVZ KX80 JRL'
                 );
-                expect(wrapper.emitted('found')).toEqual([[anOrder('order-1')]]);
+                expect(wrapper.emitted('found')).toEqual([['order-1']]);
                 expect(
                     wrapper.get<HTMLInputElement>('[data-test=order-reference-search-input] input')
                         .element.value
@@ -81,7 +58,7 @@ describe('OrderReferenceSearch', () => {
 
     it('stays put and says so inline when nothing matches', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(undefined);
+        vi.spyOn(payments, 'findOrderIdByReference').mockResolvedValue(undefined);
         const wrapper = mountSearch();
 
         return wrapper
@@ -102,7 +79,7 @@ describe('OrderReferenceSearch', () => {
 
     it('clears the inline message once the operator starts typing again', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderByReference').mockResolvedValue(undefined);
+        vi.spyOn(payments, 'findOrderIdByReference').mockResolvedValue(undefined);
         const wrapper = mountSearch();
 
         return wrapper
@@ -122,7 +99,7 @@ describe('OrderReferenceSearch', () => {
 
     it('blocks inline, not with a toast, on a real failure', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderByReference').mockRejectedValue({
+        vi.spyOn(payments, 'findOrderIdByReference').mockRejectedValue({
             success: false,
             status: 500,
             message: 'Server error',

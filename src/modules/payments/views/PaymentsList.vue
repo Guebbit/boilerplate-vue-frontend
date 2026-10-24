@@ -25,7 +25,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { linkIfRouted } from '@/kernel/route-link.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import type { Order, Payment } from '@types';
+import type { Payment } from '@types';
 import PaymentsTable from '../components/PaymentsTable.vue';
 import AwaitingTransfersTable from '../components/AwaitingTransfersTable.vue';
 import RefundsTable from '../components/RefundsTable.vue';
@@ -118,11 +118,11 @@ const reloadKey = ref(0);
  * `OrderReferenceSearch`'s `@found` handler: the order's edit page, where the offline form lives.
  * `payments` names no order route, so this resolves it by name and does nothing when absent.
  *
- * @param order - The order the reference matched.
+ * @param orderId - The id of the order the reference matched.
  * @returns A promise settling once navigation finished.
  */
-const handleReferenceFound = (order: Order) => {
-    const target = linkIfRouted(router, 'OrderEdit', { id: order.id });
+const handleReferenceFound = (orderId: string) => {
+    const target = linkIfRouted(router, 'OrderEdit', { id: orderId });
     return target ? router.push(routerLinkI18n(target)) : Promise.resolve();
 };
 </script>

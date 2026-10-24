@@ -323,59 +323,54 @@ describe('recordOfflinePayment', () => {
     });
 });
 
-describe('findOrderByReference', () => {
-    it('resolves the order behind the reference', () => {
-        responses['GET /payments/order-by-reference'] = orvalEnvelope({
-            id: 'order-1',
-            userId: 'user-1',
-            email: 'shopper@example.com',
-            items: [],
-            totalItems: 0,
-            totalQuantity: 0,
-            totalPrice: 0,
-            netTotal: 0,
-            taxTotal: 0,
-            shippingNetAmount: 0,
-            shippingTaxAmount: 0,
-            taxSummary: [],
-            status: 'pending'
+describe('findOrderIdByReference', () => {
+    it('resolves the order id of the payment the reference names, filtering the staff list', () => {
+        responses['POST /payments/search'] = orvalEnvelope({
+            items: [PAYMENT],
+            meta: { page: 1, pageSize: 1, totalItems: 1, totalPages: 1 }
         });
         const store = usePaymentsStore();
 
-        return store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL').then((order) => {
+        return store.findOrderIdByReference('RF13 2EY8 H44V JAVZ KX80 JRL').then((orderId) => {
             const call = vi
                 .mocked(orvalMutator)
-                .mock.calls.map((entry) => entry[0] as { url: string; params?: unknown })
-                .find(({ url }) => url.endsWith('/order-by-reference'));
+                .mock.calls.map((entry) => entry[0] as { url: string; data?: unknown })
+                .find(({ url }) => url.endsWith('/payments/search'));
 
-            expect(call?.params).toEqual({ ref: 'RF13 2EY8 H44V JAVZ KX80 JRL' });
-            expect(order).toMatchObject({ id: 'order-1' });
+            expect(call?.data).toEqual({
+                transferReference: 'RF13 2EY8 H44V JAVZ KX80 JRL',
+                pageSize: 1
+            });
+            expect(orderId).toBe('order-1');
         });
     });
 
     /**
-     * A malformed or an unmatched reference both answer 404, indistinguishably (the API's own
-     * choice, so a wrong-but-close code confirms nothing) — read the same way
-     * `fetchPaymentForOrder` reads its own 404, as an answer rather than a failure.
+     * A malformed or an unmatched reference both answer an empty page, indistinguishably (the
+     * API's own choice, so a wrong-but-close code confirms nothing): an answer, not a failure.
      */
-    it('reads a 404 as "no such order", not as a crash', () => {
+    it('reads an empty page as "no such order", not as a crash', () => {
+        responses['POST /payments/search'] = orvalEnvelope({
+            items: [],
+            meta: { page: 1, pageSize: 1, totalItems: 0, totalPages: 0 }
+        });
         const store = usePaymentsStore();
 
-        return store.findOrderByReference('not-a-real-reference').then((order) => {
-            expect(order).toBeUndefined();
+        return store.findOrderIdByReference('not-a-real-reference').then((orderId) => {
+            expect(orderId).toBeUndefined();
         });
     });
 
     /**
-     * The other half of "absence is an answer": only 404 is. A 500 must reach the caller, or a
-     * transient outage renders as "no order matches this reference" instead of the real failure.
+     * Only an empty page is an absence. A 500 must reach the caller, or a transient outage renders
+     * as "no order matches this reference" instead of the real failure.
      */
-    it('lets any other failure through instead of calling it "no such order"', () => {
-        responses['GET /payments/order-by-reference'] = new Error('Internal Server Error');
+    it('lets any failure through instead of calling it "no such order"', () => {
+        responses['POST /payments/search'] = new Error('Internal Server Error');
         const store = usePaymentsStore();
 
         return expect(
-            store.findOrderByReference('RF13 2EY8 H44V JAVZ KX80 JRL')
+            store.findOrderIdByReference('RF13 2EY8 H44V JAVZ KX80 JRL')
         ).rejects.toMatchObject({
             status: 500
         });

@@ -126,7 +126,7 @@ describe('OrdersList — the RF-reference lookup it mounts', () => {
         signInAsPaymentRecorder();
         const wrapper = mountList('all');
 
-        emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', anOrder());
+        emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', 'o1');
 
         return vi
             .waitFor(() => {

@@ -15,7 +15,6 @@ import {
     syncPayment,
     getPayment,
     getPaymentByOrder,
-    getOrderByReference,
     refundPaymentByOrder,
     settleRefundByHand as settleRefundByHandRequest,
     recordOfflinePayment as recordOfflinePaymentRequest,
@@ -26,7 +25,6 @@ import {
 } from '@api';
 import type {
     ListRefundsParams,
-    Order,
     Payment,
     PaymentAttentionItem,
     PaymentMethodOption,
@@ -347,25 +345,21 @@ export const usePaymentsStore = defineStore('payments', () => {
 
     /**
      * Finds the order behind an RF creditor reference — the admin's own step before recording an
-     * offline payment, when a bank statement line is all they have. Admin-only at the API, and
-     * step-up gated the same way {@link refundPayment} is.
+     * offline payment, when a bank statement line is all they have. It is the staff list filtered
+     * by `transferReference` (`POST /payments/search`), so it needs `display:Payment`.
      *
-     * A 404 is an answer, not a failure: the API cannot tell a malformed reference from one that
-     * matches no order, so both mean "no such order" and resolve `undefined`. Every other status
-     * still rejects.
+     * An empty page is an answer, not a failure: the API reads the code in its canonical form and
+     * answers nothing for a malformed or unmatched one alike, so both mean "no such order" and
+     * resolve `undefined`. Every error still rejects.
      *
      * @param ref - The RF reference, as typed — the API tolerates spaces and case.
-     * @returns A promise resolving with the order this reference pays, or `undefined` when none does.
+     * @returns A promise resolving with the id of the order this reference pays, or `undefined`.
      */
-    const findOrderByReference = (ref: string): Promise<Order | undefined> =>
+    const findOrderIdByReference = (ref: string): Promise<string | undefined> =>
         fetchAny(() =>
-            getOrderByReference({ ref })
-                .then((response) => response.data)
-                .catch((error: unknown) => {
-                    // 404 only: a wrong reference is a search result, not an incident to report.
-                    rethrowUnlessAbsent(error, 404);
-                    return undefined;
-                })
+            searchPayments({ transferReference: ref, pageSize: 1 }).then(
+                (response) => response.data.items[0]?.orderId
+            )
         );
 
     /**
@@ -498,6 +492,6 @@ export const usePaymentsStore = defineStore('payments', () => {
         refundPayment,
         settleRefundByHand,
         recordOfflinePayment,
-        findOrderByReference
+        findOrderIdByReference
     };
 });

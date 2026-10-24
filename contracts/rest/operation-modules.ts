@@ -86,7 +86,6 @@ export const OPERATION_MODULES: Record<string, string> = {
     getObservabilityMetricsOverview: 'observability',
     getOperationsStats: 'stats',
     getOrderById: 'orders',
-    getOrderByReference: 'payments',
     getOrderCreditNote: 'invoicing',
     getOrderInvoice: 'invoicing',
     getOrderTimeline: 'orders',

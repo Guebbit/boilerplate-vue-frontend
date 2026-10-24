@@ -17,7 +17,6 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -159,11 +158,7 @@ describe('PaymentsList — the drawer and the reference lookup', () => {
         session.setAbilities({ tenant: [['create', 'Payment']], platform: [] });
         const wrapper = await mountAt('/en/sales/payments');
 
-        emitOn(
-            wrapper.findComponent({ name: 'OrderReferenceSearch' }),
-            'found',
-            anOrder({ id: 'o5' })
-        );
+        emitOn(wrapper.findComponent({ name: 'OrderReferenceSearch' }), 'found', 'o5');
 
         await vi.waitFor(() => {
             expect(router.currentRoute.value.fullPath).toBe('/en/orders/o5/edit');
