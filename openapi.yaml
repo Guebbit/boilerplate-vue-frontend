@@ -1454,7 +1454,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/AccountEnvelope"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -1489,7 +1489,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/AccountEnvelope"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -1545,7 +1545,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/AccountEnvelope"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -2411,7 +2411,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/AccountEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7991,7 +7991,7 @@ paths:
       tags:
         - Users
       summary: Lift a user's purchase hold
-      description: "Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row."
+      description: Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. An account with neither a hold nor a review flag answers 409 `USER_PURCHASE_HOLD_NOT_SET`. Audited as `admin.user.purchase_hold_lifted` (`inForce` says whether the hold was still running).
       operationId: liftUserPurchaseHold
       security:
         - bearerAuth: []
@@ -8012,6 +8012,78 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
+  /users/{id}/activate:
+    post:
+      tags:
+        - Users
+      summary: Activate user
+      description: Lets a deactivated account sign in again. Answers 409 `USER_ALREADY_ACTIVE` when it is active already. Needs `ban:User`, the key deactivating takes. Audited as `admin.user.unbanned`.
+      operationId: activateUserById
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The user, now active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: users
+  /users/{id}/deactivate:
+    post:
+      tags:
+        - Users
+      summary: Deactivate user
+      description: Locks the account out and ends every session it holds in the same save, so activating it later does not bring the old tokens back. Answers 409 `USER_ALREADY_INACTIVE` when it is deactivated already. Needs `ban:User`. Audited as `admin.user.banned`.
+      operationId: deactivateUserById
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPathParam"
+      responses:
+        "200":
+          description: The user, now deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10116,7 +10188,24 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/User"
-    User:
+    AccountEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/Account"
+    Account:
       type: object
       additionalProperties: false
       required:
@@ -10175,10 +10264,72 @@ components:
         deletedAt:
           type: string
           format: date-time
-        actions:
-          $ref: "#/components/schemas/UserActions"
         purchaseHold:
           $ref: "#/components/schemas/PurchaseHold"
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - username
+        - actions
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        email:
+          $ref: "#/components/schemas/Email"
+        username:
+          type: string
+        role:
+          type: string
+        active:
+          type: boolean
+        verifiedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        pendingEmail:
+          type: string
+          format: email
+          readOnly: true
+        imageUrl:
+          $ref: "#/components/schemas/ImageUrl"
+        thumbnailUrl:
+          $ref: "#/components/schemas/ThumbnailUrl"
+        locale:
+          $ref: "#/components/schemas/Locale"
+        phone:
+          type: string
+        website:
+          type: string
+        analyticsConsent:
+          type: boolean
+        analyticsConsentAt:
+          type: string
+          format: date-time
+        termsAcceptedAt:
+          type: string
+          format: date-time
+        termsVersion:
+          type: string
+        twoFactorEnabledAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        purchaseHold:
+          $ref: "#/components/schemas/PurchaseHold"
+        actions:
+          $ref: "#/components/schemas/UserActions"
         purchaseHoldFlaggedAt:
           type: string
           format: date-time
@@ -10212,19 +10363,43 @@ components:
       additionalProperties: false
       required:
         - update
-        - ban
+        - assignRole
         - delete
-      description: "What the requesting caller may do to this account. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all three unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone."
+        - hardDelete
+        - restore
+        - setPurchaseHold
+        - liftPurchaseHold
+        - activate
+        - deactivate
+      description: "What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409."
       properties:
         update:
           type: boolean
           description: "Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor."
-        ban:
+        assignRole:
           type: boolean
-          description: Whether the account may be deactivated or reactivated — `ban:User`, and the account is not a staff account the caller may not manage.
+          description: Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. No rule refuses the caller's own account.
         delete:
           type: boolean
-          description: Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `delete:User`, and the account is not a staff account the caller may not manage.
+          description: Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already.
+        hardDelete:
+          type: boolean
+          description: Whether `DELETE /users/{id}/hard` would erase the account for good — `delete:User`, and the account is not a staff account the caller may not manage. A soft-deleted account can be erased.
+        restore:
+          type: boolean
+          description: Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted.
+        setPurchaseHold:
+          type: boolean
+          description: Whether `PUT /users/{id}/purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again to extend it.
+        liftPurchaseHold:
+          type: boolean
+          description: Whether `DELETE /users/{id}/purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear.
+        activate:
+          type: boolean
+          description: Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated.
+        deactivate:
+          type: boolean
+          description: Whether `POST /users/{id}/deactivate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is active. Deactivating ends every session of the account.
     HardDeleteRequest:
       type: object
       additionalProperties: false
@@ -13001,7 +13176,6 @@ components:
       required:
         - username
         - role
-        - active
       properties:
         username:
           type: string
@@ -13013,8 +13187,6 @@ components:
             - "null"
           maxLength: 64
           minLength: 1
-        active:
-          type: boolean
         imageUrl:
           $ref: "#/components/schemas/ImageRemoval"
         locale:
@@ -13039,7 +13211,6 @@ components:
       required:
         - username
         - role
-        - active
       properties:
         username:
           type: string
@@ -13049,8 +13220,6 @@ components:
           type: string
           maxLength: 64
           minLength: 1
-        active:
-          type: boolean
         imageUpload:
           type: string
           format: binary
@@ -13081,8 +13250,6 @@ components:
             - "null"
           maxLength: 64
           minLength: 1
-        active:
-          type: boolean
         imageUrl:
           $ref: "#/components/schemas/ImageRemoval"
         locale:
@@ -13113,8 +13280,6 @@ components:
           type: string
           maxLength: 64
           minLength: 1
-        active:
-          type: boolean
         imageUpload:
           type: string
           format: binary
@@ -18251,7 +18416,7 @@ components:
           type: string
           format: date-time
         profile:
-          $ref: "#/components/schemas/User"
+          $ref: "#/components/schemas/Account"
         auditLog:
           type: array
           items:
@@ -19837,6 +20002,18 @@ x-error-codes:
   UNSUPPORTED_MEDIA_TYPE:
     status: 415
     description: The request's `Content-Type` is not one this operation accepts.
+  USER_ALREADY_ACTIVE:
+    status: 409
+    description: "The account is active already: `POST /users/{id}/activate` has nothing to do."
+  USER_ALREADY_INACTIVE:
+    status: 409
+    description: "The account is deactivated already: `POST /users/{id}/deactivate` has nothing to do."
+  USER_NOT_DELETED:
+    status: 409
+    description: The account is not soft-deleted, so there is nothing to restore.
+  USER_PURCHASE_HOLD_NOT_SET:
+    status: 409
+    description: The account has no purchase hold and no review flag, so there is nothing to lift.
   VALIDATION_ERROR:
     status: 422
     description: One or more fields failed schema validation — see `errors[].details.field`.

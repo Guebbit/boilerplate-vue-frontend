@@ -221,6 +221,8 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "GET", pattern: /^\/stats\/products\/[^/]+$/, schemaName: "GetProductSalesSeriesResponse", bodySchemaName: undefined, module: "stats" },
     { method: "DELETE", pattern: /^\/stock-alerts\/[^/]+$/, schemaName: "DeleteStockAlertResponse", bodySchemaName: undefined, module: "stock-alerts" },
     { method: "POST", pattern: /^\/stock-alerts\/[^/]+$/, schemaName: "CreateStockAlertResponse", bodySchemaName: undefined, module: "stock-alerts" },
+    { method: "POST", pattern: /^\/users\/[^/]+\/activate$/, schemaName: "ActivateUserByIdResponse", bodySchemaName: undefined, module: "users" },
+    { method: "POST", pattern: /^\/users\/[^/]+\/deactivate$/, schemaName: "DeactivateUserByIdResponse", bodySchemaName: undefined, module: "users" },
     { method: "DELETE", pattern: /^\/users\/[^/]+\/hard$/, schemaName: "HardDeleteUserByIdResponse", bodySchemaName: undefined, module: "users" },
     { method: "DELETE", pattern: /^\/users\/[^/]+\/purchase-hold$/, schemaName: "LiftUserPurchaseHoldResponse", bodySchemaName: undefined, module: "users" },
     { method: "PUT", pattern: /^\/users\/[^/]+\/purchase-hold$/, schemaName: "SetUserPurchaseHoldResponse", bodySchemaName: "SetUserPurchaseHoldBody", module: "users" },

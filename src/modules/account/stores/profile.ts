@@ -13,7 +13,7 @@ import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type { User, AccountExportRequest, EmailVerificationRequested } from '@types';
+import type { Account, AccountExportRequest, EmailVerificationRequested } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -56,7 +56,7 @@ const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undef
  * resend, cancel), account deletion and the data export.
  *
  * Separate from `session`, which holds the minimal `{ id, email, role, … }` projection the shell
- * and the guards need. This store holds the whole `User` — the split `docs/theory/layers.md`
+ * and the guards need. This store holds the whole `Account` — the split `docs/theory/layers.md`
  * describes.
  *
  * Deliberately NOT here: establishing or ending a session (`stores/auth.ts`'s `useAuthStore`), and
@@ -83,7 +83,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         fetchAny,
         fetchTarget,
         updateTarget
-    } = useStructureRestApi<User, string>({
+    } = useStructureRestApi<Account, string>({
         resourceKey: 'accountProfile',
         queryClient
     });
@@ -106,7 +106,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @param user - The freshly loaded or updated account record.
      * @returns A promise resolving once the shell also holds the rules that go with them.
      */
-    const publishViewer = (user?: User) =>
+    const publishViewer = (user?: Account) =>
         session.setViewer(
             user && {
                 id: user.id,
@@ -143,7 +143,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         return fetchTarget(
             () =>
                 apiGetAccount().then((data) => {
-                    const payload = getPayloadFromResponse<User>(data);
+                    const payload = getPayloadFromResponse<Account>(data);
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
@@ -173,9 +173,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
 
     /**
      * What a profile write may carry: the record's own fields, widened where the wire accepts
-     * `null` (a clear) but the local `User` never holds one.
+     * `null` (a clear) but the local `Account` never holds one.
      */
-    type ProfileWrite = Partial<Omit<User, 'imageUrl' | 'locale' | 'phone' | 'website'>> & {
+    type ProfileWrite = Partial<Omit<Account, 'imageUrl' | 'locale' | 'phone' | 'website'>> & {
         imageUrl?: null;
         locale?: string | null;
         phone?: string | null;
@@ -186,7 +186,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * The local cache patch for a profile write: the sent fields, minus any that carry `null`.
      *
      * @param userData - What the caller passed to {@link updateProfile}, `imageUpload` removed.
-     * @returns A `Partial<User>` safe to merge into the cached record.
+     * @returns A `Partial<Account>` safe to merge into the cached record.
      */
     const optimisticPatch = ({
         locale,
@@ -194,7 +194,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         website,
         imageUrl,
         ...rest
-    }: ProfileWrite): Partial<User> => ({
+    }: ProfileWrite): Partial<Account> => ({
         ...rest,
         ...omitNulls({ locale, phone, website, imageUrl }, [
             'locale',
@@ -226,7 +226,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  `imageUrl: null` alone (never `''` — the contract's own `minLength: 1` refuses that with a
      *  422), its picker sends `imageUpload` alone. `Profile.vue`'s own details form must send
      *  neither: re-sending the already-loaded `imageUrl` there would overwrite a concurrent avatar
-     *  change and orphan the file it just uploaded. `imageUrl` widens past `Partial<User>`'s own
+     *  change and orphan the file it just uploaded. `imageUrl` widens past `Partial<Account>`'s own
      *  (read-shape, non-null) type for exactly this: the write contract allows `null`, the record
      *  itself never reads back as one. `phone` and `website` widen the same way: `null` clears
      *  them, and `Profile.vue` sends it for a field the visitor emptied.
@@ -240,7 +240,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         options?: AxiosRequestConfig
     ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
-        // Listed field by field rather than spread: a `Partial<User>` can carry `role`,
+        // Listed field by field rather than spread: a `Partial<Account>` can carry `role`,
         // `verifiedAt` or `deletedAt`, and none of those is a user's to send. The two branches
         // differ only in how the picture travels.
         const fields = {
@@ -268,14 +268,14 @@ export const useProfileStore = defineStore('accountProfile', () => {
                       )
                     : apiUpdateAccount(withImageUrl, options)
                 ).then((data) => {
-                    const payload = getPayloadFromResponse<User>(data);
+                    const payload = getPayloadFromResponse<Account>(data);
 
                     // The projection must not lag the record — same rule as fetchProfile.
                     return payload ? publishViewer(payload).then(() => data) : data;
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             // `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the
-            // toolkit's `Partial<User>` (the record's read shape) never carries a null, and the
+            // toolkit's `Partial<Account>` (the record's read shape) never carries a null, and the
             // refetch right below corrects the visible state within one round trip regardless.
             optimisticPatch(userData),
             selectedIdentifier.value,
@@ -303,7 +303,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @returns A promise resolving once the sync (if any) settles; `updateProfile`'s own refetch
      *  reruns this function too, where the now-defined `analyticsConsent` short-circuits it.
      */
-    const syncGuestAnalyticsConsent = (payload: User): Promise<unknown> => {
+    const syncGuestAnalyticsConsent = (payload: Account): Promise<unknown> => {
         if (
             guestConsentSyncSettled.value ||
             !isAnalyticsConsentEnabled() ||

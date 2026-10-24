@@ -18,7 +18,12 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { asStub } from '../../../../tests/support/stub.ts';
-import { aUser } from '../../../../tests/support/unit/fixtures.ts';
+import {
+    aUser,
+    ALL_USER_ACTIONS,
+    NO_USER_ACTIONS,
+    userActionsOf
+} from '../../../../tests/support/unit/fixtures.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 
@@ -198,12 +203,12 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
             aUser({
                 id: 'u1',
                 username: 'customer',
-                actions: { update: true, ban: true, delete: true }
+                actions: { ...ALL_USER_ACTIONS, restore: false }
             }),
             aUser({
                 id: 'u2',
                 username: 'support',
-                actions: { update: false, ban: false, delete: false }
+                actions: NO_USER_ACTIONS
             })
         ]);
 
@@ -225,12 +230,28 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
         expect(rows[1].find('[data-test=row-view]').exists()).toBe(true);
     });
 
+    it('offers restore, not delete, on a row the server says is restorable', async () => {
+        const wrapper = await mountWithRows([
+            aUser({
+                id: 'u1',
+                username: 'gone',
+                deletedAt: '2026-10-01T00:00:00.000Z',
+                actions: { ...ALL_USER_ACTIONS, delete: false }
+            })
+        ]);
+
+        const row = wrapper.get('tbody tr');
+
+        expect(row.find('[data-test=row-restore]').exists()).toBe(true);
+        expect(row.find('[data-test=row-delete]').exists()).toBe(false);
+    });
+
     it('offers edit and access, but no delete, on a row that allows only the profile edit', async () => {
         const wrapper = await mountWithRows([
             aUser({
                 id: 'u1',
                 username: 'customer',
-                actions: { update: true, ban: false, delete: false }
+                actions: userActionsOf({ update: true, assignRole: true })
             })
         ]);
 
@@ -247,7 +268,12 @@ describe('UsersList — the row actions follow each row’s own `actions`', () =
             aUser({
                 id: 'u1',
                 username: 'customer',
-                actions: { update: false, ban: true, delete: false }
+                actions: userActionsOf({
+                    setPurchaseHold: true,
+                    liftPurchaseHold: true,
+                    activate: true,
+                    deactivate: true
+                })
             })
         ]);
 

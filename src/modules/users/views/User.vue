@@ -120,7 +120,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The role/active-status writes `UserAccessDialog` confirms below.
  */
-const { updateUser } = useUsersStore();
+const { applyAccessChange } = useUsersStore();
 
 /**
  * `UserAccessDialog`'s open state, target and picker options, plus the promise-returning
@@ -164,7 +164,7 @@ const handleManageAccess = () => {
     }).then((result) => {
         if (!result) return;
         clearAccessError();
-        return updateUser(target.id, result)
+        return applyAccessChange(target.id, result)
             .then(() => addMessage(t('user-target-page.success-access-update')))
             .catch((error: unknown) => reportAccessError(error));
     });
@@ -398,9 +398,15 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                 >
                     {{ t('user-target-page.button-history') }}
                 </v-btn>
-                <div v-if="currentUser?.actions?.ban" class="flex flex-col gap-2">
+                <div
+                    v-if="
+                        currentUser?.actions?.setPurchaseHold ||
+                        currentUser?.actions?.liftPurchaseHold
+                    "
+                    class="flex flex-col gap-2"
+                >
                     <v-btn
-                        v-if="currentUser.purchaseHold"
+                        v-if="currentUser.purchaseHold && currentUser.actions.liftPurchaseHold"
                         variant="tonal"
                         color="secondary"
                         data-test="user-lift-hold"
@@ -409,7 +415,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         {{ t('user-target-page.button-lift-hold') }}
                     </v-btn>
                     <v-btn
-                        v-else
+                        v-else-if="!currentUser.purchaseHold && currentUser.actions.setPurchaseHold"
                         variant="tonal"
                         color="secondary"
                         data-test="user-pause-checkout"
@@ -418,7 +424,11 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                         {{ t('user-target-page.button-pause-checkout') }}
                     </v-btn>
                     <v-btn
-                        v-if="currentUser.purchaseHoldFlaggedAt && !currentUser.purchaseHold"
+                        v-if="
+                            currentUser.purchaseHoldFlaggedAt &&
+                            !currentUser.purchaseHold &&
+                            currentUser.actions.liftPurchaseHold
+                        "
                         variant="tonal"
                         color="secondary"
                         data-test="user-mark-reviewed"
@@ -429,7 +439,11 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                     <InlineErrorAlert :message="holdError" data-test="user-purchase-hold-error" />
                 </div>
                 <div
-                    v-if="currentUser?.actions?.update || currentUser?.actions?.ban"
+                    v-if="
+                        currentUser?.actions?.assignRole ||
+                        currentUser?.actions?.activate ||
+                        currentUser?.actions?.deactivate
+                    "
                     class="flex flex-col gap-2"
                 >
                     <v-btn

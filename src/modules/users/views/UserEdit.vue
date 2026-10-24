@@ -11,18 +11,20 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * User-edit page: the admin form — username, role, active, locale, phone, website and avatar —
+ * User-edit page: the admin form — username, role, locale, phone, website and avatar —
  * built on `useStructureFormValidation` (an empty avatar field means "leave as is"), submitting
  * multipart only when a new avatar is attached. There is no email and no password field: a
  * credential is its owner's alone, changed through their own account, never by staff.
  *
- * Each control follows the row's `actions` — the server's answer, permission and role protection together: with no
- * `update` the profile fields and the role are disabled, with no `ban` the active switch is, and
- * one's own role is never offered (the server refuses it).
+ * Each control follows the row's `actions` — the server's answer, permission and role protection
+ * together: with no `update` the profile fields are disabled, with no `assignRole` the role is,
+ * and the status is two buttons (`activate`, `deactivate`) that show only when the server would
+ * accept the move. Status is an action, not a field of the `PATCH`.
  *
- * Role and active status get one more gate than the rest: `UserAccessDialog`'s confirm step,
- * opened on Save whenever either differs from the loaded record, before the `PATCH` is sent at
- * all — see `submitForm`'s own note on why an unchanged `role` must never ride along regardless.
+ * A role change gets one more gate than the rest: `UserAccessDialog`'s confirm step, opened on
+ * Save whenever it differs from the loaded record, before the `PATCH` is sent at all — see
+ * `submitForm`'s own note on why an unchanged `role` must never ride along regardless. Deactivating
+ * goes through the same dialog, since it logs the account out everywhere.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
 import { useMissingRecord } from '@/infrastructure/utils/use-missing-record.ts';
@@ -78,7 +80,7 @@ const { id } = defineProps<{
 /**
  * User store APIs and references.
  */
-const { watchUser, updateUser, fetchUser } = useUsersStore();
+const { watchUser, updateUser, fetchUser, activateUser, deactivateUser } = useUsersStore();
 
 /**
  * The user being edited, and whether a call is in flight.
@@ -92,7 +94,6 @@ const { currentUser, loading } = storeToRefs(useUsersStore());
 interface UserEditForm {
     username?: string;
     role?: string;
-    active?: boolean;
     locale?: string;
     phone?: string;
     website?: string;
@@ -103,7 +104,7 @@ interface UserEditForm {
  * Validation schema of the edit form, where the avatar is an optional replacement (an empty
  * field means "leave it as it is"). `username`/`phone`/`website` are picked
  * from `usersSchema` rather than re-declared, so this form's rules cannot drift from the create
- * form's; `role`/`active` are re-declared plain (`usersSchema`'s own are `nullish`, one shade
+ * form's; `role` is re-declared plain (`usersSchema`'s own is `nullish`, one shade
  * looser than this form's `string | undefined` needs) and `locale` has no field rule to share (a
  * closed set of codes, enforced by the select's own options, not by string validation).
  *
@@ -112,7 +113,6 @@ interface UserEditForm {
  */
 const editSchema = usersSchema.pick({ username: true, phone: true, website: true }).extend({
     role: z.string().optional(),
-    active: z.boolean().optional(),
     locale: z.string().optional(),
     imageUpload: imageUploadSchema
 });
@@ -152,10 +152,9 @@ const { markSaved } = useLeaveGuard(isDirty, () => session.isAuth);
 const { progress: uploadProgress, trackUpload } = useAxiosUploadProgress();
 
 /**
- * Auto-hydrate the form from the fetched record once it resolves. `role`/`active` fall back to
- * `''`/`true` (the record's own least-privileged defaults) rather than `undefined`, so
- * {@link roleChanged}/{@link activeChanged} in `submitForm` compare against a concrete baseline
- * instead of two `undefined`s that would always look equal.
+ * Auto-hydrate the form from the fetched record once it resolves. `role` falls back to `''` (the
+ * record's own least-privileged default) rather than `undefined`, so `roleChanged` in `submitForm`
+ * compares against a concrete baseline instead of two `undefined`s that would always look equal.
  */
 activateAutoHydrate(
     holdWhileSubmitting(isSubmitting, () =>
@@ -163,7 +162,6 @@ activateAutoHydrate(
             ? {
                   username: currentUser.value.username,
                   role: currentUser.value.role ?? '',
-                  active: currentUser.value.active ?? true,
                   locale: currentUser.value.locale ?? undefined,
                   phone: currentUser.value.phone ?? undefined,
                   website: currentUser.value.website ?? undefined
@@ -179,7 +177,7 @@ activateAutoHydrate(
 const rowActions = computed(() => currentUser.value?.actions);
 
 /**
- * The signed-in admin's own session, to tell their own account from someone else's.
+ * The signed-in admin's own session, for the leave guard.
  */
 const session = useSessionStore();
 
@@ -189,16 +187,10 @@ const session = useSessionStore();
 const { grantableRoles, roleOptions } = useRoleOptions();
 
 /**
- * Whether the role select is offered: the account may be edited, it is not the admin's own —
- * nobody changes their own role, the server refuses it — and the caller may assign at least one
- * role at all.
+ * Whether the role select is offered: the server says the role may be changed on this account
+ * (`assignRole`), and the caller may assign at least one role at all.
  */
-const canEditRole = computed(
-    () =>
-        !!rowActions.value?.update &&
-        currentUser.value?.id !== session.viewer?.id &&
-        grantableRoles().length > 0
-);
+const canEditRole = computed(() => !!rowActions.value?.assignRole && grantableRoles().length > 0);
 
 /**
  * The locale select's options — same source as `Profile.vue`'s own language select and
@@ -210,9 +202,9 @@ const localeOptions = computed(() =>
 
 /**
  * `UserAccessDialog`'s open state and target, plus the promise-returning `request()` this page's
- * Save button awaits when role or active actually changed — see `use-user-access-dialog.ts`. Every
- * request here passes `skipPicker: true`: the values were already chosen in the form above, so the
- * dialog only needs to run its confirm step.
+ * Save button awaits when the role changed, and the Deactivate button always — see
+ * `use-user-access-dialog.ts`. Every request here passes `skipPicker: true`: the values were
+ * already chosen above, so the dialog only needs to run its confirm step.
  */
 const {
     isOpen: accessDialogOpen,
@@ -288,12 +280,12 @@ const onUserSaved = () => {
 /**
  * Validates the form and persists the user changes.
  *
- * A `role` or `active` that differs from the loaded record goes through `UserAccessDialog`'s
- * confirm step first — cancelling it leaves the form exactly as it was, still editable, nothing
- * sent. Confirmed or not, the `PATCH` body below only ever includes `role`/`active` when they
- * actually changed: the backend's grant check (`assertCanGrant`) runs on any `PATCH` naming a
- * role at all, so re-sending the loaded value would fail an editor with no admin-grant keys for a
- * "change" that isn't one.
+ * A `role` that differs from the loaded record goes through `UserAccessDialog`'s confirm step
+ * first — cancelling it leaves the form exactly as it was, still editable, nothing sent.
+ * Confirmed or not, the `PATCH` body below only ever includes `role` when it actually changed: the
+ * backend's grant check (`assertCanGrant`) runs on any `PATCH` naming a role at all, so
+ * re-sending the loaded value would fail an editor with no admin-grant keys for a "change" that
+ * isn't one.
  *
  * @returns A promise resolving once the flow settles: a success toast, or the
  *  revealed validation errors when the input is invalid. API failures block the form in place
@@ -305,24 +297,22 @@ const submitForm = () => {
     return handleSubmit(() => {
         const target = currentUser.value;
         if (!id || !target) return;
-        const { username, role, active, locale, phone, website, imageUpload } = form.value;
+        const { username, role, locale, phone, website, imageUpload } = form.value;
 
         const roleChanged = role !== (target.role ?? '');
-        const activeChanged = active !== (target.active ?? true);
 
-        const accepted =
-            !roleChanged && !activeChanged
-                ? Promise.resolve(true)
-                : requestAccessConfirmation(
-                      {
-                          id,
-                          name: target.username,
-                          role: target.role,
-                          active: target.active,
-                          actions: target.actions
-                      },
-                      { skipPicker: true, chosenRole: role, chosenActive: active }
-                  ).then((result) => !!result);
+        const accepted = roleChanged
+            ? requestAccessConfirmation(
+                  {
+                      id,
+                      name: target.username,
+                      role: target.role,
+                      active: target.active,
+                      actions: target.actions
+                  },
+                  { skipPicker: true, chosenRole: role }
+              ).then((result) => !!result)
+            : Promise.resolve(true);
 
         return accepted.then((wasAccepted) => {
             if (!wasAccepted) return;
@@ -330,7 +320,7 @@ const submitForm = () => {
             // emptied locale/phone/website becomes `null` (clear) rather than a 422-bound `''`.
             return toRequestBody(
                 'UpdateUserByIdBody',
-                { username, role, active, locale, phone, website },
+                { username, role, locale, phone, website },
                 target
             )
                 .then((body) => sendUserUpdate(id, body, imageUpload))
@@ -340,6 +330,48 @@ const submitForm = () => {
         if (handleStaleSave(error)) return;
         applyServerErrors(error, { onUnmapped: () => reportSubmitError(error) });
     });
+};
+
+/**
+ * Activates the account — no confirm step: it only lets the owner sign in again.
+ *
+ * @returns A promise settling once the call has finished; a failure blocks the form in place.
+ */
+const handleActivate = () => {
+    if (!id) return Promise.resolve();
+    clearSubmitError();
+    return activateUser(id)
+        .then(() => addMessage(t('user-edit-page.success-activate')))
+        .catch((error: unknown) => reportSubmitError(error));
+};
+
+/**
+ * Deactivates the account after `UserAccessDialog`'s confirm step, which says it ends every
+ * session the account holds.
+ *
+ * @returns A promise settling once the dialog closes and, if accepted, the call has finished; a
+ *  failure blocks the form in place.
+ */
+const handleDeactivate = () => {
+    const target = currentUser.value;
+    if (!id || !target) return Promise.resolve();
+    clearSubmitError();
+    return requestAccessConfirmation(
+        {
+            id,
+            name: target.username,
+            role: target.role,
+            active: target.active,
+            actions: target.actions
+        },
+        { skipPicker: true, chosenActive: false }
+    ).then((result) =>
+        result
+            ? deactivateUser(id)
+                  .then(() => addMessage(t('user-edit-page.success-deactivate')))
+                  .catch((error: unknown) => reportSubmitError(error))
+            : undefined
+    );
 };
 
 /**
@@ -450,12 +482,28 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                                 :label="t('user-edit-page.label-role')"
                                 :disabled="!canEditRole"
                             />
-                            <v-switch
-                                v-model="form.active"
-                                data-test="user-edit-active"
-                                :label="t('user-edit-page.label-active')"
-                                :disabled="!rowActions?.ban"
-                            />
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <v-btn
+                                v-if="rowActions?.deactivate"
+                                variant="tonal"
+                                color="error"
+                                data-test="user-edit-deactivate"
+                                :disabled="isSubmitting || loading"
+                                @click="handleDeactivate"
+                            >
+                                {{ t('user-edit-page.button-deactivate') }}
+                            </v-btn>
+                            <v-btn
+                                v-if="rowActions?.activate"
+                                variant="tonal"
+                                color="success"
+                                data-test="user-edit-activate"
+                                :disabled="isSubmitting || loading"
+                                @click="handleActivate"
+                            >
+                                {{ t('user-edit-page.button-activate') }}
+                            </v-btn>
                         </div>
                         <FormImageUpload
                             v-model="form.imageUpload"
@@ -487,11 +535,7 @@ const asideFields = computed<DetailFieldRow[]>(() => [
                                 type="submit"
                                 color="primary"
                                 data-test="user-edit-submit"
-                                :disabled="
-                                    isSubmitting ||
-                                    loading ||
-                                    !(rowActions?.update || rowActions?.ban)
-                                "
+                                :disabled="isSubmitting || loading || !rowActions?.update"
                             >
                                 {{ t('user-edit-page.button-submit') }}
                             </v-btn>

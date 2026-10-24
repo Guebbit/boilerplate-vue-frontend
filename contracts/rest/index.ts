@@ -147,18 +147,6 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
-/**
- * What the requesting caller may do to this account. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all three unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone.
- */
-export interface UserActions {
-    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
-    update: boolean;
-    /** Whether the account may be deactivated or reactivated — `ban:User`, and the account is not a staff account the caller may not manage. */
-    ban: boolean;
-    /** Whether `DELETE /users/{id}` (soft or hard) and `POST /users/{id}/restore` would be accepted — `delete:User`, and the account is not a staff account the caller may not manage. */
-    delete: boolean;
-}
-
 export type PurchaseHoldReason = (typeof PurchaseHoldReason)[keyof typeof PurchaseHoldReason];
 
 export const PurchaseHoldReason = {
@@ -176,6 +164,30 @@ export interface PurchaseHold {
      */
     note?: string;
     setAt: string;
+}
+
+/**
+ * What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409.
+ */
+export interface UserActions {
+    /** Whether `PUT`/`PATCH /users/{id}` would be accepted for the profile fields — `update:User`, and the account is not a staff account the caller may not manage. Never covers a credential: no caller changes another person's email, password or second factor. */
+    update: boolean;
+    /** Whether the `role` field of `PUT`/`PATCH /users/{id}` would be accepted — `update` AND the caller holds `assign:Role`. No rule refuses the caller's own account. */
+    assignRole: boolean;
+    /** Whether `DELETE /users/{id}` would soft-delete the account — `delete:User`, the account is not a staff account the caller may not manage, and it is not deleted already. */
+    delete: boolean;
+    /** Whether `DELETE /users/{id}/hard` would erase the account for good — `delete:User`, and the account is not a staff account the caller may not manage. A soft-deleted account can be erased. */
+    hardDelete: boolean;
+    /** Whether `POST /users/{id}/restore` would be accepted — `delete:User`, the account is not a staff account the caller may not manage, and it is soft-deleted. */
+    restore: boolean;
+    /** Whether `PUT /users/{id}/purchase-hold` would be accepted — `ban:User`, and the account is not a staff account the caller may not manage. A hold can be placed again to extend it. */
+    setPurchaseHold: boolean;
+    /** Whether `DELETE /users/{id}/purchase-hold` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and there is a hold or a review flag to clear. */
+    liftPurchaseHold: boolean;
+    /** Whether `POST /users/{id}/activate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is deactivated. */
+    activate: boolean;
+    /** Whether `POST /users/{id}/deactivate` would be accepted — `ban:User`, the account is not a staff account the caller may not manage, and it is active. Deactivating ends every session of the account. */
+    deactivate: boolean;
 }
 
 export interface User {
@@ -200,8 +212,8 @@ export interface User {
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
-    actions?: UserActions;
     purchaseHold?: PurchaseHold;
+    actions: UserActions;
     /** When the shop's rule flagged this account for staff review after repeated cancellations. Staff view only (`/users` reads). Cleared when staff set or lift a hold. */
     purchaseHoldFlaggedAt?: string;
 }
@@ -211,6 +223,38 @@ export interface UserEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: User;
+}
+
+export interface Account {
+    id: Id;
+    email: Email;
+    username: string;
+    role?: string;
+    active?: boolean;
+    /** @nullable */
+    verifiedAt?: string | null;
+    readonly pendingEmail?: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+    analyticsConsentAt?: string;
+    termsAcceptedAt?: string;
+    termsVersion?: string;
+    twoFactorEnabledAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    purchaseHold?: PurchaseHold;
+}
+
+export interface AccountEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Account;
 }
 
 export interface HardDeleteRequest {
@@ -1999,7 +2043,6 @@ export interface ReplaceUserByIdRequest {
      * @nullable
      */
     role: string | null;
-    active: boolean;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
     /**
@@ -2027,7 +2070,6 @@ export interface ReplaceUserByIdRequestMultipart {
      * @maxLength 64
      */
     role: string;
-    active: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
@@ -2055,7 +2097,6 @@ export interface UpdateUserByIdRequest {
      * @nullable
      */
     role?: string | null;
-    active?: boolean;
     imageUrl?: ImageRemoval;
     locale?: Locale | null;
     /**
@@ -2083,7 +2124,6 @@ export interface UpdateUserByIdRequestMultipart {
      * @maxLength 64
      */
     role?: string;
-    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: string;
@@ -5313,7 +5353,7 @@ export type AccountExportResponseRolesItem = {
 
 export interface AccountExportResponse {
     exportedAt: string;
-    profile: User;
+    profile: Account;
     auditLog: AuditEntryItem[];
     sessions: ExportSession[];
     addresses: Address[];
@@ -7678,8 +7718,8 @@ export const createAnalyticsEvent = (
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
-export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnvelope>>) => {
-    return orvalMutator<UserEnvelope>({ url: `/account`, method: 'GET' }, options);
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>) => {
+    return orvalMutator<AccountEnvelope>({ url: `/account`, method: 'GET' }, options);
 };
 
 /**
@@ -7688,9 +7728,9 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
  */
 export const replaceAccount = (
     replaceAccountRequest: ReplaceAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PUT',
@@ -7707,7 +7747,7 @@ export const replaceAccount = (
  */
 export const replaceAccountWithMultipart = (
     replaceAccountRequestMultipart: ReplaceAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
     const formData = new FormData();
     formData.append(`email`, replaceAccountRequestMultipart.email);
@@ -7726,7 +7766,7 @@ export const replaceAccountWithMultipart = (
     }
     formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString());
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PUT',
@@ -7743,9 +7783,9 @@ export const replaceAccountWithMultipart = (
  */
 export const updateAccount = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -7762,9 +7802,9 @@ export const updateAccount = (
  */
 export const updateAccountWithMergePatchJson = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -7781,7 +7821,7 @@ export const updateAccountWithMergePatchJson = (
  */
 export const updateAccountWithMultipart = (
     updateAccountRequestMultipart: UpdateAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
     const formData = new FormData();
     if (updateAccountRequestMultipart.email !== undefined) {
@@ -7809,7 +7849,7 @@ export const updateAccountWithMultipart = (
         );
     }
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -8215,9 +8255,9 @@ export const login = (
  */
 export const signup = (
     signupRequest: SignupRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<AccountEnvelope>(
         {
             url: `/account/signup`,
             method: 'POST',
@@ -8675,7 +8715,6 @@ export const replaceUserByIdWithMultipart = (
     const formData = new FormData();
     formData.append(`username`, replaceUserByIdRequestMultipart.username);
     formData.append(`role`, replaceUserByIdRequestMultipart.role);
-    formData.append(`active`, replaceUserByIdRequestMultipart.active.toString());
     if (replaceUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, replaceUserByIdRequestMultipart.imageUpload);
     }
@@ -8755,9 +8794,6 @@ export const updateUserByIdWithMultipart = (
     }
     if (updateUserByIdRequestMultipart.role !== undefined) {
         formData.append(`role`, updateUserByIdRequestMultipart.role);
-    }
-    if (updateUserByIdRequestMultipart.active !== undefined) {
-        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
     }
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
@@ -10869,7 +10905,7 @@ export const setUserPurchaseHold = (
 };
 
 /**
- * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. Safe to repeat: lifting no hold answers 200 with the user. Audited as `admin.user.purchase_hold_lifted` when a hold or a review flag was there to clear (`inForce` says which); a repeat that finds neither writes no row.
+ * Ends the hold now and restarts the count of cancellations from this moment, so the cancellations that caused an automatic hold never trigger another. A staff review is exactly this call, and it clears the account's review flag. An account with neither a hold nor a review flag answers 409 `USER_PURCHASE_HOLD_NOT_SET`. Audited as `admin.user.purchase_hold_lifted` (`inForce` says whether the hold was still running).
  * @summary Lift a user's purchase hold
  */
 export const liftUserPurchaseHold = (
@@ -10880,6 +10916,28 @@ export const liftUserPurchaseHold = (
         { url: `/users/${id}/purchase-hold`, method: 'DELETE' },
         options
     );
+};
+
+/**
+ * Lets a deactivated account sign in again. Answers 409 `USER_ALREADY_ACTIVE` when it is active already. Needs `ban:User`, the key deactivating takes. Audited as `admin.user.unbanned`.
+ * @summary Activate user
+ */
+export const activateUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}/activate`, method: 'POST' }, options);
+};
+
+/**
+ * Locks the account out and ends every session it holds in the same save, so activating it later does not bring the old tokens back. Answers 409 `USER_ALREADY_INACTIVE` when it is deactivated already. Needs `ban:User`. Audited as `admin.user.banned`.
+ * @summary Deactivate user
+ */
+export const deactivateUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}/deactivate`, method: 'POST' }, options);
 };
 
 /**
@@ -11887,6 +11945,8 @@ export type SetUserPurchaseHoldResult = NonNullable<
 export type LiftUserPurchaseHoldResult = NonNullable<
     Awaited<ReturnType<typeof liftUserPurchaseHold>>
 >;
+export type ActivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof activateUserById>>>;
+export type DeactivateUserByIdResult = NonNullable<Awaited<ReturnType<typeof deactivateUserById>>>;
 export type MergeCartResult = NonNullable<Awaited<ReturnType<typeof mergeCart>>>;
 export type ExportOrdersResult = NonNullable<Awaited<ReturnType<typeof exportOrders>>>;
 export type GetOrderTimelineResult = NonNullable<Awaited<ReturnType<typeof getOrderTimeline>>>;

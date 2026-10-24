@@ -63,6 +63,16 @@ Every role picker (`UserCreate`, `UserEdit`, `UserAccessDialog`) is built from `
 `users/create` is declared before `users/:id` for the same reason the products routes are: vue-router
 would rank it correctly either way, and a reader should not have to know that.
 
+**Every button follows the row's `actions`**, the server's one flag per endpoint (`update`,
+`assignRole`, `delete`, `hardDelete`, `restore`, `setPurchaseHold`, `liftPurchaseHold`, `activate`,
+`deactivate`), already counting the caller's keys, the protection of staff accounts and the row's own
+state. `UsersList` reads `restore` and `hardDelete` instead of deriving them from `deletedAt`;
+`UserAccessDialog` offers the role on `assignRole` (own account included: no rule refuses it) and the
+status on whichever of `activate` / `deactivate` fits. Status is not a field of the edit `PATCH`:
+`UserEdit` has an Activate and a Deactivate button, and the store's `applyAccessChange` turns a
+confirmed role/status choice into a `PATCH` and an `activate` / `deactivate` call. `/account` is a
+different schema, `Account`, with no `actions`.
+
 `UserTarget` also pauses and resumes an account's checkout (the **purchase hold**, `ban:User`): "Pause
 checkout" opens `UserPurchaseHoldDialog` (an end date and a note the buyer reads), "Lift the hold" asks
 first and doubles as the staff review. The list filters by it (`purchaseHold`, `true` only) and marks
@@ -126,7 +136,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `index.ts`                                       | The public barrel: the only surface a sibling module may import.                                                                                                                                                                                 | [read](../theory/strategic-ddd.md)    |
 | `components/UserPurchaseHoldDialog.vue`          | The form that pauses checkout for one account: an end date and a note the buyer reads. Opened from the detail page.                                                                                                                              | [read](../theory/layers.md)           |
 | `composables/use-role-options.ts`                | `useRoleOptions` — the role select's items, built from the server's `grantableRoles` plus the account's current role.                                                                                                                            | [read](../theory/strategic-ddd.md)    |
-| `components/UserAccessDialog.vue`                | Shared role/active-status editor with a confirm step, opened from the list, the detail page and the edit form.                                                                                                                                   | [read](../theory/layers.md)           |
+| `components/UserAccessDialog.vue`                | Shared role/status editor with a confirm step, opened from the list, the detail page and the edit form.                                                                                                                                          | [read](../theory/layers.md)           |
 | `composables/use-user-access-dialog.ts`          | Promise wrapper around `UserAccessDialog.vue`'s `v-model`, so a caller awaits its outcome like `useDialogStore().confirm()`.                                                                                                                     | [read](../theory/layers.md)           |
 | `locales/en.json`                                | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |
 | `locales/it.json`                                | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                                  | [read](../tools/i18n.md)              |

@@ -21,7 +21,8 @@ export interface UserAccessDialogTarget {
     active?: boolean;
     /**
      * What the signed-in admin may do to this account, as the server answered for the row. The
-     * dialog offers the role picker only with `update` and the active toggle only with `ban`.
+     * dialog offers the role picker only with `assignRole` and the status toggle only with the
+     * `activate` / `deactivate` flag for the move.
      * Absent reads as "everything", the shape of a caller that never loaded the row's actions.
      */
     actions?: UserActions;
@@ -39,8 +40,8 @@ export interface UserAccessDialogRequestOptions {
 }
 
 /**
- * The admin's decision — each field present only when it differs from the target's loaded value,
- * ready to spread straight into a `PATCH /users/{id}` body.
+ * The admin's decision — each field present only when it differs from the target's loaded value.
+ * The store's `applyAccessChange` turns it into a `PATCH` (role) and an activate / deactivate call.
  */
 export interface UserAccessDialogResult {
     role?: string;

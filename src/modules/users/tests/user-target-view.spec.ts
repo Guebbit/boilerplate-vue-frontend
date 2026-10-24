@@ -20,7 +20,12 @@ import { orvalMutator } from '@/infrastructure/http';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { emitOn } from '../../../../tests/support/unit/mounted-vm.ts';
-import { aUser } from '../../../../tests/support/unit/fixtures.ts';
+import {
+    aUser,
+    ALL_USER_ACTIONS,
+    NO_USER_ACTIONS,
+    userActionsOf
+} from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
     orvalEnvelope,
@@ -103,16 +108,13 @@ beforeEach(() => {
 });
 
 /** What the signed-in admin may do to the account — the shape the server answers a row with. */
-const ALL = { update: true, ban: true, delete: true };
 
 describe('User (detail page)', () => {
     // The row's `actions` is the whole answer: the manager reads users and may change none, a
     // support agent may edit a customer and may not ban, and nobody may touch an account at their
     // own level or above.
     it('offers no Edit and no access button when the row allows neither update nor ban', () => {
-        queueGetResponses(
-            aUser({ id: 'u1', actions: { update: false, ban: false, delete: false } })
-        );
+        queueGetResponses(aUser({ id: 'u1', actions: NO_USER_ACTIONS }));
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
@@ -122,7 +124,7 @@ describe('User (detail page)', () => {
     });
 
     it('offers Edit and the access button when the row allows them', () => {
-        queueGetResponses(aUser({ id: 'u1', actions: ALL }));
+        queueGetResponses(aUser({ id: 'u1', actions: ALL_USER_ACTIONS }));
         const wrapper = mountPage();
 
         return flushPromises().then(() => {
@@ -135,7 +137,7 @@ describe('User (detail page)', () => {
     // opens for a role change with its active switch disabled.
     it('offers Edit and the access dialog when only update is allowed, as for a support agent', () => {
         queueGetResponses(
-            aUser({ id: 'u1', actions: { update: true, ban: false, delete: false } })
+            aUser({ id: 'u1', actions: userActionsOf({ update: true, assignRole: true }) })
         );
         const editOnly = mountPage();
 
@@ -148,7 +150,11 @@ describe('User (detail page)', () => {
     // A credential is its owner's alone: the strip button is gone for good, whatever the row says.
     it('has no control for a second factor, even on an account that has one', () => {
         queueGetResponses(
-            aUser({ id: 'u1', actions: ALL, twoFactorEnabledAt: '2026-01-01T00:00:00.000Z' })
+            aUser({
+                id: 'u1',
+                actions: ALL_USER_ACTIONS,
+                twoFactorEnabledAt: '2026-01-01T00:00:00.000Z'
+            })
         );
         const wrapper = mountPage();
 
@@ -159,7 +165,13 @@ describe('User (detail page)', () => {
 
     it('opens the access dialog for the loaded user, and sends only what it confirms', () => {
         queueGetResponses(
-            aUser({ id: 'u1', username: 'ada', role: 'customer', active: true, actions: ALL })
+            aUser({
+                id: 'u1',
+                username: 'ada',
+                role: 'customer',
+                active: true,
+                actions: ALL_USER_ACTIONS
+            })
         );
         const wrapper = mountPage();
 
@@ -173,27 +185,36 @@ describe('User (detail page)', () => {
                     name: 'ada',
                     role: 'customer',
                     active: true,
-                    actions: ALL
+                    actions: ALL_USER_ACTIONS
                 });
-                // Only `active` "changed" here — `UserAccessDialog` itself is what decides which
-                // fields to include; this stub simulates it having decided `active: false`.
-                emitOn(dialog, 'confirm', { active: false });
+                // `UserAccessDialog` itself decides which fields changed; this stub simulates it
+                // having decided on a role AND a status change.
+                emitOn(dialog, 'confirm', { role: 'manager', active: false });
             })
             .then(flushPromises)
             .then(() => {
-                const patchCall = vi
-                    .mocked(orvalMutator)
-                    .mock.calls.find(([config]) => config.method === 'PATCH');
-                expect(patchCall?.[0]).toMatchObject({ url: '/users/u1', method: 'PATCH' });
-                expect(contractRequest(schemas.UpdateUserByIdBody, patchCall?.[0].data)).toEqual({
-                    active: false
+                const calls = vi.mocked(orvalMutator).mock.calls.map(([config]) => config);
+                const patch = calls.find((config) => config.method === 'PATCH');
+                expect(patch).toMatchObject({ url: '/users/u1', method: 'PATCH' });
+                // The status is never part of the PATCH: it is its own endpoint.
+                expect(contractRequest(schemas.UpdateUserByIdBody, patch?.data)).toEqual({
+                    role: 'manager'
                 });
+                expect(calls).toContainEqual(
+                    expect.objectContaining({ url: '/users/u1/deactivate', method: 'POST' })
+                );
             });
     });
 
     it('does nothing when the access dialog is cancelled', () => {
         queueGetResponses(
-            aUser({ id: 'u1', username: 'ada', role: 'customer', active: true, actions: ALL })
+            aUser({
+                id: 'u1',
+                username: 'ada',
+                role: 'customer',
+                active: true,
+                actions: ALL_USER_ACTIONS
+            })
         );
         const wrapper = mountPage();
 

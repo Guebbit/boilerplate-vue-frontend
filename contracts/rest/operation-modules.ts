@@ -6,6 +6,7 @@
 
 /** Every generated `@api` function, mapped to the backend module that owns its operation. */
 export const OPERATION_MODULES: Record<string, string> = {
+    activateUserById: 'users',
     addAddress: 'addresses',
     addCartItem: 'cart',
     addWishlistItem: 'wishlist',
@@ -39,6 +40,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     createUser: 'users',
     createUserWithMultipart: 'users',
     createWebhookSubscription: 'webhooks',
+    deactivateUserById: 'users',
     declineReturn: 'returns',
     deleteExampleById: 'example',
     deleteFeedbackRequest: 'feedback',

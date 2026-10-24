@@ -196,6 +196,14 @@ export const ERROR_CODES = {
     UNAUTHORIZED: 'UNAUTHORIZED',
     /** 415 — The request's `Content-Type` is not one this operation accepts. */
     UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
+    /** 409 — The account is active already: `POST /users/{id}/activate` has nothing to do. */
+    USER_ALREADY_ACTIVE: 'USER_ALREADY_ACTIVE',
+    /** 409 — The account is deactivated already: `POST /users/{id}/deactivate` has nothing to do. */
+    USER_ALREADY_INACTIVE: 'USER_ALREADY_INACTIVE',
+    /** 409 — The account is not soft-deleted, so there is nothing to restore. */
+    USER_NOT_DELETED: 'USER_NOT_DELETED',
+    /** 409 — The account has no purchase hold and no review flag, so there is nothing to lift. */
+    USER_PURCHASE_HOLD_NOT_SET: 'USER_PURCHASE_HOLD_NOT_SET',
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     /** 409 — A retry of this delivery is already in flight. */

@@ -21,6 +21,11 @@ import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { noopWatchHandle } from '../../../../tests/support/unit/watch-handle.ts';
 import type { User as UserType } from '@types';
+import {
+    ALL_USER_ACTIONS,
+    NO_USER_ACTIONS,
+    userActionsOf
+} from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -42,6 +47,7 @@ const A_USER: UserType = {
     username: 'ada',
     role: 'admin',
     active: true,
+    actions: NO_USER_ACTIONS,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -145,7 +151,7 @@ describe('the purchase hold', () => {
     /** An hour-long hold, as the API leaves it on a record while it is in force. */
     const HELD: UserType = {
         ...A_USER,
-        actions: { update: true, ban: true, delete: true },
+        actions: ALL_USER_ACTIONS,
         purchaseHold: {
             until: '2999-01-01T00:00:00.000Z',
             reason: 'repeated_cancellations',
@@ -157,7 +163,7 @@ describe('the purchase hold', () => {
         signIn(false);
         const wrapper = mountUser({
             ...A_USER,
-            actions: { update: true, ban: true, delete: true }
+            actions: ALL_USER_ACTIONS
         });
 
         expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(true);
@@ -169,7 +175,7 @@ describe('the purchase hold', () => {
         signIn(false);
         const wrapper = mountUser({
             ...A_USER,
-            actions: { update: true, ban: false, delete: false }
+            actions: userActionsOf({ update: true, assignRole: true })
         });
 
         expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(false);
@@ -221,7 +227,7 @@ describe('the purchase hold', () => {
         /** Flagged by the shop's rule, no hold in force (it ended, or only paid cancels flagged it). */
         const FLAGGED: UserType = {
             ...A_USER,
-            actions: { update: true, ban: true, delete: true },
+            actions: ALL_USER_ACTIONS,
             purchaseHoldFlaggedAt: '2026-10-19T10:00:00.000Z'
         };
 
@@ -240,7 +246,7 @@ describe('the purchase hold', () => {
             signIn(false);
             const wrapper = mountUser({
                 ...A_USER,
-                actions: { update: true, ban: true, delete: true }
+                actions: ALL_USER_ACTIONS
             });
 
             expect(wrapper.find('[data-test=user-needs-review]').exists()).toBe(false);

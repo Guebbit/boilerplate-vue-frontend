@@ -6,6 +6,7 @@
  * fails when something finally parses it.
  */
 import type {
+    Account,
     FulfillmentOrder,
     InventoryLevel,
     Order,
@@ -17,7 +18,8 @@ import type {
     Return,
     Shipment,
     Shop,
-    User
+    User,
+    UserActions
 } from '@types';
 
 /**
@@ -73,8 +75,59 @@ export const aPayment = (overrides: Partial<Payment> = {}): Payment => ({
 });
 
 /**
- * A valid account as `GET /account` and `GET /users/{id}` answer it — the three required fields,
- * plus whatever a case sets.
+ * A valid account as `GET /account` answers it — the three required fields, plus whatever a case
+ * sets.
+ *
+ * @param overrides - the fields a case actually cares about
+ * @returns an `Account` that parses against the generated schema
+ */
+export const anAccount = (overrides: Partial<Account> = {}): Account => ({
+    id: '1',
+    email: 'ada@example.com',
+    username: 'ada',
+    ...overrides
+});
+
+/** Every `UserActions` flag `false`: a row the caller may do nothing to. */
+export const NO_USER_ACTIONS: UserActions = {
+    update: false,
+    assignRole: false,
+    delete: false,
+    hardDelete: false,
+    restore: false,
+    setPurchaseHold: false,
+    liftPurchaseHold: false,
+    activate: false,
+    deactivate: false
+};
+
+/** Every `UserActions` flag `true`: a row the caller may do anything to. */
+export const ALL_USER_ACTIONS: UserActions = {
+    update: true,
+    assignRole: true,
+    delete: true,
+    hardDelete: true,
+    restore: true,
+    setPurchaseHold: true,
+    liftPurchaseHold: true,
+    activate: true,
+    deactivate: true
+};
+
+/**
+ * `UserActions` with every flag `false` but the ones a case names.
+ *
+ * @param allowed - the flags that are `true`
+ * @returns a complete `UserActions`
+ */
+export const userActionsOf = (allowed: Partial<UserActions>): UserActions => ({
+    ...NO_USER_ACTIONS,
+    ...allowed
+});
+
+/**
+ * A valid user as `GET /users/{id}` answers it — the required fields (`actions` included, all
+ * `false`), plus whatever a case sets.
  *
  * @param overrides - the fields a case actually cares about
  * @returns a `User` that parses against the generated schema
@@ -83,6 +136,7 @@ export const aUser = (overrides: Partial<User> = {}): User => ({
     id: '1',
     email: 'ada@example.com',
     username: 'ada',
+    actions: NO_USER_ACTIONS,
     ...overrides
 });
 

@@ -60,7 +60,8 @@ const { addMessage } = useNotificationsStore();
 /**
  * Users store actions.
  */
-const { watchSearchUsers, updateUser, deleteUser, hardDeleteUser, restoreUser } = useUsersStore();
+const { watchSearchUsers, applyAccessChange, deleteUser, hardDeleteUser, restoreUser } =
+    useUsersStore();
 
 /**
  * `UserAccessDialog`'s open state, target and picker options, plus the promise-returning
@@ -327,7 +328,7 @@ const handleManageAccess = (item: User) =>
     }).then((result) =>
         result
             ? run({
-                  action: () => updateUser(item.id, result),
+                  action: () => applyAccessChange(item.id, result),
                   success: t('users-list-page.success-access-update')
               })
             : undefined
@@ -524,7 +525,11 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        v-if="item.actions?.update || item.actions?.ban"
+                        v-if="
+                            item.actions?.assignRole ||
+                            item.actions?.activate ||
+                            item.actions?.deactivate
+                        "
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -538,7 +543,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-access') }}
                     </v-btn>
                     <v-btn
-                        v-if="item.actions?.delete && item.deletedAt"
+                        v-if="item.actions?.restore"
                         :size="rowActionSize"
                         variant="tonal"
                         color="success"
@@ -566,7 +571,7 @@ const handleHardDelete = (userId: string, username: string) =>
                         {{ t('users-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        v-if="item.actions?.delete"
+                        v-if="item.actions?.hardDelete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"
