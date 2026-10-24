@@ -120,8 +120,6 @@ export const ERROR_CODES = {
     LOCALE_ENTRY_KEY_EXISTS: 'LOCALE_ENTRY_KEY_EXISTS',
     /** 422 — The key is empty, longer than 200 characters, or has an empty or reserved segment. */
     LOCALE_ENTRY_KEY_INVALID: 'LOCALE_ENTRY_KEY_INVALID',
-    /** 404 — No entry with that id exists under that language and app. */
-    LOCALE_ENTRY_NOT_FOUND: 'LOCALE_ENTRY_NOT_FOUND',
     /** 409 — The language is still switched on — deactivate it before deleting it. */
     LOCALE_LANGUAGE_ACTIVE: 'LOCALE_LANGUAGE_ACTIVE',
     /** 409 — The language is already switched on. */

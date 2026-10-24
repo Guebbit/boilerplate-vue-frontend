@@ -19839,9 +19839,6 @@ x-error-codes:
   LOCALE_ENTRY_KEY_INVALID:
     status: 422
     description: The key is empty, longer than 200 characters, or has an empty or reserved segment.
-  LOCALE_ENTRY_NOT_FOUND:
-    status: 404
-    description: No entry with that id exists under that language and app.
   LOCALE_LANGUAGE_ACTIVE:
     status: 409
     description: The language is still switched on — deactivate it before deleting it.
