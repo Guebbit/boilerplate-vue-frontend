@@ -1,66 +1,22 @@
 /**
  * @module
- * The total a checkout names (`src/modules/cart/domain/expected-total.ts`): decimal to integer
- * minor units with no float drift, and back. Pure, so no mount and no store.
+ * The total a checkout names (`src/modules/cart/domain/expected-total.ts`): integer minor units
+ * read back as a decimal for display, and the checkout attempt's fingerprint. Pure, so no mount
+ * and no store.
  */
 import { describe, expect, it } from 'vitest';
-import fc from 'fast-check';
-import { checkoutFingerprint, expectedTotalOf, fromMinorUnits, toMinorUnits } from '../domain';
+import { checkoutFingerprint, fromMinorUnits } from '../domain';
 import type { CartResponse } from '@types';
 import { asStub } from '../../../../tests/support/stub.ts';
 
-describe('toMinorUnits', () => {
+describe('fromMinorUnits', () => {
     it.each([
-        [0.56, 2, 56],
-        [1.06, 2, 106],
-        [1.13, 2, 113],
-        [4.35, 2, 435],
-        [19.98, 2, 1998],
+        [1998, 2, 19.98],
         [0, 2, 0],
         [1500, 0, 1500],
-        [1.234, 3, 1234]
-    ])('turns %s at %s decimals into %s', (amount, digits, minor) => {
-        expect(toMinorUnits(amount, digits)).toBe(minor);
-    });
-
-    it('is exact for every amount a two-decimal currency can show', () => {
-        fc.assert(
-            fc.property(fc.integer({ min: 0, max: 100_000_000 }), (cents) => {
-                // The decimal the server's own read would hold for that many cents.
-                const shown = Number((cents / 100).toFixed(2));
-                expect(toMinorUnits(shown, 2)).toBe(cents);
-            })
-        );
-    });
-
-    it('round-trips through fromMinorUnits', () => {
-        fc.assert(
-            fc.property(
-                fc.integer({ min: 0, max: 100_000_000 }),
-                fc.constantFrom(0, 2, 3),
-                (minor, digits) => {
-                    expect(toMinorUnits(fromMinorUnits(minor, digits), digits)).toBe(minor);
-                }
-            )
-        );
-    });
-});
-
-describe('expectedTotalOf', () => {
-    it('names the total price (shipping included) in minor units, with its currency', () => {
-        expect(
-            expectedTotalOf(
-                {
-                    itemsCount: 1,
-                    totalQuantity: 1,
-                    itemsTotal: 0.56,
-                    shippingCost: 0.5,
-                    totalPrice: 1.06,
-                    currency: 'EUR'
-                },
-                2
-            )
-        ).toEqual({ amount: 106, currency: 'EUR' });
+        [1234, 3, 1.234]
+    ])('reads %s at %s decimals as %s', (minor, digits, amount) => {
+        expect(fromMinorUnits(minor, digits)).toBe(amount);
     });
 });
 

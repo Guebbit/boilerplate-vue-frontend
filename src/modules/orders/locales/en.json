@@ -45,7 +45,6 @@
         "filter-paid-to": "Paid to"
     },
     "orders-form": {
-        "status-invalid": "Invalid order status",
         "email-invalid": "Check your email address for typos or a missing domain",
         "status-pending": "Pending",
         "status-paid": "Paid",
@@ -82,6 +81,7 @@
         "button-reorder": "Buy again",
         "success-reorder": "Order added to cart.",
         "warning-reorder-left-out": "Order added to cart, without what is no longer sold: {titles}.",
+        "warning-reorder-capped": "Order added to cart, but these lines are at the most one line may hold: {titles}.",
         "label-shipping": "Shipping",
         "label-shipping-address": "Shipping address",
         "label-billing-address": "Billing address",

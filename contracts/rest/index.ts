@@ -2793,6 +2793,25 @@ export interface CartResponseItem {
     /** @minimum 1 */
     quantity: number;
     availability: LineAvailability;
+    /** Whether the line can hold one more unit: `quantity` is below the shop's per-line ceiling (`NODE_CART_LINE_MAX`). Stock plays no part, as for `POST /cart`. A client disables its "+" on `false` instead of copying the ceiling. */
+    canIncrease: boolean;
+}
+
+/**
+ * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
+ */
+export interface ExpectedTotal {
+    /**
+     * The total in minor units of `currency` (EUR 71.00 is 7100).
+     * @minimum 0
+     */
+    amount: number;
+    /**
+     * The ISO-4217 code the total is priced in.
+     * @minLength 3
+     * @maxLength 3
+     */
+    currency: string;
 }
 
 export interface CartSummaryResponse {
@@ -2823,6 +2842,8 @@ export interface CartSummaryResponse {
     totalPrice: number;
     /** ISO-4217 currency code (e.g. USD) */
     currency: string;
+    /** `totalPrice` in minor units, exactly as `POST /cart/checkout` compares it: send it back unchanged as the checkout's `expectedTotal`. A client never converts the decimal itself, so it needs no table of currency exponents. */
+    expectedTotal: ExpectedTotal;
 }
 
 /**
@@ -2861,6 +2882,8 @@ export interface CartResponse {
     items: CartResponseItem[];
     summary: CartSummaryResponse;
     shipping: CartShipping;
+    /** Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this. */
+    checkoutable: boolean;
 }
 
 export interface CartResponseEnvelope {
@@ -2905,23 +2928,6 @@ export interface CartSummaryResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: CartSummaryResponse;
-}
-
-/**
- * An order total as the buyer saw it, or as the checkout would charge it. The amount is in minor units (cents), so two totals compare as integers and never as floats.
- */
-export interface ExpectedTotal {
-    /**
-     * The total in minor units of `currency` (EUR 71.00 is 7100).
-     * @minimum 0
-     */
-    amount: number;
-    /**
-     * The ISO-4217 code the total is priced in.
-     * @minLength 3
-     * @maxLength 3
-     */
-    currency: string;
 }
 
 /**
@@ -3115,15 +3121,13 @@ export const WithdrawBlockedReason = {
  * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree. Pay is the BUYER's (reading an order is not owning it); an operator who holds the key moves any order, a staff member's own included.
  */
 export interface OrderActions {
-    /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
-    transitions: OrderStatus[];
     /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`). */
     cancel: boolean;
-    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
+    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
     pay: boolean;
     /** Whether `POST /payments/order/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
     recordPayment: boolean;
-    /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. Not in `transitions`: `paid → processing` is `system`-only there, reached only by reporting the fact through `delivery`'s own door. */
+    /** Whether `POST /delivery/order/{id}/start` would be accepted for this caller. `paid → processing` is `system`-only in the lifecycle, reached only by reporting the fact through `delivery`'s own door. */
     start: boolean;
     /** The statuses `POST /orders/{id}/status-override` would accept as a destination for this caller right now — empty for anyone without `override:Order`, or once the order has left every overridable status. */
     override: OrderStatus[];
@@ -3133,12 +3137,12 @@ export interface OrderActions {
     withdraw: boolean;
     /** Why `withdraw` is `false`, for the order's own buyer on an order that is otherwise withdrawable. Absent when `withdraw` is `true`, for anyone who is not the buyer, and for an order whose status offers no withdrawal (cancelled). A client shows the button disabled with this reason rather than hiding it. */
     withdrawBlocked?: WithdrawBlockedReason;
-    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
-    withdrawUntil?: string;
     /** Whether `DELETE /orders/{id}` would be accepted for this caller: the caller holds `delete:Order`, the order is `cancelled` and not already hidden. */
     delete: boolean;
-    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled` and was never paid (a paid order's invoice must survive it). */
+    /** Whether `DELETE /orders/{id}?hardDelete=true` would be accepted for this caller: the caller holds `delete:Order`, and the order is `cancelled`, was never paid (a paid order's invoice must survive it) and holds no money recorded after the cancel (a late payment and its refund still point at it). */
     hardDelete: boolean;
+    /** Whether `POST /orders/{id}/restore` would be accepted for this caller: the caller holds `delete:Order` and the order is soft-deleted (`deletedAt` is set). */
+    restore: boolean;
     /** Whether `GET /orders/{id}/invoice` would answer a PDF rather than a 404 — `true` once the order has been invoiced (its `pending → paid` transition landed), regardless of anything that happened to it since. A gap between this and the actual download is possible but rare, the same "gaps are acceptable" policy `orderNumber` already lives under — see `docs/modules/invoicing.md`. */
     invoice: boolean;
 }
@@ -3206,6 +3210,8 @@ export interface Order {
     fulfillmentStatus: OrderFulfillmentStatus;
     returnStatus: OrderReturnStatus;
     actions?: OrderActions;
+    /** The end of the last day a withdrawal is announced to be valid (UTC), frozen when the period started — delivery for goods, payment for digital content. A client prints its date only. The shop accepts a withdrawal one day past it. Absent before the period starts: the right already exists, the window has no end yet. */
+    readonly withdrawUntil?: string;
     paidAt?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -3217,6 +3223,50 @@ export interface CheckoutResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Order;
+}
+
+/**
+ * Why a merged guest line or a reordered order line did not land exactly as asked. Absent when it did.
+ * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
+ *   nothing was added, `resulting` is what the cart already held (often 0). A product
+ *   that is merely sold out, or taken off sale, is NOT removed: it is added and
+ *   flagged through `availability`.
+ */
+export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
+
+export const MergeLineReason = {
+    summed: 'summed',
+    capped: 'capped',
+    removed: 'removed'
+} as const;
+
+export interface MergeLineResult {
+    productId: Id;
+    /**
+     * What the guest line (or the order line) asked for.
+     * @minimum 1
+     */
+    requested: number;
+    /**
+     * What the cart holds for this product after the merge or reorder.
+     * @minimum 0
+     */
+    resulting: number;
+    reason?: MergeLineReason;
+    availability: LineAvailability;
+}
+
+export interface ReorderResponse {
+    cart: CartResponse;
+    /** One result per order line, in the order's own order. */
+    lines: MergeLineResult[];
+}
+
+export interface ReorderResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReorderResponse;
 }
 
 export interface WishlistItem {
@@ -3862,8 +3912,10 @@ export interface ShipmentLine {
 export interface ShipmentActions {
     /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
     deliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` would be accepted — still `shipped`. */
-    editTracking: boolean;
+    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
+    forceDeliver: boolean;
+    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
+    update: boolean;
 }
 
 /**
@@ -4978,6 +5030,17 @@ export const OrderTimelineType = {
 } as const;
 
 /**
+ * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
+ */
+export type OrderTimelineEntryAudience =
+    (typeof OrderTimelineEntryAudience)[keyof typeof OrderTimelineEntryAudience];
+
+export const OrderTimelineEntryAudience = {
+    buyer: 'buyer',
+    staff: 'staff'
+} as const;
+
+/**
  * What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`.
  */
 export type OrderTimelineEntryData = { [key: string]: unknown };
@@ -4986,6 +5049,8 @@ export interface OrderTimelineEntry {
     id: Id;
     at: string;
     type: OrderTimelineType;
+    /** Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both. */
+    audience: OrderTimelineEntryAudience;
     /** The account that made the change. Staff view only, and absent for the system or once that account was erased. In the account export it is present only when it is the exporting account itself, never a staff member's id. */
     actor?: Id;
     /** Free text staff wrote with the change — an override's reason. Unset after `NODE_ORDER_EVENT_TEXT_RETENTION_DAYS`; the row stays. */
@@ -5397,37 +5462,6 @@ export interface MergeCartRequest {
      * @maxItems 100
      */
     lines: AddCartItemRequest[];
-}
-
-/**
- * Why a guest line did not land exactly as asked. Absent when it did.
- * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
- *   nothing was added, `resulting` is what the cart already held (often 0). A product
- *   that is merely sold out, or taken off sale, is NOT removed: it is added and
- *   flagged through `availability`.
- */
-export type MergeLineReason = (typeof MergeLineReason)[keyof typeof MergeLineReason];
-
-export const MergeLineReason = {
-    summed: 'summed',
-    capped: 'capped',
-    removed: 'removed'
-} as const;
-
-export interface MergeLineResult {
-    productId: Id;
-    /**
-     * What the guest line asked for.
-     * @minimum 1
-     */
-    requested: number;
-    /**
-     * What the cart holds for this product after the merge.
-     * @minimum 0
-     */
-    resulting: number;
-    reason?: MergeLineReason;
-    availability: LineAvailability;
 }
 
 export interface MergeCartResponse {
@@ -9624,14 +9658,14 @@ export const checkout = (
 };
 
 /**
- * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left instead, and skipped outright once there is none — the same best-effort treatment as an unavailable product. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the answer holds the cart as it now stands and ONE RESULT PER ORDER LINE, in the order's own order, by the same rule and in the same shape as `POST /cart/merge` (`requested`, `resulting`, `reason`, `availability`). A line that would pass the per-line ceiling (`NODE_CART_LINE_MAX`) is clamped to what room is left (`capped`), and adds nothing once there is none; an unavailable product is `removed`. Neither is a failure. Any signed-in account, staff included, reorders only its own orders — the cart being filled is the caller's.
  * @summary Reorder (refill cart from a past order)
  */
 export const reorder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReorderResponseEnvelope>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<ReorderResponseEnvelope>(
         { url: `/cart/reorder/${orderId}`, method: 'POST' },
         options
     );
@@ -9723,7 +9757,7 @@ export const createOrder = (
 };
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel); a `true` from any source wins, so a `false` sent elsewhere does not cancel it. A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`.
  * @summary Delete order
  */
 export const deleteOrder = (
@@ -9835,7 +9869,7 @@ export const updateOrderByIdWithMergePatchJson = (
 };
 
 /**
- * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record, which is only allowed for an order that is cancelled and was never paid (409 `ORDER_NOT_CANCELLED` while it is open, 409 `ORDER_INVOICED` once paid, 409 `ORDER_HAS_MONEY_HISTORY` once money was recorded after the cancel). A soft delete hides a cancelled order from its buyer (409 `ORDER_NOT_CANCELLED` while it is open), is safe to repeat, and is undone with `POST /orders/{id}/restore`. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderById = (
@@ -9857,7 +9891,7 @@ export const deleteOrderById = (
 };
 
 /**
- * Undoes the soft delete of the order identified by `{id}`. Answers 409 when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
+ * Undoes the soft delete of the order identified by `{id}`. Answers 409 `ORDER_NOT_DELETED` when the order is not soft-deleted, so a restore can never be mistaken for an ordinary read.
  * @summary Restore order
  */
 export const restoreOrderById = (

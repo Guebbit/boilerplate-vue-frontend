@@ -16,6 +16,7 @@
  */
 import { computed } from 'vue';
 import { defineStore } from 'pinia';
+import { listWebhookSubscriptionsQueryPageSizeMax } from '@api/schemas';
 import { useAsyncAction, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
@@ -62,7 +63,7 @@ interface DeliveryFilters {
  * unpaginated endpoint. A shop with more than this many subscriptions will not see the rest in the
  * deliveries filter dropdown; acceptable, not worth a special case.
  */
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = listWebhookSubscriptionsQueryPageSizeMax;
 
 /**
  * Webhook subscriptions, their delivery log, and the event catalogue that feeds both forms.

@@ -7,7 +7,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { useSessionStore } from '@/infrastructure/session.ts';
 import ShipmentRow from '../components/ShipmentRow.vue';
 import { useDeliveryStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
@@ -23,12 +22,10 @@ wireModulesIntoCore();
  * Mounts the row.
  *
  * @param shipment - The record under test.
- * @param canOverride - Whether the caller holds `override:Order`.
  * @returns The wrapper and the store.
  */
-const mountRow = (shipment: Shipment, canOverride = false) => {
+const mountRow = (shipment: Shipment) => {
     const store = useDeliveryStore();
-    vi.spyOn(useSessionStore(), 'can').mockReturnValue(canOverride);
     const wrapper = mount(ShipmentRow, {
         props: { shipment },
         global: { plugins: [vuetify, i18n] }
@@ -68,7 +65,7 @@ describe('the controls come from `actions`', () => {
 
     it('marks delivered on the ordinary door and tells the page', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ actions: { deliver: true, editTracking: false } })
+            aShipment({ actions: { deliver: true, forceDeliver: false, update: false } })
         );
         const deliver = vi.spyOn(store, 'deliver').mockResolvedValue(aShipment());
 
@@ -84,7 +81,10 @@ describe('the controls come from `actions`', () => {
 
     it('saves a corrected tracking code only once it differs and is not empty', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ trackingCode: 'TRK-1', actions: { deliver: false, editTracking: true } })
+            aShipment({
+                trackingCode: 'TRK-1',
+                actions: { deliver: false, forceDeliver: false, update: true }
+            })
         );
         const edit = vi.spyOn(store, 'editTracking').mockResolvedValue(aShipment());
         const save = wrapper.get('[data-test=shipment-tracking-save]');
@@ -106,7 +106,7 @@ describe('the controls come from `actions`', () => {
 
     it('shows a lost race in place and does not tell the page', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ actions: { deliver: true, editTracking: false } })
+            aShipment({ actions: { deliver: true, forceDeliver: false, update: false } })
         );
         vi.spyOn(store, 'deliver').mockRejectedValue(new Error('already delivered'));
 
@@ -124,16 +124,16 @@ describe('the controls come from `actions`', () => {
 });
 
 describe('the forced arrival', () => {
-    it('is not offered without the override', () => {
+    it('is not offered without the forceDeliver flag', () => {
         const { wrapper } = mountRow(
-            aShipment({ actions: { deliver: true, editTracking: false } })
+            aShipment({ actions: { deliver: true, forceDeliver: false, update: false } })
         );
 
         expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
     });
 
-    it('is not offered when the shipment cannot be delivered, override or not', () => {
-        const { wrapper } = mountRow(aShipment(), true);
+    it('is not offered when the server says no forced arrival', () => {
+        const { wrapper } = mountRow(aShipment());
 
         expect(wrapper.find('[data-test=force-deliver-toggle]').exists()).toBe(false);
         expect(wrapper.find('[data-test=mark-delivered]').exists()).toBe(false);
@@ -141,8 +141,7 @@ describe('the forced arrival', () => {
 
     it('needs the toggle and a reason before the button works, then sends both', () => {
         const { wrapper, store } = mountRow(
-            aShipment({ actions: { deliver: true, editTracking: false } }),
-            true
+            aShipment({ actions: { deliver: true, forceDeliver: true, update: false } })
         );
         const deliver = vi.spyOn(store, 'deliver').mockResolvedValue(aShipment());
 

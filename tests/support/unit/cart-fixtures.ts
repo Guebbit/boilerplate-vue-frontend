@@ -13,6 +13,11 @@ import type { CartResponse } from '@types';
 export const UNIT_PRICE = 10;
 
 /**
+ * The per-line ceiling a fixture cart is built against, as the server's default sets it.
+ */
+const LINE_MAX = 10;
+
+/**
  * The shipping a priced cart offers: two methods, one needing an address.
  */
 const SHIPPING_OPTIONS: CartResponse['shipping']['options'] = [
@@ -39,7 +44,8 @@ export const aCart = (
         items: lines.map(([productId, quantity]) => ({
             productId,
             quantity,
-            availability: short.includes(productId) ? 'insufficient_stock' : 'in_stock'
+            availability: short.includes(productId) ? 'insufficient_stock' : 'in_stock',
+            canIncrease: quantity < LINE_MAX
         })),
         summary: {
             itemsCount: lines.length,
@@ -47,13 +53,18 @@ export const aCart = (
             itemsTotal: totalQuantity * UNIT_PRICE,
             shippingCost,
             totalPrice: totalQuantity * UNIT_PRICE + shippingCost,
-            currency: 'EUR'
+            currency: 'EUR',
+            expectedTotal: {
+                amount: (totalQuantity * UNIT_PRICE + shippingCost) * 100,
+                currency: 'EUR'
+            }
         },
         shipping: {
             required: lines.length > 0,
             selected,
             options: lines.length > 0 ? SHIPPING_OPTIONS : []
-        }
+        },
+        checkoutable: lines.length > 0 && short.length === 0
     };
 };
 

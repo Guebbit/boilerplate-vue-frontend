@@ -46,11 +46,8 @@ describe('orders schema messages', () => {
 
     it('resolves every field message in Italian', () =>
         setLocale('it').then(() => {
-            expect(messagesOf(ordersSchema, { email: 'nope', status: 'not-a-status' })).toEqual(
-                expect.arrayContaining([
-                    itMessages['orders-form']['email-invalid'],
-                    itMessages['orders-form']['status-invalid']
-                ])
+            expect(messagesOf(ordersSchema, { email: 'nope' })).toEqual(
+                expect.arrayContaining([itMessages['orders-form']['email-invalid']])
             );
         }));
 });

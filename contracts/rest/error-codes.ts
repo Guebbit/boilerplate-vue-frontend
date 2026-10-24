@@ -29,7 +29,7 @@ export const ERROR_CODES = {
     /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
-    CART_OPEN_ORDER_LIMIT: 'CART_OPEN_ORDER_LIMIT',
+    CART_OPEN_ORDER_LIMIT_REACHED: 'CART_OPEN_ORDER_LIMIT_REACHED',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
     /** 409 — A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`. */
@@ -118,6 +118,8 @@ export const ERROR_CODES = {
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
     ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
+    /** 409 — A hard delete is refused: money was recorded on the order after it was cancelled (a late payment and its refund still point at it). Soft delete it instead. */
+    ORDER_HAS_MONEY_HISTORY: 'ORDER_HAS_MONEY_HISTORY',
     /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`). */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
     /** 409 — This action is not allowed once an order has been invoiced. */
@@ -130,6 +132,8 @@ export const ERROR_CODES = {
     ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
     /** 409 — A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
     ORDER_NOT_CANCELLED: 'ORDER_NOT_CANCELLED',
+    /** 409 — A restore is refused: the order is not soft-deleted. */
+    ORDER_NOT_DELETED: 'ORDER_NOT_DELETED',
     /** 409 — The order must be paid before this delivery action. */
     ORDER_NOT_PAID: 'ORDER_NOT_PAID',
     /** 409 — The order is not in a state this delivery action can run from. */
