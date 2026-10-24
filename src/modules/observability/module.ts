@@ -24,6 +24,8 @@ import routes from './routes';
  * the first thing a downstream project without an ops dashboard deletes.
  *
  * Context map: `docs/modules/observability.md` § "The map".
+ *
+ * Subdomain: `generic`.
  */
 export default {
     name: 'observability',

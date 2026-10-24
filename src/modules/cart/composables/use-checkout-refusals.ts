@@ -88,7 +88,7 @@ export const useCheckoutRefusals = (hooks: CheckoutRefusalHooks) => {
     const unavailableLines = ref<UnavailableCartLine[]>([]);
 
     /**
-     * The unpaid orders `CART_OPEN_ORDER_LIMIT` named. Empty unless the last checkout ended in this
+     * The unpaid orders `CART_OPEN_ORDER_LIMIT_REACHED` named. Empty unless the last checkout ended in this
      * refusal.
      */
     const openOrderIds = ref<string[]>([]);

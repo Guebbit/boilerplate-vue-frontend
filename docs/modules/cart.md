@@ -243,9 +243,10 @@ page prints one marker beside the quantity of any line that is not `in_stock`:
 
 The marker is text, and it sits inside the quantity's own live region, so a line turning short is
 announced without a live region per row. The quantity on screen is never changed for it: lowering
-the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is
-neither `in_stock` nor `preorder`, matching checkout, which refuses those four: a preorder is
-bought now and ships from its release date. The date comes from the product record; until it
+the line, or removing it, is the shopper's call. "Place order" stays disabled while any line is not
+buyable by the server's word (`checkoutable` on the cart; a line's `canIncrease` likewise
+gates its "+"), matching checkout, which refuses the short, sold-out, off-sale and removed lines: a
+preorder is bought now and ships from its release date. The date comes from the product record; until it
 loads the marker just says "Preorder". It is a name, never the number left.
 
 ### The stock poll
@@ -375,9 +376,9 @@ flowchart TD
 ### The total the buyer was shown
 
 `POST /cart/checkout` requires `expectedTotal`: the total on screen right before "Place order"
-(`summary.totalPrice`, shipping included, with its currency), in integer minor units. The store
-builds it from the cart it holds, never the page (`domain/expected-total.ts`; the decimals come from
-the currency, so JPY has none and KWD has three), and refuses to run before a cart was read.
+(`summary.totalPrice`, shipping included, with its currency), in integer minor units. The cart
+already carries it as `summary.expectedTotal`; the store echoes that from the cart it holds, never
+the page, converts nothing, and refuses to run before a cart was read.
 
 If the server would charge anything else (a price moved, shipping changed, the basket changed) it
 answers 409 `CART_TOTAL_CHANGED` with `details.expected` and `details.actual`, and writes nothing.

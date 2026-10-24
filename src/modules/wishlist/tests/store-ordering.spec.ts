@@ -8,7 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
-import { addWishlistItem, getWishlist, removeWishlistItem } from '@api';
+import { createWishlistItem, getWishlist, deleteWishlistItem } from '@api';
 import { useWishlistStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { answered, gate, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
@@ -19,8 +19,8 @@ wireModulesIntoCore();
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
     getWishlist: vi.fn(),
-    addWishlistItem: vi.fn(),
-    removeWishlistItem: vi.fn()
+    createWishlistItem: vi.fn(),
+    deleteWishlistItem: vi.fn()
 }));
 
 /**
@@ -54,10 +54,10 @@ beforeEach(() => {
 describe('answers that arrive in the wrong order', () => {
     it('shows the later write, not the older answer that arrived last', async () => {
         const store = useWishlistStore();
-        const older = gate<Answer<typeof addWishlistItem>>();
-        const newer = gate<Answer<typeof removeWishlistItem>>();
-        vi.mocked(addWishlistItem).mockReturnValueOnce(older.promise);
-        vi.mocked(removeWishlistItem).mockReturnValueOnce(newer.promise);
+        const older = gate<Answer<typeof createWishlistItem>>();
+        const newer = gate<Answer<typeof deleteWishlistItem>>();
+        vi.mocked(createWishlistItem).mockReturnValueOnce(older.promise);
+        vi.mocked(deleteWishlistItem).mockReturnValueOnce(newer.promise);
 
         const adding = store.addToWishlist('p1');
         const removing = store.removeFromWishlist('p1');

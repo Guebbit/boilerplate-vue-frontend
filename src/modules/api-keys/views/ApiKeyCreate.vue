@@ -17,7 +17,8 @@ export default {
  * the list.
  */
 import { fieldErrorProps } from '@/ui/vuetify/field-error.ts';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -48,9 +49,26 @@ const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
 /**
- * The store action that mints the credential.
+ * The store: its mint action, and the expiry ceiling the list last published.
  */
-const { mintCredential } = useApiKeysStore();
+const apiKeysStore = useApiKeysStore();
+
+const { maxExpiresAt } = storeToRefs(apiKeysStore);
+
+const { mintCredential } = apiKeysStore;
+
+/**
+ * The latest expiry the date picker offers, from the server's `maxExpiresAt` (set once the list
+ * has loaded) in the local `datetime-local` spelling. Absent, the picker is unbounded and the
+ * server's 422 on the field is the guard.
+ */
+const latestExpiry = computed(() => {
+    const iso = maxExpiresAt.value;
+    if (!iso) return undefined;
+    const date = new Date(iso);
+    // `datetime-local` wants local wall-clock time, so shift by the zone offset before slicing.
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+});
 
 /**
  * Reference to the mounted `FormCard`, read for its `<form>` element.
@@ -204,6 +222,7 @@ const handleSecretDone = () => {
             <v-text-field
                 v-model="form.expiresAt"
                 type="datetime-local"
+                :max="latestExpiry"
                 data-test="api-key-expires-at"
                 :label="t('api-key-create-page.label-expires-at')"
                 :hint="t('api-key-create-page.hint-expires-at')"

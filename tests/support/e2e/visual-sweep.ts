@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 
+import type { E2ERole } from '../scenario-description';
 import type { ViewportName } from '../../../scripts/e2e/viewports';
 import { applyViewport } from './apply-viewport';
 import { resolveRoute, switchToDarkTheme, type SweepRoute } from './sweep-state';
@@ -164,7 +165,7 @@ const toCase = (entry: VisualSweepEntry): VisualSweepCase =>
 export const sweepVisual = (
     label: string,
     screens: readonly VisualSweepEntry[],
-    role?: 'user' | 'admin'
+    role?: E2ERole
 ): void => {
     describe(`visual regression — ${label}`, () => {
         beforeEach(() => {

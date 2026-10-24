@@ -230,7 +230,7 @@ const VERDICT_BY_CODE: ReadonlyMap<unknown, (details: unknown) => CheckoutErrorV
         })
     ],
     [
-        ERROR_CODES.CART_OPEN_ORDER_LIMIT,
+        ERROR_CODES.CART_OPEN_ORDER_LIMIT_REACHED,
         (details) => ({
             kind: 'open-order-limit',
             orderIds: listDetail(details, 'orderIds', asOrderId)

@@ -3,11 +3,10 @@
  * In any module: the route table pairs each path with its lazy-loaded view and the rule the router
  * checks. Each screen names the action it performs; the coarse `meta.can` lets a caller in, and the
  * record's own `actions` decide per row.
- * Here: one public route, and a teaching guard on the edit route only.
+ * Here: one public route. Every view loads its own record, so no route guard fetches data.
  * See: docs/theory/modules.md#the-module-template
  */
 import type { RouteRecordRaw } from 'vue-router';
-import { exampleEditGuard } from './guards.ts';
 
 /**
  * Route records for the example module, mounted under the app's module registry. `create` is
@@ -61,9 +60,6 @@ export default [
             can: ['update', 'Example'],
             title: 'example-edit-page.page-title'
         },
-        // Scoped to this route rather than registered app-wide: a teaching guard has no business
-        // running on every navigation.
-        beforeEnter: [exampleEditGuard],
         component: () => import('./views/ExampleEdit.vue'),
         props: true
     }

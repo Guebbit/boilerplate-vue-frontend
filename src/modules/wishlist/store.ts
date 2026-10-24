@@ -7,7 +7,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
-import { getWishlist, addWishlistItem, removeWishlistItem, moveWishlistItemToCart } from '@api';
+import { getWishlist, createWishlistItem, deleteWishlistItem, moveWishlistItemToCart } from '@api';
 import type { WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
 import { queryClient } from '@/infrastructure/query-client.ts';
@@ -106,7 +106,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * @param productId - The product to save.
      * @returns A promise resolving with the updated lines.
      */
-    const addToWishlist = (productId: string) => replaceItems(() => addWishlistItem(productId));
+    const addToWishlist = (productId: string) => replaceItems(() => createWishlistItem(productId));
 
     /**
      * Removes a saved product.
@@ -115,7 +115,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * @returns A promise resolving with the updated lines.
      */
     const removeFromWishlist = (productId: string) =>
-        replaceItems(() => removeWishlistItem(productId));
+        replaceItems(() => deleteWishlistItem(productId));
 
     /**
      * The wishlist's exit: the saved line becomes a cart line server-side, so afterwards the

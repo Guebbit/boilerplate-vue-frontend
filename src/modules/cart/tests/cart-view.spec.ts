@@ -56,15 +56,17 @@ vi.mock('@api', async (importOriginal) => {
  * One line, one summary — the shared non-empty cart every case starts from.
  */
 const A_CART: CartResponse = {
-    items: [{ productId: 'p1', quantity: 2, availability: 'in_stock' }],
+    items: [{ productId: 'p1', quantity: 2, availability: 'in_stock', canIncrease: true }],
     summary: {
         itemsCount: 1,
         totalQuantity: 2,
         itemsTotal: 20,
         shippingCost: 0,
         totalPrice: 20,
-        currency: 'EUR'
+        currency: 'EUR',
+        expectedTotal: { amount: 2000, currency: 'EUR' }
     },
+    checkoutable: true,
     shipping: {
         required: true,
         selected: null,
@@ -74,6 +76,28 @@ const A_CART: CartResponse = {
         ]
     }
 };
+
+/**
+ * `A_CART` holding these lines, with `canIncrease` and `checkoutable` as the server would set them
+ * (buyable means `in_stock`, `preorder` or `backorder`).
+ *
+ * @param items - the lines, as `[productId, quantity, availability]`
+ * @returns the cart
+ */
+const heldWith = (
+    items: readonly (readonly [string, number, CartResponse['items'][number]['availability']])[]
+): CartResponse => ({
+    ...A_CART,
+    items: items.map(([productId, quantity, availability]) => ({
+        productId,
+        quantity,
+        availability,
+        canIncrease: true
+    })),
+    checkoutable: items.every(
+        (line) => line[2] === 'in_stock' || line[2] === 'preorder' || line[2] === 'backorder'
+    )
+});
 
 /**
  * A reject-envelope-shaped rejection, matching what `classifyCheckoutError` reads.
@@ -381,10 +405,10 @@ describe('the checkout refusals', () => {
                 });
         }));
 
-    it('links every unpaid order CART_OPEN_ORDER_LIMIT names, in plain words', () =>
+    it('links every unpaid order CART_OPEN_ORDER_LIMIT_REACHED names, in plain words', () =>
         mountCart().then(({ wrapper, checkoutSpy }) => {
             checkoutSpy.mockRejectedValueOnce(
-                checkoutRejection(409, 'CART_OPEN_ORDER_LIMIT', { orderIds: ['o1', 'o2'] })
+                checkoutRejection(409, 'CART_OPEN_ORDER_LIMIT_REACHED', { orderIds: ['o1', 'o2'] })
             );
 
             return wrapper
@@ -963,10 +987,7 @@ const A_REPORT: MergeReportLine[] = [
 /**
  * `A_CART` with its one line flagged short by the server.
  */
-const A_SHORT_CART: CartResponse = {
-    ...A_CART,
-    items: [{ productId: 'p1', quantity: 2, availability: 'insufficient_stock' }]
-};
+const A_SHORT_CART: CartResponse = heldWith([['p1', 2, 'insufficient_stock']]);
 
 describe('the merge alert', () => {
     it('stands above the lines, and a page opened with no report has none', () =>
@@ -1061,13 +1082,10 @@ describe('the merge alert', () => {
 describe('the short marker on a line', () => {
     it('shows on a line the server flags short, in words, and on no other', () =>
         mountCart({
-            held: {
-                ...A_CART,
-                items: [
-                    { productId: 'p1', quantity: 2, availability: 'insufficient_stock' },
-                    { productId: 'p2', quantity: 1, availability: 'in_stock' }
-                ]
-            }
+            held: heldWith([
+                ['p1', 2, 'insufficient_stock'],
+                ['p2', 1, 'in_stock']
+            ])
         }).then(({ wrapper }) => {
             const [first, second] = wrapper.findAll('[data-test=cart-item]');
 
@@ -1123,7 +1141,7 @@ describe('every availability on a line', () => {
         ['preorder', 'Preorder']
     ] as const)('words a %s line as "%s"', (availability, words) =>
         mountCart({
-            held: { ...A_CART, items: [{ productId: 'p1', quantity: 2, availability }] }
+            held: heldWith([['p1', 2, availability]])
         }).then(({ wrapper }) => {
             const marker = wrapper.get('[data-test=cart-line-availability]');
 
@@ -1136,7 +1154,7 @@ describe('every availability on a line', () => {
         'holds "Place order" back for a %s line, and says why',
         (availability) =>
             mountCart({
-                held: { ...A_CART, items: [{ productId: 'p1', quantity: 2, availability }] }
+                held: heldWith([['p1', 2, availability]])
             }).then(({ wrapper }) => {
                 expect(
                     wrapper.get('[data-test=cart-checkout]').attributes('disabled')
@@ -1145,12 +1163,30 @@ describe('every availability on a line', () => {
             })
     );
 
-    it('leaves "Place order" live for a preorder line: it is bought now and ships later', () =>
+    it('trusts the server for "Place order": a cart it calls not checkoutable holds the button', () =>
+        mountCart({ held: { ...A_CART, checkoutable: false } }).then(({ wrapper }) => {
+            expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeDefined();
+        }));
+
+    it('disables "+" on a line the server says cannot grow, and not on the others', () =>
         mountCart({
             held: {
                 ...A_CART,
-                items: [{ productId: 'p1', quantity: 2, availability: 'preorder' }]
+                items: [
+                    { productId: 'p1', quantity: 10, availability: 'in_stock', canIncrease: false },
+                    { productId: 'p2', quantity: 1, availability: 'in_stock', canIncrease: true }
+                ]
             }
+        }).then(({ wrapper }) => {
+            const [full, room] = wrapper.findAll('[data-test=cart-item]');
+
+            expect(full?.get('[data-test=cart-increase]').attributes('disabled')).toBeDefined();
+            expect(room?.get('[data-test=cart-increase]').attributes('disabled')).toBeUndefined();
+        }));
+
+    it('leaves "Place order" live for a preorder line: it is bought now and ships later', () =>
+        mountCart({
+            held: heldWith([['p1', 2, 'preorder']])
         }).then(({ wrapper }) => {
             expect(wrapper.get('[data-test=cart-checkout]').attributes('disabled')).toBeUndefined();
             expect(wrapper.find('[data-test=cart-lines-need-attention]').exists()).toBe(false);
@@ -1226,13 +1262,10 @@ const product = (id: string, noWithdrawal: boolean) => ({
 describe('the no-withdrawal marker on a line', () => {
     it('tells the shopper, before buying, which line has no right of withdrawal', () =>
         mountCart({
-            held: {
-                ...A_CART,
-                items: [
-                    { productId: 'p1', quantity: 1, availability: 'in_stock' },
-                    { productId: 'p2', quantity: 1, availability: 'in_stock' }
-                ]
-            },
+            held: heldWith([
+                ['p1', 1, 'in_stock'],
+                ['p2', 1, 'in_stock']
+            ]),
             products: [product('p1', true), product('p2', false)]
         }).then(({ wrapper }) => {
             const [first, second] = wrapper.findAll('[data-test=cart-item]');

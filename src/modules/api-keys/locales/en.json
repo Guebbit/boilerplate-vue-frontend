@@ -4,8 +4,7 @@
         "name-too-long": "The name is too long",
         "permissions-required": "Choose at least one permission",
         "expires-at-past": "The expiry must be in the future",
-        "expires-at-required": "An expiry is required",
-        "expires-at-too-far": "The expiry can be at most one year from now"
+        "expires-at-required": "An expiry is required"
     },
     "api-keys-list-page": {
         "page-title": "API keys",
@@ -23,6 +22,7 @@
         "status-active": "Active",
         "status-expired": "Expired",
         "status-revoked": "Revoked",
+        "status-suspended": "Suspended",
         "button-revoke": "Revoke",
         "button-revoke-named": "Revoke credential {name}",
         "confirm-revoke": "Revoke {name}? Anything still using it will stop authenticating immediately.",

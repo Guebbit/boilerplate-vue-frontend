@@ -9,7 +9,8 @@
  */
 import { useI18n } from 'vue-i18n';
 import { Minus, Plus } from 'lucide-vue-next';
-import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { currencyDigits, formatCurrency } from '@/infrastructure/utils/formatters.ts';
+import { lineTotal } from '../domain';
 
 /**
  * Component props — see each field's own doc comment below.
@@ -99,7 +100,7 @@ const { t } = useI18n();
             :data-test="`${testPrefix}-line-price`"
         >
             {{ formatCurrency(unitPrice, currency) }} × {{ quantity }} =
-            {{ formatCurrency(unitPrice * quantity, currency) }}
+            {{ formatCurrency(lineTotal(unitPrice, quantity, currencyDigits(currency)), currency) }}
         </p>
         <div class="mt-3 flex flex-wrap items-center gap-2">
             <v-btn

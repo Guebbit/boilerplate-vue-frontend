@@ -166,7 +166,7 @@ describe('VI1 · Browse the catalogue like a person', () => {
         });
 
         cy.step('the address carries the whole view, and a reload restores it');
-        cy.location('search').should('include', 'tag=').and('include', 'minPrice=');
+        cy.location('search').should('include', 'tag=').and('include', 'priceMin=');
         cy.location('href').then((shared) => {
             shownTitles().then((before) => {
                 cy.reload();

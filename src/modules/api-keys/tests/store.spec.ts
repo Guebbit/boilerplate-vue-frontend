@@ -34,6 +34,7 @@ const API_KEY = {
     id: 'key1',
     name: 'CI integration',
     publicPrefix: 'a1b2c3d4',
+    status: 'active' as const,
     permissions: ['products.read'],
     expiresAt: '2027-01-01T00:00:00.000Z',
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -173,6 +174,7 @@ describe('useApiKeysStore', () => {
 
             return store.revokeCredential(API_KEY.id).then(() => {
                 expect(store.apiKeys[API_KEY.id]?.revokedAt).toEqual(expect.any(String));
+                expect(store.apiKeys[API_KEY.id]?.status).toBe('revoked');
             });
         });
 
@@ -194,7 +196,8 @@ describe('useApiKeysStore', () => {
                             config.url,
                             orvalEnvelope({
                                 items: [API_KEY],
-                                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+                                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+                                maxExpiresAt: '2027-10-24T00:00:00.000Z'
                             })
                         )
                     )
@@ -206,6 +209,8 @@ describe('useApiKeysStore', () => {
                 .then(() => {
                     expect(lastRequest()).toMatchObject({ url: '/api-keys', method: 'GET' });
                     expect(useApiKeysStore().apiKeysList).toEqual([API_KEY]);
+                    // The ceiling the mint form bounds its date picker by.
+                    expect(useApiKeysStore().maxExpiresAt).toBe('2027-10-24T00:00:00.000Z');
                 });
         });
     });

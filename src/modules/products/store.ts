@@ -159,8 +159,8 @@ export const useProductsStore = defineStore('products', () => {
                     // reads a batch of ids; the filter box searches for one, so it's wrapped here.
                     id: filters.id ? [filters.id] : undefined,
                     sort: sortTokensOf(filters.sort, ProductSortItem),
-                    minPrice: filters.minPrice,
-                    maxPrice: filters.maxPrice,
+                    priceMin: filters.priceMin,
+                    priceMax: filters.priceMax,
                     category: filters.category,
                     tag: filters.tag,
                     // Admin-only: the public storefront's own search always

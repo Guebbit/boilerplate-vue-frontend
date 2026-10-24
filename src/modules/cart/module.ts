@@ -27,6 +27,8 @@ import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
  * the only place this client holds a multi-step flow of its own. Every other module points at it.
  *
  * Context map: `docs/modules/cart.md` § "The map".
+ *
+ * Subdomain: `core`.
  */
 export default {
     name: 'cart',

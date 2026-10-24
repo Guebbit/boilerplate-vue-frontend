@@ -26,7 +26,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { EToastType, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '../store.ts';
-import { leftOutByReorder } from '../domain';
+import { reorderOutcome } from '../domain';
 import OrderTimeline from '../components/OrderTimeline.vue';
 import { useOrderActionsRefetch } from '../composables/use-order-actions-refetch.ts';
 import { useOrderDocuments } from '../composables/use-order-documents.ts';
@@ -213,8 +213,9 @@ const {
 } = useBlockingError();
 
 /**
- * Copies this order's lines back into the cart and goes there — products that have since left
- * the catalogue are skipped server-side, so the toast names what the cart did NOT get.
+ * Copies this order's lines back into the cart and goes there. The server reports what became of
+ * each line, so the toast names what the cart did NOT get whole: products that left the catalogue,
+ * and lines held back at the per-line cap.
  *
  * @returns Nothing; the outcome is reported as a toast and navigates to the cart, a failure blocks
  *  the button in place ({@link reorderError}).
@@ -224,15 +225,18 @@ const handleReorder = () => {
     if (!order) return;
     clearReorderError();
     reorder(order.id)
-        .then((cart) => {
-            const leftOut = leftOutByReorder(
-                order.items,
-                (cart?.items ?? []).map(({ productId }) => productId)
-            );
-            if (leftOut.length === 0) addMessage(t('order-target-page.success-reorder'));
-            else
+        .then((answer) => {
+            const { gone, capped } = reorderOutcome(order.items, answer?.lines ?? []);
+            if (gone.length === 0 && capped.length === 0)
+                addMessage(t('order-target-page.success-reorder'));
+            if (gone.length > 0)
                 addMessage(
-                    t('order-target-page.warning-reorder-left-out', { titles: leftOut.join(', ') }),
+                    t('order-target-page.warning-reorder-left-out', { titles: gone.join(', ') }),
+                    EToastType.WARNING
+                );
+            if (capped.length > 0)
+                addMessage(
+                    t('order-target-page.warning-reorder-capped', { titles: capped.join(', ') }),
                     EToastType.WARNING
                 );
             return router.push(routerLinkI18n({ name: 'Cart' }));
@@ -429,7 +433,6 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         <PaymentPanel
                             :order-id="currentOrder.id"
                             :order-payable="currentOrder.actions?.pay"
-                            :order-status="currentOrder.status"
                             :pay-by="currentOrder.payBy"
                             @paid="fetchOrder(currentOrder.id, { forced: true })"
                         />
@@ -447,7 +450,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                         :order-id="currentOrder.id"
                         :can-withdraw="currentOrder.actions?.withdraw ?? false"
                         :withdraw-blocked="currentOrder.actions?.withdrawBlocked"
-                        :withdraw-until="currentOrder.actions?.withdrawUntil"
+                        :withdraw-until="currentOrder.withdrawUntil"
                         :order-number="currentOrder.orderNumber"
                         @opened="fetchOrder(currentOrder.id, { forced: true })"
                     />
@@ -603,7 +606,7 @@ useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
                                             <strong>
                                                 {{
                                                     formatCurrency(
-                                                        item.product.price * item.quantity,
+                                                        item.netAmount + item.taxAmount,
                                                         orderCurrency
                                                     )
                                                 }}

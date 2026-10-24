@@ -16,8 +16,9 @@
         "method-offline-other": "Pagato in altro modo",
         "label-reference": "riferimento {reference}",
         "partially-refunded": "{refunded} su {total} sono stati rimborsati.",
-        "refunded-by-hand": "Rimborsato — il denaro è stato restituito al cliente al di fuori di questa applicazione.",
-        "refund-pending": "Rimborso in sospeso — questo ordine è stato annullato, ma solo un operatore può confermare che il denaro sia stato effettivamente restituito al di fuori di questa applicazione.",
+        "refunded-by-hand": "Rimborsato a mano — il denaro è stato restituito al cliente al di fuori di questa applicazione.",
+        "refund-pending": "Rimborso in sospeso — il denaro non è ancora stato confermato come restituito. Un operatore lo restituisce al di fuori di questa applicazione, poi lo segna come restituito.",
+        "refund-card-pending": "Rimborso in sospeso — il gestore dei pagamenti non ha ancora confermato il rimborso. Viene ritentato automaticamente.",
         "none": "Nessun pagamento."
     },
     "payment-method-selector": {
@@ -113,6 +114,7 @@
         "refund-reason-cancellation": "Annullamento",
         "refund-reason-goodwill": "Gesto commerciale",
         "refund-reason-return": "Reso",
+        "refund-reason-late_payment": "Pagamento in ritardo",
         "failure-reason-declined": "La banca ha rifiutato il rimborso",
         "failure-reason-insufficient_funds": "Fondi insufficienti",
         "failure-reason-expired_or_canceled_card": "La carta è scaduta o è stata annullata",
@@ -136,6 +138,10 @@
         "label-received": "Ricevuto",
         "button-close": "Chiudi",
         "button-refund": "Rimborsa il resto",
+        "button-mark-returned": "Segna come restituito",
+        "confirm-mark-returned": "Confermi di aver restituito {amount} al cliente fuori dall'app? Non viene inviato nulla.",
+        "mark-returned-done": "Segnato come restituito",
+        "button-open-payment": "Apri pagamento",
         "button-open-order": "Apri l'ordine",
         "confirm-refund": "Rimborsare tutto ciò che è ancora rimborsabile sull'ordine {order}? Il denaro torna al cliente.",
         "refund-done": "Rimborso richiesto"

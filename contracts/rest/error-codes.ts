@@ -7,7 +7,7 @@
 /** Every error code the contract declares. Open-ended: a new one is additive, never a breaking change. */
 export const ERROR_CODES = {
     /** 409 — The address book already holds `NODE_ADDRESS_BOOK_MAX` entries (20 by default) — remove one before adding another. */
-    ADDRESS_BOOK_FULL: 'ADDRESS_BOOK_FULL',
+    ADDRESS_BOOK_LIMIT_REACHED: 'ADDRESS_BOOK_LIMIT_REACHED',
     /** 404 — No challenge is currently active for this session. */
     ANTIBOT_NO_CHALLENGE: 'ANTIBOT_NO_CHALLENGE',
     /** 401 — The human-challenge token is missing, expired, or the provider rejected it. */
@@ -29,7 +29,7 @@ export const ERROR_CODES = {
     /** 409 — One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`). */
     CART_INSUFFICIENT_STOCK: 'CART_INSUFFICIENT_STOCK',
     /** 409 — The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again. */
-    CART_OPEN_ORDER_LIMIT: 'CART_OPEN_ORDER_LIMIT',
+    CART_OPEN_ORDER_LIMIT_REACHED: 'CART_OPEN_ORDER_LIMIT_REACHED',
     /** 409 — The chosen payment method is not enabled for this deployment or this cart. */
     CART_PAYMENT_METHOD_NOT_AVAILABLE: 'CART_PAYMENT_METHOD_NOT_AVAILABLE',
     /** 409 — A line references a product that was deleted or hidden (`active: false`) since it was added: its `availability` is `removed`. A product merely taken off sale is `unavailable` and refused as `CART_INSUFFICIENT_STOCK`. */
@@ -106,6 +106,8 @@ export const ERROR_CODES = {
     LIMIT_PART_COUNT: 'LIMIT_PART_COUNT',
     /** 400 — A multipart upload carries a file under a field name this operation does not accept (multer). */
     LIMIT_UNEXPECTED_FILE: 'LIMIT_UNEXPECTED_FILE',
+    /** 405 — The path exists, but not with this method. The `Allow` header lists the methods it does answer. */
+    METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
     /** 400 — A multipart file part carries no field name (multer). */
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */
@@ -116,6 +118,8 @@ export const ERROR_CODES = {
     ORDER_CREDIT_NOTE_NOT_ISSUED: 'ORDER_CREDIT_NOTE_NOT_ISSUED',
     /** 422 — The export would carry more orders than `NODE_ORDER_EXPORT_MAX_ROWS` allows. The message names the cap; narrow the filters and ask again. */
     ORDER_EXPORT_TOO_LARGE: 'ORDER_EXPORT_TOO_LARGE',
+    /** 409 — A hard delete is refused: money was recorded on the order after it was cancelled (a late payment and its refund still point at it). Soft delete it instead. */
+    ORDER_HAS_MONEY_HISTORY: 'ORDER_HAS_MONEY_HISTORY',
     /** 409 — An admin-created order references a quantity beyond the product's available stock. `errors[].details.lines` names each short line with its `productId`, `title` and `requested` quantity; `available` is added only for a caller who reads stock (`read:StockLevel`). */
     ORDER_INSUFFICIENT_STOCK: 'ORDER_INSUFFICIENT_STOCK',
     /** 409 — This action is not allowed once an order has been invoiced. */
@@ -128,6 +132,8 @@ export const ERROR_CODES = {
     ORDER_NOT_CANCELLABLE: 'ORDER_NOT_CANCELLABLE',
     /** 409 — A delete, soft or hard, needs a cancelled order: this one is still open. Cancel it first (`POST /orders/{id}/cancel`), which refunds a paid one. */
     ORDER_NOT_CANCELLED: 'ORDER_NOT_CANCELLED',
+    /** 409 — A restore is refused: the order is not soft-deleted. */
+    ORDER_NOT_DELETED: 'ORDER_NOT_DELETED',
     /** 409 — The order must be paid before this delivery action. */
     ORDER_NOT_PAID: 'ORDER_NOT_PAID',
     /** 409 — The order is not in a state this delivery action can run from. */
@@ -154,8 +160,14 @@ export const ERROR_CODES = {
     PAYMENT_ORDER_NOT_PAYABLE: 'PAYMENT_ORDER_NOT_PAYABLE',
     /** 422 — The refund asks for more than the payment still has left to give back. */
     PAYMENT_REFUND_EXCEEDS_REMAINING: 'PAYMENT_REFUND_EXCEEDS_REMAINING',
+    /** 409 — The refund goes back through the card provider and its sweep; an operator cannot mark it returned by hand. */
+    PAYMENT_REFUND_NOT_BY_HAND: 'PAYMENT_REFUND_NOT_BY_HAND',
+    /** 409 — The refund was already settled (another operator confirmed it first). */
+    PAYMENT_REFUND_NOT_OPEN: 'PAYMENT_REFUND_NOT_OPEN',
     /** 412 — The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend. */
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
+    /** 409 — A restore named a product that is not soft-deleted, so there is nothing to undo. */
+    PRODUCT_NOT_DELETED: 'PRODUCT_NOT_DELETED',
     /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
@@ -207,7 +219,15 @@ export const ERROR_CODES = {
     /** 422 — One or more fields failed schema validation — see `errors[].details.field`. */
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     /** 409 — A retry of this delivery is already in flight. */
-    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS'
+    WEBHOOK_DELIVERY_IN_PROGRESS: 'WEBHOOK_DELIVERY_IN_PROGRESS',
+    /** 409 — The subscription is already disabled. */
+    WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_DISABLED',
+    /** 409 — The subscription is already enabled. */
+    WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED: 'WEBHOOK_SUBSCRIPTION_ALREADY_ENABLED',
+    /** 409 — The delivery belongs to a subscription that is disabled, so nothing can be sent until it is enabled. */
+    WEBHOOK_SUBSCRIPTION_DISABLED: 'WEBHOOK_SUBSCRIPTION_DISABLED',
+    /** 409 — This shop already holds the most webhook subscriptions it may; delete one first. */
+    WEBHOOK_SUBSCRIPTION_LIMIT_REACHED: 'WEBHOOK_SUBSCRIPTION_LIMIT_REACHED'
 } as const;
 
 /** Any code `errors[].code` may carry. NOT exhaustive at the type level — the contract's own `enum`-free `code: string` is the reason this exists. */

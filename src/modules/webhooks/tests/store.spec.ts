@@ -15,7 +15,7 @@ import { asStub } from '../../../../tests/support/stub';
 import type { ZodType } from 'zod';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { nextTick, ref } from 'vue';
+import { effectScope, nextTick, ref } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 
 import { useWebhooksStore } from '../store';
@@ -39,6 +39,15 @@ const SUBSCRIPTION = {
     enabled: true,
     consecutiveFailures: 0,
     secretIds: ['sec1'],
+    retiringSecrets: [],
+    actions: {
+        update: true,
+        delete: true,
+        enable: false,
+        disable: true,
+        rotateSecret: true,
+        removeSecret: false
+    },
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -229,16 +238,49 @@ describe('useWebhooksStore', () => {
     describe('updateSubscription', () => {
         it('patches ordinary fields', () =>
             useWebhooksStore()
-                .updateSubscription('sub1', { enabled: false })
+                .updateSubscription('sub1', { description: 'Orders feed' })
                 .then(() => {
                     expect(lastRequest()).toMatchObject({
                         url: '/webhooks/subscriptions/sub1',
                         method: 'PATCH'
                     });
-                    expect(lastBody(schemas.UpdateWebhookSubscriptionBody)).toMatchObject({
-                        enabled: false
+                    expect(lastBody(schemas.UpdateWebhookSubscriptionBody)).toEqual({
+                        description: 'Orders feed'
                     });
                 }));
+    });
+
+    describe('enableSubscription and disableSubscription', () => {
+        it.each([
+            ['enableSubscription', 'enable'],
+            ['disableSubscription', 'disable']
+        ] as const)('%s posts to its own action route', (action, route) => {
+            const store = useWebhooksStore();
+
+            return store[action]('sub1').then(() => {
+                expect(lastRequest()).toMatchObject({
+                    url: `/webhooks/subscriptions/sub1/${route}`,
+                    method: 'POST'
+                });
+            });
+        });
+
+        it('caches the answer, so the screens read the new state', () => {
+            const store = useWebhooksStore();
+            store.addSubscriptionRecord({ ...SUBSCRIPTION });
+            respondOnceWith({
+                ...SUBSCRIPTION,
+                enabled: false,
+                disabledAt: '2026-02-01T00:00:00.000Z'
+            });
+
+            return store.disableSubscription('sub1').then(() => {
+                expect(store.subscriptions.sub1).toMatchObject({
+                    enabled: false,
+                    disabledAt: '2026-02-01T00:00:00.000Z'
+                });
+            });
+        });
     });
 
     describe('deleteSubscription', () => {
@@ -263,6 +305,7 @@ describe('useWebhooksStore', () => {
                 attempt: 2,
                 status: 'succeeded',
                 responseCode: 200,
+                actions: { replay: true },
                 createdAt: '2026-01-01T00:00:00.000Z',
                 updatedAt: '2026-01-01T00:00:00.000Z'
             };
@@ -284,54 +327,41 @@ describe('useWebhooksStore', () => {
     });
 
     describe('watchSubscription', () => {
-        it('selects a cached id without any network call', () => {
+        it('reads the record itself, not the list', () => {
             const store = useWebhooksStore();
-            // Seeded by hand rather than via a list call: the store's own cache, pre-populated
-            // the way a prior list load would leave it.
-            store.addSubscriptionRecord({ ...SUBSCRIPTION });
+            const scope = effectScope();
 
-            const stop = store.watchSubscription(() => SUBSCRIPTION.id);
-
-            expect(store.selectedSubscriptionId).toBe(SUBSCRIPTION.id);
-            expect(store.currentSubscription).toMatchObject({ id: SUBSCRIPTION.id });
-            expect(orvalMutator).not.toHaveBeenCalled();
-            stop();
-        });
-
-        it('backfills the whole cache for an id it does not hold', () => {
-            respondWithItems([SUBSCRIPTION]);
-            const store = useWebhooksStore();
-
-            const stop = store.watchSubscription(() => SUBSCRIPTION.id);
+            scope.run(() => store.watchSubscription(() => SUBSCRIPTION.id));
 
             return flush().then(() => {
                 expect(lastRequest()).toMatchObject({
-                    url: '/webhooks/subscriptions',
+                    url: `/webhooks/subscriptions/${SUBSCRIPTION.id}`,
                     method: 'GET'
                 });
-                expect(lastParameters()).toMatchObject({ pageSize: 100 });
+                expect(store.selectedSubscriptionId).toBe(SUBSCRIPTION.id);
                 expect(store.currentSubscription).toMatchObject({ id: SUBSCRIPTION.id });
-                stop();
+                scope.stop();
             });
         });
 
-        it('clears the selection for an undefined id, without backfilling', () => {
+        it('clears the selection for an undefined id, without any call', () => {
             const store = useWebhooksStore();
+            const scope = effectScope();
 
-            const stop = store.watchSubscription(() => undefined);
+            scope.run(() => store.watchSubscription(() => undefined));
 
             expect(store.selectedSubscriptionId).toBeUndefined();
             expect(store.currentSubscription).toBeUndefined();
             expect(orvalMutator).not.toHaveBeenCalled();
-            stop();
+            scope.stop();
         });
 
-        it('re-hydrates when the id source changes', () => {
-            respondWithItems([SUBSCRIPTION]);
+        it('reads the new record when the id source changes', () => {
             const store = useWebhooksStore();
             const id = ref<string | undefined>(undefined);
+            const scope = effectScope();
 
-            const stop = store.watchSubscription(() => id.value);
+            scope.run(() => store.watchSubscription(() => id.value));
             expect(orvalMutator).not.toHaveBeenCalled();
 
             id.value = SUBSCRIPTION.id;
@@ -339,10 +369,24 @@ describe('useWebhooksStore', () => {
             return flush().then(() => {
                 expect(store.selectedSubscriptionId).toBe(SUBSCRIPTION.id);
                 expect(lastRequest()).toMatchObject({
-                    url: '/webhooks/subscriptions',
+                    url: `/webhooks/subscriptions/${SUBSCRIPTION.id}`,
                     method: 'GET'
                 });
-                stop();
+                scope.stop();
+            });
+        });
+
+        it('hands a refused read to onError, so the page can leave for the Error page', () => {
+            const refusal = new Error('not found');
+            vi.mocked(orvalMutator).mockRejectedValueOnce(refusal);
+            const onError = vi.fn();
+            const scope = effectScope();
+
+            scope.run(() => useWebhooksStore().watchSubscription(() => 'gone', { onError }));
+
+            return flush().then(() => {
+                expect(onError).toHaveBeenCalledWith(refusal, 'gone');
+                scope.stop();
             });
         });
     });
@@ -363,10 +407,10 @@ describe('useWebhooksStore', () => {
                 });
         });
 
-        it('watchSubscriptionsSearch sends the enabled filter', () => {
+        it('watchSubscriptionsSearch sends the enabled and autoDisabled filters', () => {
             respondWithItems([]);
             const store = useWebhooksStore();
-            store.subscriptionFilters = { enabled: true };
+            store.subscriptionFilters = { enabled: false, autoDisabled: true };
 
             return store
                 .watchSubscriptionsSearch()
@@ -376,7 +420,7 @@ describe('useWebhooksStore', () => {
                         url: '/webhooks/subscriptions',
                         method: 'GET'
                     });
-                    expect(lastParameters()).toMatchObject({ enabled: true });
+                    expect(lastParameters()).toMatchObject({ enabled: false, autoDisabled: true });
                 });
         });
 

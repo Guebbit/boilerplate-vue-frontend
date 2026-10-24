@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import { listPreorderLevelsQueryPageSizeMax } from '@api/schemas';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { useIdempotencyKeys } from '@/infrastructure/http/idempotency.ts';
@@ -27,9 +28,9 @@ import type {
 } from '@types';
 
 /**
- * The largest page the contract allows, for the read that wants every row of a short list.
+ * The largest page the contract allows (generated, never retyped), for the read that wants every row of a short list.
  */
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = listPreorderLevelsQueryPageSizeMax;
 
 /**
  * The stock board and the ledger behind it.

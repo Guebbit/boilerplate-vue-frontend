@@ -71,6 +71,7 @@ export const aPayment = (overrides: Partial<Payment> = {}): Payment => ({
     orderNumber: '2026-000001',
     email: 'ada@example.com',
     createdAt: '2026-03-04T10:00:00Z',
+    actions: { pay: false, sync: false, refund: false, settleByHand: [] },
     ...overrides
 });
 
@@ -314,7 +315,7 @@ export const aShipment = (overrides: Partial<Shipment> = {}): Shipment => ({
     lines: [{ productId: 'p1', title: 'Shirt', quantity: 1 }],
     forced: false,
     shippedAt: '2026-09-02T10:00:00.000Z',
-    actions: { deliver: false, editTracking: false },
+    actions: { deliver: false, forceDeliver: false, update: false },
     ...overrides
 });
 

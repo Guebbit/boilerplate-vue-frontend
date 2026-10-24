@@ -1,10 +1,11 @@
 /**
  * @module
  * Reorder, read back. Pure: no Vue, no store.
- * The server drops a line whose product has left the catalogue and answers with the cart as it now
- * stands, so what was dropped is what the order had and the cart lacks.
+ * The server answers one result per order line (the merge's own shape), so what did not land is
+ * read off those results and never guessed from which products the cart now holds.
  * See `docs/theory/domain-layer.md`.
  */
+import type { MergeLineResult } from '@types';
 
 /**
  * A line of a past order, as far as this rule reads it.
@@ -15,18 +16,35 @@ export interface ReorderedOrderLine {
 }
 
 /**
- * Which of an order's products did not land in the cart after a reorder.
+ * What a reorder did not do cleanly, as display names in the order's own order.
+ */
+export interface ReorderOutcome {
+    /** Products the cart did not take at all: gone from the catalogue. */
+    gone: string[];
+    /** Products added only in part, or not at all, because the line is at the cart's cap. */
+    capped: string[];
+}
+
+/**
+ * Sorts a reorder answer's lines into the two kinds of news.
  *
- * Judged by product, not quantity: a line the server clamped to the cart's own limit still landed.
+ * `summed` is not news: the shopper asked for the order added on top of the cart.
  *
  * @param orderLines - the order's lines
- * @param cartProductIds - the product ids the cart holds after the reorder
- * @returns one display name per missing product, in the order's own order
+ * @param results - the answer's `lines`: one result per order line
+ * @returns the display names of the products left out and of those held back at the cap
  */
-export const leftOutByReorder = (
+export const reorderOutcome = (
     orderLines: readonly ReorderedOrderLine[],
-    cartProductIds: readonly string[]
-): string[] =>
-    orderLines
-        .filter(({ product }) => !cartProductIds.includes(product.id))
-        .map(({ product }) => product.title || product.id);
+    results: readonly MergeLineResult[]
+): ReorderOutcome => {
+    const nameOf = new Map(
+        orderLines.map(({ product }) => [product.id, product.title || product.id])
+    );
+    const named = (reason: MergeLineResult['reason']): string[] =>
+        results
+            .filter((result) => result.reason === reason)
+            .map(({ productId }) => nameOf.get(productId) ?? productId);
+
+    return { gone: named('removed'), capped: named('capped') };
+};

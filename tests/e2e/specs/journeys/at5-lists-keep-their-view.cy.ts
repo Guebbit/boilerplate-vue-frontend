@@ -72,7 +72,7 @@ const CASES: readonly ListCase[] = [
         name: 'webhook subscriptions',
         path: '/en/webhooks/subscriptions',
         narrow: () => {
-            cy.pickOption('[data-test=filter-enabled]', 'Disabled');
+            cy.pickOption('[data-test=filter-enabled]', 'Paused');
         }
     }
 ];

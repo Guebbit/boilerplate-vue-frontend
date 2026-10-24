@@ -45,7 +45,6 @@
         "filter-paid-to": "Pagato fino al"
     },
     "orders-form": {
-        "status-invalid": "Stato ordine non valido",
         "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
         "status-pending": "In attesa",
         "status-paid": "Pagato",
@@ -82,6 +81,7 @@
         "button-reorder": "Acquista di nuovo",
         "success-reorder": "Ordine aggiunto al carrello.",
         "warning-reorder-left-out": "Ordine aggiunto al carrello, tranne ciò che non è più in vendita: {titles}.",
+        "warning-reorder-capped": "Ordine aggiunto al carrello, ma queste righe sono al massimo consentito per riga: {titles}.",
         "label-shipping": "Spedizione",
         "label-shipping-address": "Indirizzo di spedizione",
         "label-billing-address": "Indirizzo di fatturazione",
@@ -137,6 +137,10 @@
         "cancel-done": "Ordine annullato. Il pagamento è rimasto invariato.",
         "cancel-refund-done": "Ordine annullato e pagamento rimborsato.",
         "refund-done": "Pagamento rimborsato. Lo stato dell'ordine non è cambiato.",
+        "refund-recorded": "Rimborso registrato. Restituisci il denaro fuori dall'app, poi premi Segna come restituito.",
+        "button-mark-returned": "Segna come restituito ({amount})",
+        "confirm-mark-returned": "Confermi di aver restituito {amount} fuori dall'app? Non viene inviato nulla.",
+        "mark-returned-done": "Segnato come restituito.",
         "shipping-address-title": "Correggi l'indirizzo di spedizione",
         "shipping-address-hint": "Sostituisce dove viene spedito l'ordine. Possibile solo finché nulla è partito. L'acquirente vede il nuovo indirizzo sull'ordine.",
         "override-title": "Correggi stato",

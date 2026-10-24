@@ -17,6 +17,8 @@ import routes from './routes';
  * imports it. Deleting the folder costs a convenience, not a capability.
  *
  * Context map: `docs/modules/stock-alerts.md` § "The map".
+ *
+ * Subdomain: `supporting`.
  */
 export default {
     name: 'stock-alerts',

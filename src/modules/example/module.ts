@@ -34,6 +34,8 @@ declare module '@/infrastructure/utils/logger.ts' {
  *
  * It is on `DEMO_MODULE_NAMES`, so `npm run demo:remove` deletes it with the shop: copy it first.
  *
+ * Subdomain: none. It is the template a domain is copied from, not a subdomain.
+ *
  * It sits on no context-map edge: `docs/modules/index.md` § "The whole map".
  */
 export default {
@@ -46,7 +48,7 @@ export default {
             label: 'navigation.label-examples',
             plural: 2,
             order: 20,
-            section: 'main',
+            section: 'admin',
             icon: NotebookPen
         }
     ],
