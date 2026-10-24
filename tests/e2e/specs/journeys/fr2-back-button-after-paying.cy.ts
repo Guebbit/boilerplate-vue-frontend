@@ -62,9 +62,11 @@ describe('FR2 · The Back button after paying', () => {
             cy.reload();
             cy.get('[data-test=payment-status]').should('contain.text', 'Succeeded');
             cy.get('[data-test=payment-submit]').should('not.exist');
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).should((payment) => {
-                expect(payment?.status).to.equal('succeeded');
-            });
+            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).should(
+                (payment) => {
+                    expect(payment?.status).to.equal('succeeded');
+                }
+            );
             cy.apiAs<{ status: string }>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('paid');
             });

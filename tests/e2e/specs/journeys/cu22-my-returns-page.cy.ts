@@ -124,7 +124,7 @@ describe('CU22 · My returns page tells me where each one stands', () => {
                         .then((href) => {
                             opened.id = String(href).split('/').at(-1) ?? '';
                         });
-                    cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).then(
+                    cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).then(
                         (payment) => {
                             opened.paid = Math.round(Number(payment?.amount) * 100);
                         }

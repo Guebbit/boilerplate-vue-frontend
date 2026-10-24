@@ -532,12 +532,12 @@ export const shipThroughTheApi = (
     orderId: string,
     trackingCode?: string
 ): Cypress.Chainable<{ id: string } | null> => {
-    cy.apiAs('admin', 'POST', `/delivery/order/${orderId}/start`);
+    cy.apiAs('admin', 'POST', `/delivery/orders/${orderId}/start`);
     return cy
         .apiAs<{ fulfillmentOrders: { id: string }[] }>(
             'admin',
             'GET',
-            `/delivery/order/${orderId}`
+            `/delivery/orders/${orderId}`
         )
         .then((fulfilment) => {
             const group = fulfilment?.fulfillmentOrders[0];
@@ -576,7 +576,7 @@ export const paidPreorderBy = (productId: string): Cypress.Chainable<string> => 
     cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
     return checkoutAs<{ id: string }>('user').then((order) => {
         const id = String(order?.id);
-        cy.apiAs('admin', 'POST', `/payments/order/${id}/offline`, { method: 'cash' });
+        cy.apiAs('admin', 'POST', `/payments/orders/${id}/offline`, { method: 'cash' });
         return cy.wrap(id, { log: false });
     });
 };

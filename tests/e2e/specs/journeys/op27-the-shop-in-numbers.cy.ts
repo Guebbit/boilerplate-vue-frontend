@@ -70,7 +70,7 @@ describe('OP27 · The shop in numbers', () => {
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<{ id: string }>('user').then((order) => {
                 const orderId = String(order?.id);
-                cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, {
+                cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
                     method: 'cash'
                 });
 
@@ -128,13 +128,13 @@ describe('OP27 · The shop in numbers', () => {
                     });
                     checkoutAs<{ id: string }>('user').then((order) => {
                         const orderId = String(order?.id);
-                        cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, {
+                        cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
                             method: 'cash'
                         });
                         cy.apiAs<{ amount: number }>(
                             'admin',
                             'GET',
-                            `/payments/order/${orderId}`
+                            `/payments/orders/${orderId}`
                         ).then((payment) => {
                             const total = Number(payment?.amount);
                             cy.switchUser('admin');

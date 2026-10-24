@@ -101,7 +101,7 @@ describe('CU30 · Cancel what has not shipped', () => {
 
             cy.step('the refund for those units goes back to the card, in part');
             eventually(
-                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
+                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
                 (payment) => payment?.displayStatus === 'partially_refunded'
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('partially_refunded');

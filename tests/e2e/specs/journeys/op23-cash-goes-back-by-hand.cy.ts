@@ -53,7 +53,7 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.get('[data-test=button-cancel-and-refund]').should('not.be.disabled').click();
             cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
             eventually(
-                () => cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`),
+                () => cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`),
                 (payment) => payment?.displayStatus === 'refund_pending'
             ).should((payment) => {
                 expect(payment?.method).to.not.equal('card');
@@ -73,7 +73,7 @@ describe('OP23 · Cash goes back by hand', () => {
             cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test^=button-mark-returned-]').should('not.exist');
             cy.get('[data-test=order-edit-actions-error]').should('not.exist');
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`).should(
+            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`).should(
                 (payment) => {
                     expect(payment?.displayStatus).to.equal('refunded');
                     expect(payment?.refundedByHand).to.equal(true);

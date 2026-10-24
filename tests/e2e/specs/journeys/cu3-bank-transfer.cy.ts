@@ -68,7 +68,7 @@ describe('CU3 · Bank transfer, both sides', { tags: '@smoke' }, () => {
             cy.apiAs<{ nextAction?: TransferAction }>(
                 'user',
                 'GET',
-                `/payments/order/${orderId}`
+                `/payments/orders/${orderId}`
             ).then((payment) => {
                 const action = payment?.nextAction;
                 expect(action, 'the payment carries the instructions').to.not.equal(undefined);

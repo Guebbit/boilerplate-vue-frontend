@@ -75,13 +75,13 @@ export const usePaymentsStore = defineStore('payments', () => {
     const confirmIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key`s for `refundForOrder`'s `POST /payments/order/{orderId}/refund`, one per
+     * `Idempotency-Key`s for `refundForOrder`'s `POST /payments/orders/{orderId}/refund`, one per
      * order: a key kept for order A must never ride on a refund of order B.
      */
     const refundIdempotencyKeys = useIdempotencyKeys();
 
     /**
-     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /payments/order/{orderId}/offline`, one
+     * `Idempotency-Key`s for `recordOfflinePayment`'s `POST /payments/orders/{orderId}/offline`, one
      * per order, for the same reason as the refund's.
      */
     const offlineIdempotencyKeys = useIdempotencyKeys();
@@ -157,7 +157,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         });
 
     /**
-     * Reads an order's payment (`GET /payments/order/{orderId}`) without touching the shared
+     * Reads an order's payment (`GET /payments/orders/{orderId}`) without touching the shared
      * `payment` record: for a screen that is not the order page (the needs-attention list opening
      * the drawer) and must not replace what an order page holds.
      *

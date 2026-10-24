@@ -100,7 +100,7 @@ describe('OP20 · Staff prove it’s still them', () => {
             cy.visit(`/en/orders/${orderId}/edit`);
             cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
             wrongThenCancel();
-            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`).should(
+            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).should(
                 (payment) => {
                     expect(payment?.amountRefunded, 'cancel refunded nothing').to.equal(0);
                 }
@@ -111,7 +111,7 @@ describe('OP20 · Staff prove it’s still them', () => {
             cy.get('[data-test=reauth-dialog]').should('not.exist');
             // The dialog closes once the password is accepted; the replayed refund lands just after.
             eventually(
-                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`),
+                () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
                 (payment) => payment?.amountRefunded === payment?.amount
             ).should((payment) => {
                 expect(payment?.amountRefunded, 'refunded once, in full').to.equal(payment?.amount);

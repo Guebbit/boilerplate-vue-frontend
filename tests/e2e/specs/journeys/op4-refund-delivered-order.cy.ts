@@ -44,7 +44,7 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.get('[data-test=button-refund-only]').should('not.be.disabled');
             cy.get('[data-test=button-cancel-only]').should('be.disabled');
             cy.get('[data-test=button-cancel-and-refund]').should('be.disabled');
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`).should(
+            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`).should(
                 (payment) => {
                     expect(payment?.status).to.equal('succeeded');
                     expect(payment?.amountRefunded).to.equal(0);
@@ -55,7 +55,7 @@ describe('OP4 · A return: refund a delivered order', () => {
             cy.get('[data-test=button-refund-only]').click();
             cy.get('[data-test=order-edit-actions-error]').should('not.exist');
             cy.get('[data-test=button-refund-only]').should('be.disabled');
-            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/order/${orderId}`).should(
+            cy.apiAs<PaymentLike>('moderator', 'GET', `/payments/orders/${orderId}`).should(
                 (payment) => {
                     expect(payment?.displayStatus).to.equal('refunded');
                     expect(payment?.amountRefunded).to.equal(payment?.amount);

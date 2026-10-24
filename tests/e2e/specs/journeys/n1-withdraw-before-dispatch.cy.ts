@@ -81,7 +81,7 @@ describe('N1 · Withdraw before dispatch', { tags: '@smoke' }, () => {
             });
             // The refund is the payments module answering the cancel, so it may land a beat later.
             eventually(
-                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
+                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
                 (payment) => payment?.displayStatus === 'refunded'
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('refunded');

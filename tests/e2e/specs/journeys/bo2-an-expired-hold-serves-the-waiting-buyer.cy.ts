@@ -59,7 +59,7 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
             cy.apiAs('admin', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('admin').then((waiting) => {
                 const waitingId = String(waiting?.id);
-                cy.apiAs('admin', 'POST', `/payments/order/${waitingId}/offline`, {
+                cy.apiAs('admin', 'POST', `/payments/orders/${waitingId}/offline`, {
                     method: 'cash'
                 });
 
@@ -69,7 +69,7 @@ describe('BO2 · An expired hold serves the buyer who waits', () => {
 
                 cy.step('the paid buyer’s wait is released, not left for a stranger');
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/order/${waitingId}`),
+                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${waitingId}`),
                     (view) =>
                         (view?.fulfillmentOrders.length ?? 0) > 0 &&
                         (view?.fulfillmentOrders.every(({ status }) => status !== 'on_hold') ??

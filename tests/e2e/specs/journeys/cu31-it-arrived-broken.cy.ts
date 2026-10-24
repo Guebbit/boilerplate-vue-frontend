@@ -183,7 +183,7 @@ describe('CU31 · It arrived broken', () => {
 
                     cy.step('the money, the credit note and the mail follow');
                     eventually(
-                        () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`),
+                        () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
                         (payment) => inCents(Number(payment?.amountRefunded)) > 0
                     ).should((payment) => {
                         expect(inCents(Number(payment?.amountRefunded))).to.equal(
@@ -224,7 +224,7 @@ describe('CU31 · It arrived broken', () => {
                         cy.apiAs('support', 'POST', `/returns/${second?.id}/approve`);
                         cy.apiAs('warehouse', 'POST', `/returns/${second?.id}/receive`, {});
                     });
-                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`).then(
+                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).then(
                         (before) => {
                             const paid = inCents(Number(before?.amount));
                             eventually(
@@ -232,7 +232,7 @@ describe('CU31 · It arrived broken', () => {
                                     cy.apiAs<PaymentLike>(
                                         'admin',
                                         'GET',
-                                        `/payments/order/${orderId}`
+                                        `/payments/orders/${orderId}`
                                     ),
                                 (payment) =>
                                     inCents(Number(payment?.amountRefunded)) >

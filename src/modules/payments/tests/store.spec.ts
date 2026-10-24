@@ -94,7 +94,7 @@ beforeEach(() => {
         'POST /payments/intent': orvalEnvelope(PAYMENT),
         'POST /payments/payment-1/confirm': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
         'POST /payments/payment-1/sync': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
-        'GET /payments/order/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
+        'GET /payments/orders/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
     };
 });
 
@@ -142,7 +142,7 @@ describe('fetchPaymentForOrder', () => {
      * the caller — swallowed, it renders the pay form for an order that may already be paid.
      */
     it('lets any other failure through instead of calling it "no payment yet"', () => {
-        responses = { 'GET /payments/order/order-1': new Error('Internal Server Error') };
+        responses = { 'GET /payments/orders/order-1': new Error('Internal Server Error') };
         const store = usePaymentsStore();
         return expect(store.fetchPaymentForOrder('order-1')).rejects.toMatchObject({
             status: 500
@@ -252,7 +252,7 @@ describe('finishAtProvider', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/sync',
-                    '/payments/order/order-1'
+                    '/payments/orders/order-1'
                 ]);
             });
     });
@@ -276,7 +276,7 @@ describe('finishAtProvider', () => {
 
 describe('recordOfflinePayment', () => {
     it('sends the method and reference, and mirrors the settled payment', () => {
-        responses['POST /payments/order/order-1/offline'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/offline'] = orvalEnvelope({
             ...PAYMENT,
             provider: 'manual',
             method: 'cash',
@@ -307,7 +307,7 @@ describe('recordOfflinePayment', () => {
      * absence and not a decline — the caller's toast carries the server's own message.
      */
     it('lets a refusal through — a card charge already in flight, for instance', () => {
-        responses['POST /payments/order/order-1/offline'] = {
+        responses['POST /payments/orders/order-1/offline'] = {
             status: 409,
             code: 'PAYMENT_IN_FLIGHT',
             message: 'A card payment is already in progress for this order.'
@@ -391,7 +391,7 @@ const refundCall = () =>
 
 describe('refundForOrder', () => {
     it('sends no body for a full refund, so everything still refundable goes back', () => {
-        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/refund'] = orvalEnvelope({
             ...PAYMENT,
             status: 'refunded',
             amountRefunded: 50
@@ -405,12 +405,12 @@ describe('refundForOrder', () => {
     });
 
     it('sends the amount for a partial refund, and keeps the running total', () => {
-        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/refund'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 12.5
         });
-        responses['GET /payments/order/order-1'] = orvalEnvelope({
+        responses['GET /payments/orders/order-1'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 12.5
@@ -426,7 +426,7 @@ describe('refundForOrder', () => {
     });
 
     it('keeps the actions the refund answered with, without another read', () => {
-        responses['POST /payments/order/order-1/refund'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/refund'] = orvalEnvelope({
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 5,
@@ -436,13 +436,13 @@ describe('refundForOrder', () => {
 
         return store.refundForOrder('order-1', 5).then(() => {
             expect(store.payment?.actions.refund, 'money is still left to refund').toBe(true);
-            expect(requestedUrls()).toEqual(['/payments/order/order-1/refund']);
+            expect(requestedUrls()).toEqual(['/payments/orders/order-1/refund']);
         });
     });
 
     // Two operators on the same payment: the loser's answer is a 409, and the page still shows the button.
     it('re-reads the payment when nothing was left to refund, before rejecting', () => {
-        responses['POST /payments/order/order-1/refund'] = {
+        responses['POST /payments/orders/order-1/refund'] = {
             status: 409,
             code: 'PAYMENT_NOT_REFUNDABLE',
             message: 'Nothing left'
@@ -454,8 +454,8 @@ describe('refundForOrder', () => {
             .catch(() => undefined)
             .then(() => {
                 expect(requestedUrls()).toEqual([
-                    '/payments/order/order-1/refund',
-                    '/payments/order/order-1'
+                    '/payments/orders/order-1/refund',
+                    '/payments/orders/order-1'
                 ]);
             });
     });
@@ -516,7 +516,7 @@ describe('settleRefundByHand', () => {
             .then(() => {
                 expect(requestedUrls()).toEqual([
                     '/payments/payment-1/refunds/refund-1/settle',
-                    '/payments/order/order-1'
+                    '/payments/orders/order-1'
                 ]);
             });
     });
@@ -524,7 +524,7 @@ describe('settleRefundByHand', () => {
 
 describe('readPaymentForOrder', () => {
     it('reads the payment without replacing the order page’s cached one', () => {
-        responses['GET /payments/order/order-2'] = orvalEnvelope({
+        responses['GET /payments/orders/order-2'] = orvalEnvelope({
             ...PAYMENT,
             id: 'payment-2',
             orderId: 'order-2'
@@ -549,14 +549,14 @@ const refundKeyAt = (index: number): string | undefined => {
 
 describe('the refund key after a failure', () => {
     beforeEach(() => {
-        responses['POST /payments/order/order-1/refund'] = new Error('the database went away');
-        responses['POST /payments/order/order-2/refund'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/refund'] = new Error('the database went away');
+        responses['POST /payments/orders/order-2/refund'] = orvalEnvelope({
             ...PAYMENT,
             orderId: 'order-2',
             status: 'succeeded',
             amountRefunded: 50
         });
-        responses['GET /payments/order/order-2'] = orvalEnvelope({
+        responses['GET /payments/orders/order-2'] = orvalEnvelope({
             ...PAYMENT,
             orderId: 'order-2'
         });
@@ -582,12 +582,12 @@ describe('the refund key after a failure', () => {
             .refundForOrder('order-1')
             .catch(() => undefined)
             .then(() => {
-                expect(requestedUrls()).toContain('/payments/order/order-1');
+                expect(requestedUrls()).toContain('/payments/orders/order-1');
             });
     });
 
     it('keeps the key after a lost connection, so the retry replays the first attempt', () => {
-        responses['POST /payments/order/order-1/refund'] = {
+        responses['POST /payments/orders/order-1/refund'] = {
             status: 0,
             code: 'NETWORK',
             message: 'offline'
@@ -604,7 +604,7 @@ describe('the refund key after a failure', () => {
     });
 
     it('never carries a key kept for one order onto a refund of another', () => {
-        responses['POST /payments/order/order-1/refund'] = {
+        responses['POST /payments/orders/order-1/refund'] = {
             status: 0,
             code: 'NETWORK',
             message: 'offline'

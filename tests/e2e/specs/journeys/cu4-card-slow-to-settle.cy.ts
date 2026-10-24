@@ -67,13 +67,15 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status, 'nothing is paid yet').to.equal('pending');
             });
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).should((payment) => {
-                expect(
-                    payment?.actions.sync,
-                    'the server offers Finish, not a second method'
-                ).to.equal(true);
-                expect(payment?.actions.pay).to.equal(false);
-            });
+            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).should(
+                (payment) => {
+                    expect(
+                        payment?.actions.sync,
+                        'the server offers Finish, not a second method'
+                    ).to.equal(true);
+                    expect(payment?.actions.pay).to.equal(false);
+                }
+            );
             cy.reload();
             cy.get('[data-test=payment-finish]').should('exist');
 
@@ -85,9 +87,11 @@ describe('CU4 · A card that is slow to settle', () => {
             cy.apiAs<OrderLike>('user', 'GET', `/orders/${orderId}`).should((order) => {
                 expect(order?.status).to.equal('paid');
             });
-            cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`).should((payment) => {
-                expect(payment?.status).to.equal('succeeded');
-            });
+            cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`).should(
+                (payment) => {
+                    expect(payment?.status).to.equal('succeeded');
+                }
+            );
         });
     });
 
@@ -104,7 +108,7 @@ describe('CU4 · A card that is slow to settle', () => {
 
             cy.step('the cancel itself refunds the payment, and the order stays cancelled');
             eventually(
-                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/order/${orderId}`),
+                () => cy.apiAs<PaymentLike>('user', 'GET', `/payments/orders/${orderId}`),
                 (payment) => payment?.displayStatus === 'refunded'
             ).should((payment) => {
                 expect(payment?.displayStatus).to.equal('refunded');

@@ -32,7 +32,7 @@ describe('OP26 · A goodwill refund, in part', () => {
 
     it('refuses what is not money, refunds the part once, and the rest closes the payment', () => {
         cy.subjectId('order.paid').then((orderId) => {
-            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`).then((before) => {
+            cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).then((before) => {
                 const total = Number(before?.amount);
                 expect(before?.amountRefunded, 'nothing has gone back yet').to.equal(0);
 
@@ -66,7 +66,7 @@ describe('OP26 · A goodwill refund, in part', () => {
                     'contain.text',
                     'That is more than is left to refund on this payment.'
                 );
-                cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`).should(
+                cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`).should(
                     (payment) => {
                         expect(payment?.amountRefunded, 'neither refusal moved money').to.equal(0);
                     }
@@ -78,7 +78,7 @@ describe('OP26 · A goodwill refund, in part', () => {
                 cy.get('[data-test=button-refund-only]').dblclick();
                 cy.contains('Payment refunded. The order status is unchanged.').should('exist');
                 eventually(
-                    () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`),
+                    () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
                     (payment) => (payment?.refunds.length ?? 0) > 0
                 ).should((payment) => {
                     expect(payment?.refunds).to.have.length(1);
@@ -100,7 +100,7 @@ describe('OP26 · A goodwill refund, in part', () => {
                 cy.get('[data-test=refund-amount] input').clear();
                 cy.get('[data-test=button-refund-only]').should('not.be.disabled').click();
                 eventually(
-                    () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${orderId}`),
+                    () => cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${orderId}`),
                     (payment) => payment?.displayStatus === 'refunded'
                 ).should((payment) => {
                     expect(payment?.refunds).to.have.length(2);

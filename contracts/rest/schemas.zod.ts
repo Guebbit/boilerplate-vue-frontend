@@ -8734,150 +8734,7 @@ export const CreatePaymentIntentResponse = zod.strictObject({
     })
 });
 /**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
- * @summary Get the payment behind an order
- */
-export const getPaymentByOrderPathOrderIdMax = 64;
-export const getPaymentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetPaymentByOrderParams = zod.strictObject({
-    orderId: zod
-        .string()
-        .min(1)
-        .max(getPaymentByOrderPathOrderIdMax)
-        .regex(getPaymentByOrderPathOrderIdRegExp)
-});
-export const getPaymentByOrderResponseDataIdMax = 64;
-export const getPaymentByOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getPaymentByOrderResponseDataOrderIdMax = 64;
-export const getPaymentByOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getPaymentByOrderResponseDataUserIdMax = 64;
-export const getPaymentByOrderResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getPaymentByOrderResponseDataAmountMin = 0;
-export const getPaymentByOrderResponseDataAmountRefundedMin = 0;
-export const getPaymentByOrderResponseDataRefundsItemIdMax = 64;
-export const getPaymentByOrderResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const getPaymentByOrderResponseDataRefundsItemAmountMin = 0;
-export const getPaymentByOrderResponseDataRefundsItemReturnIdMax = 64;
-export const getPaymentByOrderResponseDataRefundsItemReturnIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getPaymentByOrderResponseDataReferenceMax = 120;
-export const getPaymentByOrderResponseDataActionsSettleByHandItemMax = 64;
-export const getPaymentByOrderResponseDataActionsSettleByHandItemRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const GetPaymentByOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(getPaymentByOrderResponseDataIdMax)
-            .regex(getPaymentByOrderResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(getPaymentByOrderResponseDataOrderIdMax)
-            .regex(getPaymentByOrderResponseDataOrderIdRegExp),
-        userId: zod
-            .string()
-            .min(1)
-            .max(getPaymentByOrderResponseDataUserIdMax)
-            .regex(getPaymentByOrderResponseDataUserIdRegExp)
-            .optional(),
-        amount: zod.number().min(getPaymentByOrderResponseDataAmountMin),
-        currency: zod.string(),
-        amountRefunded: zod.number().min(getPaymentByOrderResponseDataAmountRefundedMin),
-        refunds: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(getPaymentByOrderResponseDataRefundsItemIdMax)
-                    .regex(getPaymentByOrderResponseDataRefundsItemIdRegExp),
-                amount: zod.number().min(getPaymentByOrderResponseDataRefundsItemAmountMin),
-                currency: zod.string(),
-                status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
-                returnId: zod
-                    .string()
-                    .min(1)
-                    .max(getPaymentByOrderResponseDataRefundsItemReturnIdMax)
-                    .regex(getPaymentByOrderResponseDataRefundsItemReturnIdRegExp)
-                    .optional(),
-                settledAt: zod.iso.datetime({ offset: true }).optional(),
-                providerRefundRef: zod.string().optional(),
-                failureReason: zod
-                    .enum([
-                        'declined',
-                        'insufficient_funds',
-                        'expired_or_canceled_card',
-                        'lost_or_stolen_card',
-                        'provider_unavailable',
-                        'unknown'
-                    ])
-                    .optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            })
-        ),
-        status: zod.enum([
-            'requires_confirmation',
-            'requires_action',
-            'processing',
-            'succeeded',
-            'declined',
-            'cancelled'
-        ]),
-        displayStatus: zod.enum([
-            'incomplete',
-            'pending',
-            'succeeded',
-            'refund_pending',
-            'partially_refunded',
-            'refunded',
-            'failed',
-            'cancelled'
-        ]),
-        nextAction: zod
-            .strictObject({
-                type: zod.enum(['bank_transfer']),
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string(),
-                payBy: zod.iso.datetime({ offset: true })
-            })
-            .optional(),
-        providerRef: zod.string().optional(),
-        orderNumber: zod.string().optional(),
-        email: zod.string().optional(),
-        provider: zod.string(),
-        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
-        reference: zod.string().max(getPaymentByOrderResponseDataReferenceMax).optional(),
-        receivedAt: zod.iso.datetime({ offset: true }).optional(),
-        refundedByHand: zod.boolean().optional(),
-        clientSecret: zod.string().optional(),
-        cardLast4: zod.string().optional(),
-        actions: zod.strictObject({
-            pay: zod.boolean(),
-            sync: zod.boolean(),
-            refund: zod.boolean(),
-            settleByHand: zod.array(
-                zod
-                    .string()
-                    .min(1)
-                    .max(getPaymentByOrderResponseDataActionsSettleByHandItemMax)
-                    .regex(getPaymentByOrderResponseDataActionsSettleByHandItemRegExp)
-            )
-        }),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * The admin's own step before `POST /payments/order/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. The reference lives on the bank-transfer payment, which is kept for a year after its order is cancelled, so a transfer that arrives late still finds its order. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * The admin's own step before `POST /payments/orders/{orderId}/offline`: paste the RF creditor reference read off the bank's own website and get back the order it pays. Needs `create:Payment` (moderator, admin) — reading who owes what by reference is no less than recording that the money arrived. A malformed or unmatched reference both answer 404, indistinguishably: nothing here confirms that an almost-right code was close. An raw order id is not a reference, so it answers 404 too — find an order by id through the normal order search instead. The reference lives on the bank-transfer payment, which is kept for a year after its order is cancelled, so a transfer that arrives late still finds its order. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Find the order behind an RF reference
  */
 export const getOrderByReferenceQueryRefMax = 64;
@@ -9114,326 +8971,6 @@ export const GetOrderByReferenceResponse = zod.strictObject({
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
- * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Refund an order's payment
- */
-export const refundPaymentByOrderPathOrderIdMax = 64;
-export const refundPaymentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RefundPaymentByOrderParams = zod.strictObject({
-    orderId: zod
-        .string()
-        .min(1)
-        .max(refundPaymentByOrderPathOrderIdMax)
-        .regex(refundPaymentByOrderPathOrderIdRegExp)
-});
-export const refundPaymentByOrderHeaderIdempotencyKeyMax = 200;
-export const refundPaymentByOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
-export const RefundPaymentByOrderHeader = zod.strictObject({
-    'Idempotency-Key': zod
-        .string()
-        .min(1)
-        .max(refundPaymentByOrderHeaderIdempotencyKeyMax)
-        .regex(refundPaymentByOrderHeaderIdempotencyKeyRegExp)
-});
-export const refundPaymentByOrderBodyAmountExclusiveMin = 0;
-export const refundPaymentByOrderBodyCurrencyMax = 3;
-export const RefundPaymentByOrderBody = zod.strictObject({
-    amount: zod.number().gt(refundPaymentByOrderBodyAmountExclusiveMin).optional(),
-    currency: zod.string().max(refundPaymentByOrderBodyCurrencyMax).optional()
-});
-export const refundPaymentByOrderResponseDataIdMax = 64;
-export const refundPaymentByOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const refundPaymentByOrderResponseDataOrderIdMax = 64;
-export const refundPaymentByOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const refundPaymentByOrderResponseDataUserIdMax = 64;
-export const refundPaymentByOrderResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const refundPaymentByOrderResponseDataAmountMin = 0;
-export const refundPaymentByOrderResponseDataAmountRefundedMin = 0;
-export const refundPaymentByOrderResponseDataRefundsItemIdMax = 64;
-export const refundPaymentByOrderResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const refundPaymentByOrderResponseDataRefundsItemAmountMin = 0;
-export const refundPaymentByOrderResponseDataRefundsItemReturnIdMax = 64;
-export const refundPaymentByOrderResponseDataRefundsItemReturnIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const refundPaymentByOrderResponseDataReferenceMax = 120;
-export const refundPaymentByOrderResponseDataActionsSettleByHandItemMax = 64;
-export const refundPaymentByOrderResponseDataActionsSettleByHandItemRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const RefundPaymentByOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(refundPaymentByOrderResponseDataIdMax)
-            .regex(refundPaymentByOrderResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(refundPaymentByOrderResponseDataOrderIdMax)
-            .regex(refundPaymentByOrderResponseDataOrderIdRegExp),
-        userId: zod
-            .string()
-            .min(1)
-            .max(refundPaymentByOrderResponseDataUserIdMax)
-            .regex(refundPaymentByOrderResponseDataUserIdRegExp)
-            .optional(),
-        amount: zod.number().min(refundPaymentByOrderResponseDataAmountMin),
-        currency: zod.string(),
-        amountRefunded: zod.number().min(refundPaymentByOrderResponseDataAmountRefundedMin),
-        refunds: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(refundPaymentByOrderResponseDataRefundsItemIdMax)
-                    .regex(refundPaymentByOrderResponseDataRefundsItemIdRegExp),
-                amount: zod.number().min(refundPaymentByOrderResponseDataRefundsItemAmountMin),
-                currency: zod.string(),
-                status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
-                returnId: zod
-                    .string()
-                    .min(1)
-                    .max(refundPaymentByOrderResponseDataRefundsItemReturnIdMax)
-                    .regex(refundPaymentByOrderResponseDataRefundsItemReturnIdRegExp)
-                    .optional(),
-                settledAt: zod.iso.datetime({ offset: true }).optional(),
-                providerRefundRef: zod.string().optional(),
-                failureReason: zod
-                    .enum([
-                        'declined',
-                        'insufficient_funds',
-                        'expired_or_canceled_card',
-                        'lost_or_stolen_card',
-                        'provider_unavailable',
-                        'unknown'
-                    ])
-                    .optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            })
-        ),
-        status: zod.enum([
-            'requires_confirmation',
-            'requires_action',
-            'processing',
-            'succeeded',
-            'declined',
-            'cancelled'
-        ]),
-        displayStatus: zod.enum([
-            'incomplete',
-            'pending',
-            'succeeded',
-            'refund_pending',
-            'partially_refunded',
-            'refunded',
-            'failed',
-            'cancelled'
-        ]),
-        nextAction: zod
-            .strictObject({
-                type: zod.enum(['bank_transfer']),
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string(),
-                payBy: zod.iso.datetime({ offset: true })
-            })
-            .optional(),
-        providerRef: zod.string().optional(),
-        orderNumber: zod.string().optional(),
-        email: zod.string().optional(),
-        provider: zod.string(),
-        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
-        reference: zod.string().max(refundPaymentByOrderResponseDataReferenceMax).optional(),
-        receivedAt: zod.iso.datetime({ offset: true }).optional(),
-        refundedByHand: zod.boolean().optional(),
-        clientSecret: zod.string().optional(),
-        cardLast4: zod.string().optional(),
-        actions: zod.strictObject({
-            pay: zod.boolean(),
-            sync: zod.boolean(),
-            refund: zod.boolean(),
-            settleByHand: zod.array(
-                zod
-                    .string()
-                    .min(1)
-                    .max(refundPaymentByOrderResponseDataActionsSettleByHandItemMax)
-                    .regex(refundPaymentByOrderResponseDataActionsSettleByHandItemRegExp)
-            )
-        }),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
-    })
-});
-/**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
- * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
- * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Record a payment that arrived outside the provider
- */
-export const recordOfflinePaymentPathOrderIdMax = 64;
-export const recordOfflinePaymentPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const RecordOfflinePaymentParams = zod.strictObject({
-    orderId: zod
-        .string()
-        .min(1)
-        .max(recordOfflinePaymentPathOrderIdMax)
-        .regex(recordOfflinePaymentPathOrderIdRegExp)
-});
-export const recordOfflinePaymentHeaderIdempotencyKeyMax = 200;
-export const recordOfflinePaymentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
-export const RecordOfflinePaymentHeader = zod.strictObject({
-    'Idempotency-Key': zod
-        .string()
-        .min(1)
-        .max(recordOfflinePaymentHeaderIdempotencyKeyMax)
-        .regex(recordOfflinePaymentHeaderIdempotencyKeyRegExp)
-        .optional()
-});
-export const recordOfflinePaymentBodyReferenceMax = 120;
-export const RecordOfflinePaymentBody = zod.strictObject({
-    method: zod.enum(['bank_transfer', 'cash', 'other']),
-    reference: zod.string().min(1).max(recordOfflinePaymentBodyReferenceMax).optional(),
-    receivedAt: zod.iso.datetime({ offset: true }).optional()
-});
-export const recordOfflinePaymentResponseDataIdMax = 64;
-export const recordOfflinePaymentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const recordOfflinePaymentResponseDataOrderIdMax = 64;
-export const recordOfflinePaymentResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const recordOfflinePaymentResponseDataUserIdMax = 64;
-export const recordOfflinePaymentResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const recordOfflinePaymentResponseDataAmountMin = 0;
-export const recordOfflinePaymentResponseDataAmountRefundedMin = 0;
-export const recordOfflinePaymentResponseDataRefundsItemIdMax = 64;
-export const recordOfflinePaymentResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const recordOfflinePaymentResponseDataRefundsItemAmountMin = 0;
-export const recordOfflinePaymentResponseDataRefundsItemReturnIdMax = 64;
-export const recordOfflinePaymentResponseDataRefundsItemReturnIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const recordOfflinePaymentResponseDataReferenceMax = 120;
-export const recordOfflinePaymentResponseDataActionsSettleByHandItemMax = 64;
-export const recordOfflinePaymentResponseDataActionsSettleByHandItemRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const RecordOfflinePaymentResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(recordOfflinePaymentResponseDataIdMax)
-            .regex(recordOfflinePaymentResponseDataIdRegExp),
-        orderId: zod
-            .string()
-            .min(1)
-            .max(recordOfflinePaymentResponseDataOrderIdMax)
-            .regex(recordOfflinePaymentResponseDataOrderIdRegExp),
-        userId: zod
-            .string()
-            .min(1)
-            .max(recordOfflinePaymentResponseDataUserIdMax)
-            .regex(recordOfflinePaymentResponseDataUserIdRegExp)
-            .optional(),
-        amount: zod.number().min(recordOfflinePaymentResponseDataAmountMin),
-        currency: zod.string(),
-        amountRefunded: zod.number().min(recordOfflinePaymentResponseDataAmountRefundedMin),
-        refunds: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(recordOfflinePaymentResponseDataRefundsItemIdMax)
-                    .regex(recordOfflinePaymentResponseDataRefundsItemIdRegExp),
-                amount: zod.number().min(recordOfflinePaymentResponseDataRefundsItemAmountMin),
-                currency: zod.string(),
-                status: zod.enum(['pending', 'succeeded', 'failed']),
-                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
-                returnId: zod
-                    .string()
-                    .min(1)
-                    .max(recordOfflinePaymentResponseDataRefundsItemReturnIdMax)
-                    .regex(recordOfflinePaymentResponseDataRefundsItemReturnIdRegExp)
-                    .optional(),
-                settledAt: zod.iso.datetime({ offset: true }).optional(),
-                providerRefundRef: zod.string().optional(),
-                failureReason: zod
-                    .enum([
-                        'declined',
-                        'insufficient_funds',
-                        'expired_or_canceled_card',
-                        'lost_or_stolen_card',
-                        'provider_unavailable',
-                        'unknown'
-                    ])
-                    .optional(),
-                createdAt: zod.iso.datetime({ offset: true })
-            })
-        ),
-        status: zod.enum([
-            'requires_confirmation',
-            'requires_action',
-            'processing',
-            'succeeded',
-            'declined',
-            'cancelled'
-        ]),
-        displayStatus: zod.enum([
-            'incomplete',
-            'pending',
-            'succeeded',
-            'refund_pending',
-            'partially_refunded',
-            'refunded',
-            'failed',
-            'cancelled'
-        ]),
-        nextAction: zod
-            .strictObject({
-                type: zod.enum(['bank_transfer']),
-                beneficiary: zod.string(),
-                iban: zod.string(),
-                bic: zod.string().optional(),
-                reference: zod.string(),
-                payBy: zod.iso.datetime({ offset: true })
-            })
-            .optional(),
-        providerRef: zod.string().optional(),
-        orderNumber: zod.string().optional(),
-        email: zod.string().optional(),
-        provider: zod.string(),
-        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
-        reference: zod.string().max(recordOfflinePaymentResponseDataReferenceMax).optional(),
-        receivedAt: zod.iso.datetime({ offset: true }).optional(),
-        refundedByHand: zod.boolean().optional(),
-        clientSecret: zod.string().optional(),
-        cardLast4: zod.string().optional(),
-        actions: zod.strictObject({
-            pay: zod.boolean(),
-            sync: zod.boolean(),
-            refund: zod.boolean(),
-            settleByHand: zod.array(
-                zod
-                    .string()
-                    .min(1)
-                    .max(recordOfflinePaymentResponseDataActionsSettleByHandItemMax)
-                    .regex(recordOfflinePaymentResponseDataActionsSettleByHandItemRegExp)
-            )
-        }),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -9782,410 +9319,6 @@ export const ListShippingMethodsResponse = zod.strictObject({
                     .optional()
             })
         )
-    })
-});
-/**
- * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
- * @summary Get the fulfilment of an order
- */
-export const getFulfillmentByOrderPathOrderIdMax = 64;
-export const getFulfillmentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const GetFulfillmentByOrderParams = zod.strictObject({
-    orderId: zod
-        .string()
-        .min(1)
-        .max(getFulfillmentByOrderPathOrderIdMax)
-        .regex(getFulfillmentByOrderPathOrderIdRegExp)
-});
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdMax = 64;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdMax = 64;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdMax = 64;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdRegExp =
-    new RegExp('^[0-9A-Za-z_-]+$');
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemShippedQuantityMin = 0;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemCancelledQuantityMin = 0;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemRemainingMin = 0;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldMessageMax = 500;
-export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldNoteMax = 1000;
-export const getFulfillmentByOrderResponseDataShipmentsItemIdMax = 64;
-export const getFulfillmentByOrderResponseDataShipmentsItemIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getFulfillmentByOrderResponseDataShipmentsItemOrderIdMax = 64;
-export const getFulfillmentByOrderResponseDataShipmentsItemOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdMax = 64;
-export const getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdMax = 64;
-export const getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
-export const GetFulfillmentByOrderResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        fulfillmentOrders: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdMax)
-                    .regex(getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdRegExp),
-                orderId: zod
-                    .string()
-                    .min(1)
-                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdMax)
-                    .regex(getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdRegExp),
-                number: zod.number().min(1),
-                kind: zod.enum(['physical', 'digital']),
-                status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
-                lines: zod.array(
-                    zod.strictObject({
-                        productId: zod
-                            .string()
-                            .min(1)
-                            .max(
-                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdMax
-                            )
-                            .regex(
-                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdRegExp
-                            ),
-                        title: zod.string(),
-                        quantity: zod.number().min(1),
-                        shippedQuantity: zod
-                            .number()
-                            .min(
-                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemShippedQuantityMin
-                            ),
-                        cancelledQuantity: zod
-                            .number()
-                            .min(
-                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemCancelledQuantityMin
-                            ),
-                        remaining: zod
-                            .number()
-                            .min(
-                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemRemainingMin
-                            )
-                    })
-                ),
-                holdNotice: zod.enum(['awaiting_stock', 'check_address', 'delayed']).optional(),
-                holdMessage: zod
-                    .string()
-                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldMessageMax)
-                    .optional(),
-                holdReason: zod
-                    .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
-                    .optional(),
-                holdNote: zod
-                    .string()
-                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldNoteMax)
-                    .optional(),
-                agreedAt: zod.iso.datetime({ offset: true }).optional(),
-                expectedAt: zod.iso.datetime({ offset: true }).optional(),
-                lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
-                cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
-                actions: zod.strictObject({
-                    ship: zod.boolean(),
-                    forceShip: zod.boolean(),
-                    fulfill: zod.boolean(),
-                    hold: zod.boolean(),
-                    release: zod.boolean()
-                }),
-                createdAt: zod.iso.datetime({ offset: true }),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        ),
-        shipments: zod.array(
-            zod.strictObject({
-                id: zod
-                    .string()
-                    .min(1)
-                    .max(getFulfillmentByOrderResponseDataShipmentsItemIdMax)
-                    .regex(getFulfillmentByOrderResponseDataShipmentsItemIdRegExp),
-                orderId: zod
-                    .string()
-                    .min(1)
-                    .max(getFulfillmentByOrderResponseDataShipmentsItemOrderIdMax)
-                    .regex(getFulfillmentByOrderResponseDataShipmentsItemOrderIdRegExp),
-                fulfillmentOrderId: zod
-                    .string()
-                    .min(1)
-                    .max(getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdMax)
-                    .regex(getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdRegExp),
-                number: zod.number().min(1),
-                trackingCode: zod.string().optional(),
-                status: zod.enum(['shipped', 'delivered']),
-                lines: zod.array(
-                    zod.strictObject({
-                        productId: zod
-                            .string()
-                            .min(1)
-                            .max(
-                                getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdMax
-                            )
-                            .regex(
-                                getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdRegExp
-                            ),
-                        title: zod.string(),
-                        quantity: zod.number().min(1)
-                    })
-                ),
-                forced: zod.boolean(),
-                shippedAt: zod.iso.datetime({ offset: true }),
-                deliveredAt: zod.iso.datetime({ offset: true }).optional(),
-                actions: zod.strictObject({
-                    deliver: zod.boolean(),
-                    forceDeliver: zod.boolean(),
-                    update: zod.boolean()
-                }),
-                createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
-            })
-        )
-    })
-});
-/**
- * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
- * @summary Begin fulfilling a paid order
- */
-export const startFulfilmentPathOrderIdMax = 64;
-export const startFulfilmentPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const StartFulfilmentParams = zod.strictObject({
-    orderId: zod
-        .string()
-        .min(1)
-        .max(startFulfilmentPathOrderIdMax)
-        .regex(startFulfilmentPathOrderIdRegExp)
-});
-export const startFulfilmentResponseDataIdMax = 64;
-export const startFulfilmentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const startFulfilmentResponseDataUserIdMax = 64;
-export const startFulfilmentResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const startFulfilmentResponseDataEmailMax = 254;
-export const startFulfilmentResponseDataItemsItemProductIdMax = 64;
-export const startFulfilmentResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const startFulfilmentResponseDataItemsItemProductPriceMin = 0;
-export const startFulfilmentResponseDataItemsItemProductRequiresShippingDefault = true;
-export const startFulfilmentResponseDataItemsItemProductSkuMax = 64;
-export const startFulfilmentResponseDataItemsItemProductWeightMin = 0;
-export const startFulfilmentResponseDataItemsItemProductTaxRateMin = 0;
-export const startFulfilmentResponseDataItemsItemProductTaxRateMax = 1;
-export const startFulfilmentResponseDataItemsItemLocaleMax = 35;
-export const startFulfilmentResponseDataItemsItemLocaleRegExp = new RegExp(
-    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
-);
-export const startFulfilmentResponseDataItemsItemTaxAmountMin = 0;
-export const startFulfilmentResponseDataItemsItemNetAmountMin = 0;
-export const startFulfilmentResponseDataTotalItemsMin = 0;
-export const startFulfilmentResponseDataTotalQuantityMin = 0;
-export const startFulfilmentResponseDataTotalPriceMin = 0;
-export const startFulfilmentResponseDataNetTotalMin = 0;
-export const startFulfilmentResponseDataTaxTotalMin = 0;
-export const startFulfilmentResponseDataShippingNetAmountMin = 0;
-export const startFulfilmentResponseDataShippingTaxAmountMin = 0;
-export const startFulfilmentResponseDataTaxSummaryItemRateMin = 0;
-export const startFulfilmentResponseDataTaxSummaryItemNetAmountMin = 0;
-export const startFulfilmentResponseDataTaxSummaryItemTaxAmountMin = 0;
-export const startFulfilmentResponseDataTaxSummaryItemGrossAmountMin = 0;
-export const startFulfilmentResponseDataShippingCostMin = 0;
-export const startFulfilmentResponseDataShippingAddressFullNameMax = 100;
-export const startFulfilmentResponseDataShippingAddressStreetMax = 200;
-export const startFulfilmentResponseDataShippingAddressCityMax = 100;
-export const startFulfilmentResponseDataShippingAddressZipMax = 20;
-export const startFulfilmentResponseDataShippingAddressCountryMax = 2;
-export const startFulfilmentResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const startFulfilmentResponseDataShippingAddressPhoneMax = 32;
-export const startFulfilmentResponseDataBillingAddressFullNameMax = 100;
-export const startFulfilmentResponseDataBillingAddressStreetMax = 200;
-export const startFulfilmentResponseDataBillingAddressCityMax = 100;
-export const startFulfilmentResponseDataBillingAddressZipMax = 20;
-export const startFulfilmentResponseDataBillingAddressCountryMax = 2;
-export const startFulfilmentResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
-export const startFulfilmentResponseDataBillingAddressPhoneMax = 32;
-export const StartFulfilmentResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        id: zod
-            .string()
-            .min(1)
-            .max(startFulfilmentResponseDataIdMax)
-            .regex(startFulfilmentResponseDataIdRegExp),
-        userId: zod
-            .string()
-            .min(1)
-            .max(startFulfilmentResponseDataUserIdMax)
-            .regex(startFulfilmentResponseDataUserIdRegExp)
-            .optional(),
-        email: zod.email().max(startFulfilmentResponseDataEmailMax),
-        items: zod.array(
-            zod.strictObject({
-                product: zod.strictObject({
-                    id: zod
-                        .string()
-                        .min(1)
-                        .max(startFulfilmentResponseDataItemsItemProductIdMax)
-                        .regex(startFulfilmentResponseDataItemsItemProductIdRegExp),
-                    title: zod.string(),
-                    price: zod.number().min(startFulfilmentResponseDataItemsItemProductPriceMin),
-                    description: zod.string().optional(),
-                    requiresShipping: zod
-                        .boolean()
-                        .default(
-                            startFulfilmentResponseDataItemsItemProductRequiresShippingDefault
-                        ),
-                    noWithdrawal: zod.boolean().optional(),
-                    sku: zod
-                        .string()
-                        .min(1)
-                        .max(startFulfilmentResponseDataItemsItemProductSkuMax)
-                        .optional(),
-                    weight: zod
-                        .number()
-                        .min(startFulfilmentResponseDataItemsItemProductWeightMin)
-                        .optional(),
-                    releaseDate: zod.iso.datetime({ offset: true }).optional(),
-                    preorder: zod.boolean().optional(),
-                    categories: zod.array(zod.string()).optional(),
-                    tags: zod.array(zod.string()).optional(),
-                    createdAt: zod.iso.datetime({ offset: true }).optional(),
-                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
-                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
-                    taxRate: zod
-                        .number()
-                        .min(startFulfilmentResponseDataItemsItemProductTaxRateMin)
-                        .max(startFulfilmentResponseDataItemsItemProductTaxRateMax),
-                    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
-                }),
-                quantity: zod.number().min(1),
-                locale: zod
-                    .string()
-                    .max(startFulfilmentResponseDataItemsItemLocaleMax)
-                    .regex(startFulfilmentResponseDataItemsItemLocaleRegExp),
-                backorderedQuantity: zod.number().min(1).optional(),
-                promisedAt: zod.iso.datetime({ offset: true }).optional(),
-                promiseDated: zod.boolean().optional(),
-                current: zod.union([
-                    zod.strictObject({
-                        imageUrl: zod.string().min(1).optional(),
-                        thumbnailUrl: zod.string().optional()
-                    }),
-                    zod.null()
-                ]),
-                taxAmount: zod.number().min(startFulfilmentResponseDataItemsItemTaxAmountMin),
-                netAmount: zod.number().min(startFulfilmentResponseDataItemsItemNetAmountMin)
-            })
-        ),
-        totalItems: zod.number().min(startFulfilmentResponseDataTotalItemsMin),
-        totalQuantity: zod.number().min(startFulfilmentResponseDataTotalQuantityMin),
-        totalPrice: zod.number().min(startFulfilmentResponseDataTotalPriceMin),
-        currency: zod.string(),
-        netTotal: zod.number().min(startFulfilmentResponseDataNetTotalMin),
-        taxTotal: zod.number().min(startFulfilmentResponseDataTaxTotalMin),
-        shippingNetAmount: zod.number().min(startFulfilmentResponseDataShippingNetAmountMin),
-        shippingTaxAmount: zod.number().min(startFulfilmentResponseDataShippingTaxAmountMin),
-        taxSummary: zod.array(
-            zod.strictObject({
-                rate: zod.number().min(startFulfilmentResponseDataTaxSummaryItemRateMin),
-                netAmount: zod.number().min(startFulfilmentResponseDataTaxSummaryItemNetAmountMin),
-                taxAmount: zod.number().min(startFulfilmentResponseDataTaxSummaryItemTaxAmountMin),
-                grossAmount: zod
-                    .number()
-                    .min(startFulfilmentResponseDataTaxSummaryItemGrossAmountMin)
-            })
-        ),
-        notes: zod.string().optional(),
-        shippingMethod: zod.string().optional(),
-        shippingCost: zod.number().min(startFulfilmentResponseDataShippingCostMin).optional(),
-        shippingAddress: zod
-            .strictObject({
-                fullName: zod.string().max(startFulfilmentResponseDataShippingAddressFullNameMax),
-                street: zod.string().max(startFulfilmentResponseDataShippingAddressStreetMax),
-                city: zod.string().max(startFulfilmentResponseDataShippingAddressCityMax),
-                zip: zod.string().max(startFulfilmentResponseDataShippingAddressZipMax),
-                country: zod
-                    .string()
-                    .max(startFulfilmentResponseDataShippingAddressCountryMax)
-                    .regex(startFulfilmentResponseDataShippingAddressCountryRegExp),
-                phone: zod
-                    .string()
-                    .max(startFulfilmentResponseDataShippingAddressPhoneMax)
-                    .optional()
-            })
-            .optional(),
-        billingAddress: zod
-            .strictObject({
-                fullName: zod.string().max(startFulfilmentResponseDataBillingAddressFullNameMax),
-                street: zod.string().max(startFulfilmentResponseDataBillingAddressStreetMax),
-                city: zod.string().max(startFulfilmentResponseDataBillingAddressCityMax),
-                zip: zod.string().max(startFulfilmentResponseDataBillingAddressZipMax),
-                country: zod
-                    .string()
-                    .max(startFulfilmentResponseDataBillingAddressCountryMax)
-                    .regex(startFulfilmentResponseDataBillingAddressCountryRegExp),
-                phone: zod
-                    .string()
-                    .max(startFulfilmentResponseDataBillingAddressPhoneMax)
-                    .optional()
-            })
-            .optional(),
-        paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
-        payBy: zod.iso.datetime({ offset: true }).optional(),
-        orderNumber: zod.string(),
-        status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
-        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
-        fulfillmentStatus: zod.enum([
-            'unfulfilled',
-            'in_progress',
-            'on_hold',
-            'partially_fulfilled',
-            'shipped',
-            'fulfilled'
-        ]),
-        returnStatus: zod.enum([
-            'none',
-            'requested',
-            'in_progress',
-            'partially_returned',
-            'returned'
-        ]),
-        actions: zod
-            .strictObject({
-                cancel: zod.boolean(),
-                pay: zod.boolean(),
-                recordPayment: zod.boolean(),
-                start: zod.boolean(),
-                override: zod.array(
-                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
-                ),
-                correctAddress: zod.boolean(),
-                withdraw: zod.boolean(),
-                withdrawBlocked: zod
-                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
-                    .optional(),
-                delete: zod.boolean(),
-                hardDelete: zod.boolean(),
-                restore: zod.boolean(),
-                invoice: zod.boolean()
-            })
-            .optional(),
-        withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
-        paidAt: zod.iso.datetime({ offset: true }).optional(),
-        createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional(),
-        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
@@ -14884,7 +14017,7 @@ export const CorrectOrderShippingAddressResponse = zod.strictObject({
     })
 });
 /**
- * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/order/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
+ * Every payment in the shop, newest first, for the staff Payments page. Needs `display:Payment`; the payer reads their own through `GET /payments/orders/{orderId}`. `displayStatus` filters by the label the page shows, and the server maps each label to the stored fields behind it. Each row carries its order's `orderNumber` and `email`, composed from `orders`. Each row carries `actions` for the caller, so a client never decides `refund` from the status; `actions.pay` is false on a list row (paying is the payer's own step, read on the order page). The provider references (`providerRef`, each refund's `providerRefundRef`) and a failed refund's `failureReason` are sent here and nowhere a payer reads.
  * @summary List payments (staff)
  */
 export const listPaymentsQueryPageDefault = 1;
@@ -15318,7 +14451,7 @@ export const SearchPaymentsResponse = zod.strictObject({
     })
 });
 /**
- * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/order/{orderId}/refund` and the cancel path. Needs `display:Payment`.
+ * One row per refund across every payment, newest first, for the Refunds tab. Read only: a refund is opened and settled through `POST /payments/orders/{orderId}/refund` and the cancel path. Needs `display:Payment`.
  * @summary List refunds (staff)
  */
 export const listRefundsQueryPageDefault = 1;
@@ -15481,7 +14614,309 @@ export const ListPaymentAttentionResponse = zod.strictObject({
     })
 });
 /**
- * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/order/{orderId}/refund`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * @summary Get the payment behind an order
+ */
+export const getPaymentByOrderPathOrderIdMax = 64;
+export const getPaymentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetPaymentByOrderParams = zod.strictObject({
+    orderId: zod
+        .string()
+        .min(1)
+        .max(getPaymentByOrderPathOrderIdMax)
+        .regex(getPaymentByOrderPathOrderIdRegExp)
+});
+export const getPaymentByOrderResponseDataIdMax = 64;
+export const getPaymentByOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getPaymentByOrderResponseDataOrderIdMax = 64;
+export const getPaymentByOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getPaymentByOrderResponseDataUserIdMax = 64;
+export const getPaymentByOrderResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getPaymentByOrderResponseDataAmountMin = 0;
+export const getPaymentByOrderResponseDataAmountRefundedMin = 0;
+export const getPaymentByOrderResponseDataRefundsItemIdMax = 64;
+export const getPaymentByOrderResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const getPaymentByOrderResponseDataRefundsItemAmountMin = 0;
+export const getPaymentByOrderResponseDataRefundsItemReturnIdMax = 64;
+export const getPaymentByOrderResponseDataRefundsItemReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getPaymentByOrderResponseDataReferenceMax = 120;
+export const getPaymentByOrderResponseDataActionsSettleByHandItemMax = 64;
+export const getPaymentByOrderResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const GetPaymentByOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(getPaymentByOrderResponseDataIdMax)
+            .regex(getPaymentByOrderResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(getPaymentByOrderResponseDataOrderIdMax)
+            .regex(getPaymentByOrderResponseDataOrderIdRegExp),
+        userId: zod
+            .string()
+            .min(1)
+            .max(getPaymentByOrderResponseDataUserIdMax)
+            .regex(getPaymentByOrderResponseDataUserIdRegExp)
+            .optional(),
+        amount: zod.number().min(getPaymentByOrderResponseDataAmountMin),
+        currency: zod.string(),
+        amountRefunded: zod.number().min(getPaymentByOrderResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getPaymentByOrderResponseDataRefundsItemIdMax)
+                    .regex(getPaymentByOrderResponseDataRefundsItemIdRegExp),
+                amount: zod.number().min(getPaymentByOrderResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                returnId: zod
+                    .string()
+                    .min(1)
+                    .max(getPaymentByOrderResponseDataRefundsItemReturnIdMax)
+                    .regex(getPaymentByOrderResponseDataRefundsItemReturnIdRegExp)
+                    .optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                providerRefundRef: zod.string().optional(),
+                failureReason: zod
+                    .enum([
+                        'declined',
+                        'insufficient_funds',
+                        'expired_or_canceled_card',
+                        'lost_or_stolen_card',
+                        'provider_unavailable',
+                        'unknown'
+                    ])
+                    .optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        status: zod.enum([
+            'requires_confirmation',
+            'requires_action',
+            'processing',
+            'succeeded',
+            'declined',
+            'cancelled'
+        ]),
+        displayStatus: zod.enum([
+            'incomplete',
+            'pending',
+            'succeeded',
+            'refund_pending',
+            'partially_refunded',
+            'refunded',
+            'failed',
+            'cancelled'
+        ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
+        providerRef: zod.string().optional(),
+        orderNumber: zod.string().optional(),
+        email: zod.string().optional(),
+        provider: zod.string(),
+        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
+        reference: zod.string().max(getPaymentByOrderResponseDataReferenceMax).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        refundedByHand: zod.boolean().optional(),
+        clientSecret: zod.string().optional(),
+        cardLast4: zod.string().optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(getPaymentByOrderResponseDataActionsSettleByHandItemMax)
+                    .regex(getPaymentByOrderResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Refund an order's payment
+ */
+export const refundPaymentByOrderPathOrderIdMax = 64;
+export const refundPaymentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const RefundPaymentByOrderParams = zod.strictObject({
+    orderId: zod
+        .string()
+        .min(1)
+        .max(refundPaymentByOrderPathOrderIdMax)
+        .regex(refundPaymentByOrderPathOrderIdRegExp)
+});
+export const refundPaymentByOrderHeaderIdempotencyKeyMax = 200;
+export const refundPaymentByOrderHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const RefundPaymentByOrderHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(refundPaymentByOrderHeaderIdempotencyKeyMax)
+        .regex(refundPaymentByOrderHeaderIdempotencyKeyRegExp)
+});
+export const refundPaymentByOrderBodyAmountExclusiveMin = 0;
+export const refundPaymentByOrderBodyCurrencyMax = 3;
+export const RefundPaymentByOrderBody = zod.strictObject({
+    amount: zod.number().gt(refundPaymentByOrderBodyAmountExclusiveMin).optional(),
+    currency: zod.string().max(refundPaymentByOrderBodyCurrencyMax).optional()
+});
+export const refundPaymentByOrderResponseDataIdMax = 64;
+export const refundPaymentByOrderResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const refundPaymentByOrderResponseDataOrderIdMax = 64;
+export const refundPaymentByOrderResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const refundPaymentByOrderResponseDataUserIdMax = 64;
+export const refundPaymentByOrderResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const refundPaymentByOrderResponseDataAmountMin = 0;
+export const refundPaymentByOrderResponseDataAmountRefundedMin = 0;
+export const refundPaymentByOrderResponseDataRefundsItemIdMax = 64;
+export const refundPaymentByOrderResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const refundPaymentByOrderResponseDataRefundsItemAmountMin = 0;
+export const refundPaymentByOrderResponseDataRefundsItemReturnIdMax = 64;
+export const refundPaymentByOrderResponseDataRefundsItemReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const refundPaymentByOrderResponseDataReferenceMax = 120;
+export const refundPaymentByOrderResponseDataActionsSettleByHandItemMax = 64;
+export const refundPaymentByOrderResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const RefundPaymentByOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(refundPaymentByOrderResponseDataIdMax)
+            .regex(refundPaymentByOrderResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(refundPaymentByOrderResponseDataOrderIdMax)
+            .regex(refundPaymentByOrderResponseDataOrderIdRegExp),
+        userId: zod
+            .string()
+            .min(1)
+            .max(refundPaymentByOrderResponseDataUserIdMax)
+            .regex(refundPaymentByOrderResponseDataUserIdRegExp)
+            .optional(),
+        amount: zod.number().min(refundPaymentByOrderResponseDataAmountMin),
+        currency: zod.string(),
+        amountRefunded: zod.number().min(refundPaymentByOrderResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(refundPaymentByOrderResponseDataRefundsItemIdMax)
+                    .regex(refundPaymentByOrderResponseDataRefundsItemIdRegExp),
+                amount: zod.number().min(refundPaymentByOrderResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                returnId: zod
+                    .string()
+                    .min(1)
+                    .max(refundPaymentByOrderResponseDataRefundsItemReturnIdMax)
+                    .regex(refundPaymentByOrderResponseDataRefundsItemReturnIdRegExp)
+                    .optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                providerRefundRef: zod.string().optional(),
+                failureReason: zod
+                    .enum([
+                        'declined',
+                        'insufficient_funds',
+                        'expired_or_canceled_card',
+                        'lost_or_stolen_card',
+                        'provider_unavailable',
+                        'unknown'
+                    ])
+                    .optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        status: zod.enum([
+            'requires_confirmation',
+            'requires_action',
+            'processing',
+            'succeeded',
+            'declined',
+            'cancelled'
+        ]),
+        displayStatus: zod.enum([
+            'incomplete',
+            'pending',
+            'succeeded',
+            'refund_pending',
+            'partially_refunded',
+            'refunded',
+            'failed',
+            'cancelled'
+        ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
+        providerRef: zod.string().optional(),
+        orderNumber: zod.string().optional(),
+        email: zod.string().optional(),
+        provider: zod.string(),
+        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
+        reference: zod.string().max(refundPaymentByOrderResponseDataReferenceMax).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        refundedByHand: zod.boolean().optional(),
+        clientSecret: zod.string().optional(),
+        cardLast4: zod.string().optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(refundPaymentByOrderResponseDataActionsSettleByHandItemMax)
+                    .regex(refundPaymentByOrderResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/orders/{orderId}/refund`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Mark a hand-paid refund as returned
  */
 export const settleRefundByHandPathIdMax = 64;
@@ -15634,6 +15069,571 @@ export const SettleRefundByHandResponse = zod.strictObject({
         }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+ * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+ * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Record a payment that arrived outside the provider
+ */
+export const recordOfflinePaymentPathOrderIdMax = 64;
+export const recordOfflinePaymentPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const RecordOfflinePaymentParams = zod.strictObject({
+    orderId: zod
+        .string()
+        .min(1)
+        .max(recordOfflinePaymentPathOrderIdMax)
+        .regex(recordOfflinePaymentPathOrderIdRegExp)
+});
+export const recordOfflinePaymentHeaderIdempotencyKeyMax = 200;
+export const recordOfflinePaymentHeaderIdempotencyKeyRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const RecordOfflinePaymentHeader = zod.strictObject({
+    'Idempotency-Key': zod
+        .string()
+        .min(1)
+        .max(recordOfflinePaymentHeaderIdempotencyKeyMax)
+        .regex(recordOfflinePaymentHeaderIdempotencyKeyRegExp)
+        .optional()
+});
+export const recordOfflinePaymentBodyReferenceMax = 120;
+export const RecordOfflinePaymentBody = zod.strictObject({
+    method: zod.enum(['bank_transfer', 'cash', 'other']),
+    reference: zod.string().min(1).max(recordOfflinePaymentBodyReferenceMax).optional(),
+    receivedAt: zod.iso.datetime({ offset: true }).optional()
+});
+export const recordOfflinePaymentResponseDataIdMax = 64;
+export const recordOfflinePaymentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordOfflinePaymentResponseDataOrderIdMax = 64;
+export const recordOfflinePaymentResponseDataOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordOfflinePaymentResponseDataUserIdMax = 64;
+export const recordOfflinePaymentResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordOfflinePaymentResponseDataAmountMin = 0;
+export const recordOfflinePaymentResponseDataAmountRefundedMin = 0;
+export const recordOfflinePaymentResponseDataRefundsItemIdMax = 64;
+export const recordOfflinePaymentResponseDataRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const recordOfflinePaymentResponseDataRefundsItemAmountMin = 0;
+export const recordOfflinePaymentResponseDataRefundsItemReturnIdMax = 64;
+export const recordOfflinePaymentResponseDataRefundsItemReturnIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const recordOfflinePaymentResponseDataReferenceMax = 120;
+export const recordOfflinePaymentResponseDataActionsSettleByHandItemMax = 64;
+export const recordOfflinePaymentResponseDataActionsSettleByHandItemRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const RecordOfflinePaymentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(recordOfflinePaymentResponseDataIdMax)
+            .regex(recordOfflinePaymentResponseDataIdRegExp),
+        orderId: zod
+            .string()
+            .min(1)
+            .max(recordOfflinePaymentResponseDataOrderIdMax)
+            .regex(recordOfflinePaymentResponseDataOrderIdRegExp),
+        userId: zod
+            .string()
+            .min(1)
+            .max(recordOfflinePaymentResponseDataUserIdMax)
+            .regex(recordOfflinePaymentResponseDataUserIdRegExp)
+            .optional(),
+        amount: zod.number().min(recordOfflinePaymentResponseDataAmountMin),
+        currency: zod.string(),
+        amountRefunded: zod.number().min(recordOfflinePaymentResponseDataAmountRefundedMin),
+        refunds: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(recordOfflinePaymentResponseDataRefundsItemIdMax)
+                    .regex(recordOfflinePaymentResponseDataRefundsItemIdRegExp),
+                amount: zod.number().min(recordOfflinePaymentResponseDataRefundsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['pending', 'succeeded', 'failed']),
+                reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+                returnId: zod
+                    .string()
+                    .min(1)
+                    .max(recordOfflinePaymentResponseDataRefundsItemReturnIdMax)
+                    .regex(recordOfflinePaymentResponseDataRefundsItemReturnIdRegExp)
+                    .optional(),
+                settledAt: zod.iso.datetime({ offset: true }).optional(),
+                providerRefundRef: zod.string().optional(),
+                failureReason: zod
+                    .enum([
+                        'declined',
+                        'insufficient_funds',
+                        'expired_or_canceled_card',
+                        'lost_or_stolen_card',
+                        'provider_unavailable',
+                        'unknown'
+                    ])
+                    .optional(),
+                createdAt: zod.iso.datetime({ offset: true })
+            })
+        ),
+        status: zod.enum([
+            'requires_confirmation',
+            'requires_action',
+            'processing',
+            'succeeded',
+            'declined',
+            'cancelled'
+        ]),
+        displayStatus: zod.enum([
+            'incomplete',
+            'pending',
+            'succeeded',
+            'refund_pending',
+            'partially_refunded',
+            'refunded',
+            'failed',
+            'cancelled'
+        ]),
+        nextAction: zod
+            .strictObject({
+                type: zod.enum(['bank_transfer']),
+                beneficiary: zod.string(),
+                iban: zod.string(),
+                bic: zod.string().optional(),
+                reference: zod.string(),
+                payBy: zod.iso.datetime({ offset: true })
+            })
+            .optional(),
+        providerRef: zod.string().optional(),
+        orderNumber: zod.string().optional(),
+        email: zod.string().optional(),
+        provider: zod.string(),
+        method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
+        reference: zod.string().max(recordOfflinePaymentResponseDataReferenceMax).optional(),
+        receivedAt: zod.iso.datetime({ offset: true }).optional(),
+        refundedByHand: zod.boolean().optional(),
+        clientSecret: zod.string().optional(),
+        cardLast4: zod.string().optional(),
+        actions: zod.strictObject({
+            pay: zod.boolean(),
+            sync: zod.boolean(),
+            refund: zod.boolean(),
+            settleByHand: zod.array(
+                zod
+                    .string()
+                    .min(1)
+                    .max(recordOfflinePaymentResponseDataActionsSettleByHandItemMax)
+                    .regex(recordOfflinePaymentResponseDataActionsSettleByHandItemRegExp)
+            )
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
+ * @summary Get the fulfilment of an order
+ */
+export const getFulfillmentByOrderPathOrderIdMax = 64;
+export const getFulfillmentByOrderPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const GetFulfillmentByOrderParams = zod.strictObject({
+    orderId: zod
+        .string()
+        .min(1)
+        .max(getFulfillmentByOrderPathOrderIdMax)
+        .regex(getFulfillmentByOrderPathOrderIdRegExp)
+});
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdMax = 64;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdMax = 64;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdMax = 64;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdRegExp =
+    new RegExp('^[0-9A-Za-z_-]+$');
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemShippedQuantityMin = 0;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemCancelledQuantityMin = 0;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemRemainingMin = 0;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldMessageMax = 500;
+export const getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldNoteMax = 1000;
+export const getFulfillmentByOrderResponseDataShipmentsItemIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataShipmentsItemOrderIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdMax = 64;
+export const getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdRegExp = new RegExp(
+    '^[0-9A-Za-z_-]+$'
+);
+export const GetFulfillmentByOrderResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        fulfillmentOrders: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdMax)
+                    .regex(getFulfillmentByOrderResponseDataFulfillmentOrdersItemIdRegExp),
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdMax)
+                    .regex(getFulfillmentByOrderResponseDataFulfillmentOrdersItemOrderIdRegExp),
+                number: zod.number().min(1),
+                kind: zod.enum(['physical', 'digital']),
+                status: zod.enum(['open', 'in_progress', 'on_hold', 'closed', 'cancelled']),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdMax
+                            )
+                            .regex(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemProductIdRegExp
+                            ),
+                        title: zod.string(),
+                        quantity: zod.number().min(1),
+                        shippedQuantity: zod
+                            .number()
+                            .min(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemShippedQuantityMin
+                            ),
+                        cancelledQuantity: zod
+                            .number()
+                            .min(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemCancelledQuantityMin
+                            ),
+                        remaining: zod
+                            .number()
+                            .min(
+                                getFulfillmentByOrderResponseDataFulfillmentOrdersItemLinesItemRemainingMin
+                            )
+                    })
+                ),
+                holdNotice: zod.enum(['awaiting_stock', 'check_address', 'delayed']).optional(),
+                holdMessage: zod
+                    .string()
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldMessageMax)
+                    .optional(),
+                holdReason: zod
+                    .enum(['awaiting_stock', 'incorrect_address', 'high_risk', 'other'])
+                    .optional(),
+                holdNote: zod
+                    .string()
+                    .max(getFulfillmentByOrderResponseDataFulfillmentOrdersItemHoldNoteMax)
+                    .optional(),
+                agreedAt: zod.iso.datetime({ offset: true }).optional(),
+                expectedAt: zod.iso.datetime({ offset: true }).optional(),
+                lastNoticeAt: zod.iso.datetime({ offset: true }).optional(),
+                cancelReason: zod.enum(['buyer', 'staff', 'order']).optional(),
+                actions: zod.strictObject({
+                    ship: zod.boolean(),
+                    forceShip: zod.boolean(),
+                    fulfill: zod.boolean(),
+                    hold: zod.boolean(),
+                    release: zod.boolean()
+                }),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        shipments: zod.array(
+            zod.strictObject({
+                id: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataShipmentsItemIdMax)
+                    .regex(getFulfillmentByOrderResponseDataShipmentsItemIdRegExp),
+                orderId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataShipmentsItemOrderIdMax)
+                    .regex(getFulfillmentByOrderResponseDataShipmentsItemOrderIdRegExp),
+                fulfillmentOrderId: zod
+                    .string()
+                    .min(1)
+                    .max(getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdMax)
+                    .regex(getFulfillmentByOrderResponseDataShipmentsItemFulfillmentOrderIdRegExp),
+                number: zod.number().min(1),
+                trackingCode: zod.string().optional(),
+                status: zod.enum(['shipped', 'delivered']),
+                lines: zod.array(
+                    zod.strictObject({
+                        productId: zod
+                            .string()
+                            .min(1)
+                            .max(
+                                getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdMax
+                            )
+                            .regex(
+                                getFulfillmentByOrderResponseDataShipmentsItemLinesItemProductIdRegExp
+                            ),
+                        title: zod.string(),
+                        quantity: zod.number().min(1)
+                    })
+                ),
+                forced: zod.boolean(),
+                shippedAt: zod.iso.datetime({ offset: true }),
+                deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+                actions: zod.strictObject({
+                    deliver: zod.boolean(),
+                    forceDeliver: zod.boolean(),
+                    update: zod.boolean()
+                }),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        )
+    })
+});
+/**
+ * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * @summary Begin fulfilling a paid order
+ */
+export const startFulfilmentPathOrderIdMax = 64;
+export const startFulfilmentPathOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const StartFulfilmentParams = zod.strictObject({
+    orderId: zod
+        .string()
+        .min(1)
+        .max(startFulfilmentPathOrderIdMax)
+        .regex(startFulfilmentPathOrderIdRegExp)
+});
+export const startFulfilmentResponseDataIdMax = 64;
+export const startFulfilmentResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const startFulfilmentResponseDataUserIdMax = 64;
+export const startFulfilmentResponseDataUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const startFulfilmentResponseDataEmailMax = 254;
+export const startFulfilmentResponseDataItemsItemProductIdMax = 64;
+export const startFulfilmentResponseDataItemsItemProductIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const startFulfilmentResponseDataItemsItemProductPriceMin = 0;
+export const startFulfilmentResponseDataItemsItemProductRequiresShippingDefault = true;
+export const startFulfilmentResponseDataItemsItemProductSkuMax = 64;
+export const startFulfilmentResponseDataItemsItemProductWeightMin = 0;
+export const startFulfilmentResponseDataItemsItemProductTaxRateMin = 0;
+export const startFulfilmentResponseDataItemsItemProductTaxRateMax = 1;
+export const startFulfilmentResponseDataItemsItemLocaleMax = 35;
+export const startFulfilmentResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const startFulfilmentResponseDataItemsItemTaxAmountMin = 0;
+export const startFulfilmentResponseDataItemsItemNetAmountMin = 0;
+export const startFulfilmentResponseDataTotalItemsMin = 0;
+export const startFulfilmentResponseDataTotalQuantityMin = 0;
+export const startFulfilmentResponseDataTotalPriceMin = 0;
+export const startFulfilmentResponseDataNetTotalMin = 0;
+export const startFulfilmentResponseDataTaxTotalMin = 0;
+export const startFulfilmentResponseDataShippingNetAmountMin = 0;
+export const startFulfilmentResponseDataShippingTaxAmountMin = 0;
+export const startFulfilmentResponseDataTaxSummaryItemRateMin = 0;
+export const startFulfilmentResponseDataTaxSummaryItemNetAmountMin = 0;
+export const startFulfilmentResponseDataTaxSummaryItemTaxAmountMin = 0;
+export const startFulfilmentResponseDataTaxSummaryItemGrossAmountMin = 0;
+export const startFulfilmentResponseDataShippingCostMin = 0;
+export const startFulfilmentResponseDataShippingAddressFullNameMax = 100;
+export const startFulfilmentResponseDataShippingAddressStreetMax = 200;
+export const startFulfilmentResponseDataShippingAddressCityMax = 100;
+export const startFulfilmentResponseDataShippingAddressZipMax = 20;
+export const startFulfilmentResponseDataShippingAddressCountryMax = 2;
+export const startFulfilmentResponseDataShippingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const startFulfilmentResponseDataShippingAddressPhoneMax = 32;
+export const startFulfilmentResponseDataBillingAddressFullNameMax = 100;
+export const startFulfilmentResponseDataBillingAddressStreetMax = 200;
+export const startFulfilmentResponseDataBillingAddressCityMax = 100;
+export const startFulfilmentResponseDataBillingAddressZipMax = 20;
+export const startFulfilmentResponseDataBillingAddressCountryMax = 2;
+export const startFulfilmentResponseDataBillingAddressCountryRegExp = new RegExp('^[A-Z]{2}$');
+export const startFulfilmentResponseDataBillingAddressPhoneMax = 32;
+export const StartFulfilmentResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(startFulfilmentResponseDataIdMax)
+            .regex(startFulfilmentResponseDataIdRegExp),
+        userId: zod
+            .string()
+            .min(1)
+            .max(startFulfilmentResponseDataUserIdMax)
+            .regex(startFulfilmentResponseDataUserIdRegExp)
+            .optional(),
+        email: zod.email().max(startFulfilmentResponseDataEmailMax),
+        items: zod.array(
+            zod.strictObject({
+                product: zod.strictObject({
+                    id: zod
+                        .string()
+                        .min(1)
+                        .max(startFulfilmentResponseDataItemsItemProductIdMax)
+                        .regex(startFulfilmentResponseDataItemsItemProductIdRegExp),
+                    title: zod.string(),
+                    price: zod.number().min(startFulfilmentResponseDataItemsItemProductPriceMin),
+                    description: zod.string().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            startFulfilmentResponseDataItemsItemProductRequiresShippingDefault
+                        ),
+                    noWithdrawal: zod.boolean().optional(),
+                    sku: zod
+                        .string()
+                        .min(1)
+                        .max(startFulfilmentResponseDataItemsItemProductSkuMax)
+                        .optional(),
+                    weight: zod
+                        .number()
+                        .min(startFulfilmentResponseDataItemsItemProductWeightMin)
+                        .optional(),
+                    releaseDate: zod.iso.datetime({ offset: true }).optional(),
+                    preorder: zod.boolean().optional(),
+                    categories: zod.array(zod.string()).optional(),
+                    tags: zod.array(zod.string()).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                    deletedAt: zod.iso.datetime({ offset: true }).optional(),
+                    taxRate: zod
+                        .number()
+                        .min(startFulfilmentResponseDataItemsItemProductTaxRateMin)
+                        .max(startFulfilmentResponseDataItemsItemProductTaxRateMax),
+                    rateType: zod.enum(['standard', 'zero-rated', 'exempt']).optional()
+                }),
+                quantity: zod.number().min(1),
+                locale: zod
+                    .string()
+                    .max(startFulfilmentResponseDataItemsItemLocaleMax)
+                    .regex(startFulfilmentResponseDataItemsItemLocaleRegExp),
+                backorderedQuantity: zod.number().min(1).optional(),
+                promisedAt: zod.iso.datetime({ offset: true }).optional(),
+                promiseDated: zod.boolean().optional(),
+                current: zod.union([
+                    zod.strictObject({
+                        imageUrl: zod.string().min(1).optional(),
+                        thumbnailUrl: zod.string().optional()
+                    }),
+                    zod.null()
+                ]),
+                taxAmount: zod.number().min(startFulfilmentResponseDataItemsItemTaxAmountMin),
+                netAmount: zod.number().min(startFulfilmentResponseDataItemsItemNetAmountMin)
+            })
+        ),
+        totalItems: zod.number().min(startFulfilmentResponseDataTotalItemsMin),
+        totalQuantity: zod.number().min(startFulfilmentResponseDataTotalQuantityMin),
+        totalPrice: zod.number().min(startFulfilmentResponseDataTotalPriceMin),
+        currency: zod.string(),
+        netTotal: zod.number().min(startFulfilmentResponseDataNetTotalMin),
+        taxTotal: zod.number().min(startFulfilmentResponseDataTaxTotalMin),
+        shippingNetAmount: zod.number().min(startFulfilmentResponseDataShippingNetAmountMin),
+        shippingTaxAmount: zod.number().min(startFulfilmentResponseDataShippingTaxAmountMin),
+        taxSummary: zod.array(
+            zod.strictObject({
+                rate: zod.number().min(startFulfilmentResponseDataTaxSummaryItemRateMin),
+                netAmount: zod.number().min(startFulfilmentResponseDataTaxSummaryItemNetAmountMin),
+                taxAmount: zod.number().min(startFulfilmentResponseDataTaxSummaryItemTaxAmountMin),
+                grossAmount: zod
+                    .number()
+                    .min(startFulfilmentResponseDataTaxSummaryItemGrossAmountMin)
+            })
+        ),
+        notes: zod.string().optional(),
+        shippingMethod: zod.string().optional(),
+        shippingCost: zod.number().min(startFulfilmentResponseDataShippingCostMin).optional(),
+        shippingAddress: zod
+            .strictObject({
+                fullName: zod.string().max(startFulfilmentResponseDataShippingAddressFullNameMax),
+                street: zod.string().max(startFulfilmentResponseDataShippingAddressStreetMax),
+                city: zod.string().max(startFulfilmentResponseDataShippingAddressCityMax),
+                zip: zod.string().max(startFulfilmentResponseDataShippingAddressZipMax),
+                country: zod
+                    .string()
+                    .max(startFulfilmentResponseDataShippingAddressCountryMax)
+                    .regex(startFulfilmentResponseDataShippingAddressCountryRegExp),
+                phone: zod
+                    .string()
+                    .max(startFulfilmentResponseDataShippingAddressPhoneMax)
+                    .optional()
+            })
+            .optional(),
+        billingAddress: zod
+            .strictObject({
+                fullName: zod.string().max(startFulfilmentResponseDataBillingAddressFullNameMax),
+                street: zod.string().max(startFulfilmentResponseDataBillingAddressStreetMax),
+                city: zod.string().max(startFulfilmentResponseDataBillingAddressCityMax),
+                zip: zod.string().max(startFulfilmentResponseDataBillingAddressZipMax),
+                country: zod
+                    .string()
+                    .max(startFulfilmentResponseDataBillingAddressCountryMax)
+                    .regex(startFulfilmentResponseDataBillingAddressCountryRegExp),
+                phone: zod
+                    .string()
+                    .max(startFulfilmentResponseDataBillingAddressPhoneMax)
+                    .optional()
+            })
+            .optional(),
+        paymentMethod: zod.enum(['card', 'bank_transfer']).optional(),
+        payBy: zod.iso.datetime({ offset: true }).optional(),
+        orderNumber: zod.string(),
+        status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
+        paymentStatus: zod.enum(['unpaid', 'paid', 'partially_refunded', 'refunded']),
+        fulfillmentStatus: zod.enum([
+            'unfulfilled',
+            'in_progress',
+            'on_hold',
+            'partially_fulfilled',
+            'shipped',
+            'fulfilled'
+        ]),
+        returnStatus: zod.enum([
+            'none',
+            'requested',
+            'in_progress',
+            'partially_returned',
+            'returned'
+        ]),
+        actions: zod
+            .strictObject({
+                cancel: zod.boolean(),
+                pay: zod.boolean(),
+                recordPayment: zod.boolean(),
+                start: zod.boolean(),
+                override: zod.array(
+                    zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                ),
+                correctAddress: zod.boolean(),
+                withdraw: zod.boolean(),
+                withdrawBlocked: zod
+                    .enum(['all_excluded', 'window_closed', 'nothing_left'])
+                    .optional(),
+                delete: zod.boolean(),
+                hardDelete: zod.boolean(),
+                restore: zod.boolean(),
+                invoice: zod.boolean()
+            })
+            .optional(),
+        withdrawUntil: zod.iso.datetime({ offset: true }).optional(),
+        paidAt: zod.iso.datetime({ offset: true }).optional(),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**

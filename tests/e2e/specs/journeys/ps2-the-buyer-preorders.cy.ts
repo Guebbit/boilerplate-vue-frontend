@@ -72,7 +72,7 @@ describe('PS2 · The buyer preorders', () => {
             cy.apiAs('user', 'POST', '/cart', { productId: id, quantity: 1 });
             cy.apiAs('user', 'PUT', '/cart/shipping-method', { shippingMethodId: 'pickup' });
             checkoutAs<OrderLike>('user').then((order) => {
-                cy.apiAs('admin', 'POST', `/payments/order/${String(order?.id)}/offline`, {
+                cy.apiAs('admin', 'POST', `/payments/orders/${String(order?.id)}/offline`, {
                     method: 'cash'
                 });
             });

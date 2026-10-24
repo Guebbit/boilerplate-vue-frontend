@@ -70,9 +70,11 @@ describe('BO1 · The buyer backorders', () => {
                 cy.get('[data-test=order-item-owed]').should('contain.text', 'backorder');
 
                 cy.step('the order is paid; the owed part waits for stock on its own');
-                cy.apiAs('admin', 'POST', `/payments/order/${orderId}/offline`, { method: 'cash' });
+                cy.apiAs('admin', 'POST', `/payments/orders/${orderId}/offline`, {
+                    method: 'cash'
+                });
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/order/${orderId}`),
+                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
                     (view) => (view?.fulfillmentOrders.length ?? 0) === 2
                 ).then((view) => {
                     const held = view?.fulfillmentOrders.filter(
@@ -84,7 +86,7 @@ describe('BO1 · The buyer backorders', () => {
                 cy.step('stock arrives: the wait is released, and everything ships');
                 cy.apiAs('admin', 'POST', '/inventory/receipts', { productId: id, quantity: 1 });
                 eventually(
-                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/order/${orderId}`),
+                    () => cy.apiAs<DeliveryLike>('admin', 'GET', `/delivery/orders/${orderId}`),
                     (view) =>
                         view?.fulfillmentOrders.every(({ status }) => status !== 'on_hold') ?? false
                 );

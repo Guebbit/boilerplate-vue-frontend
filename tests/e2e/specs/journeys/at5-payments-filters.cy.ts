@@ -64,8 +64,8 @@ describe('AT5 · Payments and refunds filters', () => {
     it('method, provider, order, reference, amount and the two windows each narrow the payments', () => {
         cy.subjectId('order.paidOffline').then((cashId) => {
             cy.subjectId('order.paid').then((cardId) => {
-                cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${cashId}`).then((cash) => {
-                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/order/${cardId}`).then(
+                cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${cashId}`).then((cash) => {
+                    cy.apiAs<PaymentLike>('admin', 'GET', `/payments/orders/${cardId}`).then(
                         (card) => {
                             if (!cash || !card)
                                 throw new Error('AT5: a seeded order has no payment');

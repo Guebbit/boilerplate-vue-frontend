@@ -67,8 +67,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /payments/order/o1': orvalEnvelope(payment(true)),
-        'POST /payments/order/o1/refund': orvalEnvelope(payment(false))
+        'GET /payments/orders/o1': orvalEnvelope(payment(true)),
+        'POST /payments/orders/o1/refund': orvalEnvelope(payment(false))
     };
 });
 
@@ -101,7 +101,7 @@ describe('useOrderRefund', () => {
     });
 
     it('lists the hand-paid refunds the server names, and drops one once it is settled', () => {
-        responses['GET /payments/order/o1'] = orvalEnvelope(payment(false, ['r1']));
+        responses['GET /payments/orders/o1'] = orvalEnvelope(payment(false, ['r1']));
         responses['POST /payments/p1/refunds/r1/settle'] = orvalEnvelope(payment(false));
         const { settleable, settle } = useOrderRefund(ref('o1'));
 
