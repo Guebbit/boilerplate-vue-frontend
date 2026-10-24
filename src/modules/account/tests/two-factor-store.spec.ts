@@ -244,17 +244,17 @@ describe('the enrollment machine', () => {
     });
 
     it('removeMethod and disableAll each refetch status afterward', () => {
-        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
-        responses['DELETE /account/2fa'] = orvalEnvelope();
+        responses['POST /account/2fa/methods/email/remove'] = orvalEnvelope();
+        responses['POST /account/2fa/disable'] = orvalEnvelope();
         const store = useTwoFactorStore();
         return store
             .removeMethod('email', '123456')
             .then(() => store.disableAll('123456'))
             .then(() => {
                 expect(requestedUrls()).toEqual([
-                    '/account/2fa/methods/email',
+                    '/account/2fa/methods/email/remove',
                     '/account/2fa',
-                    '/account/2fa',
+                    '/account/2fa/disable',
                     '/account/2fa'
                 ]);
             });
@@ -270,7 +270,7 @@ describe('every write reaches the API each time', () => {
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
         });
-        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['POST /account/2fa/methods/email/remove'] = orvalEnvelope();
         responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
             backupCodes: ['aaa-111'],
             backupCodesRemaining: 10
@@ -286,7 +286,9 @@ describe('every write reaches the API each time', () => {
             .then(() => {
                 const urls = requestedUrls();
                 expect(urls.filter((url) => url.endsWith('/setup'))).toHaveLength(2);
-                expect(urls.filter((url) => url === '/account/2fa/methods/email')).toHaveLength(2);
+                expect(
+                    urls.filter((url) => url === '/account/2fa/methods/email/remove')
+                ).toHaveLength(2);
                 expect(urls.filter((url) => url === '/account/2fa/backup-codes')).toHaveLength(2);
             });
     });
@@ -297,7 +299,7 @@ describe('every write reaches the API each time', () => {
             backupCodes: [],
             backupCodesRemaining: 10
         });
-        responses['DELETE /account/2fa'] = orvalEnvelope();
+        responses['POST /account/2fa/disable'] = orvalEnvelope();
         const store = useTwoFactorStore();
         return store
             .confirmMethod('email', '111111')
@@ -307,7 +309,7 @@ describe('every write reaches the API each time', () => {
             .then(() => {
                 const urls = requestedUrls();
                 expect(urls.filter((url) => url.endsWith('/confirm'))).toHaveLength(2);
-                expect(urls.filter((url) => url === '/account/2fa')).toHaveLength(2 + 4);
+                expect(urls.filter((url) => url === '/account/2fa')).toHaveLength(4);
             });
     });
 });
@@ -631,7 +633,7 @@ describe('per-action loading flags', () => {
     });
 
     it('all three code-proved mutations answer the one prompt flag', () => {
-        responses['DELETE /account/2fa/methods/email'] = orvalEnvelope();
+        responses['POST /account/2fa/methods/email/remove'] = orvalEnvelope();
         responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
             backupCodes: ['ccc-333'],
             backupCodesRemaining: 10

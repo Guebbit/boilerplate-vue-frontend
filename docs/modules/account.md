@@ -135,11 +135,11 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `DELETE /account`                            | `RequestAccountDeleteResponse`     |
 | `PATCH /account`                             | `UpdateAccountResponse`            |
 | `GET /account/2fa`                           | `GetTwoFactorStatusResponse`       |
-| `DELETE /account/2fa`                        | `DisableTwoFactorResponse`         |
+| `POST /account/2fa/disable`                  | `DisableTwoFactorResponse`         |
 | `POST /account/2fa/backup-codes`             | `RegenerateBackupCodesResponse`    |
 | `POST /account/2fa/methods/{method}/setup`   | `SetupTwoFactorMethodResponse`     |
 | `POST /account/2fa/methods/{method}/confirm` | `ConfirmTwoFactorMethodResponse`   |
-| `DELETE /account/2fa/methods/{method}`       | `RemoveTwoFactorMethodResponse`    |
+| `POST /account/2fa/methods/{method}/remove`  | `RemoveTwoFactorMethodResponse`    |
 | `GET /account/addresses`                     | `GetAddressesResponse`             |
 | `POST /account/addresses`                    | `AddAddressResponse`               |
 | `DELETE /account/addresses/{id}`             | `RemoveAddressResponse`            |

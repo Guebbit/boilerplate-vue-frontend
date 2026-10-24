@@ -2688,93 +2688,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: account
-    delete:
-      tags:
-        - Auth
-      summary: Disable two-factor authentication
-      description: "Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}."
-      operationId: disableTwoFactor
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TwoFactorCodeRequest"
-      responses:
-        "200":
-          description: "Two-factor authentication is off. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment has no cookie to refresh, so `data.sessionToken` carries its replacement `ses_…` id: the old one no longer works."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SessionRenewedEnvelope"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
-  /account/2fa/methods/{method}:
-    delete:
-      tags:
-        - Auth
-      summary: Remove one second factor
-      description: Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
-      operationId: removeTwoFactorMethod
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/TwoFactorMethodPathParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TwoFactorCodeRequest"
-      responses:
-        "200":
-          description: "The method is removed. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment gets its replacement `ses_…` id in `data.sessionToken`: the old one no longer works."
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SessionRenewedEnvelope"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: account
   /account/2fa/methods/{method}/setup:
     post:
       tags:
@@ -2880,6 +2793,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TwoFactorConfirmEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
+  /account/2fa/disable:
+    post:
+      tags:
+        - Auth
+      summary: Disable two-factor authentication
+      description: "Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is POST /account/2fa/methods/{method}/remove."
+      operationId: disableTwoFactor
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TwoFactorCodeRequest"
+      responses:
+        "200":
+          description: "Two-factor authentication is off. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment has no cookie to refresh, so `data.sessionToken` carries its replacement `ses_…` id: the old one no longer works."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRenewedEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: account
+  /account/2fa/methods/{method}/remove:
+    post:
+      tags:
+        - Auth
+      summary: Remove one second factor
+      description: Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
+      operationId: removeTwoFactorMethod
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TwoFactorMethodPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TwoFactorCodeRequest"
+      responses:
+        "200":
+          description: "The method is removed. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment gets its replacement `ses_…` id in `data.sessionToken`: the old one no longer works."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionRenewedEnvelope"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -12967,17 +12968,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/TwoFactorStatus"
-    TwoFactorCodeRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - code
-      properties:
-        code:
-          type: string
-          maxLength: 64
-          minLength: 1
-          description: A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
     TwoFactorSetupRequest:
       type: object
       additionalProperties: false
@@ -13082,6 +13072,17 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/TwoFactorConfirmed"
+    TwoFactorCodeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          maxLength: 64
+          minLength: 1
+          description: A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
     TwoFactorBackupCodesRegenerated:
       type: object
       additionalProperties: false

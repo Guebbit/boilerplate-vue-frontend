@@ -1834,15 +1834,6 @@ export interface TwoFactorStatusEnvelope {
     data: TwoFactorStatus;
 }
 
-export interface TwoFactorCodeRequest {
-    /**
-     * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
-     * @minLength 1
-     * @maxLength 64
-     */
-    code: string;
-}
-
 export interface TwoFactorSetupRequest {
     /**
      * A code from any armed method, or an unused backup code. Required once any factor is armed — a replace, or adding a second method — and ignored for the account's first factor.
@@ -1901,6 +1892,15 @@ export interface TwoFactorConfirmEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: TwoFactorConfirmed;
+}
+
+export interface TwoFactorCodeRequest {
+    /**
+     * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
+     * @minLength 1
+     * @maxLength 64
+     */
+    code: string;
 }
 
 export interface TwoFactorBackupCodesRegenerated {
@@ -8522,45 +8522,6 @@ export const getTwoFactorStatus = (
 };
 
 /**
- * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
- * @summary Disable two-factor authentication
- */
-export const disableTwoFactor = (
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
-) => {
-    return orvalMutator<SessionRenewedEnvelope>(
-        {
-            url: `/account/2fa`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
-
-/**
- * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
- * @summary Remove one second factor
- */
-export const removeTwoFactorMethod = (
-    method: string,
-    twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
-) => {
-    return orvalMutator<SessionRenewedEnvelope>(
-        {
-            url: `/account/2fa/methods/${method}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: twoFactorCodeRequest
-        },
-        options
-    );
-};
-
-/**
  * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
  * @summary Start enrolling one second factor
  */
@@ -8609,6 +8570,45 @@ export const confirmTwoFactorMethod = (
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: twoFactorConfirmRequest
+        },
+        options
+    );
+};
+
+/**
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is POST /account/2fa/methods/{method}/remove.
+ * @summary Disable two-factor authentication
+ */
+export const disableTwoFactor = (
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+) => {
+    return orvalMutator<SessionRenewedEnvelope>(
+        {
+            url: `/account/2fa/disable`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
+ * @summary Remove one second factor
+ */
+export const removeTwoFactorMethod = (
+    method: string,
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+) => {
+    return orvalMutator<SessionRenewedEnvelope>(
+        {
+            url: `/account/2fa/methods/${method}/remove`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
         },
         options
     );
@@ -11879,10 +11879,6 @@ export type RequestAccountExportResult = NonNullable<
 export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
 export type SendTwoFactorCodeResult = NonNullable<Awaited<ReturnType<typeof sendTwoFactorCode>>>;
 export type GetTwoFactorStatusResult = NonNullable<Awaited<ReturnType<typeof getTwoFactorStatus>>>;
-export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
-export type RemoveTwoFactorMethodResult = NonNullable<
-    Awaited<ReturnType<typeof removeTwoFactorMethod>>
->;
 export type SetupTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof setupTwoFactorMethod>>
 >;
@@ -11891,6 +11887,10 @@ export type SendTwoFactorMethodCodeResult = NonNullable<
 >;
 export type ConfirmTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof confirmTwoFactorMethod>>
+>;
+export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
+export type RemoveTwoFactorMethodResult = NonNullable<
+    Awaited<ReturnType<typeof removeTwoFactorMethod>>
 >;
 export type RegenerateBackupCodesResult = NonNullable<
     Awaited<ReturnType<typeof regenerateBackupCodes>>

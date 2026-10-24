@@ -2751,48 +2751,6 @@ export const GetTwoFactorStatusResponse = zod.strictObject({
     })
 });
 /**
- * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is DELETE /account/2fa/methods/{method}.
- * @summary Disable two-factor authentication
- */
-export const disableTwoFactorBodyCodeMax = 64;
-export const DisableTwoFactorBody = zod.strictObject({
-    code: zod.string().min(1).max(disableTwoFactorBodyCodeMax)
-});
-export const DisableTwoFactorResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            token: zod.string().optional(),
-            sessionToken: zod.string().optional()
-        })
-        .optional()
-});
-/**
- * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as DELETE /account/2fa would.
- * @summary Remove one second factor
- */
-export const removeTwoFactorMethodPathMethodMax = 32;
-export const RemoveTwoFactorMethodParams = zod.strictObject({
-    method: zod.string().max(removeTwoFactorMethodPathMethodMax)
-});
-export const removeTwoFactorMethodBodyCodeMax = 64;
-export const RemoveTwoFactorMethodBody = zod.strictObject({
-    code: zod.string().min(1).max(removeTwoFactorMethodBodyCodeMax)
-});
-export const RemoveTwoFactorMethodResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod
-        .strictObject({
-            token: zod.string().optional(),
-            sessionToken: zod.string().optional()
-        })
-        .optional()
-});
-/**
  * Begins — or restarts — enrollment of one method. A device method answers with the secret to scan; a delivered method sends a code and answers with where it went. Nothing is armed until POST /account/2fa/methods/{method}/confirm proves the caller received it. Calling this again replaces whatever that method had pending, and disarms it if it was already confirmed. The FIRST factor an account arms needs only the fresh critical auth the route already demands. Once any factor is armed, every setup — a replace or a second method — also needs `code`, from an armed factor or an unused backup code, because a stolen-but-fresh session must not be able to swap the factor it would otherwise have to pass (OWASP MFA Cheat Sheet, "Changing MFA Factors"; NIST SP 800-63B). A caller whose only factor is delivered gets that code from POST /account/2fa/methods/{method}/send.
  * @summary Start enrolling one second factor
  */
@@ -2859,6 +2817,48 @@ export const ConfirmTwoFactorMethodResponse = zod.strictObject({
         backupCodesRemaining: zod.number(),
         sessionToken: zod.string().optional()
     })
+});
+/**
+ * Drops EVERY enrolled method and every unused backup code. Requires a valid code from any enrolled method — or an unused backup code — in the body, on top of the route's own fresh-auth requirement: disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature. Removing one method and keeping the rest is POST /account/2fa/methods/{method}/remove.
+ * @summary Disable two-factor authentication
+ */
+export const disableTwoFactorBodyCodeMax = 64;
+export const DisableTwoFactorBody = zod.strictObject({
+    code: zod.string().min(1).max(disableTwoFactorBodyCodeMax)
+});
+export const DisableTwoFactorResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
+        })
+        .optional()
+});
+/**
+ * Drops one method and leaves the others armed. Requires a valid code — from any enrolled method, or a backup code — for the same reason the full disable does. Removing the LAST armed method turns two-factor authentication off and discards the backup codes with it, exactly as POST /account/2fa/disable would.
+ * @summary Remove one second factor
+ */
+export const removeTwoFactorMethodPathMethodMax = 32;
+export const RemoveTwoFactorMethodParams = zod.strictObject({
+    method: zod.string().max(removeTwoFactorMethodPathMethodMax)
+});
+export const removeTwoFactorMethodBodyCodeMax = 64;
+export const RemoveTwoFactorMethodBody = zod.strictObject({
+    code: zod.string().min(1).max(removeTwoFactorMethodBodyCodeMax)
+});
+export const RemoveTwoFactorMethodResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            token: zod.string().optional(),
+            sessionToken: zod.string().optional()
+        })
+        .optional()
 });
 /**
  * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
