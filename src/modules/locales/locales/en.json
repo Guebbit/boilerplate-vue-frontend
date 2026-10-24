@@ -21,6 +21,10 @@
         "button-entries": "Entries",
         "button-edit": "Edit",
         "button-delete": "Delete",
+        "button-activate": "Activate",
+        "button-deactivate": "Deactivate",
+        "success-activate": "Language {tag} switched on.",
+        "success-deactivate": "Language {tag} switched off.",
         "empty": "No languages yet",
         "confirm-delete": "Delete \"{tag}\" and every entry translated into it ({count} entries)? This cannot be undone.",
         "success-create": "Language added.",
@@ -36,7 +40,9 @@
         "table-caption": "Languages",
         "button-entries-named": "Entries of {tag}",
         "button-edit-named": "Edit {tag}",
-        "button-delete-named": "Delete {tag}"
+        "button-delete-named": "Delete {tag}",
+        "button-activate-named": "Activate {tag}",
+        "button-deactivate-named": "Deactivate {tag}"
     },
     "locale-form": {
         "title-create": "Add a language",
@@ -52,9 +58,11 @@
         "button-save": "Save",
         "button-cancel": "Cancel",
         "tag-required": "A language tag is required",
-        "tag-invalid": "Use a BCP 47 tag: two lowercase letters, with an optional region (es, pt-BR)",
+        "tag-invalid": "Use a BCP 47 tag of at most 35 characters: two lowercase letters, then optional subtags (es, pt-BR, zh-Hans)",
         "name-required": "An English name is required",
-        "native-name-required": "A native name is required"
+        "name-too-long": "The English name is too long",
+        "native-name-required": "A native name is required",
+        "native-name-too-long": "The native name is too long"
     },
     "locale-entries-page": {
         "page-title": "Translations",

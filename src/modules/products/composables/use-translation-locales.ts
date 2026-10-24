@@ -41,7 +41,9 @@ const fallbackOnlyManifest = (tag: string): LocaleCapability => ({
     apps: ['frontend'],
     source: LocaleSource.static,
     entryCount: 0,
-    revision: 0
+    revision: 0,
+    // No manifest was readable, so no row is known to be switchable.
+    actions: { update: false, activate: false, deactivate: false, delete: false }
 });
 
 /**

@@ -182,6 +182,8 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "PATCH", pattern: /^\/feedback\/[^/]+$/, schemaName: "UpdateFeedbackRequestStatusResponse", bodySchemaName: "UpdateFeedbackRequestStatusBody", module: "feedback" },
     { method: "PUT", pattern: /^\/feedback\/[^/]+$/, schemaName: "ReplaceFeedbackRequestStatusResponse", bodySchemaName: "ReplaceFeedbackRequestStatusBody", module: "feedback" },
     { method: "PUT", pattern: /^\/inventory\/levels\/[^/]+\/backorder-limit$/, schemaName: "SetBackorderLimitResponse", bodySchemaName: "SetBackorderLimitBody", module: "inventory" },
+    { method: "POST", pattern: /^\/locales\/[^/]+\/activate$/, schemaName: "ActivateLocaleResponse", bodySchemaName: undefined, module: "locales" },
+    { method: "POST", pattern: /^\/locales\/[^/]+\/deactivate$/, schemaName: "DeactivateLocaleResponse", bodySchemaName: undefined, module: "locales" },
     { method: "GET", pattern: /^\/locales\/[^/]+\/entries$/, schemaName: "ListLocaleEntriesResponse", bodySchemaName: undefined, module: "locales" },
     { method: "GET", pattern: /^\/locales\/[^/]+\/messages$/, schemaName: "GetLocaleMessagesResponse", bodySchemaName: undefined, module: "locales" },
     { method: "DELETE", pattern: /^\/locales\/[^/]+$/, schemaName: "DeleteLocaleResponse", bodySchemaName: undefined, module: "locales" },

@@ -65,7 +65,8 @@ const SPANISH: LocaleCapability = {
     apps: ['backend'],
     source: 'dynamic',
     entryCount: 3,
-    revision: 1
+    revision: 1,
+    actions: { update: true, activate: true, deactivate: false, delete: true }
 };
 
 /** The real route tree, so the links in the views resolve. */

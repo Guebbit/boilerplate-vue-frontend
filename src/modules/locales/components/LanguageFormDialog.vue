@@ -171,7 +171,12 @@ defineExpose({ applyServerErrors });
                     :label="t('locale-form.label-direction')"
                     hide-details
                 />
+                <!--
+                    Only the initial state, on create. An existing language is switched on and off
+                    by its own buttons on the board (`POST …/activate`, `…/deactivate`).
+                -->
                 <v-switch
+                    v-if="!isEdit"
                     v-model="form.active"
                     :label="t('locale-form.label-active')"
                     :hint="t('locale-form.hint-active')"

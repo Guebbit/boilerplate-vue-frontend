@@ -6,6 +6,13 @@
  */
 import { z } from 'zod';
 import { translate } from '@/i18n';
+import {
+    createLocaleBodyNameMax,
+    createLocaleBodyNativeNameMax,
+    createLocaleBodyTagMax,
+    createLocaleBodyTagRegExp
+} from '@api/schemas';
+import { LocaleDirection } from '@api';
 
 /**
  * Validation schemas for the locale admin's two forms.
@@ -16,14 +23,6 @@ import { translate } from '@/i18n';
  */
 
 /**
- * A language tag as the contract accepts it: primary subtag, optional region.
- *
- * `pt-BR`, not `pt-br` and not `por`. The region's case carries meaning in BCP 47, and the API
- * stores the tag as given.
- */
-const LANGUAGE_TAG_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
-
-/**
  * Validation schema of the language form.
  *
  * `tag` is validated here for the CREATE case. Editing shows it disabled — it is what every entry
@@ -31,18 +30,33 @@ const LANGUAGE_TAG_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
  * {@link localesLanguageEditSchema} rather than making the field conditionally optional, which
  * would leave a required field silently unchecked on the form that does write it.
  *
+ * `tag` is the contract's own pattern and bound (a primary subtag then any BCP 47 subtags, 35
+ * characters), not a narrower copy: a hand-written pattern refused `zh-Hans` and `en-GB-oed`,
+ * which the API stores.
+ *
  * `direction` and `active` are DEFAULTED, not required: `CreateLocaleRequest` requires only
  * `[tag, name, nativeName]` and infers the other two. `.default()` rather than `.optional()` so a
  * missing value resolves to the contract's own fallback instead of reaching the API as `undefined`.
+ * `active` is the initial state only; an existing language moves through its activate and
+ * deactivate buttons.
  */
 export const localesLanguageSchema = z.object({
     tag: z
         .string()
         .min(1, { error: () => translate('locale-form.tag-required') })
-        .regex(LANGUAGE_TAG_PATTERN, { error: () => translate('locale-form.tag-invalid') }),
-    name: z.string().min(1, { error: () => translate('locale-form.name-required') }),
-    nativeName: z.string().min(1, { error: () => translate('locale-form.native-name-required') }),
-    direction: z.enum(['ltr', 'rtl']).default('ltr'),
+        .max(createLocaleBodyTagMax, { error: () => translate('locale-form.tag-invalid') })
+        .regex(createLocaleBodyTagRegExp, { error: () => translate('locale-form.tag-invalid') }),
+    name: z
+        .string()
+        .min(1, { error: () => translate('locale-form.name-required') })
+        .max(createLocaleBodyNameMax, { error: () => translate('locale-form.name-too-long') }),
+    nativeName: z
+        .string()
+        .min(1, { error: () => translate('locale-form.native-name-required') })
+        .max(createLocaleBodyNativeNameMax, {
+            error: () => translate('locale-form.native-name-too-long')
+        }),
+    direction: z.enum(LocaleDirection).default(LocaleDirection.ltr),
     active: z.boolean().default(true)
 });
 

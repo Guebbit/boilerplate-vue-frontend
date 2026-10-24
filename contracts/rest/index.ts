@@ -278,6 +278,32 @@ export const LocaleSource = {
 } as const;
 
 /**
+ * Why `actions.delete` is false for a caller who holds `delete:Locale` and could otherwise act. `still_active`: switch it off first (`actions.deactivate`). `fallback`: the deployment's fallback language can never be deleted. Absent when the caller lacks the permission (the control is hidden, not explained) or when `delete` is true.
+ */
+export type LanguageDeleteBlockedReason =
+    (typeof LanguageDeleteBlockedReason)[keyof typeof LanguageDeleteBlockedReason];
+
+export const LanguageDeleteBlockedReason = {
+    still_active: 'still_active',
+    fallback: 'fallback'
+} as const;
+
+/**
+ * What THIS caller may do to THIS language right now, so a client never restates the rules. A caller without the permission, and a language with no registered row (a deployed file alone), get every flag `false`. Served only on reads that are not shared between callers: a visitor's `GET /locales` carries all `false`.
+ */
+export interface LanguageActions {
+    /** Whether `PUT` or `PATCH /locales/{locale}` would be accepted: the caller holds `update:Locale` and a registered row exists. */
+    update: boolean;
+    /** Whether `POST /locales/{locale}/activate` would be accepted: `update` and the language is off. */
+    activate: boolean;
+    /** Whether `POST /locales/{locale}/deactivate` would be accepted: `update`, the language is on, and it is not the deployment's fallback. */
+    deactivate: boolean;
+    /** Whether `DELETE /locales/{locale}` would be accepted: the caller holds `delete:Locale`, a registered row exists, the language is off, and it is not the deployment's fallback. */
+    delete: boolean;
+    deleteBlocked?: LanguageDeleteBlockedReason;
+}
+
+/**
  * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both apps.
  */
 export interface LocaleCapability {
@@ -296,6 +322,7 @@ export interface LocaleCapability {
     entryCount: number;
     /** @minimum 0 */
     revision: number;
+    actions: LanguageActions;
 }
 
 /**
@@ -351,6 +378,7 @@ export interface Language {
     active: boolean;
     /** @minimum 0 */
     revision: number;
+    actions: LanguageActions;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -427,7 +455,6 @@ export interface ReplaceLocaleRequest {
      */
     nativeName: string;
     direction: LocaleDirection;
-    active: boolean;
 }
 
 /**
@@ -445,7 +472,6 @@ export interface UpdateLocaleRequest {
      */
     nativeName?: string;
     direction?: LocaleDirection;
-    active?: boolean;
 }
 
 /**
@@ -7004,6 +7030,11 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * language with a deployed file that is switched off is listed for everyone, as
  * `active: false`. The flag gates selection by visitors and nothing else — the same
  * rule products and users follow.
+ *
+ * Each row carries `actions`: what the caller may do to that language. Only a
+ * caller who holds `display:Locale` is answered outside the shared cache, so only
+ * such a caller gets a flag set to `true`; everyone else's answer is the cached one,
+ * with every flag `false`.
  * @summary Supported languages
  */
 export const getLocales = (
@@ -7077,14 +7108,13 @@ export const getLocaleDictionary = (
 };
 
 /**
- * Replaces a language's display names, writing direction and visibility (RFC 9110
- * §9.3.4 — every writable field is required, none of them has a legal "cleared"
- * state). The tag itself is immutable — it is what every entry references, so
- * changing it would be a rename of the whole dictionary rather than an edit of this
- * record.
+ * Replaces a language's display names and writing direction (RFC 9110 §9.3.4 — every
+ * writable field is required, none of them has a legal "cleared" state). The tag
+ * itself is immutable — it is what every entry references, so changing it would be a
+ * rename of the whole dictionary rather than an edit of this record.
  *
- * Refuses with 409 when it would deactivate the deployment's fallback language: every
- * translatable row's source lives there.
+ * Whether the language is switched on is not a field here: `POST
+ * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Replace a language
  */
 export const replaceLocale = (
@@ -7104,13 +7134,13 @@ export const replaceLocale = (
 };
 
 /**
- * Merges a language's display names, writing direction or visibility (RFC 7396, an
- * omitted field is left unchanged). The tag itself is immutable — it is what every
+ * Merges a language's display names or writing direction (RFC 7396, an omitted field is
+ * left unchanged). The tag itself is immutable — it is what every
  * entry references, so changing it would be a rename of the whole dictionary rather
  * than an edit of this record.
  *
- * Refuses with 409 when it would deactivate the deployment's fallback language: every
- * translatable row's source lives there.
+ * Whether the language is switched on is not a field here: `POST
+ * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Edit a language
  */
 export const updateLocale = (
@@ -7130,13 +7160,13 @@ export const updateLocale = (
 };
 
 /**
- * Merges a language's display names, writing direction or visibility (RFC 7396, an
- * omitted field is left unchanged). The tag itself is immutable — it is what every
+ * Merges a language's display names or writing direction (RFC 7396, an omitted field is
+ * left unchanged). The tag itself is immutable — it is what every
  * entry references, so changing it would be a rename of the whole dictionary rather
  * than an edit of this record.
  *
- * Refuses with 409 when it would deactivate the deployment's fallback language: every
- * translatable row's source lives there.
+ * Whether the language is switched on is not a field here: `POST
+ * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Edit a language
  */
 export const updateLocaleWithMergePatchJson = (
@@ -7158,9 +7188,12 @@ export const updateLocaleWithMergePatchJson = (
 /**
  * Removes the language AND every entry translated into it.
  *
- * Refuses with 409 while the language is still active. That two-step is deliberate:
- * this destroys a day's translation work, and a mis-click should cost a toggle rather
- * than the work. Deactivate first, then delete.
+ * Refuses with 409 `LOCALE_LANGUAGE_ACTIVE` while the language is still active, and
+ * with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback language. The
+ * two steps are deliberate: this destroys a day's translation work, and a mis-click
+ * should cost a toggle rather than the work. `POST /locales/{locale}/deactivate`
+ * first, then delete. `actions.delete` on the language says whether it would be
+ * accepted now.
  * @summary Remove a language
  */
 export const deleteLocale = (
@@ -10803,6 +10836,48 @@ export const revokeApiKey = (
 };
 
 /**
+ * Switches a registered language on: a visitor may now select it, requests in it are
+ * answered in it, and its translated entity text is served. Clears the cached
+ * translated text and refreshes the served-language list, so the next request sees it.
+ *
+ * Refuses with 409 `LOCALE_LANGUAGE_ALREADY_ACTIVE` when it is already on — an action
+ * endpoint answers a state it cannot move to, never a silent success.
+ * `actions.activate` says whether it would be accepted.
+ * @summary Switch a language on
+ */
+export const activateLocale = (
+    locale: string,
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        { url: `/locales/${locale}/activate`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Switches a registered language off: it becomes invisible to every public route
+ * (never picked for a request, 404 on its dictionary, its entity text not served)
+ * while staff holding `display:Locale` still see it. This is the state a language
+ * must be put into before it can be deleted.
+ *
+ * Refuses with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback
+ * language (every translatable row's source lives there), and with 409
+ * `LOCALE_LANGUAGE_ALREADY_INACTIVE` when it is already off.
+ * `actions.deactivate` says whether it would be accepted.
+ * @summary Switch a language off
+ */
+export const deactivateLocale = (
+    locale: string,
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        { url: `/locales/${locale}/deactivate`, method: 'POST' },
+        options
+    );
+};
+
+/**
  * Mails the caller a one-time code for step-up, for an account that has no password to prove instead. Answers 422 for an account that has a password, or that has no verified address or no way to deliver mail, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent (shared with `POST /account/2fa/methods/{method}/send`, since both spend the same mailbox). Needs no fresh auth — it is what earns one.
  * @summary Send a code to re-authenticate
  */
@@ -11885,6 +11960,8 @@ export type ListWebhookEventsResult = NonNullable<Awaited<ReturnType<typeof list
 export type ListApiKeysResult = NonNullable<Awaited<ReturnType<typeof listApiKeys>>>;
 export type MintApiKeyResult = NonNullable<Awaited<ReturnType<typeof mintApiKey>>>;
 export type RevokeApiKeyResult = NonNullable<Awaited<ReturnType<typeof revokeApiKey>>>;
+export type ActivateLocaleResult = NonNullable<Awaited<ReturnType<typeof activateLocale>>>;
+export type DeactivateLocaleResult = NonNullable<Awaited<ReturnType<typeof deactivateLocale>>>;
 export type SendReauthCodeResult = NonNullable<Awaited<ReturnType<typeof sendReauthCode>>>;
 export type TouchSessionResult = NonNullable<Awaited<ReturnType<typeof touchSession>>>;
 export type GetSessionConfigResult = NonNullable<Awaited<ReturnType<typeof getSessionConfig>>>;

@@ -95,4 +95,34 @@ describe('LanguageFormDialog', () => {
 
         expect(wrapper.get('[data-test=language-save]').attributes('disabled')).toBeDefined();
     });
+
+    // `active` left the PUT/PATCH bodies: a new language picks its initial state, an existing
+    // one is switched by its own buttons on the board.
+    it('offers the switch on create and not on edit', () => {
+        const create = mount(LanguageFormDialog, {
+            props: { modelValue: true },
+            global: GLOBAL
+        });
+        const edit = mount(LanguageFormDialog, {
+            props: {
+                modelValue: true,
+                language: {
+                    tag: 'es',
+                    name: 'Spanish',
+                    nativeName: 'Español',
+                    direction: 'ltr',
+                    active: true,
+                    apps: ['frontend'],
+                    source: 'dynamic',
+                    entryCount: 0,
+                    revision: 0,
+                    actions: { update: true, activate: false, deactivate: true, delete: false }
+                }
+            },
+            global: GLOBAL
+        });
+
+        expect(create.find('[data-test=language-active]').exists()).toBe(true);
+        expect(edit.find('[data-test=language-active]').exists()).toBe(false);
+    });
 });

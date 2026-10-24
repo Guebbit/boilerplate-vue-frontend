@@ -106,6 +106,34 @@ export const ERROR_CODES = {
     LIMIT_PART_COUNT: 'LIMIT_PART_COUNT',
     /** 400 — A multipart upload carries a file under a field name this operation does not accept (multer). */
     LIMIT_UNEXPECTED_FILE: 'LIMIT_UNEXPECTED_FILE',
+    /** 422 — No app with that id is configured on this deployment — see `GET /locales/apps`. */
+    LOCALE_APP_UNKNOWN: 'LOCALE_APP_UNKNOWN',
+    /** 404 — The module that owns the entity type holds no entity with that id. */
+    LOCALE_ENTITY_NOT_FOUND: 'LOCALE_ENTITY_NOT_FOUND',
+    /** 404 — The entity type is not a registered translatable. */
+    LOCALE_ENTITY_TYPE_UNKNOWN: 'LOCALE_ENTITY_TYPE_UNKNOWN',
+    /** 422 — A merge patch named no entry at all. */
+    LOCALE_ENTRIES_EMPTY: 'LOCALE_ENTRIES_EMPTY',
+    /** 409 — The key is a strict dotted prefix of another key, or has one as a prefix: no dictionary tree can hold both. */
+    LOCALE_ENTRY_KEY_COLLISION: 'LOCALE_ENTRY_KEY_COLLISION',
+    /** 409 — The key is already translated in this language and app, or a batch names it twice. */
+    LOCALE_ENTRY_KEY_EXISTS: 'LOCALE_ENTRY_KEY_EXISTS',
+    /** 422 — The key is empty, longer than 200 characters, or has an empty or reserved segment. */
+    LOCALE_ENTRY_KEY_INVALID: 'LOCALE_ENTRY_KEY_INVALID',
+    /** 404 — No entry with that id exists under that language and app. */
+    LOCALE_ENTRY_NOT_FOUND: 'LOCALE_ENTRY_NOT_FOUND',
+    /** 409 — The language is still switched on — deactivate it before deleting it. */
+    LOCALE_LANGUAGE_ACTIVE: 'LOCALE_LANGUAGE_ACTIVE',
+    /** 409 — The language is already switched on. */
+    LOCALE_LANGUAGE_ALREADY_ACTIVE: 'LOCALE_LANGUAGE_ALREADY_ACTIVE',
+    /** 409 — The language is already switched off. */
+    LOCALE_LANGUAGE_ALREADY_INACTIVE: 'LOCALE_LANGUAGE_ALREADY_INACTIVE',
+    /** 409 — A language is already registered under that tag. */
+    LOCALE_LANGUAGE_EXISTS: 'LOCALE_LANGUAGE_EXISTS',
+    /** 409 — The deployment's fallback language cannot be deactivated or deleted: every translatable row's source lives there. */
+    LOCALE_LANGUAGE_IS_FALLBACK: 'LOCALE_LANGUAGE_IS_FALLBACK',
+    /** 404 — No language is registered under that tag. */
+    LOCALE_LANGUAGE_NOT_FOUND: 'LOCALE_LANGUAGE_NOT_FOUND',
     /** 400 — A multipart file part carries no field name (multer). */
     MISSING_FIELD_NAME: 'MISSING_FIELD_NAME',
     /** 404 — The addressed resource does not exist, or the caller may not be told that it does. */

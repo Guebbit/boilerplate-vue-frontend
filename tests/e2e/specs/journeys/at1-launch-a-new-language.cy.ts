@@ -168,10 +168,8 @@ describe('AT1 · Launch a new language', () => {
 
         cy.step('switched on, it is offered to a guest and renders on the storefront');
         cy.visit('/en/locales');
-        cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();
-        cy.get('[data-test=language-active] input').check({ force: true });
-        cy.get('[data-test=language-save]').click();
-        cy.get('[data-test=language-form]').should('not.exist');
+        cy.get(`[data-language=${TAG}] [data-test=row-activate]`).click();
+        cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).should('exist');
         offeredToGuests().should('equal', 'offered');
         cy.logout();
         cy.visit('/en');
@@ -198,10 +196,8 @@ describe('AT1 · Launch a new language', () => {
 
             cy.step('with German switched off, an editor can still draft German text');
             cy.visit('/en/locales');
-            cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();
-            cy.get('[data-test=language-active] input').uncheck({ force: true });
-            cy.get('[data-test=language-save]').click();
-            cy.get('[data-test=language-form]').should('not.exist');
+            cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).click();
+            cy.get(`[data-language=${TAG}] [data-test=row-activate]`).should('exist');
             // A draft: the write is taken, and the public reads leave an inactive language out.
             loginDevice('editor').then((device) => {
                 requestAsDevice(device, 'PATCH', `/locales/translations/product/${product.id}`, {
@@ -211,10 +207,8 @@ describe('AT1 · Launch a new language', () => {
                     .should('equal', 200);
             });
             // Switched back on so the deletion below keeps its place in the story.
-            cy.get(`[data-language=${TAG}] [data-test=row-edit]`).click();
-            cy.get('[data-test=language-active] input').check({ force: true });
-            cy.get('[data-test=language-save]').click();
-            cy.get('[data-test=language-form]').should('not.exist');
+            cy.get(`[data-language=${TAG}] [data-test=row-activate]`).click();
+            cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).should('exist');
 
             // The language has rows and no deployed file, and it is served all the same: one
             // language per request, so the product text drafted above reaches the page now.
@@ -223,12 +217,17 @@ describe('AT1 · Launch a new language', () => {
             cy.contains('Hundekorb 2').should('exist');
         });
 
-        cy.step('the fallback language refuses deletion, the new one is deleted');
+        cy.step(
+            'the fallback language offers no deletion, the new one is switched off then deleted'
+        );
         cy.visit('/en/locales');
-        cy.get('[data-language=en] [data-test=row-delete]').click();
-        cy.get('[data-test=app-dialog-confirm]').click();
-        cy.get('[data-test=locales-list-delete-error]').should('be.visible');
+        // The server's flags decide: the fallback has neither a delete nor a deactivate button.
+        cy.get('[data-language=en] [data-test=row-delete]').should('not.exist');
+        cy.get('[data-language=en] [data-test=row-deactivate]').should('not.exist');
         cy.get(`[data-test=row-entries][href$="/locales/en"]`).should('exist');
+        // Two controls, never chained: a language that is on has no delete until it is off.
+        cy.get(`[data-language=${TAG}] [data-test=row-delete]`).should('not.exist');
+        cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).click();
         cy.get(`[data-language=${TAG}] [data-test=row-delete]`).click();
         cy.get('[data-test=app-dialog-confirm]').click();
         cy.get(`[data-test=row-entries][href$="/locales/${TAG}"]`).should('not.exist');

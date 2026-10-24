@@ -26,10 +26,14 @@ describe('localesLanguageSchema', () => {
     });
 
     /**
-     * Case carries meaning in BCP 47 and the API stores the tag as given, so a lowercase region
-     * is a different tag rather than a spelling of the same one.
+     * The contract's own pattern, not a narrower copy: the API accepts script and numeric subtags
+     * and lowercases the tag it stores, so `zh-Hans`, `es-419` and `pt-br` are all valid.
      */
-    it.each(['pt-br', 'PT-BR', 'Pt-BR', 'por', 'p', 'pt-BRA', 'pt_BR', 'pt-', ''])(
+    it.each(['zh-Hans', 'es-419', 'sr-Latn-RS', 'pt-br'])('accepts %o as a language tag', (tag) => {
+        expect(localesLanguageSchema.safeParse({ ...validLanguage, tag }).success).toBe(true);
+    });
+
+    it.each(['PT-BR', 'Pt-BR', 'por', 'p', 'pt_BR', 'pt-', '', `pt-${'a'.repeat(33)}`])(
         'rejects %o as a language tag',
         (tag) => {
             expect(localesLanguageSchema.safeParse({ ...validLanguage, tag }).success).toBe(false);
@@ -69,6 +73,16 @@ describe('localesLanguageSchema', () => {
             false
         );
     });
+
+    it.each(['name', 'nativeName'] as const)(
+        'rejects a %s longer than the contract allows',
+        (field) => {
+            expect(
+                localesLanguageSchema.safeParse({ ...validLanguage, [field]: 'x'.repeat(101) })
+                    .success
+            ).toBe(false);
+        }
+    );
 });
 
 describe('localesLanguageEditSchema', () => {

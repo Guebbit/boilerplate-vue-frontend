@@ -23,7 +23,6 @@ import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { routerLinkI18n } from '@/i18n/router-link.ts';
 import { useLocalesStore } from '../store.ts';
-import { deactivateThenDelete } from '../deactivate-then-delete.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import LanguageFormDialog from '../components/LanguageFormDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -148,8 +147,7 @@ const handleSave = (fields: {
               .editLanguage(editing.value.tag, {
                   name: fields.name,
                   nativeName: fields.nativeName,
-                  direction: fields.direction,
-                  active: fields.active
+                  direction: fields.direction
               })
               .then(() => addMessage(t('locales-list-page.success-edit')))
         : localesStore
@@ -170,9 +168,10 @@ const handleSave = (fields: {
 };
 
 /**
- * The row delete's own blocked state — a single write action behind a confirm dialog, with
- * nowhere per-row to host an alert; the board keeps working either way, so one alert above it is
- * where a failure belongs. The dialog's own save stays a toast — see docs/theory/request-flow.md.
+ * The row actions' own blocked state (switch on, switch off, delete) — single writes, some behind
+ * a confirm dialog, with nowhere per-row to host an alert; the board keeps working either way, so
+ * one alert above it is where a failure belongs. The dialog's own save stays a toast — see
+ * docs/theory/request-flow.md.
  */
 const {
     message: deleteError,
@@ -181,12 +180,42 @@ const {
 } = useBlockingError();
 
 /**
+ * Switches a language on or off, as the row's own flag allows. The two are separate buttons, each
+ * shown only when the server says it would be accepted.
+ *
+ * @param language - The row.
+ * @param active - The state to move to.
+ * @returns A promise settling once the write has; a failure blocks the board in place
+ *  ({@link deleteError}).
+ */
+const handleSwitch = singleFlight((language: LocaleCapability, active: boolean) => {
+    clearDeleteError();
+    return (
+        active
+            ? localesStore.activateLanguage(language.tag)
+            : localesStore.deactivateLanguage(language.tag)
+    )
+        .then(() =>
+            addMessage(
+                t(
+                    active
+                        ? 'locales-list-page.success-activate'
+                        : 'locales-list-page.success-deactivate',
+                    {
+                        tag: language.tag
+                    }
+                )
+            )
+        )
+        .catch((error: unknown) => reportDeleteError(error));
+});
+
+/**
  * Deletes a language and everything translated into it, after a confirmation that names the cost.
  *
- * An ACTIVE row is deactivated first, because the API refuses to delete one — its guard rail;
- * the confirmation here is this page's half. An already-inactive row goes straight out. A row
- * deactivated this way that then fails to delete is reactivated before the error is reported —
- * see {@link deactivateThenDelete}.
+ * Only offered once the server says the delete would be accepted (`actions.delete`): an active
+ * language shows "Deactivate" first. The two steps are the API's guard rail, so they are two
+ * controls and never one chained call.
  *
  * @param language - The row being destroyed.
  * @returns A promise settling once the viewer has answered and, if they accepted, the deletion
@@ -204,12 +233,8 @@ const handleDelete = singleFlight((language: LocaleCapability) => {
         .then((accepted) => {
             if (!accepted) return;
             clearDeleteError();
-            return deactivateThenDelete(
-                language.active,
-                () => localesStore.editLanguage(language.tag, { active: false }),
-                () => localesStore.removeLanguage(language.tag),
-                () => localesStore.editLanguage(language.tag, { active: true })
-            )
+            return localesStore
+                .removeLanguage(language.tag)
                 .then(() => addMessage(t('locales-list-page.success-delete')))
                 .catch((error: unknown) => reportDeleteError(error));
         });
@@ -351,6 +376,7 @@ onMounted(() => {
                         {{ t('locales-list-page.button-entries') }}
                     </v-btn>
                     <v-btn
+                        v-if="item.actions.update"
                         :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
@@ -361,6 +387,34 @@ onMounted(() => {
                         {{ t('locales-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
+                        v-if="item.actions.deactivate"
+                        :size="rowActionSize"
+                        variant="tonal"
+                        data-test="row-deactivate"
+                        :aria-label="
+                            t('locales-list-page.button-deactivate-named', { tag: item.tag })
+                        "
+                        :disabled="loading"
+                        @click="handleSwitch(item, false)"
+                    >
+                        {{ t('locales-list-page.button-deactivate') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="item.actions.activate"
+                        :size="rowActionSize"
+                        variant="tonal"
+                        color="success"
+                        data-test="row-activate"
+                        :aria-label="
+                            t('locales-list-page.button-activate-named', { tag: item.tag })
+                        "
+                        :disabled="loading"
+                        @click="handleSwitch(item, true)"
+                    >
+                        {{ t('locales-list-page.button-activate') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="item.actions.delete"
                         :size="rowActionSize"
                         variant="tonal"
                         color="error"

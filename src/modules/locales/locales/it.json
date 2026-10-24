@@ -21,6 +21,10 @@
         "button-entries": "Voci",
         "button-edit": "Modifica",
         "button-delete": "Elimina",
+        "button-activate": "Attiva",
+        "button-deactivate": "Disattiva",
+        "success-activate": "Lingua {tag} attivata.",
+        "success-deactivate": "Lingua {tag} disattivata.",
         "empty": "Nessuna lingua",
         "confirm-delete": "Eliminare \"{tag}\" e ogni voce tradotta in essa ({count} voci)? Non si può annullare.",
         "success-create": "Lingua aggiunta.",
@@ -36,7 +40,9 @@
         "table-caption": "Lingue",
         "button-entries-named": "Voci di {tag}",
         "button-edit-named": "Modifica {tag}",
-        "button-delete-named": "Elimina {tag}"
+        "button-delete-named": "Elimina {tag}",
+        "button-activate-named": "Attiva {tag}",
+        "button-deactivate-named": "Disattiva {tag}"
     },
     "locale-form": {
         "title-create": "Aggiungi una lingua",
@@ -52,9 +58,11 @@
         "button-save": "Salva",
         "button-cancel": "Annulla",
         "tag-required": "Un tag di lingua è obbligatorio",
-        "tag-invalid": "Usa un tag BCP 47: due minuscole, con regione opzionale (es, pt-BR)",
+        "tag-invalid": "Usa un tag BCP 47 di al massimo 35 caratteri: due minuscole, poi sottotag opzionali (es, pt-BR, zh-Hans)",
         "name-required": "Un nome inglese è obbligatorio",
-        "native-name-required": "Un nome nativo è obbligatorio"
+        "name-too-long": "Il nome inglese è troppo lungo",
+        "native-name-required": "Un nome nativo è obbligatorio",
+        "native-name-too-long": "Il nome nativo è troppo lungo"
     },
     "locale-entries-page": {
         "page-title": "Traduzioni",

@@ -88,6 +88,11 @@ export const GetSecurityTxtResponse = zod.string();
  * language with a deployed file that is switched off is listed for everyone, as
  * `active: false`. The flag gates selection by visitors and nothing else — the same
  * rule products and users follow.
+ *
+ * Each row carries `actions`: what the caller may do to that language. Only a
+ * caller who holds `display:Locale` is answered outside the shared cache, so only
+ * such a caller gets a flag set to `true`; everyone else's answer is the cached one,
+ * with every flag `false`.
  * @summary Supported languages
  */
 export const getLocalesResponseDataLocalesItemTagMax = 35;
@@ -126,7 +131,14 @@ export const GetLocalesResponse = zod.strictObject({
                     .min(1),
                 source: zod.enum(['static', 'dynamic', 'both']),
                 entryCount: zod.number().min(getLocalesResponseDataLocalesItemEntryCountMin),
-                revision: zod.number().min(getLocalesResponseDataLocalesItemRevisionMin)
+                revision: zod.number().min(getLocalesResponseDataLocalesItemRevisionMin),
+                actions: zod.strictObject({
+                    update: zod.boolean(),
+                    activate: zod.boolean(),
+                    deactivate: zod.boolean(),
+                    delete: zod.boolean(),
+                    deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+                })
             })
         ),
         default: zod
@@ -186,6 +198,13 @@ export const CreateLocaleResponse = zod.strictObject({
         direction: zod.enum(['ltr', 'rtl']),
         active: zod.boolean(),
         revision: zod.number().min(createLocaleResponseDataRevisionMin),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            activate: zod.boolean(),
+            deactivate: zod.boolean(),
+            delete: zod.boolean(),
+            deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -259,14 +278,13 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
     })
 });
 /**
- * Replaces a language's display names, writing direction and visibility (RFC 9110
- * §9.3.4 — every writable field is required, none of them has a legal "cleared"
- * state). The tag itself is immutable — it is what every entry references, so
- * changing it would be a rename of the whole dictionary rather than an edit of this
- * record.
+ * Replaces a language's display names and writing direction (RFC 9110 §9.3.4 — every
+ * writable field is required, none of them has a legal "cleared" state). The tag
+ * itself is immutable — it is what every entry references, so changing it would be a
+ * rename of the whole dictionary rather than an edit of this record.
  *
- * Refuses with 409 when it would deactivate the deployment's fallback language: every
- * translatable row's source lives there.
+ * Whether the language is switched on is not a field here: `POST
+ * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Replace a language
  */
 export const replaceLocalePathLocaleMax = 35;
@@ -279,8 +297,7 @@ export const replaceLocaleBodyNativeNameMax = 100;
 export const ReplaceLocaleBody = zod.strictObject({
     name: zod.string().min(1).max(replaceLocaleBodyNameMax),
     nativeName: zod.string().min(1).max(replaceLocaleBodyNativeNameMax),
-    direction: zod.enum(['ltr', 'rtl']),
-    active: zod.boolean()
+    direction: zod.enum(['ltr', 'rtl'])
 });
 export const replaceLocaleResponseDataIdMax = 64;
 export const replaceLocaleResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -308,18 +325,25 @@ export const ReplaceLocaleResponse = zod.strictObject({
         direction: zod.enum(['ltr', 'rtl']),
         active: zod.boolean(),
         revision: zod.number().min(replaceLocaleResponseDataRevisionMin),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            activate: zod.boolean(),
+            deactivate: zod.boolean(),
+            delete: zod.boolean(),
+            deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 /**
- * Merges a language's display names, writing direction or visibility (RFC 7396, an
- * omitted field is left unchanged). The tag itself is immutable — it is what every
+ * Merges a language's display names or writing direction (RFC 7396, an omitted field is
+ * left unchanged). The tag itself is immutable — it is what every
  * entry references, so changing it would be a rename of the whole dictionary rather
  * than an edit of this record.
  *
- * Refuses with 409 when it would deactivate the deployment's fallback language: every
- * translatable row's source lives there.
+ * Whether the language is switched on is not a field here: `POST
+ * /locales/{locale}/activate` and `/deactivate` move it.
  * @summary Edit a language
  */
 export const updateLocalePathLocaleMax = 35;
@@ -332,8 +356,7 @@ export const updateLocaleBodyNativeNameMax = 100;
 export const UpdateLocaleBody = zod.strictObject({
     name: zod.string().min(1).max(updateLocaleBodyNameMax).optional(),
     nativeName: zod.string().min(1).max(updateLocaleBodyNativeNameMax).optional(),
-    direction: zod.enum(['ltr', 'rtl']).optional(),
-    active: zod.boolean().optional()
+    direction: zod.enum(['ltr', 'rtl']).optional()
 });
 export const updateLocaleResponseDataIdMax = 64;
 export const updateLocaleResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -361,6 +384,13 @@ export const UpdateLocaleResponse = zod.strictObject({
         direction: zod.enum(['ltr', 'rtl']),
         active: zod.boolean(),
         revision: zod.number().min(updateLocaleResponseDataRevisionMin),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            activate: zod.boolean(),
+            deactivate: zod.boolean(),
+            delete: zod.boolean(),
+            deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        }),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -368,9 +398,12 @@ export const UpdateLocaleResponse = zod.strictObject({
 /**
  * Removes the language AND every entry translated into it.
  *
- * Refuses with 409 while the language is still active. That two-step is deliberate:
- * this destroys a day's translation work, and a mis-click should cost a toggle rather
- * than the work. Deactivate first, then delete.
+ * Refuses with 409 `LOCALE_LANGUAGE_ACTIVE` while the language is still active, and
+ * with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback language. The
+ * two steps are deliberate: this destroys a day's translation work, and a mis-click
+ * should cost a toggle rather than the work. `POST /locales/{locale}/deactivate`
+ * first, then delete. `actions.delete` on the language says whether it would be
+ * accepted now.
  * @summary Remove a language
  */
 export const deleteLocalePathLocaleMax = 35;
@@ -12557,6 +12590,112 @@ export const RevokeApiKeyResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
+});
+/**
+ * Switches a registered language on: a visitor may now select it, requests in it are
+ * answered in it, and its translated entity text is served. Clears the cached
+ * translated text and refreshes the served-language list, so the next request sees it.
+ *
+ * Refuses with 409 `LOCALE_LANGUAGE_ALREADY_ACTIVE` when it is already on — an action
+ * endpoint answers a state it cannot move to, never a silent success.
+ * `actions.activate` says whether it would be accepted.
+ * @summary Switch a language on
+ */
+export const activateLocalePathLocaleMax = 35;
+export const activateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const ActivateLocaleParams = zod.strictObject({
+    locale: zod.string().max(activateLocalePathLocaleMax).regex(activateLocalePathLocaleRegExp)
+});
+export const activateLocaleResponseDataIdMax = 64;
+export const activateLocaleResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const activateLocaleResponseDataTagMax = 35;
+export const activateLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const activateLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const activateLocaleResponseDataRevisionMin = 0;
+export const ActivateLocaleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(activateLocaleResponseDataIdMax)
+            .regex(activateLocaleResponseDataIdRegExp),
+        tag: zod
+            .string()
+            .max(activateLocaleResponseDataTagMax)
+            .regex(activateLocaleResponseDataTagRegExp),
+        baseLanguage: zod.string().regex(activateLocaleResponseDataBaseLanguageRegExp),
+        name: zod.string(),
+        nativeName: zod.string(),
+        direction: zod.enum(['ltr', 'rtl']),
+        active: zod.boolean(),
+        revision: zod.number().min(activateLocaleResponseDataRevisionMin),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            activate: zod.boolean(),
+            deactivate: zod.boolean(),
+            delete: zod.boolean(),
+            deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
+});
+/**
+ * Switches a registered language off: it becomes invisible to every public route
+ * (never picked for a request, 404 on its dictionary, its entity text not served)
+ * while staff holding `display:Locale` still see it. This is the state a language
+ * must be put into before it can be deleted.
+ *
+ * Refuses with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback
+ * language (every translatable row's source lives there), and with 409
+ * `LOCALE_LANGUAGE_ALREADY_INACTIVE` when it is already off.
+ * `actions.deactivate` says whether it would be accepted.
+ * @summary Switch a language off
+ */
+export const deactivateLocalePathLocaleMax = 35;
+export const deactivateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const DeactivateLocaleParams = zod.strictObject({
+    locale: zod.string().max(deactivateLocalePathLocaleMax).regex(deactivateLocalePathLocaleRegExp)
+});
+export const deactivateLocaleResponseDataIdMax = 64;
+export const deactivateLocaleResponseDataIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const deactivateLocaleResponseDataTagMax = 35;
+export const deactivateLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const deactivateLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const deactivateLocaleResponseDataRevisionMin = 0;
+export const DeactivateLocaleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        id: zod
+            .string()
+            .min(1)
+            .max(deactivateLocaleResponseDataIdMax)
+            .regex(deactivateLocaleResponseDataIdRegExp),
+        tag: zod
+            .string()
+            .max(deactivateLocaleResponseDataTagMax)
+            .regex(deactivateLocaleResponseDataTagRegExp),
+        baseLanguage: zod.string().regex(deactivateLocaleResponseDataBaseLanguageRegExp),
+        name: zod.string(),
+        nativeName: zod.string(),
+        direction: zod.enum(['ltr', 'rtl']),
+        active: zod.boolean(),
+        revision: zod.number().min(deactivateLocaleResponseDataRevisionMin),
+        actions: zod.strictObject({
+            update: zod.boolean(),
+            activate: zod.boolean(),
+            deactivate: zod.boolean(),
+            delete: zod.boolean(),
+            deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        }),
+        createdAt: zod.iso.datetime({ offset: true }).optional(),
+        updatedAt: zod.iso.datetime({ offset: true }).optional()
+    })
 });
 /**
  * Mails the caller a one-time code for step-up, for an account that has no password to prove instead. Answers 422 for an account that has a password, or that has no verified address or no way to deliver mail, and 429 inside the per-code cooldown or once the account's hourly delivery budget is spent (shared with `POST /account/2fa/methods/{method}/send`, since both spend the same mailbox). Needs no fresh auth — it is what earns one.

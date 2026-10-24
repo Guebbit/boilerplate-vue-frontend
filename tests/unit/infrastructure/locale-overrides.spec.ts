@@ -73,7 +73,8 @@ const capability = (
     apps,
     source,
     entryCount: 0,
-    revision: 1
+    revision: 1,
+    actions: { update: false, activate: false, deactivate: false, delete: false }
 });
 
 beforeEach(() => {

@@ -14,6 +14,8 @@ import {
     listLocaleApps,
     createLocale,
     updateLocale as apiUpdateLocale,
+    activateLocale,
+    deactivateLocale,
     deleteLocale,
     listLocaleEntries,
     listAppLocaleEntries,
@@ -257,7 +259,8 @@ export const useLocalesStore = defineStore('locales', () => {
         );
 
     /**
-     * Edits a language's display names, direction or visibility, then reloads the manifest.
+     * Edits a language's display names or direction, then reloads the manifest. Whether it is
+     * switched on is not editable here: {@link activateLanguage} and {@link deactivateLanguage}.
      *
      * The tag is not editable — it is what every entry references.
      *
@@ -273,10 +276,33 @@ export const useLocalesStore = defineStore('locales', () => {
         );
 
     /**
+     * Switches a language on, then reloads the manifest.
+     *
+     * @param tag - Which language.
+     * @returns A promise resolving with the updated `Language` row.
+     */
+    const activateLanguage = (tag: string) =>
+        fetchAny(() =>
+            activateLocale(tag).then((response) => fetchLanguages().then(() => response.data))
+        );
+
+    /**
+     * Switches a language off, then reloads the manifest. The fallback language refuses (409).
+     *
+     * @param tag - Which language.
+     * @returns A promise resolving with the updated `Language` row.
+     */
+    const deactivateLanguage = (tag: string) =>
+        fetchAny(() =>
+            deactivateLocale(tag).then((response) => fetchLanguages().then(() => response.data))
+        );
+
+    /**
      * Removes a language and every entry translated into it, then reloads the manifest.
      *
      * The API refuses with 409 while the language is still active — deactivate first. That
-     * two-step is the server's guard rail, not this store's to soften.
+     * two-step is the server's guard rail, not this store's to soften: the page shows the two
+     * controls, each gated by a flag, and never chains them.
      *
      * @param tag - Which language.
      * @returns A promise resolving once the manifest agrees the language is gone.
@@ -448,6 +474,8 @@ export const useLocalesStore = defineStore('locales', () => {
         fetchLanguages,
         createLanguage,
         editLanguage,
+        activateLanguage,
+        deactivateLanguage,
         removeLanguage,
         fetchEntityTranslations,
         saveEntityTranslations,
