@@ -11031,6 +11031,7 @@ export const listReturnsQueryPageSizeDefault = 10;
 export const listReturnsQueryPageSizeMax = 100;
 export const listReturnsQueryOrderIdMax = 64;
 export const listReturnsQueryOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
+export const listReturnsQuerySortMax = 2;
 export const ListReturnsQueryParams = zod.strictObject({
     page: zod.number().min(1).max(listReturnsQueryPageMax).default(listReturnsQueryPageDefault),
     pageSize: zod
@@ -11045,7 +11046,12 @@ export const ListReturnsQueryParams = zod.strictObject({
         .regex(listReturnsQueryOrderIdRegExp)
         .optional(),
     status: zod.enum(['requested', 'approved', 'declined', 'received', 'closed']).optional(),
-    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']).optional()
+    reason: zod.enum(['withdrawal', 'defective', 'wrong_item', 'other']).optional(),
+    sort: zod
+        .array(zod.enum(['createdAt', '-createdAt', 'status', '-status']))
+        .min(1)
+        .max(listReturnsQuerySortMax)
+        .optional()
 });
 export const listReturnsResponseDataItemsItemIdMax = 64;
 export const listReturnsResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12799,20 +12805,35 @@ export const ListWebhookEventsResponse = zod.strictObject({
     )
 });
 /**
- * Never returns a credential's secret — that exists only in the response of the call that minted it.
+ * Newest first unless `sort` says otherwise. Never returns a credential's secret — that exists only in the response of the call that minted it.
  * @summary List this shop's machine-to-machine credentials
  */
 export const listApiKeysQueryPageDefault = 1;
 export const listApiKeysQueryPageMax = 10000;
 export const listApiKeysQueryPageSizeDefault = 10;
 export const listApiKeysQueryPageSizeMax = 100;
+export const listApiKeysQuerySortMax = 3;
 export const ListApiKeysQueryParams = zod.strictObject({
     page: zod.number().min(1).max(listApiKeysQueryPageMax).default(listApiKeysQueryPageDefault),
     pageSize: zod
         .number()
         .min(1)
         .max(listApiKeysQueryPageSizeMax)
-        .default(listApiKeysQueryPageSizeDefault)
+        .default(listApiKeysQueryPageSizeDefault),
+    sort: zod
+        .array(
+            zod.enum([
+                'createdAt',
+                '-createdAt',
+                'expiresAt',
+                '-expiresAt',
+                'lastUsedAt',
+                '-lastUsedAt'
+            ])
+        )
+        .min(1)
+        .max(listApiKeysQuerySortMax)
+        .optional()
 });
 export const listApiKeysResponseDataItemsItemIdMax = 64;
 export const listApiKeysResponseDataItemsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
@@ -12836,6 +12857,7 @@ export const ListApiKeysResponse = zod.strictObject({
                     .regex(listApiKeysResponseDataItemsItemIdRegExp),
                 name: zod.string(),
                 publicPrefix: zod.string(),
+                status: zod.enum(['active', 'expired', 'revoked', 'suspended']),
                 permissions: zod.array(zod.string()).min(1),
                 lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
                 expiresAt: zod.iso.datetime({ offset: true }),
@@ -12857,7 +12879,8 @@ export const ListApiKeysResponse = zod.strictObject({
                 .default(listApiKeysResponseDataMetaPageSizeDefault),
             totalItems: zod.number().min(listApiKeysResponseDataMetaTotalItemsMin),
             totalPages: zod.number().min(listApiKeysResponseDataMetaTotalPagesMin)
-        })
+        }),
+        maxExpiresAt: zod.iso.datetime({ offset: true })
     })
 });
 /**
@@ -13881,6 +13904,7 @@ export const DownloadAccountExportResponse = zod.strictObject({
                 .regex(downloadAccountExportResponseApiKeysItemIdRegExp),
             name: zod.string(),
             publicPrefix: zod.string(),
+            status: zod.enum(['active', 'expired', 'revoked', 'suspended']),
             permissions: zod.array(zod.string()).min(1),
             lastUsedAt: zod.iso.datetime({ offset: true }).optional(),
             expiresAt: zod.iso.datetime({ offset: true }),

@@ -4193,6 +4193,21 @@ export const ReturnReason = {
     other: 'other'
 } as const;
 
+export type ReturnSortItem = (typeof ReturnSortItem)[keyof typeof ReturnSortItem];
+
+export const ReturnSortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    status: 'status',
+    '-status': '-status'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 2
+ */
+export type ReturnSort = ReturnSortItem[];
+
 /**
  * What the record is: `return` — goods that left coming back; `cancellation` — the unshipped remainder of one fulfillment order, cancelled and refunded, closed when made.
  */
@@ -4842,11 +4857,41 @@ export interface WebhookEventCatalogueResponseEnvelope {
     data: WebhookEventCatalogueEntry[];
 }
 
+export type ApiKeySortItem = (typeof ApiKeySortItem)[keyof typeof ApiKeySortItem];
+
+export const ApiKeySortItem = {
+    createdAt: 'createdAt',
+    '-createdAt': '-createdAt',
+    expiresAt: 'expiresAt',
+    '-expiresAt': '-expiresAt',
+    lastUsedAt: 'lastUsedAt',
+    '-lastUsedAt': '-lastUsedAt'
+} as const;
+
+/**
+ * @minItems 1
+ * @maxItems 3
+ */
+export type ApiKeySort = ApiKeySortItem[];
+
+/**
+ * Whether the credential works right now, decided by the server. `revoked` and `expired` are final. `suspended` means the person who minted it can no longer sign in (banned, soft-deleted or erased): the key is refused with 401 and comes back by itself if they do. Checked in that order, so a revoked key never reads as `suspended`.
+ */
+export type ApiKeyStatus = (typeof ApiKeyStatus)[keyof typeof ApiKeyStatus];
+
+export const ApiKeyStatus = {
+    active: 'active',
+    expired: 'expired',
+    revoked: 'revoked',
+    suspended: 'suspended'
+} as const;
+
 export interface ApiKey {
     id: Id;
     name: string;
     /** The credential's non-secret prefix, e.g. `a1b2c3d4` — shown in a list so an operator can recognise which key is which. */
     publicPrefix: string;
+    status: ApiKeyStatus;
     /**
      * The permission rules this credential was minted with, each spelled `<action>:<Subject>` (`display:Order`). Re-floored against the minter's CURRENT permissions on every request; this is the snapshot taken at mint time.
      * @minItems 1
@@ -4862,6 +4907,8 @@ export interface ApiKey {
 export interface ApiKeysResponse {
     items: ApiKey[];
     meta: PaginationMeta;
+    /** The latest `expiresAt` a mint accepts right now (one calendar year from this response). A later one is refused with 422, so a form can bound its date picker without copying the rule. */
+    maxExpiresAt: string;
 }
 
 export interface ApiKeysResponseEnvelope {
@@ -6653,6 +6700,7 @@ export type ListReturnsParams = {
     orderId?: Id;
     status?: ReturnStatus;
     reason?: ReturnReason;
+    sort?: ReturnSort;
 };
 
 export type GetReturnOptionsParams = {
@@ -6770,6 +6818,7 @@ export type ListApiKeysParams = {
      * @maximum 100
      */
     pageSize?: PageSizeParamParameter;
+    sort?: ApiKeySort;
 };
 
 export type ExportOrdersParams = {
@@ -10832,7 +10881,7 @@ export const listWebhookEvents = (
 };
 
 /**
- * Never returns a credential's secret — that exists only in the response of the call that minted it.
+ * Newest first unless `sort` says otherwise. Never returns a credential's secret — that exists only in the response of the call that minted it.
  * @summary List this shop's machine-to-machine credentials
  */
 export const listApiKeys = (

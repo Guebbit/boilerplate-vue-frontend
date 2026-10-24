@@ -7,7 +7,7 @@
 /** Every error code the contract declares. Open-ended: a new one is additive, never a breaking change. */
 export const ERROR_CODES = {
     /** 409 — The address book already holds `NODE_ADDRESS_BOOK_MAX` entries (20 by default) — remove one before adding another. */
-    ADDRESS_BOOK_FULL: 'ADDRESS_BOOK_FULL',
+    ADDRESS_BOOK_LIMIT_REACHED: 'ADDRESS_BOOK_LIMIT_REACHED',
     /** 404 — No challenge is currently active for this session. */
     ANTIBOT_NO_CHALLENGE: 'ANTIBOT_NO_CHALLENGE',
     /** 401 — The human-challenge token is missing, expired, or the provider rejected it. */
@@ -160,6 +160,8 @@ export const ERROR_CODES = {
     PAYMENT_REFUND_NOT_OPEN: 'PAYMENT_REFUND_NOT_OPEN',
     /** 412 — The write's `If-Match` no longer describes the stored resource — someone changed or removed it since the caller read it. Re-read, reapply the edit, resend. */
     PRECONDITION_FAILED: 'PRECONDITION_FAILED',
+    /** 409 — A restore named a product that is not soft-deleted, so there is nothing to undo. */
+    PRODUCT_NOT_DELETED: 'PRODUCT_NOT_DELETED',
     /** 429 — The caller exceeded a rate-limit budget. Carries a `Retry-After` hint. */
     RATE_LIMITED: 'RATE_LIMITED',
     /** 401 — This action requires a session fresher than the caller's current one — see `POST /account/reauth`. `details.maxAge` is the freshness asked for; `details.methods`, when present, lists what the re-authentication must also prove (`otp`: a code from an armed second factor). */
