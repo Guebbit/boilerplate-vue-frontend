@@ -1,6 +1,6 @@
 /**
  * @module
- * Warns before a half-typed staff form is thrown away. In-app navigation asks through the shared
+ * Warns before a half-typed form that creates or edits a lasting record is thrown away. In-app navigation asks through the shared
  * confirm dialog; a tab close or reload gets the browser's own prompt. Silent whenever nothing
  * would be lost: the form is clean, it was just saved, or the session is already over (a forced
  * sign-out is not the visitor's choice to leave).

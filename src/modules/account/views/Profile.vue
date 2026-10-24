@@ -27,6 +27,8 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { supportedLanguages } from '@/i18n';
 import { useProfileStore } from '../stores/profile.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useLeaveGuard } from '@/ui/composables/use-leave-guard.ts';
 import { usersSchema } from '@/modules/users';
 import ProfileAvatar from '../components/ProfileAvatar.vue';
 import PurchaseHoldNotice from '../components/PurchaseHoldNotice.vue';
@@ -135,6 +137,17 @@ const {
     revalidateOn: locale,
     onInvalid: () => addMessage(t('generic.fix-errors'))
 });
+
+/**
+ * The session, read for the leave guard: a forced sign-out is not a choice to leave.
+ */
+const session = useSessionStore();
+
+/**
+ * Warns before typed profile values are lost to a navigation. No `markSaved`: a save re-baselines
+ * the form, so it reads clean again by itself.
+ */
+useLeaveGuard(isDirty, () => session.isAuth);
 
 /**
  * Hydrate, never clobber.

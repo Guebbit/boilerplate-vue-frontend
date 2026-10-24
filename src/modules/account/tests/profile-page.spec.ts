@@ -16,6 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import type { Ref } from 'vue';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
@@ -24,6 +25,18 @@ import {
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
+
+/**
+ * The arguments the page gave the leave guard, captured from the mocked composable.
+ */
+const guard = vi.hoisted(() => ({ isDirty: undefined as undefined | Ref<boolean> }));
+
+vi.mock('@/ui/composables/use-leave-guard.ts', () => ({
+    useLeaveGuard: (isDirty: Ref<boolean>) => {
+        guard.isDirty = isDirty;
+        return { markSaved: () => undefined };
+    }
+}));
 
 /**
  * The real app router — child panels (sessions, addresses) resolve links through it.
@@ -451,5 +464,25 @@ describe('the purchase-hold notice', () => {
         return flushPromises().then(() => {
             expect(wrapper.find('[data-test=purchase-hold-notice]').exists()).toBe(false);
         });
+    });
+});
+
+describe('the leave guard', () => {
+    it('reads clean after the load, dirty after an edit, and clean again after a save', () => {
+        const wrapper = mountProfile();
+
+        return flushPromises()
+            .then(() => {
+                expect(guard.isDirty?.value).toBe(false);
+                return wrapper.get('[data-test=profile-analytics-consent] input').setValue(true);
+            })
+            .then(() => {
+                expect(guard.isDirty?.value).toBe(true);
+                return wrapper.get('form').trigger('submit');
+            })
+            .then(flushPromises)
+            .then(() => {
+                expect(guard.isDirty?.value).toBe(false);
+            });
     });
 });
