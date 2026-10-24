@@ -4819,7 +4819,7 @@ paths:
                 $ref: "#/components/schemas/CheckoutResponseEnvelope"
           links:
             PayOrder:
-              operationId: createPaymentIntent
+              operationId: createPayment
               parameters:
                 orderId: $response.body#/data/id
               description: The new order's id is the `orderId` to freeze into a payment intent.
@@ -5138,7 +5138,7 @@ paths:
                 $ref: "#/components/schemas/OrderEnvelope"
           links:
             PayOrder:
-              operationId: createPaymentIntent
+              operationId: createPayment
               parameters:
                 orderId: $response.body#/data/id
               description: The new order's id is the `orderId` to freeze into a payment intent.
@@ -5731,65 +5731,30 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
-  /payments/intent:
-    post:
+  /payments/orders/{orderId}:
+    get:
       tags:
         - Payments
-      summary: Create a payment intent
-      description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
-      operationId: createPaymentIntent
+      summary: Get the payment behind an order
+      description: The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments`.
+      operationId: getPaymentByOrder
       security:
         - bearerAuth: []
         - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePaymentIntentRequest"
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+          description: One of the caller's own orders
       responses:
         "200":
-          description: The order already had an intent; it was refreshed and is ready to confirm
+          description: The payment
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentEnvelope"
-          links:
-            ConfirmPayment:
-              operationId: confirmPayment
-              parameters:
-                id: $response.body#/data/id
-              description: The intent's id is confirmed here to complete the charge.
-        "201":
-          description: The payment intent, ready to confirm
-          headers:
-            Location:
-              $ref: "#/components/headers/Location"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
-          links:
-            ConfirmPayment:
-              operationId: confirmPayment
-              parameters:
-                id: $response.body#/data/id
-        "400":
-          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5835,6 +5800,120 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
+  /payments/orders/{orderId}/refund:
+    post:
+      tags:
+        - Payments
+      summary: Refund an order's payment
+      description: |-
+        Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+        On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+      operationId: refundPaymentByOrder
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+          description: The order whose payment is being returned
+        - $ref: "#/components/parameters/RequiredIdempotencyKeyHeader"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundPaymentRequest"
+      responses:
+        "200":
+          description: The payment — still `succeeded` after a refund; `displayStatus` says how much of it went back
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
+  /payments/orders/{orderId}/offline:
+    post:
+      tags:
+        - Payments
+      summary: Record a payment that arrived outside the provider
+      description: |-
+        An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+        A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+        Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+      operationId: recordOfflinePayment
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+          description: The order the money arrived for. Must still be `pending`
+        - $ref: "#/components/parameters/IdempotencyKeyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordOfflinePaymentRequest"
+      responses:
+        "200":
+          description: The payment, `succeeded` — it converted the row of an unpaid card intent — with the order now `paid`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
+        "201":
+          description: The payment, `succeeded`, with the order now `paid`
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "422":
           $ref: "#/components/responses/ValidationError"
         "429":
@@ -6004,6 +6083,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ShippingMethodsResponseEnvelope"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
+  /delivery/orders/{orderId}:
+    get:
+      tags:
+        - Delivery
+      summary: Get the fulfilment of an order
+      description: "Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else."
+      operationId: getFulfillmentByOrder
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+          description: One of the caller's own orders
+      responses:
+        "200":
+          description: The fulfillment orders and the shipments of the order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderFulfillmentEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: delivery
+  /delivery/orders/{orderId}/start:
+    post:
+      tags:
+        - Delivery
+      summary: Begin fulfilling a paid order
+      description: Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+      operationId: startFulfilment
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+          description: The order to start fulfilling
+      responses:
+        "200":
+          description: The order, now `processing`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -8241,6 +8386,71 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
+    post:
+      tags:
+        - Payments
+      summary: Create a payment
+      description: Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
+      operationId: createPayment
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "200":
+          description: The order already had an intent; it was refreshed and is ready to confirm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
+          links:
+            ConfirmPayment:
+              operationId: confirmPayment
+              parameters:
+                id: $response.body#/data/id
+              description: The intent's id is confirmed here to complete the charge.
+        "201":
+          description: The payment intent, ready to confirm
+          headers:
+            Location:
+              $ref: "#/components/headers/Location"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentEnvelope"
+          links:
+            ConfirmPayment:
+              operationId: confirmPayment
+              parameters:
+                id: $response.body#/data/id
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+      x-module: payments
   /payments/search:
     post:
       tags:
@@ -8367,89 +8577,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
-  /payments/orders/{orderId}:
-    get:
-      tags:
-        - Payments
-      summary: Get the payment behind an order
-      description: The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
-      operationId: getPaymentByOrder
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: One of the caller's own orders
-      responses:
-        "200":
-          description: The payment
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: payments
-  /payments/orders/{orderId}/refund:
-    post:
-      tags:
-        - Payments
-      summary: Refund an order's payment
-      description: |-
-        Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
-        On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
-      operationId: refundPaymentByOrder
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: The order whose payment is being returned
-        - $ref: "#/components/parameters/RequiredIdempotencyKeyHeader"
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RefundPaymentRequest"
-      responses:
-        "200":
-          description: The payment — still `succeeded` after a refund; `displayStatus` says how much of it went back
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: payments
   /payments/{id}/refunds/{refundId}/settle:
     post:
       tags:
@@ -8494,134 +8621,6 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
       x-module: payments
-  /payments/orders/{orderId}/offline:
-    post:
-      tags:
-        - Payments
-      summary: Record a payment that arrived outside the provider
-      description: |-
-        An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
-        A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
-        Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
-      operationId: recordOfflinePayment
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: The order the money arrived for. Must still be `pending`
-        - $ref: "#/components/parameters/IdempotencyKeyHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RecordOfflinePaymentRequest"
-      responses:
-        "200":
-          description: The payment, `succeeded` — it converted the row of an unpaid card intent — with the order now `paid`
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
-        "201":
-          description: The payment, `succeeded`, with the order now `paid`
-          headers:
-            Location:
-              $ref: "#/components/headers/Location"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "415":
-          $ref: "#/components/responses/UnsupportedMediaType"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: payments
-  /delivery/orders/{orderId}:
-    get:
-      tags:
-        - Delivery
-      summary: Get the fulfilment of an order
-      description: "Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else."
-      operationId: getFulfillmentByOrder
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: One of the caller's own orders
-      responses:
-        "200":
-          description: The fulfillment orders and the shipments of the order
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OrderFulfillmentEnvelope"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: delivery
-  /delivery/orders/{orderId}/start:
-    post:
-      tags:
-        - Delivery
-      summary: Begin fulfilling a paid order
-      description: Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
-      operationId: startFulfilment
-      security:
-        - bearerAuth: []
-        - cookieAuth: []
-      parameters:
-        - $ref: "#/components/parameters/OrderIdPathParam"
-          description: The order to start fulfilling
-      responses:
-        "200":
-          description: The order, now `processing`
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OrderEnvelope"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailable"
-      x-module: delivery
   /delivery/fulfillment-orders/release-date-impact:
     get:
       tags:
@@ -15036,7 +15035,7 @@ components:
           description: "Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`)."
         pay:
           type: boolean
-          description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest."
+          description: "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest."
         recordPayment:
           type: boolean
           description: "Whether `POST /payments/orders/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record."
@@ -15606,14 +15605,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/PaymentMethodsResponse"
-    CreatePaymentIntentRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - orderId
-      properties:
-        orderId:
-          $ref: "#/components/schemas/Id"
     RefundStatus:
       type: string
       enum:
@@ -15740,7 +15731,7 @@ components:
       properties:
         pay:
           type: boolean
-          description: "Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments/intent` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`."
+          description: "Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`."
         sync:
           type: boolean
           description: "Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`."
@@ -15839,7 +15830,7 @@ components:
           description: "`true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the operator's own record that it was done (`POST /payments/{id}/refunds/{refundId}/settle`). Set by that route alone. Absent otherwise."
         clientSecret:
           type: string
-          description: "Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response."
+          description: "Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response."
         cardLast4:
           type: string
           description: The only card digits a payment system may remember. Survives a refund — refunding does not clear it.
@@ -15885,6 +15876,41 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/Order"
+    RefundPaymentRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
+        currency:
+          type: string
+          maxLength: 3
+          description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+    RecordOfflinePaymentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - method
+      properties:
+        method:
+          type: string
+          enum:
+            - bank_transfer
+            - cash
+            - other
+          description: How the money arrived. `card` is not offered here — that path is `POST /payments`.
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: A bank transaction id, a receipt number — whatever ties this record to the money.
+        receivedAt:
+          type: string
+          format: date-time
+          description: When the money arrived. Must not be in the future. Defaults to now.
     ConfirmPaymentRequest:
       type: object
       additionalProperties: false
@@ -15979,14 +16005,12 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/ShippingMethodsResponse"
-    PreorderFulfillmentState:
+    FulfillmentOrderKind:
       type: string
       enum:
-        - waiting
-        - allocated
-        - shipped
-        - cancelled
-      description: "Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who."
+        - physical
+        - digital
+      description: "`digital` when no line rides in a parcel; its act is `fulfill`, not a shipment."
     FulfillmentOrderStatus:
       type: string
       enum:
@@ -16028,17 +16052,13 @@ components:
           type: integer
           minimum: 0
           description: "`quantity − shippedQuantity − cancelledQuantity`, computed here so no client counts."
-    PreorderBuyer:
-      type: object
-      additionalProperties: false
-      required:
-        - email
-      description: Who the order belongs to, as the order itself carries it.
-      properties:
-        userId:
-          $ref: "#/components/schemas/Id"
-        email:
-          type: string
+    FulfillmentHoldNotice:
+      type: string
+      enum:
+        - awaiting_stock
+        - check_address
+        - delayed
+      description: "What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's."
     FulfillmentHoldReason:
       type: string
       enum:
@@ -16054,6 +16074,237 @@ components:
         - staff
         - order
       description: "Who cancelled what was left of a fulfillment order. `buyer`: the buyer's own cancel of the remainder. `staff`: a refund by staff. `order`: the whole order was cancelled."
+    FulfillmentOrderActions:
+      type: object
+      additionalProperties: false
+      required:
+        - ship
+        - forceShip
+        - fulfill
+        - hold
+        - release
+      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
+      properties:
+        ship:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining.
+        forceShip:
+          type: boolean
+          description: "Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship."
+        fulfill:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open.
+        hold:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted.
+        release:
+          type: boolean
+          description: Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`.
+    FulfillmentOrder:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - number
+        - kind
+        - status
+        - lines
+        - actions
+        - createdAt
+      description: A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: 1-based position within the order — `#1` is the one that ships now.
+        kind:
+          $ref: "#/components/schemas/FulfillmentOrderKind"
+        status:
+          $ref: "#/components/schemas/FulfillmentOrderStatus"
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentOrderLine"
+        holdNotice:
+          $ref: "#/components/schemas/FulfillmentHoldNotice"
+        holdMessage:
+          type: string
+          maxLength: 500
+          description: What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
+        holdReason:
+          $ref: "#/components/schemas/FulfillmentHoldReason"
+        holdNote:
+          type: string
+          maxLength: 1000
+          description: Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
+        agreedAt:
+          type: string
+          format: date-time
+          description: The date promised when ordering, frozen from the line snapshot (CRD Art. 18).
+        expectedAt:
+          type: string
+          format: date-time
+          description: When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
+        lastNoticeAt:
+          type: string
+          format: date-time
+          description: When the buyer was last told the date had moved or would be missed.
+        cancelReason:
+          $ref: "#/components/schemas/FulfillmentCancelReason"
+        actions:
+          $ref: "#/components/schemas/FulfillmentOrderActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ShipmentLine:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - title
+        - quantity
+      description: One product in a shipment.
+      properties:
+        productId:
+          $ref: "#/components/schemas/Id"
+        title:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    ShipmentActions:
+      type: object
+      additionalProperties: false
+      required:
+        - deliver
+        - forceDeliver
+        - update
+      description: What the requesting caller may do to this shipment, decided by the server.
+      properties:
+        deliver:
+          type: boolean
+          description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`.
+        forceDeliver:
+          type: boolean
+          description: "Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`."
+        update:
+          type: boolean
+          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`.
+    Shipment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - fulfillmentOrderId
+        - number
+        - status
+        - lines
+        - forced
+        - shippedAt
+        - actions
+      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        orderId:
+          $ref: "#/components/schemas/Id"
+        fulfillmentOrderId:
+          $ref: "#/components/schemas/Id"
+        number:
+          type: integer
+          minimum: 1
+          description: 1-based position within the order, in the order shipments were cut.
+        trackingCode:
+          type: string
+          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment.
+        status:
+          type: string
+          enum:
+            - shipped
+            - delivered
+          description: The tail of the order's lifecycle, as the carrier sees it.
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShipmentLine"
+        forced:
+          type: boolean
+          description: Whether staff skipped a step to record it (shipped from `paid` without `start`).
+        shippedAt:
+          type: string
+          format: date-time
+        deliveredAt:
+          type: string
+          format: date-time
+        actions:
+          $ref: "#/components/schemas/ShipmentActions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OrderFulfillment:
+      type: object
+      additionalProperties: false
+      required:
+        - fulfillmentOrders
+        - shipments
+      description: An order's fulfilment — both lists empty until the order is paid.
+      properties:
+        fulfillmentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentOrder"
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
+    OrderFulfillmentEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: "#/components/schemas/EnvelopeSuccess"
+        status:
+          $ref: "#/components/schemas/EnvelopeStatus"
+        message:
+          $ref: "#/components/schemas/EnvelopeMessage"
+        data:
+          $ref: "#/components/schemas/OrderFulfillment"
+    PreorderFulfillmentState:
+      type: string
+      enum:
+        - waiting
+        - allocated
+        - shipped
+        - cancelled
+      description: "Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who."
+    PreorderBuyer:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+      description: Who the order belongs to, as the order itself carries it.
+      properties:
+        userId:
+          $ref: "#/components/schemas/Id"
+        email:
+          type: string
     PreorderFulfillmentOrder:
       type: object
       additionalProperties: false
@@ -16256,95 +16507,6 @@ components:
           maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
-    ShipmentLine:
-      type: object
-      additionalProperties: false
-      required:
-        - productId
-        - title
-        - quantity
-      description: One product in a shipment.
-      properties:
-        productId:
-          $ref: "#/components/schemas/Id"
-        title:
-          type: string
-        quantity:
-          type: integer
-          minimum: 1
-    ShipmentActions:
-      type: object
-      additionalProperties: false
-      required:
-        - deliver
-        - forceDeliver
-        - update
-      description: What the requesting caller may do to this shipment, decided by the server.
-      properties:
-        deliver:
-          type: boolean
-          description: Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`.
-        forceDeliver:
-          type: boolean
-          description: "Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`."
-        update:
-          type: boolean
-          description: Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`.
-    Shipment:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - fulfillmentOrderId
-        - number
-        - status
-        - lines
-        - forced
-        - shippedAt
-        - actions
-      description: What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        fulfillmentOrderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-          description: 1-based position within the order, in the order shipments were cut.
-        trackingCode:
-          type: string
-          description: The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment.
-        status:
-          type: string
-          enum:
-            - shipped
-            - delivered
-          description: The tail of the order's lifecycle, as the carrier sees it.
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/ShipmentLine"
-        forced:
-          type: boolean
-          description: Whether staff skipped a step to record it (shipped from `paid` without `start`).
-        shippedAt:
-          type: string
-          format: date-time
-        deliveredAt:
-          type: string
-          format: date-time
-        actions:
-          $ref: "#/components/schemas/ShipmentActions"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     ShipmentEnvelope:
       type: object
       additionalProperties: false
@@ -16385,109 +16547,6 @@ components:
           maxLength: 500
           minLength: 1
           description: A sentence for the buyer, shown on their order and mailed with the hold. Separate from `note`, which they never see. A hold for `incorrect_address` or with a message is mailed; a bare one is not.
-    FulfillmentOrderKind:
-      type: string
-      enum:
-        - physical
-        - digital
-      description: "`digital` when no line rides in a parcel; its act is `fulfill`, not a shipment."
-    FulfillmentHoldNotice:
-      type: string
-      enum:
-        - awaiting_stock
-        - check_address
-        - delayed
-      description: "What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's."
-    FulfillmentOrderActions:
-      type: object
-      additionalProperties: false
-      required:
-        - ship
-        - forceShip
-        - fulfill
-        - hold
-        - release
-      description: What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
-      properties:
-        ship:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining.
-        forceShip:
-          type: boolean
-          description: "Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship."
-        fulfill:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open.
-        hold:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted.
-        release:
-          type: boolean
-          description: Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`.
-    FulfillmentOrder:
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - orderId
-        - number
-        - kind
-        - status
-        - lines
-        - actions
-        - createdAt
-      description: A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
-      properties:
-        id:
-          $ref: "#/components/schemas/Id"
-        orderId:
-          $ref: "#/components/schemas/Id"
-        number:
-          type: integer
-          minimum: 1
-          description: 1-based position within the order — `#1` is the one that ships now.
-        kind:
-          $ref: "#/components/schemas/FulfillmentOrderKind"
-        status:
-          $ref: "#/components/schemas/FulfillmentOrderStatus"
-        lines:
-          type: array
-          items:
-            $ref: "#/components/schemas/FulfillmentOrderLine"
-        holdNotice:
-          $ref: "#/components/schemas/FulfillmentHoldNotice"
-        holdMessage:
-          type: string
-          maxLength: 500
-          description: What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
-        holdReason:
-          $ref: "#/components/schemas/FulfillmentHoldReason"
-        holdNote:
-          type: string
-          maxLength: 1000
-          description: Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
-        agreedAt:
-          type: string
-          format: date-time
-          description: The date promised when ordering, frozen from the line snapshot (CRD Art. 18).
-        expectedAt:
-          type: string
-          format: date-time
-          description: When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected.
-        lastNoticeAt:
-          type: string
-          format: date-time
-          description: When the buyer was last told the date had moved or would be missed.
-        cancelReason:
-          $ref: "#/components/schemas/FulfillmentCancelReason"
-        actions:
-          $ref: "#/components/schemas/FulfillmentOrderActions"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
     FulfillmentOrderEnvelope:
       type: object
       additionalProperties: false
@@ -18938,6 +18997,14 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/PaymentsResponse"
+    CreatePaymentRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - orderId
+      properties:
+        orderId:
+          $ref: "#/components/schemas/Id"
     SearchPaymentsRequest:
       type: object
       additionalProperties: false
@@ -19116,74 +19183,6 @@ components:
           $ref: "#/components/schemas/EnvelopeMessage"
         data:
           $ref: "#/components/schemas/PaymentAttentionResponse"
-    RefundPaymentRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        amount:
-          type: number
-          format: double
-          exclusiveMinimum: 0
-          description: How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
-        currency:
-          type: string
-          maxLength: 3
-          description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
-    RecordOfflinePaymentRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - method
-      properties:
-        method:
-          type: string
-          enum:
-            - bank_transfer
-            - cash
-            - other
-          description: How the money arrived. `card` is not offered here — that path is `POST /payments/intent`.
-        reference:
-          type: string
-          minLength: 1
-          maxLength: 120
-          description: A bank transaction id, a receipt number — whatever ties this record to the money.
-        receivedAt:
-          type: string
-          format: date-time
-          description: When the money arrived. Must not be in the future. Defaults to now.
-    OrderFulfillment:
-      type: object
-      additionalProperties: false
-      required:
-        - fulfillmentOrders
-        - shipments
-      description: An order's fulfilment — both lists empty until the order is paid.
-      properties:
-        fulfillmentOrders:
-          type: array
-          items:
-            $ref: "#/components/schemas/FulfillmentOrder"
-        shipments:
-          type: array
-          items:
-            $ref: "#/components/schemas/Shipment"
-    OrderFulfillmentEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OrderFulfillment"
     ReleaseDateImpact:
       type: object
       additionalProperties: false
@@ -20076,7 +20075,7 @@ x-error-codes:
     description: "One or more lines cannot be bought as they stand — see `errors[].details.lines`, one entry per refused line with its `productId`, `title`, the `requested` quantity and its `availability` (`insufficient_stock`, `out_of_stock` or `unavailable`, so the client picks the message). The number left is not part of the answer: exact stock is for callers who read it (`read:StockLevel`)."
   CART_OPEN_ORDER_LIMIT_REACHED:
     status: 409
-    description: "The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments/intent`) or cancel one (`POST /orders/{id}/cancel`), then check out again."
+    description: "The account already holds `NODE_MAX_OPEN_UNPAID_ORDERS_PER_ACCOUNT` unpaid orders, whatever their payment method — each holds stock. `errors[].details.orderIds` names them: pay one (`POST /payments`) or cancel one (`POST /orders/{id}/cancel`), then check out again."
   CART_PAYMENT_METHOD_NOT_AVAILABLE:
     status: 409
     description: The chosen payment method is not enabled for this deployment or this cart.

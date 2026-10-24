@@ -91,7 +91,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /payments/intent': orvalEnvelope(PAYMENT),
+        'POST /payments': orvalEnvelope(PAYMENT),
         'POST /payments/payment-1/confirm': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
         'POST /payments/payment-1/sync': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
         'GET /payments/orders/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
@@ -154,7 +154,7 @@ describe('payForOrder', () => {
     it('walks the PSP sequence: intent first, then the confirm with the method reference', () => {
         const store = usePaymentsStore();
         return store.payForOrder('order-1', 'pm_card_visa').then(() => {
-            expect(requestedUrls()).toEqual(['/payments/intent', '/payments/payment-1/confirm']);
+            expect(requestedUrls()).toEqual(['/payments', '/payments/payment-1/confirm']);
             expect(store.payment?.status).toBe('succeeded');
         });
     });
@@ -162,7 +162,7 @@ describe('payForOrder', () => {
     it('sends no Idempotency-Key on the intent, which a stored replay would leak a secret through', () => {
         const store = usePaymentsStore();
         return store.payForOrder('order-1', 'pm_card_visa').then(() => {
-            expect(idempotencyKeyOf('/payments/intent')).toBeUndefined();
+            expect(idempotencyKeyOf('/payments')).toBeUndefined();
             expect(idempotencyKeyOf('/confirm')).toEqual(expect.any(String));
         });
     });

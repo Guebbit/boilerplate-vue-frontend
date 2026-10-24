@@ -31,7 +31,7 @@ export const OPERATION_MODULES: Record<string, string> = {
     createLocale: 'locales',
     createLocaleEntry: 'locales',
     createOrder: 'orders',
-    createPaymentIntent: 'payments',
+    createPayment: 'payments',
     createProduct: 'products',
     createProductWithMultipart: 'products',
     createReturn: 'returns',

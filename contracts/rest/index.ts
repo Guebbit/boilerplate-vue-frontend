@@ -3159,7 +3159,7 @@ export const WithdrawBlockedReason = {
 export interface OrderActions {
     /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further — and only while nothing has shipped: once any shipment left, what remains is cancelled one fulfillment order at a time (`POST /returns`, `kind: cancellation`). */
     cancel: boolean;
-    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
+    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes — and the caller may pay it: the buyer, who holds the shopper's checkout key (staff and administrators do not). Not a status move any request makes: a client starts the flow with `POST /payments` and the provider's yes does the rest. */
     pay: boolean;
     /** Whether `POST /payments/orders/{orderId}/offline` would be accepted for this caller: an operator recording money that arrived another way. True while the order is still awaiting payment and the caller holds the key that records one. A buyer's own step is `pay`; a buyer who is staff may also record. */
     recordPayment: boolean;
@@ -3481,10 +3481,6 @@ export interface PaymentMethodsResponseEnvelope {
     data: PaymentMethodsResponse;
 }
 
-export interface CreatePaymentIntentRequest {
-    orderId: Id;
-}
-
 export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
 
 export const RefundStatus = {
@@ -3585,7 +3581,7 @@ export type PaymentNextAction = PaymentBankTransferAction;
  * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself. Every response that carries a payment carries these, including the answer to each write, so a client never has to re-read to learn the next step.
  */
 export interface PaymentActions {
-    /** Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments/intent` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`. */
+    /** Whether the buyer may start or retry paying — the payment is awaiting confirmation or retryable after a decline (then `POST /payments/{id}/confirm`), or it is a bank transfer still waiting for its money and a card provider is configured (then `POST /payments` takes it over with a card), AND the order can still reach `paid`, AND the caller is the payer and holds `checkout:Cart` (staff reading the payment are never offered it). An in-flight payment is deliberately not payable: its next step is `sync`. */
     pay: boolean;
     /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
     sync: boolean;
@@ -3662,7 +3658,7 @@ export interface Payment {
     receivedAt?: string;
     /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the operator's own record that it was done (`POST /payments/{id}/refunds/{refundId}/settle`). Set by that route alone. Absent otherwise. */
     refundedByHand?: boolean;
-    /** Returned by `POST /payments/intent` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
+    /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
     /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
     cardLast4?: string;
@@ -3683,6 +3679,44 @@ export interface OrderByReferenceResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: Order;
+}
+
+export interface RefundPaymentRequest {
+    /**
+     * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
+     * @exclusiveMinimum 0
+     */
+    amount?: number;
+    /**
+     * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
+     * @maxLength 3
+     */
+    currency?: string;
+}
+
+/**
+ * How the money arrived. `card` is not offered here — that path is `POST /payments`.
+ */
+export type RecordOfflinePaymentRequestMethod =
+    (typeof RecordOfflinePaymentRequestMethod)[keyof typeof RecordOfflinePaymentRequestMethod];
+
+export const RecordOfflinePaymentRequestMethod = {
+    bank_transfer: 'bank_transfer',
+    cash: 'cash',
+    other: 'other'
+} as const;
+
+export interface RecordOfflinePaymentRequest {
+    /** How the money arrived. `card` is not offered here — that path is `POST /payments`. */
+    method: RecordOfflinePaymentRequestMethod;
+    /**
+     * A bank transaction id, a receipt number — whatever ties this record to the money.
+     * @minLength 1
+     * @maxLength 120
+     */
+    reference?: string;
+    /** When the money arrived. Must not be in the future. Defaults to now. */
+    receivedAt?: string;
 }
 
 export interface ConfirmPaymentRequest {
@@ -3754,16 +3788,13 @@ export interface ShippingMethodsResponseEnvelope {
 }
 
 /**
- * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who.
+ * `digital` when no line rides in a parcel; its act is `fulfill`, not a shipment.
  */
-export type PreorderFulfillmentState =
-    (typeof PreorderFulfillmentState)[keyof typeof PreorderFulfillmentState];
+export type FulfillmentOrderKind = (typeof FulfillmentOrderKind)[keyof typeof FulfillmentOrderKind];
 
-export const PreorderFulfillmentState = {
-    waiting: 'waiting',
-    allocated: 'allocated',
-    shipped: 'shipped',
-    cancelled: 'cancelled'
+export const FulfillmentOrderKind = {
+    physical: 'physical',
+    digital: 'digital'
 } as const;
 
 /**
@@ -3807,12 +3838,16 @@ export interface FulfillmentOrderLine {
 }
 
 /**
- * Who the order belongs to, as the order itself carries it.
+ * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
  */
-export interface PreorderBuyer {
-    userId?: Id;
-    email: string;
-}
+export type FulfillmentHoldNotice =
+    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
+
+export const FulfillmentHoldNotice = {
+    awaiting_stock: 'awaiting_stock',
+    check_address: 'check_address',
+    delayed: 'delayed'
+} as const;
 
 /**
  * Why a fulfillment order is on hold (Shopify's hold reasons). `awaiting_stock` is set only by the allocation of stock, and released only by it; the other three are staff's.
@@ -3838,6 +3873,154 @@ export const FulfillmentCancelReason = {
     staff: 'staff',
     order: 'order'
 } as const;
+
+/**
+ * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
+ */
+export interface FulfillmentOrderActions {
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
+    ship: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
+    forceShip: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
+    fulfill: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
+    hold: boolean;
+    /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
+    release: boolean;
+}
+
+/**
+ * A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
+ */
+export interface FulfillmentOrder {
+    id: Id;
+    orderId: Id;
+    /**
+     * 1-based position within the order — `#1` is the one that ships now.
+     * @minimum 1
+     */
+    number: number;
+    kind: FulfillmentOrderKind;
+    status: FulfillmentOrderStatus;
+    lines: FulfillmentOrderLine[];
+    holdNotice?: FulfillmentHoldNotice;
+    /**
+     * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
+     * @maxLength 500
+     */
+    holdMessage?: string;
+    holdReason?: FulfillmentHoldReason;
+    /**
+     * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
+     * @maxLength 1000
+     */
+    holdNote?: string;
+    /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
+    agreedAt?: string;
+    /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
+    expectedAt?: string;
+    /** When the buyer was last told the date had moved or would be missed. */
+    lastNoticeAt?: string;
+    cancelReason?: FulfillmentCancelReason;
+    actions: FulfillmentOrderActions;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+/**
+ * One product in a shipment.
+ */
+export interface ShipmentLine {
+    productId: Id;
+    title: string;
+    /** @minimum 1 */
+    quantity: number;
+}
+
+/**
+ * What the requesting caller may do to this shipment, decided by the server.
+ */
+export interface ShipmentActions {
+    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
+    deliver: boolean;
+    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
+    forceDeliver: boolean;
+    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
+    update: boolean;
+}
+
+/**
+ * The tail of the order's lifecycle, as the carrier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+/**
+ * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
+ */
+export interface Shipment {
+    id: Id;
+    orderId: Id;
+    fulfillmentOrderId: Id;
+    /**
+     * 1-based position within the order, in the order shipments were cut.
+     * @minimum 1
+     */
+    number: number;
+    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment. */
+    trackingCode?: string;
+    /** The tail of the order's lifecycle, as the carrier sees it. */
+    status: ShipmentStatus;
+    lines: ShipmentLine[];
+    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
+    forced: boolean;
+    shippedAt: string;
+    deliveredAt?: string;
+    actions: ShipmentActions;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/**
+ * An order's fulfilment — both lists empty until the order is paid.
+ */
+export interface OrderFulfillment {
+    fulfillmentOrders: FulfillmentOrder[];
+    shipments: Shipment[];
+}
+
+export interface OrderFulfillmentEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OrderFulfillment;
+}
+
+/**
+ * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who.
+ */
+export type PreorderFulfillmentState =
+    (typeof PreorderFulfillmentState)[keyof typeof PreorderFulfillmentState];
+
+export const PreorderFulfillmentState = {
+    waiting: 'waiting',
+    allocated: 'allocated',
+    shipped: 'shipped',
+    cancelled: 'cancelled'
+} as const;
+
+/**
+ * Who the order belongs to, as the order itself carries it.
+ */
+export interface PreorderBuyer {
+    userId?: Id;
+    email: string;
+}
 
 /**
  * One fulfillment order of a preorder, with its buyer and what the board needs to judge it.
@@ -3946,64 +4129,6 @@ export interface ShipFulfillmentOrderRequest {
     reason?: string;
 }
 
-/**
- * One product in a shipment.
- */
-export interface ShipmentLine {
-    productId: Id;
-    title: string;
-    /** @minimum 1 */
-    quantity: number;
-}
-
-/**
- * What the requesting caller may do to this shipment, decided by the server.
- */
-export interface ShipmentActions {
-    /** Whether `POST /delivery/shipments/{id}/deliver` would be accepted — still `shipped`. */
-    deliver: boolean;
-    /** Whether `POST /delivery/shipments/{id}/deliver` with `forced: true` would be accepted: the arrival is open (as for `deliver`) and the caller also holds `override:Order`. True beside `deliver`, not instead of it: forcing records the arrival without a carrier confirmation and needs a `reason`. */
-    forceDeliver: boolean;
-    /** Whether `PATCH /delivery/shipments/{id}` (the tracking code) would be accepted — still `shipped`. */
-    update: boolean;
-}
-
-/**
- * The tail of the order's lifecycle, as the carrier sees it.
- */
-export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
-
-export const ShipmentStatus = {
-    shipped: 'shipped',
-    delivered: 'delivered'
-} as const;
-
-/**
- * What actually left, at one time, with one tracking code (Shopify's `Fulfillment`). Born `shipped`; a digital fulfilment is born `delivered`.
- */
-export interface Shipment {
-    id: Id;
-    orderId: Id;
-    fulfillmentOrderId: Id;
-    /**
-     * 1-based position within the order, in the order shipments were cut.
-     * @minimum 1
-     */
-    number: number;
-    /** The carrier's handle on the parcel. Absent for a method that carries no tracking (ShippingMethod.tracked is false), and for a digital fulfilment. */
-    trackingCode?: string;
-    /** The tail of the order's lifecycle, as the carrier sees it. */
-    status: ShipmentStatus;
-    lines: ShipmentLine[];
-    /** Whether staff skipped a step to record it (shipped from `paid` without `start`). */
-    forced: boolean;
-    shippedAt: string;
-    deliveredAt?: string;
-    actions: ShipmentActions;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
 export interface ShipmentEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
@@ -4038,82 +4163,6 @@ export interface HoldFulfillmentOrderRequest {
      * @maxLength 500
      */
     message?: string;
-}
-
-/**
- * `digital` when no line rides in a parcel; its act is `fulfill`, not a shipment.
- */
-export type FulfillmentOrderKind = (typeof FulfillmentOrderKind)[keyof typeof FulfillmentOrderKind];
-
-export const FulfillmentOrderKind = {
-    physical: 'physical',
-    digital: 'digital'
-} as const;
-
-/**
- * What a hold means to the BUYER, whatever staff's reason: `awaiting_stock` (the goods are not here yet), `check_address` (the buyer can act: the address needs a look), `delayed` (held for a check, said plainly). A reason that must stay quiet, such as `high_risk`, reads as `delayed`, so a notice never reveals a screening result. The reason itself (`FulfillmentHoldReason`) is staff's.
- */
-export type FulfillmentHoldNotice =
-    (typeof FulfillmentHoldNotice)[keyof typeof FulfillmentHoldNotice];
-
-export const FulfillmentHoldNotice = {
-    awaiting_stock: 'awaiting_stock',
-    check_address: 'check_address',
-    delayed: 'delayed'
-} as const;
-
-/**
- * What the requesting caller may do to this fulfillment order, decided by the server so a client renders its controls from this. `ship`, `fulfill`, `hold` and `release` are false for anyone without `update:Shipment`.
- */
-export interface FulfillmentOrderActions {
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` would be accepted — a physical order, open or in progress, with lines remaining. */
-    ship: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/shipments` with `forced: true` would be accepted and the ordinary door would not: the caller holds `override:Order`, the order is `paid` (or otherwise not yet `processing`) and the fulfillment order still has units to ship. */
-    forceShip: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/fulfill` would be accepted — a `digital` one, open. */
-    fulfill: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/hold` would be accepted. */
-    hold: boolean;
-    /** Whether `POST /delivery/fulfillment-orders/{id}/release` would be accepted — never for `awaiting_stock`. */
-    release: boolean;
-}
-
-/**
- * A group of an order's lines that should leave together, made by rule when the order is paid (Shopify's `FulfillmentOrder`). One order, one payment, one invoice, as many fulfillment orders as the rule makes.
- */
-export interface FulfillmentOrder {
-    id: Id;
-    orderId: Id;
-    /**
-     * 1-based position within the order — `#1` is the one that ships now.
-     * @minimum 1
-     */
-    number: number;
-    kind: FulfillmentOrderKind;
-    status: FulfillmentOrderStatus;
-    lines: FulfillmentOrderLine[];
-    holdNotice?: FulfillmentHoldNotice;
-    /**
-     * What staff wrote for the buyer about the hold. Everyone who reads the fulfillment order sees it.
-     * @maxLength 500
-     */
-    holdMessage?: string;
-    holdReason?: FulfillmentHoldReason;
-    /**
-     * Staff's free text about the hold. Left out for anyone who cannot update fulfilment.
-     * @maxLength 1000
-     */
-    holdNote?: string;
-    /** The date promised when ordering, frozen from the line snapshot (CRD Art. 18). */
-    agreedAt?: string;
-    /** When it is now expected to ship, when that differs from what was agreed. Absent when the release date was cleared after the order was paid, since then nothing is expected. */
-    expectedAt?: string;
-    /** When the buyer was last told the date had moved or would be missed. */
-    lastNoticeAt?: string;
-    cancelReason?: FulfillmentCancelReason;
-    actions: FulfillmentOrderActions;
-    createdAt: string;
-    updatedAt?: string;
 }
 
 export interface FulfillmentOrderEnvelope {
@@ -5558,6 +5607,10 @@ export interface PaymentsResponseEnvelope {
     data: PaymentsResponse;
 }
 
+export interface CreatePaymentRequest {
+    orderId: Id;
+}
+
 export interface SearchPaymentsRequest {
     page?: Page;
     pageSize?: PageSize;
@@ -5639,59 +5692,6 @@ export interface PaymentAttentionResponseEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: PaymentAttentionResponse;
-}
-
-export interface RefundPaymentRequest {
-    /**
-     * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
-     * @exclusiveMinimum 0
-     */
-    amount?: number;
-    /**
-     * ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
-     * @maxLength 3
-     */
-    currency?: string;
-}
-
-/**
- * How the money arrived. `card` is not offered here — that path is `POST /payments/intent`.
- */
-export type RecordOfflinePaymentRequestMethod =
-    (typeof RecordOfflinePaymentRequestMethod)[keyof typeof RecordOfflinePaymentRequestMethod];
-
-export const RecordOfflinePaymentRequestMethod = {
-    bank_transfer: 'bank_transfer',
-    cash: 'cash',
-    other: 'other'
-} as const;
-
-export interface RecordOfflinePaymentRequest {
-    /** How the money arrived. `card` is not offered here — that path is `POST /payments/intent`. */
-    method: RecordOfflinePaymentRequestMethod;
-    /**
-     * A bank transaction id, a receipt number — whatever ties this record to the money.
-     * @minLength 1
-     * @maxLength 120
-     */
-    reference?: string;
-    /** When the money arrived. Must not be in the future. Defaults to now. */
-    receivedAt?: string;
-}
-
-/**
- * An order's fulfilment — both lists empty until the order is paid.
- */
-export interface OrderFulfillment {
-    fulfillmentOrders: FulfillmentOrder[];
-    shipments: Shipment[];
-}
-
-export interface OrderFulfillmentEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OrderFulfillment;
 }
 
 /**
@@ -10069,20 +10069,15 @@ export const listPaymentMethods = (
 };
 
 /**
- * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
- * @summary Create a payment intent
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments`.
+ * @summary Get the payment behind an order
  */
-export const createPaymentIntent = (
-    createPaymentIntentRequest: CreatePaymentIntentRequest,
+export const getPaymentByOrder = (
+    orderId: string,
     options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
 ) => {
     return orvalMutator<PaymentEnvelope>(
-        {
-            url: `/payments/intent`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createPaymentIntentRequest
-        },
+        { url: `/payments/orders/${orderId}`, method: 'GET' },
         options
     );
 };
@@ -10097,6 +10092,49 @@ export const getOrderByReference = (
 ) => {
     return orvalMutator<OrderByReferenceResponseEnvelope>(
         { url: `/payments/order-by-reference`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+ * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Refund an order's payment
+ */
+export const refundPaymentByOrder = (
+    orderId: string,
+    refundPaymentRequest?: RefundPaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/orders/${orderId}/refund`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: refundPaymentRequest
+        },
+        options
+    );
+};
+
+/**
+ * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
+ * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
+ * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
+ * @summary Record a payment that arrived outside the provider
+ */
+export const recordOfflinePayment = (
+    orderId: string,
+    recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/orders/${orderId}/offline`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: recordOfflinePaymentRequest
+        },
         options
     );
 };
@@ -10161,6 +10199,34 @@ export const listShippingMethods = (
 ) => {
     return orvalMutator<ShippingMethodsResponseEnvelope>(
         { url: `/delivery/methods`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
+ * @summary Get the fulfilment of an order
+ */
+export const getFulfillmentByOrder = (
+    orderId: string,
+    options?: SecondParameter<typeof orvalMutator<OrderFulfillmentEnvelope>>
+) => {
+    return orvalMutator<OrderFulfillmentEnvelope>(
+        { url: `/delivery/orders/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
+ * @summary Begin fulfilling a paid order
+ */
+export const startFulfilment = (
+    orderId: string,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        { url: `/delivery/orders/${orderId}/start`, method: 'POST' },
         options
     );
 };
@@ -11055,6 +11121,25 @@ export const listPayments = (
 };
 
 /**
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact) and answers 200, so a retry needs no `Idempotency-Key` (a stored replay would hand back the first answer's `clientSecret` for as long as the ledger keeps it). The caller's intents and syncs share one budget per hour (429) — 201 says a payment was created, and a refresh created nothing (RFC 9110 §15.3.2). An order whose money already moved answers 409, and so does a deployment with no card payment provider (`PAYMENT_CARD_NOT_AVAILABLE`). The intent is the thing the card dialog confirms.
+ * @summary Create a payment
+ */
+export const createPayment = (
+    createPaymentRequest: CreatePaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createPaymentRequest
+        },
+        options
+    );
+};
+
+/**
  * Same as `GET /payments`, with the filters in a JSON body.
  * @summary Search payments (staff, DTO-friendly)
  */
@@ -11101,41 +11186,6 @@ export const listPaymentAttention = (
 };
 
 /**
- * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. A caller holding `display:Payment` reads anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
- * @summary Get the payment behind an order
- */
-export const getPaymentByOrder = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
-) => {
-    return orvalMutator<PaymentEnvelope>(
-        { url: `/payments/orders/${orderId}`, method: 'GET' },
-        options
-    );
-};
-
-/**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 200 with the payment as it now stands: `refunds` carries the new record, `amountRefunded` the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
- * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Refund an order's payment
- */
-export const refundPaymentByOrder = (
-    orderId: string,
-    refundPaymentRequest?: RefundPaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
-) => {
-    return orvalMutator<PaymentEnvelope>(
-        {
-            url: `/payments/orders/${orderId}/refund`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: refundPaymentRequest
-        },
-        options
-    );
-};
-
-/**
  * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/orders/{orderId}/refund`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Mark a hand-paid refund as returned
  */
@@ -11146,56 +11196,6 @@ export const settleRefundByHand = (
 ) => {
     return orvalMutator<PaymentEnvelope>(
         { url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST' },
-        options
-    );
-};
-
-/**
- * An admin recording money the card provider never saw — cash at the counter, a phone order paid by transfer, a bank transfer that landed. Recording one's own order is allowed and the audit row is flagged `ownOrder`. Writes the payment as `manual` and runs it through the same settlement `POST /payments/{id}/confirm` does: the order moves `pending → paid`, stock commits, and `ORDER_STATUS_CHANGED` and `PAYMENT_SUCCEEDED` fire as usual. The amount is always the order's own total — there is no partial or over-payment here, those are handled by hand, off-system. Answers 201 when the payment row is new, and 200 when it converted a row that already existed: a card intent nobody paid, or the open payment of a `bank_transfer` order (the very payment being recorded).
- * A transfer that arrives after its order was cancelled is recorded too, onto the payment the cancel closed: the money is real, the order cannot be paid any more, so it answers 200 with the payment `succeeded` and a refund record left open (a hand-paid refund is returned by the operator, off-system, and then marked done).
- * Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
- * @summary Record a payment that arrived outside the provider
- */
-export const recordOfflinePayment = (
-    orderId: string,
-    recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
-) => {
-    return orvalMutator<PaymentEnvelope>(
-        {
-            url: `/payments/orders/${orderId}/offline`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: recordOfflinePaymentRequest
-        },
-        options
-    );
-};
-
-/**
- * Where an order's goods stand: its fulfillment orders (the groups of lines that leave together, made by rule when the order is paid) and the shipments cut from them (what actually left, with its tracking code). Each record carries its own `actions`, decided per caller. Ownership is the order's, read through the same scope every order read uses. An order that is not paid yet answers both lists empty — absence is the answer, never a 404. A hold reads to the buyer as `holdNotice` and staff's `holdMessage`; `holdReason` and `holdNote` are staff's own and are left out for anyone else.
- * @summary Get the fulfilment of an order
- */
-export const getFulfillmentByOrder = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<OrderFulfillmentEnvelope>>
-) => {
-    return orvalMutator<OrderFulfillmentEnvelope>(
-        { url: `/delivery/orders/${orderId}`, method: 'GET' },
-        options
-    );
-};
-
-/**
- * Reports that fulfilment has started — the order moves `paid → processing`. No shipment exists yet at this point; that comes later, at `POST /delivery/fulfillment-orders/{id}/shipments`. Narrower than `update:Order` on purpose — `start:Shipment` lets the warehouse begin work on an order without being handed the run of the order record. Refuses an order that is not `paid` with a named 409.
- * @summary Begin fulfilling a paid order
- */
-export const startFulfilment = (
-    orderId: string,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
-) => {
-    return orvalMutator<OrderEnvelope>(
-        { url: `/delivery/orders/${orderId}/start`, method: 'POST' },
         options
     );
 };
@@ -11989,11 +11989,15 @@ export type ListOrderCreditNotesResult = NonNullable<
 >;
 export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
-export type CreatePaymentIntentResult = NonNullable<
-    Awaited<ReturnType<typeof createPaymentIntent>>
->;
+export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
 export type GetOrderByReferenceResult = NonNullable<
     Awaited<ReturnType<typeof getOrderByReference>>
+>;
+export type RefundPaymentByOrderResult = NonNullable<
+    Awaited<ReturnType<typeof refundPaymentByOrder>>
+>;
+export type RecordOfflinePaymentResult = NonNullable<
+    Awaited<ReturnType<typeof recordOfflinePayment>>
 >;
 export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
 export type SyncPaymentResult = NonNullable<Awaited<ReturnType<typeof syncPayment>>>;
@@ -12003,6 +12007,10 @@ export type ReceivePaymentWebhookResult = NonNullable<
 export type ListShippingMethodsResult = NonNullable<
     Awaited<ReturnType<typeof listShippingMethods>>
 >;
+export type GetFulfillmentByOrderResult = NonNullable<
+    Awaited<ReturnType<typeof getFulfillmentByOrder>>
+>;
+export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
 export type ListPreorderFulfillmentOrdersResult = NonNullable<
     Awaited<ReturnType<typeof listPreorderFulfillmentOrders>>
 >;
@@ -12100,23 +12108,13 @@ export type CorrectOrderShippingAddressResult = NonNullable<
     Awaited<ReturnType<typeof correctOrderShippingAddress>>
 >;
 export type ListPaymentsResult = NonNullable<Awaited<ReturnType<typeof listPayments>>>;
+export type CreatePaymentResult = NonNullable<Awaited<ReturnType<typeof createPayment>>>;
 export type SearchPaymentsResult = NonNullable<Awaited<ReturnType<typeof searchPayments>>>;
 export type ListRefundsResult = NonNullable<Awaited<ReturnType<typeof listRefunds>>>;
 export type ListPaymentAttentionResult = NonNullable<
     Awaited<ReturnType<typeof listPaymentAttention>>
 >;
-export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
-export type RefundPaymentByOrderResult = NonNullable<
-    Awaited<ReturnType<typeof refundPaymentByOrder>>
->;
 export type SettleRefundByHandResult = NonNullable<Awaited<ReturnType<typeof settleRefundByHand>>>;
-export type RecordOfflinePaymentResult = NonNullable<
-    Awaited<ReturnType<typeof recordOfflinePayment>>
->;
-export type GetFulfillmentByOrderResult = NonNullable<
-    Awaited<ReturnType<typeof getFulfillmentByOrder>>
->;
-export type StartFulfilmentResult = NonNullable<Awaited<ReturnType<typeof startFulfilment>>>;
 export type PreviewReleaseDateImpactResult = NonNullable<
     Awaited<ReturnType<typeof previewReleaseDateImpact>>
 >;

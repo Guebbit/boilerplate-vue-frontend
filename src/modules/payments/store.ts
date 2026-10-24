@@ -10,7 +10,7 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import {
-    createPaymentIntent,
+    createPayment,
     confirmPayment,
     syncPayment,
     getPaymentByOrder,
@@ -67,7 +67,7 @@ export const usePaymentsStore = defineStore('payments', () => {
 
     /**
      * `Idempotency-Key`s for `confirmPayment`, one per order — the contract declares the header on
-     * `POST /payments/{id}/confirm` only: `POST /payments/intent` takes none (asking again already
+     * `POST /payments/{id}/confirm` only: `POST /payments` takes none (asking again already
      * refreshes the same intent, and a stored replay would keep its `clientSecret`). A retry after
      * a lost connection resends the key unchanged; any answer (success, a decline the visitor
      * answers with a different method, a fault) mints a fresh one.
@@ -193,7 +193,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     ) => {
         const confirmKeeper = confirmIdempotencyKeys.forSubject(orderId);
         return fetchAny(() =>
-            createPaymentIntent({ orderId })
+            createPayment({ orderId })
                 .then((intentResponse) =>
                     confirmPayment(
                         intentResponse.data.id,
