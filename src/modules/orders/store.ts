@@ -15,7 +15,6 @@ import {
     listOrders,
     searchOrders,
     getOrderById,
-    createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
     hardDeleteOrderById,
@@ -154,7 +153,6 @@ export const useOrdersStore = defineStore('orders', () => {
         watchList: watchSearchOrders,
         fetchOne: fetchOrder,
         watchOne: watchOrder,
-        createOne: createOrder,
         updateOne: updateOrder,
         deleteOne: deleteOrder,
         deleteTarget,
@@ -181,8 +179,6 @@ export const useOrdersStore = defineStore('orders', () => {
                 })),
 
             get: (orderId) => getOrderById(orderId).then((response) => response.data),
-
-            create: (orderData) => apiCreateOrder(orderData).then((response) => response.data),
 
             update: (orderId, orderData) =>
                 updateOrderById(orderId, orderData).then((response) => response.data),
@@ -361,7 +357,6 @@ export const useOrdersStore = defineStore('orders', () => {
         watchSearchOrders,
         fetchOrder,
         watchOrder,
-        createOrder,
         updateOrder,
         deleteOrder,
         cancelOrder,

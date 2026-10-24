@@ -23,11 +23,12 @@ wireModulesIntoCore();
  * reason text and the acting account.
  */
 const STAFF_ROWS: OrderTimelineEntry[] = [
-    { id: 'e1', at: '2026-10-01T10:00:00.000Z', type: 'created', data: {} },
+    { id: 'e1', at: '2026-10-01T10:00:00.000Z', type: 'created', audience: 'buyer', data: {} },
     {
         id: 'e2',
         at: '2026-10-01T10:05:00.000Z',
         type: 'paid',
+        audience: 'buyer',
         actor: 'u9',
         data: { method: 'card' }
     },
@@ -35,6 +36,7 @@ const STAFF_ROWS: OrderTimelineEntry[] = [
         id: 'e3',
         at: '2026-10-02T09:00:00.000Z',
         type: 'status_overridden',
+        audience: 'staff',
         actor: 'u9',
         text: 'Courier confirmed by phone',
         data: { mode: 'status', from: 'paid', to: 'shipped' }

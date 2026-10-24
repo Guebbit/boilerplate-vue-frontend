@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { OrderTimelineType } from '@api';
-import { describeTimelineEntry, isStaffOnly, exportRefusalOf } from '../domain';
+import { describeTimelineEntry, exportRefusalOf } from '../domain';
 import type { TimelineTools } from '../domain';
 import enMessages from '../locales/en.json';
 import itMessages from '../locales/it.json';
@@ -138,20 +138,6 @@ describe('the preorder rows', () => {
         expect(
             describeTimelineEntry({ type: 'delay_notice_sent', data: {} }, tools).detail
         ).toBeUndefined();
-    });
-});
-
-describe('isStaffOnly', () => {
-    it('flags exactly the five types the buyer never sees', () => {
-        const staffOnly = Object.values(OrderTimelineType).filter((type) => isStaffOnly(type));
-
-        expect(staffOnly.toSorted()).toEqual([
-            'address_corrected',
-            'fulfillment_held',
-            'fulfillment_released',
-            'refund_failed',
-            'status_overridden'
-        ]);
     });
 });
 

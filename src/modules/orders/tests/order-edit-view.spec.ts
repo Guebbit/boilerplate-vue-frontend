@@ -85,7 +85,6 @@ const signInAsAdmin = (abilities: [string, string][] = [['create', 'Payment']]) 
  * in "the correct-status door" below) at every call site.
  */
 const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
-    transitions: [],
     cancel: false,
     pay: false,
     recordPayment: false,
@@ -96,6 +95,7 @@ const anAction = (overrides: Partial<OrderActions> = {}): OrderActions => ({
     withdraw: false,
     delete: false,
     hardDelete: false,
+    restore: false,
     ...overrides
 });
 
@@ -177,7 +177,6 @@ describe('a list-cache arrival gains actions', () => {
         const detail = anOrder({
             status: OrderStatus.shipped,
             actions: anAction({
-                transitions: [OrderStatus.delivered, OrderStatus.cancelled],
                 cancel: true,
                 pay: false
             })
@@ -200,7 +199,7 @@ describe('a list-cache arrival gains actions', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.delivered,
-            actions: anAction({ transitions: [], cancel: false, pay: false })
+            actions: anAction({ cancel: false, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -224,7 +223,7 @@ describe('refunding', () => {
         mockCanRefund.value = true;
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
         const { wrapper } = mountFromListCache(detail);
 
@@ -252,7 +251,7 @@ const mountRefundable = () => {
     mockCanRefund.value = true;
     const detail = anOrder({
         status: OrderStatus.pending,
-        actions: anAction({ transitions: [], cancel: true, pay: false })
+        actions: anAction({ cancel: true, pay: false })
     });
     const { wrapper } = mountFromListCache(detail);
     return nextTick()
@@ -300,7 +299,7 @@ describe('cancelling', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [OrderStatus.cancelled], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
         // Spied BEFORE mounting, same reasoning as the override test above.
         const cancelOrder = vi
@@ -329,7 +328,7 @@ describe('the correct-status door', () => {
             status: OrderStatus.shipped,
             // `override` left at `anAction`'s empty default — no permission, or nothing left
             // overridable, read the same way here: the server already decided.
-            actions: anAction({ transitions: [OrderStatus.delivered], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -346,7 +345,6 @@ describe('the correct-status door', () => {
         const detail = anOrder({
             status: OrderStatus.shipped,
             actions: anAction({
-                transitions: [OrderStatus.delivered],
                 cancel: true,
                 pay: false,
                 override: [OrderStatus.delivered]
@@ -450,7 +448,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
@@ -471,7 +468,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
@@ -493,7 +489,7 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.pending,
-            actions: anAction({ transitions: [], cancel: false, pay: true, recordPayment: false })
+            actions: anAction({ cancel: false, pay: true, recordPayment: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -512,7 +508,7 @@ describe('recording a payment by hand', () => {
         signInAsAdmin();
         const detail = anOrder({
             status: OrderStatus.paid,
-            actions: anAction({ transitions: [OrderStatus.processing], cancel: true, pay: false })
+            actions: anAction({ cancel: true, pay: false })
         });
 
         const { wrapper } = mountFromListCache(detail);
@@ -531,7 +527,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })
@@ -556,7 +551,6 @@ describe('recording a payment by hand', () => {
         const detail = anOrder({
             status: OrderStatus.pending,
             actions: anAction({
-                transitions: [OrderStatus.cancelled],
                 cancel: true,
                 recordPayment: true
             })

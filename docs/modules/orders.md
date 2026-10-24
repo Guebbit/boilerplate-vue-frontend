@@ -96,9 +96,10 @@ as inclusive instants (`src/infrastructure/utils/day-range.ts`), in the browser'
 
 ## Permanent delete: cancel first
 
-The list offers **Delete** and **Hard delete** from `actions.delete` and `actions.hardDelete`; the
-server decides, from the caller's `delete:Order` key and the order's state. A refused one would answer
-`409 ORDER_NOT_CANCELLED` for an open order, `409 ORDER_INVOICED` for a paid one. Cancelling is what releases the stock
+The list offers **Delete**, **Hard delete** and **Restore** from `actions.delete`, `actions.hardDelete`
+and `actions.restore` (list rows carry them); the server decides, from the caller's `delete:Order` key
+and the order's state. A refused one would answer `409 ORDER_NOT_CANCELLED` for an open order,
+`409 ORDER_INVOICED` for a paid one, `409 ORDER_HAS_MONEY_HISTORY` for one handed money after its cancel. Cancelling is what releases the stock
 and cancels the open payment intent, so the delete is pure cleanup. A refusal that slips through
 (the order changed under the viewer) shows the API's own sentence in the row-action alert; the
 copy is the API's, in the viewer's language, so this app holds none for it.
@@ -125,8 +126,7 @@ with the server's `ORDER_ADDRESS_LOCKED` message; the form decides nothing about
 (`GET /orders/{id}/timeline`). **The server decides who sees what**: staff (`display:Order`) get
 every row with the acting account and any note, the buyer only the buyer-visible rows and never an
 actor. The component filters nothing; it only flags, for staff, the rows the buyer cannot see
-(`TIMELINE_AUDIENCE` in `src/modules/orders/domain/timeline.ts` mirrors the API's table, and is checked against the
-contract's type enum at compile time).
+(each row carries the server's own `audience`, `buyer` or `staff`; the client keeps no table).
 
 Each line is `describeTimelineEntry`'s: a title per type, and a detail built from the row's ids and
 codes (an amount, a parcel number, a reason code through its own dictionary). A code the dictionary
@@ -158,7 +158,7 @@ server: `paymentStatus` (`unpaid` · `paid` · `partially_refunded` · `refunded
 (`unfulfilled` · `in_progress` · `on_hold` · `partially_fulfilled` · `shipped` · `fulfilled`) and
 `returnStatus`. None is derived here. The list shows `fulfillmentStatus` as a chip beside the
 status and filters by it (`GET /orders` search), so a held or part-shipped order can be found. The withdrawal control is [`returns`](./returns.md)'
-`WithdrawalPanel`, handed `actions.withdraw` and `actions.withdrawUntil` untouched; a line whose
+`WithdrawalPanel`, handed `actions.withdraw` and `Order.withdrawUntil` untouched; a line whose
 product carries `noWithdrawal` says so on the page. The operator's "Refund payment" button takes an
 optional amount for a partial refund — empty still means everything still refundable.
 
@@ -171,11 +171,11 @@ order's own cancel is there if they do not want to wait. Nothing is asked of the
 
 Store `orders`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                                                                | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `orders` · `selectedOrderId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                                                  | The refs the setup function returns — the only writable surface. |
-| **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `createOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `fetchInvoice` · `fetchCreditNotes` · `fetchCreditNote` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                                | What it is                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `orders` · `selectedOrderId` · `filters` · `pageCurrent` · `pageSize`                                                                                                                                                                  | The refs the setup function returns — the only writable surface. |
+| **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `fetchInvoice` · `fetchCreditNotes` · `fetchCreditNote` | Everything that changes state or calls the API.                  |
 
 ## Screens
 

@@ -120,7 +120,6 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
     currency: 'EUR',
     orderNumber: '2026-000001',
     actions: {
-        transitions: [],
         cancel: false,
         pay: false,
         recordPayment: false,
@@ -130,7 +129,8 @@ const BASE_ORDER: Omit<OrderType, 'items'> = {
         invoice: false,
         withdraw: false,
         delete: false,
-        hardDelete: false
+        hardDelete: false,
+        restore: false
     }
 };
 
@@ -163,7 +163,6 @@ describe('the invoice buttons', () => {
             ...BASE_ORDER,
             items: [lineWith(null)],
             actions: {
-                transitions: [],
                 cancel: false,
                 pay: false,
                 recordPayment: false,
@@ -173,7 +172,8 @@ describe('the invoice buttons', () => {
                 invoice: true,
                 withdraw: false,
                 delete: false,
-                hardDelete: false
+                hardDelete: false,
+                restore: false
             }
         });
 
@@ -509,10 +509,10 @@ describe('the withdrawal panel', () => {
         const wrapper = mountOrder({
             ...BASE_ORDER,
             items: [lineWith(null)],
+            withdrawUntil: '2026-10-01T10:00:00Z',
             actions: {
                 ...BASE_ORDER.actions!,
-                withdraw: true,
-                withdrawUntil: '2026-10-01T10:00:00Z'
+                withdraw: true
             }
         });
 
