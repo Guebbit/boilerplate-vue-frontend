@@ -257,10 +257,6 @@ export interface AccountEnvelope {
     data: Account;
 }
 
-export interface HardDeleteRequest {
-    hardDelete?: boolean;
-}
-
 /**
  * Liveness indicator. Always `ok` when the process is answering.
  */
@@ -6171,7 +6167,7 @@ export type PreconditionFailedResponse = ErrorResponse;
 export type PayloadTooLargeResponse = ErrorResponse;
 
 /**
- * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged.
+ * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
  */
 export type UnsupportedMediaTypeResponse = ErrorResponse;
 
@@ -8957,18 +8953,11 @@ export const updateUserByIdWithMultipart = (
  */
 export const deleteUserById = (
     id: string,
-    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteUserByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        {
-            url: `/users/${id}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: hardDeleteRequest,
-            params
-        },
+        { url: `/users/${id}`, method: 'DELETE', params },
         options
     );
 };
@@ -9526,18 +9515,11 @@ export const updateProductByIdWithMultipart = (
  */
 export const deleteProductById = (
     id: string,
-    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteProductByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        {
-            url: `/products/${id}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: hardDeleteRequest,
-            params
-        },
+        { url: `/products/${id}`, method: 'DELETE', params },
         options
     );
 };
@@ -9959,18 +9941,11 @@ export const updateOrderByIdWithMergePatchJson = (
  */
 export const deleteOrderById = (
     id: string,
-    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteOrderByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        {
-            url: `/orders/${id}`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: hardDeleteRequest,
-            params
-        },
+        { url: `/orders/${id}`, method: 'DELETE', params },
         options
     );
 };

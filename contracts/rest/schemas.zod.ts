@@ -3485,10 +3485,6 @@ export const deleteUserByIdHeaderIfMatchMax = 200;
 export const DeleteUserByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(deleteUserByIdHeaderIfMatchMax).optional()
 });
-export const deleteUserByIdBodyHardDeleteDefault = false;
-export const DeleteUserByIdBody = zod.strictObject({
-    hardDelete: zod.boolean().default(deleteUserByIdBodyHardDeleteDefault)
-});
 export const DeleteUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -4631,10 +4627,6 @@ export const DeleteProductByIdQueryParams = zod.strictObject({
 export const deleteProductByIdHeaderIfMatchMax = 200;
 export const DeleteProductByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(deleteProductByIdHeaderIfMatchMax).optional()
-});
-export const deleteProductByIdBodyHardDeleteDefault = false;
-export const DeleteProductByIdBody = zod.strictObject({
-    hardDelete: zod.boolean().default(deleteProductByIdBodyHardDeleteDefault)
 });
 export const DeleteProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -7777,10 +7769,6 @@ export const DeleteOrderByIdQueryParams = zod.strictObject({
 export const deleteOrderByIdHeaderIfMatchMax = 200;
 export const DeleteOrderByIdHeader = zod.strictObject({
     'If-Match': zod.string().max(deleteOrderByIdHeaderIfMatchMax).optional()
-});
-export const deleteOrderByIdBodyHardDeleteDefault = false;
-export const DeleteOrderByIdBody = zod.strictObject({
-    hardDelete: zod.boolean().default(deleteOrderByIdBodyHardDeleteDefault)
 });
 export const DeleteOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
