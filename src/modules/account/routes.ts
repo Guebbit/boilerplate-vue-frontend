@@ -33,6 +33,14 @@ export default [
         component: () => import('./views/TwoFactorChallenge.vue')
     },
     {
+        // Guest like the 2FA step: the claim check from the sign-in is the credential, and a
+        // visitor holding a live session has nothing to restore.
+        path: 'login/restore',
+        name: 'AccountRestoreChallenge',
+        meta: { access: 'guest', title: 'account-restore-challenge-page.page-title' },
+        component: () => import('./views/AccountRestoreChallenge.vue')
+    },
+    {
         path: 'password-reset',
         name: 'PasswordResetRequest',
         meta: { access: 'guest', title: 'password-reset-request-page.page-title' },

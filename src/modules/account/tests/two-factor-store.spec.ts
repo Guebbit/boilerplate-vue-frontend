@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -442,6 +443,24 @@ describe('the login-time challenge', () => {
             expect(session.accessToken).toBe('stepped-up-jwt');
             expect(session.isAuth).toBe(true);
             expect(store.challenge).toBeUndefined();
+        });
+    });
+
+    it('submitLoginCode opens the restore offer, and adopts no session, for an account in its deletion grace', () => {
+        const store = useTwoFactorStore();
+        store.beginLoginChallenge(MFA_OUTCOME, false);
+        responses['POST /account/login/2fa'] = orvalEnvelope({
+            deletionPending: true,
+            challenge: 'restore-claim-check',
+            expiresAt: '2026-10-24T10:05:00.000Z',
+            purgeAt: '2026-11-23T00:00:00.000Z'
+        });
+
+        return store.submitLoginCode('123456').then((outcome) => {
+            expect(outcome).toBe('deletion-pending');
+            expect(useSessionStore().isAuth).toBe(false);
+            expect(store.challenge).toBeUndefined();
+            expect(useDeletionRestoreStore().pending?.challenge).toBe('restore-claim-check');
         });
     });
 

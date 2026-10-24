@@ -66,6 +66,22 @@ sweepA11y('account — guest', [
             cy.get('form').submit();
             cy.get('#two-factor-challenge-page').should('exist');
         }
+    },
+    {
+        /*
+         * Reached through a REAL sign-in of an account in its deletion grace, not
+         * `cy.visit('/en/login/restore')` cold, for the same reason as the 2FA step: the claim
+         * check lives in Pinia memory, so a bare visit bounces to `Login`. The demo user asks for its deletion through the API, then signs in by the form.
+         */
+        name: 'login, deletion restore offer',
+        route: '/en/login',
+        prepare: () => {
+            cy.apiAs('user', 'DELETE', '/account');
+            cy.get('[type=email]').type(seedAccount('user').email);
+            cy.get('[type=password]').type(seedAccount('user').password);
+            cy.get('form').submit();
+            cy.get('#account-restore-challenge-page').should('exist');
+        }
     }
 ]);
 

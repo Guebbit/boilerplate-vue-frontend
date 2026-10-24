@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import OAuthCallback from '../views/OAuthCallback.vue';
+import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -23,9 +24,12 @@ const redirectAfterLogin = vi.fn();
 /** Toasts the page raised. */
 const addMessage = vi.fn();
 
+/** The router's `push`, shared so a case can see where the page sent the visitor. */
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
 vi.mock('vue-router', () => ({
     useRoute: () => ({ query }),
-    useRouter: () => ({ push: vi.fn() }),
+    useRouter: () => ({ push }),
     RouterLink: { template: '<a><slot /></a>' }
 }));
 
@@ -58,6 +62,38 @@ describe('OAuthCallback — a connected provider', () => {
         expect(addMessage).toHaveBeenCalledWith(
             'Google is connected. You can now sign in with it.'
         );
+        expect(redirectAfterLogin).toHaveBeenCalledOnce();
+    });
+});
+
+describe('OAuthCallback — an account in its deletion grace', () => {
+    it('opens the restore offer from the redirect dates and goes to its page', async () => {
+        query = {
+            deletionPending: '1',
+            purgeAt: '2026-11-23T00:00:00.000Z',
+            expiresAt: '2026-10-24T10:05:00.000Z'
+        };
+
+        mountPage();
+        await flushPromises();
+
+        expect(useDeletionRestoreStore().pending).toEqual({
+            purgeAt: '2026-11-23T00:00:00.000Z',
+            expiresAt: '2026-10-24T10:05:00.000Z'
+        });
+        expect(push).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ name: 'AccountRestoreChallenge' })
+        );
+        expect(redirectAfterLogin).not.toHaveBeenCalled();
+    });
+
+    it('ignores a redirect missing a date: no offer, the ordinary landing', async () => {
+        query = { deletionPending: '1', purgeAt: '2026-11-23T00:00:00.000Z' };
+
+        mountPage();
+        await flushPromises();
+
+        expect(useDeletionRestoreStore().pending).toBeUndefined();
         expect(redirectAfterLogin).toHaveBeenCalledOnce();
     });
 });

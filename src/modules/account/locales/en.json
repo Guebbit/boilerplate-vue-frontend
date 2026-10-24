@@ -180,6 +180,13 @@
         "button-go-to-login": "Back to login",
         "success": "Password updated successfully. You can now log in."
     },
+    "account-restore-challenge-page": {
+        "page-title": "Restore your account",
+        "title": "Your account is scheduled for deletion",
+        "intro": "You asked to delete this account. It will be erased on {date}. Restore it now to keep everything and sign in, or leave it and it will be erased as planned.",
+        "button-restore": "Restore my account",
+        "button-leave": "Leave it deleted"
+    },
     "account-restore-page": {
         "page-title": "Restore your account",
         "intro-message": "Your account is scheduled for deletion. Restore it to keep everything exactly as it was.",

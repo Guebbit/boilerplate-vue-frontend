@@ -180,6 +180,13 @@
         "button-go-to-login": "Torna al login",
         "success": "Password aggiornata con successo. Ora puoi effettuare il login."
     },
+    "account-restore-challenge-page": {
+        "page-title": "Ripristina il tuo account",
+        "title": "Il tuo account è in programma per l'eliminazione",
+        "intro": "Hai chiesto di eliminare questo account. Verrà cancellato il {date}. Ripristinalo ora per tenere tutto e accedere, oppure lascialo e verrà cancellato come previsto.",
+        "button-restore": "Ripristina il mio account",
+        "button-leave": "Lascialo eliminato"
+    },
     "account-restore-page": {
         "page-title": "Ripristina il tuo account",
         "intro-message": "Il tuo account è in programma per l'eliminazione. Ripristinalo per tenere tutto esattamente com'era.",

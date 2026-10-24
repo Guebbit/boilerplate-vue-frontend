@@ -25,6 +25,7 @@ import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '../stores/auth.ts';
 import { useTwoFactorStore } from '../stores/two-factor.ts';
+import { useDeletionRestoreStore } from '../stores/deletion-restore.ts';
 import OAuthButtons from '../components/OAuthButtons.vue';
 import { usePostLoginRedirect } from '../composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
@@ -149,7 +150,8 @@ const requiresHumanCheck = ref(false);
  *
  * @returns A promise resolving once the outcome settles: a plain session redirects (see
  *  `usePostLoginRedirect`); an account with 2FA armed hands the challenge to the two-factor store
- *  and pushes `TwoFactorChallenge` instead. Invalid input is revealed, announced and focused by
+ *  and pushes `TwoFactorChallenge` instead; an account in the grace of its own deletion hands the
+ *  restore offer to the deletion store and pushes `AccountRestoreChallenge`. Invalid input is revealed, announced and focused by
  *  the toolkit before the handler is ever reached; API failures are attached to the field the
  *  server named, or blocked in place ({@link loginError}) when it named none. An
  *  `ANTIBOT_VERIFICATION_FAILED` refusal instead reveals {@link humanCheck} and leaves the form
@@ -168,6 +170,12 @@ const submitForm = () => {
             )
             .then((outcome) => {
                 requiresHumanCheck.value = false;
+                if (outcome.kind === 'deletion-pending') {
+                    useDeletionRestoreStore().begin(outcome, form.value.remember ?? false);
+                    return router.push(
+                        routerLinkI18n({ name: 'AccountRestoreChallenge', query: route.query })
+                    );
+                }
                 if (outcome.kind === 'mfa') {
                     useTwoFactorStore().beginLoginChallenge(outcome, form.value.remember ?? false);
                     return router.push(
