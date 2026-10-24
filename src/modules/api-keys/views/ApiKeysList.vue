@@ -98,25 +98,15 @@ watchApiKeysSearch({
 });
 
 /**
- * A credential's status, derived rather than stored: `revokedAt` set beats everything else, an
- * `expiresAt` already past comes next, anything else is active.
- *
- * @param apiKey - The row to derive a status for.
- */
-const statusOf = (apiKey: ApiKey): 'revoked' | 'expired' | 'active' => {
-    if (apiKey.revokedAt) return 'revoked';
-    if (apiKey.expiresAt && new Date(apiKey.expiresAt).getTime() <= Date.now()) return 'expired';
-    return 'active';
-};
-
-/**
- * The status chip's colour, one per {@link statusOf} outcome.
+ * The status chip's colour, one per `ApiKey.status` the server can answer. The server decides the
+ * status (a banned minter suspends their keys); this only chooses how it looks.
  */
 const statusColor = {
     active: 'success',
     expired: 'warning',
-    revoked: 'error'
-} as const satisfies Record<'active' | 'expired' | 'revoked', ThemeColor>;
+    revoked: 'error',
+    suspended: 'warning'
+} as const satisfies Record<ApiKey['status'], ThemeColor>;
 
 /**
  * The row action's own blocked state — revoke is the table's only write action, behind a confirm
@@ -184,13 +174,11 @@ const handleRevoke = (apiKey: ApiKey) =>
             :no-data-text="t('generic.no-data')"
         >
             <template v-slot:[`item.name`]="{ item }">
-                <span :class="{ 'opacity-muted': statusOf(item) === 'revoked' }">{{
-                    item.name
-                }}</span>
+                <span :class="{ 'opacity-muted': item.status === 'revoked' }">{{ item.name }}</span>
             </template>
 
             <template v-slot:[`item.publicPrefix`]="{ item }">
-                <span class="font-mono" :class="{ 'opacity-muted': statusOf(item) === 'revoked' }">
+                <span class="font-mono" :class="{ 'opacity-muted': item.status === 'revoked' }">
                     {{ item.publicPrefix }}
                 </span>
             </template>
@@ -202,7 +190,7 @@ const handleRevoke = (apiKey: ApiKey) =>
                         :key="permission"
                         size="small"
                         variant="tonal"
-                        :color="statusOf(item) === 'revoked' ? undefined : 'tertiary'"
+                        :color="item.status === 'revoked' ? undefined : 'tertiary'"
                     >
                         {{ permission }}
                     </v-chip>
@@ -213,11 +201,11 @@ const handleRevoke = (apiKey: ApiKey) =>
                 <v-chip
                     size="small"
                     variant="tonal"
-                    :color="statusColor[statusOf(item)]"
+                    :color="statusColor[item.status]"
                     data-test="api-key-status"
-                    :data-status="statusOf(item)"
+                    :data-status="item.status"
                 >
-                    {{ t(`api-keys-list-page.status-${statusOf(item)}`) }}
+                    {{ t(`api-keys-list-page.status-${item.status}`) }}
                 </v-chip>
             </template>
 
@@ -247,7 +235,7 @@ const handleRevoke = (apiKey: ApiKey) =>
                     color="error"
                     data-test="row-revoke"
                     :aria-label="t('api-keys-list-page.button-revoke-named', { name: item.name })"
-                    :disabled="loading || statusOf(item) === 'revoked'"
+                    :disabled="loading || item.status === 'revoked'"
                     @click.stop="handleRevoke(item)"
                 >
                     {{ t('api-keys-list-page.button-revoke') }}

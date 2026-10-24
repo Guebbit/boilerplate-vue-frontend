@@ -68,18 +68,12 @@ describe('api-keys schema messages', () => {
             );
         }));
 
-    it('resolves the missing-expiry and too-far messages', () => {
+    it('resolves the missing-expiry message', () => {
         const base = { name: 'a key', permissions: ['products.read'] };
 
         expect(messagesOf(apiKeyCreateSchema, base)).toEqual(
             expect.arrayContaining([enMessages['api-keys-form']['expires-at-required']])
         );
-        expect(
-            messagesOf(apiKeyCreateSchema, {
-                ...base,
-                expiresAt: new Date(Date.now() + 400 * 86_400_000).toISOString()
-            })
-        ).toEqual(expect.arrayContaining([enMessages['api-keys-form']['expires-at-too-far']]));
     });
 
     it('resolves the past-expiry message', () => {

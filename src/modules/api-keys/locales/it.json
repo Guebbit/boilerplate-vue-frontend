@@ -4,8 +4,7 @@
         "name-too-long": "Il nome è troppo lungo",
         "permissions-required": "Scegli almeno un permesso",
         "expires-at-past": "La scadenza deve essere nel futuro",
-        "expires-at-required": "La scadenza è obbligatoria",
-        "expires-at-too-far": "La scadenza può essere al massimo tra un anno"
+        "expires-at-required": "La scadenza è obbligatoria"
     },
     "api-keys-list-page": {
         "page-title": "Chiavi API",
@@ -23,6 +22,7 @@
         "status-active": "Attiva",
         "status-expired": "Scaduta",
         "status-revoked": "Revocata",
+        "status-suspended": "Sospesa",
         "button-revoke": "Revoca",
         "button-revoke-named": "Revoca la credenziale {name}",
         "confirm-revoke": "Revocare {name}? Chi la sta ancora usando smetterà immediatamente di autenticarsi.",

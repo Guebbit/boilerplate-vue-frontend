@@ -13,6 +13,7 @@
  */
 import { useStructureCrudApi } from '@guebbit/vue-toolkit';
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import { listApiKeys, mintApiKey, revokeApiKey } from '@api';
 import type { ApiKey, MintApiKeyRequest } from '@types';
@@ -21,6 +22,12 @@ import type { ApiKey, MintApiKeyRequest } from '@types';
  * Machine-to-machine credentials: list, mint, revoke.
  */
 export const useApiKeysStore = defineStore('api-keys', () => {
+    /**
+     * The latest `expiresAt` a mint accepts, as the last list response published it. Absent until
+     * the list has loaded; the server's 422 is the guard either way.
+     */
+    const maxExpiresAt = ref<string>();
+
     /**
      * Credentials: search only. No `list`/`get`/`update` — no matching endpoints — and no
      * `create`/`remove` either, since both need the hand-written scrubbing below.
@@ -43,10 +50,13 @@ export const useApiKeysStore = defineStore('api-keys', () => {
     } = useStructureCrudApi<ApiKey, string>(
         {
             search: (_filters, page, size) =>
-                listApiKeys({ page, pageSize: size }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
-                }))
+                listApiKeys({ page, pageSize: size }).then((response) => {
+                    maxExpiresAt.value = response.data.maxExpiresAt;
+                    return {
+                        items: response.data.items,
+                        totalItems: response.data.meta.totalItems
+                    };
+                })
         },
         { resourceKey: 'api-keys', queryClient }
     );
@@ -71,7 +81,8 @@ export const useApiKeysStore = defineStore('api-keys', () => {
         fetchAny(() =>
             mintApiKey(data).then(({ data: created }) => {
                 const { secret: _secret, ...record } = created;
-                editApiKeyRecord(record, record.id);
+                // A key just minted is live: the mint response carries no status of its own.
+                editApiKeyRecord({ ...record, status: 'active' }, record.id);
                 return created;
             })
         );
@@ -90,12 +101,13 @@ export const useApiKeysStore = defineStore('api-keys', () => {
      */
     const revokeCredential = (id: string) =>
         fetchAny(() => revokeApiKey(id)).then(() => {
-            editApiKeyRecord({ revokedAt: new Date().toISOString() }, id, false);
+            editApiKeyRecord({ revokedAt: new Date().toISOString(), status: 'revoked' }, id, false);
         });
 
     return {
         apiKeys,
         apiKeysList,
+        maxExpiresAt,
         addApiKeyRecord,
 
         filters,

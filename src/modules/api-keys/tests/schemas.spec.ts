@@ -13,9 +13,6 @@ const validCredential = {
     expiresAt: new Date(Date.now() + 86_400_000).toISOString()
 };
 
-/** An ISO instant this many days from now. */
-const ahead = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString();
-
 describe('apiKeyCreateSchema', () => {
     it('accepts a minimal valid credential', () => {
         expect(apiKeyCreateSchema.safeParse(validCredential).success).toBe(true);
@@ -28,15 +25,6 @@ describe('apiKeyCreateSchema', () => {
         expect(apiKeyCreateSchema.safeParse({ ...validCredential, expiresAt: '' }).success).toBe(
             false
         );
-    });
-
-    it('accepts an expiry a little under a year ahead and refuses one beyond it', () => {
-        expect(
-            apiKeyCreateSchema.safeParse({ ...validCredential, expiresAt: ahead(360) }).success
-        ).toBe(true);
-        expect(
-            apiKeyCreateSchema.safeParse({ ...validCredential, expiresAt: ahead(370) }).success
-        ).toBe(false);
     });
 
     it('rejects an empty name', () => {

@@ -26,31 +26,17 @@ const apiKeyPermissionsSchema = z
     .min(1, { error: () => translate('api-keys-form.permissions-required') });
 
 /**
- * The latest expiry the server accepts: one calendar year from now, the same rule it applies at
- * mint (a request beyond it is a 422).
- *
- * @returns The instant in epoch milliseconds.
- */
-const latestExpiry = (): number => {
-    const limit = new Date();
-    limit.setFullYear(limit.getFullYear() + 1);
-    return limit.getTime();
-};
-
-/**
- * Validation schema for the expiry: REQUIRED (a credential that never expires is never rotated),
- * refused when it names a moment already past, and refused beyond a year ahead. The server accepts
- * a past date and mints a credential that is dead on arrival — that floor exists only here,
- * client-side, to catch the mistake before the round trip; the ceiling is the server's too.
+ * Validation schema for the expiry: REQUIRED (a credential that never expires is never rotated)
+ * and refused when it names a moment already past. The server accepts a past date and mints a
+ * credential that is dead on arrival — that floor exists only here, to catch the mistake before
+ * the round trip. The ceiling is the server's alone: the list publishes it as `maxExpiresAt`, and
+ * a mint beyond it answers 422 on the field.
  */
 const apiKeyExpiresAtSchema = z
     .string({ error: () => translate('api-keys-form.expires-at-required') })
     .min(1, { error: () => translate('api-keys-form.expires-at-required') })
     .refine((value) => new Date(value).getTime() > Date.now(), {
         error: () => translate('api-keys-form.expires-at-past')
-    })
-    .refine((value) => new Date(value).getTime() <= latestExpiry(), {
-        error: () => translate('api-keys-form.expires-at-too-far')
     });
 
 /**
