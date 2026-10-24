@@ -956,6 +956,19 @@ export const AuditEntryItemOutcome = {
     failure: 'failure'
 } as const;
 
+/**
+ * What the action carried. Open on purpose: each action adds its own keys, and a
+ * declared-properties object would be validated closed by the generated schema.
+ * Keys with a fixed meaning across actions:
+ *
+ * - `ownOrder` (boolean): `true` when staff acted on an order they placed
+ *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
+ * - `changes` (object): an `*.updated` action's non-personal fields that moved,
+ *   `{ <field>: { from, to } }`, `null` meaning unset.
+ * - `changedFields` (string[]): an `*.updated` action's free-text and personal
+ *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
+ *   their values never enter it.
+ */
 export type AuditEntryItemMetadata = { [key: string]: unknown };
 
 export type AuditEntryItemLevel = (typeof AuditEntryItemLevel)[keyof typeof AuditEntryItemLevel];
@@ -984,6 +997,19 @@ export interface AuditEntryItem {
     traceId?: string;
     targetType?: string;
     targetId?: string;
+    /**
+     * What the action carried. Open on purpose: each action adds its own keys, and a
+     * declared-properties object would be validated closed by the generated schema.
+     * Keys with a fixed meaning across actions:
+     *
+     * - `ownOrder` (boolean): `true` when staff acted on an order they placed
+     *   themselves; absent otherwise. Filter with `GET /audit?ownOrder=`.
+     * - `changes` (object): an `*.updated` action's non-personal fields that moved,
+     *   `{ <field>: { from, to } }`, `null` meaning unset.
+     * - `changedFields` (string[]): an `*.updated` action's free-text and personal
+     *   fields that moved, by NAME only. The trail is never scrubbed on erasure, so
+     *   their values never enter it.
+     */
     metadata?: AuditEntryItemMetadata;
     timestamp: string;
     level: AuditEntryItemLevel;
@@ -6368,6 +6394,10 @@ export type ListAuditEntriesParams = {
      * Return events strictly after this ISO-8601 timestamp — an exclusive bound
      */
     since?: string;
+    /**
+     * Filter by whether the action was taken on the caller's own order. `true` keeps only the entries flagged `metadata.ownOrder`; `false` keeps the rest. Absent keeps both.
+     */
+    ownOrder?: boolean;
     /**
      * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1

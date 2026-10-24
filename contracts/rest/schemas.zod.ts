@@ -1531,6 +1531,7 @@ export const ListAuditEntriesQueryParams = zod.strictObject({
     outcome: zod.enum(['success', 'failure']).optional(),
     target: zod.string().max(listAuditEntriesQueryTargetMax).optional(),
     since: zod.iso.datetime({ offset: true }).optional(),
+    ownOrder: zod.boolean().optional(),
     page: zod
         .number()
         .min(1)
