@@ -3602,6 +3602,7 @@ export const RefundReason = {
 
 /**
  * Why the provider last refused a refund, as a closed code. Staff only (`display:Payment`). `unknown` is anything the provider's adapter did not classify; the raw wording stays in the logs.
+ * Money did NOT move for `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` (the payment's provider is no longer installed, so nothing was asked): the refund may be marked returned by hand once the money went back another way. `declined`, `expired_or_canceled_card`, `lost_or_stolen_card` and `provider_removed` are final and are not retried; `insufficient_funds` (the shop's own provider balance is short) and the unclear `provider_unavailable` and `unknown` are retried with a growing delay. An unclear refusal may have gone through, so it is never offered for hand settlement.
  */
 export type RefundFailureReason = (typeof RefundFailureReason)[keyof typeof RefundFailureReason];
 
@@ -3610,6 +3611,7 @@ export const RefundFailureReason = {
     insufficient_funds: 'insufficient_funds',
     expired_or_canceled_card: 'expired_or_canceled_card',
     lost_or_stolen_card: 'lost_or_stolen_card',
+    provider_removed: 'provider_removed',
     provider_unavailable: 'provider_unavailable',
     unknown: 'unknown'
 } as const;
@@ -3626,12 +3628,14 @@ export interface Refund {
     amount: number;
     /** ISO-4217 currency code, copied from the payment. */
     currency: string;
-    /** `pending` while the provider is being asked; `failed` when it refused — a sweep retries the same refund with the same idempotency key; `succeeded` once the money is confirmed back (or, for a hand-paid payment, reported back by the operator). */
+    /** `pending` while the provider is being asked (or, on a hand-paid payment, until an operator reports the money back); `failed` when it refused — the sweep retries it with the same idempotency key unless the refusal is final, and an operator may report it returned by hand when the money provably did not move (see `RefundFailureReason`); `succeeded` once the money is confirmed back, or reported back by the operator. */
     status: RefundStatus;
     reason: RefundReason;
     returnId?: Id;
     /** When the refund succeeded. Absent while it has not. */
     settledAt?: string;
+    /** `true` when an operator reported this refund's money returned outside the application (`POST /payments/{id}/refunds/{refundId}/settle`): a hand-paid payment's refund, or a card refund the provider refused. Per refund. Absent otherwise. */
+    settledByHand?: boolean;
     /** The provider's id for the refund (Stripe's `re_…`). Staff only. */
     providerRefundRef?: string;
     failureReason?: RefundFailureReason;
@@ -3686,7 +3690,7 @@ export interface PaymentActions {
     sync: boolean;
     /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, a refund still open included), which is what greys the control out rather than letting the operator discover it by clicking. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
     refund: boolean;
-    /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded` and hand-paid, and the refund is `pending`. An array because the route takes a target; empty when there is none. */
+    /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
     settleByHand: Id[];
 }
 
@@ -3755,8 +3759,6 @@ export interface Payment {
     reference?: string;
     /** When the money actually arrived, as the admin recording it reported — possibly earlier than `createdAt`. Set only by `POST /payments/orders/{orderId}/offline`; absent from a card payment. */
     receivedAt?: string;
-    /** `true` once a refunded `manual` payment has had its money returned to the customer outside this application — there is no provider to ask, so this is the operator's own record that it was done (`POST /payments/{id}/refunds/{refundId}/settle`). Set by that route alone. Absent otherwise. */
-    refundedByHand?: boolean;
     /** Returned by `POST /payments` alone, never stored and never read back: it authorises completing this payment against the provider from the browser. Absent from every other response. */
     clientSecret?: string;
     /** The only card digits a payment system may remember. Survives a refund — refunding does not clear it. */
@@ -5886,12 +5888,13 @@ export interface RefundsResponseEnvelope {
 }
 
 /**
- * `stale_refund` — a provider refund open past the threshold; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
+ * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
  */
 export type PaymentAttentionKind = (typeof PaymentAttentionKind)[keyof typeof PaymentAttentionKind];
 
 export const PaymentAttentionKind = {
     stale_refund: 'stale_refund',
+    refused_refund: 'refused_refund',
     manual_refund_owed: 'manual_refund_owed'
 } as const;
 
@@ -10331,6 +10334,7 @@ export const hardDeleteOrderById = (
 
 /**
  * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return). A customer can cancel only their own orders; an operator (a caller holding `update:Order`) can cancel anyone's, and must have proved themselves recently: a stale session answers `401 REAUTH_REQUIRED`, while the buyer's own cancel is never prompted. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * The refund of a paid order runs AFTER this answer, so a 200 does not say the money is back: follow it on the payment (`displayStatus` `refund_pending`, then `refunded`) and on `GET /payments/attention`. A provider that refuses it leaves the refund open and retried; the cancel stays done.
  * @summary Cancel order
  */
 export const cancelOrderById = (
@@ -10440,11 +10444,12 @@ export const getPaymentByOrder = (
 };
 
 /**
- * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left, which includes a refund still open: a card refund the provider has not confirmed belongs to the refund sweep) or 422 (asks for more than is left).
+ * Returns money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Needs `create:Refund`. Refunding one's own order is allowed and the audit row is flagged `ownOrder`. Without a body it returns everything still refundable; with an `amount` it returns that part, and the payment stays `succeeded` until the parts add up to what was paid. Each call is one `Refund` record on the payment. Answers 201 with the new `Refund` record and its address in `Location`; read the payment again (`GET /payments/{id}`) for the running total. The reservation of the amount is conditional on the payment still having that much left, so a double submit cannot return the money twice — the second call answers 409 (nothing left to refund) or 422 (asks for more than is left). A refund still open counts against what is left, so a second partial refund beside it is allowed while money remains.
+ * The 201 is the answer for every outcome of the record the request wrote; its `status` carries the result. `succeeded`: the money is back. `failed`: the provider refused, the record is kept and counts against what is left, and it is either retried by the refund sweep or, when `actions.settleByHand` lists it, final and waiting for the money to be returned another way. `pending`: hand-paid money waiting for an operator. A refusal is never a 5xx. The reason of a refusal (`failureReason`) is sent to `display:Payment` callers only.
  * On a hand-paid payment (cash, a transfer) the record is only OPENED: it stays `pending` and the payment's `actions.settleByHand` lists it, because nobody here can tell the money went back. `POST /payments/{id}/refunds/{refundId}/settle` is what confirms it. Requires an `Idempotency-Key` header: a retry that repeats the key replays the first answer instead of returning the money again, and a request without it answers 400 `IDEMPOTENCY_KEY_REQUIRED`. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`, and the caller re-authenticates and retries the same request.
  * @summary Refund a payment
  */
-export const refundPaymentByOrder = (
+export const createRefund = (
     id: string,
     refundPaymentRequest?: RefundPaymentRequest,
     options?: SecondParameter<typeof orvalMutator<RefundEnvelope>>
@@ -10876,7 +10881,7 @@ export const declineReturn = (
 
 /**
  * The warehouse (or a manager) says the goods are back: the units go on sale again, the customer is owed the money for them, and the return finishes. Requires an `approved` return — a withdrawal is born approved, anything else was approved by staff first. The status move and the restock are one transaction, so a return is never half-received; the move is conditional, so a second click answers 409.
- * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
+ * What is refunded: the returned lines, plus the delivery paid when the return carries every unit on the order (a withdrawal gets back up to the cheapest standard delivery on offer; faulty or wrong goods get all of it), less an optional `handlingDeduction` for damage the customer caused (Art. 14(2)). The amount is fixed when the goods are received and shown as `refundAmount`. If the payment provider refuses, the return stays `received` and the refund is retried by the payment sweep; the return closes when it lands. The answer is 200 either way: `received` means the money is still owed (its refund record is already on the payment, follow it there and on `GET /payments/attention`), `closed` means it went back. Sends `Idempotency-Key`-safe retries. Requires a session that has re-proved itself within the last few minutes — a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`.
  * @summary Record that the returned goods arrived
  */
 export const receiveReturn = (
@@ -11624,7 +11629,8 @@ export const listPaymentAttention = (
 };
 
 /**
- * An operator confirming that money already handed back outside the application (cash given back, a bank transfer sent) was returned, on a refund left `pending` by `POST /payments/{id}/refunds`, a cancellation, a received return or a withdrawal. Nothing is sent anywhere: the refund record settles with `refundedByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately. Only a hand-paid (`manual`) payment's refund can be settled this way; a card refund belongs to the provider and its sweep (409 `PAYMENT_REFUND_NOT_BY_HAND`). A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
+ * An operator confirming that money was handed back outside the application (cash given back, a bank transfer sent). Nothing is sent anywhere: the refund record settles with `settledByHand`, `payment.refunded` fires as for any refund (the credit note is issued, a return waiting on it closes), and the audit row is `admin.payment.refund_settled_by_hand`. The refund is named by its own id, so one payment carrying several open refunds settles each separately.
+ * Which refunds may be settled: a hand-paid (`manual`) payment's `pending` refund; and a card refund the provider refused in a way that proves the money did not move (`RefundFailureReason`: `declined`, `insufficient_funds`, `expired_or_canceled_card`, `lost_or_stolen_card`, `provider_removed`). The payment's `actions.settleByHand` lists exactly these ids. A card refund that is `pending` (an attempt is running) or `failed` for an unclear reason (`provider_unavailable`, `unknown`) answers 409 `PAYMENT_REFUND_IN_FLIGHT`: the money may have moved, and the sweep settles it from the provider. A refund two operators settle at once settles once, and the loser answers 409 `PAYMENT_REFUND_NOT_OPEN`. Needs `create:Refund`, which carries the same fresh-session requirement as the refund itself: a valid-but-stale token answers 401 with `errors[].code` `REAUTH_REQUIRED`. `Idempotency-Key` is optional.
  * @summary Mark a hand-paid refund as returned
  */
 export const settleRefundByHand = (
@@ -12504,9 +12510,7 @@ export type ListOrderCreditNotesResult = NonNullable<
 export type GetOrderCreditNoteResult = NonNullable<Awaited<ReturnType<typeof getOrderCreditNote>>>;
 export type ListPaymentMethodsResult = NonNullable<Awaited<ReturnType<typeof listPaymentMethods>>>;
 export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
-export type RefundPaymentByOrderResult = NonNullable<
-    Awaited<ReturnType<typeof refundPaymentByOrder>>
->;
+export type CreateRefundResult = NonNullable<Awaited<ReturnType<typeof createRefund>>>;
 export type GetRefundResult = NonNullable<Awaited<ReturnType<typeof getRefund>>>;
 export type RecordOfflinePaymentResult = NonNullable<
     Awaited<ReturnType<typeof recordOfflinePayment>>

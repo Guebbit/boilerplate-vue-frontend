@@ -119,9 +119,11 @@
         "failure-reason-insufficient_funds": "Fondi insufficienti",
         "failure-reason-expired_or_canceled_card": "La carta è scaduta o è stata annullata",
         "failure-reason-lost_or_stolen_card": "La carta risulta smarrita o rubata",
+        "failure-reason-provider_removed": "Il gestore dei pagamenti non è più installato",
         "failure-reason-provider_unavailable": "Il provider di pagamento non era disponibile",
         "failure-reason-unknown": "Il provider non ha indicato un motivo utilizzabile",
-        "attention-kind-stale_refund": "Rimborso aperto da troppo tempo",
+        "attention-kind-stale_refund": "In attesa della risposta del gestore",
+        "attention-kind-refused_refund": "Rifiutato: restituisci il denaro in un altro modo",
         "attention-kind-manual_refund_owed": "Denaro da restituire fuori dal sistema",
         "attention-hint": "Solo i problemi ancora registrati su un pagamento o un ordine. Uno risolto sparisce alla lettura successiva.",
         "button-reload": "Ricarica",
@@ -140,11 +142,21 @@
         "button-refund": "Rimborsa il resto",
         "button-mark-returned": "Segna come restituito",
         "confirm-mark-returned": "Confermi di aver restituito {amount} al cliente fuori dall'app? Non viene inviato nulla.",
+        "confirm-mark-returned-card": "Confermi di aver restituito {amount} al cliente in un altro modo? Fallo solo dopo che il denaro è uscito: l'app smette di ritentare questo rimborso e avvisa il cliente che è stato restituito.",
         "mark-returned-done": "Segnato come restituito",
         "button-open-payment": "Apri pagamento",
         "button-open-order": "Apri l'ordine",
         "confirm-refund": "Rimborsare tutto ciò che è ancora rimborsabile sull'ordine {order}? Il denaro torna al cliente.",
         "refund-done": "Rimborso richiesto"
+    },
+    "refund-notice": {
+        "recorded": "Rimborso registrato. Restituisci il denaro fuori dall'app, poi premi Segna come restituito.",
+        "refused": "Il gestore della carta ha rifiutato questo rimborso: {reason}. {next}",
+        "no-reason": "nessun motivo utilizzabile",
+        "settle-by-hand": "Restituisci il denaro in un altro modo, poi premi Segna come restituito.",
+        "retried": "Resta aperto e viene ritentato automaticamente.",
+        "cancel-under-way": "Ordine annullato. Il rimborso è in corso; lo stato è sul pagamento.",
+        "receive-owed": "Merce ricevuta. Il rimborso non è ancora concluso; seguilo sul pagamento dell'ordine."
     },
     "navigation": {
         "label-payments": "Pagamenti"

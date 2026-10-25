@@ -34,6 +34,7 @@ import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import type { Payment } from '@types';
 import { usePaymentsStore } from '../store.ts';
+import { refundNotice } from '../composables/refund-notice.ts';
 import PaymentStatusChip from './PaymentStatusChip.vue';
 
 /**
@@ -161,10 +162,19 @@ const handleRefund = singleFlight(() => {
             refunding.value = true;
             return store
                 .refundPayment(current)
-                .then(() => {
-                    addMessage(t('payments-list-page.refund-done'));
+                .then((done) => {
+                    if (!done) return;
+                    const { payment: refreshed, refund } = done;
+                    const notice = refundNotice(
+                        t,
+                        refund,
+                        refreshed.actions.settleByHand,
+                        'payments-list-page.refund-done'
+                    );
+                    addMessage(notice.text, notice.type);
                     emit('changed');
-                    open.value = false;
+                    // A refused refund keeps the drawer open: its Mark returned is right there.
+                    if (refund.status !== 'failed') open.value = false;
                 })
                 .catch((error: unknown) => reportRefundError(error))
                 .finally(() => {
@@ -187,9 +197,12 @@ const handleMarkReturned = singleFlight((refund: Payment['refunds'][number]) => 
     if (!current) return Promise.resolve();
     return useDialogStore()
         .confirm({
-            message: t('payments-list-page.confirm-mark-returned', {
-                amount: formatCurrency(refund.amount, refund.currency)
-            }),
+            message: t(
+                refund.failureReason
+                    ? 'payments-list-page.confirm-mark-returned-card'
+                    : 'payments-list-page.confirm-mark-returned',
+                { amount: formatCurrency(refund.amount, refund.currency) }
+            ),
             color: 'error'
         })
         .then((accepted) => {

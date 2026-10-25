@@ -378,6 +378,16 @@ describe('AttentionList', () => {
             since: '2026-03-04T10:00:00Z'
         },
         {
+            kind: 'refused_refund',
+            orderId: 'o3',
+            paymentId: 'pay-3',
+            refundId: 'r3',
+            amount: 7,
+            currency: 'EUR',
+            failureReason: 'lost_or_stolen_card',
+            since: '2026-03-04T10:00:00Z'
+        },
+        {
             kind: 'manual_refund_owed',
             orderId: 'o1',
             paymentId: 'pay-1',
@@ -394,18 +404,24 @@ describe('AttentionList', () => {
         await flushPromises();
 
         const rows = wrapper.findAll('[data-test="attention-row"]');
-        expect(rows).toHaveLength(2);
+        expect(rows).toHaveLength(3);
         expect(rows[0]?.get('[data-test="attention-kind"]').text()).toBe(
-            'Refund open for too long'
+            "Waiting for the provider's answer"
         );
         expect(rows[0]?.get('[data-test="attention-failure-reason"]').text()).toBe(
             'The payment provider was unavailable'
         );
         expect(rows[0]?.text()).toContain('€5.00');
         expect(rows[1]?.get('[data-test="attention-kind"]').text()).toBe(
+            'Refused: return the money another way'
+        );
+        expect(rows[1]?.get('[data-test="attention-failure-reason"]').text()).toBe(
+            'The card was reported lost or stolen'
+        );
+        expect(rows[2]?.get('[data-test="attention-kind"]').text()).toBe(
             'Money to hand back outside the system'
         );
-        expect(rows[1]?.text()).toContain('€12.00');
+        expect(rows[2]?.text()).toContain('€12.00');
     });
 
     it('links each problem to its order', async () => {
@@ -442,7 +458,7 @@ describe('AttentionList', () => {
         expect(read).toHaveBeenCalledTimes(2);
     });
 
-    it('opens the payment’s drawer from a refund owed by hand, and from no other kind', async () => {
+    it('opens the payment’s drawer from any row', async () => {
         answerAttentionWith(ITEMS);
         const read = vi
             .spyOn(usePaymentsStore(), 'readPaymentForOrder')
@@ -451,8 +467,8 @@ describe('AttentionList', () => {
         await flushPromises();
 
         const rows = wrapper.findAll('[data-test="attention-row"]');
-        expect(rows[0]?.find('[data-test="attention-open-payment"]').exists()).toBe(false);
-        await rows[1]?.get('[data-test="attention-open-payment"]').trigger('click');
+        expect(rows[0]?.find('[data-test="attention-open-payment"]').exists()).toBe(true);
+        await rows[2]?.get('[data-test="attention-open-payment"]').trigger('click');
         await flushPromises();
 
         expect(read).toHaveBeenCalledWith('o1');

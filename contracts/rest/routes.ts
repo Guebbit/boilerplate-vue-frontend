@@ -213,7 +213,7 @@ export const ROUTES: GeneratedRoute[] = [
     { method: "PATCH", pattern: /^\/orders\/[^/]+$/, schemaName: "UpdateOrderByIdResponse", bodySchemaName: "UpdateOrderByIdBody", module: "orders" },
     { method: "PUT", pattern: /^\/orders\/[^/]+$/, schemaName: "ReplaceOrderByIdResponse", bodySchemaName: "ReplaceOrderByIdBody", module: "orders" },
     { method: "POST", pattern: /^\/payments\/[^/]+\/confirm$/, schemaName: "ConfirmPaymentResponse", bodySchemaName: "ConfirmPaymentBody", module: "payments" },
-    { method: "POST", pattern: /^\/payments\/[^/]+\/refunds$/, schemaName: "RefundPaymentByOrderResponse", bodySchemaName: "RefundPaymentByOrderBody", module: "payments" },
+    { method: "POST", pattern: /^\/payments\/[^/]+\/refunds$/, schemaName: "CreateRefundResponse", bodySchemaName: "CreateRefundBody", module: "payments" },
     { method: "POST", pattern: /^\/payments\/[^/]+\/sync$/, schemaName: "SyncPaymentResponse", bodySchemaName: undefined, module: "payments" },
     { method: "GET", pattern: /^\/payments\/[^/]+$/, schemaName: "GetPaymentResponse", bodySchemaName: undefined, module: "payments" },
     { method: "POST", pattern: /^\/payments\/orders\/[^/]+\/offline$/, schemaName: "RecordOfflinePaymentResponse", bodySchemaName: "RecordOfflinePaymentBody", module: "payments" },

@@ -166,7 +166,13 @@ describe('PaymentPanel', () => {
 
         it('shows the waiting refund before a refund an operator already confirmed', () => {
             const { store, wrapper } = mountPanel();
-            store.payment = { ...waitingRefund(), refundedByHand: true };
+            store.payment = {
+                ...waitingRefund(),
+                refunds: [
+                    pendingRefund,
+                    { ...pendingRefund, id: 'refund-2', status: 'succeeded', settledByHand: true }
+                ]
+            };
 
             return nextRenderTick(wrapper).then(() => {
                 expect(wrapper.find('[data-test=payment-refund-pending]').exists()).toBe(true);
@@ -180,7 +186,7 @@ describe('PaymentPanel', () => {
                 ...handPaidSucceededPayment,
                 displayStatus: 'partially_refunded',
                 amountRefunded: 30,
-                refundedByHand: true
+                refunds: [{ ...pendingRefund, status: 'succeeded', settledByHand: true }]
             };
 
             return nextRenderTick(wrapper).then(() => {

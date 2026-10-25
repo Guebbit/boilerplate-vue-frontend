@@ -5,7 +5,10 @@
  */
 import { computed, watch, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { translate as t } from '@/i18n';
+import type { EToastType } from '@guebbit/vue-toolkit';
 import { usePaymentsStore } from '../store';
+import { refundNotice } from './refund-notice';
 
 /**
  * The operator's refund control for one order — published where the store is not.
@@ -72,12 +75,38 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
          *
          * @param amount - A partial refund; absent returns everything still refundable.
          * @returns A promise resolving once the refreshed payment has replaced the cached one,
-         *  which is what withdraws `canRefund`.
+         *  which is what withdraws `canRefund`, with what the operator should be told: the money
+         *  is back, on file, or the provider refused it (and what to do then).
          */
-        refund: (amount?: number) =>
+        refund: (amount?: number): Promise<{ text: string; type: EToastType } | undefined> =>
             payment.value
-                ? paymentsStore.refundPayment(payment.value, amount).then(() => undefined)
-                : Promise.resolve(),
+                ? paymentsStore
+                      .refundPayment(payment.value, amount)
+                      .then((done) =>
+                          done
+                              ? refundNotice(
+                                    t,
+                                    done.refund,
+                                    done.payment.actions.settleByHand,
+                                    'order-edit-page.refund-done'
+                                )
+                              : undefined
+                      )
+                : Promise.resolve(undefined),
+        /**
+         * What a cancel's refund has become, read off the payment after it was re-read: the
+         * refund runs after the cancel's answer, so the page says what is known, not what is hoped.
+         *
+         * @param doneKey - The wording for a payment that is already refunded.
+         */
+        cancelNotice: (doneKey: string): string => {
+            if (payment.value?.displayStatus === 'refunded') return t(doneKey);
+            return t(
+                (payment.value?.actions.settleByHand.length ?? 0) > 0
+                    ? 'refund-notice.recorded'
+                    : 'refund-notice.cancel-under-way'
+            );
+        },
         /**
          * Confirms that one hand-paid refund's money was returned outside the application.
          *

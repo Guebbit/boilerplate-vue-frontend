@@ -10,6 +10,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { loadLocale } from '@/i18n';
 import { ref } from 'vue';
 import { useOrderRefund } from '../composables/use-order-refund';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
@@ -103,6 +104,28 @@ describe('useOrderRefund', () => {
             })
             .then(() => {
                 expect(canRefund.value).toBe(false);
+            });
+    });
+
+    it('answers a refusal as a warning that names the next step, not as an error', () => {
+        responses['POST /payments/p1/refunds'] = orvalEnvelope({
+            id: 'r9',
+            amount: 10,
+            currency: 'EUR',
+            status: 'failed',
+            failureReason: 'lost_or_stolen_card',
+            reason: 'goodwill',
+            createdAt: '2026-10-24T10:00:00.000Z'
+        });
+        responses['GET /payments/p1'] = orvalEnvelope(payment(true, ['r9']));
+        const { refund } = useOrderRefund(ref('o1'));
+
+        return loadLocale('en')
+            .then(() => settled())
+            .then(() => refund())
+            .then((notice) => {
+                expect(notice?.type).toBe('warning');
+                expect(notice?.text).toContain('press Mark returned');
             });
     });
 
