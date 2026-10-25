@@ -56,9 +56,7 @@ const trackerIsSilenced = (silenced: boolean): void => {
 const storedConsent = (device: Device): Cypress.Chainable<boolean> =>
     requestAsDevice(device, 'GET', '/account').then(
         // The body is `unknown`; this is the one field the story reads off it.
-        (response) =>
-            (response.body as { data: { analyticsConsent?: boolean } }).data.analyticsConsent ===
-            true
+        (response) => (response.body as { analyticsConsent?: boolean }).analyticsConsent === true
     );
 
 /**

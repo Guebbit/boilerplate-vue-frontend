@@ -43,8 +43,8 @@ describe('AT11 · A staff member walks away', () => {
         cy.loginAs('user');
         cy.wait('@touch')
             .its('response.body')
-            .should((body: { data?: { idleTimeoutSeconds?: number } }) => {
-                expect(body.data?.idleTimeoutSeconds).to.equal(undefined);
+            .should((body: { idleTimeoutSeconds?: number }) => {
+                expect(body.idleTimeoutSeconds).to.equal(undefined);
             });
 
         cy.step('half an hour passes: no prompt, and the orders page still loads');
@@ -61,8 +61,8 @@ describe('AT11 · A staff member walks away', () => {
         cy.loginAs('warehouse');
         cy.wait('@touch')
             .its('response.body')
-            .should((body: { data?: { idleTimeoutSeconds?: number } }) => {
-                expect(body.data?.idleTimeoutSeconds).to.equal(1800);
+            .should((body: { idleTimeoutSeconds?: number }) => {
+                expect(body.idleTimeoutSeconds).to.equal(1800);
             });
 
         cy.step('right after signing in there is no prompt; close to the limit there is');
