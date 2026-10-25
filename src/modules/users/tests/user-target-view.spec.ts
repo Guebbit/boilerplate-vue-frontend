@@ -28,7 +28,6 @@ import {
 } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -63,11 +62,9 @@ const queueGetResponses = (...users: ReturnType<typeof aUser>[]) => {
         if (config.method === 'GET') {
             const user = users[Math.min(call, users.length - 1)];
             call += 1;
-            return Promise.resolve(
-                parseOrvalFixture(config.method, config.url, orvalEnvelope(user))
-            );
+            return Promise.resolve(parseOrvalFixture(config.method, config.url, user));
         }
-        return Promise.resolve(parseOrvalFixture(config.method, config.url, orvalEnvelope()));
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, undefined));
     });
 };
 

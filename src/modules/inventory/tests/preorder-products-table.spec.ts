@@ -17,10 +17,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { aPreorderLevel, aPreorderSummary } from '../../../../tests/support/unit/fixtures.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { PreorderLevel, PreorderProductSummary } from '@types';
 
 wireModulesIntoCore();
@@ -63,14 +60,14 @@ const mountTable = (
     session.viewer = { id: 'u1', email: 'staff@example.com', role: 'admin' };
     session.setAbilities({ tenant: abilities, platform: [] });
     answers = {
-        '/inventory/preorders': orvalEnvelope({
+        '/inventory/preorders': {
             items: levels,
             meta: { page: 1, pageSize: 100, totalItems: levels.length, totalPages: 1 }
-        }),
-        '/delivery/fulfillment-orders/summary': orvalEnvelope({
+        },
+        '/delivery/fulfillment-orders/summary': {
             items: summaries,
             meta: { page: 1, pageSize: 100, totalItems: summaries.length, totalPages: 1 }
-        })
+        }
     };
     const wrapper = mount(PreorderProductsTable, { global: { plugins: [router, vuetify, i18n] } });
     return flushPromises().then(() => wrapper);

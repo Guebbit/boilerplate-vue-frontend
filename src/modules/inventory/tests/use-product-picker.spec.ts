@@ -10,7 +10,6 @@ import { useProductPicker, useProductPickerPin } from '../composables/use-produc
 import { orvalMutator } from '@/infrastructure/http';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { Product } from '@types';
@@ -29,14 +28,10 @@ const lastRequest = () => {
 const respondWith = (items: Product[]) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
         Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                orvalEnvelope({
-                    items,
-                    meta: { page: 1, pageSize: 20, totalItems: items.length, totalPages: 1 }
-                })
-            )
+            parseOrvalFixture(config.method, config.url, {
+                items,
+                meta: { page: 1, pageSize: 20, totalItems: items.length, totalPages: 1 }
+            })
         )
     );
 

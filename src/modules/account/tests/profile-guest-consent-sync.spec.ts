@@ -13,10 +13,7 @@ import { useProfileStore } from '../stores/profile.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -52,16 +49,16 @@ beforeEach(() => {
     // same reasoning as `session.spec.ts`'s own `clearSession()` reset.
     deleteCookie('analyticsConsent');
     responses = {
-        'GET /account': orvalEnvelope(NEVER_ASKED_USER),
-        'PATCH /account': orvalEnvelope({ ...NEVER_ASKED_USER, analyticsConsent: true }),
+        'GET /account': NEVER_ASKED_USER,
+        'PATCH /account': { ...NEVER_ASKED_USER, analyticsConsent: true },
         // The rules `setViewer` fetches for every freshly-loaded profile — same fixture shape as
         // `profile.spec.ts`'s own.
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [['read', 'Product', { active: true, deletedAt: null }]],
             version: 36,
             subjects: ['Product']
-        })
+        }
     };
 });
 
@@ -96,10 +93,10 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         useAnalyticsConsentStore().grant();
-        responses['GET /account'] = orvalEnvelope({
+        responses['GET /account'] = {
             ...NEVER_ASKED_USER,
             analyticsConsent: false
-        });
+        };
 
         return useProfileStore()
             .fetchProfile(true)
@@ -124,10 +121,10 @@ describe('the guest-consent sync', () => {
         vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
         vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
         useAnalyticsConsentStore().deny();
-        responses['PATCH /account'] = orvalEnvelope({
+        responses['PATCH /account'] = {
             ...NEVER_ASKED_USER,
             analyticsConsent: false
-        });
+        };
 
         return useProfileStore()
             .fetchProfile(true)

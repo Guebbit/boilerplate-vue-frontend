@@ -15,10 +15,7 @@ import ProfileTwoFactor from '../components/ProfileTwoFactor.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -57,7 +54,7 @@ const ARMED_TOTP = { method: 'totp', delivers: false, enrolledAt: '2026-01-01T00
  */
 const mountPanel = (status: Record<string, unknown>) => {
     setActivePinia(createPinia());
-    responses = { 'GET /account/2fa': orvalEnvelope(status) };
+    responses = { 'GET /account/2fa': status };
     return mount(ProfileTwoFactor, {
         attachTo: document.body,
         global: { plugins: [vuetify, i18n] }
@@ -80,12 +77,12 @@ describe('ProfileTwoFactor + TwoFactorEnroll: the TOTP secret', () => {
 
         return flushPromises()
             .then(() => {
-                responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+                responses['POST /account/2fa/methods/totp/setup'] = {
                     method: 'totp',
                     delivers: false,
                     secret: 'JBSWY3DPEHPK3PXP',
                     otpauthUri: 'otpauth://totp/x'
-                });
+                };
                 return wrapper.get('[data-test=two-factor-add-totp]').trigger('click');
             })
             .then(flushPromises)
@@ -104,29 +101,29 @@ describe('ProfileTwoFactor + TwoFactorEnroll: the TOTP secret', () => {
 
         return flushPromises()
             .then(() => {
-                responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+                responses['POST /account/2fa/methods/totp/setup'] = {
                     method: 'totp',
                     delivers: false,
                     secret: 'JBSWY3DPEHPK3PXP',
                     otpauthUri: 'otpauth://totp/x'
-                });
+                };
                 return document.body
                     .querySelector<HTMLButtonElement>('[data-test=two-factor-add-totp]')
                     ?.click();
             })
             .then(flushPromises)
             .then(() => {
-                responses['POST /account/2fa/methods/totp/confirm'] = orvalEnvelope({
+                responses['POST /account/2fa/methods/totp/confirm'] = {
                     method: 'totp',
                     backupCodes: ['aaa-111', 'bbb-222'],
                     backupCodesRemaining: 10
-                });
-                responses['GET /account/2fa'] = orvalEnvelope({
+                };
+                responses['GET /account/2fa'] = {
                     enabled: true,
                     methods: [ARMED_TOTP],
                     available: [],
                     backupCodesRemaining: 10
-                });
+                };
                 const codeInput = document.body.querySelector<HTMLInputElement>(
                     '[data-test=two-factor-enroll-code] input'
                 );
@@ -183,16 +180,16 @@ describe('ProfileTwoFactor: regenerating backup codes', () => {
             )
             .then(flushPromises)
             .then(() => {
-                responses['POST /account/2fa/backup-codes'] = orvalEnvelope({
+                responses['POST /account/2fa/backup-codes'] = {
                     backupCodes: ['ccc-333', 'ddd-444'],
                     backupCodesRemaining: 10
-                });
-                responses['GET /account/2fa'] = orvalEnvelope({
+                };
+                responses['GET /account/2fa'] = {
                     enabled: true,
                     methods: [ARMED_TOTP],
                     available: [],
                     backupCodesRemaining: 10
-                });
+                };
                 const codeInput = document.body.querySelector<HTMLInputElement>(
                     '[data-test=two-factor-code-prompt-input] input'
                 );
@@ -240,18 +237,18 @@ describe('ProfileTwoFactor: replacing an armed method', () => {
         return flushPromises()
             .then(() => {
                 // Starting the replace disarms the method on the server before anything is proved.
-                responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+                responses['POST /account/2fa/methods/totp/setup'] = {
                     method: 'totp',
                     delivers: false,
                     secret: 'JBSWY3DPEHPK3PXP',
                     otpauthUri: 'otpauth://totp/x'
-                });
-                responses['GET /account/2fa'] = orvalEnvelope({
+                };
+                responses['GET /account/2fa'] = {
                     enabled: false,
                     methods: [],
                     available: [{ method: 'totp', delivers: false, enrollable: true }],
                     backupCodesRemaining: 0
-                });
+                };
                 return wrapper.get('[data-test=two-factor-replace-totp]').trigger('click');
             })
             .then(flushPromises)
@@ -309,12 +306,12 @@ describe('ProfileTwoFactor: changing factors needs a factor', () => {
             available: [{ method: 'totp', delivers: false, enrollable: true }],
             backupCodesRemaining: 0
         });
-        responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+        responses['POST /account/2fa/methods/totp/setup'] = {
             method: 'totp',
             delivers: false,
             secret: 'JBSWY3DPEHPK3PXP',
             otpauthUri: 'otpauth://totp/x'
-        });
+        };
 
         return flushPromises()
             .then(() => wrapper.get('[data-test=two-factor-add-totp]').trigger('click'))
@@ -334,12 +331,12 @@ describe('ProfileTwoFactor: changing factors needs a factor', () => {
             available: [],
             backupCodesRemaining: 3
         });
-        responses['POST /account/2fa/methods/totp/setup'] = orvalEnvelope({
+        responses['POST /account/2fa/methods/totp/setup'] = {
             method: 'totp',
             delivers: false,
             secret: 'JBSWY3DPEHPK3PXP',
             otpauthUri: 'otpauth://totp/x'
-        });
+        };
 
         return flushPromises()
             .then(() => wrapper.get('[data-test=two-factor-replace-totp]').trigger('click'))
@@ -386,12 +383,12 @@ describe('ProfileTwoFactor: changing factors needs a factor', () => {
             available: [{ method: 'totp', delivers: false, enrollable: true }],
             backupCodesRemaining: 3
         });
-        responses['POST /account/2fa/methods/email/send'] = orvalEnvelope({
+        responses['POST /account/2fa/methods/email/send'] = {
             method: 'email',
             sentTo: 'a***a@example.com',
             resendAfter: 30,
             expiresAt: '2026-01-01T00:10:00.000Z'
-        });
+        };
 
         return flushPromises()
             .then(() => wrapper.get('[data-test=two-factor-regenerate-codes]').trigger('click'))

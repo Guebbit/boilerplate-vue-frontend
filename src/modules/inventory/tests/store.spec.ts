@@ -14,7 +14,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -70,15 +69,15 @@ beforeEach(() => {
     responses = {
         // `totalPages` is required by the real contract alongside `totalItems` — absent from
         // this fixture before wiring in `parseOrvalFixture` ever proved it against the schema.
-        'GET /inventory/movements': orvalEnvelope({
+        'GET /inventory/movements': {
             items: [MOVEMENT],
             meta: { totalItems: 1, totalPages: 1 }
-        }),
-        'GET /inventory/levels': orvalEnvelope({
+        },
+        'GET /inventory/levels': {
             items: [LEVEL],
             meta: { totalItems: 1, totalPages: 1 }
-        }),
-        'GET /inventory/preorders': orvalEnvelope({
+        },
+        'GET /inventory/preorders': {
             items: [
                 {
                     productId: 'p1',
@@ -92,10 +91,10 @@ beforeEach(() => {
                 }
             ],
             meta: { totalItems: 1, totalPages: 1 }
-        }),
-        'PUT /inventory/levels/p1/backorder-limit': orvalEnvelope({ ...LEVEL, backorderLimit: 10 }),
-        'POST /inventory/levels/p1/receive': orvalEnvelope(LEVEL),
-        'POST /inventory/levels/p1/adjust': orvalEnvelope(LEVEL)
+        },
+        'PUT /inventory/levels/p1/backorder-limit': { ...LEVEL, backorderLimit: 10 },
+        'POST /inventory/levels/p1/receive': LEVEL,
+        'POST /inventory/levels/p1/adjust': LEVEL
     };
 });
 
@@ -118,10 +117,10 @@ describe('fetchMovements', () => {
     });
 
     it('keeps the audit honest: totalItems from meta, not the row count', () => {
-        responses['GET /inventory/movements'] = orvalEnvelope({
+        responses['GET /inventory/movements'] = {
             items: [MOVEMENT],
             meta: { page: 1, pageSize: 10, totalItems: 41, totalPages: 5 }
-        });
+        };
         const store = useInventoryStore();
         return store.fetchMovements({ page: 1, pageSize: 10 }).then(() => {
             expect(store.movementsTotal).toBe(41);
@@ -157,22 +156,21 @@ describe('fetchLevels', () => {
  * @param productId - The product on the page.
  * @param pageNumber - Which page it is.
  */
-const allowancePage = (productId: string, pageNumber: number) =>
-    orvalEnvelope({
-        items: [
-            {
-                productId,
-                title: productId,
-                backorderLimit: 1,
-                backordered: 0,
-                held: 0,
-                paid: 0,
-                left: 1,
-                ordered: 0
-            }
-        ],
-        meta: { page: pageNumber, pageSize: 100, totalItems: 2, totalPages: 2 }
-    });
+const allowancePage = (productId: string, pageNumber: number) => ({
+    items: [
+        {
+            productId,
+            title: productId,
+            backorderLimit: 1,
+            backordered: 0,
+            held: 0,
+            paid: 0,
+            left: 1,
+            ordered: 0
+        }
+    ],
+    meta: { page: pageNumber, pageSize: 100, totalItems: 2, totalPages: 2 }
+});
 
 describe('fetchPreorderLevels', () => {
     it('replaces the allowances with what the API answered', () => {
@@ -296,7 +294,7 @@ describe('the Idempotency-Key on a stock write', () => {
             .then(() => {
                 const first = keyOfFirstCall();
                 vi.mocked(orvalMutator).mockClear();
-                responses['POST /inventory/levels/p1/receive'] = orvalEnvelope(LEVEL);
+                responses['POST /inventory/levels/p1/receive'] = LEVEL;
                 return store.receive('p1', 20).then(() => first);
             })
             .then((first) => {
@@ -307,7 +305,7 @@ describe('the Idempotency-Key on a stock write', () => {
 
 describe('sweep', () => {
     it('answers how many holds were released and reloads both views', () => {
-        responses['POST /inventory/reservations/sweep'] = orvalEnvelope({ expired: 3 });
+        responses['POST /inventory/reservations/sweep'] = { expired: 3 };
         const store = useInventoryStore();
         return store.sweep().then((expired) => {
             expect(expired).toBe(3);

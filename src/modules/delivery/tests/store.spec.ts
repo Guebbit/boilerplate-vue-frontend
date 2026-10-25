@@ -11,7 +11,6 @@ import { useDeliveryStore } from '../store.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -69,25 +68,28 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /delivery/methods': orvalEnvelope({ methods: METHODS }),
-        'GET /shop': orvalEnvelope(aShop({ shipToCountries: ['IT'] })),
-        'GET /delivery/orders/o1': orvalEnvelope({
+        'GET /delivery/methods': { methods: METHODS },
+        'GET /shop': aShop({ shipToCountries: ['IT'] }),
+        'GET /delivery/orders/o1': {
             fulfillmentOrders: [aFulfillmentOrder()],
             shipments: [aShipment({ trackingCode: 'TRK-1' })]
+        },
+        'POST /delivery/fulfillment-orders/fo1/shipments': aShipment({
+            id: 's2',
+            trackingCode: 'TRK-2'
         }),
-        'POST /delivery/fulfillment-orders/fo1/shipments': orvalEnvelope(
-            aShipment({ id: 's2', trackingCode: 'TRK-2' })
-        ),
-        'POST /delivery/fulfillment-orders/fo1/fulfill': orvalEnvelope(
-            aShipment({ id: 's3', status: 'delivered' })
-        ),
-        'POST /delivery/fulfillment-orders/fo1/hold': orvalEnvelope(
-            aFulfillmentOrder({ status: 'on_hold', holdReason: 'high_risk' })
-        ),
-        'POST /delivery/fulfillment-orders/fo1/release': orvalEnvelope(aFulfillmentOrder()),
-        'PATCH /delivery/shipments/s1': orvalEnvelope(aShipment({ trackingCode: 'TRK-9' })),
-        'POST /delivery/shipments/s1/deliver': orvalEnvelope(aShipment({ status: 'delivered' })),
-        'POST /delivery/orders/order-3/start': orvalEnvelope({
+        'POST /delivery/fulfillment-orders/fo1/fulfill': aShipment({
+            id: 's3',
+            status: 'delivered'
+        }),
+        'POST /delivery/fulfillment-orders/fo1/hold': aFulfillmentOrder({
+            status: 'on_hold',
+            holdReason: 'high_risk'
+        }),
+        'POST /delivery/fulfillment-orders/fo1/release': aFulfillmentOrder(),
+        'PATCH /delivery/shipments/s1': aShipment({ trackingCode: 'TRK-9' }),
+        'POST /delivery/shipments/s1/deliver': aShipment({ status: 'delivered' }),
+        'POST /delivery/orders/order-3/start': {
             id: 'order-3',
             userId: 'u1',
             email: 'shopper@example.com',
@@ -101,7 +103,7 @@ beforeEach(() => {
             shippingTaxAmount: 0,
             taxSummary: [],
             status: 'processing'
-        })
+        }
     };
 });
 
@@ -165,10 +167,10 @@ describe('fetchFulfillmentForOrder', () => {
      * An order not paid yet answers 200 with two empty lists: absence is the answer.
      */
     it('reads two empty lists as "nothing to ship yet"', () => {
-        responses['GET /delivery/orders/o1'] = orvalEnvelope({
+        responses['GET /delivery/orders/o1'] = {
             fulfillmentOrders: [],
             shipments: []
-        });
+        };
         const store = useDeliveryStore();
         return store.fetchFulfillmentForOrder('o1').then(() => {
             expect(store.fulfillmentOrders).toEqual([]);
@@ -283,18 +285,17 @@ describe('hold and release', () => {
  * @param productId - The product on the page.
  * @param pageNumber - Which page it is.
  */
-const summaryPage = (productId: string, pageNumber: number) =>
-    orvalEnvelope({
-        items: [aPreorderSummary({ productId })],
-        meta: { page: pageNumber, pageSize: 100, totalItems: 2, totalPages: 2 }
-    });
+const summaryPage = (productId: string, pageNumber: number) => ({
+    items: [aPreorderSummary({ productId })],
+    meta: { page: pageNumber, pageSize: 100, totalItems: 2, totalPages: 2 }
+});
 
 describe('the preorder board reads', () => {
     it('lists the board with cause=any added, and keeps the total', async () => {
-        responses['GET /delivery/fulfillment-orders'] = orvalEnvelope({
+        responses['GET /delivery/fulfillment-orders'] = {
             items: [aPreorderFulfillmentOrder()],
             meta: { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
-        });
+        };
         const { orvalMutator } = await import('@/infrastructure/http');
         const store = useDeliveryStore();
 

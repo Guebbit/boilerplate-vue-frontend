@@ -13,17 +13,6 @@ import type { ZodType } from 'zod';
 import { resolveResponseSchema } from '@/infrastructure/http/response-schema-map';
 
 /**
- * A success body as a spec's mock resolves it: the payload itself, or `undefined` for a 204.
- *
- * The API answers a success with the resource and nothing around it, so a fixture IS the body.
- * Kept as a name so a spec reads as "the answer", and so the call sites are one search away.
- *
- * @param data - the payload a store reads; omit for a response with no body
- * @returns `data`, unchanged
- */
-export const orvalEnvelope = (data?: unknown): unknown => data;
-
-/**
  * Validates a mocked `orvalMutator` response against its real contract schema before a test's
  * mock resolves it.
  *

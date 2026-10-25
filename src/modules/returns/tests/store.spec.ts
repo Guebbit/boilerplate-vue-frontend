@@ -14,7 +14,6 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -58,7 +57,7 @@ beforeEach(() => {
 
 describe('openReturn', () => {
     it('reports the return and caches it', () => {
-        responses['POST /returns'] = orvalEnvelope(aReturn());
+        responses['POST /returns'] = aReturn();
         const store = useReturnsStore();
 
         return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
@@ -72,9 +71,7 @@ describe('openReturn', () => {
     });
 
     it('reports a withdrawal before dispatch as the return it is: closed at birth, no lines', () => {
-        responses['POST /returns'] = orvalEnvelope(
-            aReturn({ status: 'closed', lines: [], refundAmount: 40 })
-        );
+        responses['POST /returns'] = aReturn({ status: 'closed', lines: [], refundAmount: 40 });
         const store = useReturnsStore();
 
         return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
@@ -84,7 +81,7 @@ describe('openReturn', () => {
     });
 
     it('sends an Idempotency-Key so a retry cannot open two', () => {
-        responses['POST /returns'] = orvalEnvelope(aReturn());
+        responses['POST /returns'] = aReturn();
 
         return useReturnsStore()
             .openReturn({ orderId: 'o1', reason: 'withdrawal' })
@@ -118,7 +115,7 @@ describe('when the read wrapper hands back no response', () => {
 
 describe('the staff moves', () => {
     it('approve replaces the cached record with the approved one', () => {
-        responses['POST /returns/r1/approve'] = orvalEnvelope(aReturn({ status: 'approved' }));
+        responses['POST /returns/r1/approve'] = aReturn({ status: 'approved' });
         const store = useReturnsStore();
 
         return store.approve('r1').then(() => {
@@ -127,9 +124,10 @@ describe('the staff moves', () => {
     });
 
     it('decline sends the reason', () => {
-        responses['POST /returns/r1/decline'] = orvalEnvelope(
-            aReturn({ status: 'declined', declineReason: 'Used' })
-        );
+        responses['POST /returns/r1/decline'] = aReturn({
+            status: 'declined',
+            declineReason: 'Used'
+        });
 
         return useReturnsStore()
             .decline('r1', 'Used')
@@ -141,9 +139,7 @@ describe('the staff moves', () => {
     });
 
     it('receive sends the handling deduction, and an Idempotency-Key', () => {
-        responses['POST /returns/r1/receive'] = orvalEnvelope(
-            aReturn({ status: 'closed', refundAmount: 25 })
-        );
+        responses['POST /returns/r1/receive'] = aReturn({ status: 'closed', refundAmount: 25 });
         const store = useReturnsStore();
 
         return store.receive('r1', { handlingDeduction: 5 }).then(() => {
@@ -158,10 +154,10 @@ describe('the staff moves', () => {
 
 describe('fetchOrderReturns', () => {
     it('asks for one order’s returns and caches them', () => {
-        responses['GET /returns'] = orvalEnvelope({
+        responses['GET /returns'] = {
             items: [aReturn()],
             meta: { page: 1, pageSize: 50, totalItems: 1, totalPages: 1 }
-        });
+        };
         const store = useReturnsStore();
 
         return store.fetchOrderReturns('o1').then((items) => {
@@ -181,7 +177,7 @@ describe('fetchReturnOptions', () => {
             returnable: [{ productId: 'p1', title: 'Shirt', quantity: 1, withdrawable: true }],
             cancellable: []
         };
-        responses['GET /returns/options'] = orvalEnvelope(options);
+        responses['GET /returns/options'] = options;
 
         return useReturnsStore()
             .fetchReturnOptions('o1')

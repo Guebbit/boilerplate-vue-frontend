@@ -22,7 +22,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -39,8 +38,8 @@ vi.mock('@/infrastructure/http', () => ({
                 config.method,
                 config.url,
                 config.method?.toUpperCase() === 'DELETE'
-                    ? orvalEnvelope()
-                    : orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+                    ? undefined
+                    : { id: 'u1', username: 'ada', email: 'ada@example.com' }
             )
         )
     )
@@ -72,14 +71,10 @@ const lastFormData = () => {
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
         Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                orvalEnvelope({
-                    items,
-                    meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
-                })
-            )
+            parseOrvalFixture(config.method, config.url, {
+                items,
+                meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+            })
         )
     );
 
@@ -263,14 +258,12 @@ describe('useUsersStore', () => {
                     // still resolves to the default placeholder URL until Step 1b's "null clears"
                     // read-shape change lands. What this test pins is the OPTIMISTIC guess, not
                     // this response value.
-                    release(
-                        orvalEnvelope({
-                            id: 'u1',
-                            username: 'ada2',
-                            email: 'ada@example.com',
-                            imageUrl: 'https://cdn.example.com/avatars/default.png'
-                        })
-                    );
+                    release({
+                        id: 'u1',
+                        username: 'ada2',
+                        email: 'ada@example.com',
+                        imageUrl: 'https://cdn.example.com/avatars/default.png'
+                    });
                     return pending;
                 });
         });
@@ -334,11 +327,11 @@ describe('useUsersStore', () => {
         it('lifts the hold with a DELETE on the same path', () => {
             // Unlike the other deletes this one answers with the user, hold gone.
             vi.mocked(orvalMutator).mockResolvedValueOnce(
-                parseOrvalFixture(
-                    'DELETE',
-                    '/users/u1/purchase-hold',
-                    orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
-                )
+                parseOrvalFixture('DELETE', '/users/u1/purchase-hold', {
+                    id: 'u1',
+                    username: 'ada',
+                    email: 'ada@example.com'
+                })
             );
             return useUsersStore()
                 .liftPurchaseHold('u1')
@@ -443,9 +436,7 @@ describe('useUsersStore', () => {
         it('fetchUser requests one user and unwraps a single-record envelope', () => {
             vi.mocked(orvalMutator).mockImplementation(
                 (config: { url?: string; method?: string }) =>
-                    Promise.resolve(
-                        parseOrvalFixture(config.method, config.url, orvalEnvelope(USER))
-                    )
+                    Promise.resolve(parseOrvalFixture(config.method, config.url, USER))
             );
 
             return useUsersStore()

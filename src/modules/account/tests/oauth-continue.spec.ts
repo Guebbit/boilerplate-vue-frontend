@@ -17,16 +17,13 @@ import vuetify from '@/ui/vuetify';
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
 /** Canned responses per `METHOD /url` key: one OAuth provider, `google`. */
 const RESPONSES: Record<string, unknown> = {
-    'GET /account/oauth/providers': orvalEnvelope({ providers: ['google'] })
+    'GET /account/oauth/providers': { providers: ['google'] }
 };
 
 vi.mock('@/infrastructure/http', () => ({

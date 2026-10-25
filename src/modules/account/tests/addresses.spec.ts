@@ -14,18 +14,13 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useAddressesStore } from '../stores/addresses.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
-        Promise.resolve(
-            parseOrvalFixture(config.method, config.url, orvalEnvelope({ addresses: [] }))
-        )
+        Promise.resolve(parseOrvalFixture(config.method, config.url, { addresses: [] }))
     )
 }));
 
@@ -50,11 +45,7 @@ const respondWithBook = (addresses: unknown[], written?: unknown) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         const answersOneEntry = config.method !== 'GET' && config.method !== 'DELETE';
         return Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                answersOneEntry ? orvalEnvelope(written) : orvalEnvelope({ addresses })
-            )
+            parseOrvalFixture(config.method, config.url, answersOneEntry ? written : { addresses })
         );
     });
 

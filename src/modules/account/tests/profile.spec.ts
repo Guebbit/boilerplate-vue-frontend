@@ -19,7 +19,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -58,11 +57,11 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
-        'GET /account': orvalEnvelope(USER),
+        'POST /account/login': { token: 'jwt-token' },
+        'GET /account': USER,
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [
                 ['read', 'Product', { active: true, deletedAt: null }],
@@ -70,22 +69,22 @@ beforeEach(() => {
             ],
             version: 36,
             subjects: ['Order', 'Product']
-        }),
+        },
         // `202`: the account is locked now and erased at `purgeAt` unless restored first.
-        'DELETE /account': orvalEnvelope({
+        'DELETE /account': {
             requestedAt: '2026-10-24T10:00:00.000Z',
             purgeAt: '2026-11-23T10:00:00.000Z'
-        }),
-        'POST /account/restore': orvalEnvelope(),
+        },
+        'POST /account/restore': undefined,
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
-        'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
+        'PATCH /account': { ...USER, username: 'ada2' },
         // A fresh access token for this session.
-        'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
-        'POST /account/email-verification/confirm': orvalEnvelope(),
-        'POST /account/email-change/confirm': orvalEnvelope(),
-        'POST /account/email-change/undo': orvalEnvelope(),
+        'POST /account/password': { token: 'rotated-jwt' },
+        'POST /account/email-verification/confirm': undefined,
+        'POST /account/email-change/confirm': undefined,
+        'POST /account/email-change/undo': undefined,
         // The request answers `202` with the export's id and status; the data comes later, by link.
-        'POST /account/export': orvalEnvelope({ id: 'e1', status: 'building' }),
+        'POST /account/export': { id: 'e1', status: 'building' },
         // The download body IS the export document, not an envelope. Every collection is an array
         // the fixture is free to leave empty; only `exportedAt` and `profile` are required scalars
         // on `AccountExportResponse`. `invoicing` is the one exception — an object of two empty

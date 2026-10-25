@@ -15,10 +15,7 @@ import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -111,14 +108,14 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/providers': orvalEnvelope({ providers: [] }),
+        'GET /account/oauth/providers': { providers: [] },
         // A minimal `User`, matching `auth-signup.spec.ts`'s own fixture — `SignupResponse` needs
-        // a real object under `data`, not the bodyless shape `orvalEnvelope()` defaults to.
-        'POST /account/signup': orvalEnvelope({
+        // a real object not the bodyless `undefined` a 204 resolves to.
+        'POST /account/signup': {
             id: 'u1',
             username: 'ada',
             email: 'ada@example.com'
-        })
+        }
     };
     return loadLocale('en');
 });

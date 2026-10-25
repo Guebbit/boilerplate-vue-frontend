@@ -10,10 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useStatsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -67,7 +64,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /stats/sales': orvalEnvelope({
+        'GET /stats/sales': {
             period: PERIOD,
             currencies: [
                 {
@@ -77,8 +74,8 @@ beforeEach(() => {
                     buckets: [{ start: '2026-09-30T22:00:00.000Z', figures: figures(90) }]
                 }
             ]
-        }),
-        'GET /stats/products': orvalEnvelope({
+        },
+        'GET /stats/products': {
             period: PERIOD,
             products: [
                 {
@@ -91,39 +88,39 @@ beforeEach(() => {
                     netSales: 40
                 }
             ]
-        }),
-        'GET /stats/categories': orvalEnvelope({
+        },
+        'GET /stats/categories': {
             period: PERIOD,
             categories: [{ category: 'Food', currency: 'EUR', unitsOrdered: 3, netSales: 40 }]
-        }),
-        'GET /stats/payments': orvalEnvelope({
+        },
+        'GET /stats/payments': {
             period: PERIOD,
             rows: [{ method: 'card', provider: 'fake', currency: 'EUR', payments: 2, amount: 90 }]
-        }),
-        'GET /stats/operations': orvalEnvelope({
+        },
+        'GET /stats/operations': {
             period: PERIOD,
             cancellation: { placed: 4, cancelled: 1, rate: 0.25 },
             returns: { unitsOrdered: 3, unitsReturned: 1, rate: 0.33 },
             refunds: [{ currency: 'EUR', invoiced: 90, credited: 12, rate: 0.13 }]
-        }),
-        'GET /stats/customers': orvalEnvelope({
+        },
+        'GET /stats/customers': {
             period: PERIOD,
             customers: 2,
             newCustomers: 1,
             returningCustomers: 1,
             returningRate: 0.5
-        }),
-        'GET /stats/pipeline': orvalEnvelope({
+        },
+        'GET /stats/pipeline': {
             awaitingTransfers: [{ currency: 'EUR', count: 2, amount: 50 }],
             paidNotShipped: 3
-        }),
-        'GET /stats/limits': orvalEnvelope({ maxRangeDays: 731, maxBuckets: 400 }),
-        'GET /stats/products/p1': orvalEnvelope({
+        },
+        'GET /stats/limits': { maxRangeDays: 731, maxBuckets: 400 },
+        'GET /stats/products/p1': {
             period: PERIOD,
             productId: 'p1',
             title: 'Kibble',
             buckets: [{ start: '2026-09-30T22:00:00.000Z', unitsOrdered: 3, unitsReversed: 1 }]
-        })
+        }
     };
 });
 

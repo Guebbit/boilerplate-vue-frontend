@@ -20,7 +20,6 @@ import type { Ref } from 'vue';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
@@ -131,16 +130,16 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account': orvalEnvelope(USER),
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account': USER,
+        'GET /account/abilities': {
             platform: [],
             tenant: [],
             version: 1,
             subjects: []
-        }),
-        'PATCH /account': orvalEnvelope(USER),
-        'DELETE /account/email-change': orvalEnvelope(),
-        'POST /account/email-change/resend': orvalEnvelope({ resendAfter: 60 })
+        },
+        'PATCH /account': USER,
+        'DELETE /account/email-change': undefined,
+        'POST /account/email-change/resend': { resendAfter: 60 }
     };
     return loadLocale('en').then(() => router.push('/en/profile').then(() => router.isReady()));
 });
@@ -236,7 +235,7 @@ describe('the email field, and a pending change', () => {
     });
 
     it('shows the parked address, and resend calls its own endpoint and nothing else', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        responses['GET /account'] = { ...USER, pendingEmail: 'new@example.com' };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -257,7 +256,7 @@ describe('the email field, and a pending change', () => {
 
     it('locks the resend button and counts down the server resendAfter, then re-enables it', () => {
         vi.useFakeTimers();
-        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        responses['GET /account'] = { ...USER, pendingEmail: 'new@example.com' };
         const wrapper = mountProfile();
         const resend = () => wrapper.get('[data-test=pending-email-resend]');
 
@@ -281,7 +280,7 @@ describe('the email field, and a pending change', () => {
     });
 
     it('says why in place when the resend is refused inside the cooldown', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        responses['GET /account'] = { ...USER, pendingEmail: 'new@example.com' };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -316,7 +315,7 @@ describe('the email field, and a pending change', () => {
     });
 
     it('cancel calls DELETE /account/email-change, its own dedicated endpoint', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        responses['GET /account'] = { ...USER, pendingEmail: 'new@example.com' };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -328,7 +327,7 @@ describe('the email field, and a pending change', () => {
     });
 
     it('a double click on resend sends only one request', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        responses['GET /account'] = { ...USER, pendingEmail: 'new@example.com' };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -346,7 +345,7 @@ describe('the email field, and a pending change', () => {
     });
 
     it('a double click on cancel sends only one DELETE', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, pendingEmail: 'new@example.com' });
+        responses['GET /account'] = { ...USER, pendingEmail: 'new@example.com' };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -371,10 +370,10 @@ describe('the email field, and a pending change', () => {
  */
 describe('the image field', () => {
     it('never includes imageUrl in an ordinary details save, loaded or not', () => {
-        responses['GET /account'] = orvalEnvelope({
+        responses['GET /account'] = {
             ...USER,
             imageUrl: 'https://cdn.example.com/avatars/ada.png'
-        });
+        };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -396,11 +395,11 @@ describe('the image field', () => {
  */
 describe('clearing the phone and website', () => {
     it('sends null for a phone and website the visitor cleared', () => {
-        responses['GET /account'] = orvalEnvelope({
+        responses['GET /account'] = {
             ...USER,
             phone: '+15550100',
             website: 'https://ada.example.com'
-        });
+        };
         const wrapper = mountProfile();
 
         return flushPromises()
@@ -435,7 +434,7 @@ describe('clearing the phone and website', () => {
 
 describe('the purchase-hold notice', () => {
     it('shows on the profile page while the account has a hold in force, with a way to ask a person', () => {
-        responses['GET /account'] = orvalEnvelope({
+        responses['GET /account'] = {
             ...USER,
             purchaseHold: {
                 until: '2999-01-01T12:00:00.000Z',
@@ -443,7 +442,7 @@ describe('the purchase-hold notice', () => {
                 note: 'Please write to us about your recent orders.',
                 setAt: '2026-10-19T10:00:00.000Z'
             }
-        });
+        };
         const wrapper = mountProfile();
 
         return flushPromises().then(() => {

@@ -9,10 +9,7 @@ import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -35,7 +32,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/providers': orvalEnvelope({ providers: ['google', 'github'] })
+        'GET /account/oauth/providers': { providers: ['google', 'github'] }
     };
 });
 
@@ -123,9 +120,9 @@ describe('useOAuthProvidersStore', () => {
             .then((providers) => {
                 expect(providers).toEqual([]);
                 // Not cached as "no providers, forever" — a transient failure gets another try.
-                responses['GET /account/oauth/providers'] = orvalEnvelope({
+                responses['GET /account/oauth/providers'] = {
                     providers: ['github']
-                });
+                };
                 return store.fetchProviders();
             })
             .then((providers) => {
