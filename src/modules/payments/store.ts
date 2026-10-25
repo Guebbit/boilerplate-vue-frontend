@@ -286,19 +286,22 @@ export const usePaymentsStore = defineStore('payments', () => {
     /**
      * Confirms that a refund's money was returned outside the application
      * (`POST /payments/{id}/refunds/{refundId}/settle`). Nothing is sent anywhere. Needs
-     * `create:Refund` and a fresh session; the API answers the refund it settled, so the payment is
-     * read again for the totals and its `actions`.
+     * `create:Refund` and a fresh session.
      *
-     * The re-read replaces the cached payment when it is the same one. A refund another operator
-     * settled first answers 409 `PAYMENT_REFUND_NOT_OPEN`, and a card refund that has no final
-     * answer yet answers 409 `PAYMENT_REFUND_IN_FLIGHT`; either way the payment is re-read before the
-     * error is rethrown, so the "Mark returned" button the loser pressed is gone.
+     * The API answers the refund it settled, so the payment is read again
+     * (`GET /payments/{id}`) for the totals and its `actions`. That read replaces the cached
+     * payment only when it is the same one: settling from a list must not swap what an order
+     * page holds.
+     *
+     * Two faults re-read the order's payment before rethrowing, so the "Mark returned" button the
+     * loser pressed is gone: 409 `PAYMENT_REFUND_NOT_OPEN` (another operator settled it first) and
+     * 409 `PAYMENT_REFUND_IN_FLIGHT` (a card refund with no final answer yet).
      *
      * @param target - The payment and the order it belongs to.
      * @param target.id - The payment carrying the refund.
      * @param target.orderId - Its order, for the re-read.
      * @param refundId - The refund record to mark as returned.
-     * @returns A promise resolving with the payment as it now stands.
+     * @returns A promise resolving with the payment as it now stands, read after the settle.
      */
     const settleRefundByHand = (target: { id: string; orderId: string }, refundId: string) =>
         fetchAny(() =>

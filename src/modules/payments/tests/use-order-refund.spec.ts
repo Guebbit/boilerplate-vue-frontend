@@ -128,7 +128,17 @@ describe('useOrderRefund', () => {
 
     it('lists the hand-paid refunds the server names, and drops one once it is settled', () => {
         responses['GET /payments/orders/o1'] = payment(false, ['r1']);
-        responses['POST /payments/p1/refunds/r1/settle'] = payment(false);
+        // The settle answers the refund it settled; the payment is a read of its own.
+        responses['POST /payments/p1/refunds/r1/settle'] = {
+            id: 'r1',
+            amount: 12,
+            currency: 'EUR',
+            status: 'succeeded',
+            reason: 'goodwill',
+            settledByHand: true,
+            createdAt: '2026-03-05T10:00:00Z'
+        };
+        responses['GET /payments/p1'] = payment(false);
         const { settleable, settle } = useOrderRefund(ref('o1'));
 
         return settled()
