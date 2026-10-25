@@ -14270,127 +14270,40 @@ export const SettleRefundByHandHeader = zod.strictObject({
 });
 export const settleRefundByHandResponseIdMax = 64;
 export const settleRefundByHandResponseIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const settleRefundByHandResponseOrderIdMax = 64;
-export const settleRefundByHandResponseOrderIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const settleRefundByHandResponseUserIdMax = 64;
-export const settleRefundByHandResponseUserIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const settleRefundByHandResponseAmountMin = 0;
-export const settleRefundByHandResponseAmountRefundedMin = 0;
-export const settleRefundByHandResponseRefundsItemIdMax = 64;
-export const settleRefundByHandResponseRefundsItemIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const settleRefundByHandResponseRefundsItemAmountMin = 0;
-export const settleRefundByHandResponseRefundsItemReturnIdMax = 64;
-export const settleRefundByHandResponseRefundsItemReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
-export const settleRefundByHandResponseReferenceMax = 120;
-export const settleRefundByHandResponseActionsSettleByHandItemMax = 64;
-export const settleRefundByHandResponseActionsSettleByHandItemRegExp = new RegExp(
-    '^[0-9A-Za-z_-]+$'
-);
+export const settleRefundByHandResponseReturnIdMax = 64;
+export const settleRefundByHandResponseReturnIdRegExp = new RegExp('^[0-9A-Za-z_-]+$');
 export const SettleRefundByHandResponse = zod.strictObject({
     id: zod
         .string()
         .min(1)
         .max(settleRefundByHandResponseIdMax)
         .regex(settleRefundByHandResponseIdRegExp),
-    orderId: zod
-        .string()
-        .min(1)
-        .max(settleRefundByHandResponseOrderIdMax)
-        .regex(settleRefundByHandResponseOrderIdRegExp),
-    userId: zod
-        .string()
-        .min(1)
-        .max(settleRefundByHandResponseUserIdMax)
-        .regex(settleRefundByHandResponseUserIdRegExp)
-        .optional(),
     amount: zod.number().min(settleRefundByHandResponseAmountMin),
     currency: zod.string(),
-    amountRefunded: zod.number().min(settleRefundByHandResponseAmountRefundedMin),
-    refunds: zod.array(
-        zod.strictObject({
-            id: zod
-                .string()
-                .min(1)
-                .max(settleRefundByHandResponseRefundsItemIdMax)
-                .regex(settleRefundByHandResponseRefundsItemIdRegExp),
-            amount: zod.number().min(settleRefundByHandResponseRefundsItemAmountMin),
-            currency: zod.string(),
-            status: zod.enum(['pending', 'succeeded', 'failed']),
-            reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
-            returnId: zod
-                .string()
-                .min(1)
-                .max(settleRefundByHandResponseRefundsItemReturnIdMax)
-                .regex(settleRefundByHandResponseRefundsItemReturnIdRegExp)
-                .optional(),
-            settledAt: zod.iso.datetime({ offset: true }).optional(),
-            settledByHand: zod.boolean().optional(),
-            providerRefundRef: zod.string().optional(),
-            failureReason: zod
-                .enum([
-                    'declined',
-                    'insufficient_funds',
-                    'expired_or_canceled_card',
-                    'lost_or_stolen_card',
-                    'provider_removed',
-                    'provider_unavailable',
-                    'unknown'
-                ])
-                .optional(),
-            createdAt: zod.iso.datetime({ offset: true })
-        })
-    ),
-    status: zod.enum([
-        'requires_confirmation',
-        'requires_action',
-        'processing',
-        'succeeded',
-        'declined',
-        'cancelled'
-    ]),
-    displayStatus: zod.enum([
-        'incomplete',
-        'pending',
-        'succeeded',
-        'refund_pending',
-        'partially_refunded',
-        'refunded',
-        'failed',
-        'cancelled'
-    ]),
-    nextAction: zod
-        .strictObject({
-            type: zod.enum(['bank_transfer']),
-            beneficiary: zod.string(),
-            iban: zod.string(),
-            bic: zod.string().optional(),
-            reference: zod.string(),
-            payBy: zod.iso.datetime({ offset: true })
-        })
+    status: zod.enum(['pending', 'succeeded', 'failed']),
+    reason: zod.enum(['cancellation', 'goodwill', 'return', 'late_payment']),
+    returnId: zod
+        .string()
+        .min(1)
+        .max(settleRefundByHandResponseReturnIdMax)
+        .regex(settleRefundByHandResponseReturnIdRegExp)
         .optional(),
-    providerRef: zod.string().optional(),
-    orderNumber: zod.string().optional(),
-    email: zod.string().optional(),
-    provider: zod.string(),
-    method: zod.enum(['card', 'bank_transfer', 'cash', 'other']),
-    reference: zod.string().max(settleRefundByHandResponseReferenceMax).optional(),
-    receivedAt: zod.iso.datetime({ offset: true }).optional(),
-    clientSecret: zod.string().optional(),
-    cardLast4: zod.string().optional(),
-    actions: zod.strictObject({
-        pay: zod.boolean(),
-        sync: zod.boolean(),
-        refund: zod.boolean(),
-        settleByHand: zod.array(
-            zod
-                .string()
-                .min(1)
-                .max(settleRefundByHandResponseActionsSettleByHandItemMax)
-                .regex(settleRefundByHandResponseActionsSettleByHandItemRegExp)
-        )
-    }),
-    createdAt: zod.iso.datetime({ offset: true }).optional(),
-    updatedAt: zod.iso.datetime({ offset: true }).optional()
+    settledAt: zod.iso.datetime({ offset: true }).optional(),
+    settledByHand: zod.boolean().optional(),
+    providerRefundRef: zod.string().optional(),
+    failureReason: zod
+        .enum([
+            'declined',
+            'insufficient_funds',
+            'expired_or_canceled_card',
+            'lost_or_stolen_card',
+            'provider_removed',
+            'provider_unavailable',
+            'unknown'
+        ])
+        .optional(),
+    createdAt: zod.iso.datetime({ offset: true })
 });
 /**
  * A preview for staff about to save a release date, so the save is never a surprise. Counts the

@@ -10821,9 +10821,9 @@ export const listPaymentAttention = (
 export const settleRefundByHand = (
     id: string,
     refundId: Id,
-    options?: SecondParameter<typeof orvalMutator<Payment>>
+    options?: SecondParameter<typeof orvalMutator<Refund>>
 ) => {
-    return orvalMutator<Payment>(
+    return orvalMutator<Refund>(
         { url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST' },
         options
     );

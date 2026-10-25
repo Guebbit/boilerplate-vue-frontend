@@ -6145,17 +6145,17 @@ paths:
             SyncPayment:
               operationId: syncPayment
               parameters:
-                id: $response.body#/data/id
+                id: $response.body#/id
               description: An in-flight payment is resolved by re-reading the provider here.
             RefundPayment:
               operationId: createRefund
               parameters:
-                orderId: $response.body#/data/orderId
+                orderId: $response.body#/orderId
               description: A succeeded payment can be refunded without touching the order status.
             CancelOrder:
               operationId: cancelOrderById
               parameters:
-                id: $response.body#/data/orderId
+                id: $response.body#/orderId
               description: A paid order can still be cancelled, which refunds it too.
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -8767,7 +8767,7 @@ paths:
             ConfirmPayment:
               operationId: confirmPayment
               parameters:
-                id: $response.body#/data/id
+                id: $response.body#/id
               description: The intent's id is confirmed here to complete the charge.
         "201":
           description: The payment intent, ready to confirm
@@ -8782,7 +8782,7 @@ paths:
             ConfirmPayment:
               operationId: confirmPayment
               parameters:
-                id: $response.body#/data/id
+                id: $response.body#/id
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8956,11 +8956,11 @@ paths:
         - $ref: "#/components/parameters/IdempotencyKeyHeader"
       responses:
         "200":
-          description: The payment, with that refund `succeeded` and `settledByHand` set
+          description: The refund as it now stands (`succeeded`, `settledByHand` set). `GET /payments/{id}` for the totals and the actions.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Payment"
+                $ref: "#/components/schemas/Refund"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":

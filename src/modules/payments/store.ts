@@ -286,9 +286,10 @@ export const usePaymentsStore = defineStore('payments', () => {
     /**
      * Confirms that a refund's money was returned outside the application
      * (`POST /payments/{id}/refunds/{refundId}/settle`). Nothing is sent anywhere. Needs
-     * `create:Refund` and a fresh session; the API answers the payment with its `actions`.
+     * `create:Refund` and a fresh session; the API answers the refund it settled, so the payment is
+     * read again for the totals and its `actions`.
      *
-     * The answer replaces the cached payment when it is the same one. A refund another operator
+     * The re-read replaces the cached payment when it is the same one. A refund another operator
      * settled first answers 409 `PAYMENT_REFUND_NOT_OPEN`, and a card refund that has no final
      * answer yet answers 409 `PAYMENT_REFUND_IN_FLIGHT`; either way the payment is re-read before the
      * error is rethrown, so the "Mark returned" button the loser pressed is gone.
@@ -302,6 +303,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     const settleRefundByHand = (target: { id: string; orderId: string }, refundId: string) =>
         fetchAny(() =>
             settleRefundByHandRequest(target.id, refundId)
+                // The answer is the refund; the payment (totals, actions) is a read of its own.
+                .then(() => getPayment(target.id))
                 .then((response) => {
                     if (payment.value?.id === response.id) payment.value = response;
                     return response;

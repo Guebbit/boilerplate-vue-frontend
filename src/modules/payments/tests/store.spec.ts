@@ -491,8 +491,9 @@ describe('settleRefundByHand', () => {
         actions: { pay: false, sync: false, refund: false, settleByHand: [] }
     };
 
-    it('posts to the refund and mirrors the payment the answer carries', () => {
-        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED;
+    it('posts to the refund, then reads the payment again and mirrors it', () => {
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED.refunds[0];
+        responses['GET /payments/payment-1'] = SETTLED;
         const store = usePaymentsStore();
         store.payment = aPayment({
             id: 'payment-1',
@@ -502,13 +503,17 @@ describe('settleRefundByHand', () => {
         return store
             .settleRefundByHand({ id: 'payment-1', orderId: 'order-1' }, 'refund-1')
             .then(() => {
-                expect(requestedUrls()).toEqual(['/payments/payment-1/refunds/refund-1/settle']);
+                expect(requestedUrls()).toEqual([
+                    '/payments/payment-1/refunds/refund-1/settle',
+                    '/payments/payment-1'
+                ]);
                 expect(store.payment?.actions.settleByHand).toEqual([]);
             });
     });
 
     it('leaves another order’s cached payment alone', () => {
-        responses['POST /payments/payment-9/refunds/refund-1/settle'] = {
+        responses['POST /payments/payment-9/refunds/refund-1/settle'] = SETTLED.refunds[0];
+        responses['GET /payments/payment-9'] = {
             ...SETTLED,
             id: 'payment-9',
             orderId: 'order-9'
