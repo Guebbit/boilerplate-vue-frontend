@@ -130,3 +130,21 @@ describe('switching a language', () => {
         expect(remove).toHaveBeenCalledExactlyOnceWith('fr');
     });
 });
+
+describe('deleting a live language', () => {
+    it('shows Delete on an active row and names that it is live in the confirm', async () => {
+        const { wrapper, store } = await mountBoard([
+            language('es', true, { update: true, deactivate: true, delete: true })
+        ]);
+        const remove = vi.spyOn(store, 'removeLanguage').mockResolvedValue(undefined);
+        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+
+        await control(wrapper, 'es', 'row-delete').trigger('click');
+        await flushPromises();
+
+        const [request] = confirm.mock.calls[0] ?? [];
+        expect(request?.message).toContain('is live');
+        expect(request?.confirmLabel).toBe('Delete language');
+        expect(remove).toHaveBeenCalledExactlyOnceWith('es');
+    });
+});

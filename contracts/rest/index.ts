@@ -338,13 +338,12 @@ export const LocaleSource = {
 } as const;
 
 /**
- * Why `actions.delete` is false for a caller who holds `delete:Locale` and could otherwise act. `still_active`: switch it off first (`actions.deactivate`). `fallback`: the deployment's fallback language can never be deleted. Absent when the caller lacks the permission (the control is hidden, not explained) or when `delete` is true.
+ * Why `actions.delete` is false for a caller who holds `delete:Locale` and could otherwise act. `fallback`: the deployment's fallback language can never be deleted. Absent when the caller lacks the permission (the control is hidden, not explained) or when `delete` is true.
  */
 export type LanguageDeleteBlockedReason =
     (typeof LanguageDeleteBlockedReason)[keyof typeof LanguageDeleteBlockedReason];
 
 export const LanguageDeleteBlockedReason = {
-    still_active: 'still_active',
     fallback: 'fallback'
 } as const;
 
@@ -358,7 +357,7 @@ export interface LanguageActions {
     activate: boolean;
     /** Whether `POST /locales/{locale}/deactivate` would be accepted: `update`, the language is on, and it is not the deployment's fallback. */
     deactivate: boolean;
-    /** Whether `DELETE /locales/{locale}` would be accepted: the caller holds `delete:Locale`, a registered row exists, the language is off, and it is not the deployment's fallback. */
+    /** Whether `DELETE /locales/{locale}` would be accepted: the caller holds `delete:Locale`, a registered row exists, and it is not the deployment's fallback. */
     delete: boolean;
     deleteBlocked?: LanguageDeleteBlockedReason;
 }
@@ -6848,12 +6847,10 @@ export const updateLocaleWithMergePatchJson = (
 /**
  * Removes the language AND every entry translated into it.
  *
- * Refuses with 409 `LOCALE_LANGUAGE_ACTIVE` while the language is still active, and
- * with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback language. The
- * two steps are deliberate: this destroys a day's translation work, and a mis-click
- * should cost a toggle rather than the work. `POST /locales/{locale}/deactivate`
- * first, then delete. `actions.delete` on the language says whether it would be
- * accepted now.
+ * Refuses with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback
+ * language. An active language is deleted directly: the server does not require a
+ * deactivate first, a client that wants a confirm step adds it. `actions.delete` on
+ * the language says whether it would be accepted now.
  * @summary Remove a language
  */
 export const deleteLocale = (

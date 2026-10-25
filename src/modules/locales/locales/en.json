@@ -27,6 +27,8 @@
         "success-deactivate": "Language {tag} switched off.",
         "empty": "No languages yet",
         "confirm-delete": "Delete \"{tag}\" and every entry translated into it ({count} entries)? This cannot be undone.",
+        "confirm-delete-active": "\"{tag}\" is live: visitors lose it now and links in it stop working. Delete it and its {count} entries? This cannot be undone.",
+        "button-delete-language": "Delete language",
         "success-create": "Language added.",
         "success-edit": "Language updated.",
         "success-delete": "Language removed.",

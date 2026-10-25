@@ -218,16 +218,14 @@ describe('AT1 · Launch a new language', () => {
         });
 
         cy.step(
-            'the fallback language offers no deletion, the new one is switched off then deleted'
+            'the fallback language offers no deletion, the new one is deleted while still live'
         );
         cy.visit('/en/locales');
         // The server's flags decide: the fallback has neither a delete nor a deactivate button.
         cy.get('[data-language=en] [data-test=row-delete]').should('not.exist');
         cy.get('[data-language=en] [data-test=row-deactivate]').should('not.exist');
         cy.get(`[data-test=row-entries][href$="/locales/en"]`).should('exist');
-        // Two controls, never chained: a language that is on has no delete until it is off.
-        cy.get(`[data-language=${TAG}] [data-test=row-delete]`).should('not.exist');
-        cy.get(`[data-language=${TAG}] [data-test=row-deactivate]`).click();
+        // A live language deletes directly; the confirm names that it is live.
         cy.get(`[data-language=${TAG}] [data-test=row-delete]`).click();
         cy.get('[data-test=app-dialog-confirm]').click();
         cy.get(`[data-test=row-entries][href$="/locales/${TAG}"]`).should('not.exist');

@@ -10,7 +10,7 @@ export const ERROR_CODES = {
     ADDRESS_BOOK_LIMIT_REACHED: 'ADDRESS_BOOK_LIMIT_REACHED',
     /** 404 — No challenge is currently active for this session. */
     ANTIBOT_NO_CHALLENGE: 'ANTIBOT_NO_CHALLENGE',
-    /** 401 — The human-challenge token is missing, expired, or the provider rejected it. */
+    /** 403 — The human-challenge token is missing, expired, or the provider rejected it. */
     ANTIBOT_VERIFICATION_FAILED: 'ANTIBOT_VERIFICATION_FAILED',
     /** 400 — A malformed request the body parser or a library refused before any route ran. */
     BAD_REQUEST: 'BAD_REQUEST',
@@ -120,8 +120,6 @@ export const ERROR_CODES = {
     LOCALE_ENTRY_KEY_EXISTS: 'LOCALE_ENTRY_KEY_EXISTS',
     /** 422 — The key is empty, longer than 200 characters, or has an empty or reserved segment. */
     LOCALE_ENTRY_KEY_INVALID: 'LOCALE_ENTRY_KEY_INVALID',
-    /** 409 — The language is still switched on — deactivate it before deleting it. */
-    LOCALE_LANGUAGE_ACTIVE: 'LOCALE_LANGUAGE_ACTIVE',
     /** 409 — The language is already switched on. */
     LOCALE_LANGUAGE_ALREADY_ACTIVE: 'LOCALE_LANGUAGE_ALREADY_ACTIVE',
     /** 409 — The language is already switched off. */

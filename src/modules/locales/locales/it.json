@@ -27,6 +27,8 @@
         "success-deactivate": "Lingua {tag} disattivata.",
         "empty": "Nessuna lingua",
         "confirm-delete": "Eliminare \"{tag}\" e ogni voce tradotta in essa ({count} voci)? Non si può annullare.",
+        "confirm-delete-active": "\"{tag}\" è attiva: i visitatori la perdono subito e i link in essa smettono di funzionare. Eliminarla con le sue {count} voci? Non si può annullare.",
+        "button-delete-language": "Elimina lingua",
         "success-create": "Lingua aggiunta.",
         "success-edit": "Lingua aggiornata.",
         "success-delete": "Lingua rimossa.",

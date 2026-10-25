@@ -140,7 +140,7 @@ export const GetLocalesResponse = zod.strictObject({
                 activate: zod.boolean(),
                 deactivate: zod.boolean(),
                 delete: zod.boolean(),
-                deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+                deleteBlocked: zod.enum(['fallback']).optional()
             })
         })
     ),
@@ -191,7 +191,7 @@ export const CreateLocaleResponse = zod.strictObject({
         activate: zod.boolean(),
         deactivate: zod.boolean(),
         delete: zod.boolean(),
-        deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        deleteBlocked: zod.enum(['fallback']).optional()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -296,7 +296,7 @@ export const ReplaceLocaleResponse = zod.strictObject({
         activate: zod.boolean(),
         deactivate: zod.boolean(),
         delete: zod.boolean(),
-        deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        deleteBlocked: zod.enum(['fallback']).optional()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -343,7 +343,7 @@ export const UpdateLocaleResponse = zod.strictObject({
         activate: zod.boolean(),
         deactivate: zod.boolean(),
         delete: zod.boolean(),
-        deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        deleteBlocked: zod.enum(['fallback']).optional()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -351,12 +351,10 @@ export const UpdateLocaleResponse = zod.strictObject({
 /**
  * Removes the language AND every entry translated into it.
  *
- * Refuses with 409 `LOCALE_LANGUAGE_ACTIVE` while the language is still active, and
- * with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback language. The
- * two steps are deliberate: this destroys a day's translation work, and a mis-click
- * should cost a toggle rather than the work. `POST /locales/{locale}/deactivate`
- * first, then delete. `actions.delete` on the language says whether it would be
- * accepted now.
+ * Refuses with 409 `LOCALE_LANGUAGE_IS_FALLBACK` for the deployment's fallback
+ * language. An active language is deleted directly: the server does not require a
+ * deactivate first, a client that wants a confirm step adds it. `actions.delete` on
+ * the language says whether it would be accepted now.
  * @summary Remove a language
  */
 export const deleteLocalePathLocaleMax = 35;
@@ -11537,7 +11535,7 @@ export const ActivateLocaleResponse = zod.strictObject({
         activate: zod.boolean(),
         deactivate: zod.boolean(),
         delete: zod.boolean(),
-        deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        deleteBlocked: zod.enum(['fallback']).optional()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -11583,7 +11581,7 @@ export const DeactivateLocaleResponse = zod.strictObject({
         activate: zod.boolean(),
         deactivate: zod.boolean(),
         delete: zod.boolean(),
-        deleteBlocked: zod.enum(['still_active', 'fallback']).optional()
+        deleteBlocked: zod.enum(['fallback']).optional()
     }),
     createdAt: zod.iso.datetime({ offset: true }).optional(),
     updatedAt: zod.iso.datetime({ offset: true }).optional()

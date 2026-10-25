@@ -298,9 +298,7 @@ export const useLocalesStore = defineStore('locales', () => {
     /**
      * Removes a language and every entry translated into it, then reloads the manifest.
      *
-     * The API refuses with 409 while the language is still active — deactivate first. That
-     * two-step is the server's guard rail, not this store's to soften: the page shows the two
-     * controls, each gated by a flag, and never chains them.
+     * The API deletes an active language directly; the confirm that guards it belongs to the page.
      *
      * @param tag - Which language.
      * @returns A promise resolving once the manifest agrees the language is gone.

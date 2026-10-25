@@ -213,9 +213,9 @@ const handleSwitch = singleFlight((language: LocaleCapability, active: boolean) 
 /**
  * Deletes a language and everything translated into it, after a confirmation that names the cost.
  *
- * Only offered once the server says the delete would be accepted (`actions.delete`): an active
- * language shows "Deactivate" first. The two steps are the API's guard rail, so they are two
- * controls and never one chained call.
+ * Only offered once the server says the delete would be accepted (`actions.delete`). The API
+ * deletes an active language directly; the friction is this confirm, which says so when the
+ * language is live.
  *
  * @param language - The row being destroyed.
  * @returns A promise settling once the viewer has answered and, if they accepted, the deletion
@@ -224,10 +224,13 @@ const handleSwitch = singleFlight((language: LocaleCapability, active: boolean) 
 const handleDelete = singleFlight((language: LocaleCapability) => {
     return useDialogStore()
         .confirm({
-            message: t('locales-list-page.confirm-delete', {
-                tag: language.tag,
-                count: language.entryCount
-            }),
+            message: t(
+                language.active
+                    ? 'locales-list-page.confirm-delete-active'
+                    : 'locales-list-page.confirm-delete',
+                { tag: language.tag, count: language.entryCount }
+            ),
+            confirmLabel: t('locales-list-page.button-delete-language'),
             color: 'error'
         })
         .then((accepted) => {
