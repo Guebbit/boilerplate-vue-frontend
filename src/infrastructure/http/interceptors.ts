@@ -13,7 +13,7 @@ import {
 } from '@/infrastructure/analytics-consent.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { toPathname } from './url.ts';
-import { syntheticProblem } from './problem.ts';
+import { readProblemBody, syntheticProblem } from './problem.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { AxiosRequestData, AxiosResponseErrorBody, AxiosResponseErrorData } from './types.ts';
 
@@ -140,9 +140,9 @@ const withFieldLifted = (item: unknown): unknown => {
 };
 
 /**
- * Response error normalizer: every rejection reaches a call site as the same problem details.
+ * Builds the one rejection a call site receives, from the axios error and its already-read body.
  *
- * A response that already carries the standard `errors` field passes through, enriched with the
+ * A body that already carries the standard `errors` field passes through, enriched with the
  * backend correlation header (`x-request-id` → requestId), the W3C trace context
  * (`traceparent` — neither backend has ever sent `x-trace-id`, so this replaces it), the
  * request's own method/path (what lets `captureException` name an error by more than its
@@ -150,11 +150,13 @@ const withFieldLifted = (item: unknown): unknown => {
  * transport failure, bare proxy error — is mapped onto the same shape.
  *
  * @param error - Axios error, with or without a response.
+ * @param body - The response body as {@link readProblemBody} read it; `undefined` without a response.
  * @returns A promise that never resolves; it always rejects with an
  *  {@link AxiosResponseErrorData} problem.
  */
-export const onResponseReject = (
-    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
+const rejectionOf = (
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>,
+    body: unknown
 ): Promise<never> => {
     const requestId = error.response?.headers['x-request-id'] as string | undefined;
     const traceparent = error.response?.headers.traceparent as string | undefined;
@@ -167,11 +169,11 @@ export const onResponseReject = (
         ...(path && { path })
     };
 
-    if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
-        const { errors } = error.response.data;
+    if (typeof body === 'object' && body !== null && Object.hasOwnProperty.call(body, 'errors')) {
+        const { errors } = body as { errors?: unknown };
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's problem details are this client's rejection contract; every catch downstream destructures them
         return Promise.reject({
-            ...error.response.data,
+            ...body,
             ...(Array.isArray(errors) && { errors: errors.map((item) => withFieldLifted(item)) }),
             ...correlation
         });
@@ -206,3 +208,20 @@ export const onResponseReject = (
         ...correlation
     });
 };
+
+/**
+ * Response error normalizer: every rejection reaches a call site as the same problem details.
+ *
+ * Reads the body first ({@link readProblemBody}), because a request made with `responseType:
+ * 'text'` or `'blob'` hands even its refusal over as a string or a Blob.
+ *
+ * @param error - Axios error, with or without a response.
+ * @returns A promise that never resolves; it always rejects with an
+ *  {@link AxiosResponseErrorData} problem.
+ */
+export const onResponseReject = (
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
+): Promise<never> =>
+    (error.response ? readProblemBody(error.response) : Promise.resolve()).then((body) =>
+        rejectionOf(error, body)
+    );

@@ -122,6 +122,33 @@ describe('orvalMutator contract validation', () => {
             });
     });
 
+    it('recognises a refusal to a text request, which axios hands over unparsed', () => {
+        server.use(
+            http.get(
+                `${API}/orders/export`,
+                () =>
+                    new HttpResponse(
+                        JSON.stringify({
+                            type: 'about:blank',
+                            title: 'Unprocessable Content',
+                            status: 422,
+                            detail: 'Too many rows',
+                            errors: [{ code: 'ORDER_EXPORT_TOO_LARGE', message: 'Too many rows' }]
+                        }),
+                        { status: 422, headers: { 'content-type': 'application/problem+json' } }
+                    )
+            )
+        );
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(
+                orvalMutator({ url: '/orders/export', method: 'GET', responseType: 'text' })
+            ).rejects.toMatchObject({
+                status: 422,
+                errors: [{ code: 'ORDER_EXPORT_TOO_LARGE' }]
+            })
+        );
+    });
+
     it('resolves a 204 to undefined instead of failing its contract check', () => {
         server.use(
             http.post(`${API}/analytics/events`, () => new HttpResponse(null, { status: 204 }))
