@@ -7,8 +7,8 @@ The **Auth** column shows what the backend requires: `none`, `user` (a signed-in
 
 ## The envelope every row below travels in
 
-Every endpoint on this page answers in the same wrapper, and every rejection reaches a call site in
-the same one. That normalisation is the http tier's job, not each store's:
+Every endpoint on this page answers in the same wrapper, and every rejection reaches a call site as
+the same problem-details document (RFC 9457). That normalisation is the http tier's job, not each store's:
 
 ```mermaid
 flowchart TD
@@ -22,14 +22,14 @@ flowchart TD
     Z --> U["orvalMutator unwraps to the payload"]
     U --> S["The store's .then receives the payload"]
 
-    API -->|"4xx / 5xx"| E["{ success: false, status, message, errors[] }"]
+    API -->|"4xx / 5xx"| E["problem+json: { type, title, status, detail, errors[] }"]
     API -.->|"no answer at all"| X["transport failure"]
     E --> N["onResponseReject normalises,<br/>adding x-request-id / traceparent"]
     X --> N
-    N --> R["The store's .catch receives that envelope —<br/>never an Error, which is the point"]
+    N --> R["The store's .catch receives that problem —<br/>never an Error, which is the point"]
 ```
 
-Two consequences worth carrying into every row below. A rejection is always the envelope, so
+Two consequences worth carrying into every row below. A rejection is always a problem, so
 `absentIs` and `rethrowUnlessAbsent` can read `status` off it to tell "nothing there" (a 404 on a
 payment read) from a real failure. And `errors[]` is where a machine-readable `code` lives —
 `REAUTH_REQUIRED`, `PAYMENT_DECLINED` — which is what the step-up interceptor and the checkout

@@ -110,7 +110,7 @@ Route guards run on every navigation. A guard that refuses a guest redirects to 
 
 ### Interceptors own error shape
 
-All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `AxiosResponseErrorData` envelope — a transport failure included, as `status: 0`. Views and stores never parse raw axios errors; the call site decides whether the visitor sees a toast or an in-place alert, and reports a real failure to Faro (see below).
+All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `AxiosResponseErrorData`: the server's problem details (`application/problem+json`), or one the client builds with the same members when nothing answered with one — a transport failure included, as `status: 0`. The text a person reads is `errors[0].message`, then `detail`; `title` is the English status phrase and is never shown. Views and stores never parse raw axios errors; the call site decides whether the visitor sees a toast or an in-place alert, and reports a real failure to Faro (see below).
 
 ### Analytics is not this repo's call to make
 
