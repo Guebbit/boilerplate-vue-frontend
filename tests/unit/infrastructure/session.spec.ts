@@ -11,7 +11,7 @@ import type { Mock } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import * as schemas from '@api/schemas';
 import { contractResponse } from './http/orval-fixture-schema.ts';
-import { anAccount } from '../../support/unit/fixtures.ts';
+import { anAccount, aProblem } from '../../support/unit/fixtures.ts';
 
 // `vi.fn()` deliberately left untyped: these mocks return partial, case-by-case fixture shapes
 // the real generated envelope types would refuse, and that looseness is the point of a mock.
@@ -642,12 +642,9 @@ describe('refreshToken', () => {
     });
 
     it('reads the API envelope a real rejection arrives as, not only a raw axios error', () => {
-        refreshTokenMock.mockRejectedValue({
-            success: false,
-            status: 401,
-            message: 'Unauthorized',
-            errors: [{ code: 'UNAUTHORIZED', message: 'Unauthorized' }]
-        });
+        refreshTokenMock.mockRejectedValue(
+            aProblem(401, [{ code: 'UNAUTHORIZED', message: 'Unauthorized' }])
+        );
         const store = signedIn();
 
         return store.refreshToken().then(() => {
@@ -657,7 +654,7 @@ describe('refreshToken', () => {
     });
 
     it('does not end the session on an envelope that is a 5xx', () => {
-        refreshTokenMock.mockRejectedValue({ success: false, status: 503, errors: [] });
+        refreshTokenMock.mockRejectedValue(aProblem(503, []));
         const store = signedIn();
 
         return store.refreshToken().then(() => {

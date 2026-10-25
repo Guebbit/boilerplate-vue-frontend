@@ -25,6 +25,7 @@ import { deleteCookie } from '@guebbit/js-toolkit';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';
@@ -106,10 +107,7 @@ let scenario: Scenario = defaultScenario();
  * @returns A 401 response carrying the standard reject envelope.
  */
 const unauthorized = (message: string) =>
-    HttpResponse.json(
-        { success: false, status: 401, message, errors: [{ code: 'UNAUTHORIZED', message }] },
-        { status: 401 }
-    );
+    HttpResponse.json(aProblem(401, [{ code: 'UNAUTHORIZED', message }]), { status: 401 });
 
 /** MSW server answering this file's stub endpoints (`setupServer` intercepts requests in Node). */
 const server = setupServer(
@@ -140,24 +138,13 @@ const server = setupServer(
         requestLog.push({ route: 'GET /orders', authorization });
 
         if (scenario.protectedForbidden)
-            return HttpResponse.json(
-                {
-                    success: false,
-                    status: 403,
-                    message: 'Forbidden',
-                    errors: [{ code: 'FORBIDDEN', message: 'Forbidden' }]
-                },
-                { status: 403 }
-            );
+            return HttpResponse.json(aProblem(403, [{ code: 'FORBIDDEN', message: 'Forbidden' }]), {
+                status: 403
+            });
 
         if (scenario.protectedIdle)
             return HttpResponse.json(
-                {
-                    success: false,
-                    status: 401,
-                    message: 'Idle',
-                    errors: [{ code: 'SESSION_IDLE', message: 'Your session ended.' }]
-                },
+                aProblem(401, [{ code: 'SESSION_IDLE', message: 'Your session ended.' }]),
                 { status: 401 }
             );
 
@@ -170,15 +157,9 @@ const server = setupServer(
     http.get(`${API}/account/abilities`, () => {
         requestLog.push({ route: 'GET /account/abilities' });
         return scenario.abilitiesForbidden
-            ? HttpResponse.json(
-                  {
-                      success: false,
-                      status: 403,
-                      message: 'Forbidden',
-                      errors: [{ code: 'FORBIDDEN', message: 'Forbidden' }]
-                  },
-                  { status: 403 }
-              )
+            ? HttpResponse.json(aProblem(403, [{ code: 'FORBIDDEN', message: 'Forbidden' }]), {
+                  status: 403
+              })
             : HttpResponse.json({
                   success: true,
                   status: 200,
@@ -414,7 +395,7 @@ describe('401 refresh flow', () => {
             return loadHttp()
                 .then(({ orvalMutator }) =>
                     expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
-                        success: false,
+                        type: 'about:blank',
                         status: 401
                     })
                 )
@@ -430,7 +411,7 @@ describe('401 refresh flow', () => {
             return loadHttp()
                 .then(({ orvalMutator }) =>
                     expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
-                        success: false,
+                        type: 'about:blank',
                         status: 401
                     })
                 )
@@ -506,17 +487,12 @@ describe('401 refresh flow', () => {
                     // critical action demands a step-up, same as a request never refreshed at all.
                     if (checkoutCalls === 2)
                         return HttpResponse.json(
-                            {
-                                success: false,
-                                status: 401,
-                                message: 'Fresh authentication required',
-                                errors: [
-                                    {
-                                        code: 'REAUTH_REQUIRED',
-                                        message: 'Fresh authentication required'
-                                    }
-                                ]
-                            },
+                            aProblem(401, [
+                                {
+                                    code: 'REAUTH_REQUIRED',
+                                    message: 'Fresh authentication required'
+                                }
+                            ]),
                             { status: 401 }
                         );
                     // Call 3: stepped up — the fresh session the second call demanded now exists.

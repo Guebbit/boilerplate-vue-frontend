@@ -24,7 +24,8 @@ import {
     aUser,
     ALL_USER_ACTIONS,
     NO_USER_ACTIONS,
-    userActionsOf
+    userActionsOf,
+    aProblem
 } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
@@ -274,12 +275,9 @@ const userReads = () =>
 
 describe('UserEdit — a save answered 412', () => {
     /** The reject envelope `onResponseReject` builds for the API's 412. */
-    const PRECONDITION_FAILED = {
-        success: false,
-        status: 412,
-        message: 'Precondition Failed',
-        errors: [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]
-    };
+    const PRECONDITION_FAILED = aProblem(412, [
+        { code: 'PRECONDITION_FAILED', message: 'Precondition failed' }
+    ]);
 
     /** Answers every GET as usual and every PATCH with the 412. */
     const mockRefusedPatch = () => {

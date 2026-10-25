@@ -22,6 +22,7 @@ import { contractEnvelope } from '../../../../tests/unit/infrastructure/http/orv
 import { trackStores } from '../../../../tests/support/unit/track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { apiRejection, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -565,7 +566,7 @@ describe('lines the guest changes while a merge is out', () => {
         const { merging, answer } = mergeInFlight(store);
 
         store.addGuestItem('p2', 1);
-        answer.reject({ success: false, status: 422, message: 'nope', errors: [] });
+        answer.reject(aProblem(422, []));
         await merging.catch(() => undefined);
 
         expect(store.guestLines).toEqual([{ productId: 'p2', quantity: 1 }]);
@@ -620,7 +621,7 @@ describe('lines the guest changes while a merge is out', () => {
         const merging = store.mergeGuestCart().catch(() => undefined);
 
         store.addGuestItem('p7', 1);
-        answer.reject({ success: false, status: 503, message: 'nope', errors: [] });
+        answer.reject(aProblem(503, []));
         await merging;
 
         expect(store.guestLines).toEqual([

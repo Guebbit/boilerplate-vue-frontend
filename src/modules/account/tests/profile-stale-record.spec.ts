@@ -20,6 +20,7 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -49,12 +50,9 @@ const USER = {
 /**
  * The reject envelope `onResponseReject` builds for the API's 412.
  */
-const PRECONDITION_FAILED = {
-    success: false,
-    status: 412,
-    message: 'Precondition Failed',
-    errors: [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]
-};
+const PRECONDITION_FAILED = aProblem(412, [
+    { code: 'PRECONDITION_FAILED', message: 'Precondition failed' }
+]);
 
 /**
  * How many times the profile was read.

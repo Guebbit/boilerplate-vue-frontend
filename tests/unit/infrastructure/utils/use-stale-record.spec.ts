@@ -6,11 +6,12 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { useStaleRecord } from '@/infrastructure/utils/use-stale-record.ts';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 vi.mock('@/i18n', () => ({ translate: (key: string) => `t:${key}` }));
 
 /** The reject envelope `onResponseReject` builds for a status. */
-const rejection = (status: number) => ({ success: false, status, errors: [] });
+const rejection = (status: number) => aProblem(status, [{ code: 'STUB_ERROR', message: 'nope' }]);
 
 /** A blocking-error stand-in that records what the composable asks of it. */
 const makeBlocking = () => ({ warn: vi.fn(), clear: vi.fn() });

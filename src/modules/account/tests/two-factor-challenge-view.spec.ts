@@ -13,6 +13,7 @@ import { useTwoFactorStore } from '../stores/two-factor.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -129,12 +130,9 @@ describe('TwoFactorChallenge — the way back to login', () => {
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
         );
-        vi.spyOn(store, 'submitLoginCode').mockRejectedValue({
-            success: false,
-            status: 429,
-            message: 'Too Many Requests',
-            errors: [{ code: 'RATE_LIMITED', message: 'Too many requests' }]
-        });
+        vi.spyOn(store, 'submitLoginCode').mockRejectedValue(
+            aProblem(429, [{ code: 'RATE_LIMITED', message: 'Too many requests' }])
+        );
         const wrapper = mountChallenge();
 
         return wrapper
@@ -162,12 +160,9 @@ describe('TwoFactorChallenge — the way back to login', () => {
             challengeExpiring(new Date(Date.now() + 300_000).toISOString()),
             false
         );
-        vi.spyOn(store, 'submitLoginCode').mockRejectedValue({
-            success: false,
-            status: 422,
-            message: 'Unprocessable Entity',
-            errors: [{ code: 'VALIDATION', message: 'That code is wrong.' }]
-        });
+        vi.spyOn(store, 'submitLoginCode').mockRejectedValue(
+            aProblem(422, [{ code: 'VALIDATION', message: 'That code is wrong.' }])
+        );
         const wrapper = mountChallenge();
 
         return wrapper

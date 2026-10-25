@@ -16,6 +16,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { ProductSeries } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -136,11 +137,9 @@ describe('StatsDashboard', () => {
     });
 
     it('shows a failed load as one alert above the blocks', () => {
-        vi.spyOn(useStatsStore(), 'loadDashboard').mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server exploded'
-        });
+        vi.spyOn(useStatsStore(), 'loadDashboard').mockRejectedValue(
+            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Server exploded' }])
+        );
         return mountDashboard(makeRouter()).then((wrapper) => {
             expect(wrapper.get('[data-test=stats-load-error]').text()).toContain('Server exploded');
         });

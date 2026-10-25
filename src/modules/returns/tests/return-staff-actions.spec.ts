@@ -11,7 +11,7 @@ import { useReturnsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aReturn } from '../../../../tests/support/unit/fixtures.ts';
+import { aReturn, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import type { Return } from '@types';
 
 wireModulesIntoCore();
@@ -164,19 +164,16 @@ describe('ReturnStaffActions', () => {
         const { wrapper, store } = mountActions(
             aReturn({ actions: { approve: false, decline: false, receive: true } })
         );
-        vi.mocked(store.receive).mockRejectedValue({
-            success: false,
-            status: 422,
-            message: 'Unprocessable Entity',
-            errors: [
+        vi.mocked(store.receive).mockRejectedValue(
+            aProblem(422, [
                 {
                     code: 'VALIDATION_ERROR',
                     message: 'Deduction exceeds the refund',
                     details: { field: 'handlingDeduction' },
                     field: 'handlingDeduction'
                 }
-            ]
-        });
+            ])
+        );
 
         await wrapper.get('[data-test=return-receive-deduction] input').setValue('99');
         await wrapper.get('[data-test=return-receive-form]').trigger('submit');

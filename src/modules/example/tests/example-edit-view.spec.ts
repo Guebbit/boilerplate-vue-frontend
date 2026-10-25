@@ -18,6 +18,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
 import type { Example } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -138,12 +139,7 @@ describe('ExampleEdit', () => {
 
     it('blocks the form in place when the API refuses the save', () => {
         const { wrapper, update } = mountPage();
-        update.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        update.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }]));
 
         return flushPromises()
             .then(() => wrapper.get('form').trigger('submit'))
@@ -174,12 +170,9 @@ describe('ExampleEdit', () => {
 
     it('says the record moved on a 412, offers to reload, and re-reads on request', () => {
         const { wrapper, update, fetch } = mountPage();
-        update.mockRejectedValue({
-            success: false,
-            status: 412,
-            message: 'Precondition failed',
-            errors: [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]
-        });
+        update.mockRejectedValue(
+            aProblem(412, [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }])
+        );
 
         return flushPromises()
             .then(() => wrapper.get('form').trigger('submit'))

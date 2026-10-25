@@ -23,6 +23,7 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -285,18 +286,15 @@ describe('the email field, and a pending change', () => {
 
         return flushPromises()
             .then(() => {
-                vi.mocked(orvalMutator).mockRejectedValueOnce({
-                    success: false,
-                    status: 429,
-                    message: 'Too Many Requests',
-                    errors: [
+                vi.mocked(orvalMutator).mockRejectedValueOnce(
+                    aProblem(429, [
                         {
                             code: 'EMAIL_VERIFY_RESEND_TOO_SOON',
                             message: 'A verification email was just sent. Please wait a moment.',
                             details: { retryAfter: 42 }
                         }
-                    ]
-                });
+                    ])
+                );
                 return wrapper.get('[data-test=pending-email-resend]').trigger('click');
             })
             .then(flushPromises)

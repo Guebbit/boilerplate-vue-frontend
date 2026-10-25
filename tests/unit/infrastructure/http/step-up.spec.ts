@@ -14,6 +14,7 @@ import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
 import { useReauthPromptStore } from '@/infrastructure/http/reauth-prompt.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 /** Origin of the stub API. */
 const API = 'http://api.test';
@@ -42,18 +43,13 @@ let demandedMethods: string[] | undefined;
 /** A `REAUTH_REQUIRED` 401, matching what `requireFreshAuth` actually answers. */
 const reauthRequired = () =>
     HttpResponse.json(
-        {
-            success: false,
-            status: 401,
-            message: 'Fresh authentication required',
-            errors: [
-                {
-                    code: 'REAUTH_REQUIRED',
-                    message: 'Fresh authentication required',
-                    details: { maxAge: 300, ...(demandedMethods && { methods: demandedMethods }) }
-                }
-            ]
-        },
+        aProblem(401, [
+            {
+                code: 'REAUTH_REQUIRED',
+                message: 'Fresh authentication required',
+                details: { maxAge: 300, ...(demandedMethods && { methods: demandedMethods }) }
+            }
+        ]),
         { status: 401 }
     );
 

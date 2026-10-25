@@ -10,6 +10,7 @@ import HumanCheck from '@/ui/organisms/HumanCheck.vue';
 import { fetchAntibotConfig, fetchAntibotChallenge } from '@/infrastructure/http/antibot.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { asStub } from '../../support/stub.ts';
+import { aProblem } from '../../support/unit/fixtures.ts';
 
 // Side-effect only: HumanCheck imports 'altcha' to register <altcha-widget>. Mocked to an empty
 // module so no real custom-element/proof-of-work code runs — the branch under test is which tag
@@ -120,12 +121,9 @@ describe('HumanCheck — an API that cannot be reached', () => {
     it('renders no widget, logs it, and leaves no unhandled rejection behind', async () => {
         const warned = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
         // What the http layer rejects with when nothing answered at all.
-        vi.mocked(fetchAntibotConfig).mockRejectedValue({
-            success: false,
-            status: 0,
-            message: 'Could not reach the server.',
-            errors: [{ code: 'NETWORK_ERROR', message: 'Could not reach the server.' }]
-        });
+        vi.mocked(fetchAntibotConfig).mockRejectedValue(
+            aProblem(0, [{ code: 'NETWORK_ERROR', message: 'Could not reach the server.' }])
+        );
 
         const wrapper = mount(HumanCheck);
         await flushPromises();

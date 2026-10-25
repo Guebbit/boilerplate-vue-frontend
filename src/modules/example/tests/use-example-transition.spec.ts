@@ -13,6 +13,7 @@ import { useExampleStore } from '../store';
 import { i18n, loadLocale } from '@/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Example } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -61,12 +62,9 @@ describe('useExampleTransition', () => {
 
     it('shows a 409 in place and re-reads the record once, past the cache', () => {
         const store = useExampleStore();
-        vi.spyOn(store, 'transitionExample').mockRejectedValue({
-            success: false,
-            status: 409,
-            message: 'Conflict',
-            errors: [{ code: 'EXAMPLE_TRANSITION_NOT_ALLOWED', message: 'Not allowed' }]
-        });
+        vi.spyOn(store, 'transitionExample').mockRejectedValue(
+            aProblem(409, [{ code: 'EXAMPLE_TRANSITION_NOT_ALLOWED', message: 'Not allowed' }])
+        );
         const reread = vi.spyOn(store, 'fetchExample').mockResolvedValue(MOVED);
         const { changeStatus, error } = mountHost();
 
@@ -79,12 +77,9 @@ describe('useExampleTransition', () => {
 
     it('shows any other refusal in place without re-reading', () => {
         const store = useExampleStore();
-        vi.spyOn(store, 'transitionExample').mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        vi.spyOn(store, 'transitionExample').mockRejectedValue(
+            aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }])
+        );
         const reread = vi.spyOn(store, 'fetchExample').mockResolvedValue(MOVED);
         const { changeStatus, error } = mountHost();
 

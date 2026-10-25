@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';
@@ -46,12 +47,7 @@ const server = setupServer(
 
         if (sent !== undefined && sent !== tag(serverVersion))
             return HttpResponse.json(
-                {
-                    success: false,
-                    status: 412,
-                    message: 'Precondition Failed',
-                    errors: [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]
-                },
+                aProblem(412, [{ code: 'PRECONDITION_FAILED', message: 'Precondition failed' }]),
                 { status: 412 }
             );
 

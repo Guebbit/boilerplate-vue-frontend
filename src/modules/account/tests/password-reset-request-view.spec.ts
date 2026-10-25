@@ -15,6 +15,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -99,19 +100,16 @@ describe('PasswordResetRequest', () => {
     it('puts a field error the API names on that field, not in a banner', () => {
         const { wrapper, request } = mountPage();
         // As `onResponseReject` hands it on: the contract's `details.field`, lifted to `field`.
-        request.mockRejectedValue({
-            success: false,
-            status: 422,
-            message: 'Unprocessable Entity',
-            errors: [
+        request.mockRejectedValue(
+            aProblem(422, [
                 {
                     code: 'VALIDATION_ERROR',
                     message: 'Not a deliverable address',
                     details: { field: 'email' },
                     field: 'email'
                 }
-            ]
-        });
+            ])
+        );
 
         return submitEmail(wrapper, 'ada@example.com').then(() => {
             expect(emailMessage(wrapper)).toContain('Not a deliverable address');
@@ -121,12 +119,7 @@ describe('PasswordResetRequest', () => {
 
     it('blocks the form in place for a refusal that names no field', () => {
         const { wrapper, request } = mountPage();
-        request.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        request.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }]));
 
         return submitEmail(wrapper, 'ada@example.com').then(() => {
             expect(wrapper.find('[data-test=password-reset-request-error]').exists()).toBe(true);

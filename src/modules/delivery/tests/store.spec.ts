@@ -20,7 +20,8 @@ import {
     aPreorderFulfillmentOrder,
     aPreorderSummary,
     aShipment,
-    aShop
+    aShop,
+    aProblem
 } from '../../../../tests/support/unit/fixtures.ts';
 
 import * as schemas from '@api/schemas';
@@ -52,7 +53,7 @@ let responses: Record<string, unknown>;
  */
 const rejectWith = (status: number, message: string) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({ success: false, status, message, errors: [{ code: 'STUB_ERROR', message }] });
+    Promise.reject(aProblem(status, [{ code: 'STUB_ERROR', message }]));
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {

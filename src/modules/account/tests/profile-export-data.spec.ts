@@ -12,6 +12,7 @@ import { useProfileStore } from '../stores/profile.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -58,12 +59,9 @@ describe('ProfileExportData', () => {
 
     it('blocks in place when the request is refused, and claims no link is coming', () => {
         const { wrapper, request } = mountComponent();
-        request.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Internal Server Error',
-            errors: [{ code: 'INTERNAL_ERROR', message: 'Something went wrong.' }]
-        });
+        request.mockRejectedValue(
+            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something went wrong.' }])
+        );
 
         return press(wrapper).then(() => {
             expect(wrapper.get('[data-test=profile-export-data-error]').text()).toContain(
@@ -75,12 +73,11 @@ describe('ProfileExportData', () => {
 
     it('forgets an earlier success when it is pressed again and the second try fails', () => {
         const { wrapper, request } = mountComponent();
-        request.mockResolvedValueOnce({ id: 'e1', status: 'building' }).mockRejectedValueOnce({
-            success: false,
-            status: 500,
-            message: 'Internal Server Error',
-            errors: [{ code: 'INTERNAL_ERROR', message: 'Something went wrong.' }]
-        });
+        request
+            .mockResolvedValueOnce({ id: 'e1', status: 'building' })
+            .mockRejectedValueOnce(
+                aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something went wrong.' }])
+            );
 
         return press(wrapper)
             .then(() => press(wrapper))

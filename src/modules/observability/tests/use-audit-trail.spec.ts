@@ -12,6 +12,7 @@ import type { AuditEntryItem } from '@api';
 import * as schemas from '@api/schemas';
 import { useAuditTrail } from '../composables/use-audit-trail.ts';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 /** A page's worth of meta, as `PaginationMeta` declares it. */
 const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
@@ -65,12 +66,8 @@ vi.mock('@api', () => ({
 }));
 
 /** Builds the reject envelope the API sends for a failed call. */
-const apiFailure = (status: number, message: string) => ({
-    success: false,
-    status,
-    message,
-    errors: [{ code: 'STUB_ERROR', message }]
-});
+const apiFailure = (status: number, message: string) =>
+    aProblem(status, [{ code: 'STUB_ERROR', message }]);
 
 beforeEach(() => vi.clearAllMocks());
 

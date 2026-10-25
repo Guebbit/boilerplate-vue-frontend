@@ -17,6 +17,7 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -42,7 +43,7 @@ let responses: Record<string, unknown>;
  */
 const rejectWith = (status: number, message: string, code = 'STUB_ERROR') =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({ success: false, status, message, errors: [{ code, message }] });
+    Promise.reject(aProblem(status, [{ code, message }]));
 
 /**
  * A stubbed API-level refusal, distinct from the success fixtures `orvalEnvelope` builds.

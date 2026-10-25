@@ -6,6 +6,7 @@
  * answered" compares whole carts, never a hand-copied number.
  */
 import type { CartResponse } from '@types';
+import { aProblem } from './fixtures.ts';
 
 /**
  * The price every fixture line carries, so a total is `units * UNIT_PRICE`.
@@ -109,18 +110,14 @@ export interface Gate<T> {
 export const gate = <T>(): Gate<T> => Promise.withResolvers<T>();
 
 /**
- * The reject envelope the app's HTTP layer throws for an answered failure, never an `Error`.
+ * The problem details the app's HTTP layer throws for an answered failure, never an `Error`.
  *
  * @param status - The HTTP status the server answered with
  * @param code - The stable error code in `errors[0].code`
  * @returns The rejection value
  */
-export const apiRejection = (status: number, code: string) => ({
-    success: false,
-    status,
-    message: code,
-    errors: [{ code, message: code }]
-});
+export const apiRejection = (status: number, code: string) =>
+    aProblem(status, [{ code, message: code }]);
 
 /**
  * What a request that never got an answer rejects with: no `status` at all.

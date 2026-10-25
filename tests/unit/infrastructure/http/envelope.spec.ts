@@ -10,6 +10,7 @@ import {
     getPayloadFromResponse,
     getTokenFromResponse
 } from '@/infrastructure/http/envelope.ts';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 describe('getTokenFromResponse', () => {
     it('reads the token out of the wrapped envelope the contract declares', () => {
@@ -58,9 +59,9 @@ describe('getPayloadFromResponse', () => {
 describe('getFirstApiError', () => {
     it('reads the first structured error off a reject envelope', () => {
         // What `onResponseReject` builds, and what `step-up.ts` reads `REAUTH_REQUIRED` from.
-        expect(getFirstApiError({ success: false, errors: [{ code: 'REAUTH_REQUIRED' }] })).toEqual(
-            { code: 'REAUTH_REQUIRED' }
-        );
+        expect(getFirstApiError({ errors: [{ code: 'REAUTH_REQUIRED' }] })).toEqual({
+            code: 'REAUTH_REQUIRED'
+        });
     });
 
     it('reads the error off a body that arrived as a JSON string', () => {
@@ -101,11 +102,8 @@ describe('getFirstApiError', () => {
 });
 
 /** A cooldown refusal as `onResponseReject` hands it on. */
-const tooSoon = (code: string, retryAfter: unknown) => ({
-    success: false,
-    status: 429,
-    errors: [{ code, message: 'Too soon', details: { retryAfter } }]
-});
+const tooSoon = (code: string, retryAfter: unknown) =>
+    aProblem(429, [{ code, message: 'Too soon', details: { retryAfter } }]);
 
 describe('getRetryAfter', () => {
     it('reads the server`s seconds off the refusal it names', () => {

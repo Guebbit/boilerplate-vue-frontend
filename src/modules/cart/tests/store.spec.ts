@@ -38,7 +38,7 @@ import {
     contractEnvelope,
     contractResponse
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
-import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
+import { anOrder, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import { answered, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
 
 /**
@@ -146,19 +146,14 @@ const RESPONSES = {
  */
 const apiFailure = (status: number) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({
-        success: false,
-        status,
-        message: 'nope',
-        errors: [{ code: 'STUB_ERROR', message: 'nope' }]
-    }) as never;
+    Promise.reject(aProblem(status, [{ code: 'STUB_ERROR', message: 'nope' }])) as never;
 
 /**
- * A bare 409 envelope, for a case that adds its own `errors`.
+ * A plain 409 refusal, for a case that swaps in its own `errors`.
  *
- * @returns The rejection value, without the error list.
+ * @returns The rejection value.
  */
-const apiFailure409 = () => ({ success: false, status: 409, message: 'conflict' });
+const apiFailure409 = () => aProblem(409, [{ code: 'CONFLICT', message: 'conflict' }]);
 
 /**
  * The `Idempotency-Key` header `checkout` sent, off the most recent `apiCheckout` call.

@@ -16,7 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aUser } from '../../../../tests/support/unit/fixtures.ts';
+import { aUser, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -174,12 +174,7 @@ describe('UserCreate', () => {
 
     it('blocks the form in place when the API refuses the create', () => {
         const { wrapper, create } = mountPage();
-        create.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        create.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }]));
 
         return fillAndSubmit(wrapper, {
             email: 'ada@example.com',
@@ -215,19 +210,16 @@ describe('UserCreate', () => {
     it('puts a field error the API names on that field, not in the banner', () => {
         const { wrapper, create } = mountPage();
         // As `onResponseReject` hands it on: the contract's `details.field`, lifted to `field`.
-        create.mockRejectedValue({
-            success: false,
-            status: 422,
-            message: 'Unprocessable Entity',
-            errors: [
+        create.mockRejectedValue(
+            aProblem(422, [
                 {
                     code: 'VALIDATION_ERROR',
                     message: 'Address already in use',
                     details: { field: 'email' },
                     field: 'email'
                 }
-            ]
-        });
+            ])
+        );
 
         return fillAndSubmit(wrapper, {
             email: 'ada@example.com',

@@ -16,7 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import type { Payment } from '@types';
 
 wireModulesIntoCore();
@@ -158,12 +158,9 @@ describe('PaymentDrawer', () => {
     });
 
     it('shows a refused refund in the drawer, which stays open', async () => {
-        vi.spyOn(usePaymentsStore(), 'refundPayment').mockRejectedValue({
-            success: false,
-            status: 403,
-            message: 'Forbidden',
-            errors: [{ code: 'FORBIDDEN', message: 'You may not refund this buyer.' }]
-        });
+        vi.spyOn(usePaymentsStore(), 'refundPayment').mockRejectedValue(
+            aProblem(403, [{ code: 'FORBIDDEN', message: 'You may not refund this buyer.' }])
+        );
         vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const wrapper = mountDrawer(FULL);
 
@@ -252,12 +249,9 @@ describe('PaymentDrawer', () => {
         });
 
         it('shows a refused settlement in the drawer, which stays open', async () => {
-            vi.spyOn(usePaymentsStore(), 'settleRefundByHand').mockRejectedValue({
-                success: false,
-                status: 409,
-                message: 'Conflict',
-                errors: [{ code: 'PAYMENT_REFUND_NOT_OPEN', message: 'Already settled.' }]
-            });
+            vi.spyOn(usePaymentsStore(), 'settleRefundByHand').mockRejectedValue(
+                aProblem(409, [{ code: 'PAYMENT_REFUND_NOT_OPEN', message: 'Already settled.' }])
+            );
             vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
             const wrapper = mountDrawer(OWED);
 

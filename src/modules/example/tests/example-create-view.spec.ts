@@ -16,6 +16,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Example } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -118,12 +119,11 @@ describe('ExampleCreate', () => {
 
     it('puts a server refusal that names a field on that field', () => {
         const { wrapper, create } = mountPage();
-        create.mockRejectedValue({
-            success: false,
-            status: 422,
-            message: 'Unprocessable Entity',
-            errors: [{ code: 'VALIDATION', field: 'body', message: 'Too long for this deployment' }]
-        });
+        create.mockRejectedValue(
+            aProblem(422, [
+                { code: 'VALIDATION', field: 'body', message: 'Too long for this deployment' }
+            ])
+        );
 
         return fillAndSubmit(wrapper, 'A title', 'A body').then(() => {
             expect(wrapper.find('[data-test=example-body] .v-messages').text()).toContain(
@@ -135,12 +135,7 @@ describe('ExampleCreate', () => {
 
     it('blocks the form in place when the API fails some other way', () => {
         const { wrapper, create } = mountPage();
-        create.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        create.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }]));
 
         return fillAndSubmit(wrapper, 'A title', 'A body').then(() => {
             expect(wrapper.find('[data-test=example-create-error]').exists()).toBe(true);

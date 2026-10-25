@@ -15,6 +15,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import type { Example } from '@types';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -94,11 +95,10 @@ describe('ExamplePublished', () => {
         // lint rule about rejection reasons without changing what the page reads (`status`).
         mountPage(() =>
             Promise.reject(
-                Object.assign(new Error('Not Found'), {
-                    success: false,
-                    status: 404,
-                    errors: [{ code: 'NOT_FOUND', message: 'The example was not found.' }]
-                })
+                Object.assign(
+                    new Error('Not Found'),
+                    aProblem(404, [{ code: 'NOT_FOUND', message: 'The example was not found.' }])
+                )
             )
         );
 

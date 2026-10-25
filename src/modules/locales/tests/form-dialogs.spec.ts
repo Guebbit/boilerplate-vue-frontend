@@ -16,25 +16,21 @@ import vuetify from '@/ui/vuetify';
 import { LocaleAppKind } from '@api';
 import { asStub } from '../../../../tests/support/stub';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
 /**
  * A server refusal that names the `key` field, as `onResponseReject` hands it on.
  */
-const DUPLICATE_KEY = {
-    success: false,
-    status: 422,
-    message: 'Unprocessable Entity',
-    errors: [
-        {
-            code: 'VALIDATION_ERROR',
-            message: 'Key already exists',
-            details: { field: 'key' },
-            field: 'key'
-        }
-    ]
-};
+const DUPLICATE_KEY = aProblem(422, [
+    {
+        code: 'VALIDATION_ERROR',
+        message: 'Key already exists',
+        details: { field: 'key' },
+        field: 'key'
+    }
+]);
 
 /** Mount options shared by every dialog: real i18n and Vuetify, `VDialog` rendered inline. */
 const GLOBAL = {

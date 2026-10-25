@@ -19,6 +19,7 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -362,12 +363,7 @@ describe('ProfileTwoFactor: changing factors needs a factor', () => {
             backupCodesRemaining: 3
         });
         responses['POST /account/2fa/methods/totp/setup'] = {
-            __reject: {
-                success: false,
-                status: 422,
-                message: 'Unprocessable Entity',
-                errors: [{ code: 'VALIDATION', message: 'That code didn’t work.' }]
-            }
+            __reject: aProblem(422, [{ code: 'VALIDATION', message: 'That code didn’t work.' }])
         };
 
         return flushPromises()

@@ -18,6 +18,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -114,12 +115,9 @@ describe('LinkTokenConfirmCard', () => {
         router.push('/en/verify-email/confirm#token=spent').then(() => {
             const mounted = mountPage(VerifyEmailConfirm, 'confirmEmailVerification');
             const { wrapper, spend } = mounted;
-            spend.mockRejectedValue({
-                success: false,
-                status: 400,
-                message: 'Bad Request',
-                errors: [{ code: 'TOKEN_INVALID', message: 'This link is no longer valid' }]
-            });
+            spend.mockRejectedValue(
+                aProblem(400, [{ code: 'TOKEN_INVALID', message: 'This link is no longer valid' }])
+            );
             const { navigate } = mounted;
             return submit(wrapper).then(() => {
                 expect(wrapper.find('[data-test=verify-email-confirm-error]').exists()).toBe(true);
@@ -160,12 +158,11 @@ describe('LinkTokenConfirmCard', () => {
         it('puts a server error naming the token under the field, not in the alert', () =>
             router.push('/en/account-restore#token=res1').then(() => {
                 const { wrapper, spend } = mountPage(AccountRestore, 'restoreAccount');
-                spend.mockRejectedValue({
-                    success: false,
-                    status: 422,
-                    message: 'Unprocessable',
-                    errors: [{ code: 'VALIDATION', field: 'token', message: 'Malformed token' }]
-                });
+                spend.mockRejectedValue(
+                    aProblem(422, [
+                        { code: 'VALIDATION', field: 'token', message: 'Malformed token' }
+                    ])
+                );
                 return submit(wrapper).then(() => {
                     expect(wrapper.find('[data-test=account-restore-error]').exists()).toBe(false);
                     expect(wrapper.find('.v-messages__message').text()).toContain('Malformed');
@@ -175,12 +172,9 @@ describe('LinkTokenConfirmCard', () => {
         it('blocks the form in place for a refusal that names no field', () =>
             router.push('/en/account-restore#token=res1').then(() => {
                 const { wrapper, spend } = mountPage(AccountRestore, 'restoreAccount');
-                spend.mockRejectedValue({
-                    success: false,
-                    status: 422,
-                    message: 'Unprocessable',
-                    errors: [{ code: 'VALIDATION', message: 'This link is no longer valid' }]
-                });
+                spend.mockRejectedValue(
+                    aProblem(422, [{ code: 'VALIDATION', message: 'This link is no longer valid' }])
+                );
                 return submit(wrapper).then(() => {
                     expect(wrapper.find('[data-test=account-restore-error]').exists()).toBe(true);
                 });

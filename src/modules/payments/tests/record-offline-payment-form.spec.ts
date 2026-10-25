@@ -12,6 +12,7 @@ import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -107,12 +108,9 @@ describe('RecordOfflinePaymentForm', () => {
 
     it('does not emit `recorded` when the API refuses', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue({
-            success: false,
-            status: 409,
-            message: 'in flight',
-            errors: [{ code: 'PAYMENT_IN_FLIGHT', message: 'in flight' }]
-        });
+        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue(
+            aProblem(409, [{ code: 'PAYMENT_IN_FLIGHT', message: 'in flight' }])
+        );
         const wrapper = mountForm();
 
         return wrapper
@@ -125,19 +123,16 @@ describe('RecordOfflinePaymentForm', () => {
 
     it('puts a refusal that names a field on that field, not in the banner', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue({
-            success: false,
-            status: 422,
-            message: 'Unprocessable Entity',
-            errors: [
+        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue(
+            aProblem(422, [
                 {
                     code: 'VALIDATION_ERROR',
                     message: 'Reference already used',
                     details: { field: 'reference' },
                     field: 'reference'
                 }
-            ]
-        });
+            ])
+        );
         const wrapper = mountForm();
 
         return wrapper
@@ -156,12 +151,9 @@ describe('RecordOfflinePaymentForm', () => {
 
     it('blocks the form in place for a refusal that names no field', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue({
-            success: false,
-            status: 409,
-            message: 'in flight',
-            errors: [{ code: 'PAYMENT_IN_FLIGHT', message: 'in flight' }]
-        });
+        vi.spyOn(payments, 'recordOfflinePayment').mockRejectedValue(
+            aProblem(409, [{ code: 'PAYMENT_IN_FLIGHT', message: 'in flight' }])
+        );
         const wrapper = mountForm();
 
         return wrapper

@@ -20,7 +20,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import type { PaymentAttentionItem, RefundListItem } from '@types';
 
 wireModulesIntoCore();
@@ -276,11 +276,9 @@ describe('PaymentsTable', () => {
 
     it('toasts a failed read instead of breaking the page', async () => {
         const store = usePaymentsStore();
-        vi.spyOn(store, 'fetchPaymentsPage').mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server exploded'
-        });
+        vi.spyOn(store, 'fetchPaymentsPage').mockRejectedValue(
+            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Server exploded' }])
+        );
 
         const toast = vi.spyOn(useNotificationsStore(), 'addMessage');
 

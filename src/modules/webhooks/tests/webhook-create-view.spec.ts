@@ -19,6 +19,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import type { WebhookSubscriptionCreated } from '@types';
 import * as schemas from '@api/schemas';
 import { contractRequest } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -191,12 +192,7 @@ describe('WebhookCreate', () => {
 
     it('blocks the form in place when the API refuses the create', () => {
         const { wrapper, create } = mountPage();
-        create.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        create.mockRejectedValue(aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }]));
 
         return fillAndSubmit(wrapper, 'https://hooks.example.com/in').then(() => {
             expect(wrapper.find('[data-test=webhook-create-error]').exists()).toBe(true);

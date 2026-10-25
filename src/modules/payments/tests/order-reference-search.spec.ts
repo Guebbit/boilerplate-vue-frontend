@@ -12,6 +12,7 @@ import OrderReferenceSearch from '../components/OrderReferenceSearch.vue';
 import { usePaymentsStore } from '../store.ts';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 /** Mounts the reference search with the real i18n and Vuetify. */
 const mountSearch = () =>
@@ -99,12 +100,9 @@ describe('OrderReferenceSearch', () => {
 
     it('blocks inline, not with a toast, on a real failure', () => {
         const payments = usePaymentsStore();
-        vi.spyOn(payments, 'findOrderIdByReference').mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Server error',
-            errors: [{ code: 'INTERNAL', message: 'Server error' }]
-        });
+        vi.spyOn(payments, 'findOrderIdByReference').mockRejectedValue(
+            aProblem(500, [{ code: 'INTERNAL', message: 'Server error' }])
+        );
         const wrapper = mountSearch();
 
         return wrapper

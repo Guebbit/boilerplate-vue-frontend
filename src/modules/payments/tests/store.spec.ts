@@ -14,7 +14,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { usePaymentsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import { aPayment } from '../../../../tests/support/unit/fixtures.ts';
+import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
@@ -47,7 +47,7 @@ let responses: Record<string, unknown>;
  */
 const rejectWith = (status: number, message: string, code = 'STUB_ERROR') =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({ success: false, status, message, errors: [{ code, message }] });
+    Promise.reject(aProblem(status, [{ code, message }]));
 
 /**
  * A stubbed API-level refusal — `{ status, code, message }` — distinct from `Error`, which stubs

@@ -20,6 +20,7 @@ import {
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 import * as schemas from '@api/schemas';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -185,17 +186,13 @@ describe('the enrollment machine', () => {
 
     it('a 429 resend-too-soon rejection still reaches the caller, but starts the cooldown first', () => {
         responses['POST /account/2fa/methods/email/setup'] = {
-            __reject: {
-                success: false,
-                status: 429,
-                errors: [
-                    {
-                        code: 'TWO_FACTOR_RESEND_TOO_SOON',
-                        message: 'wait',
-                        details: { retryAfter: 12 }
-                    }
-                ]
-            }
+            __reject: aProblem(429, [
+                {
+                    code: 'TWO_FACTOR_RESEND_TOO_SOON',
+                    message: 'wait',
+                    details: { retryAfter: 12 }
+                }
+            ])
         };
         const store = useTwoFactorStore();
         return expect(store.setupMethod('email'))
@@ -211,11 +208,7 @@ describe('the enrollment machine', () => {
 
     it('a rejection with no retryAfter leaves the cooldown untouched', () => {
         responses['POST /account/2fa/methods/email/setup'] = {
-            __reject: {
-                success: false,
-                status: 400,
-                errors: [{ code: 'INVALID_METHOD', message: 'nope' }]
-            }
+            __reject: aProblem(400, [{ code: 'INVALID_METHOD', message: 'nope' }])
         };
         const store = useTwoFactorStore();
         return expect(store.setupMethod('email'))
@@ -408,17 +401,13 @@ describe('the login-time challenge', () => {
         const store = useTwoFactorStore();
         store.beginLoginChallenge(MFA_OUTCOME, false);
         responses['POST /account/login/2fa/send'] = {
-            __reject: {
-                success: false,
-                status: 429,
-                errors: [
-                    {
-                        code: 'TWO_FACTOR_RESEND_TOO_SOON',
-                        message: 'wait',
-                        details: { retryAfter: 20 }
-                    }
-                ]
-            }
+            __reject: aProblem(429, [
+                {
+                    code: 'TWO_FACTOR_RESEND_TOO_SOON',
+                    message: 'wait',
+                    details: { retryAfter: 20 }
+                }
+            ])
         };
         return expect(store.sendLoginCode('email'))
             .rejects.toMatchObject({ errors: [{ code: 'TWO_FACTOR_RESEND_TOO_SOON' }] })

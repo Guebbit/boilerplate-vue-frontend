@@ -17,6 +17,7 @@ import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@api';
 import * as schemas from '@api/schemas';
 import { useAdminObservability } from '../composables/use-admin-observability';
 import { contractResponse } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 /**
  * A readiness report as `GET /observability/health` declares it — typed, so a required field the
@@ -68,12 +69,8 @@ vi.mock('@api', () => ({
  * a plain object, never an `Error`. Rejecting with anything else here would let a composable that
  * reads its message off `instanceof Error` pass while showing its fallback to every user.
  */
-const apiFailure = (status: number, message: string) => ({
-    success: false,
-    status,
-    message,
-    errors: [{ code: 'STUB_ERROR', message }]
-});
+const apiFailure = (status: number, message: string) =>
+    aProblem(status, [{ code: 'STUB_ERROR', message }]);
 
 describe('useAdminObservability', () => {
     beforeEach(() => {

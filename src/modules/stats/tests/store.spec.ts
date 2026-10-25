@@ -14,6 +14,7 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -46,7 +47,9 @@ vi.mock('@/infrastructure/http', () => ({
         const answer = responses[key];
         if (answer === undefined)
             // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-            return Promise.reject({ success: false, status: 404, message: `Not found: ${key}` });
+            return Promise.reject(
+                aProblem(404, [{ code: 'NOT_FOUND', message: `Not found: ${key}` }])
+            );
         return Promise.resolve(parseOrvalFixture(config.method, config.url, answer));
     })
 }));

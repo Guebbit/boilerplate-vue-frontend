@@ -17,6 +17,7 @@ import {
     orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -53,12 +54,9 @@ vi.mock('@/infrastructure/http', () => ({
         // reads `status` off it to tell "no payment yet" from a real failure.
         if (!(key in responses))
             // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-            return Promise.reject({
-                success: false,
-                status: 404,
-                message: `no stub for ${key}`,
-                errors: [{ code: 'NOT_FOUND', message: `no stub for ${key}` }]
-            });
+            return Promise.reject(
+                aProblem(404, [{ code: 'NOT_FOUND', message: `no stub for ${key}` }])
+            );
         return Promise.resolve(parseOrvalFixture(config.method, config.url, responses[key]));
     })
 }));

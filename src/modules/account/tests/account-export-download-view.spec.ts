@@ -16,6 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
+import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
 
@@ -87,12 +88,9 @@ describe('AccountExportDownload', () => {
 
     it('blocks in place, with a hint, when the export is gone — and saves nothing', () => {
         const { wrapper, download } = mountPage();
-        download.mockRejectedValue({
-            success: false,
-            status: 404,
-            message: 'Not Found',
-            errors: [{ code: 'NOT_FOUND', message: 'Export not found.' }]
-        });
+        download.mockRejectedValue(
+            aProblem(404, [{ code: 'NOT_FOUND', message: 'Export not found.' }])
+        );
 
         return wrapper
             .get('[data-test=account-export-download]')
@@ -110,12 +108,9 @@ describe('AccountExportDownload', () => {
 
     it('keeps the "kept for a few days" hint to a 404: a server failure is not an expired export', () => {
         const { wrapper, download } = mountPage();
-        download.mockRejectedValue({
-            success: false,
-            status: 500,
-            message: 'Internal Server Error',
-            errors: [{ code: 'INTERNAL_ERROR', message: 'Something broke.' }]
-        });
+        download.mockRejectedValue(
+            aProblem(500, [{ code: 'INTERNAL_ERROR', message: 'Something broke.' }])
+        );
 
         return wrapper
             .get('[data-test=account-export-download]')
