@@ -52,7 +52,7 @@ vi.mock('@/infrastructure/http', () => ({
     )
 }));
 
-/** An inactive language, so its deletion is the single `removeLanguage` call. */
+/** A language to delete: the single `removeLanguage` call, whatever its on/off state. */
 const SPANISH: LocaleCapability = {
     tag: 'es',
     name: 'Spanish',

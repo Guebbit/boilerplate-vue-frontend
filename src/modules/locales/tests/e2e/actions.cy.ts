@@ -31,7 +31,8 @@ actionTable('locales', [
         persona: 'editor',
         route: '/en/locales',
         trigger: () => {
-            cy.get('[data-test=row-delete]').last().click();
+            // Pinned to `ja`: any other row could be a live seeded language.
+            cy.get('[data-language=ja] [data-test=row-delete]').click();
             cy.get('[data-test=app-dialog-confirm]').click();
         },
         intercept: { method: 'DELETE', url: '**/locales/*', operation: '/locales/{locale}' },

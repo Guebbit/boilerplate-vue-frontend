@@ -186,7 +186,7 @@ flowchart TD
 | Concern                                       | File                                                                                                      |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | The widget itself                             | `src/ui/organisms/HumanCheck.vue`                                                                         |
-| Header attach + 401 detection                 | `src/infrastructure/http/antibot.ts`                                                                      |
+| Header attach + 403 detection                 | `src/infrastructure/http/antibot.ts`                                                                      |
 | Always-guarded forms (signup, reset, contact) | Mount `<HumanCheck>` unconditionally                                                                      |
 | Conditionally-guarded forms (login, payment)  | Mount `<HumanCheck>` only after `ANTIBOT_VERIFICATION_FAILED`, then let the visitor retry the same submit |
 

@@ -77,7 +77,7 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
         cy.get('[data-test=human-check-altcha]').should('exist');
         cy.get('[data-test=password-reset-email] input').type(OWNER.email);
         cy.get('form').submit();
-        cy.wait('@reset').its('response.statusCode').should('equal', 401);
+        cy.wait('@reset').its('response.statusCode').should('equal', 403);
         cy.get('[data-test=password-reset-request-error]').should('be.visible');
 
         cy.step('solved, the same request is accepted');
@@ -91,7 +91,7 @@ describe('AC18 · A bot-shaped login meets the human check', () => {
         cy.visit('/en/signup');
         cy.get('[data-test=human-check-altcha]').should('exist');
         fillSignupForm(NEWCOMER.email, NEWCOMER.password);
-        cy.wait('@signup').its('response.statusCode').should('equal', 401);
+        cy.wait('@signup').its('response.statusCode').should('equal', 403);
         cy.get('[data-test=signup-error]').should('be.visible');
         cy.location('pathname').should('equal', '/en/signup');
 

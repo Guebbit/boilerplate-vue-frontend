@@ -77,8 +77,8 @@ confirmed role/status choice into a `PATCH` and an `activate` / `deactivate` cal
 different schema, `Account`, with no `actions`.
 
 `UserTarget` also pauses and resumes an account's checkout (the **purchase hold**, `ban:User`): "Pause
-checkout" opens `UserPurchaseHoldDialog` (an end date and a note the buyer reads), "Lift the hold" asks
-first and doubles as the staff review. The list filters by it (`purchaseHold`, `true` only) and marks
+checkout" opens `UserPurchaseHoldDialog` (an end date and a note the buyer reads), "Lift the hold" acts at
+once (a toast says what happened) and doubles as the staff review. The list filters by it (`purchaseHold`, `true` only) and marks
 the rows. The buyer's side is `account`'s `PurchaseHoldNotice`, mounted by the cart.
 
 `UserTarget` (`views/User.vue`) also carries the one deliberate exception to "prove the factor to

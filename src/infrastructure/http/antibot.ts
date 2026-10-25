@@ -4,7 +4,7 @@
  * `HumanCheck.vue` itself makes — no domain module owns rung 3, so this is where they live rather
  * than in a component (`no-restricted-imports` bars `.vue` files from calling `@api` directly).
  * `withAntibotToken` attaches a solved token to a request's headers, and
- * `isAntibotVerificationFailed` detects the 401 that means "show the widget and let the visitor
+ * `isAntibotVerificationFailed` detects the 403 that means "show the widget and let the visitor
  * retry the same submit." See the paired backend's
  * `src/infrastructure/http/middlewares/human-challenge.ts`.
  */

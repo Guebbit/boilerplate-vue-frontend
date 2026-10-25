@@ -209,6 +209,16 @@ describe('the purchase hold', () => {
             });
     });
 
+    it('renders the hold line cleanly when the hold has no note', () => {
+        signIn(false);
+        const wrapper = mountUser(HELD);
+
+        const line = wrapper.get('[data-test=user-purchase-hold]').text();
+        expect(line).toContain('set ');
+        expect(line).not.toContain('Note');
+        expect(line).not.toContain('undefined');
+    });
+
     it('shows the hold note and when it was set, so staff see what a lift drops', () => {
         signIn(false);
         const wrapper = mountUser({
