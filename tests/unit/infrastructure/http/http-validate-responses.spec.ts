@@ -88,6 +88,40 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
+    /**
+     * A refusal arrives as `application/problem+json` (RFC 9457). The request must say it accepts
+     * that type, and the body must reach the caller as the parsed problem, not as a string.
+     */
+    it('asks for problem+json and rejects with the parsed problem a server sends', () => {
+        let accept: string | null = null;
+        server.use(
+            http.get(`${API}/account`, ({ request }) => {
+                accept = request.headers.get('accept');
+                return new HttpResponse(
+                    JSON.stringify({
+                        type: 'about:blank',
+                        title: 'Not Found',
+                        status: 404,
+                        detail: 'No such account',
+                        errors: [{ code: 'NOT_FOUND', message: 'No such account' }]
+                    }),
+                    { status: 404, headers: { 'content-type': 'application/problem+json' } }
+                );
+            })
+        );
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
+                    status: 404,
+                    detail: 'No such account',
+                    errors: [{ code: 'NOT_FOUND', message: 'No such account' }]
+                })
+            )
+            .then(() => {
+                expect(accept).toContain('application/problem+json');
+            });
+    });
+
     it('resolves a 204 to undefined instead of failing its contract check', () => {
         server.use(
             http.post(`${API}/analytics/events`, () => new HttpResponse(null, { status: 204 }))
@@ -133,7 +167,7 @@ describe('orvalMutator contract validation', () => {
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
-                success: false,
+                type: 'about:blank',
                 status: 0,
                 errors: [{ code: 'CONTRACT_MISMATCH' }]
             })

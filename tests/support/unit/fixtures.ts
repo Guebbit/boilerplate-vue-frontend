@@ -5,8 +5,10 @@
  * compile error in every spec at once — rather than a hand-typed `{ id, totalPrice }` that only
  * fails when something finally parses it.
  */
+import { STATUS_CODES } from 'node:http';
 import type {
     Account,
+    ErrorItem,
     FulfillmentOrder,
     InventoryLevel,
     Order,
@@ -15,6 +17,7 @@ import type {
     PreorderFulfillmentOrder,
     PreorderLevel,
     PreorderProductSummary,
+    Problem,
     Product,
     Return,
     Shipment,
@@ -364,4 +367,35 @@ export const aShop = (overrides: Partial<Shop> = {}): Shop => ({
     termsVersion: '1',
     backorderPromiseDays: 30,
     ...overrides
+});
+
+/** One error item as a spec writes it; `field` is the key `onResponseReject` lifts for the forms. */
+type ProblemItem = ErrorItem & { field?: string };
+
+/** The RFC 9110 names Node's `STATUS_CODES` still has under their older spelling. */
+const CURRENT_TITLES: Record<number, string> = {
+    413: 'Content Too Large',
+    422: 'Unprocessable Content'
+};
+
+/**
+ * The problem details an answered failure rejects with (RFC 9457), as the HTTP layer hands them to
+ * a catch. One builder for every spec, typed on the generated `Problem`, so a member the contract
+ * adds or requires is a compile error here and not a drift nobody sees.
+ *
+ * @param status - The HTTP status the server answered with.
+ * @param errors - The `errors` items; the first one's message is the `detail` unless one is given.
+ * @param detail - The summary sentence, when a spec needs one that differs from the first item's.
+ * @returns The rejection value.
+ */
+export const aProblem = (
+    status: number,
+    errors: ProblemItem[],
+    detail: string = errors[0]?.message ?? ''
+): Problem => ({
+    type: 'about:blank',
+    title: CURRENT_TITLES[status] ?? STATUS_CODES[status] ?? 'Error',
+    status,
+    detail,
+    errors
 });

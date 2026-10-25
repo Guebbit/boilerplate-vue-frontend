@@ -16,6 +16,14 @@
  * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
  * `GET /locales` lists what a deployment offers.
  *
+ * Errors: every 4xx and 5xx answers RFC 9457 problem details as `application/problem+json`,
+ * whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
+ * phrase), `status`, `detail` (the translated sentence), `instance` (`urn:uuid:` and the
+ * request id) and the `errors` extension, whose `code` is the machine key. That includes the
+ * answers no operation declares: a path that matches nothing (404) and a method a path does
+ * not offer (405, with `Allow`). The few non-JSON answers (probes, the Prometheus text,
+ * `security.txt`) are named on their own operations.
+ *
  * The header is intentionally not declared per operation: it applies to all of them and
  * clients set it once in an interceptor, so declaring it on every operation would only add a
  * redundant argument to every generated function. This paragraph is its contract.
@@ -155,25 +163,32 @@ export interface ErrorItem {
     details?: ErrorItemDetails;
 }
 
-export interface ErrorResponse {
-    success: false;
-    status: number;
-    /** Human-readable summary for this failure */
-    message: string;
-    /**
-     * Structured machine-friendly errors
-     * @minItems 1
-     */
-    errors: ErrorItem[];
-}
+/**
+ * Always `about:blank` (RFC 9457 section 4.2.1): the status says what happened. The machine key is `errors[].code`, never a URI per code.
+ */
+export type ProblemType = (typeof ProblemType)[keyof typeof ProblemType];
 
-export interface ValidationErrorResponse {
-    success: false;
-    status: number;
-    /** Human-readable summary for this failure */
-    message: string;
+export const ProblemType = {
+    'about:blank': 'about:blank'
+} as const;
+
+export interface Problem {
+    /** Always `about:blank` (RFC 9457 section 4.2.1): the status says what happened. The machine key is `errors[].code`, never a URI per code. */
+    type: ProblemType;
+    /** The English RFC 9110 phrase for `status` (`Not Found`, `Content Too Large`). Never translated. */
+    title: string;
     /**
-     * Structured machine-friendly errors
+     * The HTTP status, repeated so it survives a proxy that rewrites the status line.
+     * @minimum 400
+     * @maximum 599
+     */
+    status: number;
+    /** The sentence a user may read, in the request's language (`Accept-Language`): the one error's message, or the status's generic text when there are several. */
+    detail: string;
+    /** `urn:uuid:` and the request id, the id `x-request-id` carries. Quote it in a support request; it identifies this occurrence, never a URL. */
+    instance?: string;
+    /**
+     * Structured machine-friendly errors; branch on `code`, never on `message`.
      * @minItems 1
      */
     errors: ErrorItem[];
@@ -6376,57 +6391,62 @@ export type SuccessResponse = MessageResponse;
 /**
  * The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it.
  */
-export type BadRequestResponse = ErrorResponse;
+export type BadRequestResponse = Problem;
 
 /**
  * Unauthorized
  */
-export type UnauthorizedResponse = ErrorResponse;
+export type UnauthorizedResponse = Problem;
 
 /**
  * Forbidden
  */
-export type ForbiddenResponse = ErrorResponse;
+export type ForbiddenResponse = Problem;
 
 /**
  * Resource not found
  */
-export type NotFoundResponse = ErrorResponse;
+export type NotFoundResponse = Problem;
 
 /**
  * The request conflicts with the current state of the resource
  */
-export type ConflictResponse = ErrorResponse;
+export type ConflictResponse = Problem;
 
 /**
  * The request's `If-Match` no longer matches the stored resource: it was changed (or removed) after the caller read it. Nothing was written. Read it again, reapply the edit, and resend with the new `ETag`.
  */
-export type PreconditionFailedResponse = ErrorResponse;
+export type PreconditionFailedResponse = Problem;
+
+/**
+ * Validation failed
+ */
+export type ValidationErrorResponse = Problem;
 
 /**
  * The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
  */
-export type PayloadTooLargeResponse = ErrorResponse;
+export type PayloadTooLargeResponse = Problem;
 
 /**
  * The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
  */
-export type UnsupportedMediaTypeResponse = ErrorResponse;
+export type UnsupportedMediaTypeResponse = Problem;
 
 /**
  * The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
  */
-export type TooManyRequestsResponse = ErrorResponse;
+export type TooManyRequestsResponse = Problem;
 
 /**
  * A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from.
  */
-export type ServiceUnavailableResponse = ErrorResponse;
+export type ServiceUnavailableResponse = Problem;
 
 /**
  * Internal server error
  */
-export type InternalErrorResponse = ErrorResponse;
+export type InternalErrorResponse = Problem;
 
 export type PageParamParameter = Page;
 

@@ -16,6 +16,14 @@
  * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
  * `GET /locales` lists what a deployment offers.
  *
+ * Errors: every 4xx and 5xx answers RFC 9457 problem details as `application/problem+json`,
+ * whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
+ * phrase), `status`, `detail` (the translated sentence), `instance` (`urn:uuid:` and the
+ * request id) and the `errors` extension, whose `code` is the machine key. That includes the
+ * answers no operation declares: a path that matches nothing (404) and a method a path does
+ * not offer (405, with `Allow`). The few non-JSON answers (probes, the Prometheus text,
+ * `security.txt`) are named on their own operations.
+ *
  * The header is intentionally not declared per operation: it applies to all of them and
  * clients set it once in an interceptor, so declaring it on every operation would only add a
  * redundant argument to every generated function. This paragraph is its contract.

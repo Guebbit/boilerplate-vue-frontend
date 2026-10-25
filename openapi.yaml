@@ -22,6 +22,14 @@ info:
     answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
     `GET /locales` lists what a deployment offers.
 
+    Errors: every 4xx and 5xx answers RFC 9457 problem details as `application/problem+json`,
+    whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
+    phrase), `status`, `detail` (the translated sentence), `instance` (`urn:uuid:` and the
+    request id) and the `errors` extension, whose `code` is the machine key. That includes the
+    answers no operation declares: a path that matches nothing (404) and a method a path does
+    not offer (405, with `Allow`). The few non-JSON answers (probes, the Prometheus text,
+    `security.txt`) are named on their own operations.
+
     The header is intentionally not declared per operation: it applies to all of them and
     clients set it once in an interceptor, so declaring it on every operation would only add a
     redundant argument to every generated function. This paragraph is its contract.
@@ -171,7 +179,7 @@ paths:
               schema:
                 type: string
         "404":
-          description: This deployment has not published a disclosure contact.
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "503":
@@ -1217,15 +1225,22 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          x-not-problem: true
+          description: "The registry could not be read. Prometheus text, not a problem body: a scraper parses the exposition format only."
+          content:
+            text/plain:
+              schema:
+                type: string
         "503":
           description: |
             No metrics token is configured. The endpoint denies by default rather
             than opening: an unauthenticated metrics endpoint is not a state to arrive
             at by forgetting an environment variable.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Problem"
       x-module: observability
   /observability/metrics/overview:
     get:
@@ -3346,9 +3361,9 @@ paths:
         "400":
           description: Missing or mismatched CSRF state
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Problem"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -7330,9 +7345,9 @@ paths:
         "409":
           description: The correction would leave fewer units than are already reserved
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/Problem"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "415":
@@ -10590,6 +10605,12 @@ components:
       description: "The resource's current version as a strong entity-tag (RFC 9110 §8.8.3). Send it back as `If-Match` on `PUT`, `PATCH` or `DELETE` to refuse the write if someone else changed the resource in between. Opaque: compare it, never parse it. It validates writes only — a read never answers `304` from it."
       schema:
         type: string
+    Retry-After:
+      required: true
+      description: How long to wait before trying again, in whole seconds (RFC 9110 §10.2.3). A `429` carries the time until the budget resets; a `503` carries a rough hint, not a promise.
+      schema:
+        type: integer
+        minimum: 0
     WWW-Authenticate:
       required: true
       description: "The challenge a 401 carries (RFC 9110 §11.6.1, §15.5.2; RFC 6750 §3): which scheme the API takes (`Bearer realm=\"api\"`), or, where a guard knows more, why the credential was refused (`error=\"invalid_token\"`, or `error=\"insufficient_user_authentication\"` with a `max_age` for a step-up). A generic HTTP client reads this; this app's own clients read `errors[].code` and never the header."
@@ -10605,78 +10626,84 @@ components:
     BadRequest:
       description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     Unauthorized:
       description: Unauthorized
       headers:
         WWW-Authenticate:
           $ref: "#/components/headers/WWW-Authenticate"
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     Forbidden:
       description: Forbidden
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     NotFound:
       description: Resource not found
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     Conflict:
       description: The request conflicts with the current state of the resource
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     PreconditionFailed:
       description: "The request's `If-Match` no longer matches the stored resource: it was changed (or removed) after the caller read it. Nothing was written. Read it again, reapply the edit, and resend with the new `ETag`."
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     ValidationError:
       description: Validation failed
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ValidationErrorResponse"
+            $ref: "#/components/schemas/Problem"
     PayloadTooLarge:
       description: The request body is larger than this deployment accepts (`NODE_JSON_BODY_LIMIT`, 100kb by default; multipart uploads are bounded separately by `NODE_MAX_UPLOAD_BYTES`). Refused by the body parser before any route runs, which is why it is declared for every body-accepting operation rather than by hand.
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     UnsupportedMediaType:
       description: The body's media type is not one the operation declares (`details.accepted` lists them), or its charset or encoding cannot be read. Refused before any route runs, like `413` above. A request with no body is never judged. A `DELETE` that declares no body refuses any body, and `details.accepted` is then empty.
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     TooManyRequests:
       description: The caller has spent a rate-limit budget and must wait. The wait is in the standard `RateLimit`/`Retry-After` headers, and — where the endpoint has a budget of its own to report, like a resend cooldown — in the error `details` too.
+      headers:
+        Retry-After:
+          $ref: "#/components/headers/Retry-After"
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     ServiceUnavailable:
       description: "A dependency the request needed (Mongo, Redis) is unreachable right now — the SERVER is temporarily unable, not the request refused (RFC 9110 §15.6.4). Every route can answer this: `getAuth` for any bearer request, or a controller's own database call. The `Retry-After` header carries a rough wait hint, a few seconds, not a promise — there is no queue depth or circuit-breaker state to compute a real one from."
+      headers:
+        Retry-After:
+          $ref: "#/components/headers/Retry-After"
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
     InternalError:
       description: Internal server error
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/Problem"
   schemas:
     Page:
       type: integer
@@ -10812,55 +10839,45 @@ components:
           type: object
           additionalProperties: true
           description: "Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input."
-    ErrorResponse:
+    Problem:
       type: object
       additionalProperties: false
       required:
-        - success
+        - type
+        - title
         - status
-        - message
+        - detail
         - errors
       properties:
-        success:
-          type: boolean
+        type:
+          type: string
           enum:
-            - false
+            - about:blank
+          description: "Always `about:blank` (RFC 9457 section 4.2.1): the status says what happened. The machine key is `errors[].code`, never a URI per code."
+        title:
+          type: string
+          description: The English RFC 9110 phrase for `status` (`Not Found`, `Content Too Large`). Never translated.
+          example: Not Found
         status:
           type: integer
-        message:
+          minimum: 400
+          maximum: 599
+          description: The HTTP status, repeated so it survives a proxy that rewrites the status line.
+        detail:
           type: string
-          description: Human-readable summary for this failure
+          description: "The sentence a user may read, in the request's language (`Accept-Language`): the one error's message, or the status's generic text when there are several."
+          example: The requested order was not found
+        instance:
+          type: string
+          format: uri-reference
+          description: "`urn:uuid:` and the request id, the id `x-request-id` carries. Quote it in a support request; it identifies this occurrence, never a URL."
+          example: urn:uuid:5b0c9a1e-7a3d-4a3e-9c53-0d6b5d5c2e11
         errors:
           type: array
           minItems: 1
           items:
             $ref: "#/components/schemas/ErrorItem"
-          description: Structured machine-friendly errors
-    ValidationErrorResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - errors
-      properties:
-        success:
-          type: boolean
-          enum:
-            - false
-        status:
-          type: integer
-        message:
-          type: string
-          description: Human-readable summary for this failure
-          example: Validation failed
-        errors:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/ErrorItem"
-          description: Structured machine-friendly errors
+          description: Structured machine-friendly errors; branch on `code`, never on `message`.
     UserEnvelope:
       type: object
       additionalProperties: false

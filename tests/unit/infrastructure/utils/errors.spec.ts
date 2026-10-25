@@ -266,6 +266,31 @@ describe('getErrorMessage', () => {
         expect(getErrorMessage(error)).toBe('Forbidden');
     });
 
+    it("reads the problem's translated detail when no item has a message", () => {
+        expect(
+            getErrorMessage({ title: 'Forbidden', detail: 'Not yours', errors: [{ code: 'X' }] })
+        ).toBe('Not yours');
+    });
+
+    it("prefers the first item's message over the detail, and never shows the English title", () => {
+        expect(
+            getErrorMessage({
+                title: 'Unprocessable Content',
+                detail: 'Several things are wrong',
+                errors: [{ code: 'X', message: 'The email is taken' }]
+            })
+        ).toBe('The email is taken');
+        expect(getErrorMessage({ title: 'Unprocessable Content', errors: [{ code: 'X' }] })).toBe(
+            enMessages['api-errors'].unknown
+        );
+    });
+
+    it('uses the caller fallback when nothing is readable, as a useAsyncAction resolver does', () => {
+        expect(getErrorMessage({ errors: [] }, 'Could not load the audit trail')).toBe(
+            'Could not load the audit trail'
+        );
+    });
+
     it('falls back to the generic wording when nothing is readable', () => {
         expect(getErrorMessage({ errors: [] })).toBe(enMessages['api-errors'].unknown);
     });

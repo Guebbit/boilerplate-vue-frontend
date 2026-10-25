@@ -16,6 +16,7 @@ import {
 } from '@/infrastructure/observability/store.ts';
 import type { TransportItem } from '@grafana/faro-web-sdk';
 import { asStub } from '../../../support/stub.ts';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 /** The `faro.api` surface this store calls, spied so each call can be asserted. */
 const faroApi = {
@@ -525,15 +526,12 @@ describe('captureException, once Faro is up', () => {
      * this is the one case `captureException` must NOT collapse into the same unreadable,
      * ungroupable `Error: [object Object]` every other unrecognised value gets.
      */
-    describe('given an API rejection envelope', () => {
+    describe('given an API rejection (problem details)', () => {
         it('names the error by status, code, method and path', async () => {
             const store = useObservabilityStore();
             await store.initFaro();
             store.captureException({
-                success: false,
-                status: 401,
-                message: 'nope',
-                errors: [{ code: 'UNAUTHORIZED', message: 'nope' }],
+                ...aProblem(401, [{ code: 'UNAUTHORIZED', message: 'nope' }]),
                 method: 'GET',
                 path: '/account'
             });
@@ -545,7 +543,10 @@ describe('captureException, once Faro is up', () => {
         it('omits pieces the envelope did not carry, rather than leaving gaps', async () => {
             const store = useObservabilityStore();
             await store.initFaro();
-            store.captureException({ success: false, status: 0, message: 'offline', errors: [] });
+            store.captureException({
+                ...aProblem(0, [{ code: 'NETWORK_ERROR', message: 'offline' }]),
+                errors: []
+            });
 
             const [pushed] = faroApi.pushError.mock.calls[0] as [Error];
             expect(pushed.message).toBe('HTTP 0');
@@ -556,10 +557,7 @@ describe('captureException, once Faro is up', () => {
             await store.initFaro();
             store.captureException(
                 {
-                    success: false,
-                    status: 500,
-                    message: 'boom',
-                    errors: [{ code: 'INTERNAL' }],
+                    ...aProblem(500, [{ code: 'INTERNAL', message: 'boom' }]),
                     requestId: 'req-1',
                     traceparent: '00-abc-def-01'
                 },

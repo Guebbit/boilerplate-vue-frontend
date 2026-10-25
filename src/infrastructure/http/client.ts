@@ -18,7 +18,8 @@ import { readApiUrl, runtimeValue } from '@/infrastructure/runtime-config';
  */
 export const instance = axiosClient.create({
     headers: {
-        Accept: 'application/json',
+        // Success is JSON; every refusal is `application/problem+json` (RFC 9457). axios parses both.
+        Accept: 'application/json, application/problem+json',
         'Content-Type': 'application/json; charset=utf-8'
     },
     withCredentials: true,

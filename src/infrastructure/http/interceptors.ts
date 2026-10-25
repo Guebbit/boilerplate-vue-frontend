@@ -13,6 +13,7 @@ import {
 } from '@/infrastructure/analytics-consent.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { toPathname } from './url.ts';
+import { syntheticProblem } from './problem.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { AxiosRequestData, AxiosResponseErrorBody, AxiosResponseErrorData } from './types.ts';
 
@@ -38,13 +39,17 @@ const getFallbackMessage = (status: number, fallback: string) => {
 };
 
 /**
- * Stable `code` for a synthesized {@link ErrorItem}, when the server sent no `errors` field of
- * its own to preserve. Only 401/403 get a code — those are the only fallback statuses that build one.
+ * Stable `code` for a synthesized error item, when the server sent no `errors` field of
+ * its own to preserve. 401/403 get their own; any other status is the generic client or server code.
  *
  * @param status - HTTP status code of the response.
  * @returns A code matching this client's own vocabulary, not the API's.
  */
-const getFallbackErrorCode = (status: number) => (status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN');
+const getFallbackErrorCode = (status: number) => {
+    if (status === 401) return 'UNAUTHORIZED';
+    if (status === 403) return 'FORBIDDEN';
+    return status >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR';
+};
 
 /**
  * axios's own classification of a request that never got an answer — offline, a timeout, a
@@ -135,7 +140,7 @@ const withFieldLifted = (item: unknown): unknown => {
 };
 
 /**
- * Response error normalizer: every rejection reaches a call site in the same envelope.
+ * Response error normalizer: every rejection reaches a call site as the same problem details.
  *
  * A response that already carries the standard `errors` field passes through, enriched with the
  * backend correlation header (`x-request-id` → requestId), the W3C trace context
@@ -146,7 +151,7 @@ const withFieldLifted = (item: unknown): unknown => {
  *
  * @param error - Axios error, with or without a response.
  * @returns A promise that never resolves; it always rejects with an
- *  {@link AxiosResponseErrorData} envelope.
+ *  {@link AxiosResponseErrorData} problem.
  */
 export const onResponseReject = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
@@ -164,7 +169,7 @@ export const onResponseReject = (
 
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
         const { errors } = error.response.data;
-        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's problem details are this client's rejection contract; every catch downstream destructures them
         return Promise.reject({
             ...error.response.data,
             ...(Array.isArray(errors) && { errors: errors.map((item) => withFieldLifted(item)) }),
@@ -181,10 +186,7 @@ export const onResponseReject = (
         // Never a 5xx-worthy `logger.debug` below: nothing HERE answered at all.
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
         return Promise.reject({
-            success: false,
-            status: 0,
-            message,
-            errors: [{ code, message }],
+            ...syntheticProblem(0, 'Network Error', code, message),
             ...correlation
         });
     }
@@ -198,15 +200,9 @@ export const onResponseReject = (
 
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
     return Promise.reject({
-        success: false,
-        status,
-        message,
         // No `errors` field arrived (a bare proxy error, an empty body) — synthesize the
-        // structured shape callers rely on rather than leaving it empty.
-        errors:
-            status === 401 || status === 403
-                ? [{ code: getFallbackErrorCode(status), message }]
-                : [],
+        // structured shape callers rely on, with the one item the contract requires.
+        ...syntheticProblem(status, statusText || 'Error', getFallbackErrorCode(status), message),
         ...correlation
     });
 };

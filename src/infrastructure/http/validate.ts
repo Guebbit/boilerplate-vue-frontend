@@ -14,6 +14,7 @@ import {
     resolveRequestSchema,
     resolveResponseSchema
 } from './response-schema-map.ts';
+import { syntheticProblem } from './problem.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type { AxiosResponseErrorData } from './types.ts';
 
@@ -124,12 +125,12 @@ export const validateResponseAgainstContract = (
     const message = translate('api-errors.unknown');
 
     // eslint-disable-next-line @typescript-eslint/only-throw-error -- the envelope IS this client's rejection contract; every catch downstream destructures it, same as `onResponseReject`
-    throw {
-        success: false,
-        status: 0,
-        message,
-        errors: [{ code: 'CONTRACT_MISMATCH', message }]
-    } satisfies AxiosResponseErrorData;
+    throw syntheticProblem(
+        0,
+        'Contract Mismatch',
+        'CONTRACT_MISMATCH',
+        message
+    ) satisfies AxiosResponseErrorData;
 };
 
 /**

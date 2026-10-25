@@ -34,7 +34,7 @@ export const sendKeepalive = (
         credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
-            Accept: 'application/json',
+            Accept: 'application/json, application/problem+json',
             // `cookie` mode has no token: `credentials: 'include'` carries the session cookie.
             ...(accessToken.value && { Authorization: `Bearer ${accessToken.value}` }),
             'Accept-Language': getCurrentLocale()

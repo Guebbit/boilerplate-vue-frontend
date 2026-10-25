@@ -154,13 +154,13 @@ const stripEventUrls = (payload: EventPayload): void => {
 
 /**
  * The shape `onResponseReject` (`http/interceptors.ts`) rejects every failed request with — the
- * one this app's stores actually catch and hand to {@link captureException}. Narrowed by its two
- * always-present fields, `success`/`status`, so an arbitrary thrown object never matches it.
+ * one this app's stores actually catch and hand to {@link captureException}: RFC 9457 problem
+ * details. Narrowed by its always-present `status` number and `errors` array, so an arbitrary
+ * thrown object never matches it.
  */
 interface ApiRejectEnvelope {
-    success: false;
     status: number;
-    errors?: { code?: unknown }[];
+    errors: { code?: unknown }[];
     requestId?: string;
     traceparent?: string;
     method?: string;
@@ -175,8 +175,8 @@ interface ApiRejectEnvelope {
 const asApiRejectEnvelope = (error: unknown): ApiRejectEnvelope | undefined =>
     typeof error === 'object' &&
     error !== null &&
-    (error as { success?: unknown }).success === false &&
-    typeof (error as { status?: unknown }).status === 'number'
+    typeof (error as { status?: unknown }).status === 'number' &&
+    Array.isArray((error as { errors?: unknown }).errors)
         ? (error as ApiRejectEnvelope)
         : undefined;
 
@@ -189,7 +189,7 @@ const asApiRejectEnvelope = (error: unknown): ApiRejectEnvelope | undefined =>
  * @returns A one-line name, missing pieces simply omitted rather than left blank.
  */
 const describeApiRejectError = (envelope: ApiRejectEnvelope): string =>
-    ['HTTP', String(envelope.status), envelope.errors?.[0]?.code, envelope.method, envelope.path]
+    ['HTTP', String(envelope.status), envelope.errors[0]?.code, envelope.method, envelope.path]
         .filter((part): part is string => typeof part === 'string' && part.length > 0)
         .join(' ');
 
@@ -395,7 +395,7 @@ export const useObservabilityStore = defineStore('observability', () => {
 
         const envelope = asApiRejectEnvelope(error);
         if (envelope) {
-            const code = envelope.errors?.[0]?.code;
+            const code = envelope.errors[0]?.code;
             faro.api.pushError(new Error(describeApiRejectError(envelope)), {
                 context: normalizeContext({
                     status: envelope.status,

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import enMessages from '@/locales/en.json';
+import { aProblem } from '../../../support/unit/fixtures.ts';
 
 vi.mock('@/infrastructure/session', () => ({
     useSessionStore: vi.fn(() => ({
@@ -36,40 +37,30 @@ const makeAxiosError = (status: number, data: unknown, headers: Record<string, s
 });
 
 describe('onResponseReject', () => {
-    it('passes through a standard reject envelope unchanged', () => {
+    it('passes problem details through unchanged', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
-            const error = makeAxiosError(400, {
-                success: false,
-                message: 'Bad',
-                errors: [{ code: 'FIELD_REQUIRED', message: 'field required' }]
-            });
-            return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                success: false,
-                message: 'Bad',
-                errors: [{ code: 'FIELD_REQUIRED', message: 'field required' }]
-            });
+            const problem = aProblem(400, [{ code: 'FIELD_REQUIRED', message: 'field required' }]);
+            return expect(
+                onResponseReject(makeAxiosError(400, problem) as never)
+            ).rejects.toMatchObject(problem);
         });
     });
 
     it('lifts a validation item`s details.field to where the forms read it', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
-            const error = makeAxiosError(422, {
-                success: false,
-                message: 'Unprocessable Entity',
-                errors: [
+            const error = makeAxiosError(
+                422,
+                aProblem(422, [
                     {
                         code: 'VALIDATION_ERROR',
                         message: 'Not a valid email',
                         details: { field: 'email' }
                     },
                     { code: 'SOMETHING_ELSE', message: 'no field named' }
-                ]
-            });
+                ])
+            );
             return expect(onResponseReject(error as never)).rejects.toEqual({
-                success: false,
-                message: 'Unprocessable Entity',
-                path: '/test',
-                errors: [
+                ...aProblem(422, [
                     {
                         code: 'VALIDATION_ERROR',
                         message: 'Not a valid email',
@@ -77,20 +68,17 @@ describe('onResponseReject', () => {
                         field: 'email'
                     },
                     { code: 'SOMETHING_ELSE', message: 'no field named' }
-                ]
+                ]),
+                path: '/test'
             });
         });
     });
 
-    it('enriches a reject envelope with the x-request-id and traceparent headers', () => {
+    it('enriches problem details with the x-request-id and traceparent headers', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
             const error = makeAxiosError(
                 422,
-                {
-                    success: false,
-                    message: 'Validation',
-                    errors: [{ code: 'NAME_REQUIRED', message: 'name required' }]
-                },
+                aProblem(422, [{ code: 'NAME_REQUIRED', message: 'name required' }]),
                 { 'x-request-id': 'req-abc-123', traceparent: '00-abc-def-01' }
             );
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
@@ -129,7 +117,7 @@ describe('onResponseReject', () => {
                 }
             );
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                success: false,
+                status: 503,
                 requestId: 'req-fallback-1'
             });
         });
@@ -139,9 +127,9 @@ describe('onResponseReject', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
             const error = makeAxiosError(401, {});
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                success: false,
+                type: 'about:blank',
                 status: 401,
-                message: enMessages['api-errors'].unauthorized,
+                detail: enMessages['api-errors'].unauthorized,
                 errors: [{ code: 'UNAUTHORIZED', message: enMessages['api-errors'].unauthorized }]
             });
         });
@@ -151,9 +139,9 @@ describe('onResponseReject', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
             const error = makeAxiosError(403, {});
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                success: false,
+                type: 'about:blank',
                 status: 403,
-                message: enMessages['api-errors'].forbidden,
+                detail: enMessages['api-errors'].forbidden,
                 errors: [{ code: 'FORBIDDEN', message: enMessages['api-errors'].forbidden }]
             });
         });
@@ -170,12 +158,23 @@ describe('onResponseReject', () => {
                 expect(result).not.toHaveProperty('traceparent');
             });
     });
+
+    // axios parses any `+json` body into an object, so the media type changes nothing here.
+    it('reads a body served as application/problem+json like any other JSON', () => {
+        return import('@/infrastructure/http').then(({ onResponseReject }) => {
+            const problem = aProblem(404, [{ code: 'NOT_FOUND', message: 'no such order' }]);
+            const error = {
+                ...makeAxiosError(404, problem, { 'content-type': 'application/problem+json' })
+            };
+            return expect(onResponseReject(error as never)).rejects.toMatchObject(problem);
+        });
+    });
 });
 
 /**
- * The fallback branch of `onResponseReject` — everything that is *not* a well-formed reject
- * envelope from the API. That covers real transport failures (no response at all), gateway errors
- * from a proxy that never reached the app, and any 4xx the API answers without its envelope.
+ * The fallback branch of `onResponseReject` — everything that is *not* problem details from the
+ * API. That covers real transport failures (no response at all), gateway errors from a proxy that
+ * never reached the app, and any 4xx the API answers without its body.
  *
  * The canonicalised messages matter because they are what a user sees: an axios `statusText` of
  * "" or a raw "Network Error" is not something to put in front of someone, and 5xx detail must
@@ -187,7 +186,7 @@ describe('onResponseReject — fallback normalisation', () => {
             return expect(onResponseReject(makeAxiosError(503, {}) as never)).rejects.toMatchObject(
                 {
                     status: 503,
-                    message: enMessages['api-errors']['internal-server-error']
+                    detail: enMessages['api-errors']['internal-server-error']
                 }
             );
         });
@@ -198,7 +197,7 @@ describe('onResponseReject — fallback normalisation', () => {
         // statusText instead — the single most common server failure, mis-messaged.
         import('@/infrastructure/http').then(({ onResponseReject }) =>
             expect(onResponseReject(makeAxiosError(500, {}) as never)).rejects.toMatchObject({
-                message: enMessages['api-errors']['internal-server-error']
+                detail: enMessages['api-errors']['internal-server-error']
             })
         ));
 
@@ -207,13 +206,12 @@ describe('onResponseReject — fallback normalisation', () => {
         import('@/infrastructure/http').then(({ onResponseReject }) =>
             expect(onResponseReject(makeAxiosError(499, {}) as never)).rejects.toMatchObject({
                 status: 499,
-                message: 'Error'
+                detail: 'Error'
             })
         ));
 
-    it('carries no error items for a status that is neither 401 nor 403', () =>
-        // 401/403 get a user-facing item because the UI renders them as a state change; other
-        // fallbacks deliberately carry an empty list rather than echoing a transport string.
+    it('carries exactly one error item for any status, because the contract never sends none', () =>
+        // `errors` is `minItems: 1` in the contract, so the synthesized problem keeps that promise.
         import('@/infrastructure/http')
             .then(({ onResponseReject }) =>
                 onResponseReject(makeAxiosError(404, {}) as never).catch(
@@ -221,7 +219,9 @@ describe('onResponseReject — fallback normalisation', () => {
                 )
             )
             .then((result) => {
-                expect((result as { errors: string[] }).errors).toEqual([]);
+                expect((result as { errors: unknown[] }).errors).toEqual([
+                    { code: 'REQUEST_ERROR', message: 'Error' }
+                ]);
             }));
 
     /**
@@ -234,7 +234,7 @@ describe('onResponseReject — fallback normalisation', () => {
             expect(
                 onResponseReject({ message: 'Network Error', config: { url: '/x' } } as never)
             ).rejects.toMatchObject({
-                success: false,
+                type: 'about:blank',
                 status: 0,
                 errors: [{ code: 'NETWORK_ERROR' }]
             })
@@ -264,7 +264,8 @@ describe('onResponseReject — fallback normalisation', () => {
                 config: { url: '/x' }
             };
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                message: "I'm a teapot"
+                title: "I'm a teapot",
+                detail: "I'm a teapot"
             });
         });
     });
@@ -279,7 +280,7 @@ describe('onResponseReject — fallback normalisation', () => {
                     message: 'Request failed',
                     config: { url: '/x' }
                 } as never)
-            ).rejects.toMatchObject({ message: 'Request failed' })
+            ).rejects.toMatchObject({ detail: 'Request failed' })
         ));
 
     it('falls back to a generic message when neither is available', () => {
@@ -290,34 +291,28 @@ describe('onResponseReject — fallback normalisation', () => {
                 config: { url: '/x' }
             };
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                message: enMessages['api-errors'].unknown
+                detail: enMessages['api-errors'].unknown
             });
         });
     });
 
-    it("keeps a server envelope's own message instead of the status fallback", () =>
+    it("keeps a server problem's own wording instead of the status fallback", () =>
         /*
          * The pass-through half of the `hasOwnProperty('errors')` rule, paired with the synthesis
-         * half at 'carries no error items for a status that is neither 401 nor 403'. A 422 is the
-         * status that separates them: neither branch rewrites its message, so the envelope's own
-         * text surviving is the proof it was not rebuilt from `statusText`.
-         *
-         * The envelope carries a real `ErrorItem` because `ErrorResponse.errors` is `minItems: 1`
-         * and the API guarantees it — `normalizeErrors` in the backend substitutes a fallback item
-         * rather than ever sending an empty list.
+         * half above. A 422 is the status that separates them: neither branch rewrites its text,
+         * so the server's own sentence surviving is the proof it was not rebuilt from
+         * `statusText`.
          */
         import('@/infrastructure/http').then(({ onResponseReject }) =>
             expect(
                 onResponseReject(
-                    makeAxiosError(422, {
-                        success: false,
-                        status: 422,
-                        message: 'Validation failed',
-                        errors: [{ code: 'VALIDATION_ERROR', message: 'name required' }]
-                    }) as never
+                    makeAxiosError(
+                        422,
+                        aProblem(422, [{ code: 'VALIDATION_ERROR', message: 'name required' }])
+                    ) as never
                 )
             ).rejects.toMatchObject({
-                message: 'Validation failed',
+                detail: 'name required',
                 errors: [{ code: 'VALIDATION_ERROR', message: 'name required' }]
             })
         ));

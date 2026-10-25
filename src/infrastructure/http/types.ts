@@ -5,7 +5,7 @@
  */
 
 import type { AxiosRequestConfig } from 'axios';
-import type { ErrorResponse } from '@/types';
+import type { Problem } from '@/types';
 
 /**
  * Request payload type: deliberately unconstrained, since the generated clients
@@ -14,14 +14,14 @@ import type { ErrorResponse } from '@/types';
 export type AxiosRequestData = unknown;
 
 /**
- * Shape every rejected request is normalized to: the contract's own reject envelope, plus what
+ * Shape every rejected request is normalized to: the contract's own problem details, plus what
  * `onResponseReject` lifts off the request/response for Faro to name the error by.
  *
  * None of these travel in the body, so this tier is where each becomes a field: `requestId` and
  * `traceparent` are headers, `method`/`path` come off the request config that produced the
  * rejection.
  */
-export type AxiosResponseErrorData = ErrorResponse & {
+export type AxiosResponseErrorData = Problem & {
     /**
      * Backend request correlation id, from the `x-request-id` header. Absent when unsent.
      */

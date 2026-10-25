@@ -15,23 +15,25 @@ import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/i18n';
 
 /**
- * The API's own explanation for a refusal: `errors[0].message` of the reject envelope.
+ * The API's own explanation for a refusal, from its problem details (RFC 9457).
  *
- * The envelope's top-level `message` is only the HTTP phrase ("Unprocessable Entity"); the item in
- * `errors` is the sentence the backend chose, already translated. Reading the phrase instead is
- * what made every unmapped refusal look the same.
+ * `errors[0].message` first: the sentence the backend chose for the first failure, already
+ * translated. Then `detail`, the translated summary. The `title` is the English status phrase
+ * ("Unprocessable Content") and is never shown: reading it is what made every unmapped refusal
+ * look the same.
  *
- * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
- * @returns The first error item's non-empty message, or `undefined` when the value carries none.
+ * @param error - Unknown rejected value, normally the problem from `onResponseReject`.
+ * @returns The first non-empty sentence found, or `undefined` when the value carries none.
  */
 const firstApiMessage = (error: unknown): string | undefined => {
     if (!error || typeof error !== 'object') return undefined;
-    const { errors } = error as { errors?: unknown };
-    if (!Array.isArray(errors)) return undefined;
-    const first: unknown = errors[0];
-    if (!first || typeof first !== 'object') return undefined;
-    const { message } = first as { message?: unknown };
-    return typeof message === 'string' && message ? message : undefined;
+    const { errors, detail } = error as { errors?: unknown; detail?: unknown };
+    const first: unknown = Array.isArray(errors) ? errors[0] : undefined;
+    const itemMessage =
+        first && typeof first === 'object' ? (first as { message?: unknown }).message : undefined;
+    return [itemMessage, detail].find(
+        (candidate): candidate is string => typeof candidate === 'string' && candidate !== ''
+    );
 };
 
 /**
@@ -45,11 +47,17 @@ const firstApiMessage = (error: unknown): string | undefined => {
  * Exported for `useBlockingError` (`src/infrastructure/utils/use-blocking-error.ts`) — the one other place a caught error
  * becomes this same wording, just kept local instead of toasted.
  *
+ * Also the `resolveError` a `useAsyncAction` read passes, so a panel shows the server's sentence and
+ * keeps its own `fallback` for a rejection that carries nothing.
+ *
  * @param error - Unknown value caught in a `catch` block or promise rejection.
- * @returns The best message found, otherwise the generic translated "something went wrong".
+ * @param fallback - Wording for a rejection with nothing readable; the generic one by default.
+ * @returns The best message found, otherwise the fallback.
  */
-export const getErrorMessage = (error: unknown): string =>
-    firstApiMessage(error) ?? extractErrorMessage(error, translate('api-errors.unknown'));
+export const getErrorMessage = (
+    error: unknown,
+    fallback: string = translate('api-errors.unknown')
+): string => firstApiMessage(error) ?? extractErrorMessage(error, fallback);
 
 /**
  * Whether a rejected API call never got an answer at all.
