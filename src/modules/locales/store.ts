@@ -135,6 +135,7 @@ export const useLocalesStore = defineStore('locales', () => {
     const {
         filters,
         loading,
+        isLoading,
         pageCurrent,
         pageSize,
         pageTotal: entriesPageTotal,
@@ -456,11 +457,20 @@ export const useLocalesStore = defineStore('locales', () => {
         entityId: string,
         body: MergeTranslationsRequest
     ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
-        fetchAny(() =>
-            apiUpsertEntityTranslations(entityType, entityId, body).then(
-                (response) => response.data
-            )
+        fetchAny(
+            () =>
+                apiUpsertEntityTranslations(entityType, entityId, body).then(
+                    (response) => response.data
+                ),
+            // Own bucket so the save button spins apart from every read; `forced` because a keyed
+            // fetchAny would otherwise be served from cache.
+            { key: ['entity-translations-save'], forced: true }
         );
+
+    /**
+     * Whether an entity's translations are being saved.
+     */
+    const savingEntityTranslations = computed(() => isLoading(['entity-translations-save']));
 
     return {
         capabilities,
@@ -479,6 +489,7 @@ export const useLocalesStore = defineStore('locales', () => {
         removeLanguage,
         fetchEntityTranslations,
         saveEntityTranslations,
+        savingEntityTranslations,
 
         filters,
         loading,

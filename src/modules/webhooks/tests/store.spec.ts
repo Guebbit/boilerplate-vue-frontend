@@ -265,6 +265,21 @@ describe('useWebhooksStore', () => {
             });
         });
 
+        it('reports a write in flight through writingSubscription, and clears it after', () => {
+            const store = useWebhooksStore();
+            const pending = store.enableSubscription('sub1');
+
+            return nextTick()
+                .then(() => {
+                    expect(store.writingSubscription).toBe(true);
+                    return pending;
+                })
+                .then(() => nextTick())
+                .then(() => {
+                    expect(store.writingSubscription).toBe(false);
+                });
+        });
+
         it('caches the answer, so the screens read the new state', () => {
             const store = useWebhooksStore();
             store.addSubscriptionRecord({ ...SUBSCRIPTION });

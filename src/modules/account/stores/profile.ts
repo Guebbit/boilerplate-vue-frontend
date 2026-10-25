@@ -42,17 +42,17 @@ import {
 import { warn } from '@/infrastructure/utils/logger.ts';
 
 /**
- * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, none for an
- * ordinary field save, which has no button of its own to spin.
+ * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, and `save` for
+ * an ordinary field save (the profile form's submit button).
  *
  * @param imageUpload - The picked file, when the call carries one.
  * @param imageUrl - The record's picture field, `null` when the call is a removal.
- * @returns The bucket key, or `undefined` for a plain save (matches the whole-resource `loading`).
+ * @returns The bucket key.
  */
-const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undefined => {
+const updateLoadingKey = (imageUpload?: File, imageUrl?: null): string[] => {
     if (imageUpload) return ['avatar-upload'];
     // `null` is the removal — the contract's `minLength: 1` refuses `''`.
-    return imageUrl === null ? ['avatar-remove'] : undefined;
+    return imageUrl === null ? ['avatar-remove'] : ['save'];
 };
 
 /**
@@ -286,7 +286,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
             selectedIdentifier.value,
             // One action, two avatar buttons: each path gets its own bucket key so the picker
             // and the remove button spin one at a time. `imageUrl: null` is the removal.
-            { key: avatarLoadingKey(imageUpload, userData.imageUrl) }
+            { key: updateLoadingKey(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*
              * Refetch rather than trust the local patch: `updateTarget` merges what was SENT, and
@@ -329,8 +329,12 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @returns A promise resolving once the change is discarded and the profile refetched.
      */
     const cancelPendingEmailChange = () =>
-        fetchAny(() =>
-            apiCancelPendingEmailChange().then(() => fetchProfile(true).then(() => undefined))
+        fetchAny(
+            () =>
+                apiCancelPendingEmailChange().then(() => fetchProfile(true).then(() => undefined)),
+            // Own bucket so the Resend/Cancel buttons spin apart from the form; `forced` skips the
+            // keyed cache a write must never be served from.
+            { key: ['pending-email'], forced: true }
         );
 
     /**
@@ -344,10 +348,12 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  same number, read by `emailVerifyResendRetryAfter`.
      */
     const resendPendingEmail = (): Promise<number> =>
-        fetchAny(() =>
-            apiResendPendingEmail().then((data) =>
-                getPayloadFromResponse<EmailVerificationRequested>(data)
-            )
+        fetchAny(
+            () =>
+                apiResendPendingEmail().then((data) =>
+                    getPayloadFromResponse<EmailVerificationRequested>(data)
+                ),
+            { key: ['pending-email'], forced: true }
         ).then((payload) => payload?.resendAfter ?? 0);
 
     /**
@@ -522,8 +528,20 @@ export const useProfileStore = defineStore('accountProfile', () => {
      */
     const removingAvatar = computed(() => isLoading(['avatar-remove']));
 
+    /**
+     * Whether the profile form's details are being saved.
+     */
+    const savingProfile = computed(() => isLoading(['save']));
+
+    /**
+     * Whether a pending email change is being resent or cancelled.
+     */
+    const changingPendingEmail = computed(() => isLoading(['pending-email']));
+
     return {
         profile,
+        savingProfile,
+        changingPendingEmail,
         uploadingAvatar,
         removingAvatar,
         loading,
