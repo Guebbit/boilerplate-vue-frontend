@@ -459,3 +459,24 @@ describe('AttentionList', () => {
         expect(wrapper.find('[data-test="payment-drawer"]').exists()).toBe(true);
     });
 });
+
+describe('list state in the URL', () => {
+    it('opens the payments tab with the filters its link names', async () => {
+        const read = answerPaymentsWith([aPayment()]);
+        await router.push('/en/sales/payments?payments-provider=stripe&payments-page=2');
+        mount(PaymentsTable, { global: GLOBAL });
+        await flushPromises();
+
+        expect(read).toHaveBeenCalledWith(expect.objectContaining({ provider: 'stripe', page: 2 }));
+    });
+
+    it('keeps the refunds filters under their own prefix, apart from the payments tab', async () => {
+        const read = answerRefundsWith([]);
+        await router.push('/en/sales/payments?refunds-status=failed&payments-provider=stripe');
+        mount(RefundsTable, { global: GLOBAL });
+        await flushPromises();
+
+        expect(read).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }));
+        expect(read).not.toHaveBeenCalledWith(expect.objectContaining({ provider: 'stripe' }));
+    });
+});
