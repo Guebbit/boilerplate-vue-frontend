@@ -19302,7 +19302,7 @@ x-error-codes:
     description: The example cannot move from its current status to the one asked, or another request moved it first. `errors[].details` is `{ from, to }`; `Example.actions.transitions` lists the moves still open.
   FORBIDDEN:
     status: 403
-    description: The caller is authenticated but lacks the permission this route requires. A key's own `deniedCode` can replace this default with a more specific one.
+    description: "The server understood the request and refuses it, whoever the caller is: the caller lacks the permission this route requires (a key's own `deniedCode` can replace this default with a more specific one), or a human-challenge token is missing or refused (`ANTIBOT_VERIFICATION_FAILED`)."
   IDEMPOTENCY_IN_FLIGHT:
     status: 409
     description: Another request already carries this `Idempotency-Key` and has not finished yet.
