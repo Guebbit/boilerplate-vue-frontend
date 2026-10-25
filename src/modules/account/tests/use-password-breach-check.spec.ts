@@ -10,16 +10,15 @@ import { flushPromises } from '@vue/test-utils';
 import { effectScope } from 'vue';
 import { usePasswordBreachCheck } from '../composables/use-password-breach-check.ts';
 import { checkPasswordBreached } from '@api';
-import type { PasswordCheckEnvelope } from '@types';
+import type { PasswordCheck } from '@types';
 
 vi.mock('@api', () => ({ checkPasswordBreached: vi.fn() }));
 
 /** Milliseconds the fake timers advance so the debounced check fires. */
 const DELAY = 500;
 
-/** The real success envelope `checkPasswordBreached` resolves with. */
-const envelope = (breached: boolean): Promise<PasswordCheckEnvelope> =>
-    Promise.resolve({ success: true, status: 200, message: 'OK', data: { breached } });
+/** The real body `checkPasswordBreached` resolves with. */
+const envelope = (breached: boolean): Promise<PasswordCheck> => Promise.resolve({ breached });
 
 beforeEach(() => {
     vi.useFakeTimers();

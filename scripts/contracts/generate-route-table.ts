@@ -2,7 +2,7 @@
 /*
  * Emits the response-schema ROUTE table from `openapi.yaml`: one row per operation, giving
  * `infrastructure/http/response-schema-map.ts` and every module's own `response-schemas.ts` the
- * method, an anchored URL pattern, the `@api/schemas` export name for its response envelope, and
+ * method, an anchored URL pattern, the `@api/schemas` export name for its response body, and
  * the `x-module` owner (the backend's `scripts/contracts/openapi-bundle.ts`) — the same source
  * `generate-operation-modules.ts` already reads for `OPERATION_MODULES`.
  *
@@ -111,7 +111,7 @@ const pathToPatternSource = (openApiPath: string): string =>
         .join(String.raw`\/`)}$`;
 
 /**
- * The `@api/schemas` export name for one operation's response envelope — verified 1:1 against
+ * The `@api/schemas` export name for one operation's response body — verified 1:1 against
  * every operation this contract declares (`PascalCase(operationId) + 'Response'`, orval's own
  * rule, no exceptions today).
  *

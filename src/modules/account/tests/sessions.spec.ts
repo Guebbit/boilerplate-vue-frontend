@@ -71,17 +71,4 @@ describe('useAccountSessionsStore', () => {
                 ]);
             });
     });
-
-    it('a sessions payload without the list reads as no sessions', () => {
-        // `sessions` is required by the real contract, so this exact payload is impossible
-        // against it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence
-        // for that state, same as `addresses.spec.ts`'s book-less case.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
-        const store = useAccountSessionsStore();
-        return store.fetchSessions().then(() => {
-            expect(store.sessions).toEqual([]);
-        });
-    });
 });

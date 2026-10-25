@@ -58,9 +58,7 @@ const server = setupServer(
     http.post(`${API}/checkout`, ({ request }) => {
         const authorization = request.headers.get('authorization') ?? undefined;
         requestLog.push({ route: 'POST /checkout', authorization });
-        return scenario.requiresReauth
-            ? reauthRequired()
-            : HttpResponse.json({ success: true, status: 200, data: { orderId: 'o1' } });
+        return scenario.requiresReauth ? reauthRequired() : HttpResponse.json({ orderId: 'o1' });
     })
 );
 

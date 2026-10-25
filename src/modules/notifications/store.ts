@@ -274,7 +274,7 @@ export const useInboxStore = defineStore('inbox', () => {
         const guard: ReadGuard = { pushed: new Set(), deleted: new Set(), deletedAll: false };
         readsInFlight.add(guard);
         return listNotifications(asPassive())
-            .then(({ data }) => {
+            .then((data) => {
                 if (claim()) applyRead(data.items, guard);
             })
             .catch(report)

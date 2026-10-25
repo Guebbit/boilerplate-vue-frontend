@@ -99,7 +99,7 @@ describe('fetchStatus', () => {
     it('loads the account status', () => {
         const store = useTwoFactorStore();
         return store.fetchStatus().then(() => {
-            expect(store.status).toEqual(STATUS_OFF.data);
+            expect(store.status).toEqual(STATUS_OFF);
         });
     });
 });

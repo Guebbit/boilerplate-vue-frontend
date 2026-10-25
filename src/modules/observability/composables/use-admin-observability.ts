@@ -79,7 +79,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         error: errorHealth,
         loading: loadingHealth,
         run: runHealth
-    } = useAsyncAction(() => getObservabilityHealth().then((response) => response.data), {
+    } = useAsyncAction(() => getObservabilityHealth(), {
         fallbackErrorMessage: translate('admin-page.error-load-health'),
         resolveError: getErrorMessage
     });
@@ -93,7 +93,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         error: errorMetrics,
         loading: loadingMetrics,
         run: runMetrics
-    } = useAsyncAction(() => getObservabilityMetricsOverview().then((response) => response.data), {
+    } = useAsyncAction(() => getObservabilityMetricsOverview(), {
         fallbackErrorMessage: translate('admin-page.error-load-metrics'),
         resolveError: getErrorMessage
     });

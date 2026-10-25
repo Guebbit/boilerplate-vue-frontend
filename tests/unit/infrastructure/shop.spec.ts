@@ -16,8 +16,7 @@ vi.mock('@api', async (importOriginal) => ({
 vi.mock('@/infrastructure/utils/logger.ts', () => ({ logger: { error: vi.fn() } }));
 
 /** What `getShop` resolves to for a shop with these fields. */
-const answering = (overrides: Parameters<typeof aShop>[0]) =>
-    ({ data: aShop(overrides) }) as Awaited<ReturnType<typeof getShop>>;
+const answering = (overrides: Parameters<typeof aShop>[0]) => aShop(overrides);
 
 beforeEach(() => {
     resetShop();

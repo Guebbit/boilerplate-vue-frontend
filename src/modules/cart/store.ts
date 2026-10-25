@@ -255,8 +255,8 @@ export const useCartStore = defineStore('cart', () => {
         const claim = summaryTickets.take();
         return getCartSummary()
             .then((response) => {
-                if (claim()) summarySeed.value = response.data;
-                return response.data;
+                if (claim()) summarySeed.value = response;
+                return response;
             })
             .catch((error: unknown) => {
                 // 401 only — a guest has no cart. Anything else is a real failure, and swallowing
@@ -285,13 +285,13 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the answer, as `fetchAny` does.
      */
     const replaceCartFrom = <T>(
-        call: () => Promise<{ data: T }>,
+        call: () => Promise<T>,
         cartOf: (data: T) => CartResponse,
         invalidateProducts: boolean
     ): Promise<T | undefined> =>
         fetchTracked(() => {
             const store = takeCartSlot();
-            return call().then(({ data }) => {
+            return call().then((data) => {
                 store(cartOf(data));
                 // The shopper's own write: cached products are stale now, not in five minutes.
                 if (invalidateProducts) invalidateProductsCache();
@@ -307,7 +307,7 @@ export const useCartStore = defineStore('cart', () => {
      * @returns A promise resolving with the answer's cart.
      */
     const replaceCart = (
-        call: () => Promise<{ data: CartResponse }>,
+        call: () => Promise<CartResponse>,
         invalidateProducts = true
     ): Promise<CartResponse | undefined> =>
         replaceCartFrom(call, (data) => data, invalidateProducts);
@@ -346,8 +346,8 @@ export const useCartStore = defineStore('cart', () => {
         return getCart()
             .then((response) => {
                 if (issuedAt !== cartEpoch) return undefined;
-                store(response.data);
-                return response.data;
+                store(response);
+                return response;
             })
             .finally(() => {
                 pollInFlight = false;
@@ -483,7 +483,7 @@ export const useCartStore = defineStore('cart', () => {
                     endCheckoutAttempt();
                     // The order reserved stock: every cached `available` is out of date.
                     invalidateProductsCache();
-                    return response.data;
+                    return response;
                 })
                 .catch((error: unknown) =>
                     settleFailedCheckout(error).then(() => {
@@ -522,12 +522,12 @@ export const useCartStore = defineStore('cart', () => {
             const claim = cartTickets.take();
             return mergeCart({ lines: [...sent] }, { headers: { [IDEMPOTENCY_KEY_HEADER]: key } })
                 .then((response) => {
-                    if (claim()) cart.value = response.data.cart;
+                    if (claim()) cart.value = response.cart;
                     // The guest list is device-scoped only until the session ends: what the call
                     // carried left it either way.
                     guestLines.value = subtractGuestLines(guestLines.value, sent);
                     writeMergeAttempt(undefined);
-                    return response.data;
+                    return response;
                 })
                 .catch((error: unknown) => {
                     if (!isRetryableFailure(error)) writeMergeAttempt(undefined);

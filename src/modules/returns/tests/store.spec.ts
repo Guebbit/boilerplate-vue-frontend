@@ -58,7 +58,7 @@ beforeEach(() => {
 
 describe('openReturn', () => {
     it('reports the return and caches it', () => {
-        responses['POST /returns'] = orvalEnvelope(aReturn(), 201);
+        responses['POST /returns'] = orvalEnvelope(aReturn());
         const store = useReturnsStore();
 
         return store.openReturn({ orderId: 'o1', reason: 'withdrawal' }).then((created) => {
@@ -73,8 +73,7 @@ describe('openReturn', () => {
 
     it('reports a withdrawal before dispatch as the return it is: closed at birth, no lines', () => {
         responses['POST /returns'] = orvalEnvelope(
-            aReturn({ status: 'closed', lines: [], refundAmount: 40 }),
-            201
+            aReturn({ status: 'closed', lines: [], refundAmount: 40 })
         );
         const store = useReturnsStore();
 
@@ -85,7 +84,7 @@ describe('openReturn', () => {
     });
 
     it('sends an Idempotency-Key so a retry cannot open two', () => {
-        responses['POST /returns'] = orvalEnvelope(aReturn(), 201);
+        responses['POST /returns'] = orvalEnvelope(aReturn());
 
         return useReturnsStore()
             .openReturn({ orderId: 'o1', reason: 'withdrawal' })

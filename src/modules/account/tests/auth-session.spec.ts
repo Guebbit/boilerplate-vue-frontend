@@ -240,9 +240,7 @@ describe('login', () => {
         // (`orvalMutator` itself would reject it) — this pins `getTokenFromResponse`'s OWN defence
         // for that state, so it bypasses `parseOrvalFixture` on purpose rather than resolving
         // through the keyed `responses` table.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
+        vi.mocked(orvalMutator).mockImplementationOnce(() => Promise.resolve({}));
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')

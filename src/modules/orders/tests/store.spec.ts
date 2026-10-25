@@ -45,12 +45,12 @@ const ORDER = anOrder({ totalItems: 1, totalQuantity: 2, totalPrice: 19.98, netT
 const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
 
 /**
- * Fixture timeline, as the endpoint's envelope carries it.
+ * Fixture timeline entries, the `items` the endpoint answers.
  */
 const TIMELINE = [{ id: 'e1', at: '2026-10-01T10:00:00.000Z', type: 'created', data: {} }];
 
 /**
- * Fixture credit-note list, as the list endpoint's envelope carries it.
+ * Fixture credit notes, the `items` the list endpoint answers.
  */
 const CREDIT_NOTES = [
     {
@@ -91,9 +91,9 @@ vi.mock('@api', () => ({
     hardDeleteOrderById: vi.fn(() => Promise.resolve(RESPONSES.hardDeleted)),
     restoreOrderById: vi.fn(() => Promise.resolve(RESPONSES.restored)),
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE)),
-    listOrderCreditNotes: vi.fn(() => Promise.resolve({ data: CREDIT_NOTES })),
+    listOrderCreditNotes: vi.fn(() => Promise.resolve({ items: CREDIT_NOTES })),
     getOrderCreditNote: vi.fn(() => Promise.resolve(INVOICE)),
-    getOrderTimeline: vi.fn(() => Promise.resolve({ data: TIMELINE })),
+    getOrderTimeline: vi.fn(() => Promise.resolve({ items: TIMELINE })),
     exportOrders: vi.fn(() => Promise.resolve('createdAt,orderNumber\n')),
     // The contract's sort enum: the store reads it to drop a sort the API would refuse.
     OrderSortItem: { createdAt: 'createdAt', '-createdAt': '-createdAt', status: 'status' }

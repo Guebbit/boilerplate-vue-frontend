@@ -13,23 +13,15 @@ import type { ZodType } from 'zod';
 import { resolveResponseSchema } from '@/infrastructure/http/response-schema-map';
 
 /**
- * Wraps a payload in the API's success envelope — `{ success, status, message, data }` — every
- * response schema in `contracts/rest/schemas.zod.ts` actually requires. A spec's hand-typed
- * fixture is usually just the `data` a store reads; this is what turns it into something
- * `parseOrvalFixture` can validate for real, without every spec repeating the boilerplate.
+ * A success body as a spec's mock resolves it: the payload itself, or `undefined` for a 204.
  *
- * Omits `data` entirely rather than setting it to `undefined` for a bodyless response — the
- * schemas are `zod.strictObject`, which rejects a key it does not declare regardless of the
- * value behind it.
+ * The API answers a success with the resource and nothing around it, so a fixture IS the body.
+ * Kept as a name so a spec reads as "the answer", and so the call sites are one search away.
  *
- * @param data - the payload a store reads off `data`; omit for a response with no body
- * @param status - the envelope's HTTP status, defaults to 200
- * @returns the full envelope a mocked `orvalMutator` should resolve with
+ * @param data - the payload a store reads; omit for a response with no body
+ * @returns `data`, unchanged
  */
-export const orvalEnvelope = (data?: unknown, status = 200): Record<string, unknown> =>
-    data === undefined
-        ? { success: true, status, message: 'OK' }
-        : { success: true, status, message: 'OK', data };
+export const orvalEnvelope = (data?: unknown): unknown => data;
 
 /**
  * Validates a mocked `orvalMutator` response against its real contract schema before a test's
@@ -71,34 +63,33 @@ export const parseOrvalFixture = (
  * there is no URL to look a schema up by, so the caller names the operation's own
  * `<Operation>Response` schema from `@api/schemas` instead.
  *
- * Returns the envelope unparsed, for the same reason {@link parseOrvalFixture} does — a `.default()`
+ * Returns the body unparsed, for the same reason {@link parseOrvalFixture} does — a `.default()`
  * the schema would fill in is not something the real backend sent.
  *
  * @param schema - the operation's response schema, e.g. `schemas.GetCartResponse`
- * @param data - the payload a store reads off `data`; omit for a response with no body
- * @returns the full success envelope, once it has been proven against `schema`
- * @throws {import('zod').ZodError} When the envelope does not match `schema`
+ * @param data - the body a store reads; omit for a response with no body
+ * @returns the body, once it has been proven against `schema`
+ * @throws {import('zod').ZodError} When the body does not match `schema`
  */
-export const contractResponse = (schema: ZodType, data?: unknown): Record<string, unknown> => {
-    const envelope = orvalEnvelope(data);
-    const result = schema.safeParse(envelope);
+export const contractResponse = (schema: ZodType, data?: unknown): unknown => {
+    const result = schema.safeParse(data);
     if (!result.success) throw result.error;
-    return envelope;
+    return data;
 };
 
 /**
- * {@link contractResponse}, typed as the generated client's envelope it stands in for, so a spec
+ * {@link contractResponse}, typed as the generated client's answer it stands in for, so a spec
  * can hand it straight to a mocked client function.
  *
- * @typeParam TEnvelope - the generated client's envelope type, e.g. `Answer<typeof getCart>`
+ * @typeParam TBody - the generated client's answer type, e.g. `Answer<typeof getCart>`
  * @param schema - the operation's response schema
- * @param data - the payload a store reads off `data`
- * @returns the envelope, once proven against `schema`
+ * @param data - the body a store reads
+ * @returns the body, once proven against `schema`
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the parameter is the caller's claim about which generated envelope the proven fixture stands in for
-export const contractEnvelope = <TEnvelope>(schema: ZodType, data?: unknown): TEnvelope =>
-    // Proven against the operation's schema by `contractResponse`, so it is the envelope the caller names.
-    contractResponse(schema, data) as TEnvelope;
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the parameter is the caller's claim about which generated answer the proven fixture stands in for
+export const contractBody = <TBody>(schema: ZodType, data?: unknown): TBody =>
+    // Proven against the operation's schema by `contractResponse`, so it is the body the caller names.
+    contractResponse(schema, data) as TBody;
 
 /**
  * The request-body half of the same proof — a spec asserting on what `orvalMutator` was
@@ -112,9 +103,7 @@ export const contractEnvelope = <TEnvelope>(schema: ZodType, data?: unknown): TE
  * already testing, so the caller just names that operation's own `<Operation>Body` schema from
  * `@api/schemas` — mirroring {@link contractResponse}'s same choice, for the same reason.
  *
- * Not wrapped in an envelope — a request body is the payload itself, never `{ success, data }`.
- *
- * @param schema - the operation's request-body schema, e.g. `schemas.UpdateUserByIdBody`
+ *  * @param schema - the operation's request-body schema, e.g. `schemas.UpdateUserByIdBody`
  * @param data - the body a call under test actually sent
  * @returns `data`, unchanged, once it has been proven against `schema`
  * @throws {import('zod').ZodError} When `data` does not match `schema`

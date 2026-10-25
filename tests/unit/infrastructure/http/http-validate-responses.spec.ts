@@ -60,26 +60,18 @@ describe('orvalMutator contract validation', () => {
     it('is off by default inside Vitest, even though DEV is true (MODE is "test")', () => {
         // A response that violates GetAccountResponse (missing required `email`) — if
         // validation ran, this would throw.
-        server.use(
-            http.get(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
-            )
-        );
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-                data: { id: '1' }
+                id: '1'
             })
         );
     });
 
     it('is ON by default outside Vitest — a production build validates too (MODE decides)', () => {
         // Same violating response as above; with MODE stubbed away from 'test' and no flag set,
-        // the default must validate — this is what lets the stores trust `response.data`.
-        server.use(
-            http.get(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
-            )
-        );
+        // the default must validate — this is what lets the stores trust the body.
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('MODE', 'production');
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
@@ -164,18 +156,15 @@ describe('orvalMutator contract validation', () => {
     it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', () => {
         server.use(
             http.get(`${API}/account`, () =>
-                HttpResponse.json({
-                    success: true,
-                    status: 200,
-                    message: 'ok',
-                    data: { id: '1', email: 'a@b.com', username: 'alice' }
-                })
+                HttpResponse.json({ id: '1', email: 'a@b.com', username: 'alice' })
             )
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-                data: { id: '1', email: 'a@b.com', username: 'alice' }
+                id: '1',
+                email: 'a@b.com',
+                username: 'alice'
             })
         );
     });
@@ -186,11 +175,7 @@ describe('orvalMutator contract validation', () => {
      * failure gets, never the raw "[contract] ... does not match the OpenAPI schema" diagnostic.
      */
     it('rejects with a generic envelope, not the raw diagnostic, when a required field is missing', () => {
-        server.use(
-            http.get(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
-            )
-        );
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toMatchObject({
@@ -205,17 +190,12 @@ describe('orvalMutator contract validation', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({
-                    success: true,
-                    status: 200,
-                    message: 'ok',
-                    data: {
-                        id: '1',
-                        email: 'a@b.com',
-                        username: 'alice',
-                        // Not part of the OpenAPI schema — the exact class of bug (over-serialization)
-                        // this validation exists to catch.
-                        passwordHash: 'should-never-be-serialized'
-                    }
+                    id: '1',
+                    email: 'a@b.com',
+                    username: 'alice',
+                    // Not part of the OpenAPI schema — the exact class of bug (over-serialization)
+                    // this validation exists to catch.
+                    passwordHash: 'should-never-be-serialized'
                 })
             )
         );
@@ -228,11 +208,7 @@ describe('orvalMutator contract validation', () => {
     });
 
     it('reports the full field-level diagnostic to Faro, separate from what the call site sees', () => {
-        server.use(
-            http.get(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
-            )
-        );
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
 
@@ -253,15 +229,11 @@ describe('orvalMutator contract validation', () => {
     });
 
     it('never validates when VITE_VALIDATE_RESPONSES=false, even for a non-conformant response', () => {
-        server.use(
-            http.get(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
-            )
-        );
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'false');
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-                data: { id: '1' }
+                id: '1'
             })
         );
     });
@@ -270,15 +242,10 @@ describe('orvalMutator contract validation', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({
-                    success: true,
-                    status: 200,
-                    message: 'ok',
-                    data: {
-                        id: '1',
-                        email: 'a@b.com',
-                        username: 'alice',
-                        passwordHash: 'should-never-be-serialized'
-                    }
+                    id: '1',
+                    email: 'a@b.com',
+                    username: 'alice',
+                    passwordHash: 'should-never-be-serialized'
                 })
             )
         );
@@ -286,17 +253,15 @@ describe('orvalMutator contract validation', () => {
         vi.stubEnv('PROD', true);
         return loadHttp().then(({ orvalMutator }) =>
             expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-                data: { id: '1', email: 'a@b.com', username: 'alice' }
+                id: '1',
+                email: 'a@b.com',
+                username: 'alice'
             })
         );
     });
 
     it('report-only (PROD): a genuinely missing field still reports to Faro but resolves', () => {
-        server.use(
-            http.get(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
-            )
-        );
+        server.use(http.get(`${API}/account`, () => HttpResponse.json({ id: '1' })));
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
         vi.stubEnv('PROD', true);
         const captureException = vi.spyOn(useObservabilityStore(), 'captureException');
@@ -304,7 +269,7 @@ describe('orvalMutator contract validation', () => {
         return loadHttp()
             .then(({ orvalMutator }) =>
                 expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-                    data: { id: '1' }
+                    id: '1'
                 })
             )
             .then(() => {

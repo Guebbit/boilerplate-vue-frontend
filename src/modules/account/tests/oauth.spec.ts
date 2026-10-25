@@ -114,20 +114,6 @@ describe('useOAuthProvidersStore', () => {
                 expect(orvalMutator).toHaveBeenCalledTimes(1);
             }));
 
-    it('a payload with no list reads as no providers', () => {
-        // `providers` is required by the real contract, so this exact payload is impossible
-        // against it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence
-        // for that state, same as `addresses.spec.ts`'s book-less case.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
-        return useOAuthProvidersStore()
-            .fetchProviders()
-            .then((providers) => {
-                expect(providers).toEqual([]);
-            });
-    });
-
     it('a failed request resolves to the empty list and stays retryable', () => {
         responses['GET /account/oauth/providers'] = new Error('network down');
         const store = useOAuthProvidersStore();

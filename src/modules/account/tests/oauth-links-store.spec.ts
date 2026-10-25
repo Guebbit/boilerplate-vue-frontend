@@ -78,17 +78,6 @@ describe('useOAuthLinksStore', () => {
                 expect(store.links).toEqual([]);
             });
     });
-
-    it('a payload without the list reads as no links', () => {
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
-        const store = useOAuthLinksStore();
-
-        return store.fetchLinks().then(() => {
-            expect(store.links).toEqual([]);
-        });
-    });
 });
 
 describe('startProviderLink', () => {
@@ -110,9 +99,7 @@ describe('startProviderLink', () => {
 
     it('is an error when the server answers no URL', async () => {
         responses['POST /account/oauth/links/google'] = orvalEnvelope({});
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
+        vi.mocked(orvalMutator).mockImplementationOnce(() => Promise.resolve({}));
 
         await expect(startProviderLink('google')).rejects.toThrow('no consent URL');
     });

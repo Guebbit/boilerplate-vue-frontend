@@ -183,20 +183,4 @@ describe('useAddressesStore', () => {
                 expect(store.addresses).toEqual([{ ...WORK, default: true }]);
             });
     });
-
-    it('reads a book-less payload as an empty book rather than as undefined', () => {
-        // The `?? []` in `readAddressesResponse`. Every consumer does `addresses.map(...)`, so
-        // an undefined here is a render crash rather than an empty state. `addresses` is required
-        // by the real contract, so this specific payload is impossible against it — it bypasses
-        // `parseOrvalFixture` on purpose to pin the store's OWN defence for that state.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
-        const store = useAddressesStore();
-
-        return store.fetchAddresses().then((result) => {
-            expect(result).toEqual([]);
-            expect(store.addresses).toEqual([]);
-        });
-    });
 });

@@ -35,7 +35,7 @@ import {
 } from '@api';
 import * as schemas from '@api/schemas';
 import {
-    contractEnvelope,
+    contractBody,
     contractResponse
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder, aProblem } from '../../../../tests/support/unit/fixtures.ts';
@@ -70,7 +70,7 @@ const CART = {
  * @returns the cart answer
  */
 const cartTotalling = (totalPrice: number) =>
-    contractEnvelope<Answer<typeof getCart>>(schemas.GetCartResponse, {
+    contractBody<Answer<typeof getCart>>(schemas.GetCartResponse, {
         ...CART,
         summary: {
             ...CART.summary,
@@ -122,7 +122,7 @@ const aProduct = (id: string, requiresShipping = true) => ({
  * so a fixture that drifts from the contract fails the whole file instead of passing forever.
  */
 const RESPONSES = {
-    cart: contractEnvelope<Answer<typeof getCart>>(schemas.GetCartResponse, CART),
+    cart: contractBody<Answer<typeof getCart>>(schemas.GetCartResponse, CART),
     summary: contractResponse(schemas.GetCartSummaryResponse, CART.summary),
     added: contractResponse(schemas.AddCartItemResponse, CART),
     updated: contractResponse(schemas.UpdateCartItemByIdResponse, CART),

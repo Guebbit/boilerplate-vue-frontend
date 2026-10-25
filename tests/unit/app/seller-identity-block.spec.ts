@@ -19,9 +19,7 @@ vi.mock('@api', async (importOriginal) => ({
 
 /** Makes `GET /shop` answer with a shop carrying these fields. */
 const shopAnswers = (overrides: Parameters<typeof aShop>[0]) =>
-    vi
-        .mocked(getShop)
-        .mockResolvedValue({ data: aShop(overrides) } as Awaited<ReturnType<typeof getShop>>);
+    vi.mocked(getShop).mockResolvedValue(aShop(overrides));
 
 /** Mounts the block, waits for the shop read to land, and returns the text of its rows. */
 const renderedText = (): Promise<string> => {

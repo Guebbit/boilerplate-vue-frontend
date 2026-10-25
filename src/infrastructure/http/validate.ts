@@ -23,7 +23,7 @@ import type { AxiosResponseErrorData } from './types.ts';
  * resolving. `VITE_VALIDATE_RESPONSES` ('true'/'false') decides; unset defaults to ON — in
  * production too, not just `vite dev`.
  *
- * Production is the point: the generated envelope types promise `data` on every 2xx, and the
+ * Production is the point: the generated types promise the body on every 2xx, and the
  * stores trust that promise instead of guarding every read. This gate is what makes the promise
  * true. What differs between profiles is what a mismatch DOES — see {@link isReportOnly}.
  *
@@ -105,8 +105,9 @@ export const validateResponseAgainstContract = (
     }
 
     const reportOnly = isReportOnly();
-    // `.strip()` only exists on an object schema — every generated envelope is one, but the
-    // lookup's declared type is the wider `ZodType`, so this guards the cast.
+    // `.strip()` only exists on an object schema — a resource or list schema is one, but a `oneOf`
+    // answer (login) is not, so it is never stripped; the lookup's declared type is the wider
+    // `ZodType`, so this also guards the cast.
     const schema =
         reportOnly && mappedSchema instanceof z.ZodObject ? mappedSchema.strip() : mappedSchema;
 

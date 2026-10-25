@@ -51,7 +51,7 @@ export interface UseAuditTrailReturn {
 export const useAuditTrail = (endpoint: AuditEndpoint): UseAuditTrailReturn => {
     const { data, error, loading, run } = useAsyncAction(
         (filters: AdminAuditFilters = {}) =>
-            (endpoint === 'platform'
+            endpoint === 'platform'
                 ? listObservabilityAuditEntries({
                       actor: filters.actor,
                       action: filters.action,
@@ -74,8 +74,7 @@ export const useAuditTrail = (endpoint: AuditEndpoint): UseAuditTrailReturn => {
                       ownOrder: filters.ownOrder ? true : undefined,
                       page: filters.page,
                       pageSize: filters.pageSize
-                  })
-            ).then((response) => response.data),
+                  }),
         {
             fallbackErrorMessage: translate('admin-page.error-load-audit'),
             resolveError: getErrorMessage

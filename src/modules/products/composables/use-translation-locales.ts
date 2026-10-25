@@ -81,8 +81,8 @@ export const useTranslationLocales = () => {
         loading.value = true;
         return getLocales()
             .then((response) => {
-                locales.value = response.data.locales;
-                fallbackLocale.value = response.data.fallback;
+                locales.value = response.locales;
+                fallbackLocale.value = response.fallback;
             })
             .catch(() => {
                 const fallback = configuredFallbackLocale();

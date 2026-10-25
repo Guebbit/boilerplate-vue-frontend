@@ -127,8 +127,8 @@ export const useInventoryStore = defineStore('inventory', () => {
         fetchAny(() => {
             if (query) movementsQuery = query;
             return listStockMovements(movementsQuery).then((response) => {
-                movements.value = response.data.items;
-                movementsTotal.value = response.data.meta.totalItems;
+                movements.value = response.items;
+                movementsTotal.value = response.meta.totalItems;
                 return movements.value;
             });
         });
@@ -144,8 +144,8 @@ export const useInventoryStore = defineStore('inventory', () => {
         fetchAny(() => {
             if (query) levelsQuery = query;
             return listInventoryLevels(levelsQuery).then((response) => {
-                levels.value = response.data.items;
-                levelsTotal.value = response.data.meta.totalItems;
+                levels.value = response.items;
+                levelsTotal.value = response.meta.totalItems;
                 return levels.value;
             });
         });
@@ -161,8 +161,8 @@ export const useInventoryStore = defineStore('inventory', () => {
         fetchAny(() => {
             const collect = (page: number, soFar: PreorderLevel[]): Promise<PreorderLevel[]> =>
                 listPreorderLevels({ page, pageSize: MAX_PAGE_SIZE }).then((response) => {
-                    const items = [...soFar, ...response.data.items];
-                    return page < response.data.meta.totalPages ? collect(page + 1, items) : items;
+                    const items = [...soFar, ...response.items];
+                    return page < response.meta.totalPages ? collect(page + 1, items) : items;
                 });
             return collect(1, []).then((items) => {
                 preorderLevels.value = items;
@@ -181,7 +181,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     const setLimit = (productId: string, backorderLimit: number | null) =>
         fetchAny(() =>
             setBackorderLimit(productId, { backorderLimit }).then((response) =>
-                fetchLevels().then(() => response.data)
+                fetchLevels().then(() => response)
             )
         );
 
@@ -199,7 +199,7 @@ export const useInventoryStore = defineStore('inventory', () => {
             receiveStock(productId, { quantity, note }, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
-                    return reloadAfterWrite(response.data);
+                    return reloadAfterWrite(response);
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);
@@ -222,7 +222,7 @@ export const useInventoryStore = defineStore('inventory', () => {
             adjustStock(productId, { delta, note }, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
-                    return reloadAfterWrite(response.data);
+                    return reloadAfterWrite(response);
                 })
                 .catch((error: unknown) => {
                     keeper.settle(error);
@@ -241,7 +241,7 @@ export const useInventoryStore = defineStore('inventory', () => {
             sweepReservations().then((response) =>
                 fetchMovements()
                     .then(() => fetchLevels())
-                    .then(() => response.data.expired)
+                    .then(() => response.expired)
             )
         );
 

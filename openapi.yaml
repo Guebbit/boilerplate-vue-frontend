@@ -14,13 +14,17 @@ info:
     Language: every endpoint honours `Accept-Language` (q-weights and region tags
     included). One language is picked per request, from the languages switched on in
     `GET /locales`, and it selects the language of user-facing copy and of translated entity
-    fields (a product's `title`, `description`) — `errors[].message`, a success envelope's
-    `message` — never the response shape, the status code, or a machine-readable field such
+    fields (a product's `title`, `description`) — `errors[].message` — never the response shape, the status code, or a machine-readable field such
     as `errors[].code`. A message the API has no wording for in that language falls back to
     the default language, one message at a time. An unknown or switched-off language falls
     back instead of erroring; `Content-Language` states the language picked, the audience the
     answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
     `GET /locales` lists what a deployment offers.
+
+    Successes: a 2xx answers the resource itself, with no wrapper. A list is an object, never a
+    top-level array: `{ items, meta }` when paged (`meta` is `PaginationMeta`), or a named key
+    (`{ methods }`). An answer with nothing to say is `204` and has no body. A create is `201`
+    with a `Location` header. See `docs/api/responses.md`.
 
     Errors: every 4xx and 5xx answers RFC 9457 problem details as `application/problem+json`,
     whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
@@ -112,7 +116,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthPingEnvelope"
+                $ref: "#/components/schemas/HealthPing"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "503":
@@ -168,7 +172,7 @@ paths:
         RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
         Published only when the deployment sets `NODE_SECURITY_CONTACT` and
         `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
-        nothing. Plain text, not the JSON envelope, because the format is fixed by the RFC.
+        nothing. Plain text, not JSON, because the format is fixed by the RFC.
       operationId: getSecurityTxt
       security: []
       responses:
@@ -229,7 +233,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleCapabilitiesEnvelope"
+                $ref: "#/components/schemas/LocaleCapabilities"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -270,7 +274,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LanguageEnvelope"
+                $ref: "#/components/schemas/Language"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -316,7 +320,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleAppsEnvelope"
+                $ref: "#/components/schemas/LocaleApps"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -353,7 +357,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleDictionaryEnvelope"
+                $ref: "#/components/schemas/LocaleDictionary"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -394,7 +398,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LanguageEnvelope"
+                $ref: "#/components/schemas/Language"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -450,7 +454,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LanguageEnvelope"
+                $ref: "#/components/schemas/Language"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -493,8 +497,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/LocalePathParam"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -557,7 +561,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleMessagesEnvelope"
+                $ref: "#/components/schemas/LocaleMessages"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -600,7 +604,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleEntriesResponseEnvelope"
+                $ref: "#/components/schemas/LocaleEntriesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -646,7 +650,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleEntriesResponseEnvelope"
+                $ref: "#/components/schemas/LocaleEntriesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -693,7 +697,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleEntryEnvelope"
+                $ref: "#/components/schemas/LocaleEntry"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -754,7 +758,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleImportResultEnvelope"
+                $ref: "#/components/schemas/LocaleImportResult"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -812,7 +816,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleImportResultEnvelope"
+                $ref: "#/components/schemas/LocaleImportResult"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -861,7 +865,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleEntryEnvelope"
+                $ref: "#/components/schemas/LocaleEntry"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -906,7 +910,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LocaleEntryEnvelope"
+                $ref: "#/components/schemas/LocaleEntry"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -943,8 +947,8 @@ paths:
         - $ref: "#/components/parameters/AppPathParam"
         - $ref: "#/components/parameters/EntryIdPathParam"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -985,7 +989,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityTranslationsEnvelope"
+                $ref: "#/components/schemas/EntityTranslations"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1040,7 +1044,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityTranslationsEnvelope"
+                $ref: "#/components/schemas/EntityTranslations"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1115,7 +1119,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityTranslationsEnvelope"
+                $ref: "#/components/schemas/EntityTranslations"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1190,7 +1194,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ObservabilityHealthResponseEnvelope"
+                $ref: "#/components/schemas/ObservabilityHealth"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1261,7 +1265,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ObservabilityMetricsSummaryResponseEnvelope"
+                $ref: "#/components/schemas/ObservabilityMetricsSummary"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1328,7 +1332,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuditLogsResponseEnvelope"
+                $ref: "#/components/schemas/AuditLogsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1406,7 +1410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuditEntriesResponseEnvelope"
+                $ref: "#/components/schemas/AuditEntriesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1435,7 +1439,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AntibotConfigEnvelope"
+                $ref: "#/components/schemas/AntibotConfig"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -1458,7 +1462,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AntibotChallengeEnvelope"
+                $ref: "#/components/schemas/AntibotChallenge"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -1523,7 +1527,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountEnvelope"
+                $ref: "#/components/schemas/Account"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -1558,7 +1562,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountEnvelope"
+                $ref: "#/components/schemas/Account"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -1614,7 +1618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountEnvelope"
+                $ref: "#/components/schemas/Account"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -1658,7 +1662,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountDeletionEnvelope"
+                $ref: "#/components/schemas/AccountDeletion"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1683,8 +1687,8 @@ paths:
         - bearerAuth: []
         - cookieAuth: []
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1714,7 +1718,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EmailVerificationRequestedEnvelope"
+                $ref: "#/components/schemas/EmailVerificationRequested"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1765,7 +1769,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AbilitiesEnvelope"
+                $ref: "#/components/schemas/Abilities"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1792,14 +1796,14 @@ paths:
       responses:
         "200":
           description: |
-            Password changed. `data` normally carries a fresh access token for this
-            session, but is ABSENT on the rare degraded success where the re-mint
+            Password changed. The body normally carries a fresh access token for this
+            session, but is `{}` on the rare degraded success where the re-mint
             itself fails after the password write already committed — see B23 on
-            `SessionRenewedEnvelope`.
+            `AuthTokens`.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionRenewedEnvelope"
+                $ref: "#/components/schemas/AuthTokens"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1839,7 +1843,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PasswordCheckEnvelope"
+                $ref: "#/components/schemas/PasswordCheck"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1873,7 +1877,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReauthMethodsEnvelope"
+                $ref: "#/components/schemas/ReauthMethods"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1904,7 +1908,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTokensEnvelope"
+                $ref: "#/components/schemas/AuthTokens"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1933,8 +1937,8 @@ paths:
       operationId: logout
       security: []
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1962,7 +1966,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionsEnvelope"
+                $ref: "#/components/schemas/SessionsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -1982,8 +1986,8 @@ paths:
         - bearerAuth: []
         - cookieAuth: []
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2020,7 +2024,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionEnvelope"
+                $ref: "#/components/schemas/Session"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -2049,8 +2053,8 @@ paths:
             $ref: "#/components/schemas/Id"
           description: Session identifier from `GET /account/sessions`
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2082,7 +2086,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressesEnvelope"
+                $ref: "#/components/schemas/AddressesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -2116,7 +2120,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressEnvelope"
+                $ref: "#/components/schemas/Address"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2161,7 +2165,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressEnvelope"
+                $ref: "#/components/schemas/Address"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -2201,7 +2205,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressEnvelope"
+                $ref: "#/components/schemas/Address"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2254,7 +2258,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressEnvelope"
+                $ref: "#/components/schemas/Address"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2298,7 +2302,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressesEnvelope"
+                $ref: "#/components/schemas/AddressesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2337,7 +2341,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddressEnvelope"
+                $ref: "#/components/schemas/Address"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2367,7 +2371,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EmailVerificationRequestedEnvelope"
+                $ref: "#/components/schemas/EmailVerificationRequested"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2396,8 +2400,8 @@ paths:
             schema:
               $ref: "#/components/schemas/VerifyEmailConfirmRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2430,8 +2434,8 @@ paths:
             schema:
               $ref: "#/components/schemas/VerifyEmailConfirmRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2466,8 +2470,8 @@ paths:
             schema:
               $ref: "#/components/schemas/VerifyEmailConfirmRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2502,8 +2506,8 @@ paths:
             schema:
               $ref: "#/components/schemas/AccountRestoreRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "413":
@@ -2539,7 +2543,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginResponseEnvelope"
+                $ref: "#/components/schemas/LoginOutcome"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2577,7 +2581,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTokensEnvelope"
+                $ref: "#/components/schemas/AuthTokens"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2621,7 +2625,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountEnvelope"
+                $ref: "#/components/schemas/Account"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2658,8 +2662,8 @@ paths:
             schema:
               $ref: "#/components/schemas/PasswordResetRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2692,8 +2696,8 @@ paths:
             schema:
               $ref: "#/components/schemas/PasswordResetConfirmRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2725,7 +2729,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RefreshTokenEnvelope"
+                $ref: "#/components/schemas/RefreshTokenResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2760,7 +2764,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountExportRequestEnvelope"
+                $ref: "#/components/schemas/AccountExportRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2792,7 +2796,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginTwoFactorResponseEnvelope"
+                $ref: "#/components/schemas/LoginTwoFactorOutcome"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2830,7 +2834,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorDeliveryEnvelope"
+                $ref: "#/components/schemas/TwoFactorDelivery"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2864,7 +2868,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorStatusEnvelope"
+                $ref: "#/components/schemas/TwoFactorStatus"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -2898,7 +2902,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorSetupEnvelope"
+                $ref: "#/components/schemas/TwoFactorSetup"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2938,7 +2942,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorDeliveryEnvelope"
+                $ref: "#/components/schemas/TwoFactorDelivery"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2978,7 +2982,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorConfirmEnvelope"
+                $ref: "#/components/schemas/TwoFactorConfirmed"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3018,11 +3022,11 @@ paths:
               $ref: "#/components/schemas/TwoFactorCodeRequest"
       responses:
         "200":
-          description: "Two-factor authentication is off. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment has no cookie to refresh, so `data.sessionToken` carries its replacement `ses_…` id: the old one no longer works."
+          description: "Two-factor authentication is off. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment has no cookie to refresh, so `sessionToken` carries its replacement `ses_…` id: the old one no longer works."
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionRenewedEnvelope"
+                $ref: "#/components/schemas/AuthTokens"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3062,11 +3066,11 @@ paths:
               $ref: "#/components/schemas/TwoFactorCodeRequest"
       responses:
         "200":
-          description: "The method is removed. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment gets its replacement `ses_…` id in `data.sessionToken`: the old one no longer works."
+          description: "The method is removed. The change revoked every session, this one included, and replaced it. A bearer client of a `cookie`-mode deployment gets its replacement `ses_…` id in `sessionToken`: the old one no longer works."
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionRenewedEnvelope"
+                $ref: "#/components/schemas/AuthTokens"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3110,7 +3114,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorBackupCodesRegeneratedEnvelope"
+                $ref: "#/components/schemas/TwoFactorBackupCodesRegenerated"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3144,7 +3148,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OAuthProvidersEnvelope"
+                $ref: "#/components/schemas/OAuthProviders"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -3170,7 +3174,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OAuthLinksEnvelope"
+                $ref: "#/components/schemas/OAuthLinks"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -3218,7 +3222,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OAuthLinkStartEnvelope"
+                $ref: "#/components/schemas/OAuthLinkStart"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3255,7 +3259,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OAuthLinksEnvelope"
+                $ref: "#/components/schemas/OAuthLinks"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3434,7 +3438,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UsersResponseEnvelope"
+                $ref: "#/components/schemas/UsersResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3476,7 +3480,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3517,8 +3521,8 @@ paths:
             schema:
               $ref: "#/components/schemas/DeleteUserRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3564,7 +3568,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -3609,7 +3613,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -3667,7 +3671,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -3708,8 +3712,8 @@ paths:
         - $ref: "#/components/parameters/HardDeleteParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3747,7 +3751,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3780,8 +3784,8 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3825,7 +3829,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UsersResponseEnvelope"
+                $ref: "#/components/schemas/UsersResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3871,7 +3875,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestEnvelope"
+                $ref: "#/components/schemas/FeedbackRequest"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -3934,7 +3938,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestsResponseEnvelope"
+                $ref: "#/components/schemas/FeedbackRequestsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -3972,7 +3976,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestsResponseEnvelope"
+                $ref: "#/components/schemas/FeedbackRequestsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4011,7 +4015,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestEnvelope"
+                $ref: "#/components/schemas/FeedbackRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4052,7 +4056,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedbackRequestEnvelope"
+                $ref: "#/components/schemas/FeedbackRequest"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4087,8 +4091,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4179,7 +4183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductsResponseEnvelope"
+                $ref: "#/components/schemas/ProductsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
@@ -4219,7 +4223,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductEnvelope"
+                $ref: "#/components/schemas/Product"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4261,8 +4265,8 @@ paths:
             schema:
               $ref: "#/components/schemas/DeleteProductRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4298,7 +4302,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CatalogueFacetsEnvelope"
+                $ref: "#/components/schemas/CatalogueFacetsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -4333,7 +4337,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductEnvelope"
+                $ref: "#/components/schemas/Product"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -4384,7 +4388,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductEnvelope"
+                $ref: "#/components/schemas/Product"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -4461,7 +4465,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductEnvelope"
+                $ref: "#/components/schemas/Product"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -4505,8 +4509,8 @@ paths:
         - $ref: "#/components/parameters/HardDeleteParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4547,7 +4551,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductAdminEnvelope"
+                $ref: "#/components/schemas/ProductAdmin"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -4583,7 +4587,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductEnvelope"
+                $ref: "#/components/schemas/Product"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4617,8 +4621,8 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4663,7 +4667,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductsResponseEnvelope"
+                $ref: "#/components/schemas/ProductsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4699,7 +4703,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartResponseEnvelope"
+                $ref: "#/components/schemas/CartResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4733,7 +4737,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartResponseEnvelope"
+                $ref: "#/components/schemas/CartResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4770,7 +4774,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartResponseEnvelope"
+                $ref: "#/components/schemas/CartResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4811,7 +4815,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartResponseEnvelope"
+                $ref: "#/components/schemas/CartResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4850,7 +4854,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartResponseEnvelope"
+                $ref: "#/components/schemas/CartResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4888,7 +4892,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartResponseEnvelope"
+                $ref: "#/components/schemas/CartResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -4928,7 +4932,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CartSummaryResponseEnvelope"
+                $ref: "#/components/schemas/CartSummaryResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -4945,7 +4949,7 @@ paths:
       tags:
         - Orders
       summary: Checkout (place order from cart)
-      description: Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+      description: Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as the body — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
       operationId: checkout
       security:
         - bearerAuth: []
@@ -4967,7 +4971,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CheckoutResponseEnvelope"
+                $ref: "#/components/schemas/Order"
           links:
             PayOrder:
               operationId: createPayment
@@ -5021,7 +5025,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReorderResponseEnvelope"
+                $ref: "#/components/schemas/ReorderResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5053,7 +5057,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WishlistResponseEnvelope"
+                $ref: "#/components/schemas/WishlistResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -5085,7 +5089,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WishlistResponseEnvelope"
+                $ref: "#/components/schemas/WishlistResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5125,7 +5129,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WishlistResponseEnvelope"
+                $ref: "#/components/schemas/WishlistResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5159,7 +5163,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WishlistResponseEnvelope"
+                $ref: "#/components/schemas/WishlistResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5258,7 +5262,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrdersResponseEnvelope"
+                $ref: "#/components/schemas/OrdersResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
@@ -5299,7 +5303,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
           links:
             PayOrder:
               operationId: createPayment
@@ -5353,8 +5357,8 @@ paths:
             schema:
               $ref: "#/components/schemas/DeleteOrderRequest"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5403,7 +5407,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrdersResponseEnvelope"
+                $ref: "#/components/schemas/OrdersResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5446,7 +5450,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -5487,7 +5491,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -5541,7 +5545,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -5582,8 +5586,8 @@ paths:
         - $ref: "#/components/parameters/HardDeleteParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5623,7 +5627,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5656,8 +5660,8 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -5703,7 +5707,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5751,7 +5755,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -5824,7 +5828,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreditNotesResponseEnvelope"
+                $ref: "#/components/schemas/CreditNotesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -5887,7 +5891,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentMethodsResponseEnvelope"
+                $ref: "#/components/schemas/PaymentMethodsResponse"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -5914,7 +5918,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -5956,7 +5960,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RefundEnvelope"
+                $ref: "#/components/schemas/Refund"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6004,7 +6008,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RefundEnvelope"
+                $ref: "#/components/schemas/Refund"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -6045,7 +6049,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
         "201":
           description: The payment, `succeeded`, with the order now `paid`
           headers:
@@ -6054,7 +6058,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6096,7 +6100,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -6133,7 +6137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
           links:
             SyncPayment:
               operationId: syncPayment
@@ -6191,7 +6195,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6232,12 +6236,8 @@ paths:
             schema:
               $ref: "#/components/schemas/PaymentWebhookEvent"
       responses:
-        "200":
-          description: Accepted — acted on, or knowingly ignored
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MessageResponse"
+        "204":
+          description: Accepted — acted on, or knowingly ignored. No body.
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -6267,7 +6267,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShippingMethodsResponseEnvelope"
+                $ref: "#/components/schemas/ShippingMethodsResponse"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -6294,7 +6294,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderFulfillmentEnvelope"
+                $ref: "#/components/schemas/OrderFulfillment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -6325,7 +6325,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6405,7 +6405,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PreorderFulfillmentOrdersResponseEnvelope"
+                $ref: "#/components/schemas/PreorderFulfillmentOrdersResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6448,7 +6448,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PreorderProductSummariesResponseEnvelope"
+                $ref: "#/components/schemas/PreorderProductSummariesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6490,7 +6490,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShipmentEnvelope"
+                $ref: "#/components/schemas/Shipment"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6533,7 +6533,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShipmentEnvelope"
+                $ref: "#/components/schemas/Shipment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6574,7 +6574,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FulfillmentOrderEnvelope"
+                $ref: "#/components/schemas/FulfillmentOrder"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6617,7 +6617,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FulfillmentOrderEnvelope"
+                $ref: "#/components/schemas/FulfillmentOrder"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6652,7 +6652,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShipmentEnvelope"
+                $ref: "#/components/schemas/Shipment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6693,7 +6693,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShipmentEnvelope"
+                $ref: "#/components/schemas/Shipment"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6742,7 +6742,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShipmentEnvelope"
+                $ref: "#/components/schemas/Shipment"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6804,7 +6804,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnsResponseEnvelope"
+                $ref: "#/components/schemas/ReturnsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "422":
@@ -6846,7 +6846,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnEnvelope"
+                $ref: "#/components/schemas/Return"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -6892,7 +6892,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnOptionsEnvelope"
+                $ref: "#/components/schemas/ReturnOptions"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -6924,7 +6924,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnEnvelope"
+                $ref: "#/components/schemas/Return"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -6954,7 +6954,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnEnvelope"
+                $ref: "#/components/schemas/Return"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -6994,7 +6994,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnEnvelope"
+                $ref: "#/components/schemas/Return"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7045,7 +7045,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReturnEnvelope"
+                $ref: "#/components/schemas/Return"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7096,7 +7096,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InventoryLevelsResponseEnvelope"
+                $ref: "#/components/schemas/InventoryLevelsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7142,7 +7142,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InventoryLevelEnvelope"
+                $ref: "#/components/schemas/InventoryLevel"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7187,7 +7187,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PreorderLevelsResponseEnvelope"
+                $ref: "#/components/schemas/PreorderLevelsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7233,7 +7233,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StockMovementsResponseEnvelope"
+                $ref: "#/components/schemas/StockMovementsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7278,7 +7278,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InventoryLevelEnvelope"
+                $ref: "#/components/schemas/InventoryLevel"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7333,7 +7333,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InventoryLevelEnvelope"
+                $ref: "#/components/schemas/InventoryLevel"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7381,7 +7381,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReservationSweepEnvelope"
+                $ref: "#/components/schemas/ReservationSweepResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7435,7 +7435,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionsResponseEnvelope"
+                $ref: "#/components/schemas/WebhookSubscriptionsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7482,7 +7482,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionCreatedEnvelope"
+                $ref: "#/components/schemas/WebhookSubscriptionCreated"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7525,7 +7525,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
+                $ref: "#/components/schemas/WebhookSubscription"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7566,7 +7566,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
+                $ref: "#/components/schemas/WebhookSubscription"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7618,7 +7618,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
+                $ref: "#/components/schemas/WebhookSubscription"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7653,8 +7653,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7698,7 +7698,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionCreatedEnvelope"
+                $ref: "#/components/schemas/WebhookSubscriptionCreated"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7741,7 +7741,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
+                $ref: "#/components/schemas/WebhookSubscription"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7789,7 +7789,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookDeliveriesResponseEnvelope"
+                $ref: "#/components/schemas/WebhookDeliveriesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7829,7 +7829,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookDeliveryEnvelope"
+                $ref: "#/components/schemas/WebhookDelivery"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7866,7 +7866,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookEventCatalogueResponseEnvelope"
+                $ref: "#/components/schemas/WebhookEventCatalogueResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7904,7 +7904,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiKeysResponseEnvelope"
+                $ref: "#/components/schemas/ApiKeysResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -7958,7 +7958,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiKeyCreatedEnvelope"
+                $ref: "#/components/schemas/ApiKeyCreated"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -7996,7 +7996,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiKeyEnvelope"
+                $ref: "#/components/schemas/ApiKey"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8025,8 +8025,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8068,7 +8068,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LanguageEnvelope"
+                $ref: "#/components/schemas/Language"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8112,7 +8112,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LanguageEnvelope"
+                $ref: "#/components/schemas/Language"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8146,7 +8146,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TwoFactorDeliveryEnvelope"
+                $ref: "#/components/schemas/TwoFactorDelivery"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8176,7 +8176,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionActivityEnvelope"
+                $ref: "#/components/schemas/SessionActivity"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8202,7 +8202,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionConfigEnvelope"
+                $ref: "#/components/schemas/SessionConfig"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -8272,7 +8272,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8312,7 +8312,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8349,7 +8349,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8384,7 +8384,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserEnvelope"
+                $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8424,7 +8424,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MergeCartResponseEnvelope"
+                $ref: "#/components/schemas/MergeCartResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8577,7 +8577,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderTimelineEnvelope"
+                $ref: "#/components/schemas/OrderTimelineResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -8613,7 +8613,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrderEnvelope"
+                $ref: "#/components/schemas/Order"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8724,7 +8724,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentsResponseEnvelope"
+                $ref: "#/components/schemas/PaymentsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8759,7 +8759,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
           links:
             ConfirmPayment:
               operationId: confirmPayment
@@ -8774,7 +8774,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
           links:
             ConfirmPayment:
               operationId: confirmPayment
@@ -8826,7 +8826,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentsResponseEnvelope"
+                $ref: "#/components/schemas/PaymentsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -8887,7 +8887,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RefundsResponseEnvelope"
+                $ref: "#/components/schemas/RefundsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8917,7 +8917,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentAttentionResponseEnvelope"
+                $ref: "#/components/schemas/PaymentAttentionResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -8955,7 +8955,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentEnvelope"
+                $ref: "#/components/schemas/Payment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9012,7 +9012,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReleaseDateImpactEnvelope"
+                $ref: "#/components/schemas/ReleaseDateImpact"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9067,7 +9067,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReleaseDateImpactEnvelope"
+                $ref: "#/components/schemas/ReleaseDateImpact"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9102,7 +9102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FulfillmentOrderEnvelope"
+                $ref: "#/components/schemas/FulfillmentOrder"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9136,7 +9136,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SalesStatsEnvelope"
+                $ref: "#/components/schemas/SalesStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9177,7 +9177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductStatsEnvelope"
+                $ref: "#/components/schemas/ProductStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9216,7 +9216,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProductSeriesEnvelope"
+                $ref: "#/components/schemas/ProductSeries"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9251,7 +9251,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CategoryStatsEnvelope"
+                $ref: "#/components/schemas/CategoryStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9284,7 +9284,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaymentMixEnvelope"
+                $ref: "#/components/schemas/PaymentMix"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9317,7 +9317,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OperationsStatsEnvelope"
+                $ref: "#/components/schemas/OperationsStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9350,7 +9350,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CustomerStatsEnvelope"
+                $ref: "#/components/schemas/CustomerStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9380,7 +9380,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PipelineStatsEnvelope"
+                $ref: "#/components/schemas/PipelineStats"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9408,7 +9408,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatsLimitsEnvelope"
+                $ref: "#/components/schemas/StatsLimits"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9443,7 +9443,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InventoryLevelEnvelope"
+                $ref: "#/components/schemas/InventoryLevel"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9481,7 +9481,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
+                $ref: "#/components/schemas/WebhookSubscription"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9520,7 +9520,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookSubscriptionEnvelope"
+                $ref: "#/components/schemas/WebhookSubscription"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9555,7 +9555,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WebhookDeliveryEnvelope"
+                $ref: "#/components/schemas/WebhookDelivery"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9585,7 +9585,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
         "404":
           $ref: "#/components/responses/NotFound"
         "429":
@@ -9627,7 +9627,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExamplesResponseEnvelope"
+                $ref: "#/components/schemas/ExamplesResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9667,7 +9667,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9712,7 +9712,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExamplesResponseEnvelope"
+                $ref: "#/components/schemas/ExamplesResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9755,7 +9755,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -9796,7 +9796,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -9850,7 +9850,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
           headers:
             ETag:
               $ref: "#/components/headers/ETag"
@@ -9890,8 +9890,8 @@ paths:
         - $ref: "#/components/parameters/IdPathParam"
         - $ref: "#/components/parameters/IfMatchHeader"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -9933,7 +9933,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -9981,7 +9981,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleEnvelope"
+                $ref: "#/components/schemas/Example"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10019,7 +10019,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NotificationsResponseEnvelope"
+                $ref: "#/components/schemas/NotificationsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10067,8 +10067,8 @@ paths:
         - bearerAuth: []
         - cookieAuth: []
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10091,8 +10091,8 @@ paths:
         - bearerAuth: []
         - cookieAuth: []
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10122,7 +10122,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NotificationEnvelope"
+                $ref: "#/components/schemas/Notification"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10148,8 +10148,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/IdPathParam"
       responses:
-        "200":
-          $ref: "#/components/responses/Success"
+        "204":
+          $ref: "#/components/responses/NoContent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10179,7 +10179,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ShopEnvelope"
+                $ref: "#/components/schemas/Shop"
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
@@ -10294,7 +10294,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StockAlertsResponseEnvelope"
+                $ref: "#/components/schemas/StockAlertsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -10325,7 +10325,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StockAlertsResponseEnvelope"
+                $ref: "#/components/schemas/StockAlertsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -10367,7 +10367,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StockAlertsResponseEnvelope"
+                $ref: "#/components/schemas/StockAlertsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -10617,12 +10617,8 @@ components:
       schema:
         type: string
   responses:
-    Success:
-      description: Success
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/MessageResponse"
+    NoContent:
+      description: Done. There is nothing to say, so the body is empty (RFC 9110 section 15.3.5).
     BadRequest:
       description: "The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it."
       content:
@@ -10798,28 +10794,6 @@ components:
         totalPages:
           type: integer
           minimum: 0
-    EnvelopeSuccess:
-      type: boolean
-      enum:
-        - true
-    EnvelopeStatus:
-      type: integer
-    EnvelopeMessage:
-      type: string
-    MessageResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
     ErrorItem:
       type: object
       additionalProperties: false
@@ -10878,40 +10852,6 @@ components:
           items:
             $ref: "#/components/schemas/ErrorItem"
           description: Structured machine-friendly errors; branch on `code`, never on `message`.
-    UserEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/User"
-    AccountEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Account"
     Account:
       type: object
       additionalProperties: false
@@ -11122,23 +11062,6 @@ components:
           enum:
             - ok
           description: Liveness indicator. Always `ok` when the process is answering.
-    HealthPingEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/HealthPing"
     LocaleDirection:
       type: string
       enum:
@@ -11264,23 +11187,6 @@ components:
           $ref: "#/components/schemas/Locale"
         fallback:
           $ref: "#/components/schemas/Locale"
-    LocaleCapabilitiesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleCapabilities"
     CreateLocaleRequest:
       type: object
       additionalProperties: false
@@ -11353,23 +11259,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    LanguageEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Language"
     LocaleAppKind:
       type: string
       enum:
@@ -11405,23 +11294,6 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/LocaleAppDescriptor"
-    LocaleAppsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleApps"
     LocaleDictionary:
       type: object
       additionalProperties: false
@@ -11436,23 +11308,6 @@ components:
           type: object
           additionalProperties: true
           description: Nested key/value dictionary, the same shape the API loads.
-    LocaleDictionaryEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleDictionary"
     ReplaceLocaleRequest:
       type: object
       additionalProperties: false
@@ -11504,23 +11359,6 @@ components:
           type: object
           additionalProperties: true
           description: "Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404."
-    LocaleMessagesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleMessages"
     LocaleEntry:
       type: object
       additionalProperties: false
@@ -11566,23 +11404,6 @@ components:
             $ref: "#/components/schemas/LocaleEntry"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    LocaleEntriesResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleEntriesResponse"
     ReplaceLocaleEntriesRequest:
       type: object
       additionalProperties: false
@@ -11625,23 +11446,6 @@ components:
         revision:
           type: integer
           minimum: 0
-    LocaleImportResultEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleImportResult"
     CreateLocaleEntryRequest:
       type: object
       additionalProperties: false
@@ -11658,23 +11462,6 @@ components:
           type: string
           maxLength: 2000
           example: Catálogo
-    LocaleEntryEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LocaleEntry"
     UpdateLocaleEntriesRequest:
       type: object
       additionalProperties: false
@@ -11786,23 +11573,6 @@ components:
           items:
             type: string
           description: Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already.
-    EntityTranslationsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/EntityTranslations"
     UpsertTranslationRequest:
       type: object
       additionalProperties: false
@@ -12061,23 +11831,6 @@ components:
         timestamp:
           type: string
           format: date-time
-    ObservabilityHealthResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ObservabilityHealth"
     ObservabilityMetricsLatency:
       type: object
       additionalProperties: false
@@ -12178,23 +11931,6 @@ components:
         timestamp:
           type: string
           format: date-time
-    ObservabilityMetricsSummaryResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ObservabilityMetricsSummary"
     AuditEntryItem:
       type: object
       additionalProperties: false
@@ -12285,23 +12021,6 @@ components:
             $ref: "#/components/schemas/AuditEntryItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    AuditLogsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AuditLogsResponse"
     AuditEntriesResponse:
       type: object
       additionalProperties: false
@@ -12315,23 +12034,6 @@ components:
             $ref: "#/components/schemas/AuditEntryItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    AuditEntriesResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AuditEntriesResponse"
     AntibotRungs:
       type: object
       additionalProperties: false
@@ -12373,23 +12075,6 @@ components:
             What the client needs to render this provider's widget — a site key, a script URL. Empty for `none`. Public by definition: everything here reaches the browser.
         rungs:
           $ref: "#/components/schemas/AntibotRungs"
-    AntibotConfigEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AntibotConfig"
     AntibotChallengeParameters:
       type: object
       additionalProperties: false
@@ -12439,23 +12124,6 @@ components:
         signature:
           type: string
           description: HMAC over the parameters, proving this server issued them.
-    AntibotChallengeEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AntibotChallenge"
     AnalyticsEventRequest:
       oneOf:
         - $ref: "#/components/schemas/ProductViewedEvent"
@@ -12584,23 +12252,6 @@ components:
           type: string
           format: date-time
           description: When the account is erased unless restored before. At most one calendar month after `requestedAt`, at 00:00 UTC at the latest.
-    AccountDeletionEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AccountDeletion"
     UpdateAccountRequest:
       type: object
       additionalProperties: false
@@ -12668,23 +12319,6 @@ components:
         resendAfter:
           type: integer
           description: Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server.
-    EmailVerificationRequestedEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/EmailVerificationRequested"
     PackedRules:
       type: array
       description: |
@@ -12792,23 +12426,6 @@ components:
             when a role does. A client caches these; this is what tells it the cache is
             about a different model, not merely a different person. One number for both
             lists — the keys file they are declared in is one file.
-    AbilitiesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Abilities"
     Password:
       type: string
       maxLength: 128
@@ -12843,22 +12460,6 @@ components:
         sessionToken:
           type: string
           description: "The `ses_…` session id, to send back as `Authorization: Bearer ses_…`. Present only for a `cookie`-mode login that asked for `transport: bearer` (or a re-proof by such a client); that login sets no cookie."
-    SessionRenewedEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AuthTokens"
     PasswordCheckRequest:
       type: object
       additionalProperties: false
@@ -12883,23 +12484,6 @@ components:
           type: integer
           minimum: 0
           description: How many times HIBP has seen this exact password. Present only when HIBP is what caught it — never for a bundled-list hit, and never when rung 2 is disabled or unreachable.
-    PasswordCheckEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PasswordCheck"
     ReauthMethod:
       type: string
       enum:
@@ -12917,23 +12501,6 @@ components:
           items:
             $ref: "#/components/schemas/ReauthMethod"
           description: The methods this account can use now, in the order to offer them. Empty means none can.
-    ReauthMethodsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ReauthMethods"
     ReauthPasswordRequest:
       type: object
       additionalProperties: false
@@ -12982,23 +12549,6 @@ components:
         mapping:
           password: "#/components/schemas/ReauthPasswordRequest"
           email: "#/components/schemas/ReauthEmailRequest"
-    AuthTokensEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AuthTokens"
     Session:
       type: object
       additionalProperties: false
@@ -13038,40 +12588,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Session"
-    SessionsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/SessionsResponse"
-    SessionEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Session"
     Address:
       type: object
       additionalProperties: false
@@ -13113,23 +12629,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Address"
-    AddressesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AddressesResponse"
     AddressInput:
       type: object
       additionalProperties: false
@@ -13158,23 +12657,6 @@ components:
           $ref: "#/components/schemas/AddressPhone"
         default:
           type: boolean
-    AddressEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Address"
     ReplaceAddressRequest:
       type: object
       additionalProperties: false
@@ -13368,23 +12850,6 @@ components:
         - $ref: "#/components/schemas/MfaChallenge"
         - $ref: "#/components/schemas/DeletionPending"
       description: A full session (AuthTokens), a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled, or the offer to restore an account inside the grace of its own deletion (DeletionPending).
-    LoginResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LoginOutcome"
     LoginRestoreRequest:
       type: object
       additionalProperties: false
@@ -13458,23 +12923,6 @@ components:
         token:
           type: string
           description: New access JWT
-    RefreshTokenEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/RefreshTokenResponse"
     AccountExportRequest:
       type: object
       additionalProperties: false
@@ -13489,23 +12937,6 @@ components:
           enum:
             - building
           description: "`building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one."
-    AccountExportRequestEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/AccountExportRequest"
     LoginTwoFactorRequest:
       type: object
       additionalProperties: false
@@ -13531,23 +12962,6 @@ components:
         - $ref: "#/components/schemas/AuthTokens"
         - $ref: "#/components/schemas/DeletionPending"
       description: A full session (AuthTokens), or the offer to restore an account inside the grace of its own deletion (DeletionPending) once its second factor passed.
-    LoginTwoFactorResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/LoginTwoFactorOutcome"
     TwoFactorSendRequest:
       type: object
       additionalProperties: false
@@ -13585,23 +12999,6 @@ components:
           type: string
           format: date-time
           description: When this code stops being accepted.
-    TwoFactorDeliveryEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/TwoFactorDelivery"
     TwoFactorStatus:
       type: object
       additionalProperties: false
@@ -13627,23 +13024,6 @@ components:
         backupCodesRemaining:
           type: integer
           description: How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery.
-    TwoFactorStatusEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/TwoFactorStatus"
     TwoFactorSetupRequest:
       type: object
       additionalProperties: false
@@ -13682,23 +13062,6 @@ components:
           type: string
           format: date-time
           description: When the delivered code stops being accepted. Absent unless `delivers`.
-    TwoFactorSetupEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/TwoFactorSetup"
     TwoFactorConfirmRequest:
       type: object
       additionalProperties: false
@@ -13731,23 +13094,6 @@ components:
         sessionToken:
           type: string
           description: "The replacement `ses_…` id, for a bearer client of a `cookie`-mode deployment: arming a factor revoked every session, this one included, and the old id no longer works. Absent otherwise (a browser's cookie was refreshed in place)."
-    TwoFactorConfirmEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/TwoFactorConfirmed"
     TwoFactorCodeRequest:
       type: object
       additionalProperties: false
@@ -13774,23 +13120,6 @@ components:
         backupCodesRemaining:
           type: integer
           description: How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.
-    TwoFactorBackupCodesRegeneratedEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/TwoFactorBackupCodesRegenerated"
     OAuthProviders:
       type: object
       additionalProperties: false
@@ -13802,23 +13131,6 @@ components:
           items:
             type: string
           description: Registry names this deployment holds credentials for, e.g. `["google", "github"]`.
-    OAuthProvidersEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OAuthProviders"
     OAuthLink:
       type: object
       additionalProperties: false
@@ -13843,23 +13155,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OAuthLink"
-    OAuthLinksEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OAuthLinks"
     OAuthLinkStart:
       type: object
       additionalProperties: false
@@ -13871,23 +13166,6 @@ components:
           format: uri
           maxLength: 2048
           description: The provider's consent screen, with the state and PKCE challenge of this attempt. Navigate the browser to it.
-    OAuthLinkStartEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OAuthLinkStart"
     UserSort:
       type: array
       minItems: 1
@@ -13914,23 +13192,6 @@ components:
             $ref: "#/components/schemas/User"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    UsersResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/UsersResponse"
     CreateUserRequest:
       type: object
       additionalProperties: false
@@ -14243,23 +13504,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    FeedbackRequestEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/FeedbackRequest"
     FeedbackRequestSort:
       type: array
       minItems: 1
@@ -14286,23 +13530,6 @@ components:
             $ref: "#/components/schemas/FeedbackRequest"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    FeedbackRequestsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/FeedbackRequestsResponse"
     SearchFeedbackRequestsRequest:
       type: object
       additionalProperties: false
@@ -14494,23 +13721,6 @@ components:
             $ref: "#/components/schemas/Product"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    ProductsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ProductsResponse"
     ProductTranslationFieldsWrite:
       type: object
       additionalProperties: false
@@ -14661,23 +13871,6 @@ components:
             type: string
             maxLength: 50
             minLength: 1
-    ProductEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Product"
     DeleteProductRequest:
       type: object
       additionalProperties: false
@@ -14716,23 +13909,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FacetCount"
-    CatalogueFacetsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/CatalogueFacetsResponse"
     ReplaceProductRequest:
       type: object
       additionalProperties: false
@@ -15145,23 +14321,6 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/ProductTranslationFields"
-    ProductAdminEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ProductAdmin"
     SearchProductsRequest:
       type: object
       additionalProperties: false
@@ -15372,23 +14531,6 @@ components:
         checkoutable:
           type: boolean
           description: Whether every line can be bought as it stands (each line's `availability` is `in_stock`, `preorder` or `backorder`) and the cart is not empty. Checkout refuses the others (`CART_INSUFFICIENT_STOCK`, `CART_PRODUCT_UNAVAILABLE`); a shipping method and an address are separate steps and not part of this.
-    CartResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/CartResponse"
     CartQuantity:
       type: integer
       minimum: 1
@@ -15426,23 +14568,6 @@ components:
           maxLength: 64
           minLength: 1
           description: Which shipping method (see `GET /delivery/methods`) the cart plans to ship by. `null` clears the choice. An id that matches no method refuses with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`; one that does not apply to the basket refuses with 409 (`CART_SHIPPING_NOT_APPLICABLE`, `CART_SHIPPING_METHOD_WEIGHT`).
-    CartSummaryResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/CartSummaryResponse"
     PaymentMethodId:
       type: string
       enum:
@@ -15875,23 +15000,6 @@ components:
         deletedAt:
           type: string
           format: date-time
-    CheckoutResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Order"
     MergeLineReason:
       type: string
       description: |-
@@ -15941,23 +15049,6 @@ components:
           description: One result per order line, in the order's own order.
           items:
             $ref: "#/components/schemas/MergeLineResult"
-    ReorderResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ReorderResponse"
     WishlistItem:
       type: object
       additionalProperties: false
@@ -15979,23 +15070,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WishlistItem"
-    WishlistResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/WishlistResponse"
     CreateWishlistItemRequest:
       type: object
       additionalProperties: false
@@ -16034,23 +15108,6 @@ components:
             $ref: "#/components/schemas/Order"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    OrdersResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OrdersResponse"
     OrderLineInput:
       type: object
       additionalProperties: false
@@ -16083,23 +15140,6 @@ components:
           items:
             $ref: "#/components/schemas/OrderLineInput"
       description: Create a new order.
-    OrderEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Order"
     DeleteOrderRequest:
       type: object
       additionalProperties: false
@@ -16225,22 +15265,13 @@ components:
           description: The gross amount this credit note reverses.
         refundId:
           $ref: "#/components/schemas/Id"
-    CreditNotesResponseEnvelope:
+    CreditNotesResponse:
       type: object
       additionalProperties: false
       required:
-        - success
-        - status
-        - message
-        - data
+        - items
       properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
+        items:
           type: array
           items:
             $ref: "#/components/schemas/CreditNoteSummary"
@@ -16266,23 +15297,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PaymentMethodOption"
-    PaymentMethodsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PaymentMethodsResponse"
     RefundStatus:
       type: string
       enum:
@@ -16520,23 +15534,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    PaymentEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Payment"
     RefundPaymentRequest:
       type: object
       additionalProperties: false
@@ -16550,23 +15547,6 @@ components:
           type: string
           maxLength: 3
           description: ISO-4217 code of `amount`. Optional; when sent it must equal the payment's own currency, so an amount written in another unit is refused instead of being read as this one.
-    RefundEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Refund"
     RecordOfflinePaymentRequest:
       type: object
       additionalProperties: false
@@ -16666,23 +15646,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShippingMethod"
-    ShippingMethodsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ShippingMethodsResponse"
     FulfillmentOrderKind:
       type: string
       enum:
@@ -16947,23 +15910,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Shipment"
-    OrderFulfillmentEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OrderFulfillment"
     PreorderFulfillmentState:
       type: string
       enum:
@@ -17063,23 +16009,6 @@ components:
             $ref: "#/components/schemas/PreorderFulfillmentOrder"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    PreorderFulfillmentOrdersResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PreorderFulfillmentOrdersResponse"
     PreorderProductSummary:
       type: object
       additionalProperties: false
@@ -17135,23 +16064,6 @@ components:
             $ref: "#/components/schemas/PreorderProductSummary"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    PreorderProductSummariesResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PreorderProductSummariesResponse"
     ShipFulfillmentOrderRequest:
       type: object
       additionalProperties: false
@@ -17185,23 +16097,6 @@ components:
           maxLength: 1000
           minLength: 1
           description: Required exactly when `forced` is `true` — why the normal door didn't apply. Recorded on the order's override history.
-    ShipmentEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Shipment"
     HoldFulfillmentOrderRequest:
       type: object
       additionalProperties: false
@@ -17225,23 +16120,6 @@ components:
           maxLength: 500
           minLength: 1
           description: A sentence for the buyer, shown on their order and mailed with the hold. Separate from `note`, which they never see. A hold for `incorrect_address` or with a message is mailed; a bare one is not.
-    FulfillmentOrderEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/FulfillmentOrder"
     UpdateShipmentRequest:
       type: object
       additionalProperties: false
@@ -17435,23 +16313,6 @@ components:
             $ref: "#/components/schemas/Return"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    ReturnsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ReturnsResponse"
     CreateReturnRequest:
       type: object
       additionalProperties: false
@@ -17488,23 +16349,6 @@ components:
                 type: integer
                 minimum: 1
           description: "What comes back. Absent means everything on the order that is still left to return — the usual shape of a withdrawal. Not allowed on a `cancellation`: the whole remainder is its lines."
-    ReturnEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Return"
     ReturnOptionLine:
       type: object
       additionalProperties: false
@@ -17602,23 +16446,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CancellableFulfillmentOrder"
-    ReturnOptionsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ReturnOptions"
     DeclineReturnRequest:
       type: object
       additionalProperties: false
@@ -17688,23 +16515,6 @@ components:
             $ref: "#/components/schemas/InventoryLevel"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    InventoryLevelsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/InventoryLevelsResponse"
     BackorderLimitRequest:
       type: object
       additionalProperties: false
@@ -17717,23 +16527,6 @@ components:
             - "null"
           minimum: 0
           description: "The new allowance. `0` closes it. `null` removes the cap: set a cap equal to the incoming quantity if the date must hold for everyone."
-    InventoryLevelEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/InventoryLevel"
     PreorderLevel:
       type: object
       additionalProperties: false
@@ -17793,23 +16586,6 @@ components:
             $ref: "#/components/schemas/PreorderLevel"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    PreorderLevelsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PreorderLevelsResponse"
     StockMovementReason:
       type: string
       enum:
@@ -17882,23 +16658,6 @@ components:
             $ref: "#/components/schemas/StockMovement"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    StockMovementsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/StockMovementsResponse"
     ReceiptRequest:
       type: object
       additionalProperties: false
@@ -17938,23 +16697,6 @@ components:
           type: integer
           minimum: 0
           description: How many holds this run released.
-    ReservationSweepEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ReservationSweepResponse"
     WebhookSubscriptionSort:
       type: array
       minItems: 1
@@ -18083,23 +16825,6 @@ components:
             $ref: "#/components/schemas/WebhookSubscription"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    WebhookSubscriptionsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/WebhookSubscriptionsResponse"
     CreateWebhookSubscriptionRequest:
       type: object
       additionalProperties: false
@@ -18186,40 +16911,6 @@ components:
         newSecret:
           type: string
           description: A rotated-in secret's plaintext, present only in the response of `POST .../rotate-secret`.
-    WebhookSubscriptionCreatedEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/WebhookSubscriptionCreated"
-    WebhookSubscriptionEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/WebhookSubscription"
     ReplaceWebhookSubscriptionRequest:
       type: object
       additionalProperties: false
@@ -18344,40 +17035,6 @@ components:
             $ref: "#/components/schemas/WebhookDelivery"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    WebhookDeliveriesResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/WebhookDeliveriesResponse"
-    WebhookDeliveryEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/WebhookDelivery"
     WebhookEventCatalogueEntry:
       type: object
       additionalProperties: false
@@ -18388,22 +17045,13 @@ components:
           type: string
         description:
           type: string
-    WebhookEventCatalogueResponseEnvelope:
+    WebhookEventCatalogueResponse:
       type: object
       additionalProperties: false
       required:
-        - success
-        - status
-        - message
-        - data
+        - items
       properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
+        items:
           type: array
           items:
             $ref: "#/components/schemas/WebhookEventCatalogueEntry"
@@ -18489,23 +17137,6 @@ components:
           type: string
           format: date-time
           description: The latest `expiresAt` a mint accepts right now (one calendar year from this response). A later one is refused with 422, so a form can bound its date picker without copying the rule.
-    ApiKeysResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ApiKeysResponse"
     MintApiKeyRequest:
       type: object
       additionalProperties: false
@@ -18572,40 +17203,6 @@ components:
         secret:
           type: string
           description: The newly minted credential, in plaintext — `sk_<prefix>_<secret>`. Shown here once, on creation, and never again.
-    ApiKeyCreatedEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ApiKeyCreated"
-    ApiKeyEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ApiKey"
     SessionActivity:
       type: object
       additionalProperties: false
@@ -18620,23 +17217,6 @@ components:
           type: integer
           minimum: 1
           description: How long the session may then sit unused before it ends. Absent when no idle timeout applies to this account (a shopper, or the timeout is switched off).
-    SessionActivityEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/SessionActivity"
     SessionConfig:
       type: object
       additionalProperties: false
@@ -18672,23 +17252,6 @@ components:
           type: integer
           minimum: 1
           description: The longest a staff or admin session lives from sign-in, whatever the tier (`NODE_SESSION_LIFETIME_STAFF`). Absent when the cap is off.
-    SessionConfigEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/SessionConfig"
     ExportSession:
       type: object
       additionalProperties: false
@@ -19743,23 +18306,6 @@ components:
           description: One result per submitted line, in request order.
           items:
             $ref: "#/components/schemas/MergeLineResult"
-    MergeCartResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/MergeCartResponse"
     OrderTimelineEntry:
       type: object
       additionalProperties: false
@@ -19794,22 +18340,13 @@ components:
           type: object
           additionalProperties: true
           description: "What the type needs to say, as ids, codes and numbers — never another module's free text. `status_overridden`: `mode` (`status` or `forced`), `from`, `to`. `paid`: `method`. `delivered`: `withdrawUntil`. `cancelled`: `by`, `cause` (why: `customer`, `operator`, `withdrawal`, `reservation_expired`, `erasure` or `payment_mismatch`; `by` is shared by the system's causes), `refund` (whether the cancel returned the money). Shipment and hold rows: `shipmentId` or `fulfillmentOrderId`, `trackingCode`, `reason` (a hold's reason code). Refund rows: `refundId`, `amount`, `currency`, `reason`, and `failureReason` on a failure. Return rows: `returnId`. Document rows: `number`."
-    OrderTimelineEnvelope:
+    OrderTimelineResponse:
       type: object
       additionalProperties: false
       required:
-        - success
-        - status
-        - message
-        - data
+        - items
       properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
+        items:
           type: array
           items:
             $ref: "#/components/schemas/OrderTimelineEntry"
@@ -19851,23 +18388,6 @@ components:
             $ref: "#/components/schemas/Payment"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    PaymentsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PaymentsResponse"
     CreatePaymentRequest:
       type: object
       additionalProperties: false
@@ -19976,23 +18496,6 @@ components:
             $ref: "#/components/schemas/RefundListItem"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    RefundsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/RefundsResponse"
     PaymentAttentionKind:
       type: string
       enum:
@@ -20041,23 +18544,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PaymentAttentionItem"
-    PaymentAttentionResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PaymentAttentionResponse"
     ReleaseDateImpact:
       type: object
       additionalProperties: false
@@ -20069,23 +18555,6 @@ components:
           type: integer
           minimum: 0
           description: Orders that would get a delay email (the date moves later or is cleared); silence always means the buyer keeps waiting, and they can cancel any time before it ships.
-    ReleaseDateImpactEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ReleaseDateImpact"
     StatsInterval:
       type: string
       enum:
@@ -20227,23 +18696,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SalesCurrency"
-    SalesStatsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/SalesStats"
     ProductSalesRow:
       type: object
       additionalProperties: false
@@ -20285,23 +18737,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductSalesRow"
-    ProductStatsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ProductStats"
     ProductSeriesBucket:
       type: object
       additionalProperties: false
@@ -20336,23 +18771,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductSeriesBucket"
-    ProductSeriesEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ProductSeries"
     CategorySalesRow:
       type: object
       additionalProperties: false
@@ -20384,23 +18802,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CategorySalesRow"
-    CategoryStatsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/CategoryStats"
     PaymentMixRow:
       type: object
       additionalProperties: false
@@ -20440,23 +18841,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PaymentMixRow"
-    PaymentMixEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PaymentMix"
     OperationsStats:
       type: object
       additionalProperties: false
@@ -20527,23 +18911,6 @@ components:
                 type: number
                 format: double
                 minimum: 0
-    OperationsStatsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/OperationsStats"
     CustomerStats:
       type: object
       additionalProperties: false
@@ -20569,23 +18936,6 @@ components:
           format: double
           minimum: 0
           maximum: 1
-    CustomerStatsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/CustomerStats"
     PipelineStats:
       type: object
       additionalProperties: false
@@ -20616,23 +18966,6 @@ components:
         paidNotShipped:
           type: integer
           description: Orders `paid` or `processing`, so not yet handed to a carrier.
-    PipelineStatsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/PipelineStats"
     StatsLimits:
       type: object
       additionalProperties: false
@@ -20646,40 +18979,6 @@ components:
         maxBuckets:
           type: integer
           description: The most buckets one series may hold, the first possibly starting before `from`.
-    StatsLimitsEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/StatsLimits"
-    ExampleEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Example"
     ExampleSort:
       type: array
       minItems: 1
@@ -20706,23 +19005,6 @@ components:
             $ref: "#/components/schemas/Example"
         meta:
           $ref: "#/components/schemas/PaginationMeta"
-    ExamplesResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/ExamplesResponse"
     CreateExampleRequest:
       type: object
       additionalProperties: false
@@ -20807,40 +19089,6 @@ components:
           description: Newest first.
           items:
             $ref: "#/components/schemas/Notification"
-    NotificationsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/NotificationsResponse"
-    NotificationEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Notification"
     ShopAddress:
       type: object
       additionalProperties: false
@@ -20923,23 +19171,6 @@ components:
           type: integer
           minimum: 1
           description: 'Days a buyer is promised when a backorder names no restock date: "ships within N days". A legal value the server fixes (CRD Art. 18(1)), not a setting.'
-    ShopEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/Shop"
     SitemapDocument:
       type: string
       description: "A sitemap file (sitemaps.org 0.9): an `urlset` of `url` entries, or a `sitemapindex` of `sitemap` entries. Served as `application/xml`, not JSON."
@@ -20953,23 +19184,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StockAlert"
-    StockAlertsResponseEnvelope:
-      type: object
-      additionalProperties: false
-      required:
-        - success
-        - status
-        - message
-        - data
-      properties:
-        success:
-          $ref: "#/components/schemas/EnvelopeSuccess"
-        status:
-          $ref: "#/components/schemas/EnvelopeStatus"
-        message:
-          $ref: "#/components/schemas/EnvelopeMessage"
-        data:
-          $ref: "#/components/schemas/StockAlertsResponse"
     CreateStockAlertRequest:
       type: object
       additionalProperties: false

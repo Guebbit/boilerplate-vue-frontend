@@ -76,12 +76,10 @@ beforeEach(() => {
             shipments: [aShipment({ trackingCode: 'TRK-1' })]
         }),
         'POST /delivery/fulfillment-orders/fo1/shipments': orvalEnvelope(
-            aShipment({ id: 's2', trackingCode: 'TRK-2' }),
-            201
+            aShipment({ id: 's2', trackingCode: 'TRK-2' })
         ),
         'POST /delivery/fulfillment-orders/fo1/fulfill': orvalEnvelope(
-            aShipment({ id: 's3', status: 'delivered' }),
-            201
+            aShipment({ id: 's3', status: 'delivered' })
         ),
         'POST /delivery/fulfillment-orders/fo1/hold': orvalEnvelope(
             aFulfillmentOrder({ status: 'on_hold', holdReason: 'high_risk' })

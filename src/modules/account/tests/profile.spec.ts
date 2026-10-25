@@ -58,8 +58,6 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        // Wrapped under `data`, as `LoginResponseEnvelope` declares — the only shape
-        // `getTokenFromResponse` reads.
         'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
         'GET /account': orvalEnvelope(USER),
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
@@ -81,7 +79,7 @@ beforeEach(() => {
         'POST /account/restore': orvalEnvelope(),
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
         'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
-        // The envelope the real endpoint answers: a fresh access token for this session.
+        // A fresh access token for this session.
         'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
         'POST /account/email-verification/confirm': orvalEnvelope(),
         'POST /account/email-change/confirm': orvalEnvelope(),
@@ -129,22 +127,6 @@ describe('fetchProfile', () => {
             .then(() => {
                 expect(useSessionStore().viewer).toMatchObject({ id: 'u1' });
             }));
-
-    it('leaves the viewer alone when the response carries no payload', () => {
-        // `data` is required by the real contract, so this exact payload is impossible against
-        // it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence for
-        // that state, same as `addresses.spec.ts`'s book-less case.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: undefined })
-        );
-
-        return useProfileStore()
-            .fetchProfile(true)
-            .then(() => {
-                expect(useSessionStore().viewer).toBeUndefined();
-                expect(useSessionStore().isAuth).toBe(false);
-            });
-    });
 });
 
 describe('updateProfile', () => {
@@ -315,13 +297,13 @@ describe('the self-service actions', () => {
             .then(() => {
                 // Authenticated: the freshly verified record is pulled back in, and the rules
                 // that go with it follow.
-                // Sorted: the rules are fetched without being awaited — a shell that blocked on
+                // Unordered: the rules are fetched without being awaited — a shell that blocked on
                 // learning what to hide would be worse than one that hides too much for a moment
-                // — so which of the two lands first is not a fact worth pinning.
-                expect(requestedUrls().slice(-2).toSorted()).toEqual([
-                    '/account',
-                    '/account/abilities'
-                ]);
+                // — so the order they land in, and the idle-clock read after them, are not facts
+                // worth pinning.
+                expect(requestedUrls().slice(-3)).toEqual(
+                    expect.arrayContaining(['/account', '/account/abilities'])
+                );
             });
     });
 
@@ -356,10 +338,9 @@ describe('the self-service actions', () => {
             .then(() => {
                 // Authenticated: the freshly swapped-in address is pulled back in, and the rules
                 // that go with it follow — same sorted-tail reasoning as the verification case.
-                expect(requestedUrls().slice(-2).toSorted()).toEqual([
-                    '/account',
-                    '/account/abilities'
-                ]);
+                expect(requestedUrls().slice(-3)).toEqual(
+                    expect.arrayContaining(['/account', '/account/abilities'])
+                );
             });
     });
 });

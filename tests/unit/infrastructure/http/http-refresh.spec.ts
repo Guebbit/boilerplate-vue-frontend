@@ -125,8 +125,8 @@ const server = setupServer(
         scenario.refreshBudget -= 1;
 
         return scenario.refreshOmitsToken
-            ? HttpResponse.json({ success: true, status: 200, data: {} })
-            : HttpResponse.json({ success: true, status: 200, data: { token: FRESH_TOKEN } });
+            ? HttpResponse.json({})
+            : HttpResponse.json({ token: FRESH_TOKEN });
     }),
 
     /**
@@ -149,7 +149,7 @@ const server = setupServer(
             );
 
         return scenario.protectedAccepts && authorization === `Bearer ${FRESH_TOKEN}`
-            ? HttpResponse.json({ success: true, status: 200, data: { items: [] } })
+            ? HttpResponse.json({ items: [] })
             : unauthorized('Unauthorized');
     }),
 
@@ -161,16 +161,12 @@ const server = setupServer(
                   status: 403
               })
             : HttpResponse.json({
-                  success: true,
-                  status: 200,
-                  data: {
-                      platform: [],
-                      tenant: [],
-                      version: 1,
-                      subjects: [],
-                      grantableRoles: [],
-                      secondFactorRequired: false
-                  }
+                  platform: [],
+                  tenant: [],
+                  version: 1,
+                  subjects: [],
+                  grantableRoles: [],
+                  secondFactorRequired: false
               });
     }),
 
@@ -192,7 +188,7 @@ const server = setupServer(
         requestLog.push({ route: 'DELETE /account/sessions', authorization });
 
         return scenario.protectedAccepts && authorization === `Bearer ${FRESH_TOKEN}`
-            ? HttpResponse.json({ success: true, status: 200 })
+            ? new HttpResponse(null, { status: 204 })
             : unauthorized('Unauthorized');
     })
 );
@@ -331,10 +327,10 @@ describe('401 refresh flow', () => {
         it('refreshes once and replays the original request with the new token', () =>
             loadHttp()
                 .then(({ orvalMutator }) =>
-                    orvalMutator<{ data: { items: unknown[] } }>({ url: '/orders', method: 'GET' })
+                    orvalMutator<{ items: unknown[] }>({ url: '/orders', method: 'GET' })
                 )
                 .then((result) => {
-                    expect(result.data.items).toEqual([]);
+                    expect(result.items).toEqual([]);
                     expect(routes()).toEqual([
                         'GET /orders',
                         'POST /account/refresh',
@@ -496,11 +492,7 @@ describe('401 refresh flow', () => {
                             { status: 401 }
                         );
                     // Call 3: stepped up — the fresh session the second call demanded now exists.
-                    return HttpResponse.json({
-                        success: true,
-                        status: 200,
-                        data: { orderId: 'o1' }
-                    });
+                    return HttpResponse.json({ orderId: 'o1' });
                 })
             );
         });

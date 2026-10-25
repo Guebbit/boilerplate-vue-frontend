@@ -8,8 +8,6 @@
 import { onScopeDispose, ref } from 'vue';
 import { debounce } from 'lodash-es';
 import { checkPasswordBreached } from '@api';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
-import type { PasswordCheck } from '@types';
 
 /**
  * Checks a candidate password against the breach list as the visitor types, without hammering the
@@ -48,7 +46,7 @@ export const usePasswordBreachCheck = (delayMs = 500) => {
         checkPasswordBreached({ password })
             .then((data) => {
                 if (thisRequest !== requestId) return;
-                breached.value = getPayloadFromResponse<PasswordCheck>(data)?.breached ?? false;
+                breached.value = data.breached;
             })
             .catch(() => {
                 // Advisory only: a failed check must never alarm or block, so it reads as clean.

@@ -455,7 +455,7 @@ describe('useWebhooksStore', () => {
                         parseOrvalFixture(
                             config.method,
                             config.url,
-                            orvalEnvelope([{ name: 'order.created' }])
+                            orvalEnvelope({ items: [{ name: 'order.created' }] })
                         )
                     )
             );
