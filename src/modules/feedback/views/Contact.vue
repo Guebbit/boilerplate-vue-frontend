@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useFeedbackStore } from '../store.ts';
-import { contactSchema } from '../schemas.ts';
+import { contactSchema, orderNumberMax } from '../schemas.ts';
 import { FeedbackCategory } from '@/types/enums.ts';
 import type { FeedbackCategory as TFeedbackCategory } from '@types';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
@@ -78,7 +78,7 @@ const categoryFromLink = (): TFeedbackCategory | undefined => {
  */
 const orderFromLink = (): string => {
     const wanted = route.query.order;
-    return typeof wanted === 'string' ? wanted.slice(0, 40) : '';
+    return typeof wanted === 'string' ? wanted.slice(0, orderNumberMax) : '';
 };
 
 /**
@@ -251,7 +251,7 @@ const submitForm = () =>
             <v-text-field
                 v-model="form.orderNumber"
                 type="text"
-                maxlength="40"
+                :maxlength="orderNumberMax"
                 data-test="contact-order-number"
                 :label="t('contact-page.label-order-number')"
                 class="mb-2"

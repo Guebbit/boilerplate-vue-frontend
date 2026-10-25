@@ -8,7 +8,7 @@
  * number. Messages belong to `schemas-i18n.spec.ts` — these are the rules.
  */
 import { describe, expect, it } from 'vitest';
-import { createProductBodyPriceMin } from '@api/schemas';
+import { createProductBodyPriceMin, createProductBodyTranslationsOneTitleMax } from '@api/schemas';
 import { productsSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
@@ -160,5 +160,28 @@ describe('productsSchema', () => {
                 }).success
             ).toBe(false);
         });
+    });
+});
+
+/**
+ * A valid product whose English title has the given length.
+ *
+ * @param length - characters in the title
+ * @returns the form payload
+ */
+const withTitle = (length: number) => ({
+    ...validProduct,
+    translations: { en: { title: 'a'.repeat(length) } }
+});
+
+describe('productsSchema title bound', () => {
+    it('accepts a title at the contract maximum and refuses one past it', () => {
+        expect(
+            productsSchema.safeParse(withTitle(createProductBodyTranslationsOneTitleMax)).success
+        ).toBe(true);
+        expect(
+            productsSchema.safeParse(withTitle(createProductBodyTranslationsOneTitleMax + 1))
+                .success
+        ).toBe(false);
     });
 });

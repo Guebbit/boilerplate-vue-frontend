@@ -24,7 +24,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
 import { useReturnsStore } from '../store.ts';
-import { declineReasonSchema } from '../schemas.ts';
+import { declineReasonSchema, declineReasonMax } from '../schemas.ts';
 import type { Return } from '@types';
 
 /**
@@ -226,7 +226,7 @@ const submitReceive = () =>
                 v-model="declineForm.reason"
                 :label="t('return-staff-actions.label-reason')"
                 v-bind="fieldErrorProps(showDeclineErrors ? (declineErrors.reason ?? []) : [])"
-                maxlength="500"
+                :maxlength="declineReasonMax"
                 class="w-full grow sm:w-auto sm:min-w-64"
                 hide-details="auto"
                 data-test="return-decline-reason"

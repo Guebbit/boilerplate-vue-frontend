@@ -58,6 +58,8 @@
         "email-invalid": "Controlla l'indirizzo email: potrebbe contenere un errore di battitura o mancare del dominio",
         "label-passwordConfirm": "Conferma Password",
         "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
+        "username-too-long": "Il nome utente è troppo lungo",
+        "email-too-long": "L'indirizzo email è troppo lungo",
         "terms-required": "Devi accettare i Termini di Servizio e l'Informativa sulla Privacy!",
         "password-required": "La password è obbligatoria",
         "password-min": "La password deve essere lunga almeno 8 caratteri",
