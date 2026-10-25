@@ -41,7 +41,6 @@ import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import UserAccessDialog from '../components/UserAccessDialog.vue';
 import UserPurchaseHoldDialog from '../components/UserPurchaseHoldDialog.vue';
-import { useDialogStore } from '@/ui/dialog.ts';
 import { singleFlight } from '@/infrastructure/utils/single-flight.ts';
 import type { SetPurchaseHoldRequest } from '@types';
 import { formatText, formatDateTime } from '@/infrastructure/utils/formatters.ts';
@@ -171,14 +170,9 @@ const handleManageAccess = () => {
 };
 
 /**
- * The purchase-hold writes, and the confirm dialog that guards lifting one.
+ * The purchase-hold writes.
  */
 const { setPurchaseHold, liftPurchaseHold } = useUsersStore();
-
-/**
- * The shared confirmation dialog.
- */
-const dialog = useDialogStore();
 
 /**
  * Whether the "pause checkout" form is open.
@@ -191,18 +185,22 @@ const holdDialogOpen = ref(false);
 const { message: holdError, report: reportHoldError, clear: clearHoldError } = useBlockingError();
 
 /**
- * The hold line shown under the details: what holds checkout, and until when. `undefined` when
+ * The hold line shown under the details: what holds checkout, until when, when it was set and the
+ * staff note if there is one, so staff see what a lift drops before they click. `undefined` when
  * the account is free to buy (the API leaves an ended or lifted hold out of the record).
  */
 const holdSummary = computed(() => {
     const hold = currentUser.value?.purchaseHold;
     if (!hold) return;
-    return t(
+    const line = t(
         hold.reason === 'staff'
             ? 'user-target-page.purchase-hold-staff'
             : 'user-target-page.purchase-hold-automatic',
-        { date: formatDateTime(hold.until) }
+        { date: formatDateTime(hold.until), setAt: formatDateTime(hold.setAt) }
     );
+    return hold.note
+        ? `${line} ${t('user-target-page.purchase-hold-note', { note: hold.note })}`
+        : line;
 });
 
 /**
@@ -233,37 +231,30 @@ const handleSetHold = (hold: SetPurchaseHoldRequest) => {
 };
 
 /**
- * Lifts the hold after a confirmation that names the account: this is also the staff review, and
- * it restarts the count of cancellations. With no hold in force it is the review alone ("mark as
- * reviewed"): the flag clears and the count restarts, nothing else changes.
+ * Lifts the hold at once, no confirmation: it only favours the buyer and is redone by pausing
+ * checkout again. This is also the staff review, and it restarts the count of cancellations. With
+ * no hold in force it is the review alone ("mark as reviewed"): the flag clears and the count
+ * restarts, nothing else changes. The toast says which of the two happened.
  *
- * @returns A promise settling once the dialog closed and, if accepted, the write finished.
+ * @returns A promise settling once the write finished; a failure blocks in place ({@link holdError}).
  */
 const handleLiftHold = singleFlight(() => {
     const target = currentUser.value;
     if (!target) return;
     const inForce = target.purchaseHold !== undefined;
-    return dialog
-        .confirm({
-            message: t(
-                inForce
-                    ? 'user-target-page.confirm-lift-hold'
-                    : 'user-target-page.confirm-mark-reviewed',
-                { name: target.username }
-            ),
-            confirmLabel: t(
-                inForce
-                    ? 'user-target-page.button-lift-hold'
-                    : 'user-target-page.button-mark-reviewed'
+    clearHoldError();
+    return liftPurchaseHold(target.id)
+        .then(() =>
+            addMessage(
+                t(
+                    inForce
+                        ? 'user-target-page.success-hold-lifted'
+                        : 'user-target-page.success-marked-reviewed',
+                    { name: target.username }
+                )
             )
-        })
-        .then((accepted) => {
-            if (!accepted) return;
-            clearHoldError();
-            return liftPurchaseHold(target.id)
-                .then(() => addMessage(t('user-target-page.success-hold-lifted')))
-                .catch((error: unknown) => reportHoldError(error));
-        });
+        )
+        .catch((error: unknown) => reportHoldError(error));
 });
 
 /**

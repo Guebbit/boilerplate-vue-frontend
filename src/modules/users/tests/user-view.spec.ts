@@ -13,7 +13,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import User from '../views/User.vue';
 import { useUsersStore } from '../store';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { useDialogStore } from '@/ui/dialog.ts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
@@ -193,12 +193,11 @@ describe('the purchase hold', () => {
         expect(wrapper.find('[data-test=user-pause-checkout]').exists()).toBe(false);
     });
 
-    it('lifts the hold once the confirmation is accepted', () => {
+    it('lifts the hold at once, with no confirmation, and says so', () => {
         signIn(false);
-        const store = useUsersStore();
-        const lift = vi.spyOn(store, 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
+        const lift = vi.spyOn(useUsersStore(), 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
+        const addMessage = vi.spyOn(useNotificationsStore(), 'addMessage');
         const wrapper = mountUser(HELD);
-        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
 
         return wrapper
             .get('[data-test=user-lift-hold]')
@@ -206,20 +205,31 @@ describe('the purchase hold', () => {
             .then(flushPromises)
             .then(() => {
                 expect(lift).toHaveBeenCalledWith('u1');
+                expect(addMessage).toHaveBeenCalledWith(expect.stringContaining('lifted'));
             });
+    });
+
+    it('shows the hold note and when it was set, so staff see what a lift drops', () => {
+        signIn(false);
+        const wrapper = mountUser({
+            ...HELD,
+            purchaseHold: { ...HELD.purchaseHold!, reason: 'staff', note: 'Resells in bulk' }
+        });
+
+        const line = wrapper.get('[data-test=user-purchase-hold]').text();
+        expect(line).toContain('Resells in bulk');
+        expect(line).toContain('set ');
     });
 
     it('lifts the hold once when the button is pressed twice before the first answer', async () => {
         signIn(false);
         const lift = vi.spyOn(useUsersStore(), 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
-        const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
         const button = mountUser(HELD).get('[data-test=user-lift-hold]');
 
         void button.trigger('click');
         void button.trigger('click');
         await flushPromises();
 
-        expect(confirm).toHaveBeenCalledTimes(1);
         expect(lift).toHaveBeenCalledTimes(1);
     });
 
@@ -264,11 +274,12 @@ describe('the purchase hold', () => {
             expect(wrapper.find('[data-test=user-mark-reviewed]').exists()).toBe(false);
         });
 
-        it('marks the account reviewed through the lift once the confirmation is accepted', () => {
+        it('marks the account reviewed through the lift, with its own toast', () => {
             signIn(false);
-            const store = useUsersStore();
-            const lift = vi.spyOn(store, 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
-            const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(true);
+            const lift = vi
+                .spyOn(useUsersStore(), 'liftPurchaseHold')
+                .mockResolvedValue({ ...A_USER });
+            const addMessage = vi.spyOn(useNotificationsStore(), 'addMessage');
             const wrapper = mountUser(FLAGGED);
 
             return wrapper
@@ -276,27 +287,11 @@ describe('the purchase hold', () => {
                 .trigger('click')
                 .then(flushPromises)
                 .then(() => {
-                    expect(confirm).toHaveBeenCalledWith(
-                        expect.objectContaining({ confirmLabel: 'Mark as reviewed' })
-                    );
                     expect(lift).toHaveBeenCalledWith('u1');
+                    expect(addMessage).toHaveBeenCalledWith(
+                        expect.stringContaining('marked as reviewed')
+                    );
                 });
         });
-    });
-
-    it('leaves the hold alone when the confirmation is declined', () => {
-        signIn(false);
-        const store = useUsersStore();
-        const lift = vi.spyOn(store, 'liftPurchaseHold').mockResolvedValue({ ...A_USER });
-        const wrapper = mountUser(HELD);
-        vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
-
-        return wrapper
-            .get('[data-test=user-lift-hold]')
-            .trigger('click')
-            .then(flushPromises)
-            .then(() => {
-                expect(lift).not.toHaveBeenCalled();
-            });
     });
 });

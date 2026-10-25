@@ -88,17 +88,17 @@
         "button-history": "Cronologia",
         "label-purchase-hold": "Blocco acquisti",
         "purchase-hold-none": "Nessuno",
-        "purchase-hold-staff": "In pausa per decisione dello staff fino al {date}",
-        "purchase-hold-automatic": "In pausa per annullamenti ripetuti fino al {date}",
+        "purchase-hold-staff": "In pausa per decisione dello staff fino al {date}, impostato {setAt}.",
+        "purchase-hold-note": "Nota: {note}",
+        "purchase-hold-automatic": "In pausa per annullamenti ripetuti fino al {date}, impostato {setAt}.",
         "label-review": "Controllo",
         "needs-review": "Da controllare dal {date}: la regola del negozio ha segnalato questo account dopo annullamenti ripetuti. Impostare o togliere un blocco lo segna come controllato.",
         "button-mark-reviewed": "Segna come controllato",
-        "confirm-mark-reviewed": "Segnare {name} come controllato? Non viene impostato nessun blocco; la segnalazione sparisce e il conteggio degli annullamenti riparte da adesso.",
         "button-pause-checkout": "Metti in pausa il checkout",
         "button-lift-hold": "Togli il blocco",
-        "confirm-lift-hold": "Togliere il blocco acquisti a {name}? Il conteggio degli annullamenti riparte da adesso.",
         "success-hold-set": "Checkout messo in pausa.",
-        "success-hold-lifted": "Blocco acquisti tolto."
+        "success-hold-lifted": "Blocco acquisti di {name} tolto. Il conteggio degli annullamenti riparte da adesso.",
+        "success-marked-reviewed": "{name} segnato come controllato. Il conteggio degli annullamenti riparte da adesso."
     },
     "user-create-page": {
         "page-title": "Crea utente",

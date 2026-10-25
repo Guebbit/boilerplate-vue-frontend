@@ -88,17 +88,17 @@
         "button-history": "History",
         "label-purchase-hold": "Purchase hold",
         "purchase-hold-none": "None",
-        "purchase-hold-staff": "Paused by staff until {date}",
-        "purchase-hold-automatic": "Paused after repeated cancellations until {date}",
+        "purchase-hold-staff": "Paused by staff until {date}, set {setAt}.",
+        "purchase-hold-note": "Note: {note}",
+        "purchase-hold-automatic": "Paused after repeated cancellations until {date}, set {setAt}.",
         "label-review": "Review",
         "needs-review": "Needs review since {date}: the shop's rule flagged this account after repeated cancellations. Setting or lifting a hold marks it reviewed.",
         "button-mark-reviewed": "Mark as reviewed",
-        "confirm-mark-reviewed": "Mark {name} as reviewed? No hold is placed; the flag clears and the count of cancellations starts again from now.",
         "button-pause-checkout": "Pause checkout",
         "button-lift-hold": "Lift the hold",
-        "confirm-lift-hold": "Lift the purchase hold on {name}? The count of cancellations starts again from now.",
         "success-hold-set": "Checkout paused.",
-        "success-hold-lifted": "Purchase hold lifted."
+        "success-hold-lifted": "Purchase hold on {name} lifted. The count of cancellations starts again from now.",
+        "success-marked-reviewed": "{name} marked as reviewed. The count of cancellations starts again from now."
     },
     "user-create-page": {
         "page-title": "Create user",
