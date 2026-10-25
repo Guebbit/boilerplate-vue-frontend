@@ -5,8 +5,7 @@
  */
 import { requestEmailVerification as apiRequestEmailVerification } from '@api';
 import { ERROR_CODES } from '@api/error-codes';
-import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
-import type { EmailVerificationRequested } from '@types';
+import { getRetryAfter } from '@/infrastructure/http/envelope.ts';
 
 /**
  * The server's own resend cooldown from a verification-mail 429, or `undefined` when the rejection
@@ -27,6 +26,4 @@ export const emailVerifyResendRetryAfter = (error: unknown): number | undefined 
  *  the 429 the endpoint answers inside it — the number is the server's, never the client's.
  */
 export const requestEmailVerification = (): Promise<number> =>
-    apiRequestEmailVerification().then(
-        (data) => getPayloadFromResponse<EmailVerificationRequested>(data)?.resendAfter ?? 0
-    );
+    apiRequestEmailVerification().then(({ resendAfter }) => resendAfter);

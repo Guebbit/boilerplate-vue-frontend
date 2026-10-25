@@ -14,7 +14,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -71,10 +70,10 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account': orvalEnvelope(USER),
+        'GET /account': USER,
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [
                 ['read', 'Product', { active: true, deletedAt: null }],
@@ -82,9 +81,9 @@ beforeEach(() => {
             ],
             version: 36,
             subjects: ['Order', 'Product']
-        }),
+        },
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
-        'PATCH /account': orvalEnvelope({ ...USER, imageUrl: undefined })
+        'PATCH /account': { ...USER, imageUrl: undefined }
     };
 });
 
@@ -147,9 +146,11 @@ describe('an imageUpload switches the call to multipart', () => {
             .fetchProfile(true)
             .then(() => store.updateProfile({ imageUpload: file }))
             .then(() => {
-                const methods = calls().map(({ method }) => method?.toUpperCase());
+                const seen = calls().map(({ method, url }) => `${method?.toUpperCase()} ${url}`);
                 // ...GET, PUT, GET: the write, then the re-read `updateProfile` always chains.
-                expect(methods.at(-1)).toBe('GET');
+                // The idle-clock read that follows the viewer reload may land after it.
+                const write = seen.findLastIndex((call) => call.startsWith('PATCH '));
+                expect(seen.slice(write + 1)).toContain('GET /account');
             });
     });
 });

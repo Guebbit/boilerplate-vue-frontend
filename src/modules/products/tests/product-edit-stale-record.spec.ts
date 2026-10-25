@@ -16,10 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -94,16 +91,12 @@ const adminReads = () =>
 const mountRefused = () => {
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         if (config.url === '/locales')
-            return Promise.resolve(
-                parseOrvalFixture('GET', '/locales', orvalEnvelope(LOCALES_RESPONSE))
-            );
+            return Promise.resolve(parseOrvalFixture('GET', '/locales', LOCALES_RESPONSE));
         if (config.url === '/products/p1/admin')
-            return Promise.resolve(
-                parseOrvalFixture('GET', '/products/p1/admin', orvalEnvelope(echo({})))
-            );
+            return Promise.resolve(parseOrvalFixture('GET', '/products/p1/admin', echo({})));
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
         if (config.method === 'PATCH') return Promise.reject(PRECONDITION_FAILED);
-        return Promise.resolve(orvalEnvelope());
+        return Promise.resolve(undefined);
     });
     const wrapper = mount(ProductEdit, {
         props: { id: 'p1' },

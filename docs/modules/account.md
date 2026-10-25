@@ -132,9 +132,9 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                                         | Response envelope                  |
+| Call                                         | Response schema                    |
 | -------------------------------------------- | ---------------------------------- |
-| `DELETE /account`                            | `AccountDeletionEnvelope`          |
+| `DELETE /account`                            | `AccountDeletion`                  |
 | `PATCH /account`                             | `UpdateAccountResponse`            |
 | `GET /account/2fa`                           | `GetTwoFactorStatusResponse`       |
 | `POST /account/2fa/disable`                  | `DisableTwoFactorResponse`         |
@@ -173,7 +173,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `POST /account/email-verification/confirm`   | `ConfirmEmailVerificationResponse` |
 | `POST /account/email-verification/resend`    | `RequestEmailVerificationResponse` |
 
-Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
 #### Navigation entries
 
@@ -208,7 +208,7 @@ counting the logout that succeeded rather than the one that was attempted. See
 | `locales/en.json`                              | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                   | [read](../tools/i18n.md)              |
 | `locales/it.json`                              | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                                                                   | [read](../tools/i18n.md)              |
 | `module.ts`                                    | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots.                                               | [read](../theory/modules.md)          |
-| `response-schemas.ts`                          | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                                                                | [read](../api/openapi-workflow.md)    |
+| `response-schemas.ts`                          | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                                                                  | [read](../api/openapi-workflow.md)    |
 | `routes.ts`                                    | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                                                                            | [read](../theory/sitemap.md)          |
 | `stores/addresses.ts`                          | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |
 | `stores/auth.ts`                               | One Pinia store: one slice of this domain’s state, and the calls it makes to the generated client.                                                                                                                                | [read](../tools/state-and-routing.md) |

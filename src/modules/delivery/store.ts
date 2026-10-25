@@ -107,8 +107,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const fetchPreorderBoard = (query: ListPreorderFulfillmentOrdersParams = {}) =>
         fetchAny(() =>
             listPreorderFulfillmentOrders({ cause: 'any', ...query }).then((response) => {
-                preorderBoard.value = response.data.items;
-                preorderBoardTotal.value = response.data.meta.totalItems;
+                preorderBoard.value = response.items;
+                preorderBoardTotal.value = response.meta.totalItems;
                 return preorderBoard.value;
             })
         );
@@ -126,10 +126,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
             ): Promise<PreorderProductSummary[]> =>
                 summarizePreorderFulfillmentOrders({ page, pageSize: MAX_PAGE_SIZE }).then(
                     (response) => {
-                        const items = [...soFar, ...response.data.items];
-                        return page < response.data.meta.totalPages
-                            ? collect(page + 1, items)
-                            : items;
+                        const items = [...soFar, ...response.items];
+                        return page < response.meta.totalPages ? collect(page + 1, items) : items;
                     }
                 );
             return collect(1, []).then((items) => {
@@ -147,7 +145,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const fetchMethods = () =>
         fetchAny(() =>
             Promise.all([listShippingMethods(), loadShop()]).then(([response]) => {
-                methods.value = response.data.methods;
+                methods.value = response.methods;
                 shipToCountries.value = shipToCountriesOfShop.value;
                 return methods.value;
             })
@@ -162,8 +160,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
      */
     const readFulfillment = (orderId: string) =>
         getFulfillmentByOrder(orderId).then((response) => {
-            fulfillmentOrders.value = response.data.fulfillmentOrders;
-            shipments.value = response.data.shipments;
+            fulfillmentOrders.value = response.fulfillmentOrders;
+            shipments.value = response.shipments;
         });
 
     /**
@@ -198,7 +196,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const ship = (fulfillmentOrderId: string, input: ShipFulfillmentOrderRequest = {}) =>
         fetchAny(() =>
             shipFulfillmentOrder(fulfillmentOrderId, input).then((response) =>
-                readFulfillment(response.data.orderId).then(() => response.data)
+                readFulfillment(response.orderId).then(() => response)
             )
         );
 
@@ -211,7 +209,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const fulfill = (fulfillmentOrderId: string) =>
         fetchAny(() =>
             fulfillFulfillmentOrder(fulfillmentOrderId).then((response) =>
-                readFulfillment(response.data.orderId).then(() => response.data)
+                readFulfillment(response.orderId).then(() => response)
             )
         );
 
@@ -225,7 +223,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const hold = (fulfillmentOrderId: string, input: HoldFulfillmentOrderRequest) =>
         fetchAny(() =>
             holdFulfillmentOrder(fulfillmentOrderId, input).then((response) =>
-                readFulfillment(response.data.orderId).then(() => response.data)
+                readFulfillment(response.orderId).then(() => response)
             )
         );
 
@@ -239,7 +237,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const release = (fulfillmentOrderId: string) =>
         fetchAny(() =>
             releaseFulfillmentOrder(fulfillmentOrderId).then((response) =>
-                readFulfillment(response.data.orderId).then(() => response.data)
+                readFulfillment(response.orderId).then(() => response)
             )
         );
 
@@ -256,7 +254,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const deliver = (shipmentId: string, forced?: boolean, reason?: string) =>
         fetchAny(() =>
             deliverShipment(shipmentId, forced ? { forced, reason } : {}).then((response) =>
-                readFulfillment(response.data.orderId).then(() => response.data)
+                readFulfillment(response.orderId).then(() => response)
             )
         );
 
@@ -270,7 +268,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const editTracking = (shipmentId: string, trackingCode: string) =>
         fetchAny(() =>
             updateShipment(shipmentId, { trackingCode }).then((response) =>
-                readFulfillment(response.data.orderId).then(() => response.data)
+                readFulfillment(response.orderId).then(() => response)
             )
         );
 

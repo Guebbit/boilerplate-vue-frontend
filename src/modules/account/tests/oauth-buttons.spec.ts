@@ -11,10 +11,7 @@ import OAuthButtons from '../components/OAuthButtons.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -23,7 +20,7 @@ let providers: string[] = [];
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
-        Promise.resolve(parseOrvalFixture(config.method, config.url, orvalEnvelope({ providers })))
+        Promise.resolve(parseOrvalFixture(config.method, config.url, { providers }))
     )
 }));
 

@@ -34,10 +34,7 @@ const tag = (version: number) => `"${version.toString()}"`;
 const server = setupServer(
     /** The editor's read: answers the current tag. */
     http.get(`${API}/products/p1/admin`, () =>
-        HttpResponse.json(
-            { success: true, status: 200, data: { id: 'p1' } },
-            { headers: { ETag: tag(serverVersion) } }
-        )
+        HttpResponse.json({ id: 'p1' }, { headers: { ETag: tag(serverVersion) } })
     ),
 
     /** The write: runs only on the current tag (or no header), and answers the NEW one. */
@@ -52,16 +49,13 @@ const server = setupServer(
             );
 
         serverVersion += 100;
-        return HttpResponse.json(
-            { success: true, status: 200, data: { id: 'p1' } },
-            { headers: { ETag: tag(serverVersion) } }
-        );
+        return HttpResponse.json({ id: 'p1' }, { headers: { ETag: tag(serverVersion) } });
     }),
 
     /** An action: changes the row and answers no tag. */
     http.post(`${API}/products/p1/restore`, () => {
         serverVersion += 100;
-        return HttpResponse.json({ success: true, status: 200, data: { id: 'p1' } });
+        return HttpResponse.json({ id: 'p1' });
     })
 );
 

@@ -133,7 +133,7 @@ const configureAltcha = (): Promise<void> =>
         // No cast needed: `AntibotChallenge` (generated from the contract) and ALTCHA's own
         // `Challenge` describe the same wire shape — the backend issues exactly what altcha-lib
         // produced — so this is a plain structural match.
-        return widget.configure({ challenge: envelope.data });
+        return widget.configure({ challenge: envelope });
     });
 
 /**
@@ -191,11 +191,11 @@ const mountProvider = (
 onMounted(() => {
     void fetchAntibotConfig()
         .then((envelope) => {
-            provider.value = envelope.data.provider;
+            provider.value = envelope.provider;
             const activeProvider = provider.value;
             if (activeProvider !== 'turnstile' && activeProvider !== 'altcha') return;
 
-            return nextTick().then(() => mountProvider(activeProvider, envelope.data.parameters));
+            return nextTick().then(() => mountProvider(activeProvider, envelope.parameters));
         })
         // An unreachable API or a vendor script that would not load leaves the widget absent, and
         // nothing else: the health banner already says the API is down, and the form's own submit

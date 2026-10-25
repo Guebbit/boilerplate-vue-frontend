@@ -34,7 +34,7 @@ wireModulesIntoCore();
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
     searchProducts: vi.fn(),
-    getCatalogueFacets: vi.fn(() => Promise.resolve({ data: { categories: [], tags: [] } }))
+    getCatalogueFacets: vi.fn(() => Promise.resolve({ categories: [], tags: [] }))
 }));
 
 /**

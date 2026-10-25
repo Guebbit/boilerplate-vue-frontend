@@ -18,10 +18,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -88,7 +85,7 @@ beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     setActivePinia(createPinia());
-    responses = { 'POST /account/password/check': orvalEnvelope({ breached: false }) };
+    responses = { 'POST /account/password/check': { breached: false } };
     return loadLocale('en');
 });
 
@@ -98,7 +95,7 @@ afterEach(() => {
 
 describe('ProfilePasswordChange', () => {
     it('shows the warning once the debounce settles on a breached password', () => {
-        responses['POST /account/password/check'] = orvalEnvelope({ breached: true });
+        responses['POST /account/password/check'] = { breached: true };
         const wrapper = mountPasswordChangeForm();
 
         return wrapper
@@ -130,8 +127,8 @@ describe('ProfilePasswordChange', () => {
     });
 
     it('never blocks the submit — advisory only, even while flagged breached', () => {
-        responses['POST /account/password/check'] = orvalEnvelope({ breached: true });
-        responses['POST /account/password'] = orvalEnvelope({ token: 'rotated-jwt' });
+        responses['POST /account/password/check'] = { breached: true };
+        responses['POST /account/password'] = { token: 'rotated-jwt' };
         const wrapper = mountPasswordChangeForm();
 
         return (
@@ -175,7 +172,7 @@ describe('PasswordResetConfirm', () => {
     beforeEach(() => router.push('/en/password-reset-confirm').then(() => router.isReady()));
 
     it('warns on a breached candidate and clears once it is fixed', () => {
-        responses['POST /account/password/check'] = orvalEnvelope({ breached: true });
+        responses['POST /account/password/check'] = { breached: true };
         const wrapper = mountPasswordResetPage();
 
         return wrapper
@@ -185,7 +182,7 @@ describe('PasswordResetConfirm', () => {
             .then(flushPromises)
             .then(() => {
                 expect(wrapper.find('[data-test=password-breach-warning]').exists()).toBe(true);
-                responses['POST /account/password/check'] = orvalEnvelope({ breached: false });
+                responses['POST /account/password/check'] = { breached: false };
                 return wrapper.get('input[type=password]').setValue('a-clean-one-2');
             })
             .then(() => vi.advanceTimersByTimeAsync(DELAY))
@@ -198,12 +195,12 @@ describe('PasswordResetConfirm', () => {
 
 describe('Signup', () => {
     beforeEach(() => {
-        responses['GET /account/oauth/providers'] = orvalEnvelope({ providers: [] });
+        responses['GET /account/oauth/providers'] = { providers: [] };
         return router.push('/en/signup').then(() => router.isReady());
     });
 
     it('warns on a breached candidate typed into the password field', () => {
-        responses['POST /account/password/check'] = orvalEnvelope({ breached: true });
+        responses['POST /account/password/check'] = { breached: true };
         const wrapper = mountSignupPage();
 
         return wrapper

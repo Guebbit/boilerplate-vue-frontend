@@ -28,7 +28,6 @@ import {
 } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -53,7 +52,7 @@ const router = createRouter({
 /**
  * Queues GET responses in order, one per call — the initial load, then whatever a mutating action
  * force-refetches afterwards. Any other method the test does not set up its own answer for
- * resolves with a bare success envelope.
+ * resolves with no body.
  *
  * @param users - One `User` fixture per expected GET, in call order.
  */
@@ -63,11 +62,9 @@ const queueGetResponses = (...users: ReturnType<typeof aUser>[]) => {
         if (config.method === 'GET') {
             const user = users[Math.min(call, users.length - 1)];
             call += 1;
-            return Promise.resolve(
-                parseOrvalFixture(config.method, config.url, orvalEnvelope(user))
-            );
+            return Promise.resolve(parseOrvalFixture(config.method, config.url, user));
         }
-        return Promise.resolve(parseOrvalFixture(config.method, config.url, orvalEnvelope()));
+        return Promise.resolve(parseOrvalFixture(config.method, config.url, undefined));
     });
 };
 

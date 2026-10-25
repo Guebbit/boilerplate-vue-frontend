@@ -75,7 +75,7 @@ src/modules/<name>/
     store.ts                   Pinia state, if it has any
     index.ts                   ONLY if a sibling imports this module
     domain/                    pure business rules — lint-guaranteed framework-free
-    response-schemas.ts         the envelope schemas for the endpoints it calls
+    response-schemas.ts         the response schemas for the endpoints it calls
     locales/{en,it}.json       its dictionaries
     tests/*.spec.ts            unit specs — co-located, deleted with the module
     tests/e2e/*.cy.ts          Cypress specs for THIS domain only — likewise

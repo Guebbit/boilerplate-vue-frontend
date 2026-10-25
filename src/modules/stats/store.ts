@@ -107,7 +107,7 @@ export const useStatsStore = defineStore('stats', () => {
      */
     const loadLimits = () =>
         getStatsLimits().then((response) => {
-            limits.value = response.data;
+            limits.value = response;
         });
 
     /**
@@ -122,26 +122,26 @@ export const useStatsStore = defineStore('stats', () => {
         return fetchAny(() =>
             Promise.all([
                 getSalesStats({ from, to, interval }).then((response) => {
-                    sales.value = response.data;
+                    sales.value = response;
                 }),
                 getProductStats({ from, to, limit: TOP_PRODUCTS }).then((response) => {
-                    products.value = response.data;
+                    products.value = response;
                 }),
                 getCategoryStats({ from, to }).then((response) => {
-                    categories.value = response.data;
+                    categories.value = response;
                 }),
                 getPaymentMixStats({ from, to }).then((response) => {
-                    paymentMix.value = response.data;
+                    paymentMix.value = response;
                 }),
                 getOperationsStats({ from, to }).then((response) => {
-                    operations.value = response.data;
+                    operations.value = response;
                 }),
                 getCustomerStats({ from, to }).then((response) => {
-                    customers.value = response.data;
+                    customers.value = response;
                 }),
                 // A snapshot of now: the period does not apply to it.
                 getPipelineStats().then((response) => {
-                    pipeline.value = response.data;
+                    pipeline.value = response;
                 })
             ]).then(() => undefined)
         );
@@ -157,7 +157,7 @@ export const useStatsStore = defineStore('stats', () => {
     const loadProductSales = (productId: string, period: StatsPeriodChoice) =>
         fetchAny(() =>
             getProductSalesSeries(productId, period).then((response) => {
-                productSeries.value = response.data;
+                productSeries.value = response;
                 return productSeries.value;
             })
         );

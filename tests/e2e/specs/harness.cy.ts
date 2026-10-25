@@ -20,7 +20,7 @@ import {
 
 /** The one slice of `GET /products/categories` the cache spec reads. */
 interface FacetsBody {
-    data: { categories: { name: string }[] };
+    categories: { name: string }[];
 }
 
 /** One hour, in milliseconds. */
@@ -66,8 +66,8 @@ describe('The journey harness', () => {
         it('is the one the journeys were told, so a mode-specific skip skips the right mode', () => {
             cy.env(['apiUrl', 'sessionMode']).then(({ apiUrl, sessionMode }) =>
                 cy
-                    .request<{ data: { mode: string } }>(`${String(apiUrl)}/account/session-config`)
-                    .its('body.data.mode')
+                    .request<{ mode: string }>(`${String(apiUrl)}/account/session-config`)
+                    .its('body.mode')
                     .should('equal', sessionMode)
             );
         });
@@ -255,7 +255,7 @@ describe('The journey harness', () => {
                         win
                             .fetch(`${String(apiUrl)}/products/categories`)
                             .then((response) => response.json() as Promise<FacetsBody>)
-                            .then((body) => body.data.categories.map(({ name }) => name))
+                            .then((body) => body.categories.map(({ name }) => name))
                     );
 
                 cy.step('a product in a new category lands, and a browser read caches the chips');

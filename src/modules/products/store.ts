@@ -147,7 +147,7 @@ export const useProductsStore = defineStore('products', () => {
         AxiosRequestConfig
     >(
         {
-            list: () => listProducts().then((response) => response.data.items),
+            list: () => listProducts().then((response) => response.items),
 
             search: (filters, page, pageSize) =>
                 searchProducts({
@@ -170,18 +170,18 @@ export const useProductsStore = defineStore('products', () => {
                     purchasable: filters.purchasable,
                     deleted: filters.deleted
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 })),
 
-            get: (productId) => getProductById(productId).then((response) => response.data),
+            get: (productId) => getProductById(productId),
 
             // Multipart only when there is a file: a JSON body is cheaper and, more to the point,
             // the multipart endpoints are the only ones that have to parse a stream. Either way
             // `translations` is built by the caller as an object; JSON-encoding it into the one
             // multipart field that carries it happens here, not at every call site.
             create: ({ imageUpload, translations, ...productData }, options) =>
-                (imageUpload
+                imageUpload
                     ? createProductWithMultipart(
                           {
                               ...productData,
@@ -190,14 +190,13 @@ export const useProductsStore = defineStore('products', () => {
                           },
                           options
                       )
-                    : apiCreateProduct({ ...productData, translations }, options)
-                ).then((response) => response.data),
+                    : apiCreateProduct({ ...productData, translations }, options),
 
             //
             // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
             // part cannot carry `null`, so the clears follow as a JSON PATCH.
             update: (productId, { imageUpload, translations, ...productData }, options) =>
-                (imageUpload
+                imageUpload
                     ? uploadThenClear(
                           productData,
                           (rest) =>
@@ -227,8 +226,7 @@ export const useProductsStore = defineStore('products', () => {
                           // multipart branch and not worth relying on either way.
                           { ...productData, ...(translations !== undefined && { translations }) },
                           options
-                      )
-                ).then((response) => response.data),
+                      ),
 
             remove: (productId) => deleteProductById(productId),
 
@@ -325,8 +323,8 @@ export const useProductsStore = defineStore('products', () => {
     const restoreProduct = (productId: string) =>
         fetchAny(() =>
             restoreProductById(productId).then((response) => {
-                addProduct(response.data);
-                return response.data;
+                addProduct(response);
+                return response;
             })
         );
 
@@ -342,7 +340,7 @@ export const useProductsStore = defineStore('products', () => {
      * @returns A promise resolving with the admin record.
      */
     const fetchProductAdmin = (productId: string): Promise<ProductAdmin | undefined> =>
-        fetchAny(() => getProductAdmin(productId).then((response) => response.data));
+        fetchAny(() => getProductAdmin(productId));
 
     /**
      * Reads many products at once — the join a cart or wishlist needs for its lines, in one
@@ -363,7 +361,7 @@ export const useProductsStore = defineStore('products', () => {
                 Promise.all(
                     idBatches(missing).map((batch) =>
                         searchProducts({ id: batch, page: 1, pageSize: batch.length }).then(
-                            (response) => response.data.items
+                            (response) => response.items
                         )
                     )
                 ).then((batches) => batches.flat()),
@@ -389,8 +387,8 @@ export const useProductsStore = defineStore('products', () => {
     const fetchFacets = () =>
         fetchAny(() =>
             getCatalogueFacets().then((response) => {
-                facets.value = response.data;
-                return response.data;
+                facets.value = response;
+                return response;
             })
         );
 

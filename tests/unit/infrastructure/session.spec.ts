@@ -50,7 +50,7 @@ vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     logoutAll: () => logoutAllMock(),
     // The idle clock is read once per signed-in stretch; a shopper's answer names no timeout.
-    touchSession: () => Promise.resolve({ data: { lastActiveAt: new Date().toISOString() } })
+    touchSession: () => Promise.resolve({ lastActiveAt: new Date().toISOString() })
 }));
 
 /** The store under test, imported after the mocks are in place. */
@@ -447,7 +447,7 @@ describe.each(['logout', 'logoutAll'] as const)('%s fails open', (method) => {
  */
 describe('logout waits out an in-flight refresh', () => {
     it('does not call the API until a pending refresh has settled', () => {
-        let resolveRefresh!: (value: { data: { token: string } }) => void;
+        let resolveRefresh!: (value: { token: string }) => void;
         refreshTokenMock.mockReturnValue(
             new Promise((resolve) => {
                 resolveRefresh = resolve;
@@ -462,7 +462,7 @@ describe('logout waits out an in-flight refresh', () => {
             .then(() => {
                 // Microtask has run; the refresh has not settled, so logout must still be waiting.
                 expect(logoutMock).not.toHaveBeenCalled();
-                resolveRefresh({ data: { token: 'renewed' } });
+                resolveRefresh({ token: 'renewed' });
                 return refreshing;
             })
             .then(() => logoutOutcome)
@@ -565,7 +565,7 @@ describe('reloadAbilities', () => {
     });
 
     it('is also run after a token refresh', () => {
-        refreshTokenMock.mockResolvedValue({ data: { token: 'renewed' } });
+        refreshTokenMock.mockResolvedValue({ token: 'renewed' });
         const store = signedIn();
 
         // Joins the read `signedIn` already started, so the count below starts clean.
@@ -608,7 +608,7 @@ describe('clearSession', () => {
  */
 describe('refreshToken', () => {
     it('is marked passive, with its abilities re-read: neither is the person acting', () => {
-        refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+        refreshTokenMock.mockResolvedValue({ token: 'fresh' });
         const marked = { headers: { 'Session-Passive': 'true' } };
         const store = signedIn();
 
@@ -621,7 +621,7 @@ describe('refreshToken', () => {
     });
 
     it('stores the fresh token on success', () => {
-        refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+        refreshTokenMock.mockResolvedValue({ token: 'fresh' });
         const store = useSessionStore();
 
         return store.refreshToken().then((token) => {
@@ -685,7 +685,7 @@ describe('refreshToken', () => {
     });
 
     it('shares one in-flight attempt between concurrent callers', () => {
-        refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+        refreshTokenMock.mockResolvedValue({ token: 'fresh' });
         const store = useSessionStore();
 
         return Promise.all([store.refreshToken(), store.refreshToken()]).then(() => {
@@ -698,7 +698,7 @@ describe('refreshToken', () => {
      * when the session was cleared must not resurrect it once it lands.
      */
     it('drops a fresh token that arrives after the session was cleared mid-flight', () => {
-        let resolveRefresh!: (value: { data: { token: string } }) => void;
+        let resolveRefresh!: (value: { token: string }) => void;
         refreshTokenMock.mockReturnValue(
             new Promise((resolve) => {
                 resolveRefresh = resolve;
@@ -708,7 +708,7 @@ describe('refreshToken', () => {
         const refreshing = store.refreshToken();
 
         store.clearSession();
-        resolveRefresh({ data: { token: 'too-late' } });
+        resolveRefresh({ token: 'too-late' });
 
         return refreshing.then(() => {
             expect(store.accessToken).toBeUndefined();
@@ -724,7 +724,8 @@ describe('refreshToken', () => {
 /** Answers `GET /account/session-config` with the given mode. */
 const answerMode = (mode: 'jwt' | 'cookie') =>
     getSessionConfigMock.mockResolvedValue({
-        data: { mode, lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 } }
+        mode,
+        lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
     });
 
 describe('session modes', () => {
@@ -769,7 +770,7 @@ describe('session modes', () => {
         it('adopts a login that carries no token as a held session', () => {
             const store = useSessionStore();
 
-            store.adoptSession({ data: {} }, true);
+            store.adoptSession({}, true);
 
             expect(store.hasSession).toBe(true);
             expect(store.accessToken).toBeUndefined();
@@ -779,7 +780,7 @@ describe('session modes', () => {
 
         it('is signed in only once the viewer is known too', () => {
             const store = useSessionStore();
-            store.adoptSession({ data: {} });
+            store.adoptSession({});
             expect(store.isAuth).toBe(false);
 
             return store.setViewer({ id: '1', email: 'a@b.c', role: 'customer' }).then(() => {
@@ -807,7 +808,7 @@ describe('session modes', () => {
 
         it('clearSession drops the held session and its hint cookie', () => {
             const store = useSessionStore();
-            store.adoptSession({ data: {} }, false);
+            store.adoptSession({}, false);
 
             store.clearSession();
 
@@ -817,9 +818,9 @@ describe('session modes', () => {
 
         it('adopts a re-proof the same way, keeping the remember-me marker login left', () => {
             const store = useSessionStore();
-            store.adoptSession({ data: {} }, true);
+            store.adoptSession({}, true);
 
-            store.adoptSession({ data: {} });
+            store.adoptSession({});
 
             expect(cookieJar().rememberMe).toBe('true');
             expect(store.hasSession).toBe(true);
@@ -835,7 +836,7 @@ describe('session modes', () => {
         it('adopts the access token the login returned', () => {
             const store = useSessionStore();
 
-            store.adoptSession({ data: { token: 'jwt-1' } });
+            store.adoptSession({ token: 'jwt-1' });
 
             expect(store.accessToken).toBe('jwt-1');
             expect(store.hasSession).toBe(true);
@@ -844,13 +845,13 @@ describe('session modes', () => {
         it('holds no session when the response carries no token', () => {
             const store = useSessionStore();
 
-            store.adoptSession({ data: {} });
+            store.adoptSession({});
 
             expect(store.hasSession).toBe(false);
         });
 
         it('restores through a refresh', () => {
-            refreshTokenMock.mockResolvedValue({ data: { token: 'fresh' } });
+            refreshTokenMock.mockResolvedValue({ token: 'fresh' });
             const store = useSessionStore();
 
             return store.restoreFromCookies().then(() => {
@@ -874,21 +875,19 @@ describe('a sign-in in another tab', () => {
         const store = useSessionStore();
         store.mode = 'jwt';
 
-        store.adoptSession({ data: { token: 'one' } });
+        store.adoptSession({ token: 'one' });
         expect(postMessage).not.toHaveBeenCalledWith({ type: 'login' });
 
-        store.adoptSession({ data: { token: 'two' } }, false);
+        store.adoptSession({ token: 'two' }, false);
         expect(postMessage).toHaveBeenCalledWith({ type: 'login' });
     });
 
     it('replaces the person this tab was acting as', () => {
         getSessionConfigMock.mockResolvedValue({
-            data: {
-                mode: 'jwt',
-                lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-            }
+            mode: 'jwt',
+            lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
         });
-        refreshTokenMock.mockResolvedValue({ data: { token: 'second-persons' } });
+        refreshTokenMock.mockResolvedValue({ token: 'second-persons' });
         getAccountMock.mockResolvedValue(
             contractResponse(
                 schemas.GetAccountResponse,

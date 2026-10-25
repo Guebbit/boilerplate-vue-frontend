@@ -6,10 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../unit/infrastructure/http/orval-fixture-schema.ts';
 
 /** What `POST /account/sessions/current/touch` answers in the case at hand. */
 let touchAnswer: unknown;
@@ -39,7 +36,7 @@ const touchesAsked = () =>
 
 describe('the idle clock, asked when the viewer is set', () => {
     it('is read once per signed-in stretch, not at every viewer load', async () => {
-        touchAnswer = orvalEnvelope({ lastActiveAt: '2026-10-14T10:00:00.000Z' });
+        touchAnswer = { lastActiveAt: '2026-10-14T10:00:00.000Z' };
         const session = useSessionStore();
         const viewer = { id: 'u1', email: 'a@example.com' };
 
@@ -50,7 +47,7 @@ describe('the idle clock, asked when the viewer is set', () => {
     });
 
     it('is asked again after the session ended', async () => {
-        touchAnswer = orvalEnvelope({ lastActiveAt: '2026-10-14T10:00:00.000Z' });
+        touchAnswer = { lastActiveAt: '2026-10-14T10:00:00.000Z' };
         const session = useSessionStore();
         const viewer = { id: 'u1', email: 'a@example.com' };
 
@@ -64,10 +61,10 @@ describe('the idle clock, asked when the viewer is set', () => {
 
 describe('the idle clock', () => {
     it('is read from the server on a touch, in this client’s own milliseconds', async () => {
-        touchAnswer = orvalEnvelope({
+        touchAnswer = {
             lastActiveAt: '2026-10-14T10:00:00.000Z',
             idleTimeoutSeconds: 1800
-        });
+        };
         const session = useSessionStore();
 
         await session.touchSession();
@@ -79,7 +76,7 @@ describe('the idle clock', () => {
     });
 
     it('is absent for a shopper, whose answer names no timeout', async () => {
-        touchAnswer = orvalEnvelope({ lastActiveAt: '2026-10-14T10:00:00.000Z' });
+        touchAnswer = { lastActiveAt: '2026-10-14T10:00:00.000Z' };
         const session = useSessionStore();
 
         await session.touchSession();
@@ -88,10 +85,10 @@ describe('the idle clock', () => {
     });
 
     it('moves on with this tab’s own requests', async () => {
-        touchAnswer = orvalEnvelope({
+        touchAnswer = {
             lastActiveAt: '2026-10-14T10:00:00.000Z',
             idleTimeoutSeconds: 1800
-        });
+        };
         const session = useSessionStore();
         await session.touchSession();
 
@@ -101,10 +98,10 @@ describe('the idle clock', () => {
     });
 
     it('ends with the session, and says it ended for inactivity', async () => {
-        touchAnswer = orvalEnvelope({
+        touchAnswer = {
             lastActiveAt: '2026-10-14T10:00:00.000Z',
             idleTimeoutSeconds: 1800
-        });
+        };
         const session = useSessionStore();
         await session.touchSession();
 

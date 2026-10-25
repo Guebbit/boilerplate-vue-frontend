@@ -63,7 +63,7 @@ beforeEach(() => {
         http.patch(`${API}/account`, ({ request }) =>
             request.json().then((body) => {
                 received = body;
-                return HttpResponse.json({ success: true, status: 200, message: 'ok', data: {} });
+                return HttpResponse.json({});
             })
         )
     );
@@ -129,11 +129,7 @@ describe('orvalMutator request validation', () => {
 
     it('skips a multipart body: the JSON schema of the same route does not describe a FormData', () => {
         vi.stubEnv('VITE_VALIDATE_REQUESTS', 'true');
-        server.use(
-            http.patch(`${API}/account`, () =>
-                HttpResponse.json({ success: true, status: 200, message: 'ok', data: {} })
-            )
-        );
+        server.use(http.patch(`${API}/account`, () => HttpResponse.json({})));
         const form = new FormData();
         form.append('username', 'ann');
         return expect(patchAccount(form)).resolves.toBeDefined();

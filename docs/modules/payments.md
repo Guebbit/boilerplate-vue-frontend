@@ -154,7 +154,7 @@ The rest of the module is components, schemas and a store contributed to the mod
 
 #### Endpoints called
 
-| Call                                            | Response envelope              |
+| Call                                            | Response schema                |
 | ----------------------------------------------- | ------------------------------ |
 | `POST /payments/{id}/confirm`                   | `ConfirmPaymentResponse`       |
 | `POST /payments/{id}/sync`                      | `SyncPaymentResponse`          |
@@ -174,7 +174,7 @@ The rest of the module is components, schemas and a store contributed to the mod
 | -------------- | --------------------------- | ------- | ----- | ---- | ----- |
 | `PaymentsList` | `navigation.label-payments` | `admin` | 56    | yes  | —     |
 
-Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
 ## Files
 
@@ -192,7 +192,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `locales/en.json`                  | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `locales/it.json`                  | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `module.ts`                        | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`              | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                  | [read](../api/openapi-workflow.md)    |
+| `response-schemas.ts`              | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
 | `routes.ts`                        | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |
 | `views/PaymentsList.vue`           | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                                                  | [read](../theory/layers.md)           |
 | `store.ts`                         | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                                              | [read](../tools/state-and-routing.md) |

@@ -68,8 +68,8 @@ export const useProductsStore = defineStore('products', () => {
     const products = ref<Product[]>([]);
 
     const fetchProducts = () =>
-        listProducts().then(({ data }) => {
-            products.value = data.items;
+        listProducts().then(({ items }) => {
+            products.value = items;
         });
 
     return { products, fetchProducts };
@@ -79,6 +79,6 @@ export const useProductsStore = defineStore('products', () => {
 ## API style used in this repo
 
 - Resource-oriented URLs (`/products`, `/products/:id`, `/orders/search`).
-- Consistent shapes: the `{ data: T }` envelope for success; RFC 9457 problem details (`AxiosResponseErrorData`) for errors (shaped by `src/infrastructure/http/index.ts`).
+- Consistent shapes: the resource itself for success (a list is `{ items, meta }`, a result with nothing to say is `204`); RFC 9457 problem details (`AxiosResponseErrorData`) for errors (shaped by `src/infrastructure/http/index.ts`).
 - Auth levels: `none` → `user` → `admin`.
 - Treat sample entities (`users`, `products`, `orders`, `cart`, `admin`) as pattern examples, not product law.

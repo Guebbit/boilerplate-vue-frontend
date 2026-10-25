@@ -102,7 +102,7 @@ const readRemoteLocales = (): Promise<RemoteLocales> =>
             const offered: string[] = [];
             const switchedOff: string[] = [];
 
-            for (const language of response.data.locales) {
+            for (const language of response.locales) {
                 // Any app at all is "offers some dictionary", which is all the switcher asks.
                 if (language.apps.length === 0) continue;
 
@@ -119,7 +119,7 @@ const readRemoteLocales = (): Promise<RemoteLocales> =>
             return {
                 offered,
                 switchedOff,
-                keep: [response.data.default, response.data.fallback]
+                keep: [response.default, response.fallback]
             };
         })
         .catch((): RemoteLocales => ({ offered: [], switchedOff: [], keep: [] }));
@@ -163,7 +163,7 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
  */
 export const fetchLocaleOverrides = (locale: string): Promise<TranslationDictionaries> =>
     getLocaleMessages(locale, { app: localeApp() })
-        .then((response) => response.data.messages as TranslationDictionaries)
+        .then((response) => response.messages as TranslationDictionaries)
         .catch(() => ({}));
 
 /**

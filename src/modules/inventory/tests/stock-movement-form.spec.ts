@@ -24,7 +24,7 @@ wireModulesIntoCore();
  */
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@api')>()),
-    searchProducts: vi.fn().mockResolvedValue({ data: { items: [], meta: { totalPages: 0 } } })
+    searchProducts: vi.fn().mockResolvedValue({ items: [], meta: { totalPages: 0 } })
 }));
 
 /**

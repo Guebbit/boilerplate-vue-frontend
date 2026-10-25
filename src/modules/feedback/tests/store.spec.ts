@@ -13,7 +13,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -63,19 +62,19 @@ let responses: Record<string, unknown>;
  */
 const ticketStateEnvelope = (method: string | undefined, url: string | undefined) => {
     if (method === 'POST' && url === '/feedback/search')
-        return orvalEnvelope({
+        return {
             items: currentTicket ? [currentTicket] : [],
             meta: currentTicket
                 ? { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 }
                 : { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 }
-        });
+        };
     if (method === 'PATCH' && url === '/feedback/f1' && currentTicket) {
         currentTicket = { ...currentTicket, status: 'resolved' };
-        return orvalEnvelope(currentTicket);
+        return currentTicket;
     }
     if (method === 'DELETE' && url === '/feedback/f1') {
         currentTicket = undefined;
-        return orvalEnvelope();
+        return undefined;
     }
     return undefined;
 };
@@ -102,7 +101,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     currentTicket = { ...TICKET };
     responses = {
-        'POST /feedback/contact': orvalEnvelope(TICKET)
+        'POST /feedback/contact': TICKET
     };
 });
 

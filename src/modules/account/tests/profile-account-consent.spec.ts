@@ -13,10 +13,7 @@ import { useAuthStore } from '../stores/auth.ts';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -50,7 +47,7 @@ const patchBodies = () =>
  * @param analyticsConsent - what the account record holds, `undefined` for never asked
  */
 const signInHolding = (analyticsConsent?: boolean) => {
-    responses['GET /account'] = orvalEnvelope({ ...USER, analyticsConsent });
+    responses['GET /account'] = { ...USER, analyticsConsent };
     useProfileStore();
     return useAuthStore()
         .login('ada@example.com', 'hunter2hunter2')
@@ -64,14 +61,14 @@ beforeEach(() => {
     vi.stubEnv('VITE_UMAMI_SRC', 'https://umami.example.com/script.js');
     deleteCookie('analyticsConsent');
     responses = {
-        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
-        'PATCH /account': orvalEnvelope({ ...USER, analyticsConsent: false }),
-        'GET /account/abilities': orvalEnvelope({
+        'POST /account/login': { token: 'jwt-token' },
+        'PATCH /account': { ...USER, analyticsConsent: false },
+        'GET /account/abilities': {
             platform: [],
             tenant: [['read', 'Product', { active: true, deletedAt: null }]],
             version: 36,
             subjects: ['Product']
-        })
+        }
     };
 });
 
@@ -92,7 +89,7 @@ describe('the account answer while signed in', () => {
         signInHolding(true)
             .then(() => {
                 const consent = useAnalyticsConsentStore();
-                responses['GET /account'] = orvalEnvelope({ ...USER, analyticsConsent: false });
+                responses['GET /account'] = { ...USER, analyticsConsent: false };
                 consent.reopen();
                 consent.deny();
 
@@ -108,8 +105,8 @@ describe('the account answer while signed in', () => {
     it('grants through the account for an account that never answered', () =>
         signInHolding()
             .then(() => {
-                responses['PATCH /account'] = orvalEnvelope({ ...USER, analyticsConsent: true });
-                responses['GET /account'] = orvalEnvelope({ ...USER, analyticsConsent: true });
+                responses['PATCH /account'] = { ...USER, analyticsConsent: true };
+                responses['GET /account'] = { ...USER, analyticsConsent: true };
                 useAnalyticsConsentStore().grant();
 
                 return vi.waitFor(() => {

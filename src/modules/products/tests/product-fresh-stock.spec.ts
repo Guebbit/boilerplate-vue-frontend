@@ -46,17 +46,15 @@ const router = createRouter({
 const serverHolds = (available: number) =>
     Promise.resolve(
         asStub<Awaited<ReturnType<typeof getProductById>>>({
-            data: {
-                id: 'p1',
-                title: 'Widget',
-                price: 9.99,
-                currency: 'EUR',
-                inStock: available > 0,
-                lowStock: false,
-                onHand: available,
-                reserved: 0,
-                available
-            }
+            id: 'p1',
+            title: 'Widget',
+            price: 9.99,
+            currency: 'EUR',
+            inStock: available > 0,
+            lowStock: false,
+            onHand: available,
+            reserved: 0,
+            available
         })
     );
 

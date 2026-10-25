@@ -55,9 +55,9 @@ export const useStockAlertsStore = defineStore('stock-alerts', () => {
      * @param call - The generated client call.
      * @returns A promise resolving with the list the store holds.
      */
-    const replaceItems = (call: () => Promise<{ data: { items: StockAlert[] } }>) =>
+    const replaceItems = (call: () => Promise<{ items: StockAlert[] }>) =>
         fetchAny(() =>
-            call().then(({ data }) => {
+            call().then((data) => {
                 items.value = data.items;
                 return items.value;
             })

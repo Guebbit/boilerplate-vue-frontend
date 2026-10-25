@@ -11,10 +11,7 @@ import TwoFactorEnroll from '../components/TwoFactorEnroll.vue';
 import { i18n, loadLocale } from '@/i18n';
 import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -33,13 +30,13 @@ vi.mock('@/infrastructure/http', () => ({
  */
 const mountEnroll = () => {
     responses = {
-        'POST /account/2fa/methods/email/setup': orvalEnvelope({
+        'POST /account/2fa/methods/email/setup': {
             method: 'email',
             delivers: true,
             sentTo: 'a***a@example.com',
             resendAfter: 30,
             expiresAt: new Date(Date.now() + 300_000).toISOString()
-        })
+        }
     };
     setActivePinia(createPinia());
     return mount(TwoFactorEnroll, {

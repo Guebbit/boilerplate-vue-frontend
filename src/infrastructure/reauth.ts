@@ -13,9 +13,9 @@ import {
     sendReauthCode as apiSendReauthCode
 } from '@api';
 import { ERROR_CODES } from '@api/error-codes';
-import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
+import { getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import type { ReauthMethod, ReauthMethods, ReauthRequest, TwoFactorDelivery } from '@types';
+import type { ReauthMethod, ReauthRequest } from '@types';
 
 /**
  * The seconds a refused step-up code send still has to wait, read off its 429.
@@ -34,9 +34,7 @@ export const reauthSendRetryAfter = (error: unknown): number | undefined =>
  * @returns The methods; empty when the account has no password and mail cannot be delivered.
  */
 export const reauthMethods = (): Promise<ReauthMethod[]> =>
-    apiGetReauthMethods().then(
-        (data) => getPayloadFromResponse<ReauthMethods>(data)?.methods ?? []
-    );
+    apiGetReauthMethods().then(({ methods }) => methods);
 
 /**
  * Mails the visitor their step-up code — only an account with no password may ask.
@@ -46,9 +44,7 @@ export const reauthMethods = (): Promise<ReauthMethod[]> =>
  */
 export const sendReauthCode = (): Promise<number> =>
     // 'email' is the delivery channel; it is the only one the endpoint offers.
-    apiSendReauthCode('email').then(
-        (data) => getPayloadFromResponse<TwoFactorDelivery>(data)?.resendAfter ?? 0
-    );
+    apiSendReauthCode('email').then(({ resendAfter }) => resendAfter);
 
 /**
  * Store instance: the step-up prompt's spinner and its one write.

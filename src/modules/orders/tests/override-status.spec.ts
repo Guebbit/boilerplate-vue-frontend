@@ -13,7 +13,6 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { anOrder } from '../../../../tests/support/unit/fixtures.ts';
@@ -48,7 +47,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     sent = [];
     responses = {
-        'POST /orders/o1/status-override': orvalEnvelope(ORDER)
+        'POST /orders/o1/status-override': ORDER
     };
 });
 

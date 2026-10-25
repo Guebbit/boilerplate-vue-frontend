@@ -21,10 +21,7 @@ import type {
     NotificationWishlistItemRemoved
 } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -74,7 +71,7 @@ const row = (id: string, overrides: RowOverrides = {}): Notification => ({
  * @param rows - The inbox as the server holds it.
  */
 const serverHolds = (rows: Notification[]) => {
-    answers['GET /notifications'] = orvalEnvelope({ items: rows });
+    answers['GET /notifications'] = { items: rows };
 };
 
 /**
@@ -103,8 +100,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     answers = {
-        'POST /notifications/read-all': orvalEnvelope(),
-        'POST /notifications/dismiss-all': orvalEnvelope()
+        'POST /notifications/read-all': undefined,
+        'POST /notifications/dismiss-all': undefined
     };
     return loadLocale('en');
 });
@@ -241,9 +238,7 @@ describe('sync', () => {
         // The read was answered before the server wrote n9, but lands after the stream pushed it.
         answers['GET /notifications'] = () => {
             inbox.receiveCreated({ notification: row('n9') });
-            return Promise.resolve(
-                parseOrvalFixture('GET', '/notifications', orvalEnvelope({ items: [] }))
-            );
+            return Promise.resolve(parseOrvalFixture('GET', '/notifications', { items: [] }));
         };
 
         return inbox.sync().then(() => {
@@ -258,7 +253,7 @@ describe('sync', () => {
         answers['GET /notifications'] = () =>
             new Promise((resolve) => {
                 answerers.push((items) => {
-                    resolve(parseOrvalFixture('GET', '/notifications', orvalEnvelope({ items })));
+                    resolve(parseOrvalFixture('GET', '/notifications', { items }));
                 });
             });
 
@@ -325,9 +320,7 @@ describe('sync', () => {
 const holdRead = (rows: Notification[]) => {
     const held = Promise.withResolvers<undefined>();
     answers['GET /notifications'] = () =>
-        held.promise.then(() =>
-            parseOrvalFixture('GET', '/notifications', orvalEnvelope({ items: rows }))
-        );
+        held.promise.then(() => parseOrvalFixture('GET', '/notifications', { items: rows }));
     return () => held.resolve(undefined);
 };
 
@@ -364,7 +357,7 @@ describe('a read that is still out when something else happens', () => {
     it('does not bring back a row the owner dismissed meanwhile', async () => {
         const inbox = useInboxStore();
         inbox.receiveCreated({ notification: row('n1') });
-        answers['DELETE /notifications/n1'] = orvalEnvelope({});
+        answers['DELETE /notifications/n1'] = {};
         const release = holdRead([row('n1')]);
         const reading = inbox.sync();
 
@@ -508,9 +501,7 @@ describe('markAllRead', () => {
         inbox.receiveCreated({ notification: row('n1') });
         const answer = Promise.withResolvers<undefined>();
         answers['POST /notifications/read-all'] = () =>
-            answer.promise.then(() =>
-                parseOrvalFixture('POST', '/notifications/read-all', orvalEnvelope({}))
-            );
+            answer.promise.then(() => parseOrvalFixture('POST', '/notifications/read-all', {}));
 
         const marking = inbox.markAllRead();
         inbox.receiveCreated({ notification: row('n2') });
@@ -560,7 +551,7 @@ describe('dismiss', () => {
     it('deletes on the server and removes it from the bell', () => {
         const inbox = useInboxStore();
         serverHolds([row('n1'), row('n2')]);
-        answers['DELETE /notifications/n1'] = orvalEnvelope();
+        answers['DELETE /notifications/n1'] = undefined;
 
         return inbox
             .sync()
@@ -621,9 +612,7 @@ describe('dismissAll', () => {
         inbox.receiveCreated({ notification: row('n1') });
         const answer = Promise.withResolvers<undefined>();
         answers['POST /notifications/dismiss-all'] = () =>
-            answer.promise.then(() =>
-                parseOrvalFixture('POST', '/notifications/dismiss-all', orvalEnvelope({}))
-            );
+            answer.promise.then(() => parseOrvalFixture('POST', '/notifications/dismiss-all', {}));
 
         const dismissing = inbox.dismissAll();
         inbox.receiveCreated({ notification: row('n2') });

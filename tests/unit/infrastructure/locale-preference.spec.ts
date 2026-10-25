@@ -33,7 +33,7 @@ vi.mock('@api', () => ({
             })
         ),
     // The idle clock is read once per signed-in stretch; the answer names no timeout.
-    touchSession: () => Promise.resolve({ data: { lastActiveAt: new Date().toISOString() } })
+    touchSession: () => Promise.resolve({ lastActiveAt: new Date().toISOString() })
 }));
 
 /** The code under test, imported after the mocks are in place. */

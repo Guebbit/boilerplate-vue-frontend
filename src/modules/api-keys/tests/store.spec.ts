@@ -21,7 +21,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -50,8 +49,8 @@ vi.mock('@/infrastructure/http', () => ({
                 config.method,
                 config.url,
                 config.method?.toUpperCase() === 'DELETE'
-                    ? orvalEnvelope()
-                    : orvalEnvelope({ ...API_KEY, secret: 'sk_a1b2c3d4_default' })
+                    ? undefined
+                    : { ...API_KEY, secret: 'sk_a1b2c3d4_default' }
             )
         )
     )
@@ -80,7 +79,7 @@ const respondOnceWith = (data: unknown) =>
     vi
         .mocked(orvalMutator)
         .mockImplementationOnce((config: { url?: string; method?: string }) =>
-            Promise.resolve(parseOrvalFixture(config.method, config.url, orvalEnvelope(data)))
+            Promise.resolve(parseOrvalFixture(config.method, config.url, data))
         );
 
 describe('useApiKeysStore', () => {
@@ -191,15 +190,11 @@ describe('useApiKeysStore', () => {
             vi.mocked(orvalMutator).mockImplementation(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
-                        parseOrvalFixture(
-                            config.method,
-                            config.url,
-                            orvalEnvelope({
-                                items: [API_KEY],
-                                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
-                                maxExpiresAt: '2027-10-24T00:00:00.000Z'
-                            })
-                        )
+                        parseOrvalFixture(config.method, config.url, {
+                            items: [API_KEY],
+                            meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+                            maxExpiresAt: '2027-10-24T00:00:00.000Z'
+                        })
                     )
             );
 

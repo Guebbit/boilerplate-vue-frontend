@@ -35,16 +35,17 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
  * whether a URL, a cap or a field was refused, and a run that fails once cannot be asked again.
  */
 const unwrap = <T>(response: Response, context: string): Promise<T> =>
-    response
-        .json()
-        .then((payload: { data?: T; title?: string; detail?: string; errors?: unknown }) => {
+    // A 204 has no body to parse; the resource itself is the payload of every other success.
+    (response.status === 204 ? Promise.resolve(undefined) : response.json()).then(
+        (payload: (T & { title?: string; detail?: string; errors?: unknown }) | undefined) => {
             if (!response.ok)
                 throw new Error(
-                    `adminApi: ${context} answered ${String(response.status)} — ${payload.title ?? 'no title'}: ${payload.detail ?? 'no detail'}` +
-                        (payload.errors === undefined ? '' : ` ${JSON.stringify(payload.errors)}`)
+                    `adminApi: ${context} answered ${String(response.status)} — ${payload?.title ?? 'no title'}: ${payload?.detail ?? 'no detail'}` +
+                        (payload?.errors === undefined ? '' : ` ${JSON.stringify(payload.errors)}`)
                 );
-            return payload.data as T;
-        });
+            return payload as T;
+        }
+    );
 
 /** What a finished login answers with: a bearer, or a session id in cookie mode. */
 interface LoginTokens {

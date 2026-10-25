@@ -18,7 +18,7 @@ import {
 import { getCart, getCartSummary, mergeCart } from '@api';
 import * as schemas from '@api/schemas';
 import { loadLocale } from '@/i18n';
-import { contractEnvelope } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { contractBody } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { trackStores } from '../../../../tests/support/unit/track-stores.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { apiRejection, type Answer } from '../../../../tests/support/unit/cart-fixtures.ts';
@@ -48,11 +48,11 @@ const MERGED_CART = {
  * Canned answers, each proven against the operation's own response schema once.
  */
 const RESPONSES = {
-    merged: contractEnvelope<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
+    merged: contractBody<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
         lines: [{ productId: 'p1', requested: 3, resulting: 3, availability: 'in_stock' }]
     }),
-    mergedWithChanges: contractEnvelope<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
+    mergedWithChanges: contractBody<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
         lines: [
             {
@@ -73,7 +73,7 @@ const RESPONSES = {
             { productId: 'p4', requested: 1, resulting: 1, availability: 'in_stock' }
         ]
     }),
-    mergedAgain: contractEnvelope<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
+    mergedAgain: contractBody<Answer<typeof mergeCart>>(schemas.MergeCartResponse, {
         cart: MERGED_CART,
         lines: [
             {
@@ -85,11 +85,11 @@ const RESPONSES = {
             }
         ]
     }),
-    summary: contractEnvelope<Answer<typeof getCartSummary>>(
+    summary: contractBody<Answer<typeof getCartSummary>>(
         schemas.GetCartSummaryResponse,
         MERGED_CART.summary
     ),
-    cart: contractEnvelope<Answer<typeof getCart>>(schemas.GetCartResponse, MERGED_CART)
+    cart: contractBody<Answer<typeof getCart>>(schemas.GetCartResponse, MERGED_CART)
 };
 
 vi.mock('@api', () => ({

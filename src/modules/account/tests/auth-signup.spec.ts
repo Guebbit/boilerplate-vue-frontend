@@ -16,7 +16,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -27,11 +26,11 @@ wireModulesIntoCore();
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) =>
         Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
-            )
+            parseOrvalFixture(config.method, config.url, {
+                id: 'u1',
+                username: 'ada',
+                email: 'ada@example.com'
+            })
         )
     )
 }));

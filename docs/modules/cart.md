@@ -95,7 +95,7 @@ A step still inside its debounce when the page goes away (a reload, a closed tab
 What only the browser knows at checkout — the note, the payment choice and a picked address — lives
 in `sessionStorage` under the signed-in user's id (`composables/use-checkout-draft.ts`). A reload
 puts it back; checkout and the end of a session drop it. The delivery method is the server cart's.
-Classifying a checkout rejection is pure, too: `domain/checkout-errors.ts` reads the envelope's
+Classifying a checkout rejection is pure, too: `domain/checkout-errors.ts` reads the problem's
 first error and returns a verdict (`cart-changed`, `insufficient-stock`, `address-not-found`,
 `cart-empty`, `in-flight`, `server-error`, `other`, and the rest) — the view decides what each one
 says and does. See [the checkout flow](./cart-checkout.md) for the refusals in full.
@@ -417,7 +417,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Endpoints called
 
-| Call                      | Response envelope            |
+| Call                      | Response schema              |
 | ------------------------- | ---------------------------- |
 | `GET /cart`               | `GetCartResponse`            |
 | `POST /cart/items`        | `AddCartItemResponse`        |
@@ -429,7 +429,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `POST /cart/reorder/{id}` | `ReorderResponse`            |
 | `GET /cart/summary`       | `GetCartSummaryResponse`     |
 
-Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
+Each row registers one Zod schema through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
 #### Navigation entries
 
@@ -467,7 +467,7 @@ in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 | `locales/en.json`                           | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `locales/it.json`                           | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                                                     | [read](../tools/i18n.md)              |
 | `module.ts`                                 | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas and locales, plus the optional loading keys and slots. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                       | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                                                  | [read](../api/openapi-workflow.md)    |
+| `response-schemas.ts`                       | One row per endpoint this domain calls, pairing a method and path pattern with the Zod schema its response is validated against.                                                    | [read](../api/openapi-workflow.md)    |
 | `components/AddToCartButton.vue`            | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
 | `components/GuestCart.vue`                  | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                                            | [read](../theory/layers.md)           |
 | `routes.ts`                                 | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                                              | [read](../theory/sitemap.md)          |

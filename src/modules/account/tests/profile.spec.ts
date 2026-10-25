@@ -19,7 +19,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -58,13 +57,11 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        // Wrapped under `data`, as `LoginResponseEnvelope` declares — the only shape
-        // `getTokenFromResponse` reads.
-        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
-        'GET /account': orvalEnvelope(USER),
+        'POST /account/login': { token: 'jwt-token' },
+        'GET /account': USER,
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [
                 ['read', 'Product', { active: true, deletedAt: null }],
@@ -72,22 +69,22 @@ beforeEach(() => {
             ],
             version: 36,
             subjects: ['Order', 'Product']
-        }),
+        },
         // `202`: the account is locked now and erased at `purgeAt` unless restored first.
-        'DELETE /account': orvalEnvelope({
+        'DELETE /account': {
             requestedAt: '2026-10-24T10:00:00.000Z',
             purgeAt: '2026-11-23T10:00:00.000Z'
-        }),
-        'POST /account/restore': orvalEnvelope(),
+        },
+        'POST /account/restore': undefined,
         // PATCH, not PUT — `updateProfile` sends only the fields it was given.
-        'PATCH /account': orvalEnvelope({ ...USER, username: 'ada2' }),
-        // The envelope the real endpoint answers: a fresh access token for this session.
-        'POST /account/password': orvalEnvelope({ token: 'rotated-jwt' }),
-        'POST /account/email-verification/confirm': orvalEnvelope(),
-        'POST /account/email-change/confirm': orvalEnvelope(),
-        'POST /account/email-change/undo': orvalEnvelope(),
+        'PATCH /account': { ...USER, username: 'ada2' },
+        // A fresh access token for this session.
+        'POST /account/password': { token: 'rotated-jwt' },
+        'POST /account/email-verification/confirm': undefined,
+        'POST /account/email-change/confirm': undefined,
+        'POST /account/email-change/undo': undefined,
         // The request answers `202` with the export's id and status; the data comes later, by link.
-        'POST /account/export': orvalEnvelope({ id: 'e1', status: 'building' }),
+        'POST /account/export': { id: 'e1', status: 'building' },
         // The download body IS the export document, not an envelope. Every collection is an array
         // the fixture is free to leave empty; only `exportedAt` and `profile` are required scalars
         // on `AccountExportResponse`. `invoicing` is the one exception — an object of two empty
@@ -129,22 +126,6 @@ describe('fetchProfile', () => {
             .then(() => {
                 expect(useSessionStore().viewer).toMatchObject({ id: 'u1' });
             }));
-
-    it('leaves the viewer alone when the response carries no payload', () => {
-        // `data` is required by the real contract, so this exact payload is impossible against
-        // it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence for
-        // that state, same as `addresses.spec.ts`'s book-less case.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: undefined })
-        );
-
-        return useProfileStore()
-            .fetchProfile(true)
-            .then(() => {
-                expect(useSessionStore().viewer).toBeUndefined();
-                expect(useSessionStore().isAuth).toBe(false);
-            });
-    });
 });
 
 describe('updateProfile', () => {
@@ -315,13 +296,13 @@ describe('the self-service actions', () => {
             .then(() => {
                 // Authenticated: the freshly verified record is pulled back in, and the rules
                 // that go with it follow.
-                // Sorted: the rules are fetched without being awaited — a shell that blocked on
+                // Unordered: the rules are fetched without being awaited — a shell that blocked on
                 // learning what to hide would be worse than one that hides too much for a moment
-                // — so which of the two lands first is not a fact worth pinning.
-                expect(requestedUrls().slice(-2).toSorted()).toEqual([
-                    '/account',
-                    '/account/abilities'
-                ]);
+                // — so the order they land in, and the idle-clock read after them, are not facts
+                // worth pinning.
+                expect(requestedUrls().slice(-3)).toEqual(
+                    expect.arrayContaining(['/account', '/account/abilities'])
+                );
             });
     });
 
@@ -356,10 +337,9 @@ describe('the self-service actions', () => {
             .then(() => {
                 // Authenticated: the freshly swapped-in address is pulled back in, and the rules
                 // that go with it follow — same sorted-tail reasoning as the verification case.
-                expect(requestedUrls().slice(-2).toSorted()).toEqual([
-                    '/account',
-                    '/account/abilities'
-                ]);
+                expect(requestedUrls().slice(-3)).toEqual(
+                    expect.arrayContaining(['/account', '/account/abilities'])
+                );
             });
     });
 });

@@ -24,9 +24,7 @@ beforeEach(() => {
 
 describe('TermsPage', () => {
     it('shows the Terms version the shop states', () => {
-        vi.mocked(getShop).mockResolvedValue({
-            data: aShop({ termsVersion: '2026-10' })
-        } as Awaited<ReturnType<typeof getShop>>);
+        vi.mocked(getShop).mockResolvedValue(aShop({ termsVersion: '2026-10' }));
         const wrapper = mount(TermsPage, {
             global: { plugins: [vuetify, i18n], stubs: { StaticPageLinks: true } }
         });

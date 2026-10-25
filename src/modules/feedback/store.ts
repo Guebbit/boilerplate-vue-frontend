@@ -83,12 +83,11 @@ export const useFeedbackStore = defineStore('feedback', () => {
                     category: filters.category,
                     email: filters.email
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 })),
 
-            update: (requestId, data) =>
-                updateFeedbackRequestStatus(requestId, data).then((response) => response.data),
+            update: (requestId, data) => updateFeedbackRequestStatus(requestId, data),
 
             remove: (requestId) => deleteFeedbackRequest(requestId)
         },

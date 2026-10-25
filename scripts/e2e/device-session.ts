@@ -88,11 +88,11 @@ export const sessionCookieFrom = (headers: Headers): string | null => {
 /**
  * The access token in a login or refresh answer, `undefined` when there is none.
  *
- * @param body - the parsed JSON envelope
+ * @param body - the parsed JSON body
  */
 const tokenIn = (body: unknown): string | undefined => {
-    const data = (body as { data?: { token?: unknown } } | null)?.data;
-    return typeof data?.token === 'string' ? data.token : undefined;
+    const parsed = body as { token?: unknown } | null;
+    return typeof parsed?.token === 'string' ? parsed.token : undefined;
 };
 
 /**
@@ -128,7 +128,7 @@ const readSessionMode = (apiUrl: string): Promise<SessionMode> =>
     fetch(`${apiUrl}/account/session-config`)
         .then(jsonOf)
         .then((body) => {
-            const mode = (body as { data?: { mode?: unknown } } | null)?.data?.mode;
+            const mode = (body as { mode?: unknown } | null)?.mode;
             if (mode !== 'jwt' && mode !== 'cookie')
                 throw new Error('deviceLogin: GET /account/session-config named no known mode');
             return mode;
@@ -154,8 +154,7 @@ const answerChallenge = (
         .text()
         .then(parseJson)
         .then((body) => {
-            const data = (body as { data?: { mfaRequired?: boolean; challenge?: string } } | null)
-                ?.data;
+            const data = body as { mfaRequired?: boolean; challenge?: string } | null;
             if (data?.mfaRequired !== true) return response;
 
             return loginTotpCodeFor(totpSecret, apiUrl).then((code) =>

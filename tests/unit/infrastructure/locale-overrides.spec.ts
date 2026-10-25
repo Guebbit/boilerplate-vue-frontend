@@ -161,14 +161,9 @@ describe('fetchRemoteLocales', () => {
         // Off-contract on purpose (`apps` has `minItems: 1`), so not run through the schema:
         // this is the defence against a counterpart that breaks that rule.
         getLocalesMock.mockResolvedValue({
-            success: true,
-            status: 200,
-            message: 'OK',
-            data: {
-                locales: [capability('en'), { ...capability('es'), apps: [] }],
-                default: 'en',
-                fallback: 'en'
-            }
+            locales: [capability('en'), { ...capability('es'), apps: [] }],
+            default: 'en',
+            fallback: 'en'
         });
         return expect(fetchRemoteLocales()).resolves.toEqual(['en']);
     });
@@ -198,7 +193,7 @@ describe('fetchRemoteLocales', () => {
      * so a counterpart without the endpoint is a supported configuration, not a fault.
      */
     it('returns an empty list when the API does not implement the endpoint', () => {
-        getLocalesMock.mockResolvedValue({ data: undefined });
+        getLocalesMock.mockResolvedValue(undefined);
         return expect(fetchRemoteLocales()).resolves.toEqual([]);
     });
 });
@@ -223,7 +218,7 @@ describe('fetchLocaleOverrides', () => {
      * Both mean the same thing to a client, which is why neither is treated as a failure.
      */
     it('returns nothing when the API has no such locale', () => {
-        getLocaleMessagesMock.mockResolvedValue({ data: undefined });
+        getLocaleMessagesMock.mockResolvedValue(undefined);
         return expect(fetchLocaleOverrides('kl')).resolves.toEqual({});
     });
 });

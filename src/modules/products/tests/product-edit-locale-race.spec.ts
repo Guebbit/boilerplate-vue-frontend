@@ -23,10 +23,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -103,7 +100,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
         vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
             if (config.url === '/locales') return locales.promise;
             if (config.url === '/products/p1/admin') return admin.promise;
-            return Promise.resolve(orvalEnvelope());
+            return Promise.resolve(undefined);
         });
 
         const renderErrors: unknown[] = [];
@@ -119,7 +116,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
         });
 
         // GET /locales answers first — the race condition's trigger.
-        locales.resolve(parseOrvalFixture('GET', '/locales', orvalEnvelope(LOCALES_RESPONSE)));
+        locales.resolve(parseOrvalFixture('GET', '/locales', LOCALES_RESPONSE));
 
         return flushPromises()
             .then(() => {
@@ -129,9 +126,7 @@ describe('the edit form under a locales-before-admin-record race', () => {
                 expect(wrapper.find('[data-test=translation-tab-en]').exists()).toBe(false);
                 expect(wrapper.find('[data-test=translation-title-field]').exists()).toBe(false);
 
-                admin.resolve(
-                    parseOrvalFixture('GET', '/products/p1/admin', orvalEnvelope(ADMIN_RESPONSE))
-                );
+                admin.resolve(parseOrvalFixture('GET', '/products/p1/admin', ADMIN_RESPONSE));
                 return flushPromises();
             })
             .then(() => {
