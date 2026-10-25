@@ -75,7 +75,7 @@ const { updateProfile, cancelPendingEmailChange, resendPendingEmail, fetchProfil
 /**
  * The signed-in visitor's profile record.
  */
-const { profile } = storeToRefs(useProfileStore());
+const { profile, savingProfile, changingPendingEmail } = storeToRefs(useProfileStore());
 
 /*
  * The record this page edits, loaded by this page. The session restore only fills the shell's
@@ -232,13 +232,6 @@ const {
 );
 
 /**
- * Whether a save is in flight — the submit button spins and refuses a second one: this
- * form calls `validate`/`revealErrors` by hand instead of the toolkit's `handleSubmit`, which is
- * where {@link isSubmitting} would otherwise come from.
- */
-const savingProfile = ref(false);
-
-/**
  * Validates and saves the profile changes — the fields a user owns. Role and account state
  * belong to the admin endpoints, and the password to its own flow below.
  *
@@ -254,7 +247,6 @@ const submitForm = () => {
     if (!isDirty.value || savingProfile.value) return;
     clearSaveError();
     clearStale();
-    savingProfile.value = true;
     // No `imageUrl` here, ever: `ProfileAvatar.vue` is the only thing that writes it, through its
     // own request. Sending the loaded value back on every details save would overwrite whatever
     // the avatar panel just wrote and orphan the file it uploaded — see `updateProfile`'s docblock.
@@ -282,9 +274,6 @@ const submitForm = () => {
         .catch((error: unknown) => {
             if (handleStaleSave(error)) return;
             applyServerErrors(error, { onUnmapped: () => reportSaveError(error) });
-        })
-        .finally(() => {
-            savingProfile.value = false;
         });
 };
 
@@ -297,12 +286,6 @@ const {
     report: reportPendingEmailError,
     clear: clearPendingEmailError
 } = useBlockingError();
-
-/**
- * Whether a resend or cancel is in flight — shared by both, since they act on the same pending
- * change and a click on one while the other settles would race it.
- */
-const pendingEmailActionInFlight = ref(false);
 
 /**
  * When the Resend button may be pressed again, in epoch ms — always the server's number
@@ -336,9 +319,8 @@ const startResendCooldown = (seconds: number) => {
  *  started it) counts down ITS `retryAfter` instead.
  */
 const resendPendingEmailLink = () => {
-    if (!profile.value?.pendingEmail || pendingEmailActionInFlight.value) return;
+    if (!profile.value?.pendingEmail || changingPendingEmail.value) return;
     clearPendingEmailError();
-    pendingEmailActionInFlight.value = true;
     return resendPendingEmail()
         .then((resendAfter) => {
             startResendCooldown(resendAfter);
@@ -347,9 +329,6 @@ const resendPendingEmailLink = () => {
         .catch((error: unknown) => {
             startResendCooldown(emailVerifyResendRetryAfter(error) ?? 0);
             reportPendingEmailError(error);
-        })
-        .finally(() => {
-            pendingEmailActionInFlight.value = false;
         });
 };
 
@@ -362,15 +341,11 @@ const resendPendingEmailLink = () => {
  *  place ({@link pendingEmailError}).
  */
 const cancelPendingEmail = () => {
-    if (!profile.value?.pendingEmail || pendingEmailActionInFlight.value) return;
+    if (!profile.value?.pendingEmail || changingPendingEmail.value) return;
     clearPendingEmailError();
-    pendingEmailActionInFlight.value = true;
     return cancelPendingEmailChange()
         .then(() => addMessage(t('profile-page.pending-email-cancelled')))
-        .catch((error) => reportPendingEmailError(error))
-        .finally(() => {
-            pendingEmailActionInFlight.value = false;
-        });
+        .catch((error) => reportPendingEmailError(error));
 };
 </script>
 
@@ -412,7 +387,7 @@ const cancelPendingEmail = () => {
                     <v-btn
                         variant="text"
                         size="small"
-                        :disabled="pendingEmailActionInFlight || resendCooldown > 0"
+                        :disabled="changingPendingEmail || resendCooldown > 0"
                         data-test="pending-email-resend"
                         @click="resendPendingEmailLink"
                     >
@@ -427,7 +402,7 @@ const cancelPendingEmail = () => {
                     <v-btn
                         variant="text"
                         size="small"
-                        :disabled="pendingEmailActionInFlight"
+                        :disabled="changingPendingEmail"
                         data-test="pending-email-cancel"
                         @click="cancelPendingEmail"
                     >

@@ -19,7 +19,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -61,11 +60,11 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
-        'GET /account': orvalEnvelope(USER),
+        'POST /account/login': { token: 'jwt-token' },
+        'GET /account': USER,
         // The rules the server would publish for this viewer. The store unpacks them with CASL's
         // own reader, so a fixture that is not packed is a fixture no client could use.
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [
                 ['read', 'Product', { active: true, deletedAt: null }],
@@ -73,11 +72,11 @@ beforeEach(() => {
             ],
             version: 36,
             subjects: ['Order', 'Product']
-        }),
-        'POST /account/password/reset': orvalEnvelope(),
-        'POST /account/password/reset/confirm': orvalEnvelope(),
-        'POST /account/logout': orvalEnvelope(),
-        'DELETE /account/sessions': orvalEnvelope()
+        },
+        'POST /account/password/reset': undefined,
+        'POST /account/password/reset/confirm': undefined,
+        'POST /account/logout': undefined,
+        'DELETE /account/sessions': undefined
     };
 });
 
@@ -104,7 +103,7 @@ describe('login', () => {
      */
     it('in cookie mode, signs in from a login that carries no token', () => {
         useSessionStore().mode = 'cookie';
-        responses['POST /account/login'] = orvalEnvelope({});
+        responses['POST /account/login'] = {};
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -124,11 +123,11 @@ describe('login', () => {
     // The boot reads the mode once (`main.ts`); a fresh tab has no `isAuth` cookie to trigger it
     // anywhere else, and a login adopted before the answer would behave as `jwt` and hold nothing.
     it('signs in on a fresh tab whose deployment answered cookie mode at boot', () => {
-        responses['GET /account/session-config'] = orvalEnvelope({
+        responses['GET /account/session-config'] = {
             mode: 'cookie',
             lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-        });
-        responses['POST /account/login'] = orvalEnvelope({});
+        };
+        responses['POST /account/login'] = {};
 
         return useSessionStore()
             .loadSessionMode()
@@ -177,7 +176,7 @@ describe('login', () => {
             }));
 
     it('answers each rule an unrestricted caller was published, so their screens resolve', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'admin' });
+        responses['GET /account'] = { ...USER, role: 'admin' };
         /*
          * The RULES, not the role name. `can` asks what the server said this person may do — a
          * name is who they are, and only the rules say what that lets them do. There is no
@@ -185,7 +184,7 @@ describe('login', () => {
          * holds, so a fixture that published a `manage` rule would test a shape the server
          * cannot send.
          */
-        responses['GET /account/abilities'] = orvalEnvelope({
+        responses['GET /account/abilities'] = {
             platform: [],
             tenant: [
                 ['read', 'Product'],
@@ -195,7 +194,7 @@ describe('login', () => {
             ],
             version: 36,
             subjects: ['Product']
-        });
+        };
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -211,13 +210,13 @@ describe('login', () => {
     });
 
     it('drops the rules when the session ends, so nothing stays unlocked', () => {
-        responses['GET /account'] = orvalEnvelope({ ...USER, role: 'admin' });
-        responses['GET /account/abilities'] = orvalEnvelope({
+        responses['GET /account'] = { ...USER, role: 'admin' };
+        responses['GET /account/abilities'] = {
             platform: [],
             tenant: [['delete', 'Product']],
             version: 36,
             subjects: ['Product']
-        });
+        };
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -240,9 +239,7 @@ describe('login', () => {
         // (`orvalMutator` itself would reject it) — this pins `getTokenFromResponse`'s OWN defence
         // for that state, so it bypasses `parseOrvalFixture` on purpose rather than resolving
         // through the keyed `responses` table.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
+        vi.mocked(orvalMutator).mockImplementationOnce(() => Promise.resolve({}));
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -359,10 +356,10 @@ describe('logoutEverywhere', () => {
 
 describe('restoreFromCookies after a failed mode read', () => {
     it('asks for the mode again and opens a cookie session, instead of refreshing as jwt', () => {
-        responses['GET /account/session-config'] = orvalEnvelope({
+        responses['GET /account/session-config'] = {
             mode: 'cookie',
             lifetimeSeconds: { short: 86_400, medium: 604_800, long: 2_592_000 }
-        });
+        };
         vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('network down'));
 
         return useSessionStore()

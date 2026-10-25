@@ -106,7 +106,7 @@ export const useUsersStore = defineStore('users', () => {
         AxiosRequestConfig
     >(
         {
-            list: () => listUsers().then((response) => response.data.items),
+            list: () => listUsers().then((response) => response.items),
 
             search: (filters, page, pageSize) =>
                 searchUsers({
@@ -123,17 +123,16 @@ export const useUsersStore = defineStore('users', () => {
                     purchaseHold: filters.purchaseHold,
                     purchaseHoldReview: filters.purchaseHoldReview
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 })),
 
-            get: (userId) => getUserById(userId).then((response) => response.data),
+            get: (userId) => getUserById(userId),
 
             create: ({ imageUpload, ...userData }, options) =>
-                (imageUpload
+                imageUpload
                     ? createUserWithMultipart({ ...userData, imageUpload }, options)
-                    : apiCreateUser(userData, options)
-                ).then((response) => response.data),
+                    : apiCreateUser(userData, options),
 
             // PATCH, not PUT: `UserEdit.vue` sends only the fields its form actually holds
             // (the profile fields, an upload) — a PUT's every omitted field would be cleared
@@ -142,7 +141,7 @@ export const useUsersStore = defineStore('users', () => {
             // A save that uploads AND clears goes as two requests (`uploadThenClear`): a multipart
             // part cannot carry `null`, so the clears follow as a JSON PATCH.
             update: (userId, { imageUpload, ...userData } = {}, options) =>
-                (imageUpload
+                imageUpload
                     ? uploadThenClear(
                           userData,
                           (rest) =>
@@ -153,8 +152,7 @@ export const useUsersStore = defineStore('users', () => {
                               ),
                           (clears) => updateUserById(userId, clears, { signal: options?.signal })
                       )
-                    : updateUserById(userId, userData, options)
-                ).then((response) => response.data),
+                    : updateUserById(userId, userData, options),
 
             remove: (userId) => deleteUserById(userId),
 
@@ -212,8 +210,8 @@ export const useUsersStore = defineStore('users', () => {
     const restoreUser = (userId: string) =>
         fetchAny(() =>
             restoreUserById(userId).then((response) => {
-                addUser(response.data);
-                return response.data;
+                addUser(response);
+                return response;
             })
         );
 
@@ -227,8 +225,8 @@ export const useUsersStore = defineStore('users', () => {
     const activateUser = (userId: string) =>
         fetchAny(() =>
             activateUserById(userId).then((response) => {
-                addUser(response.data);
-                return response.data;
+                addUser(response);
+                return response;
             })
         );
 
@@ -242,8 +240,8 @@ export const useUsersStore = defineStore('users', () => {
     const deactivateUser = (userId: string) =>
         fetchAny(() =>
             deactivateUserById(userId).then((response) => {
-                addUser(response.data);
-                return response.data;
+                addUser(response);
+                return response;
             })
         );
 
@@ -276,8 +274,8 @@ export const useUsersStore = defineStore('users', () => {
     const setPurchaseHold = (userId: string, hold: SetPurchaseHoldRequest) =>
         fetchAny(() =>
             setUserPurchaseHold(userId, hold).then((response) => {
-                addUser(response.data);
-                return response.data;
+                addUser(response);
+                return response;
             })
         );
 
@@ -291,8 +289,8 @@ export const useUsersStore = defineStore('users', () => {
     const liftPurchaseHold = (userId: string) =>
         fetchAny(() =>
             liftUserPurchaseHold(userId).then((response) => {
-                addUser(response.data);
-                return response.data;
+                addUser(response);
+                return response;
             })
         );
 

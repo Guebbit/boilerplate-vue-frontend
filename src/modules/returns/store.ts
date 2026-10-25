@@ -72,11 +72,11 @@ export const useReturnsStore = defineStore('returns', () => {
                     status: filters.status,
                     reason: filters.reason
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 })),
 
-            get: (returnId) => getReturnById(returnId).then((response) => response.data)
+            get: (returnId) => getReturnById(returnId)
         },
         { resourceKey: 'returns', queryClient }
     );
@@ -115,7 +115,7 @@ export const useReturnsStore = defineStore('returns', () => {
                     throw error;
                 })
         ).then((response) => {
-            const created = response?.data;
+            const created = response;
             if (created) addReturn(created);
             return created;
         });
@@ -131,7 +131,7 @@ export const useReturnsStore = defineStore('returns', () => {
      */
     const fetchOrderReturns = (orderId: string): Promise<Return[]> =>
         fetchAny(() => listReturns({ orderId, pageSize: 50 })).then((response) => {
-            const items = response?.data.items ?? [];
+            const items = response?.items ?? [];
             for (const item of items) addReturn(item);
             return items;
         });
@@ -145,7 +145,7 @@ export const useReturnsStore = defineStore('returns', () => {
      *   wrapper handed back no response.
      */
     const fetchReturnOptions = (orderId: string): Promise<ReturnOptions | undefined> =>
-        fetchAny(() => getReturnOptions({ orderId })).then((response) => response?.data);
+        fetchAny(() => getReturnOptions({ orderId }));
 
     /**
      * Staff accept a requested return. The returned record replaces the cached one.
@@ -153,8 +153,7 @@ export const useReturnsStore = defineStore('returns', () => {
      * @param returnId - Which return.
      * @returns A promise resolving with the approved return.
      */
-    const approve = (returnId: string) =>
-        updateTarget(() => approveReturn(returnId).then((response) => response.data), {}, returnId);
+    const approve = (returnId: string) => updateTarget(() => approveReturn(returnId), {}, returnId);
 
     /**
      * Staff refuse a requested return, saying why — the customer is mailed the reason.
@@ -164,11 +163,7 @@ export const useReturnsStore = defineStore('returns', () => {
      * @returns A promise resolving with the declined return.
      */
     const decline = (returnId: string, reason: string) =>
-        updateTarget(
-            () => declineReturn(returnId, { reason }).then((response) => response.data),
-            {},
-            returnId
-        );
+        updateTarget(() => declineReturn(returnId, { reason }), {}, returnId);
 
     /**
      * Records that the goods arrived: they go back on sale and the customer is paid back. Step-up
@@ -185,7 +180,7 @@ export const useReturnsStore = defineStore('returns', () => {
                 receiveReturn(returnId, body, keeper.withKey())
                     .then((response) => {
                         keeper.settle();
-                        return response.data;
+                        return response;
                     })
                     .catch((error: unknown) => {
                         keeper.settle(error);

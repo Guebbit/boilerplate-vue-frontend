@@ -49,10 +49,10 @@ export const useWishlistStore = defineStore('wishlist', () => {
      * @param call - The generated client call.
      * @returns A promise resolving with the list the store holds once the call answers.
      */
-    const replaceItems = (call: () => Promise<{ data: { items: WishlistItem[] } }>) =>
+    const replaceItems = (call: () => Promise<{ items: WishlistItem[] }>) =>
         fetchAny(() => {
             const claim = tickets.take();
-            return call().then(({ data }) => {
+            return call().then((data) => {
                 if (claim()) items.value = data.items;
                 return items.value;
             });

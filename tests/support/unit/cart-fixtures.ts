@@ -77,18 +77,12 @@ export type Answer<TCall extends (...parameters: never[]) => Promise<unknown>> =
 >;
 
 /**
- * A success envelope as the API answers, around the data a test needs. The app reads only `data`;
- * the rest is what the generated client's types promise.
+ * A success as the API answers: the payload itself. Named so a test reads as "the answer".
  *
  * @param data - The answer's payload
- * @returns The envelope
+ * @returns The payload, unchanged
  */
-export const answered = <TData>(data: TData) => ({
-    success: true as const,
-    status: 200,
-    message: 'OK',
-    data
-});
+export const answered = <TData>(data: TData) => data;
 
 /**
  * One answer the test settles by hand: the promise a mocked call returns, and the two ways to end it.

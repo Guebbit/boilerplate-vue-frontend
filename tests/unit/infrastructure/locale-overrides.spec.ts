@@ -77,6 +77,19 @@ const capability = (
     actions: { update: false, activate: false, deactivate: false, delete: false }
 });
 
+/**
+ * A manifest with or without a draft language, as two callers would be served.
+ *
+ * @param withDraft - whether the caller may see the draft language `es`
+ * @returns the manifest response
+ */
+const manifest = (withDraft: boolean) =>
+    contractResponse(schemas.GetLocalesResponse, {
+        locales: [capability('en'), ...(withDraft ? [capability('es')] : [])],
+        default: 'en',
+        fallback: 'en'
+    });
+
 beforeEach(() => {
     vi.clearAllMocks();
     snapshot = [...supportedLanguages];
@@ -161,14 +174,9 @@ describe('fetchRemoteLocales', () => {
         // Off-contract on purpose (`apps` has `minItems: 1`), so not run through the schema:
         // this is the defence against a counterpart that breaks that rule.
         getLocalesMock.mockResolvedValue({
-            success: true,
-            status: 200,
-            message: 'OK',
-            data: {
-                locales: [capability('en'), { ...capability('es'), apps: [] }],
-                default: 'en',
-                fallback: 'en'
-            }
+            locales: [capability('en'), { ...capability('es'), apps: [] }],
+            default: 'en',
+            fallback: 'en'
         });
         return expect(fetchRemoteLocales()).resolves.toEqual(['en']);
     });
@@ -198,7 +206,7 @@ describe('fetchRemoteLocales', () => {
      * so a counterpart without the endpoint is a supported configuration, not a fault.
      */
     it('returns an empty list when the API does not implement the endpoint', () => {
-        getLocalesMock.mockResolvedValue({ data: undefined });
+        getLocalesMock.mockResolvedValue(undefined);
         return expect(fetchRemoteLocales()).resolves.toEqual([]);
     });
 });
@@ -223,7 +231,7 @@ describe('fetchLocaleOverrides', () => {
      * Both mean the same thing to a client, which is why neither is treated as a failure.
      */
     it('returns nothing when the API has no such locale', () => {
-        getLocaleMessagesMock.mockResolvedValue({ data: undefined });
+        getLocaleMessagesMock.mockResolvedValue(undefined);
         return expect(fetchLocaleOverrides('kl')).resolves.toEqual({});
     });
 });
@@ -280,6 +288,22 @@ describe('mergeRemoteLocales', () => {
             expect(supportedLanguages).not.toContain('it');
             expect(supportedLanguages).toContain('en');
         });
+    });
+
+    // The manifest differs per caller: a re-read after sign-out must drop the draft language the
+    // signed-in read added, and a re-read after sign-in must bring it back.
+    it('follows the caller: a draft language appears on sign-in and goes on sign-out', () => {
+        getLocalesMock.mockResolvedValue(manifest(true));
+        return mergeRemoteLocales()
+            .then(() => {
+                expect(supportedLanguages).toContain('es');
+                getLocalesMock.mockResolvedValue(manifest(false));
+                return mergeRemoteLocales();
+            })
+            .then(() => {
+                expect(supportedLanguages).not.toContain('es');
+                expect(supportedLanguages).toContain('en');
+            });
     });
 
     it('keeps a bundled language a staff member can still preview', () => {

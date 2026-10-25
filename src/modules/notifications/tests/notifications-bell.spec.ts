@@ -25,10 +25,7 @@ import type {
     NotificationWishlistItemRemoved
 } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -48,7 +45,7 @@ vi.mock('@/infrastructure/http', () => ({
             parseOrvalFixture(
                 config.method,
                 config.url,
-                config.method === 'GET' ? orvalEnvelope({ items: inboxOnServer }) : orvalEnvelope()
+                config.method === 'GET' ? { items: inboxOnServer } : undefined
             )
         )
     )

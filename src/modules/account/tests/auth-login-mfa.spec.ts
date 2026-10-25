@@ -13,10 +13,7 @@ import { useAuthStore } from '../stores/auth.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -49,20 +46,20 @@ beforeEach(() => {
     responses = {
         // The caller's own rules. The session store fetches these for every identified viewer,
         // so every spec that logs somebody in needs an answer for them.
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [['read', 'Product', { active: true, deletedAt: null }]],
             version: 36,
             subjects: ['Product']
-        }),
-        'POST /account/login': orvalEnvelope({ token: 'jwt-token' }),
-        'GET /account': orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+        },
+        'POST /account/login': { token: 'jwt-token' },
+        'GET /account': { id: 'u1', username: 'ada', email: 'ada@example.com' }
     };
 });
 
 describe('login — the mfa branch', () => {
     it('resolves with the challenge, echoed from the response', () => {
-        responses['POST /account/login'] = orvalEnvelope(MFA_CHALLENGE);
+        responses['POST /account/login'] = MFA_CHALLENGE;
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -78,7 +75,7 @@ describe('login — the mfa branch', () => {
     });
 
     it('never fetches the profile — an MfaChallenge response carries no token to fetch it with', () => {
-        responses['POST /account/login'] = orvalEnvelope(MFA_CHALLENGE);
+        responses['POST /account/login'] = MFA_CHALLENGE;
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')
@@ -88,7 +85,7 @@ describe('login — the mfa branch', () => {
     });
 
     it('leaves the session store untouched — the bug this branch exists to fix', () => {
-        responses['POST /account/login'] = orvalEnvelope(MFA_CHALLENGE);
+        responses['POST /account/login'] = MFA_CHALLENGE;
 
         return useAuthStore()
             .login('ada@example.com', 'hunter2hunter2')

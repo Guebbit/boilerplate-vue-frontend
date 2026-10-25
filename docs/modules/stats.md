@@ -118,7 +118,7 @@ The permission is `read:Stats`, which the backend grants to `manager` and `admin
 
 #### Endpoints called
 
-| Call                              | Response envelope               |
+| Call                              | Response schema                 |
 | --------------------------------- | ------------------------------- |
 | `GET /stats/sales`                | `GetSalesStatsResponse`         |
 | `GET /stats/products`             | `GetProductStatsResponse`       |

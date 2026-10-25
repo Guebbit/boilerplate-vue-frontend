@@ -15,7 +15,7 @@ describe('The antibot run', () => {
     it('boots a backend whose human-challenge provider is altcha, and serves its challenge', () => {
         cy.env(['apiUrl']).then(({ apiUrl }) => {
             cy.request(`${String(apiUrl)}/antibot/config`)
-                .its('body.data.provider')
+                .its('body.provider')
                 .should('equal', 'altcha');
 
             cy.request(`${String(apiUrl)}/antibot/challenge`)

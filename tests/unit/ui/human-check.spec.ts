@@ -26,38 +26,28 @@ beforeEach(() => {
     // The `altcha` branch always fetches a challenge once mounted; unresolved by default it would
     // reject `.then()` with "Cannot read properties of undefined" in every OTHER case too.
     vi.mocked(fetchAntibotChallenge).mockResolvedValue({
-        success: true,
-        status: 200,
-        message: 'OK',
-        data: {
-            parameters: {
-                algorithm: 'PBKDF2/SHA-256',
-                nonce: 'nonce',
-                salt: 'salt',
-                cost: 1,
-                keyLength: 32,
-                keyPrefix: 'prefix'
-            },
-            signature: 'signature'
-        }
+        parameters: {
+            algorithm: 'PBKDF2/SHA-256',
+            nonce: 'nonce',
+            salt: 'salt',
+            cost: 1,
+            keyLength: 32,
+            keyPrefix: 'prefix'
+        },
+        signature: 'signature'
     });
 });
 
 /**
- * A `GET /antibot/config` envelope for the given provider.
+ * A `GET /antibot/config` body for the given provider.
  *
  * @param provider - The provider name to answer with.
  * @param parameters - Its public parameters, empty for `none`.
  */
 const config = (provider: string, parameters: Record<string, string> = {}) => ({
-    success: true as const,
-    status: 200,
-    message: 'OK',
-    data: {
-        provider,
-        parameters,
-        rungs: { identityBudgets: true as const, emailPolicy: 'off' as const }
-    }
+    provider,
+    parameters,
+    rungs: { identityBudgets: true as const, emailPolicy: 'off' as const }
 });
 
 afterEach(() => {

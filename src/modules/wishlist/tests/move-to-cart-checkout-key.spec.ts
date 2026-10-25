@@ -44,28 +44,12 @@ vi.mock('@/infrastructure/http', () => ({
         if (route === 'POST /cart/checkout')
             return checkoutsToLose-- > 0
                 ? Promise.reject(lostAnswer())
-                : Promise.resolve({ success: true, status: 201, message: 'OK', data: anOrder() });
+                : Promise.resolve(anOrder());
         // The page's own read shows one unit; the read after the move shows two.
         if (route === 'GET /cart')
-            return Promise.resolve({
-                success: true,
-                status: 200,
-                message: 'OK',
-                data: aCart([['p1', cartReads++ === 0 ? 1 : 2]])
-            });
-        if (route === 'POST /wishlist/items/p1/move-to-cart')
-            return Promise.resolve({
-                success: true,
-                status: 200,
-                message: 'OK',
-                data: { items: [] }
-            });
-        return Promise.resolve({
-            success: true,
-            status: 200,
-            message: 'OK',
-            data: aCart([['p1', 2]])
-        });
+            return Promise.resolve(aCart([['p1', cartReads++ === 0 ? 1 : 2]]));
+        if (route === 'POST /wishlist/items/p1/move-to-cart') return Promise.resolve({ items: [] });
+        return Promise.resolve(aCart([['p1', 2]]));
     })
 }));
 

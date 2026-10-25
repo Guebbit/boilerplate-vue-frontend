@@ -38,7 +38,7 @@ vi.mock('@api', async (importOriginal) => {
     return {
         ...actual,
         reorder: vi.fn(actual.reorder),
-        listOrderCreditNotes: vi.fn(() => Promise.resolve({ data: [] })),
+        listOrderCreditNotes: vi.fn(() => Promise.resolve({ items: [] })),
         getOrderCreditNote: vi.fn(() => Promise.resolve(new Blob(['%PDF-1.4'])))
     };
 });
@@ -235,7 +235,7 @@ describe('the credit notes', () => {
 
     it('list one row per note, and download only the clicked one', async () => {
         const second = { ...NOTE, id: 'cn2', number: 'CN-2026-0002' };
-        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ data: [NOTE, second] } as never);
+        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ items: [NOTE, second] });
         const wrapper = mountOrder(invoicedOrder());
         await flushPromises();
 
@@ -256,7 +256,7 @@ describe('the credit notes', () => {
     });
 
     it('block the download in place when the server refuses it', async () => {
-        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ data: [NOTE] } as never);
+        vi.mocked(listOrderCreditNotes).mockResolvedValueOnce({ items: [NOTE] });
         vi.mocked(getOrderCreditNote).mockRejectedValueOnce(new Error('rate limited'));
         const wrapper = mountOrder(invoicedOrder());
         await flushPromises();
@@ -448,18 +448,16 @@ describe('the reorder button', () => {
 /** The reorder answer: one per-line result, as the server reports it. */
 const reorderAnswer = (reason?: 'summed' | 'capped' | 'removed') =>
     asStub<Awaited<ReturnType<typeof apiReorder>>>({
-        data: {
-            cart: { items: [] },
-            lines: [
-                {
-                    productId: 'p1',
-                    requested: 1,
-                    resulting: reason === 'removed' ? 0 : 1,
-                    availability: 'in_stock',
-                    ...(reason ? { reason } : {})
-                }
-            ]
-        }
+        cart: { items: [] },
+        lines: [
+            {
+                productId: 'p1',
+                requested: 1,
+                resulting: reason === 'removed' ? 0 : 1,
+                availability: 'in_stock',
+                ...(reason ? { reason } : {})
+            }
+        ]
     });
 
 /** The toasts the page has raised, newest last. */

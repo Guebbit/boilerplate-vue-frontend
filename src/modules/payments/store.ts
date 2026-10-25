@@ -99,7 +99,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const fetchMethods = () =>
         fetchAny(() =>
             listPaymentMethods().then((response) => {
-                methods.value = response.data.methods;
+                methods.value = response.methods;
                 return methods.value;
             })
         );
@@ -115,7 +115,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         fetchAny(() =>
             getPaymentByOrder(orderId)
                 .then((response) => {
-                    payment.value = response.data;
+                    payment.value = response;
                     return payment.value;
                 })
                 .catch((error: unknown) => {
@@ -163,8 +163,7 @@ export const usePaymentsStore = defineStore('payments', () => {
      * @param orderId - The order whose payment is asked about.
      * @returns A promise resolving with the payment as this caller may act on it.
      */
-    const readPaymentForOrder = (orderId: string) =>
-        fetchAny(() => getPaymentByOrder(orderId).then((response) => response.data));
+    const readPaymentForOrder = (orderId: string) => fetchAny(() => getPaymentByOrder(orderId));
 
     /**
      * Pays an order: intent first, then the confirm with the provider's method reference.
@@ -195,14 +194,14 @@ export const usePaymentsStore = defineStore('payments', () => {
             createPayment({ orderId })
                 .then((intentResponse) =>
                     confirmPayment(
-                        intentResponse.data.id,
+                        intentResponse.id,
                         { paymentMethodRef },
                         confirmKeeper.withKey(confirmOptions)
                     )
                 )
                 .then((response) => {
                     confirmKeeper.settle();
-                    payment.value = response.data;
+                    payment.value = response;
                     return payment.value;
                 })
                 .catch((error: unknown) => {
@@ -230,7 +229,7 @@ export const usePaymentsStore = defineStore('payments', () => {
         fetchAny(() =>
             syncPayment(paymentId)
                 .then((response) => {
-                    payment.value = response.data;
+                    payment.value = response;
                     return payment.value;
                 })
                 .catch((error: unknown) =>
@@ -267,8 +266,8 @@ export const usePaymentsStore = defineStore('payments', () => {
                 .then((created) => {
                     keeper.settle();
                     return getPayment(target.id).then((response) => {
-                        payment.value = response.data;
-                        return { payment: response.data, refund: created.data };
+                        payment.value = response;
+                        return { payment: response, refund: created };
                     });
                 })
                 .catch((error: unknown) => {
@@ -304,8 +303,8 @@ export const usePaymentsStore = defineStore('payments', () => {
         fetchAny(() =>
             settleRefundByHandRequest(target.id, refundId)
                 .then((response) => {
-                    if (payment.value?.id === response.data.id) payment.value = response.data;
-                    return response.data;
+                    if (payment.value?.id === response.id) payment.value = response;
+                    return response;
                 })
                 .catch((error: unknown) =>
                     rereadAfterFault(
@@ -335,7 +334,7 @@ export const usePaymentsStore = defineStore('payments', () => {
             recordOfflinePaymentRequest(orderId, body, keeper.withKey())
                 .then((response) => {
                     keeper.settle();
-                    payment.value = response.data;
+                    payment.value = response;
                     return payment.value;
                 })
                 .catch((error: unknown) => {
@@ -360,7 +359,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const findOrderIdByReference = (ref: string): Promise<string | undefined> =>
         fetchAny(() =>
             searchPayments({ transferReference: ref, pageSize: 1 }).then(
-                (response) => response.data.items[0]?.orderId
+                (response) => response.items[0]?.orderId
             )
         );
 
@@ -411,8 +410,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     const fetchPaymentsPage = (query: SearchPaymentsRequest) =>
         fetchAny(() =>
             searchPayments(query).then((response) => {
-                paymentsPage.value = response.data.items;
-                paymentsTotal.value = response.data.meta.totalItems;
+                paymentsPage.value = response.items;
+                paymentsTotal.value = response.meta.totalItems;
                 return paymentsPage.value;
             })
         );
@@ -436,8 +435,8 @@ export const usePaymentsStore = defineStore('payments', () => {
                 displayStatus: 'incomplete',
                 sort: ['payBy']
             }).then((response) => {
-                awaitingPage.value = response.data.items;
-                awaitingTotal.value = response.data.meta.totalItems;
+                awaitingPage.value = response.items;
+                awaitingTotal.value = response.meta.totalItems;
                 return awaitingPage.value;
             })
         );
@@ -451,8 +450,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     const fetchRefundsPage = (query: ListRefundsParams) =>
         fetchAny(() =>
             listRefunds(query).then((response) => {
-                refundsPage.value = response.data.items;
-                refundsTotal.value = response.data.meta.totalItems;
+                refundsPage.value = response.items;
+                refundsTotal.value = response.meta.totalItems;
                 return refundsPage.value;
             })
         );
@@ -466,7 +465,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const fetchAttention = () =>
         fetchAny(() =>
             listPaymentAttention().then((response) => {
-                attention.value = response.data.items;
+                attention.value = response.items;
                 return attention.value;
             })
         );

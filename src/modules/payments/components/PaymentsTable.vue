@@ -24,6 +24,7 @@ import { sortFieldsOf, sortTokensOf } from '@/infrastructure/utils/sort.ts';
 import { PaymentDisplayStatus, PaymentMethodKind, PaymentSortItem } from '@/types/enums.ts';
 import { useAnyFilterChoice } from '@/ui/composables/use-any-filter-choice.ts';
 import { useListSearch } from '@/ui/composables/use-list-search.ts';
+import { useListUrlState } from '@/ui/composables/use-list-url-state.ts';
 import { useServerSort } from '@/ui/composables/use-server-sort.ts';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
@@ -130,9 +131,38 @@ const { page, pageTotal, load } = usePagedTable(paymentsTotal, (pageNumber, page
 );
 
 /**
- * Apply the filters from the first page, or clear them all and reload.
+ * The filters and page in the URL, under the `payments-` prefix because the refunds tab keeps its
+ * own state in the same query string. The date and amount boxes travel as typed text.
  */
-const { handleSearch, handleReset } = useListSearch({ filters, page, search: load });
+const { sync: syncUrl } = useListUrlState({
+    filters,
+    page,
+    prefix: 'payments',
+    params: {
+        displayStatus: Object.values(PaymentDisplayStatus),
+        method: Object.values(PaymentMethodKind),
+        provider: 'string',
+        createdFrom: 'string',
+        createdTo: 'string',
+        receivedFrom: 'string',
+        receivedTo: 'string',
+        amountMin: 'string',
+        amountMax: 'string',
+        orderId: 'string',
+        reference: 'string',
+        sort: 'string'
+    }
+});
+
+/**
+ * Apply the filters from the first page, or clear them all and reload; both keep the URL in step.
+ */
+const { handleSearch, handleReset } = useListSearch({
+    filters,
+    page,
+    search: load,
+    onApplied: syncUrl
+});
 
 /**
  * The header's sort state, kept in `filters.sort`; a click restarts from page 1.

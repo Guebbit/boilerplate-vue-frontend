@@ -22,21 +22,13 @@ import {
     loginTwoFactor as apiLoginTwoFactor,
     RememberTier
 } from '@api';
-import { getPayloadFromResponse, getRetryAfter } from '@/infrastructure/http/envelope.ts';
+import { getRetryAfter } from '@/infrastructure/http/envelope.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { useCountdown } from '../composables/use-countdown.ts';
 import { useProfileStore } from './profile.ts';
 import { useDeletionRestoreStore } from './deletion-restore.ts';
 import { ERROR_CODES } from '@api/error-codes';
-import type {
-    TwoFactorStatus,
-    TwoFactorSetup,
-    TwoFactorConfirmed,
-    TwoFactorBackupCodesRegenerated,
-    TwoFactorDelivery,
-    TwoFactorMethodSummary
-} from '@api';
-import type { LoginTwoFactorOutcome } from '@api';
+import type { TwoFactorStatus, TwoFactorDelivery, TwoFactorMethodSummary } from '@api';
 import type { LoginOutcome } from './auth.ts';
 
 /**
@@ -145,7 +137,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
     const fetchStatus = () =>
         fetchAny(() =>
             apiGetTwoFactorStatus().then((data) => {
-                status.value = getPayloadFromResponse<TwoFactorStatus>(data);
+                status.value = data;
                 return status.value;
             })
         );
@@ -170,20 +162,14 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
             fetchAny(
                 () =>
                     apiSetupTwoFactorMethod(method, code ? { code } : undefined).then((data) => {
-                        const payload = getPayloadFromResponse<TwoFactorSetup>(data);
-                        if (
-                            payload?.delivers &&
-                            payload.sentTo &&
-                            payload.resendAfter &&
-                            payload.expiresAt
-                        )
+                        if (data.delivers && data.sentTo && data.resendAfter && data.expiresAt)
                             trackDelivery({
-                                method: payload.method,
-                                sentTo: payload.sentTo,
-                                resendAfter: payload.resendAfter,
-                                expiresAt: payload.expiresAt
+                                method: data.method,
+                                sentTo: data.sentTo,
+                                resendAfter: data.resendAfter,
+                                expiresAt: data.expiresAt
                             });
-                        return payload;
+                        return data;
                     }),
                 { key: ['setup'], forced: true }
             )
@@ -202,9 +188,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
             fetchAny(
                 () =>
                     apiSendTwoFactorMethodCode(method).then((data) => {
-                        const payload = getPayloadFromResponse<TwoFactorDelivery>(data);
-                        if (payload) trackDelivery(payload);
-                        return payload;
+                        trackDelivery(data);
+                        return data;
                     }),
                 { key: ['send'], forced: true }
             )
@@ -224,7 +209,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         fetchAny(
             () =>
                 apiConfirmTwoFactorMethod(method, { code }).then((data) => {
-                    const result = getPayloadFromResponse<TwoFactorConfirmed>(data);
+                    const result = data;
                     resendAvailableAt.value = undefined;
                     return fetchStatus().then(() => result);
                 }),
@@ -271,7 +256,7 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         fetchAny(
             () =>
                 apiRegenerateBackupCodes({ code }).then((data) => {
-                    const result = getPayloadFromResponse<TwoFactorBackupCodesRegenerated>(data);
+                    const result = data;
                     return fetchStatus().then(() => result);
                 }),
             { key: ['regenerate'], forced: true }
@@ -379,9 +364,8 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
         return applyResendCooldown(
             fetchAny(() =>
                 apiSendTwoFactorCode({ challenge: challengeToken, method }).then((data) => {
-                    const payload = getPayloadFromResponse<TwoFactorDelivery>(data);
-                    if (payload) trackDelivery(payload);
-                    return payload;
+                    trackDelivery(data);
+                    return data;
                 })
             )
         );
@@ -408,15 +392,14 @@ export const useTwoFactorStore = defineStore('accountTwoFactor', () => {
                 // backend sizes the session cookie from THIS request. Absent for OAuth logins.
                 remember: remember ? RememberTier.long : undefined
             }).then((data) => {
-                const payload = getPayloadFromResponse<LoginTwoFactorOutcome>(data);
                 // `in`, not a property read: `AuthTokens` carries no `deletionPending` at all.
-                if (payload && 'deletionPending' in payload) {
+                if ('deletionPending' in data) {
                     useDeletionRestoreStore().begin(
                         {
                             kind: 'deletion-pending',
-                            challenge: payload.challenge,
-                            expiresAt: payload.expiresAt,
-                            purgeAt: payload.purgeAt
+                            challenge: data.challenge,
+                            expiresAt: data.expiresAt,
+                            purgeAt: data.purgeAt
                         },
                         remember ?? false
                     );

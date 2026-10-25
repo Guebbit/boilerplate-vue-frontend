@@ -11,14 +11,8 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type {
-    Account,
-    AccountDeletion,
-    AccountExportRequest,
-    EmailVerificationRequested
-} from '@types';
+import type { Account } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -42,17 +36,17 @@ import {
 import { warn } from '@/infrastructure/utils/logger.ts';
 
 /**
- * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, none for an
- * ordinary field save, which has no button of its own to spin.
+ * Which `isLoading`/mutation key `updateProfile` runs under: one per avatar path, and `save` for
+ * an ordinary field save (the profile form's submit button).
  *
  * @param imageUpload - The picked file, when the call carries one.
  * @param imageUrl - The record's picture field, `null` when the call is a removal.
- * @returns The bucket key, or `undefined` for a plain save (matches the whole-resource `loading`).
+ * @returns The bucket key.
  */
-const avatarLoadingKey = (imageUpload?: File, imageUrl?: null): string[] | undefined => {
+const updateLoadingKey = (imageUpload?: File, imageUrl?: null): string[] => {
     if (imageUpload) return ['avatar-upload'];
     // `null` is the removal — the contract's `minLength: 1` refuses `''`.
-    return imageUrl === null ? ['avatar-remove'] : undefined;
+    return imageUrl === null ? ['avatar-remove'] : ['save'];
 };
 
 /**
@@ -148,8 +142,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         return fetchTarget(
             () =>
                 apiGetAccount().then((data) => {
-                    const payload = getPayloadFromResponse<Account>(data);
-                    if (!payload) return;
+                    const payload = data;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
                     // Both trackers follow the visitor's own analytics consent, checked fresh on
@@ -273,10 +266,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
                       )
                     : apiUpdateAccount(withImageUrl, options)
                 ).then((data) => {
-                    const payload = getPayloadFromResponse<Account>(data);
-
                     // The projection must not lag the record — same rule as fetchProfile.
-                    return payload ? publishViewer(payload).then(() => data) : data;
+                    return publishViewer(data).then(() => data);
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             // `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the
@@ -286,7 +277,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
             selectedIdentifier.value,
             // One action, two avatar buttons: each path gets its own bucket key so the picker
             // and the remove button spin one at a time. `imageUrl: null` is the removal.
-            { key: avatarLoadingKey(imageUpload, userData.imageUrl) }
+            { key: updateLoadingKey(imageUpload, userData.imageUrl) }
         ).then((result) =>
             /*
              * Refetch rather than trust the local patch: `updateTarget` merges what was SENT, and
@@ -329,8 +320,12 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @returns A promise resolving once the change is discarded and the profile refetched.
      */
     const cancelPendingEmailChange = () =>
-        fetchAny(() =>
-            apiCancelPendingEmailChange().then(() => fetchProfile(true).then(() => undefined))
+        fetchAny(
+            () =>
+                apiCancelPendingEmailChange().then(() => fetchProfile(true).then(() => undefined)),
+            // Own bucket so the Resend/Cancel buttons spin apart from the form; `forced` skips the
+            // keyed cache a write must never be served from.
+            { key: ['pending-email'], forced: true }
         );
 
     /**
@@ -344,11 +339,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  same number, read by `emailVerifyResendRetryAfter`.
      */
     const resendPendingEmail = (): Promise<number> =>
-        fetchAny(() =>
-            apiResendPendingEmail().then((data) =>
-                getPayloadFromResponse<EmailVerificationRequested>(data)
-            )
-        ).then((payload) => payload?.resendAfter ?? 0);
+        fetchAny(() => apiResendPendingEmail(), { key: ['pending-email'], forced: true }).then(
+            (payload) => payload?.resendAfter ?? 0
+        );
 
     /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
@@ -463,9 +456,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @returns A promise resolving with the two dates, once the local session is gone.
      */
     const requestAccountDelete = () =>
-        fetchAny(() =>
-            apiRequestAccountDelete().then((data) => getPayloadFromResponse<AccountDeletion>(data))
-        ).then((schedule) => {
+        fetchAny(() => apiRequestAccountDelete().then((data) => data)).then((schedule) => {
             // After the call settles, not inside it: tearing the session down clears the query
             // cache the call is still running under, which drops its answer.
             endLocalSession();
@@ -486,11 +477,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  response carries none.
      */
     const requestAccountExport = () =>
-        fetchAny(() =>
-            apiRequestAccountExport().then((data) =>
-                getPayloadFromResponse<AccountExportRequest>(data)
-            )
-        );
+        fetchAny(() => apiRequestAccountExport().then((data) => data));
 
     /**
      * Downloads a finished export — the page the mailed link opens calls this. Same fresh-session
@@ -522,8 +509,20 @@ export const useProfileStore = defineStore('accountProfile', () => {
      */
     const removingAvatar = computed(() => isLoading(['avatar-remove']));
 
+    /**
+     * Whether the profile form's details are being saved.
+     */
+    const savingProfile = computed(() => isLoading(['save']));
+
+    /**
+     * Whether a pending email change is being resent or cancelled.
+     */
+    const changingPendingEmail = computed(() => isLoading(['pending-email']));
+
     return {
         profile,
+        savingProfile,
+        changingPendingEmail,
         uploadingAvatar,
         removingAvatar,
         loading,

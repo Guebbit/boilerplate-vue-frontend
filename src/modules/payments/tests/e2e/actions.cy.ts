@@ -12,12 +12,7 @@ import {
 } from '../../../../../contracts/rest/schemas.zod';
 
 /** An empty page, as the paged list reads answer it. */
-const emptyPage = {
-    success: true,
-    status: 200,
-    message: 'OK',
-    data: { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }
-};
+const emptyPage = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } };
 
 actionTable('payments', [
     {
@@ -60,7 +55,7 @@ actionTable('payments', [
             operation: '/payments/attention'
         },
         kind: 'empty',
-        emptyBody: { ...emptyPage, data: { items: [] } },
+        emptyBody: { ...emptyPage, items: [] },
         emptySchema: ListPaymentAttentionResponse,
         empty: { copy: '.v-empty-state', rows: '[data-test=list-row]' }
     }

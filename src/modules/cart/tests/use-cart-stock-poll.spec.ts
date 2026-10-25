@@ -173,9 +173,7 @@ describe('the knob: no polling unless it asks for it', () => {
         vi.stubEnv(KNOB, '5');
         await signedIn('u1');
         const store = openPage();
-        vi.mocked(getCart).mockResolvedValue({
-            data: aCart([['p1', 2]], null, ['p1'])
-        } as never);
+        vi.mocked(getCart).mockResolvedValue(aCart([['p1', 2]], null, ['p1']));
 
         await passSeconds(5);
 

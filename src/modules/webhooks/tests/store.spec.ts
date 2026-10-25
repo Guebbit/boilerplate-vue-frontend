@@ -23,7 +23,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -61,8 +60,8 @@ vi.mock('@/infrastructure/http', () => ({
                 // A bare subscription DELETE answers empty; every other call, including the
                 // secret-removal DELETE on its own sub-resource route, answers the full record.
                 config.method?.toUpperCase() === 'DELETE' && !config.url.includes('/secrets/')
-                    ? orvalEnvelope()
-                    : orvalEnvelope(SUBSCRIPTION)
+                    ? undefined
+                    : SUBSCRIPTION
             )
         )
     )
@@ -93,20 +92,16 @@ const lastParameters = () => asStub<{ params: Record<string, unknown> }>(lastReq
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
         Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                orvalEnvelope({
-                    items,
-                    meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
-                })
-            )
+            parseOrvalFixture(config.method, config.url, {
+                items,
+                meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+            })
         )
     );
 
 /**
  * Makes the transport answer one call with `data`, verbatim — for responses
- * `parseOrvalFixture`/`orvalEnvelope`'s single-record helper cannot express, namely the
+ * `parseOrvalFixture`'s single-record helper cannot express, namely the
  * secret-carrying create/rotate envelopes (`secret`/`newSecret` are not part of the schema the
  * plain record fixture validates against, since the real contract only declares them on the
  * create/update response schemas specifically).
@@ -115,7 +110,7 @@ const respondOnceWith = (data: unknown) =>
     vi
         .mocked(orvalMutator)
         .mockImplementationOnce((config: { url?: string; method?: string }) =>
-            Promise.resolve(parseOrvalFixture(config.method, config.url, orvalEnvelope(data)))
+            Promise.resolve(parseOrvalFixture(config.method, config.url, data))
         );
 
 /**
@@ -263,6 +258,21 @@ describe('useWebhooksStore', () => {
                     method: 'POST'
                 });
             });
+        });
+
+        it('reports a write in flight through writingSubscription, and clears it after', () => {
+            const store = useWebhooksStore();
+            const pending = store.enableSubscription('sub1');
+
+            return nextTick()
+                .then(() => {
+                    expect(store.writingSubscription).toBe(true);
+                    return pending;
+                })
+                .then(() => nextTick())
+                .then(() => {
+                    expect(store.writingSubscription).toBe(false);
+                });
         });
 
         it('caches the answer, so the screens read the new state', () => {
@@ -452,11 +462,9 @@ describe('useWebhooksStore', () => {
             vi.mocked(orvalMutator).mockImplementation(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
-                        parseOrvalFixture(
-                            config.method,
-                            config.url,
-                            orvalEnvelope([{ name: 'order.created' }])
-                        )
+                        parseOrvalFixture(config.method, config.url, {
+                            items: [{ name: 'order.created' }]
+                        })
                     )
             );
 

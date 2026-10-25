@@ -52,7 +52,7 @@ export interface ResponseSchemaRoute {
      */
     pattern: RegExp;
     /**
-     * The envelope this endpoint must answer in. Parsed, never merely asserted.
+     * The body schema this endpoint must answer with. Parsed, never merely asserted.
      */
     schema: zod.ZodType;
     /**

@@ -70,7 +70,7 @@ export const useReleaseDateConfirm = (
                     ? previewReleaseDateImpact({ productId, releaseDate: date })
                     : previewRestockDateImpact({ productId, restockDate: date })
             )
-                .then(({ data }) =>
+                .then((data) =>
                     data.notify === 0
                         ? true
                         : dialog.confirm({

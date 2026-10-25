@@ -16,10 +16,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -72,8 +69,8 @@ const mockRefusedPatch = () => {
         if (config.method === 'PATCH') return Promise.reject(PRECONDITION_FAILED);
         const body =
             config.url === '/account/abilities'
-                ? orvalEnvelope({ platform: [], tenant: [], version: 1, subjects: [] })
-                : orvalEnvelope(USER);
+                ? { platform: [], tenant: [], version: 1, subjects: [] }
+                : USER;
         return Promise.resolve(parseOrvalFixture(config.method, config.url, body));
     });
 };

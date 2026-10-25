@@ -28,7 +28,7 @@ const publicPrice = (id: string): Cypress.Chainable<number> =>
         .then(({ apiUrl }) =>
             cy
                 .request(`${String(apiUrl)}/products/${id}`)
-                .then((response) => (response.body as { data: { price: number } }).data.price)
+                .then((response) => (response.body as { price: number }).price)
         );
 
 describe('OP38 · Two staff edit one product', () => {

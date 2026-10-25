@@ -70,7 +70,9 @@
     },
     "products-form": {
         "title-required": "Title is required",
-        "price-min": "Price must be greater than or equal to 0"
+        "price-min": "Price must be greater than or equal to 0",
+        "title-too-long": "Title is too long",
+        "description-too-long": "Description is too long"
     },
     "product-target-page": {
         "page-title": "Product page",

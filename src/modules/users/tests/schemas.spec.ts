@@ -7,7 +7,12 @@
  * rules.
  */
 import { describe, expect, it } from 'vitest';
-import { signupBodyPasswordMax, signupBodyPasswordMin, signupBodyUsernameMin } from '@api/schemas';
+import {
+    createUserBodyUsernameMax,
+    signupBodyPasswordMax,
+    signupBodyPasswordMin,
+    signupBodyUsernameMin
+} from '@api/schemas';
 import { usersPasswordSchema, usersSchema } from '../schemas';
 
 /** A form payload that passes, for tests that vary one field away from valid. */
@@ -96,5 +101,16 @@ describe('usersSchema', () => {
         const { [field]: _removed, ...withoutField } = validUser;
 
         expect(usersSchema.safeParse(withoutField).success).toBe(false);
+    });
+});
+
+describe('usersSchema username bound', () => {
+    it('refuses a username past the contract maximum', () => {
+        expect(
+            usersSchema.safeParse({
+                ...validUser,
+                username: 'a'.repeat(createUserBodyUsernameMax + 1)
+            }).success
+        ).toBe(false);
     });
 });

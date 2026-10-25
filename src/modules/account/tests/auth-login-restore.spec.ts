@@ -14,7 +14,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
@@ -47,15 +46,15 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/abilities': orvalEnvelope({
+        'GET /account/abilities': {
             platform: [],
             tenant: [['read', 'Product', { active: true, deletedAt: null }]],
             version: 36,
             subjects: ['Product']
-        }),
-        'POST /account/login': orvalEnvelope(DELETION_PENDING),
-        'POST /account/login/restore': orvalEnvelope({ token: 'restored-jwt' }),
-        'GET /account': orvalEnvelope({ id: 'u1', username: 'ada', email: 'ada@example.com' })
+        },
+        'POST /account/login': DELETION_PENDING,
+        'POST /account/login/restore': { token: 'restored-jwt' },
+        'GET /account': { id: 'u1', username: 'ada', email: 'ada@example.com' }
     };
 });
 

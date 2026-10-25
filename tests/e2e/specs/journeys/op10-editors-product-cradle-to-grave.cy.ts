@@ -114,7 +114,7 @@ describe("OP10 · An editor's product, cradle to grave", () => {
             cy.visit('/en/products');
             cy.env(['apiUrl'])
                 .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/products/categories`))
-                .its('body.data.categories')
+                .its('body.categories')
                 .should('deep.include', { name: category, count: 1 });
 
             cy.step('deactivated: hidden from the guest, still listed for the editor');

@@ -86,18 +86,16 @@ export const useExampleStore = defineStore('example', () => {
                     status: searchFilters.status,
                     sort: sortTokensOf(searchFilters.sort, ExampleSortItem)
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 })),
 
-            get: (id) => getExampleById(id).then((response) => response.data),
+            get: (id) => getExampleById(id),
 
-            create: (data, options) =>
-                apiCreateExample(data, options).then((response) => response.data),
+            create: (data, options) => apiCreateExample(data, options),
 
             // PATCH: the edit form sends the fields it holds, and an omitted one stays as it is.
-            update: (id, data = {}, options) =>
-                updateExampleById(id, data, options).then((response) => response.data),
+            update: (id, data = {}, options) => updateExampleById(id, data, options),
 
             remove: (id) => deleteExampleById(id)
         },
@@ -139,7 +137,7 @@ export const useExampleStore = defineStore('example', () => {
      */
     const transitionExample = (id: string, to: ExampleStatus) =>
         fetchAny(() =>
-            apiTransitionExample(id, { to }).then(({ data: moved }) => {
+            apiTransitionExample(id, { to }).then((moved) => {
                 editExampleRecord(moved, id);
                 return moved;
             })
@@ -157,7 +155,7 @@ export const useExampleStore = defineStore('example', () => {
      */
     const setCover = (id: string, imageUpload: File, options?: AxiosRequestConfig) =>
         fetchAny(() =>
-            replaceExampleCover(id, { imageUpload }, options).then(({ data: updated }) => {
+            replaceExampleCover(id, { imageUpload }, options).then((updated) => {
                 editExampleRecord(updated, id);
                 return updated;
             })
@@ -170,8 +168,7 @@ export const useExampleStore = defineStore('example', () => {
      * @param id - The example to read.
      * @returns The published example.
      */
-    const fetchPublished = (id: string) =>
-        fetchAny(() => getPublishedExample(id).then((response) => response.data));
+    const fetchPublished = (id: string) => fetchAny(() => getPublishedExample(id));
 
     return {
         examples,

@@ -55,23 +55,21 @@ const row = (tag: string, active: boolean) => ({
 describe('useTranslationLocales — GET /locales answers', () => {
     it('uses the real manifest, not the fallback', async () => {
         vi.mocked(getLocales).mockResolvedValue({
-            data: {
-                locales: [
-                    {
-                        tag: 'it',
-                        name: 'Italian',
-                        nativeName: 'Italiano',
-                        direction: 'ltr',
-                        active: true,
-                        apps: ['frontend'],
-                        source: 'static',
-                        entryCount: 0,
-                        revision: 1
-                    }
-                ],
-                default: 'it',
-                fallback: 'it'
-            }
+            locales: [
+                {
+                    tag: 'it',
+                    name: 'Italian',
+                    nativeName: 'Italiano',
+                    direction: 'ltr',
+                    active: true,
+                    apps: ['frontend'],
+                    source: 'static',
+                    entryCount: 0,
+                    revision: 1
+                }
+            ],
+            default: 'it',
+            fallback: 'it'
         } as Awaited<ReturnType<typeof getLocales>>);
 
         const { locales, fallbackLocale, fetchTranslationLocales } = useTranslationLocales();
@@ -83,7 +81,9 @@ describe('useTranslationLocales — GET /locales answers', () => {
 
     it('keeps a language switched off, so an editor can start a draft in it', async () => {
         vi.mocked(getLocales).mockResolvedValue({
-            data: { locales: [row('en', true), row('fr', false)], default: 'en', fallback: 'en' }
+            locales: [row('en', true), row('fr', false)],
+            default: 'en',
+            fallback: 'en'
         } as Awaited<ReturnType<typeof getLocales>>);
 
         const { locales, fetchTranslationLocales } = useTranslationLocales();

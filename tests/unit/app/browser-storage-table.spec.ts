@@ -27,7 +27,7 @@ vi.mock('vue-i18n', async (importOriginal) => {
     };
 });
 vi.mock('@/infrastructure/http/antibot.ts', () => ({
-    fetchAntibotConfig: () => Promise.resolve({ data: { provider: provider.value } })
+    fetchAntibotConfig: () => Promise.resolve({ provider: provider.value })
 }));
 vi.mock('@/infrastructure/analytics-consent.ts', () => ({
     isAnalyticsConsentEnabled: () => analytics.value

@@ -18,7 +18,6 @@ import { aPayment, aProblem } from '../../../../tests/support/unit/fixtures.ts';
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -91,18 +90,18 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /payments': orvalEnvelope(PAYMENT),
-        'POST /payments/payment-1/confirm': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
-        'POST /payments/payment-1/sync': orvalEnvelope({ ...PAYMENT, status: 'succeeded' }),
-        'GET /payments/orders/order-1': orvalEnvelope({ ...PAYMENT, status: 'succeeded' })
+        'POST /payments': PAYMENT,
+        'POST /payments/payment-1/confirm': { ...PAYMENT, status: 'succeeded' },
+        'POST /payments/payment-1/sync': { ...PAYMENT, status: 'succeeded' },
+        'GET /payments/orders/order-1': { ...PAYMENT, status: 'succeeded' }
     };
 });
 
 describe('fetchMethods', () => {
     it('mirrors the methods the API offers', () => {
-        responses['GET /payments/methods'] = orvalEnvelope({
+        responses['GET /payments/methods'] = {
             methods: [{ id: 'card' }, { id: 'bank_transfer', holdHours: 168 }]
-        });
+        };
         const store = usePaymentsStore();
         return store.fetchMethods().then((methods) => {
             expect(methods).toEqual([{ id: 'card' }, { id: 'bank_transfer', holdHours: 168 }]);
@@ -111,7 +110,7 @@ describe('fetchMethods', () => {
     });
 
     it('offers only card when this deployment has not configured a transfer', () => {
-        responses['GET /payments/methods'] = orvalEnvelope({ methods: [{ id: 'card' }] });
+        responses['GET /payments/methods'] = { methods: [{ id: 'card' }] };
         const store = usePaymentsStore();
         return store.fetchMethods().then(() => {
             expect(store.methods).toEqual([{ id: 'card' }]);
@@ -204,10 +203,10 @@ describe('payForOrder', () => {
      * here would strand every 3-D Secure payment.
      */
     it('resolves on a challenge, leaving the payment in flight', () => {
-        responses['POST /payments/payment-1/confirm'] = orvalEnvelope({
+        responses['POST /payments/payment-1/confirm'] = {
             ...PAYMENT,
             status: 'requires_action'
-        });
+        };
         const store = usePaymentsStore();
         return store.payForOrder('order-1', 'pm_card_authentication_required').then(() => {
             expect(store.payment?.status).toBe('requires_action');
@@ -276,13 +275,13 @@ describe('finishAtProvider', () => {
 
 describe('recordOfflinePayment', () => {
     it('sends the method and reference, and mirrors the settled payment', () => {
-        responses['POST /payments/orders/order-1/offline'] = orvalEnvelope({
+        responses['POST /payments/orders/order-1/offline'] = {
             ...PAYMENT,
             provider: 'manual',
             method: 'cash',
             reference: 'till-42',
             status: 'succeeded'
-        });
+        };
         const store = usePaymentsStore();
 
         return store
@@ -325,10 +324,10 @@ describe('recordOfflinePayment', () => {
 
 describe('findOrderIdByReference', () => {
     it('resolves the order id of the payment the reference names, filtering the staff list', () => {
-        responses['POST /payments/search'] = orvalEnvelope({
+        responses['POST /payments/search'] = {
             items: [PAYMENT],
             meta: { page: 1, pageSize: 1, totalItems: 1, totalPages: 1 }
-        });
+        };
         const store = usePaymentsStore();
 
         return store.findOrderIdByReference('RF13 2EY8 H44V JAVZ KX80 JRL').then((orderId) => {
@@ -350,10 +349,10 @@ describe('findOrderIdByReference', () => {
      * API's own choice, so a wrong-but-close code confirms nothing): an answer, not a failure.
      */
     it('reads an empty page as "no such order", not as a crash', () => {
-        responses['POST /payments/search'] = orvalEnvelope({
+        responses['POST /payments/search'] = {
             items: [],
             meta: { page: 1, pageSize: 1, totalItems: 0, totalPages: 0 }
-        });
+        };
         const store = usePaymentsStore();
 
         return store.findOrderIdByReference('not-a-real-reference').then((orderId) => {
@@ -402,8 +401,8 @@ const TARGET_2 = { id: 'payment-2', orderId: 'order-2' };
 
 describe('refundPayment', () => {
     it('sends no body for a full refund, so everything still refundable goes back', () => {
-        responses['POST /payments/payment-1/refunds'] = orvalEnvelope(REFUND);
-        responses['GET /payments/payment-1'] = orvalEnvelope({ ...PAYMENT, amountRefunded: 50 });
+        responses['POST /payments/payment-1/refunds'] = REFUND;
+        responses['GET /payments/payment-1'] = { ...PAYMENT, amountRefunded: 50 };
 
         return usePaymentsStore()
             .refundPayment(TARGET_1)
@@ -413,12 +412,12 @@ describe('refundPayment', () => {
     });
 
     it('sends the amount for a partial refund, and keeps the running total', () => {
-        responses['POST /payments/payment-1/refunds'] = orvalEnvelope({ ...REFUND, amount: 12.5 });
-        responses['GET /payments/payment-1'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = { ...REFUND, amount: 12.5 };
+        responses['GET /payments/payment-1'] = {
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 12.5
-        });
+        };
         const store = usePaymentsStore();
 
         return store.refundPayment(TARGET_1, 12.5).then(() => {
@@ -431,11 +430,11 @@ describe('refundPayment', () => {
 
     it('answers the record a refusal left, a normal answer and not an error', () => {
         const refused = { ...REFUND, status: 'failed', failureReason: 'declined' };
-        responses['POST /payments/payment-1/refunds'] = orvalEnvelope(refused);
-        responses['GET /payments/payment-1'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = refused;
+        responses['GET /payments/payment-1'] = {
             ...PAYMENT,
             actions: { pay: false, sync: false, refund: true, settleByHand: ['refund-1'] }
-        });
+        };
         const store = usePaymentsStore();
 
         return store.refundPayment(TARGET_1, 50).then((done) => {
@@ -446,13 +445,13 @@ describe('refundPayment', () => {
     });
 
     it('reads the payment again after the 201, and keeps the actions that read carries', () => {
-        responses['POST /payments/payment-1/refunds'] = orvalEnvelope({ ...REFUND, amount: 5 });
-        responses['GET /payments/payment-1'] = orvalEnvelope({
+        responses['POST /payments/payment-1/refunds'] = { ...REFUND, amount: 5 };
+        responses['GET /payments/payment-1'] = {
             ...PAYMENT,
             status: 'succeeded',
             amountRefunded: 5,
             actions: { pay: false, sync: false, refund: true, settleByHand: [] }
-        });
+        };
         const store = usePaymentsStore();
 
         return store.refundPayment(TARGET_1, 5).then(() => {
@@ -493,7 +492,7 @@ describe('settleRefundByHand', () => {
     };
 
     it('posts to the refund and mirrors the payment the answer carries', () => {
-        responses['POST /payments/payment-1/refunds/refund-1/settle'] = orvalEnvelope(SETTLED);
+        responses['POST /payments/payment-1/refunds/refund-1/settle'] = SETTLED;
         const store = usePaymentsStore();
         store.payment = aPayment({
             id: 'payment-1',
@@ -509,11 +508,11 @@ describe('settleRefundByHand', () => {
     });
 
     it('leaves another order’s cached payment alone', () => {
-        responses['POST /payments/payment-9/refunds/refund-1/settle'] = orvalEnvelope({
+        responses['POST /payments/payment-9/refunds/refund-1/settle'] = {
             ...SETTLED,
             id: 'payment-9',
             orderId: 'order-9'
-        });
+        };
         const store = usePaymentsStore();
         store.payment = aPayment({ id: 'payment-1' });
 
@@ -545,11 +544,11 @@ describe('settleRefundByHand', () => {
 
 describe('readPaymentForOrder', () => {
     it('reads the payment without replacing the order page’s cached one', () => {
-        responses['GET /payments/orders/order-2'] = orvalEnvelope({
+        responses['GET /payments/orders/order-2'] = {
             ...PAYMENT,
             id: 'payment-2',
             orderId: 'order-2'
-        });
+        };
         const store = usePaymentsStore();
 
         return store.readPaymentForOrder('order-2').then((read) => {
@@ -571,12 +570,12 @@ const refundKeyAt = (index: number): string | undefined => {
 describe('the refund key after a failure', () => {
     beforeEach(() => {
         responses['POST /payments/payment-1/refunds'] = new Error('the database went away');
-        responses['POST /payments/payment-2/refunds'] = orvalEnvelope(REFUND);
-        responses['GET /payments/payment-2'] = orvalEnvelope({
+        responses['POST /payments/payment-2/refunds'] = REFUND;
+        responses['GET /payments/payment-2'] = {
             ...PAYMENT,
             id: 'payment-2',
             orderId: 'order-2'
-        });
+        };
     });
 
     it('spends the key on a server fault, so a retry is a new attempt', () => {
@@ -668,10 +667,10 @@ describe('the staff lists', () => {
     const META = { page: 1, pageSize: 10, totalItems: 31, totalPages: 4 };
 
     it('posts the filters to the search and keeps the page with its total', () => {
-        responses['POST /payments/search'] = orvalEnvelope({
+        responses['POST /payments/search'] = {
             items: [{ ...PAYMENT, displayStatus: 'succeeded', status: 'succeeded' }],
             meta: META
-        });
+        };
         const store = usePaymentsStore();
         return store
             .fetchPaymentsPage({ page: 2, pageSize: 10, displayStatus: 'refunded' })
@@ -685,10 +684,10 @@ describe('the staff lists', () => {
     });
 
     it('reads the owed transfers by deadline, apart from the main list', () => {
-        responses['POST /payments/search'] = orvalEnvelope({
+        responses['POST /payments/search'] = {
             items: [{ ...PAYMENT, method: 'bank_transfer', status: 'requires_action' }],
             meta: META
-        });
+        };
         const store = usePaymentsStore();
         return store.fetchAwaitingPage(2, 5).then(() => {
             expect(store.awaitingPage).toHaveLength(1);
@@ -707,7 +706,7 @@ describe('the staff lists', () => {
     });
 
     it('keeps the list apart from the one payment an order page holds', () => {
-        responses['POST /payments/search'] = orvalEnvelope({ items: [], meta: META });
+        responses['POST /payments/search'] = { items: [], meta: META };
         const store = usePaymentsStore();
         return store.fetchPaymentForOrder('order-1').then(() =>
             store.fetchPaymentsPage({}).then(() => {
@@ -718,7 +717,7 @@ describe('the staff lists', () => {
     });
 
     it('reads refunds with their filters in the query', () => {
-        responses['GET /payments/refunds'] = orvalEnvelope({ items: [REFUND], meta: META });
+        responses['GET /payments/refunds'] = { items: [REFUND], meta: META };
         const store = usePaymentsStore();
         return store.fetchRefundsPage({ page: 1, pageSize: 10, status: 'failed' }).then(() => {
             expect(store.refundsPage[0]?.failureReason).toBe('insufficient_funds');
@@ -730,7 +729,7 @@ describe('the staff lists', () => {
     });
 
     it('reads what needs attention, unpaged', () => {
-        responses['GET /payments/attention'] = orvalEnvelope({
+        responses['GET /payments/attention'] = {
             items: [
                 {
                     kind: 'manual_refund_owed',
@@ -742,7 +741,7 @@ describe('the staff lists', () => {
                     since: '2026-03-04T10:00:00Z'
                 }
             ]
-        });
+        };
         const store = usePaymentsStore();
         return store.fetchAttention().then(() => {
             expect(store.attention.map(({ kind }) => kind)).toEqual(['manual_refund_owed']);

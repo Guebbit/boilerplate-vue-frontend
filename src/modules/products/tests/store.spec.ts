@@ -25,7 +25,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import type { Product } from '@types';
@@ -43,8 +42,8 @@ vi.mock('@/infrastructure/http', () => ({
                 config.method,
                 config.url,
                 config.method?.toUpperCase() === 'DELETE'
-                    ? orvalEnvelope()
-                    : orvalEnvelope({ id: 'p1', title: 'T', price: 1, currency: 'EUR' })
+                    ? undefined
+                    : { id: 'p1', title: 'T', price: 1, currency: 'EUR' }
             )
         )
     )
@@ -99,14 +98,10 @@ const TRANSLATIONS = { en: { title: 'Gadget' } };
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
         Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                orvalEnvelope({
-                    items,
-                    meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
-                })
-            )
+            parseOrvalFixture(config.method, config.url, {
+                items,
+                meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+            })
         )
     );
 
@@ -360,7 +355,7 @@ describe('useProductsStore', () => {
                 .then(() => {
                     expect(store.products.p1).not.toHaveProperty('imageUpload');
                     expect(store.products.p1).not.toHaveProperty('translations');
-                    release(orvalEnvelope({ ...PRODUCT, price: 12.5 }));
+                    release({ ...PRODUCT, price: 12.5 });
                     return pending;
                 })
                 .then(() => {
@@ -524,9 +519,7 @@ describe('useProductsStore', () => {
             it('requests one product and unwraps a single-record envelope', () => {
                 vi.mocked(orvalMutator).mockImplementation(
                     (config: { url?: string; method?: string }) =>
-                        Promise.resolve(
-                            parseOrvalFixture(config.method, config.url, orvalEnvelope(PRODUCT))
-                        )
+                        Promise.resolve(parseOrvalFixture(config.method, config.url, PRODUCT))
                 );
 
                 return useProductsStore()
@@ -547,13 +540,7 @@ describe('useProductsStore', () => {
                 const ADMIN_PRODUCT = { ...PRODUCT, translations: { en: { title: 'Gadget' } } };
                 vi.mocked(orvalMutator).mockImplementation(
                     (config: { url?: string; method?: string }) =>
-                        Promise.resolve(
-                            parseOrvalFixture(
-                                config.method,
-                                config.url,
-                                orvalEnvelope(ADMIN_PRODUCT)
-                            )
-                        )
+                        Promise.resolve(parseOrvalFixture(config.method, config.url, ADMIN_PRODUCT))
                 );
 
                 return useProductsStore()
@@ -654,9 +641,7 @@ describe('useProductsStore', () => {
             it('parks the facets on the store and resolves with them', () => {
                 vi.mocked(orvalMutator).mockImplementation(
                     (config: { url?: string; method?: string }) =>
-                        Promise.resolve(
-                            parseOrvalFixture(config.method, config.url, orvalEnvelope(FACETS))
-                        )
+                        Promise.resolve(parseOrvalFixture(config.method, config.url, FACETS))
                 );
                 const store = useProductsStore();
 

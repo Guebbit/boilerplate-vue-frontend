@@ -21,7 +21,7 @@ vi.mock('@api', () => ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- deliberately untyped vi.fn(), see above
     sendReauthCode: (method: string) => sendReauthCodeMock(method),
     // The idle clock is read once per signed-in stretch; the answer names no timeout.
-    touchSession: () => Promise.resolve({ data: { lastActiveAt: new Date().toISOString() } })
+    touchSession: () => Promise.resolve({ lastActiveAt: new Date().toISOString() })
 }));
 
 /** The store under test, imported after the mocks are in place. */

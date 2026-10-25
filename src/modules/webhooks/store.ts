@@ -89,6 +89,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
         filters: subscriptionFilters,
         loading: loadingSubscriptions,
+        isLoading: isLoadingSubscriptions,
         pageCurrent: subscriptionPageCurrent,
         pageSize: subscriptionPageSize,
         pageTotal: subscriptionsPageTotal,
@@ -111,8 +112,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         {
             // Backfills the cache for the deliveries filter dropdown — not the list screen's own
             // search, which is paginated below.
-            list: () =>
-                listWebhookSubscriptions({ pageSize: MAX_PAGE_SIZE }).then((r) => r.data.items),
+            list: () => listWebhookSubscriptions({ pageSize: MAX_PAGE_SIZE }).then((r) => r.items),
 
             search: (filters, page, pageSize) =>
                 listWebhookSubscriptions({
@@ -120,12 +120,11 @@ export const useWebhooksStore = defineStore('webhooks', () => {
                     pageSize,
                     enabled: filters.enabled,
                     autoDisabled: filters.autoDisabled
-                }).then((r) => ({ items: r.data.items, totalItems: r.data.meta.totalItems })),
+                }).then((r) => ({ items: r.items, totalItems: r.meta.totalItems })),
 
-            get: (id) => getWebhookSubscription(id).then((r) => r.data),
+            get: (id) => getWebhookSubscription(id),
 
-            update: (id, data, options) =>
-                updateWebhookSubscription(id, data, options).then((r) => r.data),
+            update: (id, data, options) => updateWebhookSubscription(id, data, options),
 
             remove: (id) => deleteWebhookSubscription(id)
         },
@@ -151,12 +150,23 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      */
     const createSubscription = (data: CreateWebhookSubscriptionRequest) =>
         fetchAnySubscriptions(() =>
-            createWebhookSubscription(data).then(({ data: created }) => {
+            createWebhookSubscription(data).then((created) => {
                 const { secret: _secret, newSecret: _newSecret, ...record } = created;
                 editSubscriptionRecord(record, record.id);
                 return created;
             })
         );
+
+    /**
+     * Settings every subscription write shares: its own bucket, so the target page's buttons
+     * disable apart from reads, and `forced` because a keyed `fetchAny` would be served from cache.
+     */
+    const WRITE_SETTINGS = { key: ['write'], forced: true };
+
+    /**
+     * Whether a secret, enable or disable write is in flight.
+     */
+    const writingSubscription = computed(() => isLoadingSubscriptions(['write']));
 
     /**
      * Mints a new secret onto an existing subscription's ring, without disturbing any secret
@@ -170,12 +180,14 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @returns The full response, including the plaintext `newSecret`
      */
     const rotateSecret = (id: string) =>
-        fetchAnySubscriptions(() =>
-            rotateWebhookSubscriptionSecret(id).then(({ data: updated }) => {
-                const { secret: _secret, newSecret: _newSecret, ...record } = updated;
-                editSubscriptionRecord(record, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                rotateWebhookSubscriptionSecret(id).then((updated) => {
+                    const { secret: _secret, newSecret: _newSecret, ...record } = updated;
+                    editSubscriptionRecord(record, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -189,11 +201,13 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param secretId - the ring entry to remove
      */
     const removeSecret = (id: string, secretId: string) =>
-        fetchAnySubscriptions(() =>
-            removeWebhookSubscriptionSecret(id, secretId).then(({ data: updated }) => {
-                editSubscriptionRecord(updated, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                removeWebhookSubscriptionSecret(id, secretId).then((updated) => {
+                    editSubscriptionRecord(updated, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -204,11 +218,13 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param id - the subscription to enable
      */
     const enableSubscription = (id: string) =>
-        fetchAnySubscriptions(() =>
-            enableWebhookSubscription(id).then(({ data: updated }) => {
-                editSubscriptionRecord(updated, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                enableWebhookSubscription(id).then((updated) => {
+                    editSubscriptionRecord(updated, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -217,11 +233,13 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param id - the subscription to disable
      */
     const disableSubscription = (id: string) =>
-        fetchAnySubscriptions(() =>
-            disableWebhookSubscription(id).then(({ data: updated }) => {
-                editSubscriptionRecord(updated, id);
-                return updated;
-            })
+        fetchAnySubscriptions(
+            () =>
+                disableWebhookSubscription(id).then((updated) => {
+                    editSubscriptionRecord(updated, id);
+                    return updated;
+                }),
+            WRITE_SETTINGS
         );
 
     /**
@@ -252,7 +270,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
                     pageSize,
                     subscriptionId: filters.subscriptionId,
                     status: filters.status
-                }).then((r) => ({ items: r.data.items, totalItems: r.data.meta.totalItems }))
+                }).then((r) => ({ items: r.items, totalItems: r.meta.totalItems }))
         },
         { resourceKey: 'webhooks-deliveries', queryClient }
     );
@@ -268,7 +286,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
      * @param id - the delivery to replay
      */
     const replayDelivery = (id: string) =>
-        updateTargetDelivery(() => replayWebhookDelivery(id).then((r) => r.data), {}, id);
+        updateTargetDelivery(() => replayWebhookDelivery(id), {}, id);
 
     /**
      * The public event catalogue that feeds the `eventTypes` multiselect on the create/edit
@@ -280,7 +298,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
         error: errorEventCatalogue,
         loading: loadingEventCatalogue,
         run: runEventCatalogue
-    } = useAsyncAction(() => listWebhookEvents().then((r) => r.data), {
+    } = useAsyncAction(() => listWebhookEvents().then(({ items }) => items), {
         fallbackErrorMessage: translate('webhooks-form.error-load-events'),
         resolveError: getErrorMessage
     });
@@ -305,6 +323,7 @@ export const useWebhooksStore = defineStore('webhooks', () => {
 
         subscriptionFilters,
         loadingSubscriptions,
+        writingSubscription,
         subscriptionPageCurrent,
         subscriptionPageSize,
         subscriptionsPageTotal,

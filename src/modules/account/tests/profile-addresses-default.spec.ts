@@ -16,7 +16,6 @@ import vuetify from '@/ui/vuetify';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -113,7 +112,7 @@ const fillRequired = (wrapper: ReturnType<typeof mountAddresses>) =>
 beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    responses = { 'GET /account/addresses': orvalEnvelope({ addresses: [] }) };
+    responses = { 'GET /account/addresses': { addresses: [] } };
     return loadLocale('en');
 });
 
@@ -131,7 +130,7 @@ describe('an empty address book', () => {
 
 describe('a book that already holds an address', () => {
     beforeEach(() => {
-        responses['GET /account/addresses'] = orvalEnvelope({ addresses: [HOME] });
+        responses['GET /account/addresses'] = { addresses: [HOME] };
     });
 
     it('shows the checkbox on Add, but not on Edit', () => {
@@ -152,9 +151,9 @@ describe('a book that already holds an address', () => {
     });
 
     it('sends default: true when checked, and no `default` key at all when left unchecked', () => {
-        responses['POST /account/addresses'] = orvalEnvelope({
+        responses['POST /account/addresses'] = {
             addresses: [HOME, { ...HOME, id: 'a2' }]
-        });
+        };
         const wrapper = mountAddresses();
 
         return flushPromises()
@@ -171,9 +170,9 @@ describe('a book that already holds an address', () => {
     });
 
     it('omits `default` entirely when the checkbox is left unchecked', () => {
-        responses['POST /account/addresses'] = orvalEnvelope({
+        responses['POST /account/addresses'] = {
             addresses: [HOME, { ...HOME, id: 'a2' }]
-        });
+        };
         const wrapper = mountAddresses();
 
         return flushPromises()

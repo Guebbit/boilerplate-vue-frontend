@@ -8,13 +8,17 @@
  * Language: every endpoint honours `Accept-Language` (q-weights and region tags
  * included). One language is picked per request, from the languages switched on in
  * `GET /locales`, and it selects the language of user-facing copy and of translated entity
- * fields (a product's `title`, `description`) — `errors[].message`, a success envelope's
- * `message` — never the response shape, the status code, or a machine-readable field such
+ * fields (a product's `title`, `description`) — `errors[].message` — never the response shape, the status code, or a machine-readable field such
  * as `errors[].code`. A message the API has no wording for in that language falls back to
  * the default language, one message at a time. An unknown or switched-off language falls
  * back instead of erroring; `Content-Language` states the language picked, the audience the
  * answer is written for (RFC 9110 section 8.5), and `Vary: Accept-Language` is always set.
  * `GET /locales` lists what a deployment offers.
+ *
+ * Successes: a 2xx answers the resource itself, with no wrapper. A list is an object, never a
+ * top-level array: `{ items, meta }` when paged (`meta` is `PaginationMeta`), or a named key
+ * (`{ methods }`). An answer with nothing to say is `204` and has no body. A create is `201`
+ * with a `Location` header. See `docs/api/responses.md`.
  *
  * Errors: every 4xx and 5xx answers RFC 9457 problem details as `application/problem+json`,
  * whatever `Accept` says: `type` (always `about:blank`), `title` (the English status
@@ -137,18 +141,6 @@ export interface PaginationMeta {
     totalPages: number;
 }
 
-export type EnvelopeSuccess = true;
-
-export type EnvelopeStatus = number;
-
-export type EnvelopeMessage = string;
-
-export interface MessageResponse {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-}
-
 /**
  * Optional structured metadata for programmatic handling. Any refusal about one request field names it in `details.field`, whatever its `code`: a dotted path into the body (`shippingAddress.zip`), so a client can show the message under that input.
  */
@@ -213,6 +205,31 @@ export interface PurchaseHold {
     setAt: string;
 }
 
+export interface Account {
+    id: Id;
+    email: Email;
+    username: string;
+    role?: string;
+    active?: boolean;
+    /** @nullable */
+    verifiedAt?: string | null;
+    readonly pendingEmail?: string;
+    imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
+    locale?: Locale;
+    phone?: string;
+    website?: string;
+    analyticsConsent?: boolean;
+    analyticsConsentAt?: string;
+    termsAcceptedAt?: string;
+    termsVersion?: string;
+    twoFactorEnabledAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
+    purchaseHold?: PurchaseHold;
+}
+
 /**
  * What the requesting caller may do to this account, one flag per endpoint. Each is the route's permission key AND the protection of staff accounts: an account that holds a staff role is `false` for all of them unless the caller holds `assign:Role`; the caller's own account is judged by the keys alone. A flag also reads the account's state, so a control never offers a move the server would refuse with a 409.
  */
@@ -267,45 +284,6 @@ export interface User {
     purchaseHoldFlaggedAt?: string;
 }
 
-export interface UserEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: User;
-}
-
-export interface Account {
-    id: Id;
-    email: Email;
-    username: string;
-    role?: string;
-    active?: boolean;
-    /** @nullable */
-    verifiedAt?: string | null;
-    readonly pendingEmail?: string;
-    imageUrl?: ImageUrl;
-    thumbnailUrl?: ThumbnailUrl;
-    locale?: Locale;
-    phone?: string;
-    website?: string;
-    analyticsConsent?: boolean;
-    analyticsConsentAt?: string;
-    termsAcceptedAt?: string;
-    termsVersion?: string;
-    twoFactorEnabledAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    deletedAt?: string;
-    purchaseHold?: PurchaseHold;
-}
-
-export interface AccountEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Account;
-}
-
 /**
  * Liveness indicator. Always `ok` when the process is answering.
  */
@@ -318,13 +296,6 @@ export const HealthPingStatus = {
 export interface HealthPing {
     /** Liveness indicator. Always `ok` when the process is answering. */
     status: HealthPingStatus;
-}
-
-export interface HealthPingEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: HealthPing;
 }
 
 /**
@@ -424,13 +395,6 @@ export interface LocaleCapabilities {
     fallback: Locale;
 }
 
-export interface LocaleCapabilitiesEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleCapabilities;
-}
-
 export interface CreateLocaleRequest {
     tag: Locale;
     /**
@@ -472,13 +436,6 @@ export interface Language {
     updatedAt?: string;
 }
 
-export interface LanguageEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Language;
-}
-
 /**
  * What an app is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language.
  */
@@ -504,13 +461,6 @@ export interface LocaleApps {
     apps: LocaleAppDescriptor[];
 }
 
-export interface LocaleAppsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleApps;
-}
-
 /**
  * Nested key/value dictionary, the same shape the API loads.
  */
@@ -523,13 +473,6 @@ export interface LocaleDictionary {
     locale: Locale;
     /** Nested key/value dictionary, the same shape the API loads. */
     messages: LocaleDictionaryMessages;
-}
-
-export interface LocaleDictionaryEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleDictionary;
 }
 
 export interface ReplaceLocaleRequest {
@@ -579,13 +522,6 @@ export interface LocaleMessages {
     messages: LocaleMessagesMessages;
 }
 
-export interface LocaleMessagesEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleMessages;
-}
-
 /**
  * One translated string: one row per (language, app, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
  * `app` is part of the identity, not a label on it: two apps may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other.
@@ -604,13 +540,6 @@ export interface LocaleEntry {
 export interface LocaleEntriesResponse {
     items: LocaleEntry[];
     meta: PaginationMeta;
-}
-
-export interface LocaleEntriesResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleEntriesResponse;
 }
 
 /**
@@ -647,13 +576,6 @@ export interface LocaleImportResult {
     revision: number;
 }
 
-export interface LocaleImportResultEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleImportResult;
-}
-
 export interface CreateLocaleEntryRequest {
     /**
      * @minLength 1
@@ -662,13 +584,6 @@ export interface CreateLocaleEntryRequest {
     key: string;
     /** @maxLength 2000 */
     value: string;
-}
-
-export interface LocaleEntryEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LocaleEntry;
 }
 
 /**
@@ -743,13 +658,6 @@ export interface EntityTranslations {
     translations: Translation[];
     /** Every field name the `translatables` registry declares for this `entityType` — the field set the generic translation screen offers, so it is never limited to whatever fields the fetched rows happen to carry already. */
     fields: string[];
-}
-
-export interface EntityTranslationsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: EntityTranslations;
 }
 
 /**
@@ -925,13 +833,6 @@ export interface ObservabilityHealth {
     timestamp: string;
 }
 
-export interface ObservabilityHealthResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ObservabilityHealth;
-}
-
 export interface ObservabilityMetricsLatency {
     /** Median latency in ms */
     p50: number;
@@ -995,13 +896,6 @@ export interface ObservabilityMetricsSummary {
     database: ObservabilityMetricsSummaryDatabase;
     process: ObservabilityMetricsSummaryProcess;
     timestamp: string;
-}
-
-export interface ObservabilityMetricsSummaryResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ObservabilityMetricsSummary;
 }
 
 export type AuditEntryItemActorRole =
@@ -1097,23 +991,9 @@ export interface AuditLogsResponse {
     meta: PaginationMeta;
 }
 
-export interface AuditLogsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AuditLogsResponse;
-}
-
 export interface AuditEntriesResponse {
     items: AuditEntryItem[];
     meta: PaginationMeta;
-}
-
-export interface AuditEntriesResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AuditEntriesResponse;
 }
 
 /**
@@ -1151,13 +1031,6 @@ export interface AntibotConfig {
     rungs: AntibotRungs;
 }
 
-export interface AntibotConfigEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AntibotConfig;
-}
-
 /**
  * What the solver needs to derive the key the challenge asks for.
  */
@@ -1184,13 +1057,6 @@ export interface AntibotChallenge {
     parameters: AntibotChallengeParameters;
     /** HMAC over the parameters, proving this server issued them. */
     signature: string;
-}
-
-export interface AntibotChallengeEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AntibotChallenge;
 }
 
 export type ProductViewedEventEvent =
@@ -1282,13 +1148,6 @@ export interface AccountDeletion {
     purgeAt: string;
 }
 
-export interface AccountDeletionEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AccountDeletion;
-}
-
 export interface UpdateAccountRequest {
     email?: Email;
     /**
@@ -1339,13 +1198,6 @@ export interface UpdateAccountRequestMultipart {
 export interface EmailVerificationRequested {
     /** Seconds before another verification email may be requested. A client counts down from this rather than inventing its own cooldown, so it never disagrees with the server. */
     resendAfter: number;
-}
-
-export interface EmailVerificationRequestedEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: EmailVerificationRequested;
 }
 
 export type PackedRulesItemItem = string | boolean | { [key: string]: unknown } | string[];
@@ -1431,13 +1283,6 @@ export interface Abilities {
     version: number;
 }
 
-export interface AbilitiesEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Abilities;
-}
-
 /**
  * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. Length bounds only, like `PasswordNew`: a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
  * @minLength 8
@@ -1465,13 +1310,6 @@ export interface AuthTokens {
     sessionToken?: string;
 }
 
-export interface SessionRenewedEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data?: AuthTokens;
-}
-
 export interface PasswordCheckRequest {
     /**
      * A CANDIDATE password, not `PasswordNew` — this runs while someone is still typing, so it accepts anything non-empty rather than the contract's own composition rule.
@@ -1491,13 +1329,6 @@ export interface PasswordCheck {
     count?: number;
 }
 
-export interface PasswordCheckEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PasswordCheck;
-}
-
 /**
  * One way to re-authenticate. `password` proves the account password; `email` proves control of the account's verified address with a mailed code.
  */
@@ -1511,13 +1342,6 @@ export const ReauthMethod = {
 export interface ReauthMethods {
     /** The methods this account can use now, in the order to offer them. Empty means none can. */
     methods: ReauthMethod[];
-}
-
-export interface ReauthMethodsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ReauthMethods;
 }
 
 export type ReauthPasswordRequestMethod =
@@ -1563,13 +1387,6 @@ export interface ReauthEmailRequest {
 
 export type ReauthRequest = ReauthPasswordRequest | ReauthEmailRequest;
 
-export interface AuthTokensEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AuthTokens;
-}
-
 export interface Session {
     id: Id;
     /** When this sign-in happened. It is the session's, not the current token's: refreshing or re-proving the password does not move it. */
@@ -1586,20 +1403,6 @@ export interface Session {
 
 export interface SessionsResponse {
     sessions: Session[];
-}
-
-export interface SessionsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: SessionsResponse;
-}
-
-export interface SessionEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Session;
 }
 
 export interface Address {
@@ -1619,13 +1422,6 @@ export interface AddressesResponse {
     addresses: Address[];
 }
 
-export interface AddressesEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AddressesResponse;
-}
-
 export interface AddressInput {
     /**
      * @minLength 1
@@ -1639,13 +1435,6 @@ export interface AddressInput {
     country: CountryCode;
     phone?: AddressPhone;
     default?: boolean;
-}
-
-export interface AddressEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Address;
 }
 
 export interface ReplaceAddressRequest {
@@ -1770,13 +1559,6 @@ export interface DeletionPending {
  */
 export type LoginOutcome = AuthTokens | MfaChallenge | DeletionPending;
 
-export interface LoginResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LoginOutcome;
-}
-
 export interface LoginRestoreRequest {
     /**
      * The `DeletionPending` challenge. Omit it for an OAuth-originated sign-in — that challenge was never sent to the client, and this endpoint reads it from the httpOnly cookie the callback set instead.
@@ -1821,13 +1603,6 @@ export interface RefreshTokenResponse {
     token: string;
 }
 
-export interface RefreshTokenEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: RefreshTokenResponse;
-}
-
 /**
  * `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one.
  */
@@ -1842,13 +1617,6 @@ export interface AccountExportRequest {
     id: Id;
     /** `building` on a fresh request. A request never answers `ready` or `failed`: asking again after either REPLACES the export with a new `building` one. */
     status: AccountExportRequestStatus;
-}
-
-export interface AccountExportRequestEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: AccountExportRequest;
 }
 
 export interface LoginTwoFactorRequest {
@@ -1872,13 +1640,6 @@ export interface LoginTwoFactorRequest {
  * A full session (AuthTokens), or the offer to restore an account inside the grace of its own deletion (DeletionPending) once its second factor passed.
  */
 export type LoginTwoFactorOutcome = AuthTokens | DeletionPending;
-
-export interface LoginTwoFactorResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: LoginTwoFactorOutcome;
-}
 
 export interface TwoFactorSendRequest {
     /**
@@ -1905,13 +1666,6 @@ export interface TwoFactorDelivery {
     expiresAt: string;
 }
 
-export interface TwoFactorDeliveryEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorDelivery;
-}
-
 export interface TwoFactorStatus {
     /** Whether a login on this account is challenged for a second factor. True exactly when `methods` holds at least one armed entry. */
     enabled: boolean;
@@ -1921,13 +1675,6 @@ export interface TwoFactorStatus {
     available: TwoFactorMethodSummary[];
     /** How many unused backup codes are left. Zero with `enabled` true is the state worth warning about — a lost device then means admin-assisted recovery. */
     backupCodesRemaining: number;
-}
-
-export interface TwoFactorStatusEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorStatus;
 }
 
 export interface TwoFactorSetupRequest {
@@ -1956,13 +1703,6 @@ export interface TwoFactorSetup {
     expiresAt?: string;
 }
 
-export interface TwoFactorSetupEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorSetup;
-}
-
 export interface TwoFactorConfirmRequest {
     /**
      * The code for the method being armed — read off the device, or received through its channel. A backup code is NOT accepted here: the point of this call is to prove the new factor works.
@@ -1983,13 +1723,6 @@ export interface TwoFactorConfirmed {
     sessionToken?: string;
 }
 
-export interface TwoFactorConfirmEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorConfirmed;
-}
-
 export interface TwoFactorCodeRequest {
     /**
      * A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.
@@ -2006,23 +1739,9 @@ export interface TwoFactorBackupCodesRegenerated {
     backupCodesRemaining: number;
 }
 
-export interface TwoFactorBackupCodesRegeneratedEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: TwoFactorBackupCodesRegenerated;
-}
-
 export interface OAuthProviders {
     /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
     providers: string[];
-}
-
-export interface OAuthProvidersEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OAuthProviders;
 }
 
 export interface OAuthLink {
@@ -2036,26 +1755,12 @@ export interface OAuthLinks {
     links: OAuthLink[];
 }
 
-export interface OAuthLinksEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OAuthLinks;
-}
-
 export interface OAuthLinkStart {
     /**
      * The provider's consent screen, with the state and PKCE challenge of this attempt. Navigate the browser to it.
      * @maxLength 2048
      */
     authorizeUrl: string;
-}
-
-export interface OAuthLinkStartEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OAuthLinkStart;
 }
 
 export type UserSortItem = (typeof UserSortItem)[keyof typeof UserSortItem];
@@ -2078,13 +1783,6 @@ export type UserSort = UserSortItem[];
 export interface UsersResponse {
     items: User[];
     meta: PaginationMeta;
-}
-
-export interface UsersResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: UsersResponse;
 }
 
 export interface CreateUserRequest {
@@ -2323,13 +2021,6 @@ export interface FeedbackRequest {
     updatedAt?: string;
 }
 
-export interface FeedbackRequestEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: FeedbackRequest;
-}
-
 export type FeedbackRequestSortItem =
     (typeof FeedbackRequestSortItem)[keyof typeof FeedbackRequestSortItem];
 
@@ -2351,13 +2042,6 @@ export type FeedbackRequestSort = FeedbackRequestSortItem[];
 export interface FeedbackRequestsResponse {
     items: FeedbackRequest[];
     meta: PaginationMeta;
-}
-
-export interface FeedbackRequestsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: FeedbackRequestsResponse;
 }
 
 export interface SearchFeedbackRequestsRequest {
@@ -2497,13 +2181,6 @@ export interface ProductsResponse {
     meta: PaginationMeta;
 }
 
-export interface ProductsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ProductsResponse;
-}
-
 export interface ProductTranslationFieldsWrite {
     /**
      * @minLength 5
@@ -2599,13 +2276,6 @@ export interface CreateProductRequestMultipart {
     tags?: string[];
 }
 
-export interface ProductEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Product;
-}
-
 export interface DeleteProductRequest {
     id: Id;
     hardDelete?: boolean;
@@ -2620,13 +2290,6 @@ export interface FacetCount {
 export interface CatalogueFacetsResponse {
     categories: FacetCount[];
     tags: FacetCount[];
-}
-
-export interface CatalogueFacetsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CatalogueFacetsResponse;
 }
 
 export interface ReplaceProductRequest {
@@ -2866,13 +2529,6 @@ export interface ProductAdmin {
     translations: ProductAdminTranslations;
 }
 
-export interface ProductAdminEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ProductAdmin;
-}
-
 export interface SearchProductsRequest {
     page?: Page;
     pageSize?: PageSize;
@@ -3026,13 +2682,6 @@ export interface CartResponse {
     checkoutable: boolean;
 }
 
-export interface CartResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CartResponse;
-}
-
 /**
  * Bounded at both ends, and this bound is on the STORED line, not only the request: `PATCH /cart/items/{productId}` sets a line to exactly this value, which already fits; a caller that instead adds to an existing line (`POST /cart/items`, the wishlist's move-to-cart) is refused past it with 422 `CART_QUANTITY_LIMIT` rather than silently overflowing. The ceiling is not a stock check — stock is verified at checkout, which refuses with `CART_INSUFFICIENT_STOCK` and is the real boundary. This stops a cart holding a quantity no order could ever be, whose only effect is a nonsense summary total and arithmetic far outside any range the money code is exercised over.
  * @minimum 1
@@ -3057,13 +2706,6 @@ export interface SetCartShippingMethodRequest {
      * @nullable
      */
     shippingMethodId: string | null;
-}
-
-export interface CartSummaryResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CartSummaryResponse;
 }
 
 /**
@@ -3349,13 +2991,6 @@ export interface Order {
     deletedAt?: string;
 }
 
-export interface CheckoutResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Order;
-}
-
 /**
  * Why a merged guest line or a reordered order line did not land exactly as asked. Absent when it did.
  * - `summed`: the cart already held some of the product, so `resulting` is the sum. - `capped`: the sum would pass the per-line cap (`NODE_CART_LINE_MAX`); `resulting` is the cap. - `removed`: the product is not publicly visible any more (deleted or hidden);
@@ -3393,13 +3028,6 @@ export interface ReorderResponse {
     lines: MergeLineResult[];
 }
 
-export interface ReorderResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ReorderResponse;
-}
-
 export interface WishlistItem {
     productId: Id;
     availability: LineAvailability;
@@ -3407,13 +3035,6 @@ export interface WishlistItem {
 
 export interface WishlistResponse {
     items: WishlistItem[];
-}
-
-export interface WishlistResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WishlistResponse;
 }
 
 export interface CreateWishlistItemRequest {
@@ -3446,13 +3067,6 @@ export interface OrdersResponse {
     meta: PaginationMeta;
 }
 
-export interface OrdersResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OrdersResponse;
-}
-
 export interface OrderLineInput {
     productId: Id;
     /**
@@ -3473,13 +3087,6 @@ export interface CreateOrderRequest {
      * @maxItems 1000
      */
     items: OrderLineInput[];
-}
-
-export interface OrderEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Order;
 }
 
 export interface DeleteOrderRequest {
@@ -3553,11 +3160,8 @@ export interface CreditNoteSummary {
     refundId: Id;
 }
 
-export interface CreditNotesResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CreditNoteSummary[];
+export interface CreditNotesResponse {
+    items: CreditNoteSummary[];
 }
 
 export interface PaymentMethodOption {
@@ -3571,13 +3175,6 @@ export interface PaymentMethodOption {
 
 export interface PaymentMethodsResponse {
     methods: PaymentMethodOption[];
-}
-
-export interface PaymentMethodsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PaymentMethodsResponse;
 }
 
 export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus];
@@ -3688,7 +3285,7 @@ export interface PaymentActions {
     pay: boolean;
     /** Whether the buyer may finish at the provider with `POST /payments/{id}/sync` — the payment is `requires_action` or `processing`, it went through the provider, and the caller is the payer holding `checkout:Cart`. Narrower than the route on purpose: the route also accepts a payment that is awaiting confirmation or was declined, whose next step is `pay`. Never true together with `pay`. */
     sync: boolean;
-    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back, a refund still open included), which is what greys the control out rather than letting the operator discover it by clicking. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
+    /** Whether `POST /payments/{id}/refunds` would be accepted: the caller holds `create:Refund`, the payment is `succeeded` and something is left to refund. False once nothing is left (fully refunded, or the rest already asked back), which is what greys the control out rather than letting the operator discover it by clicking. A refund still open counts against what is left but does not hide the control while money remains. On a hand-paid payment the refund only opens a record; `settleByHand` confirms it. */
     refund: boolean;
     /** The ids of the refunds this caller may mark as returned with `POST /payments/{id}/refunds/{refundId}/settle`: the caller holds `create:Refund`, the payment is `succeeded`, and the refund is either a hand-paid payment's `pending` one or a card refund `failed` with a reason that proves the money did not move (`RefundFailureReason`). The server decides; a client never rebuilds this rule. An array because the route takes a target; empty when there is none. */
     settleByHand: Id[];
@@ -3768,13 +3365,6 @@ export interface Payment {
     updatedAt?: string;
 }
 
-export interface PaymentEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Payment;
-}
-
 export interface RefundPaymentRequest {
     /**
      * How much to return, a decimal in the payment's own currency. Absent means everything still refundable.
@@ -3786,13 +3376,6 @@ export interface RefundPaymentRequest {
      * @maxLength 3
      */
     currency?: string;
-}
-
-export interface RefundEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Refund;
 }
 
 /**
@@ -3879,13 +3462,6 @@ export interface ShippingMethod {
 
 export interface ShippingMethodsResponse {
     methods: ShippingMethod[];
-}
-
-export interface ShippingMethodsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ShippingMethodsResponse;
 }
 
 /**
@@ -4095,13 +3671,6 @@ export interface OrderFulfillment {
     shipments: Shipment[];
 }
 
-export interface OrderFulfillmentEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OrderFulfillment;
-}
-
 /**
  * Where a preorder's fulfillment order stands, as the board reads it. `waiting`: paid, held for stock. `allocated`: stock is set aside for it, not all shipped. `shipped`: nothing remains and something shipped. `cancelled`: nothing remains and nothing shipped; `cancelReason` says who.
  */
@@ -4160,13 +3729,6 @@ export interface PreorderFulfillmentOrdersResponse {
     meta: PaginationMeta;
 }
 
-export interface PreorderFulfillmentOrdersResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PreorderFulfillmentOrdersResponse;
-}
-
 /**
  * One product's preorder units across every fulfillment order made from it. `paid` is every unit paid for, so `waiting + allocated + shipped + cancelled` equals it. `late` is a subset: units remaining on fulfillment orders whose expected date has passed.
  */
@@ -4193,13 +3755,6 @@ export interface PreorderProductSummary {
 export interface PreorderProductSummariesResponse {
     items: PreorderProductSummary[];
     meta: PaginationMeta;
-}
-
-export interface PreorderProductSummariesResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PreorderProductSummariesResponse;
 }
 
 export type ShipFulfillmentOrderRequestLinesItem = {
@@ -4230,13 +3785,6 @@ export interface ShipFulfillmentOrderRequest {
     reason?: string;
 }
 
-export interface ShipmentEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Shipment;
-}
-
 /**
  * Why it is held. `awaiting_stock` is not staff's to give.
  */
@@ -4264,13 +3812,6 @@ export interface HoldFulfillmentOrderRequest {
      * @maxLength 500
      */
     message?: string;
-}
-
-export interface FulfillmentOrderEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: FulfillmentOrder;
 }
 
 export interface UpdateShipmentRequest {
@@ -4429,13 +3970,6 @@ export interface ReturnsResponse {
     meta: PaginationMeta;
 }
 
-export interface ReturnsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ReturnsResponse;
-}
-
 export type CreateReturnRequestLinesItem = {
     productId: Id;
     /** @minimum 1 */
@@ -4458,13 +3992,6 @@ export interface CreateReturnRequest {
      * @minItems 1
      */
     lines?: CreateReturnRequestLinesItem[];
-}
-
-export interface ReturnEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Return;
 }
 
 export interface ReturnOptionLine {
@@ -4519,13 +4046,6 @@ export interface ReturnOptions {
     cancellable: CancellableFulfillmentOrder[];
 }
 
-export interface ReturnOptionsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ReturnOptions;
-}
-
 export interface DeclineReturnRequest {
     /**
      * What the customer is told. Required — a refusal nobody explains is not one.
@@ -4571,13 +4091,6 @@ export interface InventoryLevelsResponse {
     meta: PaginationMeta;
 }
 
-export interface InventoryLevelsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: InventoryLevelsResponse;
-}
-
 export interface BackorderLimitRequest {
     /**
      * The new allowance. `0` closes it. `null` removes the cap: set a cap equal to the incoming quantity if the date must hold for everyone.
@@ -4585,13 +4098,6 @@ export interface BackorderLimitRequest {
      * @nullable
      */
     backorderLimit: number | null;
-}
-
-export interface InventoryLevelEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: InventoryLevel;
 }
 
 export interface PreorderLevel {
@@ -4635,13 +4141,6 @@ export interface PreorderLevel {
 export interface PreorderLevelsResponse {
     items: PreorderLevel[];
     meta: PaginationMeta;
-}
-
-export interface PreorderLevelsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PreorderLevelsResponse;
 }
 
 /**
@@ -4691,13 +4190,6 @@ export interface StockMovementsResponse {
     meta: PaginationMeta;
 }
 
-export interface StockMovementsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: StockMovementsResponse;
-}
-
 export interface ReceiptRequest {
     /**
      * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
@@ -4729,13 +4221,6 @@ export interface ReservationSweepResponse {
      * @minimum 0
      */
     expired: number;
-}
-
-export interface ReservationSweepEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ReservationSweepResponse;
 }
 
 export type WebhookSubscriptionSortItem =
@@ -4808,13 +4293,6 @@ export interface WebhookSubscriptionsResponse {
     meta: PaginationMeta;
 }
 
-export interface WebhookSubscriptionsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookSubscriptionsResponse;
-}
-
 export interface CreateWebhookSubscriptionRequest {
     /**
      * Must be `https://`. Validated again, against the resolved IP, on every delivery.
@@ -4857,20 +4335,6 @@ export interface WebhookSubscriptionCreated {
     secret?: string;
     /** A rotated-in secret's plaintext, present only in the response of `POST .../rotate-secret`. */
     newSecret?: string;
-}
-
-export interface WebhookSubscriptionCreatedEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookSubscriptionCreated;
-}
-
-export interface WebhookSubscriptionEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookSubscription;
 }
 
 export interface ReplaceWebhookSubscriptionRequest {
@@ -4954,30 +4418,13 @@ export interface WebhookDeliveriesResponse {
     meta: PaginationMeta;
 }
 
-export interface WebhookDeliveriesResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookDeliveriesResponse;
-}
-
-export interface WebhookDeliveryEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookDelivery;
-}
-
 export interface WebhookEventCatalogueEntry {
     name: string;
     description?: string;
 }
 
-export interface WebhookEventCatalogueResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: WebhookEventCatalogueEntry[];
+export interface WebhookEventCatalogueResponse {
+    items: WebhookEventCatalogueEntry[];
 }
 
 export type ApiKeySortItem = (typeof ApiKeySortItem)[keyof typeof ApiKeySortItem];
@@ -5034,13 +4481,6 @@ export interface ApiKeysResponse {
     maxExpiresAt: string;
 }
 
-export interface ApiKeysResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ApiKeysResponse;
-}
-
 export interface MintApiKeyRequest {
     /**
      * A caller-chosen label — what this credential is for, shown back in the list.
@@ -5073,20 +4513,6 @@ export interface ApiKeyCreated {
     secret: string;
 }
 
-export interface ApiKeyCreatedEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ApiKeyCreated;
-}
-
-export interface ApiKeyEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ApiKey;
-}
-
 export interface SessionActivity {
     /** When the session last saw a real request — now, for a touch. */
     lastActiveAt: string;
@@ -5095,13 +4521,6 @@ export interface SessionActivity {
      * @minimum 1
      */
     idleTimeoutSeconds?: number;
-}
-
-export interface SessionActivityEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: SessionActivity;
 }
 
 /**
@@ -5136,13 +4555,6 @@ export interface SessionConfig {
      * @minimum 1
      */
     staffLifetimeSeconds?: number;
-}
-
-export interface SessionConfigEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: SessionConfig;
 }
 
 export interface ExportSession {
@@ -5741,13 +5153,6 @@ export interface MergeCartResponse {
     lines: MergeLineResult[];
 }
 
-export interface MergeCartResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: MergeCartResponse;
-}
-
 /**
  * Who the row is for, decided per `type` by the server. `staff` rows are private (an override's reason, a hold, a provider's refusal): a buyer's timeline never contains one, so a client only tells staff which of their rows the buyer cannot see. The account export carries both.
  */
@@ -5778,11 +5183,8 @@ export interface OrderTimelineEntry {
     data: OrderTimelineEntryData;
 }
 
-export interface OrderTimelineEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OrderTimelineEntry[];
+export interface OrderTimelineResponse {
+    items: OrderTimelineEntry[];
 }
 
 /**
@@ -5820,13 +5222,6 @@ export const PaymentMethodKind = {
 export interface PaymentsResponse {
     items: Payment[];
     meta: PaginationMeta;
-}
-
-export interface PaymentsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PaymentsResponse;
 }
 
 export interface CreatePaymentRequest {
@@ -5880,13 +5275,6 @@ export interface RefundsResponse {
     meta: PaginationMeta;
 }
 
-export interface RefundsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: RefundsResponse;
-}
-
 /**
  * `stale_refund` — a provider refund open past the threshold, still waiting for the provider's answer or its next retry; `refused_refund` — a card refund the provider refused for good (a final `RefundFailureReason`), shown at once: the money has to go back another way; `manual_refund_owed` — money to hand back outside the system on a `manual` payment. Both are an open refund record on a payment: a cancel or a refund opens it before anything is asked of a provider, so no refund is owed without one.
  */
@@ -5915,13 +5303,6 @@ export interface PaymentAttentionResponse {
     items: PaymentAttentionItem[];
 }
 
-export interface PaymentAttentionResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PaymentAttentionResponse;
-}
-
 /**
  * Orders a release-date move would email, counted in orders, never fulfillment orders.
  */
@@ -5931,13 +5312,6 @@ export interface ReleaseDateImpact {
      * @minimum 0
      */
     notify: number;
-}
-
-export interface ReleaseDateImpactEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ReleaseDateImpact;
 }
 
 /**
@@ -6008,13 +5382,6 @@ export interface SalesStats {
     currencies: SalesCurrency[];
 }
 
-export interface SalesStatsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: SalesStats;
-}
-
 export interface ProductSalesRow {
     productId: Id;
     title: string;
@@ -6031,13 +5398,6 @@ export interface ProductStats {
     products: ProductSalesRow[];
 }
 
-export interface ProductStatsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ProductStats;
-}
-
 export interface ProductSeriesBucket {
     start: string;
     unitsOrdered: number;
@@ -6052,13 +5412,6 @@ export interface ProductSeries {
     buckets: ProductSeriesBucket[];
 }
 
-export interface ProductSeriesEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ProductSeries;
-}
-
 export interface CategorySalesRow {
     category: string;
     currency: string;
@@ -6069,13 +5422,6 @@ export interface CategorySalesRow {
 export interface CategoryStats {
     period: StatsPeriod;
     categories: CategorySalesRow[];
-}
-
-export interface CategoryStatsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CategoryStats;
 }
 
 export type PaymentMixRowMethod = (typeof PaymentMixRowMethod)[keyof typeof PaymentMixRowMethod];
@@ -6098,13 +5444,6 @@ export interface PaymentMixRow {
 export interface PaymentMix {
     period: StatsPeriod;
     rows: PaymentMixRow[];
-}
-
-export interface PaymentMixEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PaymentMix;
 }
 
 /**
@@ -6145,13 +5484,6 @@ export interface OperationsStats {
     refunds: OperationsStatsRefundsItem[];
 }
 
-export interface OperationsStatsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: OperationsStats;
-}
-
 export interface CustomerStats {
     period: StatsPeriod;
     /** Accounts with at least one paid order in the period. */
@@ -6164,13 +5496,6 @@ export interface CustomerStats {
      * @maximum 1
      */
     returningRate: number;
-}
-
-export interface CustomerStatsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: CustomerStats;
 }
 
 export type PipelineStatsAwaitingTransfersItem = {
@@ -6186,32 +5511,11 @@ export interface PipelineStats {
     paidNotShipped: number;
 }
 
-export interface PipelineStatsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: PipelineStats;
-}
-
 export interface StatsLimits {
     /** The most calendar days one period may cover, both ends counted. */
     maxRangeDays: number;
     /** The most buckets one series may hold, the first possibly starting before `from`. */
     maxBuckets: number;
-}
-
-export interface StatsLimitsEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: StatsLimits;
-}
-
-export interface ExampleEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Example;
 }
 
 export type ExampleSortItem = (typeof ExampleSortItem)[keyof typeof ExampleSortItem];
@@ -6234,13 +5538,6 @@ export type ExampleSort = ExampleSortItem[];
 export interface ExamplesResponse {
     items: Example[];
     meta: PaginationMeta;
-}
-
-export interface ExamplesResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: ExamplesResponse;
 }
 
 export interface CreateExampleRequest {
@@ -6303,20 +5600,6 @@ export interface NotificationsResponse {
     items: Notification[];
 }
 
-export interface NotificationsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: NotificationsResponse;
-}
-
-export interface NotificationEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Notification;
-}
-
 /**
  * Where returned goods are sent: the configured return address (`NODE_RETURN_ADDRESS_*`), or the shop's legal address when none is fully set.
  */
@@ -6359,13 +5642,6 @@ export interface Shop {
     backorderPromiseDays: number;
 }
 
-export interface ShopEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: Shop;
-}
-
 /**
  * A sitemap file (sitemaps.org 0.9): an `urlset` of `url` entries, or a `sitemapindex` of `sitemap` entries. Served as `application/xml`, not JSON.
  */
@@ -6375,21 +5651,14 @@ export interface StockAlertsResponse {
     items: StockAlert[];
 }
 
-export interface StockAlertsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: StockAlertsResponse;
-}
-
 export interface CreateStockAlertRequest {
     productId: Id;
 }
 
 /**
- * Success
+ * Done. There is nothing to say, so the body is empty (RFC 9110 section 15.3.5).
  */
-export type SuccessResponse = MessageResponse;
+export type NoContentResponse = void;
 
 /**
  * The request could not be understood or authenticated as what it claims to be — distinct from `ValidationError`, which is a well-formed request whose FIELDS are wrong. Used where a caller is a machine rather than a form: an unverifiable webhook signature is the case that needs it.
@@ -7366,8 +6635,8 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * browser call. Not an orchestrator probe: `/livez` is liveness, `/readyz` readiness.
  * @summary API health check
  */
-export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPingEnvelope>>) => {
-    return orvalMutator<HealthPingEnvelope>({ url: `/`, method: 'GET' }, options);
+export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPing>>) => {
+    return orvalMutator<HealthPing>({ url: `/`, method: 'GET' }, options);
 };
 
 /**
@@ -7400,7 +6669,7 @@ export const getReadyz = (options?: SecondParameter<typeof orvalMutator<void>>) 
  * RFC 9116 `security.txt`: where an outside reporter sends a vulnerability.
  * Published only when the deployment sets `NODE_SECURITY_CONTACT` and
  * `NODE_SECURITY_EXPIRES`; a fork that has not opted in answers 404 and publishes
- * nothing. Plain text, not the JSON envelope, because the format is fixed by the RFC.
+ * nothing. Plain text, not JSON, because the format is fixed by the RFC.
  * @summary Vulnerability disclosure contact
  */
 export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<string>>) => {
@@ -7438,10 +6707,8 @@ export const getSecurityTxt = (options?: SecondParameter<typeof orvalMutator<str
  * with every flag `false`.
  * @summary Supported languages
  */
-export const getLocales = (
-    options?: SecondParameter<typeof orvalMutator<LocaleCapabilitiesEnvelope>>
-) => {
-    return orvalMutator<LocaleCapabilitiesEnvelope>({ url: `/locales`, method: 'GET' }, options);
+export const getLocales = (options?: SecondParameter<typeof orvalMutator<LocaleCapabilities>>) => {
+    return orvalMutator<LocaleCapabilities>({ url: `/locales`, method: 'GET' }, options);
 };
 
 /**
@@ -7455,9 +6722,9 @@ export const getLocales = (
  */
 export const createLocale = (
     createLocaleRequest: CreateLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LanguageEnvelope>(
+    return orvalMutator<Language>(
         {
             url: `/locales`,
             method: 'POST',
@@ -7481,10 +6748,8 @@ export const createLocale = (
  * Public and cacheable, like every other locale read.
  * @summary Translation apps
  */
-export const listLocaleApps = (
-    options?: SecondParameter<typeof orvalMutator<LocaleAppsEnvelope>>
-) => {
-    return orvalMutator<LocaleAppsEnvelope>({ url: `/locales/apps`, method: 'GET' }, options);
+export const listLocaleApps = (options?: SecondParameter<typeof orvalMutator<LocaleApps>>) => {
+    return orvalMutator<LocaleApps>({ url: `/locales/apps`, method: 'GET' }, options);
 };
 
 /**
@@ -7500,12 +6765,9 @@ export const listLocaleApps = (
  */
 export const getLocaleDictionary = (
     locale: Locale,
-    options?: SecondParameter<typeof orvalMutator<LocaleDictionaryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleDictionary>>
 ) => {
-    return orvalMutator<LocaleDictionaryEnvelope>(
-        { url: `/locales/${locale}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<LocaleDictionary>({ url: `/locales/${locale}`, method: 'GET' }, options);
 };
 
 /**
@@ -7521,9 +6783,9 @@ export const getLocaleDictionary = (
 export const replaceLocale = (
     locale: string,
     replaceLocaleRequest: ReplaceLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LanguageEnvelope>(
+    return orvalMutator<Language>(
         {
             url: `/locales/${locale}`,
             method: 'PUT',
@@ -7547,9 +6809,9 @@ export const replaceLocale = (
 export const updateLocale = (
     locale: string,
     updateLocaleRequest: UpdateLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LanguageEnvelope>(
+    return orvalMutator<Language>(
         {
             url: `/locales/${locale}`,
             method: 'PATCH',
@@ -7573,9 +6835,9 @@ export const updateLocale = (
 export const updateLocaleWithMergePatchJson = (
     locale: string,
     updateLocaleRequest: UpdateLocaleRequest,
-    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LanguageEnvelope>(
+    return orvalMutator<Language>(
         {
             url: `/locales/${locale}`,
             method: 'PATCH',
@@ -7599,9 +6861,12 @@ export const updateLocaleWithMergePatchJson = (
  */
 export const deleteLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/locales/${locale}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>(
+        { url: `/locales/${locale}`, method: 'DELETE' },
+        options
+    );
 };
 
 /**
@@ -7635,9 +6900,9 @@ export const deleteLocale = (
 export const getLocaleMessages = (
     locale: string,
     params?: GetLocaleMessagesParams,
-    options?: SecondParameter<typeof orvalMutator<LocaleMessagesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleMessages>>
 ) => {
-    return orvalMutator<LocaleMessagesEnvelope>(
+    return orvalMutator<LocaleMessages>(
         { url: `/locales/${locale}/messages`, method: 'GET', params },
         options
     );
@@ -7656,9 +6921,9 @@ export const getLocaleMessages = (
 export const listLocaleEntries = (
     locale: string,
     params?: ListLocaleEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponse>>
 ) => {
-    return orvalMutator<LocaleEntriesResponseEnvelope>(
+    return orvalMutator<LocaleEntriesResponse>(
         { url: `/locales/${locale}/entries`, method: 'GET', params },
         options
     );
@@ -7678,9 +6943,9 @@ export const listAppLocaleEntries = (
     locale: string,
     app: string,
     params?: ListAppLocaleEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponse>>
 ) => {
-    return orvalMutator<LocaleEntriesResponseEnvelope>(
+    return orvalMutator<LocaleEntriesResponse>(
         { url: `/locales/${locale}/apps/${app}/entries`, method: 'GET', params },
         options
     );
@@ -7696,9 +6961,9 @@ export const createLocaleEntry = (
     locale: string,
     app: string,
     createLocaleEntryRequest: CreateLocaleEntryRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleEntry>>
 ) => {
-    return orvalMutator<LocaleEntryEnvelope>(
+    return orvalMutator<LocaleEntry>(
         {
             url: `/locales/${locale}/apps/${app}/entries`,
             method: 'POST',
@@ -7728,9 +6993,9 @@ export const replaceLocaleEntries = (
     locale: string,
     app: string,
     replaceLocaleEntriesRequest: ReplaceLocaleEntriesRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>
 ) => {
-    return orvalMutator<LocaleImportResultEnvelope>(
+    return orvalMutator<LocaleImportResult>(
         {
             url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PUT',
@@ -7754,9 +7019,9 @@ export const updateLocaleEntries = (
     locale: string,
     app: string,
     updateLocaleEntriesRequest: UpdateLocaleEntriesRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>
 ) => {
-    return orvalMutator<LocaleImportResultEnvelope>(
+    return orvalMutator<LocaleImportResult>(
         {
             url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PATCH',
@@ -7780,9 +7045,9 @@ export const updateLocaleEntriesWithMergePatchJson = (
     locale: string,
     app: string,
     updateLocaleEntriesRequest: UpdateLocaleEntriesRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResult>>
 ) => {
-    return orvalMutator<LocaleImportResultEnvelope>(
+    return orvalMutator<LocaleImportResult>(
         {
             url: `/locales/${locale}/apps/${app}/entries`,
             method: 'PATCH',
@@ -7804,9 +7069,9 @@ export const getLocaleEntry = (
     locale: string,
     app: string,
     entryId: string,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleEntry>>
 ) => {
-    return orvalMutator<LocaleEntryEnvelope>(
+    return orvalMutator<LocaleEntry>(
         { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'GET' },
         options
     );
@@ -7823,9 +7088,9 @@ export const replaceLocaleEntry = (
     app: string,
     entryId: string,
     replaceLocaleEntryRequest: ReplaceLocaleEntryRequest,
-    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LocaleEntry>>
 ) => {
-    return orvalMutator<LocaleEntryEnvelope>(
+    return orvalMutator<LocaleEntry>(
         {
             url: `/locales/${locale}/apps/${app}/entries/${entryId}`,
             method: 'PUT',
@@ -7844,9 +7109,9 @@ export const deleteLocaleEntry = (
     locale: string,
     app: string,
     entryId: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/locales/${locale}/apps/${app}/entries/${entryId}`, method: 'DELETE' },
         options
     );
@@ -7861,9 +7126,9 @@ export const deleteLocaleEntry = (
 export const getEntityTranslations = (
     entityType: string,
     id: string,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
-    return orvalMutator<EntityTranslationsEnvelope>(
+    return orvalMutator<EntityTranslations>(
         { url: `/locales/translations/${entityType}/${id}`, method: 'GET' },
         options
     );
@@ -7892,9 +7157,9 @@ export const replaceEntityTranslations = (
     entityType: string,
     id: string,
     upsertTranslationsRequest: UpsertTranslationsRequest,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
-    return orvalMutator<EntityTranslationsEnvelope>(
+    return orvalMutator<EntityTranslations>(
         {
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PUT',
@@ -7937,9 +7202,9 @@ export const upsertEntityTranslations = (
     entityType: string,
     id: string,
     mergeTranslationsRequest: MergeTranslationsRequest,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
-    return orvalMutator<EntityTranslationsEnvelope>(
+    return orvalMutator<EntityTranslations>(
         {
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PATCH',
@@ -7982,9 +7247,9 @@ export const upsertEntityTranslationsWithMergePatchJson = (
     entityType: string,
     id: string,
     mergeTranslationsRequest: MergeTranslationsRequest,
-    options?: SecondParameter<typeof orvalMutator<EntityTranslationsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<EntityTranslations>>
 ) => {
-    return orvalMutator<EntityTranslationsEnvelope>(
+    return orvalMutator<EntityTranslations>(
         {
             url: `/locales/translations/${entityType}/${id}`,
             method: 'PATCH',
@@ -8018,9 +7283,9 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
  * @summary Health snapshot
  */
 export const getObservabilityHealth = (
-    options?: SecondParameter<typeof orvalMutator<ObservabilityHealthResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ObservabilityHealth>>
 ) => {
-    return orvalMutator<ObservabilityHealthResponseEnvelope>(
+    return orvalMutator<ObservabilityHealth>(
         { url: `/observability/health`, method: 'GET' },
         options
     );
@@ -8043,9 +7308,9 @@ export const getObservabilityMetrics = (options?: SecondParameter<typeof orvalMu
  * @summary Metrics overview (JSON)
  */
 export const getObservabilityMetricsOverview = (
-    options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummary>>
 ) => {
-    return orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>(
+    return orvalMutator<ObservabilityMetricsSummary>(
         { url: `/observability/metrics/overview`, method: 'GET' },
         options
     );
@@ -8066,9 +7331,9 @@ export const getObservabilityMetricsOverview = (
  */
 export const listObservabilityAuditEntries = (
     params?: ListObservabilityAuditEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<AuditLogsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuditLogsResponse>>
 ) => {
-    return orvalMutator<AuditLogsResponseEnvelope>(
+    return orvalMutator<AuditLogsResponse>(
         { url: `/observability/audit`, method: 'GET', params },
         options
     );
@@ -8085,22 +7350,17 @@ export const listObservabilityAuditEntries = (
  */
 export const listAuditEntries = (
     params?: ListAuditEntriesParams,
-    options?: SecondParameter<typeof orvalMutator<AuditEntriesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuditEntriesResponse>>
 ) => {
-    return orvalMutator<AuditEntriesResponseEnvelope>(
-        { url: `/audit`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<AuditEntriesResponse>({ url: `/audit`, method: 'GET', params }, options);
 };
 
 /**
  * Rung 3 of the anti-automation ladder, plus a `rungs` summary of every other one. Always answers 200; the default `none` provider reports an empty parameter map, which means there is no widget to render and no token to send. Reachable with no credential; guarding it behind a login would defeat signup, which has none yet.
  * @summary Read the active human-challenge provider's public parameters, and every rung's status
  */
-export const getAntibotConfig = (
-    options?: SecondParameter<typeof orvalMutator<AntibotConfigEnvelope>>
-) => {
-    return orvalMutator<AntibotConfigEnvelope>({ url: `/antibot/config`, method: 'GET' }, options);
+export const getAntibotConfig = (options?: SecondParameter<typeof orvalMutator<AntibotConfig>>) => {
+    return orvalMutator<AntibotConfig>({ url: `/antibot/config`, method: 'GET' }, options);
 };
 
 /**
@@ -8108,12 +7368,9 @@ export const getAntibotConfig = (
  * @summary Fetch work from a self-hosted human-challenge provider
  */
 export const getAntibotChallenge = (
-    options?: SecondParameter<typeof orvalMutator<AntibotChallengeEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AntibotChallenge>>
 ) => {
-    return orvalMutator<AntibotChallengeEnvelope>(
-        { url: `/antibot/challenge`, method: 'GET' },
-        options
-    );
+    return orvalMutator<AntibotChallenge>({ url: `/antibot/challenge`, method: 'GET' }, options);
 };
 
 /**
@@ -8139,8 +7396,8 @@ export const createAnalyticsEvent = (
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
-export const getAccount = (options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>) => {
-    return orvalMutator<AccountEnvelope>({ url: `/account`, method: 'GET' }, options);
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<Account>>) => {
+    return orvalMutator<Account>({ url: `/account`, method: 'GET' }, options);
 };
 
 /**
@@ -8149,9 +7406,9 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<Account
  */
 export const replaceAccount = (
     replaceAccountRequest: ReplaceAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Account>>
 ) => {
-    return orvalMutator<AccountEnvelope>(
+    return orvalMutator<Account>(
         {
             url: `/account`,
             method: 'PUT',
@@ -8168,7 +7425,7 @@ export const replaceAccount = (
  */
 export const replaceAccountWithMultipart = (
     replaceAccountRequestMultipart: ReplaceAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Account>>
 ) => {
     const formData = new FormData();
     formData.append(`email`, replaceAccountRequestMultipart.email);
@@ -8187,7 +7444,7 @@ export const replaceAccountWithMultipart = (
     }
     formData.append(`analyticsConsent`, replaceAccountRequestMultipart.analyticsConsent.toString());
 
-    return orvalMutator<AccountEnvelope>(
+    return orvalMutator<Account>(
         {
             url: `/account`,
             method: 'PUT',
@@ -8204,9 +7461,9 @@ export const replaceAccountWithMultipart = (
  */
 export const updateAccount = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Account>>
 ) => {
-    return orvalMutator<AccountEnvelope>(
+    return orvalMutator<Account>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -8223,9 +7480,9 @@ export const updateAccount = (
  */
 export const updateAccountWithMergePatchJson = (
     updateAccountRequest: UpdateAccountRequest,
-    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Account>>
 ) => {
-    return orvalMutator<AccountEnvelope>(
+    return orvalMutator<Account>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -8242,7 +7499,7 @@ export const updateAccountWithMergePatchJson = (
  */
 export const updateAccountWithMultipart = (
     updateAccountRequestMultipart: UpdateAccountRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Account>>
 ) => {
     const formData = new FormData();
     if (updateAccountRequestMultipart.email !== undefined) {
@@ -8270,7 +7527,7 @@ export const updateAccountWithMultipart = (
         );
     }
 
-    return orvalMutator<AccountEnvelope>(
+    return orvalMutator<Account>(
         {
             url: `/account`,
             method: 'PATCH',
@@ -8286,9 +7543,9 @@ export const updateAccountWithMultipart = (
  * @summary Delete the account (locked at once, erased after a grace)
  */
 export const requestAccountDelete = (
-    options?: SecondParameter<typeof orvalMutator<AccountDeletionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountDeletion>>
 ) => {
-    return orvalMutator<AccountDeletionEnvelope>({ url: `/account`, method: 'DELETE' }, options);
+    return orvalMutator<AccountDeletion>({ url: `/account`, method: 'DELETE' }, options);
 };
 
 /**
@@ -8296,9 +7553,9 @@ export const requestAccountDelete = (
  * @summary Cancel a pending email change
  */
 export const cancelPendingEmailChange = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/account/email-change`, method: 'DELETE' },
         options
     );
@@ -8309,9 +7566,9 @@ export const cancelPendingEmailChange = (
  * @summary Resend the pending email confirmation
  */
 export const resendPendingEmail = (
-    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>
 ) => {
-    return orvalMutator<EmailVerificationRequestedEnvelope>(
+    return orvalMutator<EmailVerificationRequested>(
         { url: `/account/email-change/resend`, method: 'POST' },
         options
     );
@@ -8342,10 +7599,8 @@ export const resendPendingEmail = (
  * out for a visitor is a shop front that lies twice.
  * @summary The caller's own authorization rules
  */
-export const getMyAbilities = (
-    options?: SecondParameter<typeof orvalMutator<AbilitiesEnvelope>>
-) => {
-    return orvalMutator<AbilitiesEnvelope>({ url: `/account/abilities`, method: 'GET' }, options);
+export const getMyAbilities = (options?: SecondParameter<typeof orvalMutator<Abilities>>) => {
+    return orvalMutator<Abilities>({ url: `/account/abilities`, method: 'GET' }, options);
 };
 
 /**
@@ -8354,9 +7609,9 @@ export const getMyAbilities = (
  */
 export const changePassword = (
     changePasswordRequest: ChangePasswordRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
 ) => {
-    return orvalMutator<SessionRenewedEnvelope>(
+    return orvalMutator<AuthTokens>(
         {
             url: `/account/password`,
             method: 'POST',
@@ -8373,9 +7628,9 @@ export const changePassword = (
  */
 export const checkPasswordBreached = (
     passwordCheckRequest: PasswordCheckRequest,
-    options?: SecondParameter<typeof orvalMutator<PasswordCheckEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PasswordCheck>>
 ) => {
-    return orvalMutator<PasswordCheckEnvelope>(
+    return orvalMutator<PasswordCheck>(
         {
             url: `/account/password/check`,
             method: 'POST',
@@ -8390,10 +7645,8 @@ export const checkPasswordBreached = (
  * The ways THIS account can answer a `401 REAUTH_REQUIRED` challenge, in the order a client should offer them. An account with a password gets `password`; an account with none (it signed up through an OAuth provider) gets `email`, a code mailed to its verified address. Empty when the account has no password and this deployment cannot deliver mail, so a client shows a dead end instead of a form nobody can pass. The list is a server fact, not a client guess: the kernel that raises the challenge cannot see account data.
  * @summary How this account can re-authenticate
  */
-export const getReauthMethods = (
-    options?: SecondParameter<typeof orvalMutator<ReauthMethodsEnvelope>>
-) => {
-    return orvalMutator<ReauthMethodsEnvelope>({ url: `/account/reauth`, method: 'GET' }, options);
+export const getReauthMethods = (options?: SecondParameter<typeof orvalMutator<ReauthMethods>>) => {
+    return orvalMutator<ReauthMethods>({ url: `/account/reauth`, method: 'GET' }, options);
 };
 
 /**
@@ -8402,9 +7655,9 @@ export const getReauthMethods = (
  */
 export const reauth = (
     reauthRequest: ReauthRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<AuthTokens>(
         {
             url: `/account/reauth`,
             method: 'POST',
@@ -8419,24 +7672,24 @@ export const reauth = (
  * Logs out the CURRENT session only — deletes the session the `__Host-session` cookie (or, in `cookie` mode, a `ses_…` bearer) names, and clears the authentication cookies. Refused with 403 when the request names an `Origin` that is not an allowed frontend origin. Other devices stay signed in; `DELETE /account/sessions` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
  * @summary Logout this session
  */
-export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
-    return orvalMutator<SuccessResponse>({ url: `/account/logout`, method: 'POST' }, options);
+export const logout = (options?: SecondParameter<typeof orvalMutator<NoContentResponse>>) => {
+    return orvalMutator<NoContentResponse>({ url: `/account/logout`, method: 'POST' }, options);
 };
 
 /**
  * Lists the authenticated user's live sessions, one per sign-in, newest first. Each carries an id that stays the same for as long as the sign-in lasts (a `jwt` refresh or a `cookie` re-proof does not change it), when the sign-in happened, when it ends, and a `current` marker; never a credential. The session the caller's own cookie (or `ses_…` bearer) belongs to is flagged `current`. In `cookie` mode each also carries a coarse `device` label such as "Firefox on Linux", read from the User-Agent at the sign-in. A staff session that has idled out is not listed: it no longer signs anyone in.
  * @summary List active sessions
  */
-export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
-    return orvalMutator<SessionsEnvelope>({ url: `/account/sessions`, method: 'GET' }, options);
+export const listSessions = (options?: SecondParameter<typeof orvalMutator<SessionsResponse>>) => {
+    return orvalMutator<SessionsResponse>({ url: `/account/sessions`, method: 'GET' }, options);
 };
 
 /**
  * Logs out the authenticated user from ALL devices by deleting every session the account holds and clearing authentication cookies. Needs a fresh session (sensitive tier, `401 REAUTH_REQUIRED` when stale).
  * @summary Logout from all devices
  */
-export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
-    return orvalMutator<SuccessResponse>({ url: `/account/sessions`, method: 'DELETE' }, options);
+export const logoutAll = (options?: SecondParameter<typeof orvalMutator<NoContentResponse>>) => {
+    return orvalMutator<NoContentResponse>({ url: `/account/sessions`, method: 'DELETE' }, options);
 };
 
 /**
@@ -8445,12 +7698,9 @@ export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessR
  */
 export const getSession = (
     sessionId: Id,
-    options?: SecondParameter<typeof orvalMutator<SessionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Session>>
 ) => {
-    return orvalMutator<SessionEnvelope>(
-        { url: `/account/sessions/${sessionId}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<Session>({ url: `/account/sessions/${sessionId}`, method: 'GET' }, options);
 };
 
 /**
@@ -8459,9 +7709,9 @@ export const getSession = (
  */
 export const revokeSession = (
     sessionId: Id,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/account/sessions/${sessionId}`, method: 'DELETE' },
         options
     );
@@ -8472,9 +7722,9 @@ export const revokeSession = (
  * @summary List saved addresses
  */
 export const listAddresses = (
-    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AddressesResponse>>
 ) => {
-    return orvalMutator<AddressesEnvelope>({ url: `/account/addresses`, method: 'GET' }, options);
+    return orvalMutator<AddressesResponse>({ url: `/account/addresses`, method: 'GET' }, options);
 };
 
 /**
@@ -8483,9 +7733,9 @@ export const listAddresses = (
  */
 export const addAddress = (
     addressInput: AddressInput,
-    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
-    return orvalMutator<AddressEnvelope>(
+    return orvalMutator<Address>(
         {
             url: `/account/addresses`,
             method: 'POST',
@@ -8502,9 +7752,9 @@ export const addAddress = (
  */
 export const getAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
-    return orvalMutator<AddressEnvelope>(
+    return orvalMutator<Address>(
         { url: `/account/addresses/${addressId}`, method: 'GET' },
         options
     );
@@ -8517,9 +7767,9 @@ export const getAddress = (
 export const replaceAddress = (
     addressId: Id,
     replaceAddressRequest: ReplaceAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
-    return orvalMutator<AddressEnvelope>(
+    return orvalMutator<Address>(
         {
             url: `/account/addresses/${addressId}`,
             method: 'PUT',
@@ -8537,9 +7787,9 @@ export const replaceAddress = (
 export const updateAddress = (
     addressId: Id,
     updateAddressRequest: UpdateAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
-    return orvalMutator<AddressEnvelope>(
+    return orvalMutator<Address>(
         {
             url: `/account/addresses/${addressId}`,
             method: 'PATCH',
@@ -8557,9 +7807,9 @@ export const updateAddress = (
 export const updateAddressWithMergePatchJson = (
     addressId: Id,
     updateAddressRequest: UpdateAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
-    return orvalMutator<AddressEnvelope>(
+    return orvalMutator<Address>(
         {
             url: `/account/addresses/${addressId}`,
             method: 'PATCH',
@@ -8576,9 +7826,9 @@ export const updateAddressWithMergePatchJson = (
  */
 export const removeAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AddressesResponse>>
 ) => {
-    return orvalMutator<AddressesEnvelope>(
+    return orvalMutator<AddressesResponse>(
         { url: `/account/addresses/${addressId}`, method: 'DELETE' },
         options
     );
@@ -8590,9 +7840,9 @@ export const removeAddress = (
  */
 export const setDefaultAddress = (
     addressId: Id,
-    options?: SecondParameter<typeof orvalMutator<AddressEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Address>>
 ) => {
-    return orvalMutator<AddressEnvelope>(
+    return orvalMutator<Address>(
         { url: `/account/addresses/${addressId}/default`, method: 'PUT' },
         options
     );
@@ -8603,9 +7853,9 @@ export const setDefaultAddress = (
  * @summary Request email verification
  */
 export const requestEmailVerification = (
-    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequestedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<EmailVerificationRequested>>
 ) => {
-    return orvalMutator<EmailVerificationRequestedEnvelope>(
+    return orvalMutator<EmailVerificationRequested>(
         { url: `/account/email-verification/resend`, method: 'POST' },
         options
     );
@@ -8617,9 +7867,9 @@ export const requestEmailVerification = (
  */
 export const confirmEmailVerification = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/account/email-verification/confirm`,
             method: 'POST',
@@ -8636,9 +7886,9 @@ export const confirmEmailVerification = (
  */
 export const confirmEmailChange = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/account/email-change/confirm`,
             method: 'POST',
@@ -8655,9 +7905,9 @@ export const confirmEmailChange = (
  */
 export const undoEmailChange = (
     verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/account/email-change/undo`,
             method: 'POST',
@@ -8674,9 +7924,9 @@ export const undoEmailChange = (
  */
 export const restoreAccount = (
     accountRestoreRequest: AccountRestoreRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/account/restore`,
             method: 'POST',
@@ -8693,9 +7943,9 @@ export const restoreAccount = (
  */
 export const login = (
     loginRequest: LoginRequest,
-    options?: SecondParameter<typeof orvalMutator<LoginResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LoginOutcome>>
 ) => {
-    return orvalMutator<LoginResponseEnvelope>(
+    return orvalMutator<LoginOutcome>(
         {
             url: `/account/login`,
             method: 'POST',
@@ -8712,9 +7962,9 @@ export const login = (
  */
 export const loginRestore = (
     loginRestoreRequest: LoginRestoreRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<AuthTokens>(
         {
             url: `/account/login/restore`,
             method: 'POST',
@@ -8731,9 +7981,9 @@ export const loginRestore = (
  */
 export const signup = (
     signupRequest: SignupRequest,
-    options?: SecondParameter<typeof orvalMutator<AccountEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Account>>
 ) => {
-    return orvalMutator<AccountEnvelope>(
+    return orvalMutator<Account>(
         {
             url: `/account/signup`,
             method: 'POST',
@@ -8750,9 +8000,9 @@ export const signup = (
  */
 export const requestPasswordReset = (
     passwordResetRequest: PasswordResetRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/account/password/reset`,
             method: 'POST',
@@ -8769,9 +8019,9 @@ export const requestPasswordReset = (
  */
 export const confirmPasswordReset = (
     passwordResetConfirmRequest: PasswordResetConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/account/password/reset/confirm`,
             method: 'POST',
@@ -8787,9 +8037,9 @@ export const confirmPasswordReset = (
  * @summary Refresh access token
  */
 export const refreshToken = (
-    options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<RefreshTokenResponse>>
 ) => {
-    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'POST' }, options);
+    return orvalMutator<RefreshTokenResponse>({ url: `/account/refresh`, method: 'POST' }, options);
 };
 
 /**
@@ -8801,12 +8051,9 @@ export const refreshToken = (
  * @summary Request an export of the caller's own data
  */
 export const requestAccountExport = (
-    options?: SecondParameter<typeof orvalMutator<AccountExportRequestEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AccountExportRequest>>
 ) => {
-    return orvalMutator<AccountExportRequestEnvelope>(
-        { url: `/account/export`, method: 'POST' },
-        options
-    );
+    return orvalMutator<AccountExportRequest>({ url: `/account/export`, method: 'POST' }, options);
 };
 
 /**
@@ -8815,9 +8062,9 @@ export const requestAccountExport = (
  */
 export const loginTwoFactor = (
     loginTwoFactorRequest: LoginTwoFactorRequest,
-    options?: SecondParameter<typeof orvalMutator<LoginTwoFactorResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LoginTwoFactorOutcome>>
 ) => {
-    return orvalMutator<LoginTwoFactorResponseEnvelope>(
+    return orvalMutator<LoginTwoFactorOutcome>(
         {
             url: `/account/login/2fa`,
             method: 'POST',
@@ -8834,9 +8081,9 @@ export const loginTwoFactor = (
  */
 export const sendTwoFactorCode = (
     twoFactorSendRequest: TwoFactorSendRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>
 ) => {
-    return orvalMutator<TwoFactorDeliveryEnvelope>(
+    return orvalMutator<TwoFactorDelivery>(
         {
             url: `/account/login/2fa/send`,
             method: 'POST',
@@ -8852,9 +8099,9 @@ export const sendTwoFactorCode = (
  * @summary Two-factor status
  */
 export const getTwoFactorStatus = (
-    options?: SecondParameter<typeof orvalMutator<TwoFactorStatusEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorStatus>>
 ) => {
-    return orvalMutator<TwoFactorStatusEnvelope>({ url: `/account/2fa`, method: 'GET' }, options);
+    return orvalMutator<TwoFactorStatus>({ url: `/account/2fa`, method: 'GET' }, options);
 };
 
 /**
@@ -8864,9 +8111,9 @@ export const getTwoFactorStatus = (
 export const setupTwoFactorMethod = (
     method: string,
     twoFactorSetupRequest?: TwoFactorSetupRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorSetup>>
 ) => {
-    return orvalMutator<TwoFactorSetupEnvelope>(
+    return orvalMutator<TwoFactorSetup>(
         {
             url: `/account/2fa/methods/${method}/setup`,
             method: 'POST',
@@ -8883,9 +8130,9 @@ export const setupTwoFactorMethod = (
  */
 export const sendTwoFactorMethodCode = (
     method: string,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>
 ) => {
-    return orvalMutator<TwoFactorDeliveryEnvelope>(
+    return orvalMutator<TwoFactorDelivery>(
         { url: `/account/2fa/methods/${method}/send`, method: 'POST' },
         options
     );
@@ -8898,9 +8145,9 @@ export const sendTwoFactorMethodCode = (
 export const confirmTwoFactorMethod = (
     method: string,
     twoFactorConfirmRequest: TwoFactorConfirmRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmed>>
 ) => {
-    return orvalMutator<TwoFactorConfirmEnvelope>(
+    return orvalMutator<TwoFactorConfirmed>(
         {
             url: `/account/2fa/methods/${method}/confirm`,
             method: 'POST',
@@ -8917,9 +8164,9 @@ export const confirmTwoFactorMethod = (
  */
 export const disableTwoFactor = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
 ) => {
-    return orvalMutator<SessionRenewedEnvelope>(
+    return orvalMutator<AuthTokens>(
         {
             url: `/account/2fa/disable`,
             method: 'POST',
@@ -8937,9 +8184,9 @@ export const disableTwoFactor = (
 export const removeTwoFactorMethod = (
     method: string,
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<SessionRenewedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<AuthTokens>>
 ) => {
-    return orvalMutator<SessionRenewedEnvelope>(
+    return orvalMutator<AuthTokens>(
         {
             url: `/account/2fa/methods/${method}/remove`,
             method: 'POST',
@@ -8956,9 +8203,9 @@ export const removeTwoFactorMethod = (
  */
 export const regenerateBackupCodes = (
     twoFactorCodeRequest: TwoFactorCodeRequest,
-    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegenerated>>
 ) => {
-    return orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>(
+    return orvalMutator<TwoFactorBackupCodesRegenerated>(
         {
             url: `/account/2fa/backup-codes`,
             method: 'POST',
@@ -8974,9 +8221,9 @@ export const regenerateBackupCodes = (
  * @summary List enabled OAuth providers
  */
 export const listOAuthProviders = (
-    options?: SecondParameter<typeof orvalMutator<OAuthProvidersEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OAuthProviders>>
 ) => {
-    return orvalMutator<OAuthProvidersEnvelope>(
+    return orvalMutator<OAuthProviders>(
         { url: `/account/oauth/providers`, method: 'GET' },
         options
     );
@@ -8986,13 +8233,8 @@ export const listOAuthProviders = (
  * The sign-in providers linked to the authenticated account (Google, GitHub), with when each was connected. Never carries a provider's own identifier. An empty list means the account signs in with a password alone.
  * @summary List the caller's connected accounts
  */
-export const listOAuthLinks = (
-    options?: SecondParameter<typeof orvalMutator<OAuthLinksEnvelope>>
-) => {
-    return orvalMutator<OAuthLinksEnvelope>(
-        { url: `/account/oauth/links`, method: 'GET' },
-        options
-    );
+export const listOAuthLinks = (options?: SecondParameter<typeof orvalMutator<OAuthLinks>>) => {
+    return orvalMutator<OAuthLinks>({ url: `/account/oauth/links`, method: 'GET' }, options);
 };
 
 /**
@@ -9002,9 +8244,9 @@ export const listOAuthLinks = (
 export const startOAuthLink = (
     provider: string,
     params?: StartOAuthLinkParams,
-    options?: SecondParameter<typeof orvalMutator<OAuthLinkStartEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OAuthLinkStart>>
 ) => {
-    return orvalMutator<OAuthLinkStartEnvelope>(
+    return orvalMutator<OAuthLinkStart>(
         { url: `/account/oauth/links/${provider}`, method: 'POST', params },
         options
     );
@@ -9016,9 +8258,9 @@ export const startOAuthLink = (
  */
 export const unlinkOAuthProvider = (
     provider: string,
-    options?: SecondParameter<typeof orvalMutator<OAuthLinksEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OAuthLinks>>
 ) => {
-    return orvalMutator<OAuthLinksEnvelope>(
+    return orvalMutator<OAuthLinks>(
         { url: `/account/oauth/links/${provider}`, method: 'DELETE' },
         options
     );
@@ -9060,9 +8302,9 @@ export const completeOAuthLogin = (
  */
 export const listUsers = (
     params?: ListUsersParams,
-    options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<UsersResponse>>
 ) => {
-    return orvalMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params }, options);
+    return orvalMutator<UsersResponse>({ url: `/users`, method: 'GET', params }, options);
 };
 
 /**
@@ -9071,9 +8313,9 @@ export const listUsers = (
  */
 export const createUser = (
     createUserRequest: CreateUserRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users`,
             method: 'POST',
@@ -9090,7 +8332,7 @@ export const createUser = (
  */
 export const createUserWithMultipart = (
     createUserRequestMultipart: CreateUserRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
     const formData = new FormData();
     formData.append(`email`, createUserRequestMultipart.email);
@@ -9108,7 +8350,7 @@ export const createUserWithMultipart = (
         formData.append(`locale`, createUserRequestMultipart.locale);
     }
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users`,
             method: 'POST',
@@ -9126,9 +8368,9 @@ export const createUserWithMultipart = (
 export const deleteUser = (
     deleteUserRequest: DeleteUserRequest,
     params?: DeleteUserParams,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/users`,
             method: 'DELETE',
@@ -9144,11 +8386,8 @@ export const deleteUser = (
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
  * @summary User details
  */
-export const getUserById = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
-) => {
-    return orvalMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' }, options);
+export const getUserById = (id: string, options?: SecondParameter<typeof orvalMutator<User>>) => {
+    return orvalMutator<User>({ url: `/users/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -9158,9 +8397,9 @@ export const getUserById = (
 export const replaceUserById = (
     id: string,
     replaceUserByIdRequest: ReplaceUserByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users/${id}`,
             method: 'PUT',
@@ -9178,7 +8417,7 @@ export const replaceUserById = (
 export const replaceUserByIdWithMultipart = (
     id: string,
     replaceUserByIdRequestMultipart: ReplaceUserByIdRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
     const formData = new FormData();
     formData.append(`username`, replaceUserByIdRequestMultipart.username);
@@ -9196,7 +8435,7 @@ export const replaceUserByIdWithMultipart = (
         formData.append(`website`, replaceUserByIdRequestMultipart.website);
     }
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users/${id}`,
             method: 'PUT',
@@ -9214,9 +8453,9 @@ export const replaceUserByIdWithMultipart = (
 export const updateUserById = (
     id: string,
     updateUserByIdRequest: UpdateUserByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users/${id}`,
             method: 'PATCH',
@@ -9234,9 +8473,9 @@ export const updateUserById = (
 export const updateUserByIdWithMergePatchJson = (
     id: string,
     updateUserByIdRequest: UpdateUserByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users/${id}`,
             method: 'PATCH',
@@ -9254,7 +8493,7 @@ export const updateUserByIdWithMergePatchJson = (
 export const updateUserByIdWithMultipart = (
     id: string,
     updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
     const formData = new FormData();
     if (updateUserByIdRequestMultipart.username !== undefined) {
@@ -9276,7 +8515,7 @@ export const updateUserByIdWithMultipart = (
         formData.append(`website`, updateUserByIdRequestMultipart.website);
     }
 
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users/${id}`,
             method: 'PATCH',
@@ -9294,9 +8533,9 @@ export const updateUserByIdWithMultipart = (
 export const deleteUserById = (
     id: string,
     params?: DeleteUserByIdParams,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/users/${id}`, method: 'DELETE', params },
         options
     );
@@ -9308,9 +8547,9 @@ export const deleteUserById = (
  */
 export const restoreUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>({ url: `/users/${id}/restore`, method: 'POST' }, options);
+    return orvalMutator<User>({ url: `/users/${id}/restore`, method: 'POST' }, options);
 };
 
 /**
@@ -9319,9 +8558,9 @@ export const restoreUserById = (
  */
 export const hardDeleteUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
 };
 
 /**
@@ -9330,9 +8569,9 @@ export const hardDeleteUserById = (
  */
 export const searchUsers = (
     searchUsersRequest: SearchUsersRequest,
-    options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<UsersResponse>>
 ) => {
-    return orvalMutator<UsersResponseEnvelope>(
+    return orvalMutator<UsersResponse>(
         {
             url: `/users/search`,
             method: 'POST',
@@ -9349,9 +8588,9 @@ export const searchUsers = (
  */
 export const createFeedbackRequest = (
     createFeedbackRequest: CreateFeedbackRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
 ) => {
-    return orvalMutator<FeedbackRequestEnvelope>(
+    return orvalMutator<FeedbackRequest>(
         {
             url: `/feedback/contact`,
             method: 'POST',
@@ -9368,9 +8607,9 @@ export const createFeedbackRequest = (
  */
 export const listFeedbackRequests = (
     params?: ListFeedbackRequestsParams,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponse>>
 ) => {
-    return orvalMutator<FeedbackRequestsResponseEnvelope>(
+    return orvalMutator<FeedbackRequestsResponse>(
         { url: `/feedback`, method: 'GET', params },
         options
     );
@@ -9382,9 +8621,9 @@ export const listFeedbackRequests = (
  */
 export const searchFeedbackRequests = (
     searchFeedbackRequestsRequest: SearchFeedbackRequestsRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponse>>
 ) => {
-    return orvalMutator<FeedbackRequestsResponseEnvelope>(
+    return orvalMutator<FeedbackRequestsResponse>(
         {
             url: `/feedback/search`,
             method: 'POST',
@@ -9401,12 +8640,9 @@ export const searchFeedbackRequests = (
  */
 export const getFeedbackRequest = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
 ) => {
-    return orvalMutator<FeedbackRequestEnvelope>(
-        { url: `/feedback/${id}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<FeedbackRequest>({ url: `/feedback/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -9416,9 +8652,9 @@ export const getFeedbackRequest = (
 export const updateFeedbackRequestStatus = (
     id: string,
     updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
 ) => {
-    return orvalMutator<FeedbackRequestEnvelope>(
+    return orvalMutator<FeedbackRequest>(
         {
             url: `/feedback/${id}`,
             method: 'PATCH',
@@ -9436,9 +8672,9 @@ export const updateFeedbackRequestStatus = (
 export const updateFeedbackRequestStatusWithMergePatchJson = (
     id: string,
     updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
-    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequest>>
 ) => {
-    return orvalMutator<FeedbackRequestEnvelope>(
+    return orvalMutator<FeedbackRequest>(
         {
             url: `/feedback/${id}`,
             method: 'PATCH',
@@ -9455,9 +8691,9 @@ export const updateFeedbackRequestStatusWithMergePatchJson = (
  */
 export const deleteFeedbackRequest = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/feedback/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/feedback/${id}`, method: 'DELETE' }, options);
 };
 
 /**
@@ -9466,12 +8702,9 @@ export const deleteFeedbackRequest = (
  */
 export const listProducts = (
     params?: ListProductsParams,
-    options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ProductsResponse>>
 ) => {
-    return orvalMutator<ProductsResponseEnvelope>(
-        { url: `/products`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<ProductsResponse>({ url: `/products`, method: 'GET', params }, options);
 };
 
 /**
@@ -9480,9 +8713,9 @@ export const listProducts = (
  */
 export const createProduct = (
     createProductRequest: CreateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products`,
             method: 'POST',
@@ -9499,7 +8732,7 @@ export const createProduct = (
  */
 export const createProductWithMultipart = (
     createProductRequestMultipart: CreateProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
     const formData = new FormData();
     formData.append(`translations`, createProductRequestMultipart.translations);
@@ -9552,7 +8785,7 @@ export const createProductWithMultipart = (
         createProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
     }
 
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products`,
             method: 'POST',
@@ -9570,9 +8803,9 @@ export const createProductWithMultipart = (
 export const deleteProduct = (
     deleteProductRequest: DeleteProductRequest,
     params?: DeleteProductParams,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/products`,
             method: 'DELETE',
@@ -9589,9 +8822,9 @@ export const deleteProduct = (
  * @summary Catalogue facets
  */
 export const getCatalogueFacets = (
-    options?: SecondParameter<typeof orvalMutator<CatalogueFacetsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CatalogueFacetsResponse>>
 ) => {
-    return orvalMutator<CatalogueFacetsEnvelope>(
+    return orvalMutator<CatalogueFacetsResponse>(
         { url: `/products/categories`, method: 'GET' },
         options
     );
@@ -9603,9 +8836,9 @@ export const getCatalogueFacets = (
  */
 export const getProductById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
-    return orvalMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' }, options);
+    return orvalMutator<Product>({ url: `/products/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -9622,9 +8855,9 @@ export const getProductById = (
 export const replaceProductById = (
     id: string,
     replaceProductRequest: ReplaceProductRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products/${id}`,
             method: 'PUT',
@@ -9649,7 +8882,7 @@ export const replaceProductById = (
 export const replaceProductByIdWithMultipart = (
     id: string,
     replaceProductRequestMultipart: ReplaceProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
     const formData = new FormData();
     formData.append(`translations`, replaceProductRequestMultipart.translations);
@@ -9689,7 +8922,7 @@ export const replaceProductByIdWithMultipart = (
     );
     replaceProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
 
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products/${id}`,
             method: 'PUT',
@@ -9723,9 +8956,9 @@ export const replaceProductByIdWithMultipart = (
 export const updateProductById = (
     id: string,
     updateProductRequest: UpdateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products/${id}`,
             method: 'PATCH',
@@ -9759,9 +8992,9 @@ export const updateProductById = (
 export const updateProductByIdWithMergePatchJson = (
     id: string,
     updateProductRequest: UpdateProductRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products/${id}`,
             method: 'PATCH',
@@ -9795,7 +9028,7 @@ export const updateProductByIdWithMergePatchJson = (
 export const updateProductByIdWithMultipart = (
     id: string,
     updateProductRequestMultipart: UpdateProductRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
     const formData = new FormData();
     if (updateProductRequestMultipart.translations !== undefined) {
@@ -9852,7 +9085,7 @@ export const updateProductByIdWithMultipart = (
         updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
     }
 
-    return orvalMutator<ProductEnvelope>(
+    return orvalMutator<Product>(
         {
             url: `/products/${id}`,
             method: 'PATCH',
@@ -9870,9 +9103,9 @@ export const updateProductByIdWithMultipart = (
 export const deleteProductById = (
     id: string,
     params?: DeleteProductByIdParams,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/products/${id}`, method: 'DELETE', params },
         options
     );
@@ -9884,12 +9117,9 @@ export const deleteProductById = (
  */
 export const getProductAdmin = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ProductAdminEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ProductAdmin>>
 ) => {
-    return orvalMutator<ProductAdminEnvelope>(
-        { url: `/products/${id}/admin`, method: 'GET' },
-        options
-    );
+    return orvalMutator<ProductAdmin>({ url: `/products/${id}/admin`, method: 'GET' }, options);
 };
 
 /**
@@ -9898,12 +9128,9 @@ export const getProductAdmin = (
  */
 export const restoreProductById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Product>>
 ) => {
-    return orvalMutator<ProductEnvelope>(
-        { url: `/products/${id}/restore`, method: 'POST' },
-        options
-    );
+    return orvalMutator<Product>({ url: `/products/${id}/restore`, method: 'POST' }, options);
 };
 
 /**
@@ -9912,9 +9139,9 @@ export const restoreProductById = (
  */
 export const hardDeleteProductById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/products/${id}/hard`, method: 'DELETE' },
         options
     );
@@ -9926,9 +9153,9 @@ export const hardDeleteProductById = (
  */
 export const searchProducts = (
     searchProductsRequest: SearchProductsRequest,
-    options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ProductsResponse>>
 ) => {
-    return orvalMutator<ProductsResponseEnvelope>(
+    return orvalMutator<ProductsResponse>(
         {
             url: `/products/search`,
             method: 'POST',
@@ -9943,8 +9170,8 @@ export const searchProducts = (
  * Returns all items currently in the authenticated user's cart along with a computed summary
  * @summary Get cart
  */
-export const getCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
-    return orvalMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' }, options);
+export const getCart = (options?: SecondParameter<typeof orvalMutator<CartResponse>>) => {
+    return orvalMutator<CartResponse>({ url: `/cart`, method: 'GET' }, options);
 };
 
 /**
@@ -9953,9 +9180,9 @@ export const getCart = (options?: SecondParameter<typeof orvalMutator<CartRespon
  */
 export const addCartItem = (
     addCartItemRequest: AddCartItemRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<CartResponse>(
         {
             url: `/cart/items`,
             method: 'POST',
@@ -9970,8 +9197,8 @@ export const addCartItem = (
  * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL, and any body on it is refused (415), so a body can never turn a one-line delete into this. Returns the (empty) cart; clearing an already-empty cart is the state the caller asked for, so also 200.
  * @summary Clear cart
  */
-export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
-    return orvalMutator<CartResponseEnvelope>({ url: `/cart/items`, method: 'DELETE' }, options);
+export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponse>>) => {
+    return orvalMutator<CartResponse>({ url: `/cart/items`, method: 'DELETE' }, options);
 };
 
 /**
@@ -9981,9 +9208,9 @@ export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResp
 export const updateCartItemById = (
     productId: string,
     updateCartItemByIdRequest: UpdateCartItemByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<CartResponse>(
         {
             url: `/cart/items/${productId}`,
             method: 'PATCH',
@@ -10001,9 +9228,9 @@ export const updateCartItemById = (
 export const updateCartItemByIdWithMergePatchJson = (
     productId: string,
     updateCartItemByIdRequest: UpdateCartItemByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<CartResponse>(
         {
             url: `/cart/items/${productId}`,
             method: 'PATCH',
@@ -10020,9 +9247,9 @@ export const updateCartItemByIdWithMergePatchJson = (
  */
 export const removeCartItem = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<CartResponse>(
         { url: `/cart/items/${productId}`, method: 'DELETE' },
         options
     );
@@ -10034,9 +9261,9 @@ export const removeCartItem = (
  */
 export const setCartShippingMethod = (
     setCartShippingMethodRequest: SetCartShippingMethodRequest,
-    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CartResponse>>
 ) => {
-    return orvalMutator<CartResponseEnvelope>(
+    return orvalMutator<CartResponse>(
         {
             url: `/cart/shipping-method`,
             method: 'PUT',
@@ -10052,23 +9279,20 @@ export const setCartShippingMethod = (
  * @summary Get cart summary
  */
 export const getCartSummary = (
-    options?: SecondParameter<typeof orvalMutator<CartSummaryResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CartSummaryResponse>>
 ) => {
-    return orvalMutator<CartSummaryResponseEnvelope>(
-        { url: `/cart/summary`, method: 'GET' },
-        options
-    );
+    return orvalMutator<CartSummaryResponse>({ url: `/cart/summary`, method: 'GET' }, options);
 };
 
 /**
- * Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as `data` — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
+ * Converts the authenticated user's current cart into a new order. Needs a critically fresh session (`401 REAUTH_REQUIRED`), asked after the verified-address key, so a caller who can never pass is refused first. The cart is cleared upon success. The request names the total the buyer was shown (`expectedTotal`); a checkout that would charge anything else is refused with 409 `CART_TOTAL_CHANGED` and the new total, before any stock is held. Optional order notes can be supplied in the request body. Answers 201 with the created order itself as the body — the same shape `POST /orders` answers — and its `Location`. The order's email is always the authenticated caller's own — checkout is account-bound; a future guest checkout would bring an `email` field back.
  * @summary Checkout (place order from cart)
  */
 export const checkout = (
     checkoutRequest: CheckoutRequest,
-    options?: SecondParameter<typeof orvalMutator<CheckoutResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<CheckoutResponseEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/cart/checkout`,
             method: 'POST',
@@ -10085,9 +9309,9 @@ export const checkout = (
  */
 export const reorder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<ReorderResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReorderResponse>>
 ) => {
-    return orvalMutator<ReorderResponseEnvelope>(
+    return orvalMutator<ReorderResponse>(
         { url: `/cart/reorder/${orderId}`, method: 'POST' },
         options
     );
@@ -10097,10 +9321,8 @@ export const reorder = (
  * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
  * @summary Get wishlist
  */
-export const getWishlist = (
-    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
-) => {
-    return orvalMutator<WishlistResponseEnvelope>({ url: `/wishlist`, method: 'GET' }, options);
+export const getWishlist = (options?: SecondParameter<typeof orvalMutator<WishlistResponse>>) => {
+    return orvalMutator<WishlistResponse>({ url: `/wishlist`, method: 'GET' }, options);
 };
 
 /**
@@ -10109,9 +9331,9 @@ export const getWishlist = (
  */
 export const createWishlistItem = (
     createWishlistItemRequest: CreateWishlistItemRequest,
-    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WishlistResponse>>
 ) => {
-    return orvalMutator<WishlistResponseEnvelope>(
+    return orvalMutator<WishlistResponse>(
         {
             url: `/wishlist/items`,
             method: 'POST',
@@ -10128,9 +9350,9 @@ export const createWishlistItem = (
  */
 export const deleteWishlistItem = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WishlistResponse>>
 ) => {
-    return orvalMutator<WishlistResponseEnvelope>(
+    return orvalMutator<WishlistResponse>(
         { url: `/wishlist/items/${productId}`, method: 'DELETE' },
         options
     );
@@ -10142,9 +9364,9 @@ export const deleteWishlistItem = (
  */
 export const moveWishlistItemToCart = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WishlistResponse>>
 ) => {
-    return orvalMutator<WishlistResponseEnvelope>(
+    return orvalMutator<WishlistResponse>(
         { url: `/wishlist/items/${productId}/move-to-cart`, method: 'POST' },
         options
     );
@@ -10157,9 +9379,9 @@ export const moveWishlistItemToCart = (
  */
 export const listOrders = (
     params?: ListOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OrdersResponse>>
 ) => {
-    return orvalMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params }, options);
+    return orvalMutator<OrdersResponse>({ url: `/orders`, method: 'GET', params }, options);
 };
 
 /**
@@ -10170,9 +9392,9 @@ export const listOrders = (
  */
 export const createOrder = (
     createOrderRequest: CreateOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders`,
             method: 'POST',
@@ -10190,9 +9412,9 @@ export const createOrder = (
 export const deleteOrder = (
     deleteOrderRequest: DeleteOrderRequest,
     params?: DeleteOrderParams,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         {
             url: `/orders`,
             method: 'DELETE',
@@ -10211,9 +9433,9 @@ export const deleteOrder = (
  */
 export const searchOrders = (
     searchOrdersRequest: SearchOrdersRequest,
-    options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OrdersResponse>>
 ) => {
-    return orvalMutator<OrdersResponseEnvelope>(
+    return orvalMutator<OrdersResponse>(
         {
             url: `/orders/search`,
             method: 'POST',
@@ -10228,11 +9450,8 @@ export const searchOrders = (
  * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
  * @summary Order details
  */
-export const getOrderById = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
-) => {
-    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' }, options);
+export const getOrderById = (id: string, options?: SecondParameter<typeof orvalMutator<Order>>) => {
+    return orvalMutator<Order>({ url: `/orders/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -10242,9 +9461,9 @@ export const getOrderById = (
 export const replaceOrderById = (
     id: string,
     replaceOrderByIdRequest: ReplaceOrderByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders/${id}`,
             method: 'PUT',
@@ -10262,9 +9481,9 @@ export const replaceOrderById = (
 export const updateOrderById = (
     id: string,
     updateOrderByIdRequest: UpdateOrderByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders/${id}`,
             method: 'PATCH',
@@ -10282,9 +9501,9 @@ export const updateOrderById = (
 export const updateOrderByIdWithMergePatchJson = (
     id: string,
     updateOrderByIdRequest: UpdateOrderByIdRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders/${id}`,
             method: 'PATCH',
@@ -10302,9 +9521,9 @@ export const updateOrderByIdWithMergePatchJson = (
 export const deleteOrderById = (
     id: string,
     params?: DeleteOrderByIdParams,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/orders/${id}`, method: 'DELETE', params },
         options
     );
@@ -10316,9 +9535,9 @@ export const deleteOrderById = (
  */
 export const restoreOrderById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}/restore`, method: 'POST' }, options);
+    return orvalMutator<Order>({ url: `/orders/${id}/restore`, method: 'POST' }, options);
 };
 
 /**
@@ -10327,9 +9546,12 @@ export const restoreOrderById = (
  */
 export const hardDeleteOrderById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/orders/${id}/hard`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>(
+        { url: `/orders/${id}/hard`, method: 'DELETE' },
+        options
+    );
 };
 
 /**
@@ -10340,9 +9562,9 @@ export const hardDeleteOrderById = (
 export const cancelOrderById = (
     id: string,
     cancelOrderRequest?: CancelOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders/${id}/cancel`,
             method: 'POST',
@@ -10360,9 +9582,9 @@ export const cancelOrderById = (
 export const overrideOrderStatus = (
     id: string,
     statusOverrideRequest: StatusOverrideRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders/${id}/status-override`,
             method: 'POST',
@@ -10393,9 +9615,9 @@ export const getOrderInvoice = (
  */
 export const listOrderCreditNotes = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<CreditNotesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CreditNotesResponse>>
 ) => {
-    return orvalMutator<CreditNotesResponseEnvelope>(
+    return orvalMutator<CreditNotesResponse>(
         { url: `/orders/${id}/credit-notes`, method: 'GET' },
         options
     );
@@ -10421,9 +9643,9 @@ export const getOrderCreditNote = (
  * @summary List payment methods
  */
 export const listPaymentMethods = (
-    options?: SecondParameter<typeof orvalMutator<PaymentMethodsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PaymentMethodsResponse>>
 ) => {
-    return orvalMutator<PaymentMethodsResponseEnvelope>(
+    return orvalMutator<PaymentMethodsResponse>(
         { url: `/payments/methods`, method: 'GET' },
         options
     );
@@ -10435,12 +9657,9 @@ export const listPaymentMethods = (
  */
 export const getPaymentByOrder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Payment>>
 ) => {
-    return orvalMutator<PaymentEnvelope>(
-        { url: `/payments/orders/${orderId}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<Payment>({ url: `/payments/orders/${orderId}`, method: 'GET' }, options);
 };
 
 /**
@@ -10452,9 +9671,9 @@ export const getPaymentByOrder = (
 export const createRefund = (
     id: string,
     refundPaymentRequest?: RefundPaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<RefundEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Refund>>
 ) => {
-    return orvalMutator<RefundEnvelope>(
+    return orvalMutator<Refund>(
         {
             url: `/payments/${id}/refunds`,
             method: 'POST',
@@ -10472,9 +9691,9 @@ export const createRefund = (
 export const getRefund = (
     id: string,
     refundId: Id,
-    options?: SecondParameter<typeof orvalMutator<RefundEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Refund>>
 ) => {
-    return orvalMutator<RefundEnvelope>(
+    return orvalMutator<Refund>(
         { url: `/payments/${id}/refunds/${refundId}`, method: 'GET' },
         options
     );
@@ -10489,9 +9708,9 @@ export const getRefund = (
 export const recordOfflinePayment = (
     orderId: string,
     recordOfflinePaymentRequest: RecordOfflinePaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Payment>>
 ) => {
-    return orvalMutator<PaymentEnvelope>(
+    return orvalMutator<Payment>(
         {
             url: `/payments/orders/${orderId}/offline`,
             method: 'POST',
@@ -10506,11 +9725,8 @@ export const recordOfflinePayment = (
  * One payment by its own id, which is where `Location` points after `POST /payments`. The payer reads their own; a caller holding `display:Payment` reads anyone's. Another account's payment is the same 404 as a missing one. The provider's `clientSecret` is never part of a read, only of the answer to `POST /payments`.
  * @summary Get a payment
  */
-export const getPayment = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
-) => {
-    return orvalMutator<PaymentEnvelope>({ url: `/payments/${id}`, method: 'GET' }, options);
+export const getPayment = (id: string, options?: SecondParameter<typeof orvalMutator<Payment>>) => {
+    return orvalMutator<Payment>({ url: `/payments/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -10520,9 +9736,9 @@ export const getPayment = (
 export const confirmPayment = (
     id: string,
     confirmPaymentRequest: ConfirmPaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Payment>>
 ) => {
-    return orvalMutator<PaymentEnvelope>(
+    return orvalMutator<Payment>(
         {
             url: `/payments/${id}/confirm`,
             method: 'POST',
@@ -10539,9 +9755,9 @@ export const confirmPayment = (
  */
 export const syncPayment = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Payment>>
 ) => {
-    return orvalMutator<PaymentEnvelope>({ url: `/payments/${id}/sync`, method: 'POST' }, options);
+    return orvalMutator<Payment>({ url: `/payments/${id}/sync`, method: 'POST' }, options);
 };
 
 /**
@@ -10551,9 +9767,9 @@ export const syncPayment = (
  */
 export const receivePaymentWebhook = (
     paymentWebhookEvent: PaymentWebhookEvent,
-    options?: SecondParameter<typeof orvalMutator<MessageResponse>>
+    options?: SecondParameter<typeof orvalMutator<void>>
 ) => {
-    return orvalMutator<MessageResponse>(
+    return orvalMutator<void>(
         {
             url: `/payments/webhook`,
             method: 'POST',
@@ -10569,9 +9785,9 @@ export const receivePaymentWebhook = (
  * @summary List shipping methods
  */
 export const listShippingMethods = (
-    options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponse>>
 ) => {
-    return orvalMutator<ShippingMethodsResponseEnvelope>(
+    return orvalMutator<ShippingMethodsResponse>(
         { url: `/delivery/methods`, method: 'GET' },
         options
     );
@@ -10583,9 +9799,9 @@ export const listShippingMethods = (
  */
 export const getFulfillmentByOrder = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<OrderFulfillmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OrderFulfillment>>
 ) => {
-    return orvalMutator<OrderFulfillmentEnvelope>(
+    return orvalMutator<OrderFulfillment>(
         { url: `/delivery/orders/${orderId}`, method: 'GET' },
         options
     );
@@ -10597,9 +9813,9 @@ export const getFulfillmentByOrder = (
  */
 export const startFulfilment = (
     orderId: string,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         { url: `/delivery/orders/${orderId}/start`, method: 'POST' },
         options
     );
@@ -10620,9 +9836,9 @@ export const startFulfilment = (
  */
 export const listPreorderFulfillmentOrders = (
     params?: ListPreorderFulfillmentOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<PreorderFulfillmentOrdersResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PreorderFulfillmentOrdersResponse>>
 ) => {
-    return orvalMutator<PreorderFulfillmentOrdersResponseEnvelope>(
+    return orvalMutator<PreorderFulfillmentOrdersResponse>(
         { url: `/delivery/fulfillment-orders`, method: 'GET', params },
         options
     );
@@ -10637,9 +9853,9 @@ export const listPreorderFulfillmentOrders = (
  */
 export const summarizePreorderFulfillmentOrders = (
     params?: SummarizePreorderFulfillmentOrdersParams,
-    options?: SecondParameter<typeof orvalMutator<PreorderProductSummariesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PreorderProductSummariesResponse>>
 ) => {
-    return orvalMutator<PreorderProductSummariesResponseEnvelope>(
+    return orvalMutator<PreorderProductSummariesResponse>(
         { url: `/delivery/fulfillment-orders/summary`, method: 'GET', params },
         options
     );
@@ -10652,9 +9868,9 @@ export const summarizePreorderFulfillmentOrders = (
 export const shipFulfillmentOrder = (
     id: string,
     shipFulfillmentOrderRequest?: ShipFulfillmentOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
+    return orvalMutator<Shipment>(
         {
             url: `/delivery/fulfillment-orders/${id}/shipments`,
             method: 'POST',
@@ -10671,9 +9887,9 @@ export const shipFulfillmentOrder = (
  */
 export const fulfillFulfillmentOrder = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
+    return orvalMutator<Shipment>(
         { url: `/delivery/fulfillment-orders/${id}/fulfill`, method: 'POST' },
         options
     );
@@ -10686,9 +9902,9 @@ export const fulfillFulfillmentOrder = (
 export const holdFulfillmentOrder = (
     id: string,
     holdFulfillmentOrderRequest: HoldFulfillmentOrderRequest,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>
 ) => {
-    return orvalMutator<FulfillmentOrderEnvelope>(
+    return orvalMutator<FulfillmentOrder>(
         {
             url: `/delivery/fulfillment-orders/${id}/hold`,
             method: 'POST',
@@ -10705,9 +9921,9 @@ export const holdFulfillmentOrder = (
  */
 export const releaseFulfillmentOrder = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>
 ) => {
-    return orvalMutator<FulfillmentOrderEnvelope>(
+    return orvalMutator<FulfillmentOrder>(
         { url: `/delivery/fulfillment-orders/${id}/release`, method: 'POST' },
         options
     );
@@ -10719,12 +9935,9 @@ export const releaseFulfillmentOrder = (
  */
 export const getShipment = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
-        { url: `/delivery/shipments/${id}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<Shipment>({ url: `/delivery/shipments/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -10734,9 +9947,9 @@ export const getShipment = (
 export const updateShipment = (
     id: string,
     updateShipmentRequest: UpdateShipmentRequest,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
+    return orvalMutator<Shipment>(
         {
             url: `/delivery/shipments/${id}`,
             method: 'PATCH',
@@ -10754,9 +9967,9 @@ export const updateShipment = (
 export const updateShipmentWithMergePatchJson = (
     id: string,
     updateShipmentRequest: UpdateShipmentRequest,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
+    return orvalMutator<Shipment>(
         {
             url: `/delivery/shipments/${id}`,
             method: 'PATCH',
@@ -10774,9 +9987,9 @@ export const updateShipmentWithMergePatchJson = (
 export const deliverShipment = (
     id: string,
     deliverShipmentRequest?: DeliverShipmentRequest,
-    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Shipment>>
 ) => {
-    return orvalMutator<ShipmentEnvelope>(
+    return orvalMutator<Shipment>(
         {
             url: `/delivery/shipments/${id}/deliver`,
             method: 'POST',
@@ -10793,12 +10006,9 @@ export const deliverShipment = (
  */
 export const listReturns = (
     params?: ListReturnsParams,
-    options?: SecondParameter<typeof orvalMutator<ReturnsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReturnsResponse>>
 ) => {
-    return orvalMutator<ReturnsResponseEnvelope>(
-        { url: `/returns`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<ReturnsResponse>({ url: `/returns`, method: 'GET', params }, options);
 };
 
 /**
@@ -10810,9 +10020,9 @@ export const listReturns = (
  */
 export const createReturn = (
     createReturnRequest: CreateReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Return>>
 ) => {
-    return orvalMutator<ReturnEnvelope>(
+    return orvalMutator<Return>(
         {
             url: `/returns`,
             method: 'POST',
@@ -10829,12 +10039,9 @@ export const createReturn = (
  */
 export const getReturnOptions = (
     params: GetReturnOptionsParams,
-    options?: SecondParameter<typeof orvalMutator<ReturnOptionsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReturnOptions>>
 ) => {
-    return orvalMutator<ReturnOptionsEnvelope>(
-        { url: `/returns/options`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<ReturnOptions>({ url: `/returns/options`, method: 'GET', params }, options);
 };
 
 /**
@@ -10843,9 +10050,9 @@ export const getReturnOptions = (
  */
 export const getReturnById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Return>>
 ) => {
-    return orvalMutator<ReturnEnvelope>({ url: `/returns/${id}`, method: 'GET' }, options);
+    return orvalMutator<Return>({ url: `/returns/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -10854,9 +10061,9 @@ export const getReturnById = (
  */
 export const approveReturn = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Return>>
 ) => {
-    return orvalMutator<ReturnEnvelope>({ url: `/returns/${id}/approve`, method: 'POST' }, options);
+    return orvalMutator<Return>({ url: `/returns/${id}/approve`, method: 'POST' }, options);
 };
 
 /**
@@ -10866,9 +10073,9 @@ export const approveReturn = (
 export const declineReturn = (
     id: string,
     declineReturnRequest: DeclineReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Return>>
 ) => {
-    return orvalMutator<ReturnEnvelope>(
+    return orvalMutator<Return>(
         {
             url: `/returns/${id}/decline`,
             method: 'POST',
@@ -10887,9 +10094,9 @@ export const declineReturn = (
 export const receiveReturn = (
     id: string,
     receiveReturnRequest?: ReceiveReturnRequest,
-    options?: SecondParameter<typeof orvalMutator<ReturnEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Return>>
 ) => {
-    return orvalMutator<ReturnEnvelope>(
+    return orvalMutator<Return>(
         {
             url: `/returns/${id}/receive`,
             method: 'POST',
@@ -10906,9 +10113,9 @@ export const receiveReturn = (
  */
 export const listInventoryLevels = (
     params?: ListInventoryLevelsParams,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponse>>
 ) => {
-    return orvalMutator<InventoryLevelsResponseEnvelope>(
+    return orvalMutator<InventoryLevelsResponse>(
         { url: `/inventory/levels`, method: 'GET', params },
         options
     );
@@ -10923,9 +10130,9 @@ export const listInventoryLevels = (
 export const setBackorderLimit = (
     productId: Id,
     backorderLimitRequest: BackorderLimitRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
 ) => {
-    return orvalMutator<InventoryLevelEnvelope>(
+    return orvalMutator<InventoryLevel>(
         {
             url: `/inventory/levels/${productId}/backorder-limit`,
             method: 'PUT',
@@ -10944,9 +10151,9 @@ export const setBackorderLimit = (
  */
 export const listPreorderLevels = (
     params?: ListPreorderLevelsParams,
-    options?: SecondParameter<typeof orvalMutator<PreorderLevelsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PreorderLevelsResponse>>
 ) => {
-    return orvalMutator<PreorderLevelsResponseEnvelope>(
+    return orvalMutator<PreorderLevelsResponse>(
         { url: `/inventory/preorders`, method: 'GET', params },
         options
     );
@@ -10958,9 +10165,9 @@ export const listPreorderLevels = (
  */
 export const listStockMovements = (
     params?: ListStockMovementsParams,
-    options?: SecondParameter<typeof orvalMutator<StockMovementsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<StockMovementsResponse>>
 ) => {
-    return orvalMutator<StockMovementsResponseEnvelope>(
+    return orvalMutator<StockMovementsResponse>(
         { url: `/inventory/movements`, method: 'GET', params },
         options
     );
@@ -10973,9 +10180,9 @@ export const listStockMovements = (
 export const receiveStock = (
     productId: Id,
     receiptRequest: ReceiptRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
 ) => {
-    return orvalMutator<InventoryLevelEnvelope>(
+    return orvalMutator<InventoryLevel>(
         {
             url: `/inventory/levels/${productId}/receive`,
             method: 'POST',
@@ -10993,9 +10200,9 @@ export const receiveStock = (
 export const adjustStock = (
     productId: Id,
     adjustmentRequest: AdjustmentRequest,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
 ) => {
-    return orvalMutator<InventoryLevelEnvelope>(
+    return orvalMutator<InventoryLevel>(
         {
             url: `/inventory/levels/${productId}/adjust`,
             method: 'POST',
@@ -11013,9 +10220,9 @@ export const adjustStock = (
  * @summary Expire stale reservations
  */
 export const sweepReservations = (
-    options?: SecondParameter<typeof orvalMutator<ReservationSweepEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReservationSweepResponse>>
 ) => {
-    return orvalMutator<ReservationSweepEnvelope>(
+    return orvalMutator<ReservationSweepResponse>(
         { url: `/inventory/reservations/sweep`, method: 'POST' },
         options
     );
@@ -11029,9 +10236,9 @@ export const sweepReservations = (
  */
 export const listWebhookSubscriptions = (
     params?: ListWebhookSubscriptionsParams,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionsResponse>>
 ) => {
-    return orvalMutator<WebhookSubscriptionsResponseEnvelope>(
+    return orvalMutator<WebhookSubscriptionsResponse>(
         { url: `/webhooks/subscriptions`, method: 'GET', params },
         options
     );
@@ -11050,9 +10257,9 @@ export const listWebhookSubscriptions = (
  */
 export const createWebhookSubscription = (
     createWebhookSubscriptionRequest: CreateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>
 ) => {
-    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+    return orvalMutator<WebhookSubscriptionCreated>(
         {
             url: `/webhooks/subscriptions`,
             method: 'POST',
@@ -11070,9 +10277,9 @@ export const createWebhookSubscription = (
  */
 export const getWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         { url: `/webhooks/subscriptions/${id}`, method: 'GET' },
         options
     );
@@ -11087,9 +10294,9 @@ export const getWebhookSubscription = (
 export const replaceWebhookSubscription = (
     id: string,
     replaceWebhookSubscriptionRequest: ReplaceWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         {
             url: `/webhooks/subscriptions/${id}`,
             method: 'PUT',
@@ -11109,9 +10316,9 @@ export const replaceWebhookSubscription = (
 export const updateWebhookSubscription = (
     id: string,
     updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         {
             url: `/webhooks/subscriptions/${id}`,
             method: 'PATCH',
@@ -11131,9 +10338,9 @@ export const updateWebhookSubscription = (
 export const updateWebhookSubscriptionWithMergePatchJson = (
     id: string,
     updateWebhookSubscriptionRequest: UpdateWebhookSubscriptionRequest,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         {
             url: `/webhooks/subscriptions/${id}`,
             method: 'PATCH',
@@ -11150,9 +10357,9 @@ export const updateWebhookSubscriptionWithMergePatchJson = (
  */
 export const deleteWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/webhooks/subscriptions/${id}`, method: 'DELETE' },
         options
     );
@@ -11172,9 +10379,9 @@ export const deleteWebhookSubscription = (
  */
 export const rotateWebhookSubscriptionSecret = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreatedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionCreated>>
 ) => {
-    return orvalMutator<WebhookSubscriptionCreatedEnvelope>(
+    return orvalMutator<WebhookSubscriptionCreated>(
         { url: `/webhooks/subscriptions/${id}/rotate-secret`, method: 'POST' },
         options
     );
@@ -11189,9 +10396,9 @@ export const rotateWebhookSubscriptionSecret = (
 export const removeWebhookSubscriptionSecret = (
     id: string,
     secretId: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         { url: `/webhooks/subscriptions/${id}/secrets/${secretId}`, method: 'DELETE' },
         options
     );
@@ -11203,9 +10410,9 @@ export const removeWebhookSubscriptionSecret = (
  */
 export const listWebhookDeliveries = (
     params?: ListWebhookDeliveriesParams,
-    options?: SecondParameter<typeof orvalMutator<WebhookDeliveriesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookDeliveriesResponse>>
 ) => {
-    return orvalMutator<WebhookDeliveriesResponseEnvelope>(
+    return orvalMutator<WebhookDeliveriesResponse>(
         { url: `/webhooks/deliveries`, method: 'GET', params },
         options
     );
@@ -11223,9 +10430,9 @@ export const listWebhookDeliveries = (
  */
 export const replayWebhookDelivery = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookDeliveryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookDelivery>>
 ) => {
-    return orvalMutator<WebhookDeliveryEnvelope>(
+    return orvalMutator<WebhookDelivery>(
         { url: `/webhooks/deliveries/${id}/replay`, method: 'POST' },
         options
     );
@@ -11239,9 +10446,9 @@ export const replayWebhookDelivery = (
  * @summary The public event catalogue
  */
 export const listWebhookEvents = (
-    options?: SecondParameter<typeof orvalMutator<WebhookEventCatalogueResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookEventCatalogueResponse>>
 ) => {
-    return orvalMutator<WebhookEventCatalogueResponseEnvelope>(
+    return orvalMutator<WebhookEventCatalogueResponse>(
         { url: `/webhooks/events`, method: 'GET' },
         options
     );
@@ -11253,12 +10460,9 @@ export const listWebhookEvents = (
  */
 export const listApiKeys = (
     params?: ListApiKeysParams,
-    options?: SecondParameter<typeof orvalMutator<ApiKeysResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ApiKeysResponse>>
 ) => {
-    return orvalMutator<ApiKeysResponseEnvelope>(
-        { url: `/api-keys`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<ApiKeysResponse>({ url: `/api-keys`, method: 'GET', params }, options);
 };
 
 /**
@@ -11282,9 +10486,9 @@ export const listApiKeys = (
  */
 export const mintApiKey = (
     mintApiKeyRequest: MintApiKeyRequest,
-    options?: SecondParameter<typeof orvalMutator<ApiKeyCreatedEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ApiKeyCreated>>
 ) => {
-    return orvalMutator<ApiKeyCreatedEnvelope>(
+    return orvalMutator<ApiKeyCreated>(
         {
             url: `/api-keys`,
             method: 'POST',
@@ -11299,11 +10503,8 @@ export const mintApiKey = (
  * One credential of this shop, with the same `status` the list gives it. Never its secret — that exists only in the response of the call that minted it. Another shop's credential, an unknown id and a malformed one are the same 404.
  * @summary Get a machine-to-machine credential
  */
-export const getApiKey = (
-    id: string,
-    options?: SecondParameter<typeof orvalMutator<ApiKeyEnvelope>>
-) => {
-    return orvalMutator<ApiKeyEnvelope>({ url: `/api-keys/${id}`, method: 'GET' }, options);
+export const getApiKey = (id: string, options?: SecondParameter<typeof orvalMutator<ApiKey>>) => {
+    return orvalMutator<ApiKey>({ url: `/api-keys/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -11314,9 +10515,9 @@ export const getApiKey = (
  */
 export const revokeApiKey = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/api-keys/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/api-keys/${id}`, method: 'DELETE' }, options);
 };
 
 /**
@@ -11331,12 +10532,9 @@ export const revokeApiKey = (
  */
 export const activateLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LanguageEnvelope>(
-        { url: `/locales/${locale}/activate`, method: 'POST' },
-        options
-    );
+    return orvalMutator<Language>({ url: `/locales/${locale}/activate`, method: 'POST' }, options);
 };
 
 /**
@@ -11353,9 +10551,9 @@ export const activateLocale = (
  */
 export const deactivateLocale = (
     locale: string,
-    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Language>>
 ) => {
-    return orvalMutator<LanguageEnvelope>(
+    return orvalMutator<Language>(
         { url: `/locales/${locale}/deactivate`, method: 'POST' },
         options
     );
@@ -11367,9 +10565,9 @@ export const deactivateLocale = (
  */
 export const sendReauthCode = (
     method: 'email',
-    options?: SecondParameter<typeof orvalMutator<TwoFactorDeliveryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<TwoFactorDelivery>>
 ) => {
-    return orvalMutator<TwoFactorDeliveryEnvelope>(
+    return orvalMutator<TwoFactorDelivery>(
         { url: `/account/reauth/methods/${method}/send`, method: 'POST' },
         options
     );
@@ -11379,10 +10577,8 @@ export const sendReauthCode = (
  * Marks the session as having seen a real request now, and answers its idle clock. A staff or admin session that sees none for `idleTimeoutSeconds` ends (`401 SESSION_IDLE`); a client shows a "still there?" prompt before then and calls this when the person answers. A shopper's session never idles out, so the field is absent. Every other request counts as activity too, except one sent with the `Session-Passive: true` header: a poll or a keep-alive that is not the person acting.
  * @summary Count the caller's own session as active, and read its idle clock
  */
-export const touchSession = (
-    options?: SecondParameter<typeof orvalMutator<SessionActivityEnvelope>>
-) => {
-    return orvalMutator<SessionActivityEnvelope>(
+export const touchSession = (options?: SecondParameter<typeof orvalMutator<SessionActivity>>) => {
+    return orvalMutator<SessionActivity>(
         { url: `/account/sessions/current/touch`, method: 'POST' },
         options
     );
@@ -11392,13 +10588,8 @@ export const touchSession = (
  * Public, like `GET /antibot/config`: a client reads it once at boot and adapts, so it needs no switch of its own. `jwt` — a short access token in memory plus a rotating refresh cookie (`POST /account/refresh` exists). `cookie` — one HttpOnly `__Host-session` cookie, nothing to refresh, and every state-changing request that a cookie authenticates must come from an allowed `Origin`.
  * @summary How this deployment keeps people signed in
  */
-export const getSessionConfig = (
-    options?: SecondParameter<typeof orvalMutator<SessionConfigEnvelope>>
-) => {
-    return orvalMutator<SessionConfigEnvelope>(
-        { url: `/account/session-config`, method: 'GET' },
-        options
-    );
+export const getSessionConfig = (options?: SecondParameter<typeof orvalMutator<SessionConfig>>) => {
+    return orvalMutator<SessionConfig>({ url: `/account/session-config`, method: 'GET' }, options);
 };
 
 /**
@@ -11422,9 +10613,9 @@ export const downloadAccountExport = (
 export const setUserPurchaseHold = (
     id: string,
     setPurchaseHoldRequest: SetPurchaseHoldRequest,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>(
+    return orvalMutator<User>(
         {
             url: `/users/${id}/purchase-hold`,
             method: 'PUT',
@@ -11441,12 +10632,9 @@ export const setUserPurchaseHold = (
  */
 export const liftUserPurchaseHold = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>(
-        { url: `/users/${id}/purchase-hold`, method: 'DELETE' },
-        options
-    );
+    return orvalMutator<User>({ url: `/users/${id}/purchase-hold`, method: 'DELETE' }, options);
 };
 
 /**
@@ -11455,9 +10643,9 @@ export const liftUserPurchaseHold = (
  */
 export const activateUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>({ url: `/users/${id}/activate`, method: 'POST' }, options);
+    return orvalMutator<User>({ url: `/users/${id}/activate`, method: 'POST' }, options);
 };
 
 /**
@@ -11466,9 +10654,9 @@ export const activateUserById = (
  */
 export const deactivateUserById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<User>>
 ) => {
-    return orvalMutator<UserEnvelope>({ url: `/users/${id}/deactivate`, method: 'POST' }, options);
+    return orvalMutator<User>({ url: `/users/${id}/deactivate`, method: 'POST' }, options);
 };
 
 /**
@@ -11477,9 +10665,9 @@ export const deactivateUserById = (
  */
 export const mergeCart = (
     mergeCartRequest: MergeCartRequest,
-    options?: SecondParameter<typeof orvalMutator<MergeCartResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<MergeCartResponse>>
 ) => {
-    return orvalMutator<MergeCartResponseEnvelope>(
+    return orvalMutator<MergeCartResponse>(
         {
             url: `/cart/merge`,
             method: 'POST',
@@ -11521,9 +10709,9 @@ export const exportOrders = (
  */
 export const getOrderTimeline = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<OrderTimelineEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OrderTimelineResponse>>
 ) => {
-    return orvalMutator<OrderTimelineEnvelope>(
+    return orvalMutator<OrderTimelineResponse>(
         { url: `/orders/${id}/timeline`, method: 'GET' },
         options
     );
@@ -11536,9 +10724,9 @@ export const getOrderTimeline = (
 export const correctOrderShippingAddress = (
     id: string,
     replaceShippingAddressRequest: ReplaceShippingAddressRequest,
-    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Order>>
 ) => {
-    return orvalMutator<OrderEnvelope>(
+    return orvalMutator<Order>(
         {
             url: `/orders/${id}/shipping-address`,
             method: 'PUT',
@@ -11555,12 +10743,9 @@ export const correctOrderShippingAddress = (
  */
 export const listPayments = (
     params?: ListPaymentsParams,
-    options?: SecondParameter<typeof orvalMutator<PaymentsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PaymentsResponse>>
 ) => {
-    return orvalMutator<PaymentsResponseEnvelope>(
-        { url: `/payments`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<PaymentsResponse>({ url: `/payments`, method: 'GET', params }, options);
 };
 
 /**
@@ -11569,9 +10754,9 @@ export const listPayments = (
  */
 export const createPayment = (
     createPaymentRequest: CreatePaymentRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Payment>>
 ) => {
-    return orvalMutator<PaymentEnvelope>(
+    return orvalMutator<Payment>(
         {
             url: `/payments`,
             method: 'POST',
@@ -11588,9 +10773,9 @@ export const createPayment = (
  */
 export const searchPayments = (
     searchPaymentsRequest: SearchPaymentsRequest,
-    options?: SecondParameter<typeof orvalMutator<PaymentsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PaymentsResponse>>
 ) => {
-    return orvalMutator<PaymentsResponseEnvelope>(
+    return orvalMutator<PaymentsResponse>(
         {
             url: `/payments/search`,
             method: 'POST',
@@ -11607,22 +10792,22 @@ export const searchPayments = (
  */
 export const listRefunds = (
     params?: ListRefundsParams,
-    options?: SecondParameter<typeof orvalMutator<RefundsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<RefundsResponse>>
 ) => {
-    return orvalMutator<RefundsResponseEnvelope>(
+    return orvalMutator<RefundsResponse>(
         { url: `/payments/refunds`, method: 'GET', params },
         options
     );
 };
 
 /**
- * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
+ * Only problems still recorded on a document, so a fixed one disappears: refunds open past `NODE_PAYMENT_ATTENTION_MINUTES` (`stale_refund`), card refunds the provider refused for good (`refused_refund`: shown at once, the money has to go back another way), and refunds owed by hand on a `manual` payment (`manual_refund_owed`: the sweep never finishes those, so they show at any age). A cancelled order's refund is one of them, because its record opens before the provider is asked. Oldest first, each source capped at 100 rows. An amount mismatch is not here: it is an audit row (`payment.amount_mismatch`), not stored state. Needs `display:Payment`.
  * @summary Payments that need a person (staff)
  */
 export const listPaymentAttention = (
-    options?: SecondParameter<typeof orvalMutator<PaymentAttentionResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PaymentAttentionResponse>>
 ) => {
-    return orvalMutator<PaymentAttentionResponseEnvelope>(
+    return orvalMutator<PaymentAttentionResponse>(
         { url: `/payments/attention`, method: 'GET' },
         options
     );
@@ -11636,9 +10821,9 @@ export const listPaymentAttention = (
 export const settleRefundByHand = (
     id: string,
     refundId: Id,
-    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Payment>>
 ) => {
-    return orvalMutator<PaymentEnvelope>(
+    return orvalMutator<Payment>(
         { url: `/payments/${id}/refunds/${refundId}/settle`, method: 'POST' },
         options
     );
@@ -11658,9 +10843,9 @@ export const settleRefundByHand = (
  */
 export const previewReleaseDateImpact = (
     params: PreviewReleaseDateImpactParams,
-    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpactEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpact>>
 ) => {
-    return orvalMutator<ReleaseDateImpactEnvelope>(
+    return orvalMutator<ReleaseDateImpact>(
         { url: `/delivery/fulfillment-orders/release-date-impact`, method: 'GET', params },
         options
     );
@@ -11680,9 +10865,9 @@ export const previewReleaseDateImpact = (
  */
 export const previewRestockDateImpact = (
     params: PreviewRestockDateImpactParams,
-    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpactEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ReleaseDateImpact>>
 ) => {
-    return orvalMutator<ReleaseDateImpactEnvelope>(
+    return orvalMutator<ReleaseDateImpact>(
         { url: `/delivery/fulfillment-orders/restock-date-impact`, method: 'GET', params },
         options
     );
@@ -11694,9 +10879,9 @@ export const previewRestockDateImpact = (
  */
 export const getFulfillmentOrder = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<FulfillmentOrderEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<FulfillmentOrder>>
 ) => {
-    return orvalMutator<FulfillmentOrderEnvelope>(
+    return orvalMutator<FulfillmentOrder>(
         { url: `/delivery/fulfillment-orders/${id}`, method: 'GET' },
         options
     );
@@ -11708,12 +10893,9 @@ export const getFulfillmentOrder = (
  */
 export const getSalesStats = (
     params: GetSalesStatsParams,
-    options?: SecondParameter<typeof orvalMutator<SalesStatsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<SalesStats>>
 ) => {
-    return orvalMutator<SalesStatsEnvelope>(
-        { url: `/stats/sales`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<SalesStats>({ url: `/stats/sales`, method: 'GET', params }, options);
 };
 
 /**
@@ -11722,12 +10904,9 @@ export const getSalesStats = (
  */
 export const getProductStats = (
     params: GetProductStatsParams,
-    options?: SecondParameter<typeof orvalMutator<ProductStatsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ProductStats>>
 ) => {
-    return orvalMutator<ProductStatsEnvelope>(
-        { url: `/stats/products`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<ProductStats>({ url: `/stats/products`, method: 'GET', params }, options);
 };
 
 /**
@@ -11737,9 +10916,9 @@ export const getProductStats = (
 export const getProductSalesSeries = (
     productId: Id,
     params: GetProductSalesSeriesParams,
-    options?: SecondParameter<typeof orvalMutator<ProductSeriesEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ProductSeries>>
 ) => {
-    return orvalMutator<ProductSeriesEnvelope>(
+    return orvalMutator<ProductSeries>(
         { url: `/stats/products/${productId}`, method: 'GET', params },
         options
     );
@@ -11751,9 +10930,9 @@ export const getProductSalesSeries = (
  */
 export const getCategoryStats = (
     params: GetCategoryStatsParams,
-    options?: SecondParameter<typeof orvalMutator<CategoryStatsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CategoryStats>>
 ) => {
-    return orvalMutator<CategoryStatsEnvelope>(
+    return orvalMutator<CategoryStats>(
         { url: `/stats/categories`, method: 'GET', params },
         options
     );
@@ -11765,12 +10944,9 @@ export const getCategoryStats = (
  */
 export const getPaymentMixStats = (
     params: GetPaymentMixStatsParams,
-    options?: SecondParameter<typeof orvalMutator<PaymentMixEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<PaymentMix>>
 ) => {
-    return orvalMutator<PaymentMixEnvelope>(
-        { url: `/stats/payments`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<PaymentMix>({ url: `/stats/payments`, method: 'GET', params }, options);
 };
 
 /**
@@ -11779,9 +10955,9 @@ export const getPaymentMixStats = (
  */
 export const getOperationsStats = (
     params: GetOperationsStatsParams,
-    options?: SecondParameter<typeof orvalMutator<OperationsStatsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<OperationsStats>>
 ) => {
-    return orvalMutator<OperationsStatsEnvelope>(
+    return orvalMutator<OperationsStats>(
         { url: `/stats/operations`, method: 'GET', params },
         options
     );
@@ -11793,32 +10969,25 @@ export const getOperationsStats = (
  */
 export const getCustomerStats = (
     params: GetCustomerStatsParams,
-    options?: SecondParameter<typeof orvalMutator<CustomerStatsEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<CustomerStats>>
 ) => {
-    return orvalMutator<CustomerStatsEnvelope>(
-        { url: `/stats/customers`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<CustomerStats>({ url: `/stats/customers`, method: 'GET', params }, options);
 };
 
 /**
  * A snapshot, not a period: bank transfers awaiting money (count, amount incl. VAT, the nearest `payBy`) and paid orders not yet shipped. Needs `read:Stats`.
  * @summary What is waiting right now (staff)
  */
-export const getPipelineStats = (
-    options?: SecondParameter<typeof orvalMutator<PipelineStatsEnvelope>>
-) => {
-    return orvalMutator<PipelineStatsEnvelope>({ url: `/stats/pipeline`, method: 'GET' }, options);
+export const getPipelineStats = (options?: SecondParameter<typeof orvalMutator<PipelineStats>>) => {
+    return orvalMutator<PipelineStats>({ url: `/stats/pipeline`, method: 'GET' }, options);
 };
 
 /**
  * The two ceilings every period read enforces, so a form can refuse a period before a round trip does: the most calendar days (inclusive) and the most buckets one request may cover. Needs `read:Stats`.
  * @summary How big a period may be (staff)
  */
-export const getStatsLimits = (
-    options?: SecondParameter<typeof orvalMutator<StatsLimitsEnvelope>>
-) => {
-    return orvalMutator<StatsLimitsEnvelope>({ url: `/stats/limits`, method: 'GET' }, options);
+export const getStatsLimits = (options?: SecondParameter<typeof orvalMutator<StatsLimits>>) => {
+    return orvalMutator<StatsLimits>({ url: `/stats/limits`, method: 'GET' }, options);
 };
 
 /**
@@ -11827,9 +10996,9 @@ export const getStatsLimits = (
  */
 export const getInventoryLevel = (
     productId: Id,
-    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<InventoryLevel>>
 ) => {
-    return orvalMutator<InventoryLevelEnvelope>(
+    return orvalMutator<InventoryLevel>(
         { url: `/inventory/levels/${productId}`, method: 'GET' },
         options
     );
@@ -11845,9 +11014,9 @@ export const getInventoryLevel = (
  */
 export const enableWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         { url: `/webhooks/subscriptions/${id}/enable`, method: 'POST' },
         options
     );
@@ -11862,9 +11031,9 @@ export const enableWebhookSubscription = (
  */
 export const disableWebhookSubscription = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookSubscriptionEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookSubscription>>
 ) => {
-    return orvalMutator<WebhookSubscriptionEnvelope>(
+    return orvalMutator<WebhookSubscription>(
         { url: `/webhooks/subscriptions/${id}/disable`, method: 'POST' },
         options
     );
@@ -11876,9 +11045,9 @@ export const disableWebhookSubscription = (
  */
 export const getWebhookDelivery = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<WebhookDeliveryEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<WebhookDelivery>>
 ) => {
-    return orvalMutator<WebhookDeliveryEnvelope>(
+    return orvalMutator<WebhookDelivery>(
         { url: `/webhooks/deliveries/${id}`, method: 'GET' },
         options
     );
@@ -11890,12 +11059,9 @@ export const getWebhookDelivery = (
  */
 export const getPublishedExample = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>(
-        { url: `/examples/published/${id}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<Example>({ url: `/examples/published/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -11904,12 +11070,9 @@ export const getPublishedExample = (
  */
 export const listExamples = (
     params?: ListExamplesParams,
-    options?: SecondParameter<typeof orvalMutator<ExamplesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ExamplesResponse>>
 ) => {
-    return orvalMutator<ExamplesResponseEnvelope>(
-        { url: `/examples`, method: 'GET', params },
-        options
-    );
+    return orvalMutator<ExamplesResponse>({ url: `/examples`, method: 'GET', params }, options);
 };
 
 /**
@@ -11918,9 +11081,9 @@ export const listExamples = (
  */
 export const createExample = (
     createExampleRequest: CreateExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>(
+    return orvalMutator<Example>(
         {
             url: `/examples`,
             method: 'POST',
@@ -11937,9 +11100,9 @@ export const createExample = (
  */
 export const searchExamples = (
     searchExamplesRequest: SearchExamplesRequest,
-    options?: SecondParameter<typeof orvalMutator<ExamplesResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<ExamplesResponse>>
 ) => {
-    return orvalMutator<ExamplesResponseEnvelope>(
+    return orvalMutator<ExamplesResponse>(
         {
             url: `/examples/search`,
             method: 'POST',
@@ -11956,9 +11119,9 @@ export const searchExamples = (
  */
 export const getExampleById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>({ url: `/examples/${id}`, method: 'GET' }, options);
+    return orvalMutator<Example>({ url: `/examples/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -11968,9 +11131,9 @@ export const getExampleById = (
 export const replaceExampleById = (
     id: string,
     replaceExampleRequest: ReplaceExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>(
+    return orvalMutator<Example>(
         {
             url: `/examples/${id}`,
             method: 'PUT',
@@ -11988,9 +11151,9 @@ export const replaceExampleById = (
 export const updateExampleById = (
     id: string,
     updateExampleRequest: UpdateExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>(
+    return orvalMutator<Example>(
         {
             url: `/examples/${id}`,
             method: 'PATCH',
@@ -12008,9 +11171,9 @@ export const updateExampleById = (
 export const updateExampleByIdWithMergePatchJson = (
     id: string,
     updateExampleRequest: UpdateExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>(
+    return orvalMutator<Example>(
         {
             url: `/examples/${id}`,
             method: 'PATCH',
@@ -12027,9 +11190,9 @@ export const updateExampleByIdWithMergePatchJson = (
  */
 export const deleteExampleById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/examples/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<NoContentResponse>({ url: `/examples/${id}`, method: 'DELETE' }, options);
 };
 
 /**
@@ -12039,9 +11202,9 @@ export const deleteExampleById = (
 export const transitionExample = (
     id: string,
     transitionExampleRequest: TransitionExampleRequest,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
-    return orvalMutator<ExampleEnvelope>(
+    return orvalMutator<Example>(
         {
             url: `/examples/${id}/transitions`,
             method: 'POST',
@@ -12059,12 +11222,12 @@ export const transitionExample = (
 export const replaceExampleCover = (
     id: string,
     replaceExampleCoverRequestMultipart: ReplaceExampleCoverRequestMultipart,
-    options?: SecondParameter<typeof orvalMutator<ExampleEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Example>>
 ) => {
     const formData = new FormData();
     formData.append(`imageUpload`, replaceExampleCoverRequestMultipart.imageUpload);
 
-    return orvalMutator<ExampleEnvelope>(
+    return orvalMutator<Example>(
         {
             url: `/examples/${id}/cover`,
             method: 'PUT',
@@ -12080,12 +11243,9 @@ export const replaceExampleCover = (
  * @summary List notifications
  */
 export const listNotifications = (
-    options?: SecondParameter<typeof orvalMutator<NotificationsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<NotificationsResponse>>
 ) => {
-    return orvalMutator<NotificationsResponseEnvelope>(
-        { url: `/notifications`, method: 'GET' },
-        options
-    );
+    return orvalMutator<NotificationsResponse>({ url: `/notifications`, method: 'GET' }, options);
 };
 
 /**
@@ -12101,9 +11261,9 @@ export const getNotificationsStream = (options?: SecondParameter<typeof orvalMut
  * @summary Mark every notification read
  */
 export const readAllNotifications = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/notifications/read-all`, method: 'POST' },
         options
     );
@@ -12114,9 +11274,9 @@ export const readAllNotifications = (
  * @summary Delete every notification
  */
 export const dismissAllNotifications = (
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/notifications/dismiss-all`, method: 'POST' },
         options
     );
@@ -12128,12 +11288,9 @@ export const dismissAllNotifications = (
  */
 export const getNotificationById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<NotificationEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<Notification>>
 ) => {
-    return orvalMutator<NotificationEnvelope>(
-        { url: `/notifications/${id}`, method: 'GET' },
-        options
-    );
+    return orvalMutator<Notification>({ url: `/notifications/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -12142,9 +11299,9 @@ export const getNotificationById = (
  */
 export const deleteNotificationById = (
     id: string,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<NoContentResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<NoContentResponse>(
         { url: `/notifications/${id}`, method: 'DELETE' },
         options
     );
@@ -12154,8 +11311,8 @@ export const deleteNotificationById = (
  * Everything a visitor is entitled to know before a sale: the seller's legal identity (Consumer Rights Directive Art. 6(1), e-Commerce Directive Art. 5), the one currency every price is quoted in, the countries the shop ships to, where returned goods go, the version of the Terms in force and the backorder promise in days. Public and cheap to read; it never changes without a redeploy. Not published: the shop's time zone, and the bank-transfer details, which travel on each order.
  * @summary The shop's identity, currency, ship-to countries and return address
  */
-export const getShop = (options?: SecondParameter<typeof orvalMutator<ShopEnvelope>>) => {
-    return orvalMutator<ShopEnvelope>({ url: `/shop`, method: 'GET' }, options);
+export const getShop = (options?: SecondParameter<typeof orvalMutator<Shop>>) => {
+    return orvalMutator<Shop>({ url: `/shop`, method: 'GET' }, options);
 };
 
 /**
@@ -12197,12 +11354,9 @@ export const getSitemapProducts = (
  * @summary List my back-in-stock requests
  */
 export const listStockAlerts = (
-    options?: SecondParameter<typeof orvalMutator<StockAlertsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>
 ) => {
-    return orvalMutator<StockAlertsResponseEnvelope>(
-        { url: `/stock-alerts`, method: 'GET' },
-        options
-    );
+    return orvalMutator<StockAlertsResponse>({ url: `/stock-alerts`, method: 'GET' }, options);
 };
 
 /**
@@ -12211,9 +11365,9 @@ export const listStockAlerts = (
  */
 export const createStockAlert = (
     createStockAlertRequest: CreateStockAlertRequest,
-    options?: SecondParameter<typeof orvalMutator<StockAlertsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>
 ) => {
-    return orvalMutator<StockAlertsResponseEnvelope>(
+    return orvalMutator<StockAlertsResponse>(
         {
             url: `/stock-alerts`,
             method: 'POST',
@@ -12230,9 +11384,9 @@ export const createStockAlert = (
  */
 export const deleteStockAlert = (
     productId: string,
-    options?: SecondParameter<typeof orvalMutator<StockAlertsResponseEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<StockAlertsResponse>>
 ) => {
-    return orvalMutator<StockAlertsResponseEnvelope>(
+    return orvalMutator<StockAlertsResponse>(
         { url: `/stock-alerts/${productId}`, method: 'DELETE' },
         options
     );

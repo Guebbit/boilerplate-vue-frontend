@@ -13,10 +13,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -46,7 +43,7 @@ const rejectWith = (status: number, message: string, code = 'STUB_ERROR') =>
     Promise.reject(aProblem(status, [{ code, message }]));
 
 /**
- * A stubbed API-level refusal, distinct from the success fixtures `orvalEnvelope` builds.
+ * A stubbed API-level refusal, distinct from the success bodies the other fixtures are.
  */
 interface Declined {
     status: number;
@@ -72,7 +69,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'POST /payments/orders/o1/offline': orvalEnvelope(PAYMENT)
+        'POST /payments/orders/o1/offline': PAYMENT
     };
 });
 

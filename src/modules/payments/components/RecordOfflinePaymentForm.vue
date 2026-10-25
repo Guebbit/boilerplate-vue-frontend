@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { RecordOfflinePaymentRequestMethod } from '@/types/enums.ts';
 import { usePaymentsStore } from '../store.ts';
+import { offlineReferenceMax } from '../schemas.ts';
 import { useRecordOfflinePayment } from '../composables/use-record-offline-payment.ts';
 import { useBlockingError } from '@/infrastructure/utils/use-blocking-error.ts';
 import InlineErrorAlert from '@/ui/molecules/InlineErrorAlert.vue';
@@ -87,7 +88,7 @@ const schema = z.object({
     method: z.enum(RecordOfflinePaymentRequestMethod, {
         error: () => t('record-offline-payment-form.error-method-required')
     }),
-    reference: z.string().max(120).optional(),
+    reference: z.string().max(offlineReferenceMax).optional(),
     receivedAt: z.string().optional()
 });
 

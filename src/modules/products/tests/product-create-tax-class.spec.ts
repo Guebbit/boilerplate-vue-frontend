@@ -14,10 +14,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -66,24 +63,18 @@ beforeEach(() => {
     vi.mocked(orvalMutator).mockReset();
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         if (config.url === '/locales')
-            return Promise.resolve(
-                parseOrvalFixture('GET', '/locales', orvalEnvelope(LOCALES_RESPONSE))
-            );
+            return Promise.resolve(parseOrvalFixture('GET', '/locales', LOCALES_RESPONSE));
         if (config.method === 'POST')
             return Promise.resolve(
-                parseOrvalFixture(
-                    'POST',
-                    '/products',
-                    orvalEnvelope({
-                        id: 'p2',
-                        title: 'New',
-                        price: 1,
-                        inStock: true,
-                        lowStock: false
-                    })
-                )
+                parseOrvalFixture('POST', '/products', {
+                    id: 'p2',
+                    title: 'New',
+                    price: 1,
+                    inStock: true,
+                    lowStock: false
+                })
             );
-        return Promise.resolve(orvalEnvelope());
+        return Promise.resolve(undefined);
     });
     return loadLocale('en').then(() =>
         router.push('/en/products/new').then(() => router.isReady())

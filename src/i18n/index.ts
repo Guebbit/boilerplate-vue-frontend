@@ -70,7 +70,7 @@ type TranslateFunction = (key: string, named?: Record<string, unknown>) => strin
  * the whole run dies in the dry run rather than producing a surviving mutant.
  */
 // Stryker disable next-line StringLiteral: Vite requires a static literal here; see above.
-const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map((file) =>
+export const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map((file) =>
     file.replace('/src/locales/', '').replace('.json', '')
 );
 

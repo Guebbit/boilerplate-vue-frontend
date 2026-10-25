@@ -5,9 +5,10 @@ The **Auth** column shows what the backend requires: `none`, `user` (a signed-in
 
 > The backend-specific implementation details (Redis caching strategy, RabbitMQ events, PDF generation) are intentionally omitted here — they are transparent to the FE. What matters to the FE is the HTTP method, path, auth requirement, and response shape.
 
-## The envelope every row below travels in
+## The answers every row below travels in
 
-Every endpoint on this page answers in the same wrapper, and every rejection reaches a call site as
+Every endpoint on this page answers a success with the resource itself (a list is `{ items, meta }`, a
+result with nothing to say is a body-less `204`), and every rejection reaches a call site as
 the same problem-details document (RFC 9457). That normalisation is the http tier's job, not each store's:
 
 ```mermaid
@@ -15,12 +16,12 @@ flowchart TD
     C["A store calls the generated client"] --> I["axios instance<br/>infrastructure/http"]
     I --> API[["The API"]]
 
-    API -->|"2xx"| OK["{ success, status, message, data }"]
+    API -->|"2xx"| OK["the resource, or { items, meta }, or 204"]
     OK --> V{"VITE_VALIDATE_RESPONSES?"}
     V -->|"on"| Z["Zod-parsed against this route's row<br/>in the module's response-schemas.ts"]
     V -->|"off"| U
-    Z --> U["orvalMutator unwraps to the payload"]
-    U --> S["The store's .then receives the payload"]
+    Z --> U["orvalMutator resolves with the body (undefined for 204)"]
+    U --> S["The store's .then receives the body"]
 
     API -->|"4xx / 5xx"| E["problem+json: { type, title, status, detail, errors[] }"]
     API -.->|"no answer at all"| X["transport failure"]

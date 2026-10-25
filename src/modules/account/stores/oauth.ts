@@ -9,7 +9,6 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { listOAuthProviders as apiListOAuthProviders } from '@api';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { instance } from '@/infrastructure/http/client.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { StartOAuthLoginParams } from '@api';
@@ -110,8 +109,7 @@ export const useOAuthProvidersStore = defineStore('accountOAuthProviders', () =>
         if (loaded.value) return Promise.resolve(providers.value);
         return fetchAny(() =>
             apiListOAuthProviders().then((data) => {
-                const payload = getPayloadFromResponse<{ providers: string[] }>(data);
-                providers.value = payload?.providers ?? [];
+                providers.value = data.providers;
                 loaded.value = true;
                 return providers.value;
             })

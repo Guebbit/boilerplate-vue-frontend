@@ -29,7 +29,6 @@ import {
 } from '../../../../tests/support/unit/fixtures.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import * as schemas from '@api/schemas';
@@ -73,7 +72,7 @@ const USER_WITH_CONTACT = aUser({
 let loadedUser = LOADED_USER;
 
 /**
- * Answers every GET with {@link LOADED_USER} and every PATCH with a bare success envelope.
+ * Answers every GET with {@link LOADED_USER} and every other call with no body.
  */
 const mockTransport = () => {
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
@@ -81,7 +80,7 @@ const mockTransport = () => {
             parseOrvalFixture(
                 config.method,
                 config.url,
-                config.method === 'GET' ? orvalEnvelope(loadedUser) : orvalEnvelope()
+                config.method === 'GET' ? loadedUser : undefined
             )
         )
     );
@@ -285,9 +284,7 @@ describe('UserEdit — a save answered 412', () => {
             config.method === 'PATCH'
                 ? // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
                   Promise.reject(PRECONDITION_FAILED)
-                : Promise.resolve(
-                      parseOrvalFixture(config.method, config.url, orvalEnvelope(loadedUser))
-                  )
+                : Promise.resolve(parseOrvalFixture(config.method, config.url, loadedUser))
         );
     };
 

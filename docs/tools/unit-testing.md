@@ -57,8 +57,8 @@ A domain store is tested by stubbing where the network starts, not by hitting on
 
 ```ts
 vi.mock('@api', () => ({
-    getCart: vi.fn(() => Promise.resolve({ data: CART })),
-    addCartItem: vi.fn(() => Promise.resolve({ data: CART }))
+    getCart: vi.fn(() => Promise.resolve(CART)),
+    addCartItem: vi.fn(() => Promise.resolve(CART))
 }));
 ```
 
@@ -70,7 +70,7 @@ vi.mock('@api', () => ({
 
 ```ts
 const server = setupServer(
-    http.get(`${API}/account/refresh`, () => HttpResponse.json({ data: { token: 'fresh-token' } })),
+    http.get(`${API}/account/refresh`, () => HttpResponse.json({ token: 'fresh-token' })),
     http.get(`${API}/orders`, ({ request }) => /* 401 unless Authorization matches */ )
 );
 ```

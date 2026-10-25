@@ -91,12 +91,10 @@ beforeEach(() => {
     vi.mocked(searchProducts).mockImplementation((body) =>
         Promise.resolve(
             asStub<Awaited<ReturnType<typeof searchProducts>>>({
-                data: {
-                    items: (body.id ?? [])
-                        .filter((id) => id !== 'gone')
-                        .map((id) => ({ id, title: `Title of ${id}`, price: 1, currency: 'EUR' })),
-                    meta: { totalItems: 0, totalPages: 1 }
-                }
+                items: (body.id ?? [])
+                    .filter((id) => id !== 'gone')
+                    .map((id) => ({ id, title: `Title of ${id}`, price: 1, currency: 'EUR' })),
+                meta: { totalItems: 0, totalPages: 1 }
             })
         )
     );

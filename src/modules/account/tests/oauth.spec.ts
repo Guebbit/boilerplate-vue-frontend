@@ -9,10 +9,7 @@ import { useOAuthProvidersStore, oauthStartUrl, providerLabel } from '../stores/
 import { orvalMutator } from '@/infrastructure/http';
 import { instance } from '@/infrastructure/http/client.ts';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -35,7 +32,7 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/providers': orvalEnvelope({ providers: ['google', 'github'] })
+        'GET /account/oauth/providers': { providers: ['google', 'github'] }
     };
 });
 
@@ -114,20 +111,6 @@ describe('useOAuthProvidersStore', () => {
                 expect(orvalMutator).toHaveBeenCalledTimes(1);
             }));
 
-    it('a payload with no list reads as no providers', () => {
-        // `providers` is required by the real contract, so this exact payload is impossible
-        // against it — it bypasses `parseOrvalFixture` on purpose to pin the store's OWN defence
-        // for that state, same as `addresses.spec.ts`'s book-less case.
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
-        return useOAuthProvidersStore()
-            .fetchProviders()
-            .then((providers) => {
-                expect(providers).toEqual([]);
-            });
-    });
-
     it('a failed request resolves to the empty list and stays retryable', () => {
         responses['GET /account/oauth/providers'] = new Error('network down');
         const store = useOAuthProvidersStore();
@@ -137,9 +120,9 @@ describe('useOAuthProvidersStore', () => {
             .then((providers) => {
                 expect(providers).toEqual([]);
                 // Not cached as "no providers, forever" — a transient failure gets another try.
-                responses['GET /account/oauth/providers'] = orvalEnvelope({
+                responses['GET /account/oauth/providers'] = {
                     providers: ['github']
-                });
+                };
                 return store.fetchProviders();
             })
             .then((providers) => {

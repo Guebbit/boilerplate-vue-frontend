@@ -42,7 +42,7 @@ flowchart LR
         HTTP -->|refresh, replay once| Backend
         HTTP -->|REAUTH_REQUIRED| Step["Step-up prompt\n(ReauthDialog)"]
     else any other failure
-        HTTP -->|normalised envelope| Store
+        HTTP -->|normalised problem| Store
         Store -->|rejects to| Caller["Call site\ntoast or in-place alert,\nreported to Faro"]
     end
 

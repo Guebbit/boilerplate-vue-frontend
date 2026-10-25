@@ -55,7 +55,7 @@ export const backorderPromiseDays = computed(() => shop.value?.backorderPromiseD
 export const loadShop = (): Promise<Shop | undefined> => {
     loading ??= getShop()
         .then((response) => {
-            shop.value = response.data;
+            shop.value = response;
             return shop.value;
         })
         .catch((error: unknown) => {

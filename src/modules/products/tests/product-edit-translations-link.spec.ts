@@ -20,10 +20,7 @@ import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -75,33 +72,27 @@ beforeEach(() => {
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) => {
         if (config.url === '/locales')
             return Promise.resolve(
-                parseOrvalFixture(
-                    'GET',
-                    '/locales',
-                    orvalEnvelope({
-                        locales: [
-                            {
-                                tag: 'en',
-                                name: 'English',
-                                nativeName: 'English',
-                                direction: 'ltr',
-                                active: true,
-                                apps: ['demo-fe'],
-                                source: 'static',
-                                entryCount: 0,
-                                revision: 1
-                            }
-                        ],
-                        default: 'en',
-                        fallback: 'en'
-                    })
-                )
+                parseOrvalFixture('GET', '/locales', {
+                    locales: [
+                        {
+                            tag: 'en',
+                            name: 'English',
+                            nativeName: 'English',
+                            direction: 'ltr',
+                            active: true,
+                            apps: ['demo-fe'],
+                            source: 'static',
+                            entryCount: 0,
+                            revision: 1
+                        }
+                    ],
+                    default: 'en',
+                    fallback: 'en'
+                })
             );
         if (config.url === '/products/p1/admin')
-            return Promise.resolve(
-                parseOrvalFixture('GET', '/products/p1/admin', orvalEnvelope(ADMIN_PRODUCT))
-            );
-        return Promise.resolve(orvalEnvelope());
+            return Promise.resolve(parseOrvalFixture('GET', '/products/p1/admin', ADMIN_PRODUCT));
+        return Promise.resolve(undefined);
     });
     return loadLocale('en');
 });

@@ -33,7 +33,7 @@ const stubFetch = (...responses: Response[]) => {
 };
 
 /** `GET /account/session-config`'s answer for the given mode. */
-const modeAnswer = (mode: 'jwt' | 'cookie') => answer(200, { data: { mode } });
+const modeAnswer = (mode: 'jwt' | 'cookie') => answer(200, { mode });
 
 /** A `jwt`-mode device: an access token and a refresh cookie. */
 const device: Device = {
@@ -80,7 +80,7 @@ describe('deviceLogin', () => {
     it('keeps the access token and the refresh cookie the login issued', async () => {
         stubFetch(
             modeAnswer('jwt'),
-            answer(200, { data: { token: 'access-1' } }, ['__Host-session=refresh-1; Path=/'])
+            answer(200, { token: 'access-1' }, ['__Host-session=refresh-1; Path=/'])
         );
 
         await expect(
@@ -89,10 +89,7 @@ describe('deviceLogin', () => {
     });
 
     it('in cookie mode keeps the session cookie and no token: the body carries none', async () => {
-        stubFetch(
-            modeAnswer('cookie'),
-            answer(200, { data: {} }, ['__Host-session=ses_abc; Path=/'])
-        );
+        stubFetch(modeAnswer('cookie'), answer(200, {}, ['__Host-session=ses_abc; Path=/']));
 
         await expect(
             deviceLogin({ apiUrl: 'http://api.test', email: 'a@b.c', password: 'pw' })
@@ -100,7 +97,7 @@ describe('deviceLogin', () => {
     });
 
     it('throws when the deployment names no known session mode', async () => {
-        stubFetch(answer(200, { data: { mode: 'other' } }));
+        stubFetch(answer(200, { mode: 'other' }));
 
         await expect(
             deviceLogin({ apiUrl: 'http://api.test', email: 'a@b.c', password: 'pw' })
@@ -116,10 +113,7 @@ describe('deviceLogin', () => {
     });
 
     it('throws when a two-factor challenge came back instead of a token', async () => {
-        stubFetch(
-            modeAnswer('jwt'),
-            answer(200, { data: { mfaRequired: true } }, ['__Host-session=x'])
-        );
+        stubFetch(modeAnswer('jwt'), answer(200, { mfaRequired: true }, ['__Host-session=x']));
 
         await expect(
             deviceLogin({ apiUrl: 'http://api.test', email: 'a@b.c', password: 'pw' })
@@ -130,7 +124,7 @@ describe('deviceLogin', () => {
 describe('deviceRefresh', () => {
     it('sends its own cookie and becomes the rotated device', async () => {
         const calls = stubFetch(
-            answer(200, { data: { token: 'access-2' } }, ['__Host-session=refresh-2; Path=/'])
+            answer(200, { token: 'access-2' }, ['__Host-session=refresh-2; Path=/'])
         );
 
         const refreshed = await deviceRefresh(device);
@@ -146,7 +140,7 @@ describe('deviceRefresh', () => {
     });
 
     it('in cookie mode asks GET /account instead: there is no refresh endpoint', async () => {
-        const calls = stubFetch(answer(200, { data: { id: 'u1' } }));
+        const calls = stubFetch(answer(200, { id: 'u1' }));
 
         const refreshed = await deviceRefresh(cookieDevice);
 

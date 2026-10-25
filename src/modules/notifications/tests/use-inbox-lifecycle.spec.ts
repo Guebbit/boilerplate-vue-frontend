@@ -20,10 +20,7 @@ import { loadLocale } from '@/i18n';
 import type { SseClientCallbacks } from '@/infrastructure/create-sse-client';
 import type { Notification, SseEventName } from '@types';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -63,11 +60,7 @@ vi.mock('@/infrastructure/http', () => ({
         readFailure
             ? Promise.reject(readFailure as Error)
             : Promise.resolve(
-                  parseOrvalFixture(
-                      config.method,
-                      config.url,
-                      orvalEnvelope({ items: inboxOnServer })
-                  )
+                  parseOrvalFixture(config.method, config.url, { items: inboxOnServer })
               )
     )
 }));

@@ -40,12 +40,7 @@ actionTable('stats', [
         route: '/en/sales/stats',
         intercept: { method: 'GET', url: '**/stats/sales*', operation: '/stats/sales' },
         kind: 'empty',
-        emptyBody: {
-            success: true,
-            status: 200,
-            message: 'OK',
-            data: { period: EMPTY_PERIOD, currencies: [] }
-        },
+        emptyBody: { period: EMPTY_PERIOD, currencies: [] },
         emptySchema: GetSalesStatsResponse,
         empty: { copy: '[data-test=sales-empty]', rows: '[data-test=sales-currency]' }
     },
@@ -55,12 +50,7 @@ actionTable('stats', [
         route: '/en/sales/stats',
         intercept: { method: 'GET', url: '**/stats/products*', operation: '/stats/products' },
         kind: 'empty',
-        emptyBody: {
-            success: true,
-            status: 200,
-            message: 'OK',
-            data: { period: EMPTY_PERIOD, products: [] }
-        },
+        emptyBody: { period: EMPTY_PERIOD, products: [] },
         emptySchema: GetProductStatsResponse,
         empty: { copy: '[data-test=products-empty]', rows: '[data-test=products-table]' }
     }
