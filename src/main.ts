@@ -6,7 +6,7 @@
  * no step can race the one after it. The response-schema contract loads lazily, after mount,
  * instead of joining that chain.
  */
-import { createApp } from 'vue';
+import { createApp, watch } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { i18n } from '@/i18n';
@@ -149,6 +149,14 @@ const bootstrapApplication = () =>
             // tab adopts its session by this mode, and no `isAuth` cookie exists yet to trigger
             // the read in the restore guard. Shared with that guard's call; never rejects.
             void useSessionStore().loadSessionMode();
+
+            // The language manifest differs per caller (staff also see draft languages), but the
+            // boot read ran before any session existed. Re-read it whenever the session changes
+            // (sign-in, restore, sign-out); `isAuth` flips on all three. Never rejects.
+            watch(
+                () => useSessionStore().isAuth,
+                () => void mergeRemoteLocales()
+            );
 
             // Grafana Faro (crash reports, tracing, web-vitals) and Umami (product analytics) both
             // load only if this visitor already said yes (the guest cookie); Umami also loads when
