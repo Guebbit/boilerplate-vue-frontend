@@ -49,13 +49,13 @@ const offeredToGuests = (): Cypress.Chainable<'absent' | 'listed-off' | 'offered
     cy
         .env(['apiUrl'])
         .then(({ apiUrl }) =>
-            cy.task<{ body: { data: LocalesAnswer } }>('guestApi', {
+            cy.task<{ body: LocalesAnswer }>('guestApi', {
                 apiUrl: String(apiUrl),
                 path: '/locales'
             })
         )
         .then((response) => {
-            const row = response.body.data.locales.find((found) => found.tag === TAG);
+            const row = response.body.locales.find((found) => found.tag === TAG);
             if (!row) return 'absent';
             return row.active ? 'offered' : 'listed-off';
         });

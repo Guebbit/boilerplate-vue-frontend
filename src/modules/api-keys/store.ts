@@ -51,10 +51,10 @@ export const useApiKeysStore = defineStore('api-keys', () => {
         {
             search: (_filters, page, size) =>
                 listApiKeys({ page, pageSize: size }).then((response) => {
-                    maxExpiresAt.value = response.data.maxExpiresAt;
+                    maxExpiresAt.value = response.maxExpiresAt;
                     return {
-                        items: response.data.items,
-                        totalItems: response.data.meta.totalItems
+                        items: response.items,
+                        totalItems: response.meta.totalItems
                     };
                 })
         },
@@ -79,7 +79,7 @@ export const useApiKeysStore = defineStore('api-keys', () => {
      */
     const mintCredential = (data: MintApiKeyRequest) =>
         fetchAny(() =>
-            mintApiKey(data).then(({ data: created }) => {
+            mintApiKey(data).then((created) => {
                 const { secret: _secret, ...record } = created;
                 // A key just minted is live: the mint response carries no status of its own.
                 editApiKeyRecord({ ...record, status: 'active' }, record.id);
@@ -88,9 +88,9 @@ export const useApiKeysStore = defineStore('api-keys', () => {
         );
 
     /**
-     * Revokes a credential. `RevokeApiKeyResponse` is a bare success envelope with no updated
-     * record in it (unlike webhooks' replay), so this cannot be `updateTarget` over the raw
-     * response — the row is patched by hand instead.
+     * Revokes a credential. The revoke answers 204 with no body, so there is no updated record
+     * (unlike webhooks' replay) and this cannot be `updateTarget` over the raw response — the row
+     * is patched by hand instead.
      *
      * An optimistic local timestamp is fine: revocation is immediate server-side, no grace
      * window. `false` (the `create` argument) is load-bearing — `editRecord` defaults to

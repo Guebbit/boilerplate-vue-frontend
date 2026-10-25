@@ -12,7 +12,7 @@ import { refuseALogin } from '../../../support/e2e/steps';
 
 /** The slice of `GET /observability/health` this story reads: each worker queue's parked depth. */
 interface HealthLike {
-    data: { queues?: { name: string; parked: number }[] };
+    queues?: { name: string; parked: number }[];
 }
 
 describe('AT4 · Housekeeping on the admin page', () => {
@@ -35,7 +35,7 @@ describe('AT4 · Housekeeping on the admin page', () => {
         cy.get('[data-test=admin-overview-refresh]').should('not.be.disabled').click();
         cy.wait('@health').then(({ response }) => {
             expect(response?.statusCode).to.equal(200);
-            cy.wrap((response?.body as HealthLike).data.queues ?? []).as('queues');
+            cy.wrap((response?.body as HealthLike).queues ?? []).as('queues');
         });
         cy.wait('@overview').its('response.statusCode').should('equal', 200);
 

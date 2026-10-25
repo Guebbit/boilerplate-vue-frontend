@@ -8,7 +8,6 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { listSessions as apiListSessions, revokeSession as apiRevokeSession } from '@api';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
 import type { Session } from '@types';
 
@@ -42,8 +41,7 @@ export const useAccountSessionsStore = defineStore('accountSessions', () => {
     const fetchSessions = () =>
         fetchAny(() =>
             apiListSessions().then((data) => {
-                const payload = getPayloadFromResponse<{ sessions: Session[] }>(data);
-                sessions.value = payload?.sessions ?? [];
+                sessions.value = data.sessions;
                 return sessions.value;
             })
         );

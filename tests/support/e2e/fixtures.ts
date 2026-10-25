@@ -229,11 +229,10 @@ const publicProductsPage = (
     cy
         .request(`${apiUrl}/products?pageSize=${String(PUBLIC_PAGE_SIZE)}&page=${String(page)}`)
         .then((response) => {
-            const { items, meta } = (
-                response.body as {
-                    data: { items: ProductLike[]; meta: { totalPages: number } };
-                }
-            ).data;
+            const { items, meta } = response.body as {
+                items: ProductLike[];
+                meta: { totalPages: number };
+            };
             return { items, totalPages: meta.totalPages };
         });
 
@@ -264,7 +263,7 @@ Cypress.Commands.add('subjectProduct', (name: string) =>
                 .then(({ apiUrl }) =>
                     cy
                         .request(`${String(apiUrl)}/products/${id}`)
-                        .then((response) => (response.body as { data: ProductLike }).data)
+                        .then((response) => response.body as ProductLike)
                 )
         )
 );

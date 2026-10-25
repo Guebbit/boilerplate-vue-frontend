@@ -8,12 +8,7 @@ import { actionTable } from '../../../../../tests/support/e2e/action-table';
 import { SearchOrdersResponse } from '../../../../../contracts/rest/schemas.zod';
 
 /** A list answer with nothing in it, for the list read the empty rows stub. */
-const emptyPage = {
-    success: true,
-    status: 200,
-    message: 'OK',
-    data: { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }
-};
+const emptyPage = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } };
 
 actionTable('orders', [
     {

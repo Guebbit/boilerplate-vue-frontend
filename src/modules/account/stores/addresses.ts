@@ -16,14 +16,7 @@ import {
     setDefaultAddress as apiSetDefaultAddress,
     removeAddress as apiRemoveAddress
 } from '@api';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
-import type {
-    Address,
-    AddressesEnvelope,
-    AddressesResponse,
-    AddressInput,
-    UpdateAddressRequest
-} from '@types';
+import type { Address, AddressesResponse, AddressInput, UpdateAddressRequest } from '@types';
 
 /**
  * The visitor's address book. Scoped to `ProfileAddresses.vue`, the only component that renders
@@ -50,13 +43,12 @@ export const useAddressesStore = defineStore('accountAddresses', () => {
      * Replace the local book with the payload the book's own endpoints answer with (the read and
      * the delete).
      *
-     * Typed as the generated envelope rather than `unknown`, so the call sites are checked against
+     * Typed as the generated schema rather than `unknown`, so the call sites are checked against
      * the contract instead of being waved through a cast: the day an endpoint stops answering with
      * the address book, this stops compiling.
      */
-    const readAddressesResponse = (data: AddressesEnvelope) => {
-        const payload = getPayloadFromResponse<AddressesResponse>(data);
-        addresses.value = payload?.addresses ?? [];
+    const readAddressesResponse = (data: AddressesResponse) => {
+        addresses.value = data.addresses;
         return addresses.value;
     };
 

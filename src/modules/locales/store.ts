@@ -75,7 +75,7 @@ const fetchApiDictionary = (tag: string): Promise<Record<string, string>> =>
     getLocaleDictionary(tag)
         .then((response) =>
             Object.fromEntries(
-                flattenDictionary(response.data.messages as TranslationDictionaries).map(
+                flattenDictionary(response.messages as TranslationDictionaries).map(
                     ({ key, value }) => [key, value]
                 )
             )
@@ -154,8 +154,8 @@ export const useLocalesStore = defineStore('locales', () => {
                     pageSize: size,
                     text: searchFilters.text
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 }))
         },
         { resourceKey: 'locales', queryClient: sharedQueryClient }
@@ -218,7 +218,7 @@ export const useLocalesStore = defineStore('locales', () => {
     const fetchApps = () =>
         fetchAny(() =>
             listLocaleApps().then((response) => {
-                apps.value = response.data.apps;
+                apps.value = response.apps;
                 return apps.value;
             })
         );
@@ -241,9 +241,9 @@ export const useLocalesStore = defineStore('locales', () => {
     const fetchLanguages = () =>
         fetchAny(() =>
             getLocales().then((response) => {
-                capabilities.value = response.data.locales;
-                defaultLocale.value = response.data.default;
-                fallbackLocale.value = response.data.fallback;
+                capabilities.value = response.locales;
+                defaultLocale.value = response.default;
+                fallbackLocale.value = response.fallback;
                 return capabilities.value;
             })
         );
@@ -256,7 +256,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const createLanguage = (body: CreateLocaleRequest) =>
         fetchAny(() =>
-            createLocale(body).then((response) => fetchLanguages().then(() => response.data))
+            createLocale(body).then((response) => fetchLanguages().then(() => response))
         );
 
     /**
@@ -271,9 +271,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const editLanguage = (tag: string, body: UpdateLocaleRequest) =>
         fetchAny(() =>
-            apiUpdateLocale(tag, body).then((response) =>
-                fetchLanguages().then(() => response.data)
-            )
+            apiUpdateLocale(tag, body).then((response) => fetchLanguages().then(() => response))
         );
 
     /**
@@ -284,7 +282,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const activateLanguage = (tag: string) =>
         fetchAny(() =>
-            activateLocale(tag).then((response) => fetchLanguages().then(() => response.data))
+            activateLocale(tag).then((response) => fetchLanguages().then(() => response))
         );
 
     /**
@@ -295,7 +293,7 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const deactivateLanguage = (tag: string) =>
         fetchAny(() =>
-            deactivateLocale(tag).then((response) => fetchLanguages().then(() => response.data))
+            deactivateLocale(tag).then((response) => fetchLanguages().then(() => response))
         );
 
     /**
@@ -329,10 +327,10 @@ export const useLocalesStore = defineStore('locales', () => {
     const addEntry = (tag: string, app: string, body: CreateLocaleEntryRequest) =>
         fetchAny(() =>
             createLocaleEntry(tag, app, body).then((response) => {
-                addRecord(response.data);
+                addRecord(response);
                 // The new row's page position is the server's call, so cached pages are stale.
                 void invalidateEntrySearches();
-                return response.data;
+                return response;
             })
         );
 
@@ -348,8 +346,8 @@ export const useLocalesStore = defineStore('locales', () => {
     const editEntry = (tag: string, app: string, entryId: string, value: string) =>
         fetchAny(() =>
             replaceLocaleEntry(tag, app, entryId, { value }).then((response) => {
-                addRecord(response.data);
-                return response.data;
+                addRecord(response);
+                return response;
             })
         );
 
@@ -393,7 +391,7 @@ export const useLocalesStore = defineStore('locales', () => {
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
                 void invalidateEntrySearches();
-                return response.data;
+                return response;
             })
         );
     };
@@ -415,8 +413,8 @@ export const useLocalesStore = defineStore('locales', () => {
             const pageSize = 100;
             const collect = (page: number, soFar: LocaleEntry[]): Promise<LocaleEntry[]> =>
                 listEntriesOf(tag, app, { page, pageSize }).then((response) => {
-                    const items = [...soFar, ...response.data.items];
-                    const { totalPages } = response.data.meta;
+                    const items = [...soFar, ...response.items];
+                    const { totalPages } = response.meta;
                     return page < totalPages ? collect(page + 1, items) : items;
                 });
             return collect(1, []);
@@ -438,9 +436,7 @@ export const useLocalesStore = defineStore('locales', () => {
         entityType: string,
         entityId: string
     ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
-        fetchAny(() =>
-            getEntityTranslations(entityType, entityId).then((response) => response.data)
-        );
+        fetchAny(() => getEntityTranslations(entityType, entityId));
 
     /**
      * Merges one or more locales of one entity's translations — an object upserts a locale, `null`
@@ -458,10 +454,7 @@ export const useLocalesStore = defineStore('locales', () => {
         body: MergeTranslationsRequest
     ): Promise<Pick<EntityTranslations, 'translations' | 'fields'> | undefined> =>
         fetchAny(
-            () =>
-                apiUpsertEntityTranslations(entityType, entityId, body).then(
-                    (response) => response.data
-                ),
+            () => apiUpsertEntityTranslations(entityType, entityId, body),
             // Own bucket so the save button spins apart from every read; `forced` because a keyed
             // fetchAny would otherwise be served from cache.
             { key: ['entity-translations-save'], forced: true }

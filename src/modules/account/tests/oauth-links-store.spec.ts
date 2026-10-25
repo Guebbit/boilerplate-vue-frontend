@@ -9,10 +9,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { startProviderLink, useOAuthLinksStore } from '../stores/oauth-links.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -43,13 +40,13 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /account/oauth/links': orvalEnvelope({
+        'GET /account/oauth/links': {
             links: [{ provider: 'google', connectedAt: '2026-01-01T00:00:00.000Z' }]
-        }),
-        'DELETE /account/oauth/links/google': orvalEnvelope({ links: [] }),
-        'POST /account/oauth/links/google': orvalEnvelope({
+        },
+        'DELETE /account/oauth/links/google': { links: [] },
+        'POST /account/oauth/links/google': {
             authorizeUrl: 'https://accounts.example/consent?state=x'
-        })
+        }
     };
 });
 
@@ -78,17 +75,6 @@ describe('useOAuthLinksStore', () => {
                 expect(store.links).toEqual([]);
             });
     });
-
-    it('a payload without the list reads as no links', () => {
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
-        const store = useOAuthLinksStore();
-
-        return store.fetchLinks().then(() => {
-            expect(store.links).toEqual([]);
-        });
-    });
 });
 
 describe('startProviderLink', () => {
@@ -109,10 +95,8 @@ describe('startProviderLink', () => {
     });
 
     it('is an error when the server answers no URL', async () => {
-        responses['POST /account/oauth/links/google'] = orvalEnvelope({});
-        vi.mocked(orvalMutator).mockImplementationOnce(() =>
-            Promise.resolve({ success: true, status: 200, message: 'OK', data: {} })
-        );
+        responses['POST /account/oauth/links/google'] = {};
+        vi.mocked(orvalMutator).mockImplementationOnce(() => Promise.resolve({}));
 
         await expect(startProviderLink('google')).rejects.toThrow('no consent URL');
     });

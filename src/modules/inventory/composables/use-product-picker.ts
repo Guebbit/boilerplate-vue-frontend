@@ -50,7 +50,7 @@ export const useProductPicker = () => {
     const runSearch = debounce((text: string) => {
         searchProducts({ text: text || undefined, pageSize: PAGE_SIZE })
             .then((response) => {
-                results.value = response.data.items;
+                results.value = response.items;
             })
             // A failed search just leaves the previous page showing — the picker has no error
             // slot of its own, and the caller's own submit will surface a real problem anyway.
@@ -87,7 +87,7 @@ export const useProductPicker = () => {
         if (pinned.value?.id === id) return;
         searchProducts({ id: [id], pageSize: 1 })
             .then((response) => {
-                pinned.value = response.data.items[0];
+                pinned.value = response.items[0];
             })
             // A product that no longer exists (deleted since it was selected) just stays
             // unresolved — the bound id is still whatever the caller's form holds either way.

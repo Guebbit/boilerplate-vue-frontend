@@ -104,7 +104,7 @@ const criteriaOf = (filters: OrdersFilters) => ({
  * @returns A promise resolving with the entries.
  */
 const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
-    getOrderTimeline(orderId).then((response) => response.data);
+    getOrderTimeline(orderId).then((response) => response.items);
 
 /**
  * Lists the credit notes of an order, oldest first — one per settled refund, `[]` for an order
@@ -116,7 +116,7 @@ const fetchTimeline = (orderId: string): Promise<OrderTimelineEntry[]> =>
  * @returns A promise resolving with the note summaries.
  */
 const listCreditNotes = (orderId: string): Promise<CreditNoteSummary[]> =>
-    listOrderCreditNotes(orderId).then((response) => response.data);
+    listOrderCreditNotes(orderId).then((response) => response.items);
 
 /**
  * Orders CRUD, paginated search and invoices.
@@ -166,7 +166,7 @@ export const useOrdersStore = defineStore('orders', () => {
         UpdateOrderByIdRequest
     >(
         {
-            list: () => listOrders().then((response) => response.data.items),
+            list: () => listOrders().then((response) => response.items),
 
             search: (filters, page, pageSize) =>
                 searchOrders({
@@ -174,14 +174,13 @@ export const useOrdersStore = defineStore('orders', () => {
                     pageSize,
                     ...criteriaOf(filters)
                 }).then((response) => ({
-                    items: response.data.items,
-                    totalItems: response.data.meta.totalItems
+                    items: response.items,
+                    totalItems: response.meta.totalItems
                 })),
 
-            get: (orderId) => getOrderById(orderId).then((response) => response.data),
+            get: (orderId) => getOrderById(orderId),
 
-            update: (orderId, orderData) =>
-                updateOrderById(orderId, orderData).then((response) => response.data),
+            update: (orderId, orderData) => updateOrderById(orderId, orderData),
 
             remove: (orderId) => deleteOrderById(orderId)
         },
@@ -237,11 +236,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the restored order.
      */
     const restoreOrder = (orderId: string) =>
-        updateTarget(
-            () => restoreOrderById(orderId).then((response) => response.data),
-            {},
-            orderId
-        );
+        updateTarget(() => restoreOrderById(orderId), {}, orderId);
 
     /**
      * Cancels one order. Which statuses allow it is the server's `actions.cancel`, and its
@@ -262,7 +257,7 @@ export const useOrdersStore = defineStore('orders', () => {
         updateTarget(
             () =>
                 cancelOrderById(orderId, refund === undefined ? undefined : { refund }).then(
-                    (response) => response.data
+                    (response) => response
                 ),
             {},
             orderId
@@ -281,11 +276,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the corrected order.
      */
     const overrideStatus = (orderId: string, to: OrderStatus, reason: string) =>
-        updateTarget(
-            () => overrideOrderStatus(orderId, { to, reason }).then((response) => response.data),
-            {},
-            orderId
-        );
+        updateTarget(() => overrideOrderStatus(orderId, { to, reason }), {}, orderId);
 
     /**
      * Replaces where an unshipped order ships — `PUT /orders/{id}/shipping-address`
@@ -297,11 +288,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving with the order, its new address in place.
      */
     const correctShippingAddress = (orderId: string, address: OrderAddress) =>
-        updateTarget(
-            () => correctOrderShippingAddress(orderId, address).then((response) => response.data),
-            {},
-            orderId
-        );
+        updateTarget(() => correctOrderShippingAddress(orderId, address), {}, orderId);
 
     /**
      * Downloads every order the filters match as one CSV file — `GET /orders/export`

@@ -218,8 +218,8 @@ describe('Static pages', () => {
         cy.env(['apiUrl'])
             .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/shop`))
             .then((response) => {
-                const { data } = response.body as { data: { legalName: string } };
-                cy.get('[data-test=seller-identity]').should('contain.text', data.legalName);
+                const { legalName } = response.body as { legalName: string };
+                cy.get('[data-test=seller-identity]').should('contain.text', legalName);
             });
     });
 });

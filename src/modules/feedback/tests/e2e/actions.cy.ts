@@ -41,12 +41,7 @@ actionTable('feedback', [
         route: '/en/feedback',
         intercept: { method: 'POST', url: '**/feedback/search', operation: '/feedback/search' },
         kind: 'empty',
-        emptyBody: {
-            success: true,
-            status: 200,
-            message: 'OK',
-            data: { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } }
-        },
+        emptyBody: { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } },
         emptySchema: SearchFeedbackRequestsResponse,
         empty: { copy: '.v-empty-state', rows: '[data-test=feedback-item]' }
     }

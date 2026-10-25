@@ -11,14 +11,8 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { omitNulls, uploadThenClear } from '@/infrastructure/utils/forms.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { AxiosRequestConfig } from 'axios';
-import type {
-    Account,
-    AccountDeletion,
-    AccountExportRequest,
-    EmailVerificationRequested
-} from '@types';
+import type { Account } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -148,8 +142,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
         return fetchTarget(
             () =>
                 apiGetAccount().then((data) => {
-                    const payload = getPayloadFromResponse<Account>(data);
-                    if (!payload) return;
+                    const payload = data;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
                     // Both trackers follow the visitor's own analytics consent, checked fresh on
@@ -273,10 +266,8 @@ export const useProfileStore = defineStore('accountProfile', () => {
                       )
                     : apiUpdateAccount(withImageUrl, options)
                 ).then((data) => {
-                    const payload = getPayloadFromResponse<Account>(data);
-
                     // The projection must not lag the record — same rule as fetchProfile.
-                    return payload ? publishViewer(payload).then(() => data) : data;
+                    return publishViewer(data).then(() => data);
                 }),
             // The new imageUrl comes back from the API; a Blob has no business in store state.
             // `null` (image, phone, website) is dropped from this OPTIMISTIC patch only — the
@@ -348,13 +339,9 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  same number, read by `emailVerifyResendRetryAfter`.
      */
     const resendPendingEmail = (): Promise<number> =>
-        fetchAny(
-            () =>
-                apiResendPendingEmail().then((data) =>
-                    getPayloadFromResponse<EmailVerificationRequested>(data)
-                ),
-            { key: ['pending-email'], forced: true }
-        ).then((payload) => payload?.resendAfter ?? 0);
+        fetchAny(() => apiResendPendingEmail(), { key: ['pending-email'], forced: true }).then(
+            (payload) => payload?.resendAfter ?? 0
+        );
 
     /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
@@ -469,9 +456,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @returns A promise resolving with the two dates, once the local session is gone.
      */
     const requestAccountDelete = () =>
-        fetchAny(() =>
-            apiRequestAccountDelete().then((data) => getPayloadFromResponse<AccountDeletion>(data))
-        ).then((schedule) => {
+        fetchAny(() => apiRequestAccountDelete().then((data) => data)).then((schedule) => {
             // After the call settles, not inside it: tearing the session down clears the query
             // cache the call is still running under, which drops its answer.
             endLocalSession();
@@ -492,11 +477,7 @@ export const useProfileStore = defineStore('accountProfile', () => {
      *  response carries none.
      */
     const requestAccountExport = () =>
-        fetchAny(() =>
-            apiRequestAccountExport().then((data) =>
-                getPayloadFromResponse<AccountExportRequest>(data)
-            )
-        );
+        fetchAny(() => apiRequestAccountExport().then((data) => data));
 
     /**
      * Downloads a finished export — the page the mailed link opens calls this. Same fresh-session

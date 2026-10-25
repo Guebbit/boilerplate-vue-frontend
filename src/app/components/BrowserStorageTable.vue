@@ -62,7 +62,7 @@ onMounted(() => {
     void session.loadSessionMode();
     fetchAntibotConfig()
         .then((envelope) => {
-            usesTurnstile.value = envelope.data.provider === 'turnstile';
+            usesTurnstile.value = envelope.provider === 'turnstile';
         })
         .catch((error: unknown) => {
             logger.debug('http', '[Cookies] human-check provider not read', error);

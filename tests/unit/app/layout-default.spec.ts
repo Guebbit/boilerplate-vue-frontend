@@ -158,9 +158,7 @@ describe('LayoutDefault — a session that died on its own', () => {
 
 /** Mounts the layout once `GET /shop` has answered with these fields. */
 const mountWithShop = (overrides: Parameters<typeof aShop>[0]) => {
-    vi.mocked(getShop).mockResolvedValue({ data: aShop(overrides) } as Awaited<
-        ReturnType<typeof getShop>
-    >);
+    vi.mocked(getShop).mockResolvedValue(aShop(overrides));
     return router.push('/plain').then(() => {
         const wrapper = mountLayout();
         return loadShop()

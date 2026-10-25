@@ -13,9 +13,8 @@ import {
     startOAuthLink as apiStartOAuthLink,
     unlinkOAuthProvider as apiUnlinkOAuthProvider
 } from '@api';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import type { OAuthLink, OAuthLinks, OAuthLinkStart } from '@types';
+import type { OAuthLink } from '@types';
 
 /**
  * Starts connecting a provider to the signed-in account: the server issues a short-lived connect
@@ -37,7 +36,7 @@ export const startProviderLink = (
         ...(options.continueTo ? { continue: options.continueTo } : {}),
         ...(options.locale ? { locale: options.locale } : {})
     }).then((data) => {
-        const authorizeUrl = getPayloadFromResponse<OAuthLinkStart>(data)?.authorizeUrl;
+        const { authorizeUrl } = data;
         if (!authorizeUrl) throw new Error('The server answered no consent URL to connect to.');
         return authorizeUrl;
     });
@@ -67,7 +66,7 @@ export const useOAuthLinksStore = defineStore('accountOAuthLinks', () => {
      * @returns The links now held.
      */
     const applyLinks = (data: Awaited<ReturnType<typeof apiListOAuthLinks>>) => {
-        links.value = getPayloadFromResponse<OAuthLinks>(data)?.links ?? [];
+        links.value = data.links;
         return links.value;
     };
 

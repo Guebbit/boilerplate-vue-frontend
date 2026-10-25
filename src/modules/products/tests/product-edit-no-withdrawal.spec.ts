@@ -18,7 +18,6 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import * as schemas from '@api/schemas';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -112,10 +111,8 @@ const mountHydrated = (adminRecord: Record<string, unknown>) => {
         if (config.url === '/locales') return locales.promise;
         if (config.url === '/products/p1/admin') return admin.promise;
         if (config.method === 'PATCH')
-            return Promise.resolve(
-                parseOrvalFixture('PATCH', '/products/p1', orvalEnvelope(echo({})))
-            );
-        return Promise.resolve(orvalEnvelope());
+            return Promise.resolve(parseOrvalFixture('PATCH', '/products/p1', echo({})));
+        return Promise.resolve(undefined);
     });
 
     const wrapper = mount(ProductEdit, {
@@ -125,12 +122,10 @@ const mountHydrated = (adminRecord: Record<string, unknown>) => {
         }
     });
 
-    locales.resolve(parseOrvalFixture('GET', '/locales', orvalEnvelope(LOCALES_RESPONSE)));
+    locales.resolve(parseOrvalFixture('GET', '/locales', LOCALES_RESPONSE));
     return flushPromises()
         .then(() => {
-            admin.resolve(
-                parseOrvalFixture('GET', '/products/p1/admin', orvalEnvelope(echo(adminRecord)))
-            );
+            admin.resolve(parseOrvalFixture('GET', '/products/p1/admin', echo(adminRecord)));
             return flushPromises();
         })
         .then(() => wrapper);

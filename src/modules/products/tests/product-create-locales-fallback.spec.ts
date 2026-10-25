@@ -34,7 +34,7 @@ beforeEach(() => {
     vi.mocked(orvalMutator).mockReset();
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string }) => {
         if (config.url === '/locales') return Promise.reject(new Error('404'));
-        return Promise.resolve({ data: {} });
+        return Promise.resolve({});
     });
     return loadLocale('en').then(() =>
         router.push('/en/products/new').then(() => router.isReady())

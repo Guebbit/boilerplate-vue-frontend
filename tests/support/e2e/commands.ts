@@ -920,14 +920,14 @@ Cypress.Commands.add('loginAsFast', (role: E2ERole = 'user') => {
     const { email, password, totpSecret } = seedAccount(role);
     cy.env(['apiUrl']).then(({ apiUrl }) => {
         cy.request('POST', `${String(apiUrl)}/account/login`, { email, password }).then((login) => {
-            const { data } = login.body as { data?: { mfaRequired?: boolean; challenge?: string } };
-            if (!totpSecret || data?.mfaRequired !== true) return;
+            const outcome = login.body as { mfaRequired?: boolean; challenge?: string };
+            if (!totpSecret || outcome.mfaRequired !== true) return;
 
             // A staff account answers a challenge: finish it, so the session cookie is set.
             cy.task<string>('loginTotpCode', { secret: totpSecret, apiUrl: String(apiUrl) }).then(
                 (code) => {
                     cy.request('POST', `${String(apiUrl)}/account/login/2fa`, {
-                        challenge: data.challenge,
+                        challenge: outcome.challenge,
                         code
                     });
                 }

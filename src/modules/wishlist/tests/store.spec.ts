@@ -14,10 +14,7 @@ import { useWishlistStore } from '../store.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -39,25 +36,25 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /wishlist': orvalEnvelope({
+        'GET /wishlist': {
             items: [
                 { productId: 'p1', availability: 'in_stock' },
                 { productId: 'p2', availability: 'in_stock' }
             ]
-        }),
-        'POST /wishlist/items': orvalEnvelope({
+        },
+        'POST /wishlist/items': {
             items: [
                 { productId: 'p1', availability: 'in_stock' },
                 { productId: 'p2', availability: 'in_stock' }
             ]
-        }),
-        'DELETE /wishlist/items/p1': orvalEnvelope({
+        },
+        'DELETE /wishlist/items/p1': {
             items: [{ productId: 'p2', availability: 'in_stock' }]
-        }),
-        'POST /wishlist/items/p1/move-to-cart': orvalEnvelope({
+        },
+        'POST /wishlist/items/p1/move-to-cart': {
             items: [{ productId: 'p2', availability: 'in_stock' }]
-        }),
-        'GET /cart': orvalEnvelope({
+        },
+        'GET /cart': {
             items: [],
             summary: {
                 itemsCount: 0,
@@ -68,7 +65,7 @@ beforeEach(() => {
                 currency: 'EUR'
             },
             shipping: { required: false, selected: null, options: [] }
-        })
+        }
     };
 });
 
@@ -148,9 +145,9 @@ describe('ensureWishlist', () => {
             .ensureWishlist()
             .catch(() => undefined)
             .then(() => {
-                responses['GET /wishlist'] = orvalEnvelope({
+                responses['GET /wishlist'] = {
                     items: [{ productId: 'p1', availability: 'in_stock' }]
-                });
+                };
                 return store.ensureWishlist();
             })
             .then(() => {

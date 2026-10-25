@@ -17,7 +17,6 @@ import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
     contractRequest,
-    orvalEnvelope,
     parseOrvalFixture
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -57,7 +56,7 @@ defaultAnswer.current = (config) =>
     parseOrvalFixture(
         config.method,
         config.url,
-        config.method?.toUpperCase() === 'DELETE' ? orvalEnvelope() : orvalEnvelope(EXAMPLE)
+        config.method?.toUpperCase() === 'DELETE' ? undefined : EXAMPLE
     );
 
 /**
@@ -80,14 +79,10 @@ const lastBody = (schema: ZodType) => contractRequest(schema, lastRequest().data
 const answerWithPage = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockImplementation((config: { url?: string; method?: string }) =>
         Promise.resolve(
-            parseOrvalFixture(
-                config.method,
-                config.url,
-                orvalEnvelope({
-                    items,
-                    meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
-                })
-            )
+            parseOrvalFixture(config.method, config.url, {
+                items,
+                meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 }
+            })
         )
     );
 
@@ -215,15 +210,11 @@ describe('useExampleStore', () => {
             vi.mocked(orvalMutator).mockImplementationOnce(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
-                        parseOrvalFixture(
-                            config.method,
-                            config.url,
-                            orvalEnvelope({
-                                ...EXAMPLE,
-                                status: 'published',
-                                actions: { transitions: ['archived'], update: true, delete: true }
-                            })
-                        )
+                        parseOrvalFixture(config.method, config.url, {
+                            ...EXAMPLE,
+                            status: 'published',
+                            actions: { transitions: ['archived'], update: true, delete: true }
+                        })
                     )
             );
 
@@ -287,11 +278,10 @@ describe('useExampleStore', () => {
             vi.mocked(orvalMutator).mockImplementationOnce(
                 (config: { url?: string; method?: string }) =>
                     Promise.resolve(
-                        parseOrvalFixture(
-                            config.method,
-                            config.url,
-                            orvalEnvelope({ ...EXAMPLE, imageUrl: '/images/a.png' })
-                        )
+                        parseOrvalFixture(config.method, config.url, {
+                            ...EXAMPLE,
+                            imageUrl: '/images/a.png'
+                        })
                     )
             );
 

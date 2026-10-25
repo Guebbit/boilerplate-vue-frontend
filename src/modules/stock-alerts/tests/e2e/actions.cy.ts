@@ -60,7 +60,7 @@ actionTable('stock-alerts', [
         route: '/en/stock-alerts',
         intercept: { method: 'GET', url: '**/stock-alerts', operation: '/stock-alerts' },
         kind: 'empty',
-        emptyBody: { success: true, status: 200, message: 'OK', data: { items: [] } },
+        emptyBody: { items: [] },
         emptySchema: ListStockAlertsResponse,
         empty: { copy: '[data-test=stock-alerts-empty]', rows: '[data-test=stock-alert-row]' }
     }

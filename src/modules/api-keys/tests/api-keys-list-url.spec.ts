@@ -21,7 +21,7 @@ wireModulesIntoCore();
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     listApiKeys: vi.fn(() =>
-        Promise.resolve({ data: { items: [], meta: { totalItems: 0 }, maxExpiresAt: undefined } })
+        Promise.resolve({ items: [], meta: { totalItems: 0 }, maxExpiresAt: undefined })
     )
 }));
 

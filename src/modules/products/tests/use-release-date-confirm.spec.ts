@@ -29,7 +29,7 @@ beforeEach(() => {
 
 describe('confirmReleaseDateMove', () => {
     it('asks the server for any changed date, an earlier one too', () => {
-        previewRelease.mockResolvedValue({ data: { notify: 0 } });
+        previewRelease.mockResolvedValue({ notify: 0 });
         const { confirmReleaseDateMove } = useReleaseDateConfirm(() => HELD);
 
         return confirmReleaseDateMove('p1', EARLIER).then((go) => {
@@ -48,7 +48,7 @@ describe('confirmReleaseDateMove', () => {
     });
 
     it('puts the server count to the visitor when buyers would be emailed', () => {
-        previewRelease.mockResolvedValue({ data: { notify: 3 } });
+        previewRelease.mockResolvedValue({ notify: 3 });
         const confirm = vi.spyOn(useDialogStore(), 'confirm').mockResolvedValue(false);
         const { confirmReleaseDateMove } = useReleaseDateConfirm(() => HELD);
 

@@ -13,10 +13,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import { useOrderRefund } from '../composables/use-order-refund';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 import { aProblem } from '../../../../tests/support/unit/fixtures.ts';
 
 wireModulesIntoCore();
@@ -65,16 +62,16 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /payments/orders/o1': orvalEnvelope(payment(true)),
-        'POST /payments/p1/refunds': orvalEnvelope({
+        'GET /payments/orders/o1': payment(true),
+        'POST /payments/p1/refunds': {
             id: 'r1',
             amount: 10,
             currency: 'EUR',
             status: 'succeeded',
             reason: 'goodwill',
             createdAt: '2026-10-24T10:00:00.000Z'
-        }),
-        'GET /payments/p1': orvalEnvelope(payment(false))
+        },
+        'GET /payments/p1': payment(false)
     };
 });
 
@@ -107,8 +104,8 @@ describe('useOrderRefund', () => {
     });
 
     it('lists the hand-paid refunds the server names, and drops one once it is settled', () => {
-        responses['GET /payments/orders/o1'] = orvalEnvelope(payment(false, ['r1']));
-        responses['POST /payments/p1/refunds/r1/settle'] = orvalEnvelope(payment(false));
+        responses['GET /payments/orders/o1'] = payment(false, ['r1']);
+        responses['POST /payments/p1/refunds/r1/settle'] = payment(false);
         const { settleable, settle } = useOrderRefund(ref('o1'));
 
         return settled()

@@ -18,17 +18,14 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 wireModulesIntoCore();
 
 /** An empty entries page for either entries read. */
-const emptyPage = () =>
-    Promise.resolve({ data: { items: [], meta: { totalItems: 0, totalPages: 0 } } });
+const emptyPage = () => Promise.resolve({ items: [], meta: { totalItems: 0, totalPages: 0 } });
 
 vi.mock('@api', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     listLocaleEntries: vi.fn(() => emptyPage()),
     listAppLocaleEntries: vi.fn(() => emptyPage()),
-    getLocales: vi.fn(() =>
-        Promise.resolve({ data: { locales: [], default: 'en', fallback: 'en' } })
-    ),
-    listLocaleApps: vi.fn(() => Promise.resolve({ data: { apps: [] } }))
+    getLocales: vi.fn(() => Promise.resolve({ locales: [], default: 'en', fallback: 'en' })),
+    listLocaleApps: vi.fn(() => Promise.resolve({ apps: [] }))
 }));
 
 /** The real route tree, so the screen's links resolve. */

@@ -29,7 +29,6 @@ import {
     touchSession as apiTouchSession
 } from '@api';
 import type { PermissionAction } from '@api/permission-actions';
-import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import { clearEtags } from '@/infrastructure/http/etag.ts';
 import { asPassive } from '@/infrastructure/http/passive.ts';
 import { warn } from '@/infrastructure/utils/logger.ts';
@@ -402,12 +401,12 @@ export const useSessionStore = defineStore('session', () => {
      * in whichever mode the deployment runs: the access token in `jwt` mode, the granted cookie in
      * `cookie` mode. The one door every such response goes through, so no caller asks which mode.
      *
-     * @param response - The raw API response.
+     * @param response - The login-shaped answer: carries the access token in `jwt` mode.
      * @param remember - The login's "remember me" choice; omitted on a re-proof.
      */
-    const adoptSession = (response: unknown, remember?: boolean) => {
+    const adoptSession = (response: { token?: string } | undefined, remember?: boolean) => {
         if (mode.value === 'cookie') startCookieSession(remember);
-        else setAccessToken(getTokenFromResponse(response), remember);
+        else setAccessToken(response?.token, remember);
         // A sign-in (it names a "remember me" choice) replaces the browser-wide session: every
         // other tab must re-read who it is, not keep acting as the person it was. A re-proof
         // keeps the same person, so it says nothing.
@@ -428,10 +427,9 @@ export const useSessionStore = defineStore('session', () => {
      */
     const loadSessionMode = (): Promise<void> => {
         modeRequest ??= apiGetSessionConfig()
-            .then((answer) => {
-                const config = getPayloadFromResponse<SessionConfig>(answer);
-                mode.value = config?.mode;
-                lifetimes.value = config && {
+            .then((config) => {
+                mode.value = config.mode;
+                lifetimes.value = {
                     lifetimeSeconds: config.lifetimeSeconds,
                     staffLifetimeSeconds: config.staffLifetimeSeconds
                 };
@@ -471,7 +469,7 @@ export const useSessionStore = defineStore('session', () => {
         if (!viewer.value) return Promise.resolve();
         abilitiesInFlight ??= apiGetMyAbilities(asPassive())
             .then((answer) => {
-                setAbilities(getPayloadFromResponse<Abilities>(answer));
+                setAbilities(answer);
                 if (announce) abilitiesSignal.value += 1;
             })
             .catch(() => undefined)
@@ -546,7 +544,7 @@ export const useSessionStore = defineStore('session', () => {
                 asPassive({ _refreshed: true } as AxiosRequestConfigWithRetry)
             )
                 .then((data) => {
-                    const token = getTokenFromResponse(data);
+                    const { token } = data;
                     if (epochAtStart === sessionEpoch.value) {
                         setAccessToken(token);
                         // The rules may have moved while the old token lived; the first restore
@@ -595,26 +593,16 @@ export const useSessionStore = defineStore('session', () => {
         apiGetAccount().then((data) => {
             // Typed structurally rather than as the generated `User`: naming the domain entity
             // here would put a `User` back into `infrastructure`.
-            const payload = getPayloadFromResponse<{
-                id: string;
-                email: string;
-                role?: string;
-                imageUrl?: string;
-                thumbnailUrl?: string;
-                verifiedAt?: string | null;
-            }>(data);
-            return setViewer(
-                payload && {
-                    id: payload.id,
-                    email: payload.email,
-                    // Absent for a plain customer: only a staff role is ever stored.
-                    role: payload.role,
-                    imageUrl: payload.imageUrl,
-                    thumbnailUrl: payload.thumbnailUrl,
-                    // Absent means unverified: the backend sends the field only once it's set.
-                    verified: payload.verifiedAt != null
-                }
-            ).then(() => payload);
+            return setViewer({
+                id: data.id,
+                email: data.email,
+                // Absent for a plain customer: only a staff role is ever stored.
+                role: data.role,
+                imageUrl: data.imageUrl,
+                thumbnailUrl: data.thumbnailUrl,
+                // Absent means unverified: the backend sends the field only once it's set.
+                verified: data.verifiedAt != null
+            }).then(() => data);
         });
 
     /**
@@ -676,14 +664,10 @@ export const useSessionStore = defineStore('session', () => {
         idleRead = true;
         return apiTouchSession()
             .then((data) => {
-                const clock = getPayloadFromResponse<{
-                    lastActiveAt: string;
-                    idleTimeoutSeconds?: number;
-                }>(data);
-                idle.value = clock?.idleTimeoutSeconds
+                idle.value = data.idleTimeoutSeconds
                     ? {
-                          timeoutMs: clock.idleTimeoutSeconds * 1000,
-                          lastActiveAt: Date.parse(clock.lastActiveAt)
+                          timeoutMs: data.idleTimeoutSeconds * 1000,
+                          lastActiveAt: Date.parse(data.lastActiveAt)
                       }
                     : undefined;
                 if (idle.value) sessionChannel?.postMessage({ type: 'activity', at: Date.now() });

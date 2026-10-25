@@ -331,8 +331,8 @@ It produced fixes, not a report nobody read:
   dictionary string would have kept both sides agreeing. Now anchored to the literal locale string.
 - Quantity floor-clamp tests asserted against `MIN_LINE_QUANTITY`, a sibling export of the module
   under test, instead of the contract's literal `minimum: 1`.
-- The login fixture mocked a bare `{token}` while the backend envelope wraps it under `data` — the
-  auth tests would have passed against a server violating the contract.
+- The login fixture mocked a shape the contract did not declare for the answer — the auth tests
+  would have passed against a server violating the contract.
 
 Run them before a refactor, after a contract change, or when a module's docs and tests have drifted
 apart — not on a schedule.

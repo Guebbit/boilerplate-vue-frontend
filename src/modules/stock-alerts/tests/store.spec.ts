@@ -10,10 +10,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useStockAlertsStore } from '../store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
-import {
-    orvalEnvelope,
-    parseOrvalFixture
-} from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
+import { parseOrvalFixture } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
 wireModulesIntoCore();
 
@@ -36,9 +33,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     const asked = { items: [{ productId: 'p1', createdAt: '2026-10-18T09:00:00Z' }] };
     responses = {
-        'GET /stock-alerts': orvalEnvelope(asked),
-        'POST /stock-alerts': orvalEnvelope(asked),
-        'DELETE /stock-alerts/p1': orvalEnvelope({ items: [] })
+        'GET /stock-alerts': asked,
+        'POST /stock-alerts': asked,
+        'DELETE /stock-alerts/p1': { items: [] }
     };
 });
 

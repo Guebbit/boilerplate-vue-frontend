@@ -33,7 +33,7 @@ interface Agreement {
 const agreementOf = (device: Device): Cypress.Chainable<Agreement> =>
     requestAsDevice(device, 'GET', '/account').then(
         // The body is `unknown`; these are the fields the story reads off it.
-        (response) => (response.body as { data: Agreement }).data
+        (response) => response.body as Agreement
     );
 
 describe('AC25 · What I agreed to', () => {
@@ -120,7 +120,7 @@ describe('AC25 · What I agreed to', () => {
 
         cy.step('the record carries the terms and no analytics answer');
         cy.wait('@account')
-            .its('response.body.data')
+            .its('response.body')
             .should((agreed: Agreement) => {
                 expect(agreed.termsAcceptedAt, 'the terms were stamped').to.be.a('string');
                 expect(agreed.termsVersion, 'with the version').to.be.a('string');

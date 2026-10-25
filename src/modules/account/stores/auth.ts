@@ -9,7 +9,6 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { queryClient } from '@/infrastructure/query-client.ts';
-import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import {
     login as apiLogin,
     RememberTier,
@@ -17,7 +16,7 @@ import {
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset
 } from '@api';
-import type { MfaChallenge, LoginOutcome as ApiLoginOutcome } from '@api';
+import type { MfaChallenge } from '@api';
 import { useAnalyticsConsentStore } from '@/infrastructure/analytics-consent.ts';
 import { useIdempotencyKey } from '@/infrastructure/http/idempotency.ts';
 import { useProfileStore } from './profile.ts';
@@ -86,24 +85,23 @@ export const useAuthStore = defineStore('accountAuth', () => {
         data: Awaited<ReturnType<typeof apiLogin>>,
         remember: boolean
     ): Promise<LoginOutcome> | LoginOutcome => {
-        const payload = getPayloadFromResponse<ApiLoginOutcome>(data);
         // `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
         // all, so the union needs a guard TS can narrow on rather than an optional access.
-        if (payload && 'mfaRequired' in payload)
+        if ('mfaRequired' in data)
             return {
                 kind: 'mfa',
-                challenge: payload.challenge,
-                expiresAt: payload.expiresAt,
-                methods: payload.methods,
-                defaultMethod: payload.defaultMethod
+                challenge: data.challenge,
+                expiresAt: data.expiresAt,
+                methods: data.methods,
+                defaultMethod: data.defaultMethod
             } as const;
 
-        if (payload && 'deletionPending' in payload)
+        if ('deletionPending' in data)
             return {
                 kind: 'deletion-pending',
-                challenge: payload.challenge,
-                expiresAt: payload.expiresAt,
-                purgeAt: payload.purgeAt
+                challenge: data.challenge,
+                expiresAt: data.expiresAt,
+                purgeAt: data.purgeAt
             } as const;
 
         session.adoptSession(data, remember);

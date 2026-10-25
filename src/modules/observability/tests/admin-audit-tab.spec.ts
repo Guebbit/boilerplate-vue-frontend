@@ -17,7 +17,7 @@ import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import {
-    contractEnvelope,
+    contractBody,
     contractResponse
 } from '../../../../tests/unit/infrastructure/http/orval-fixture-schema.ts';
 
@@ -191,7 +191,7 @@ const rowOn = (targetType?: string, targetId?: string) => ({
 /** Mounts the shop trail answering `items`. */
 const mountWith = (items: ReturnType<typeof rowOn>[]) => {
     vi.mocked(listAuditEntries).mockResolvedValueOnce(
-        contractEnvelope<Awaited<ReturnType<typeof listAuditEntries>>>(
+        contractBody<Awaited<ReturnType<typeof listAuditEntries>>>(
             schemas.ListAuditEntriesResponse,
             {
                 items,
@@ -242,7 +242,7 @@ describe('the correlation ids', () => {
 
     it('gives each id a copy button that names the full id, and puts no title on the cell', () => {
         vi.mocked(listAuditEntries).mockResolvedValueOnce(
-            contractEnvelope<Awaited<ReturnType<typeof listAuditEntries>>>(
+            contractBody<Awaited<ReturnType<typeof listAuditEntries>>>(
                 schemas.ListAuditEntriesResponse,
                 {
                     items: [ROW],
@@ -279,7 +279,7 @@ const refundRow = (metadata: Record<string, unknown>) => ({
 describe('own money', () => {
     it('badges a row whose metadata says ownOrder, and no other', () => {
         vi.mocked(listAuditEntries).mockResolvedValueOnce(
-            contractEnvelope<Awaited<ReturnType<typeof listAuditEntries>>>(
+            contractBody<Awaited<ReturnType<typeof listAuditEntries>>>(
                 schemas.ListAuditEntriesResponse,
                 {
                     items: [refundRow({ ownOrder: true }), refundRow({ amount: 5 })],
