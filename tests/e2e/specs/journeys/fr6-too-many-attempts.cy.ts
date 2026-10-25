@@ -8,17 +8,14 @@
  *
  * The 429 is a stub on purpose: the real budget is proven by the backend's own tests, and a
  * budget spent for real would carry over to every later spec on a live backend. What is REAL is
- * its shape: the reject envelope `generateReject` builds (`status`, the HTTP phrase in `message`,
- * the `RATE_LIMITED` item in `errors`) and the `Retry-After` header `express-rate-limit` adds.
+ * its shape: the problem details `rejectResponse` builds (`title` the HTTP phrase, `detail` the
+ * sentence, the `RATE_LIMITED` item in `errors`) and the `Retry-After` header `express-rate-limit` adds.
  */
 
+import { rejectEnvelope } from '../../../support/e2e/envelope';
+
 /** What the backend answers when a budget runs out: `refuse` in its rate-limit middleware. */
-const RATE_LIMITED = {
-    success: false,
-    status: 429,
-    message: 'Too Many Requests',
-    errors: [{ code: 'RATE_LIMITED', message: 'Too many requests. Try again shortly.' }]
-};
+const RATE_LIMITED = rejectEnvelope(429, 'RATE_LIMITED', 'Too many requests. Try again shortly.');
 
 /**
  * Fills the login form and submits it, without expecting to leave the page.
@@ -51,9 +48,8 @@ describe('FR6 · Too many attempts', () => {
                 .then((wrongPassword) => {
                     cy.step('the budget runs out: the answer is a 429 with the real envelope');
                     cy.intercept('POST', '**/account/login', {
-                        statusCode: 429,
-                        headers: { 'retry-after': '60' },
-                        body: RATE_LIMITED
+                        ...RATE_LIMITED,
+                        headers: { ...RATE_LIMITED.headers, 'retry-after': '60' }
                     }).as('refused');
                     attemptLogin(email, `${password}-wrong`);
                     cy.wait('@refused');

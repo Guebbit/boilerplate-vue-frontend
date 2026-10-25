@@ -13,6 +13,7 @@
  * (`RATE_LIMITED`, the sentence in the guest's own language: Italian here) and the story still proves the form's reaction.
  */
 import { mailMentions } from '../../../../scripts/e2e/mail-message';
+import { rejectEnvelope } from '../../../support/e2e/envelope';
 
 /** The sender's address: one identity, so both the per-address and per-email budgets are spent together. */
 const SENDER = 'vi3.guest@example.com';
@@ -20,13 +21,8 @@ const SENDER = 'vi3.guest@example.com';
 /** The budget's size: five messages pass, the sixth is refused (`NODE_SUBMISSION_RATE_LIMIT_MAX`). */
 const BUDGET = 5;
 
-/** What the real limiter answers with: the shared error envelope and its sentence, in the language the request asked for. */
-const TOO_MANY = {
-    success: false,
-    status: 429,
-    message: 'Too Many Requests',
-    errors: [{ code: 'RATE_LIMITED', message: 'Troppe richieste. Riprova tra poco.' }]
-};
+/** What the real limiter answers with: the problem details and their sentence, in the language the request asked for. */
+const TOO_MANY = rejectEnvelope(429, 'RATE_LIMITED', 'Troppe richieste. Riprova tra poco.');
 
 /** One ticket as far as this story reads it. */
 interface TicketLike {
@@ -128,14 +124,13 @@ describe('VI3 · A guest writes to the shop', () => {
         }
         cy.env(['liveProfile']).then(({ liveProfile }) => {
             // Demo budgets are raised far past this, so the answer a spent budget gives is stubbed.
-            if (liveProfile !== true)
-                cy.intercept('POST', '**/feedback/contact', { statusCode: 429, body: TOO_MANY });
+            if (liveProfile !== true) cy.intercept('POST', '**/feedback/contact', TOO_MANY);
         });
         const sixth = `VI3 sixth ${run}`;
         writeToTheShop(sixth);
         cy.get('[data-test=contact-submit-error]')
             .should('be.visible')
-            .and('contain.text', TOO_MANY.errors[0].message);
+            .and('contain.text', TOO_MANY.body.errors[0].message);
         // What the guest typed is still there to send later; nothing was lost.
         cy.get('[data-test=contact-subject] input').should('have.value', sixth);
         ticketsAbout(sixth).should('have.length', 0);

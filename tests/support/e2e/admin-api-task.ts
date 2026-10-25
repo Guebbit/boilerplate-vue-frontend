@@ -37,10 +37,10 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
 const unwrap = <T>(response: Response, context: string): Promise<T> =>
     response
         .json()
-        .then((payload: { success?: boolean; data?: T; message?: string; errors?: unknown }) => {
+        .then((payload: { data?: T; title?: string; detail?: string; errors?: unknown }) => {
             if (!response.ok)
                 throw new Error(
-                    `adminApi: ${context} answered ${String(response.status)} — ${payload.message ?? 'no message'}` +
+                    `adminApi: ${context} answered ${String(response.status)} — ${payload.title ?? 'no title'}: ${payload.detail ?? 'no detail'}` +
                         (payload.errors === undefined ? '' : ` ${JSON.stringify(payload.errors)}`)
                 );
             return payload.data as T;

@@ -6,6 +6,7 @@
  */
 import { skipUnlessSessionMode } from '../../../../../tests/support/e2e/harness';
 import { answerChallengePage } from '../../../../../tests/support/e2e/login-challenge';
+import { rejectEnvelope } from '../../../../../tests/support/e2e/envelope';
 
 /**
  * Signs the administrator in through the login form already on screen, and answers the
@@ -249,15 +250,7 @@ describe('Authentication', () => {
                         return;
                     }
                     forced401 = true;
-                    request.reply({
-                        statusCode: 401,
-                        body: {
-                            success: false,
-                            status: 401,
-                            message: 'Unauthorized',
-                            errors: [{ code: 'UNAUTHORIZED', message: 'Unauthorized' }]
-                        }
-                    });
+                    request.reply(rejectEnvelope(401, 'UNAUTHORIZED', 'Unauthorized'));
                 }).as('ordersSearch');
             });
 
